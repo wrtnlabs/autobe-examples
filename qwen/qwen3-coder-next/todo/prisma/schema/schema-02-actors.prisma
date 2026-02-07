@@ -1,0 +1,149 @@
+/// Main user table with email/password authentication credentials and
+/// profile information
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for user login and notifications. Must be unique across all
+  /// users.
+  email String
+  
+  /// Hashed password for authentication. Never stores plain text passwords.
+  password_hash String
+  
+  /// User's display name shown in the application interface.
+  display_name String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Optional timestamp when the user account was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions todo_app_user_sessions[]
+  passwordResets todo_app_user_password_resets[]
+  auditEvents todo_app_system_audits[]
+  todos todo_app_todos[]
+  editHistories todo_app_todo_edit_histories[]
+  todoTrashes todo_app_todo_trashes[]
+  
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens with access and refresh token support for user
+/// authentication
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who owns this session. {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Unique session identifier (UUID) for the session token.
+  session_id String
+  
+  /// JWT access token for API authentication. This token is used to authorize
+  /// API requests.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens. Used for token
+  /// rotation and extended sessions.
+  refresh_token String
+  
+  /// IP address of the client that established this session.
+  ip String
+  
+  /// Referrer URL that led to the application (if applicable).
+  referrer String?
+  
+  /// Timestamp when this session was created (login time).
+  created_at DateTime
+  
+  /// Timestamp when this session will expire and be invalidated.
+  expired_at DateTime
+  
+  /// Timestamp when this session was last renewed (token rotation).
+  renewed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  passwordResets todo_app_user_password_resets[]
+  todoTrashes todo_app_todo_trashes[]
+  
+  @@unique([session_id])
+  @@unique([access_token])
+  @@unique([refresh_token])
+  @@index([todo_app_user_id, created_at])
+  @@index([expired_at])
+}
+
+/// Password reset tokens for user account recovery. Each token is valid for
+/// a single use and expires after a set period. Linked to users table for
+/// authentication flow.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account requesting password reset. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Session context for this password reset request. {@link
+  /// todo_app_user_sessions.id}
+  todo_app_user_session_id String?
+  
+  /// Password reset token generated for authentication. Used in password reset
+  /// URL.
+  token String
+  
+  /// Timestamp when this password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when this password reset token expires. After this time, the
+  /// token becomes invalid.
+  expired_at DateTime
+  
+  /// Timestamp when the token was consumed (password successfully changed).
+  consumed_at DateTime?
+  
+  /// Timestamp when this password reset record was permanently deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  userSession todo_app_user_sessions? @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_session_id])
+  
+  @@unique([token])
+  @@index([todo_app_user_id, created_at])
+}

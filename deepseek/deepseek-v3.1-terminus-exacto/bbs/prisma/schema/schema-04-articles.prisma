@@ -1,0 +1,612 @@
+/// Core article entity storing title, content, section assignment, and
+/// author information.
+///
+/// This table represents the main content unit of the discussion board where
+/// users create and share articles on economic and political topics. Each
+/// article belongs to a specific section and is authored by a registered
+/// user. The table supports article lifecycle management including creation,
+/// editing, deletion, and publication status tracking.
+///
+/// Articles can have multiple attachments, tags, and engagement metrics
+/// through related child tables. The content field stores the main article
+/// text while the title provides a concise summary. The status field manages
+/// article workflow from draft to published to archived states.
+///
+/// Related entities include: {@link discussion_board_sections.id} for
+/// section assignment, {@link discussion_board_users.id} for author
+/// identification, and various child tables for attachments, tags, and
+/// engagement metrics.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section where this article is published. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Author who created this article. {@link discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Article title that summarizes the content. Must be between 5 and 200
+  /// characters.
+  title String
+  
+  /// Main article content containing the full text of the discussion. Must be
+  /// at least 50 characters.
+  content String
+  
+  /// Publication status of the article. Values: draft, published, archived.
+  status String
+  
+  /// Timestamp when the article was first created.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft-deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  auditActions discussion_board_audit_logs[]
+  snapshots discussion_board_article_snapshots[]
+  files discussion_board_article_files[]
+  images discussion_board_article_images[]
+  tags discussion_board_article_tags[]
+  viewStat discussion_board_article_view_stats?
+  favoritedBies discussion_board_article_favorites[]
+  drafts discussion_board_article_drafts[]
+  viewStatEvents discussion_board_article_view_stat_events[]
+  comments discussion_board_comments[]
+  commentPaginationSetting discussion_board_comment_pagination_settings?
+  moderationLogs discussion_board_moderation_logs[]
+  moderationHistories discussion_board_moderated_content_histories[]
+  contentFlags discussion_board_content_flags[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_articles_discussion_board_section_id__cb7d94c3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_articles_discussion_board_user_id_cre_906977c0")
+  @@index([status, created_at])
+}
+
+/// Audit trail for article changes with version history and edit tracking.
+///
+/// This table captures point-in-time states of articles whenever they are
+/// modified, providing a complete version history for audit purposes. Each
+/// snapshot contains a denormalized copy of the article's state at the time
+/// of modification, including title, content, section assignment, and author
+/// information.
+///
+/// The snapshots are append-only records that support rollback capabilities,
+/// content moderation tracking, and compliance requirements. They reference
+/// the parent {@link discussion_board_articles} table and maintain the
+/// complete edit history of each article.
+///
+/// Key business uses include:
+/// - Tracking content changes for moderation and compliance
+/// - Enabling article version comparison and rollback
+/// - Providing audit trail for content modifications
+/// - Supporting historical analysis of article evolution
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article being snapshotted. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Title of the article at the time of snapshot creation.
+  title String
+  
+  /// Full content of the article at the time of snapshot creation.
+  content String
+  
+  /// Section assignment of the article at the time of snapshot creation.
+  /// {@link discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Author of the article at the time of snapshot creation. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_snapshots_discussion_board_ar_12be945f")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_article_snapshots_discussion_board_us_d95c7d7d")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_article_snapshots_discussion_board_se_f2ef0f8a")
+}
+
+/// Stores file attachments associated with articles, supporting multiple
+/// file types and formats.
+///
+/// This table manages all file attachments that users can add to their
+/// articles, including documents, PDFs, and other supported file formats.
+/// Each file attachment is linked to a specific article and includes
+/// metadata such as file name, type, size, and storage path.
+///
+/// Files are managed through the parent article entity and cannot exist
+/// independently. When an article is deleted, all associated file
+/// attachments are also removed. The system supports various file types with
+/// appropriate validation and storage handling.
+///
+/// Related entities: {@link discussion_board_articles} (parent article),
+/// {@link discussion_board_users} (uploading user if tracked).
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article to which this file attachment belongs. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original name of the uploaded file as provided by the user.
+  file_name String
+  
+  /// MIME type or file extension indicating the file format (e.g.,
+  /// 'application/pdf', 'image/jpeg').
+  file_type String
+  
+  /// Size of the file in bytes for storage management and download tracking.
+  file_size Int
+  
+  /// Path to the file in the storage system for retrieval and download
+  /// operations.
+  storage_path String
+  
+  /// User who uploaded this file attachment. {@link discussion_board_users.id}
+  uploaded_by String?
+  
+  /// Optional description of the file attachment provided by the user.
+  description String?
+  
+  /// Number of times this file has been downloaded for usage analytics.
+  download_count Int
+  
+  /// Timestamp when the file attachment was created.
+  created_at DateTime
+  
+  /// Timestamp when the file attachment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the file attachment was soft-deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  commentAttachments discussion_board_comment_attachments[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+  @@index([file_type, created_at])
+}
+
+/// Central repository for article image attachments with comprehensive
+/// lifecycle management. Each image record maintains metadata for efficient
+/// retrieval and display while supporting versioning, status tracking, and
+/// independent management operations.
+///
+/// This table enables system-wide image operations including search across
+/// articles, bulk management, and status tracking. Images can be
+/// independently managed while maintaining referential integrity with parent
+/// articles. The design supports complete image lifecycle from upload
+/// through archival or deletion.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article that this image is attached to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Reference to the centralized file storage containing the actual image
+  /// binary data and metadata. {@link discussion_board_attachment_files.id}
+  attachment_file_id String
+  
+  /// Current status of the image in the workflow: 'uploaded', 'processing',
+  /// 'active', 'archived', 'deleted'.
+  status String
+  
+  /// Order in which images should be displayed within the article content.
+  display_order Int
+  
+  /// Alternative text for accessibility and SEO purposes describing the image
+  /// content.
+  alt_text String?
+  
+  /// Optional caption text displayed below the image for additional context.
+  caption String?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  imageFiles discussion_board_article_image_files[]
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, display_order], map: "discussion_board_article_images_discussion_board_artic_ed181826")
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, status], map: "discussion_board_article_images_discussion_board_artic_160c28e3")
+}
+
+/// Junction table implementing the tagging system for articles. This table
+/// enables multiple free-text tags to be associated with each article
+/// through a many-to-many relationship. Tags are stored as free text and
+/// support flexible categorization of article content.
+///
+/// The tagging system allows users to add descriptive labels to their
+/// articles, making content more discoverable through tag-based filtering
+/// and search. Each tag association is unique per article, preventing
+/// duplicate tags on the same article while allowing the same tag to be used
+/// across multiple articles.
+///
+/// This table serves as the bridge between {@link discussion_board_articles}
+/// and the tag values, maintaining referential integrity while enabling
+/// efficient tag-based queries and filtering operations.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated article. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Free-text tag name assigned to the article. Users can create custom tags
+  /// to categorize content.
+  tag_name String
+  
+  /// Timestamp when the tag was associated with the article.
+  created_at DateTime
+  
+  /// Timestamp when the tag association was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the tag association was soft-deleted, allowing for tag
+  /// removal tracking.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, tag_name], map: "discussion_board_article_tags_discussion_board_article_2ef58600")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_tags_discussion_board_article_2f3d4113")
+}
+
+/// Tracks view statistics and engagement metrics for articles. This table
+/// records view counts, unique viewers, and temporal patterns for article
+/// analytics. Provides data for article popularity, user engagement
+/// tracking, and content performance analysis.
+///
+/// Each record represents view statistics aggregates for a specific article,
+/// including total view count, unique viewer count, and calculation fields
+/// for derived metrics. The data supports analytics dashboards, content
+/// recommendations, and article performance insights.
+///
+/// This table integrates with {@link discussion_board_articles} to provide
+/// comprehensive article analytics and requires {@link
+/// discussion_board_article_view_stat_events} for granular view tracking and
+/// 3NF compliance.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article being tracked. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Total number of views for the article, including repeat views from the
+  /// same user.
+  total_view_count Int
+  
+  /// Number of distinct users who have viewed the article.
+  unique_viewer_count Int
+  
+  /// Timestamp of the most recent view of the article.
+  last_viewed_at DateTime?
+  
+  /// Average time users spend viewing the article in seconds, calculated from
+  /// view events.
+  average_time_spent_seconds Float?
+  
+  /// Total accumulated time spent by all viewers on the article.
+  total_time_spent_seconds Float
+  
+  /// Timestamp when the view statistics record was created.
+  created_at DateTime
+  
+  /// Timestamp when the view statistics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_article_view_stats_discussion_board_a_1e299b02")
+  @@index([total_view_count])
+  @@index([unique_viewer_count])
+  @@index([last_viewed_at])
+  @@index([created_at, updated_at])
+}
+
+/// Junction table representing user bookmarking of articles. Each record
+/// indicates that a specific user has favorited a specific article, creating
+/// a many-to-many relationship between users and articles.
+///
+/// This table enables users to save articles of interest for quick access
+/// later. It also supports analytics on article popularity based on favorite
+/// counts. The relationship is unique per user-article pair to prevent
+/// duplicate favorites.
+///
+/// Related entities: {@link discussion_board_users.id} for the user who
+/// favorited the article, {@link discussion_board_articles.id} for the
+/// article being favorited.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who favorited the article. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Reference to the article that was favorited. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Timestamp when the user favorited the article.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_user_id, discussion_board_article_id], map: "discussion_board_article_favorites_discussion_board_us_265af336")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_article_favorites_discussion_board_us_f8185375")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_favorites_discussion_board_ar_3defbd19")
+}
+
+/// Stores draft versions of articles before publication with auto-recovery
+/// features.
+///
+/// This table manages article drafts that users create before publishing
+/// their content to the main discussion board. Drafts are independent
+/// entities that users can create, edit, and delete separately from
+/// published articles. When a draft is published, it becomes associated with
+/// a main article record.
+///
+/// Key features include:
+/// - Draft-specific metadata for auto-recovery functionality
+/// - Independent lifecycle management from published articles
+/// - Support for draft-specific workflows and status tracking
+/// - Association with published articles when finalized
+///
+/// Drafts are managed through the article creation workflow and provide
+/// users with the ability to save work in progress without committing to
+/// publication. {@link discussion_board_articles.id}
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_drafts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the published article when this draft becomes finalized.
+  /// {@link discussion_board_articles.id}
+  discussion_board_article_id String?
+  
+  /// Working title of the draft, which may differ from the final published
+  /// article title.
+  draft_title String
+  
+  /// Working content of the draft, which may differ from the final published
+  /// article content.
+  draft_content String
+  
+  /// Current status of the draft. Values: 'draft', 'published', 'archived'.
+  draft_status String
+  
+  /// Timestamp of the last auto-save operation for recovery purposes.
+  last_saved_at DateTime
+  
+  /// JSON data for auto-recovery functionality, storing incremental changes
+  /// and edit history.
+  recovery_data String?
+  
+  /// Timestamp when the draft was first created.
+  draft_created_at DateTime
+  
+  /// Timestamp when the draft was last modified.
+  draft_updated_at DateTime
+  
+  /// Timestamp when the draft was soft-deleted, allowing for recovery.
+  draft_deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_drafts_discussion_board_artic_3a527a40")
+  
+  @@index([draft_status, last_saved_at])
+}
+
+/// Stores comprehensive file metadata for images attached to articles,
+/// providing detailed file information and lifecycle management for image
+/// attachments. This table serves as a subsidiary entity to {@link
+/// discussion_board_article_images}, containing technical file details
+/// separate from the image content itself.
+///
+/// The table captures essential file metadata including filename, size, MIME
+/// type, and storage information, enabling proper file management and
+/// retrieval. It supports the image attachment system by providing the
+/// technical foundation for file operations while maintaining referential
+/// integrity with the parent image entity.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_image_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article image entity. {@link
+  /// discussion_board_article_images.id}
+  discussion_board_article_image_id String
+  
+  /// Original filename of the uploaded image file as provided by the user.
+  filename String
+  
+  /// Size of the image file in bytes, used for storage management and download
+  /// size estimation.
+  file_size Int
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
+  mime_type String
+  
+  /// Server-side storage path where the image file is physically stored.
+  storage_path String
+  
+  /// Original filename provided during upload, preserved for user reference.
+  original_filename String?
+  
+  /// Timestamp when the file metadata was first created.
+  created_at DateTime
+  
+  /// Timestamp when the file metadata was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  articleImage discussion_board_article_images @relation(fields: [discussion_board_article_image_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_image_id], map: "discussion_board_article_image_files_discussion_board__6b68a00d")
+  @@index([filename])
+  @@index([mime_type])
+  @@index([created_at])
+}
+
+/// Records individual article view events for granular analytics and
+/// engagement tracking. Each event captures detailed information about when
+/// an article was viewed, by which user session, and for how long. This
+/// table supports the aggregated view statistics in {@link
+/// discussion_board_article_view_stats} while maintaining 3NF compliance
+/// through proper event-level tracking.
+///
+/// The table enables detailed analytics such as user engagement patterns,
+/// popular content analysis, and reader behavior tracking. View events are
+/// append-only records that provide the foundation for comprehensive article
+/// performance metrics and user activity analysis.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_view_stat_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the viewed article. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Reference to the user session that viewed the article. {@link
+  /// discussion_board_user_sessions.id}
+  discussion_board_user_session_id String?
+  
+  /// Timestamp when the view event was recorded.
+  created_at DateTime
+  
+  /// Duration of the view event in seconds, measuring how long the user
+  /// engaged with the article content.
+  view_duration_seconds Int?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  userSession discussion_board_user_sessions? @relation(fields: [discussion_board_user_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_view_stat_events_discussion_b_80a40b86")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_session_id, created_at], map: "discussion_board_article_view_stat_events_discussion_b_f5582f56")
+}

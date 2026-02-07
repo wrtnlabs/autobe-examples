@@ -1,0 +1,67 @@
+/// Stores user comments on articles with content, timestamps, and
+/// relationships to users and articles. Each comment has a single parent
+/// article and is authored by one user. Comments include text content,
+/// creation timestamp, last edited timestamp, and deletion status. This
+/// single table handles all comment operations as specified: creation,
+/// editing (within 1-hour window), deletion, and reading. Foreign keys link
+/// to economic_board_users (author) and economic_board_articles (parent
+/// article). Comments are displayed sorted by oldest first and are
+/// paginated. The table supports moderation workflows with soft deletion and
+/// administrative deletion tracking. All comment metadata is stored in raw
+/// form without calculated fields to maintain 3NF compliance.
+///
+/// @namespace Comment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article this comment belongs to. {@link
+  /// economic_board_articles.id}
+  economic_board_articles_id String
+  
+  /// Reference to the user who authored this comment. {@link
+  /// economic_board_citizens.id} or {@link economic_board_administrators.id}
+  /// or {@link economic_board_super_administrators.id}
+  economic_board_users_id String
+  
+  /// The text content of the comment, limited to 2,500 characters as per
+  /// business rules.
+  content String
+  
+  /// Timestamp when the comment was originally created. Immutable after
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last edited. Updated only when author
+  /// modifies content within the 1-hour edit window.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was marked as deleted. Null if comment is
+  /// active. Supports soft delete for audit trails.
+  deleted_at DateTime?
+  
+  /// Flag that indicates if the comment was deleted by an administrator (true)
+  /// or by the author (false). Maintains audit trail of deletion actions.
+  deleted_by_admin Boolean
+  
+  /// Optional reason provided by an administrator when deleting a comment.
+  /// Stored only when deleted_by_admin is true.
+  deletion_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [economic_board_articles_id], references: [id], onDelete: Cascade)
+  author economic_board_citizens @relation(fields: [economic_board_users_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_articles_id, economic_board_users_id], map: "economic_board_comments_economic_board_articles_id_eco_d24e3e68")
+  // spellchecker: ignore-next-line
+  @@index([economic_board_articles_id, created_at], map: "economic_board_comments_economic_board_articles_id_cre_d83ca417")
+  @@index([economic_board_users_id, created_at])
+  @@index([deleted_at, created_at])
+}

@@ -1,233 +1,404 @@
-/// User authentication records including credentials, email verification
-/// state, and account activity tracking. Stores primary user identity data
-/// with email credentials for system access and audit trails.
-///
-/// Includes all fields necessary for user registration, login, and session
-/// management while following strict schema normalization. User accounts are
-/// fully authenticated through email and password, with verification state
-/// tracked separately from profile data.
+/// Temporary guest accounts identified by device hash for public content
+/// access. Guests are tracked via device hash to prevent abuse of public
+/// content features and maintain access policies without requiring
+/// authentication.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_users {
+model community_platform_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address used for authentication and email communication.
-  /// Must be unique across all users to prevent duplicate accounts.
-  email String
+  /// Permanent device identifier used to track guest sessions across visits
+  device_hash String
   
-  /// Hashed password for authentication. Stored securely with cryptographic
-  /// hashing to prevent plaintext password exposure.
-  password_hash String
-  
-  /// Whether the user's email address has been verified through the
-  /// verification process. Used for security and access control.
-  email_verified Boolean
-  
-  /// Account creation timestamp. Automatically set when the user creates their
-  /// account.
+  /// Record creation timestamp.
   created_at DateTime
   
-  /// Last account modification timestamp. Updated on any profile change or
-  /// credential update.
+  /// Record last update timestamp.
   updated_at DateTime
   
-  /// Account deletion timestamp for soft delete functionality. Null indicates
-  /// active account, timestamp indicates deletion for audit trails.
+  /// Soft delete timestamp if record is inactive.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  sessions community_platform_user_sessions[]
-  emailVerifications community_platform_user_email_verifications[]
-  passwordResets community_platform_user_password_resets[]
-  profile community_platform_profiles?
-  karmaScores community_platform_karma_scores[]
-  postVotes community_platform_post_votes[]
-  communities community_platform_communities[]
-  subscriptions community_platform_community_subscriptions[]
-  moderatedCommunities community_platform_community_moderators[]
-  posts community_platform_posts[]
-  votes community_platform_comment_votes[]
-  comments community_platform_comments[]
-  reportedReports community_platform_reports[]
-  moderationActions community_platform_moderation_actions[]
-  bansForBannedUser community_platform_bans[] @relation("community_platform_bans_of_user_id")
-  bansForModerator community_platform_bans[] @relation("community_platform_bans_of_moderator_id")
+  sessions community_platform_guest_sessions[]
   
-  @@unique([email])
-  @@index([email_verified, created_at])
+  @@unique([device_hash])
 }
 
-/// Session records for user authentication and access management.
+/// Temporary session tokens with device fingerprint for guest access management
 ///
-/// Tracks active user login sessions including connection details and
-/// expiration information.
+/// This table stores temporary session information for unauthenticated users
+/// who access public content. Each session is tied to a specific guest (from
+/// community_platform_guests) and contains a unique token for API
+/// authentication. Sessions expire after a fixed duration to enhance
+/// security and reduce stale session storage.
 ///
-/// Each session is associated with a single user and records the following:
-/// - Session creation data (timestamp and connection details)
-/// - Session lifetime (with forced expiration for security)
-/// - Session lifecycle for security audit tracking
-///
-/// This table uses the standard session table pattern for user authentication.
-///
-/// Security: Sessions always expire by default (no unlimited sessions) to
-/// prevent security vulnerabilities.
+/// Key relationships: - This table references community_platform_guests
+/// (actor) through foreign key
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_sessions {
+model community_platform_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User session belongs to a user's {@link community_platform_users.id}
-  community_platform_user_id String
+  /// Guest account that owns this session. References the actor table
+  /// (community_platform_guests).
+  community_platform_guest_id String
   
-  /// IP address from which the session was created.
-  ip String
+  /// Unique session token used for authentication. Rotated on each login
+  /// attempt to prevent session fixation attacks.
+  token String
   
-  /// Connection URL (full URL) that created the session.
-  href String
-  
-  /// Referrer URL that initiated the session.
-  referrer String
-  
-  /// Session creation timestamp.
+  /// Timestamp when the session was created (UTC).
   created_at DateTime
   
-  /// Session expiration timestamp.
+  /// Timestamp when the session will expire (UTC). Prevents stale sessions
+  /// from being used.
+  expired_at DateTime
+  
+  /// User agent string from the request. Helps identify client type for
+  /// security monitoring.
+  user_agent String
+  
+  /// IP address associated with the session. Used for security monitoring and
+  /// location-based features.
+  ip String
+  
+  /// Full URL of the session's origin. Required for session context and
+  /// security.
+  href String
+  
+  /// Source where session was initiated (e.g., browser URL). Required for
+  /// session security and analytics.
+  referrer String
+  
+  //----
+  // RELATIONS
+  //----
+  guest community_platform_guests @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id], map: "community_platform_guest_sessions_community_platform_g_4fcd2eae")
+  
+  @@unique([token])
+}
+
+/// Store member information for user authentication and account management.
+/// Includes email for identification, password hash for security, and
+/// profile fields for user identity. Designed for use with authentication
+/// flows and session management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address for authentication.
+  email String
+  
+  /// Secure hash of user's password, stored using bcrypt or similar algorithm.
+  password_hash String
+  
+  /// Timestamp of when the account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the account data.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sessions community_platform_member_sessions[]
+  passwordResets community_platform_member_password_resets[]
+  emailVerifications community_platform_member_email_verifications[]
+  communities community_platform_communities[]
+  subscriptions community_platform_community_subscriptions[]
+  posts community_platform_posts[]
+  comments community_platform_comments[]
+  votes community_platform_votes[]
+  karmaScores community_platform_karma_scores[]
+  bans community_platform_moderation_bans[]
+  reports community_platform_reports[]
+  profileReference community_platform_profiles?
+  
+  @@unique([email])
+}
+
+/// Persistent JWT session tokens with access/refresh tokens for member
+/// authentication. Stores secure session information including client device
+/// data for security audits and token expiry management.
+///
+/// This table tracks all active member sessions with connection metadata
+/// (IP, headers, referrer) to support security monitoring and session
+/// lifecycle management. All sessions belong to community_platform_members
+/// and must have valid token expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member record's {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Client IP address used for session creation and security monitoring
+  ip String
+  
+  /// Full URL of session creation request
+  href String
+  
+  /// Originating URL of session request
+  referrer String
+  
+  /// Timestamp when session was created
+  created_at DateTime
+  
+  /// Timestamp when session expires (not null by security requirement)
   expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([community_platform_user_id, created_at], map: "community_platform_user_sessions_community_platform_us_cc8d68d4")
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
 }
 
-/// Stores email verification tokens used during user account activation
-/// after registration. Each verification token is tied to a user's email
-/// address and has a limited validity period for security.
-///
-/// The token is generated upon registration and email is stored as part of
-/// the verification request. Tokens expire to prevent unauthorized access
-/// while the user completes the activation process. This table supports
-/// secure account activation without storing sensitive verification data
-/// long-term.
-///
-/// Verification tokens are only valid for the intended email and expiration
-/// date, ensuring that tokens cannot be reused or misused for different
-/// email accounts.
+/// Temporary tokens for password reset with expiration timestamps. These
+/// tokens are generated when users request to reset their password and are
+/// used to validate the reset process before resetting the password. The
+/// token is valid for 24 hours after being generated.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_email_verifications {
+model community_platform_member_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User this verification belongs to. {@link community_platform_users.id}
-  user_id String
+  /// Member whose password reset token this is. {@link
+  /// community_platform_members.id}.
+  community_platform_members_id String
   
-  /// Email address for which the verification token was issued. Must match the
-  /// email in user profiles for activation.
+  /// The unique reset token used for password reset validation.
+  token String
+  
+  /// Timestamp when this reset token expires. Tokens remain valid for 24 hours
+  /// from creation.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token was last updated (e.g., if
+  /// reissued).
+  updated_at DateTime
+  
+  /// Timestamp when the password reset token was soft-deleted (token
+  /// invalidated before expiration).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_members_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_members_id, created_at], map: "community_platform_member_password_resets_community_pl_5c77f6c7")
+}
+
+/// Temporary tokens for email confirmation with expiration timestamps during
+/// member account registration and verification process. Each token is
+/// created and consumed once for email validation.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced member account's {@link community_platform_members.id.
+  community_platform_member_id String
+  
+  /// Uniquely identifies email verification request used for validation.
+  token String
+  
+  /// Token expiration timestamp for validity checks.
+  expired_at DateTime
+  
+  /// Token creation timestamp.
+  created_at DateTime
+  
+  /// Token last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  verification community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, expired_at], map: "community_platform_member_email_verifications_communit_ed63d907")
+}
+
+/// System administrators with elevated permissions and authentication
+/// credentials. This table stores core authentication information for admin
+/// users, including email and password hashes. Serves as the primary
+/// identity record for admin actors in the system.
+///
+/// *Note: All admin authentication flows and session management are handled
+/// through this table's relationship to community_platform_admin_sessions,
+/// which is managed by another agent component.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's authentication email address. Must be unique across all actor
+  /// tables.
   email String
   
-  /// One-time verification token used during account activation. Stored in
-  /// hashed form for security, not plaintext.
-  token String
+  /// Hashed password for authentication. Never stores plaintext passwords.
+  password_hash String
   
-  /// Time when the verification token expires. After this time, the token is
-  /// no longer valid for account activation.
-  expires_at DateTime
-  
-  /// Timestamp when the verification token was created.
+  /// Timestamp when admin account was created.
   created_at DateTime
   
-  /// Timestamp when the verification token was last modified (e.g., refreshed).
+  /// Timestamp when admin account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the verification token was marked for deletion. Soft
-  /// delete support for security audit trails.
+  /// Timestamp when admin account was soft-deleted for audit purposes.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  adminSessions community_platform_admin_sessions[]
+  auditLogs community_platform_admin_audit_logs[]
+  resolvedReports community_platform_moderation_reports_resolutions[]
+  bans community_platform_moderation_bans[]
   
-  @@index([user_id])
-  
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([email, expires_at], map: "community_platform_user_email_verifications_email_expi_17ebaf1e")
-  @@index([expires_at])
+  @@unique([email])
 }
 
-/// Stores temporary tokens for secure password reset workflows, including
-/// expiration timing for security and automatic cleanup.
-///
-/// This table holds one-time password reset tokens used to validate user
-/// requests for changing their password. Each token is uniquely associated
-/// with a user account and has a limited validity period to prevent stale
-/// tokens.
-///
-/// Tokens are generated as UUIDs and stored with expiration dates set to
-/// match system security requirements. The table tracks token creation time
-/// for audit purposes, allowing security monitoring of reset attempts.
-///
-/// Automated cleanup processes remove expired tokens to maintain database
-/// efficiency and security compliance.
+/// JWT session tokens for administrative access with role-based validation.
+/// Tracks active sessions for admin users including IP, browser context, and
+/// session expiration details. Each session is tied to an admin account via
+/// `admin_id`.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_user_password_resets {
+model community_platform_admin_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated user's {@link community_platform_users.id}.
-  user_id String
+  /// Admin's {@link community_platform_admins.id}
+  admin_id String
   
-  /// Unique password reset token generated for security verification. Must be
-  /// a strong, random UUID string.
-  token String
+  /// IP address of session origin.
+  ip String
   
-  /// Expiration timestamp for the reset token. Tokens become invalid after
-  /// this time.
-  expires_at DateTime
+  /// Current URL location of session.
+  href String
   
-  /// Timestamp of when the reset token was created.
+  /// Previous URL before session access.
+  referrer String
+  
+  /// Session creation timestamp.
   created_at DateTime
   
-  /// Timestamp of the last modification to the token record.
+  /// Session expiration timestamp (security requirement).
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  admin community_platform_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+}
+
+/// Audit trail of all administrative actions including login attempts,
+/// configuration changes, and content moderation. This historical record
+/// captures the who (admin), what (action), when (timestamp), and additional
+/// context (details) of all administrative activities performed within the
+/// platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Corresponding admin's {@link community_platform_admins.id}.
+  admin_id String
+  
+  /// Type of administrative action (e.g., 'login_attempt', 'config_change',
+  /// 'content_moderation')
+  action_type String
+  
+  /// Additional context and specifics about the administrative action performed
+  details String
+  
+  /// IP address of the administrator when the action was performed
+  ip_address String
+  
+  /// User agent string of the administrator's browser/client when the action
+  /// was performed
+  user_agent String
+  
+  /// Timestamp when the audit entry was created
+  created_at DateTime
+  
+  /// Timestamp when the audit entry was last updated
   updated_at DateTime
   
-  /// Timestamp for soft delete to maintain audit trail when tokens are expired
-  /// or used.
+  /// Timestamp when the audit entry was deleted (soft delete)
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
-  @@index([user_id])
+  @@index([admin_id])
   
-  @@unique([token])
-  @@index([expires_at])
+  @@index([created_at])
 }

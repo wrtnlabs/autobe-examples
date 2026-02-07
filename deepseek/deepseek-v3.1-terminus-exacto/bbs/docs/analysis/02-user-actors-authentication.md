@@ -1,275 +1,295 @@
-# User Actors and Authentication Requirements
+# Economic/Political Discussion Board - Requirements Analysis Report
 
 ## Executive Summary
 
-This document defines the complete user actor hierarchy, authentication system, and permission structure for the Economic/Political Discussion Board. The system supports three distinct user roles with progressive levels of authorization and administrative capabilities.
+The Economic/Political Discussion Board is a specialized online platform designed to facilitate meaningful discourse on economic and political topics. This service addresses the growing need for structured, moderated discussions in these critical domains, providing users with a professional environment to share insights, debate ideas, and build knowledge communities.
 
-## User Actor Definitions
+### Business Justification
 
-### Regular User (Member)
-Regular authenticated users are the foundation of the discussion board community. They have full access to core platform functionality while respecting community guidelines.
+**Market Need Analysis**: There is a significant gap in the market for dedicated discussion platforms that balance free expression with responsible moderation. Existing social media platforms often lack the specialized moderation and topic organization required for substantive economic and political discussions.
 
-**Core Characteristics:**
-- Authenticated member with email and password credentials
-- Creates articles and comments in discussion sections
-- Manages personal profile and content
-- Participates in community discussions
-- Can request administrator privileges
+**Target Audience**: The service targets politically and economically engaged individuals including academics, professionals, policymakers, journalists, and informed citizens seeking substantive discourse beyond mainstream social media.
 
-### Administrator
-Administrators are responsible for content moderation and section management, operating under the supervision of super administrators.
+**Competitive Differentiation**: Unlike general discussion platforms, this service offers:
+- Specialized topic categorization
+- Professional moderation system
+- Structured content organization
+- Academic-grade discussion quality
 
-**Core Characteristics:**
-- Regular user with elevated content moderation privileges
-- Manages discussion sections and user-generated content
-- Enforces community guidelines through content removal and user banning
-- Cannot manage other administrators or system-wide settings
+### Core Value Proposition
 
-### Super Administrator
-Super administrators hold ultimate system authority, managing the administrator hierarchy and system-level configurations.
+THE discussion board SHALL provide a moderated environment for high-quality economic and political discourse.
+THE system SHALL enable users to create, share, and discuss content while maintaining respectful community standards.
+THE platform SHALL balance free expression with responsible content moderation.
 
-**Core Characteristics:**
-- Highest authority level with unrestricted system access
-- Manages administrator appointments, promotions, and demotions
-- Oversees all administrative functions and system policies
-- Cannot be demoted unless by another super administrator
+## User Actors and Authentication System
 
-## Authentication Requirements
+### User Actor Definitions
 
-### Core Authentication Functions
-The authentication system ensures secure access control while maintaining user convenience and session integrity.
+#### Regular User
+- **Description**: Authenticated users who can participate in discussions
+- **Capabilities**: Create articles, write comments, manage profile, browse content
+- **Authentication**: Email/password based authentication
 
-**Complete Authentication Flow:**
+#### Administrator
+- **Description**: Moderators with content management privileges
+- **Capabilities**: All regular user capabilities plus section management, content moderation, user banning
+- **Promotion**: Requires approval from super administrators
 
-```mermaid
-graph LR
-  A["User Registration"] --> B["Email Verification"]
-  B --> C["Login Credentials"]
-  C --> D["Session Establishment"]
-  D --> E["Token Validation"]
-  E --> F["Access Granted"]
-  
-  G["Session Expiration"] --> H["Token Refresh"]
-  H --> I["Session Renewal"]
-  I --> E
-  
-  J["User Logout"] --> K["Session Termination"]
-  K --> L["Access Revoked"]
-```
+#### Super Administrator
+- **Description**: Highest privilege level with system-wide control
+- **Capabilities**: All administrator capabilities plus administrator promotion/demotion, system configuration
+- **Limitations**: Cannot demote themselves
 
-### User Registration Process
-Users must follow a secure registration process to establish their identity on the platform.
+### Authentication Requirements
 
-**Registration Requirements:**
-- WHEN a user initiates registration, THE system SHALL validate email format and uniqueness
-- THE system SHALL require minimum password strength (8+ characters with mixed types)
-- WHEN registration is submitted, THE system SHALL send email verification link
-- THE user account SHALL remain inactive until email verification is completed
-- AFTER successful verification, THE system SHALL automatically log in the user
+#### User Registration
+WHEN a new user attempts to register, THE system SHALL validate email format and password strength.
+WHEN registration is successful, THE system SHALL send email verification.
+WHEN email verification is completed, THE system SHALL activate the user account.
 
-### Login and Session Management
-Secure login and session handling ensure authenticated access to platform features.
+#### User Login
+WHEN a user attempts to login, THE system SHALL validate credentials against stored records.
+IF credentials are invalid, THEN THE system SHALL return authentication error.
+WHILE a user is logged in, THE system SHALL maintain secure session state.
 
-**Authentication Specifications:**
-- WHEN a user attempts login, THE system SHALL validate credentials against stored hashes
-- UPON successful authentication, THE system SHALL generate JWT tokens with user role information
-- THE access token SHALL expire after 15 minutes of inactivity
-- THE refresh token SHALL expire after 30 days of continuous use
-- WHEN access token expires, THE system SHALL automatically refresh using refresh token
-- IF refresh token is invalid or expired, THE system SHALL require re-authentication
+#### Password Management
+WHEN a user requests password change, THE system SHALL validate current password.
+WHEN password change is successful, THE system SHALL invalidate all existing sessions.
+WHEN a user requests account deletion, THE system SHALL permanently remove all user data.
 
-### Password Management
-Users must have secure mechanisms for managing their authentication credentials.
+### Permission Matrix
 
-**Password Requirements:**
-- USERS SHALL be able to change their password while logged in
-- WHEN changing password, THE system SHALL require current password verification
-- USERS SHALL be able to reset forgotten passwords via email recovery
-- PASSWORD reset links SHALL expire after 1 hour for security
-- AFTER password change, THE system SHALL invalidate all active sessions
-
-### Account Management
-Users maintain control over their digital identity and content.
-
-**Account Requirements:**
-- WHEN a user chooses to delete account, THE system SHALL require confirmation
-- UPON account deletion, THE system SHALL permanently remove all user-generated content
-- THE account deletion process SHALL be irreversible once confirmed
-- DELETED accounts SHALL be anonymized in system logs and audit trails
-
-## Permission Matrix
-
-### Content Creation and Management
 | Action | Regular User | Administrator | Super Administrator |
 |--------|--------------|---------------|---------------------|
+| Create Account | ✅ | ✅ | ✅ |
+| Login | ✅ | ✅ | ✅ |
 | Create Article | ✅ | ✅ | ✅ |
 | Edit Own Article | ✅ | ✅ | ✅ |
 | Delete Own Article | ✅ | ✅ | ✅ |
-| Delete Any Article | ❌ | ✅ | ✅ |
 | Create Comment | ✅ | ✅ | ✅ |
 | Edit Own Comment | ✅ | ✅ | ✅ |
 | Delete Own Comment | ✅ | ✅ | ✅ |
-| Delete Any Comment | ❌ | ✅ | ✅ |
-
-### Section Management
-| Action | Regular User | Administrator | Super Administrator |
-|--------|--------------|---------------|---------------------|
-| View Sections | ✅ | ✅ | ✅ |
-| Browse Section Content | ✅ | ✅ | ✅ |
 | Create Section | ❌ | ✅ | ✅ |
 | Edit Section | ❌ | ✅ | ✅ |
-| Delete Section | ❌ | ❌ | ✅ |
-
-### User Management
-| Action | Regular User | Administrator | Super Administrator |
-|--------|--------------|---------------|---------------------|
-| View User Profiles | ✅ | ✅ | ✅ |
-| Edit Own Profile | ✅ | ✅ | ✅ |
-| Submit Admin Request | ✅ | ❌ | ❌ |
-| View Admin Requests | ❌ | ❌ | ✅ |
-| Approve/Reject Admin Request | ❌ | ❌ | ✅ |
-| Promote/Demote Administrators | ❌ | ❌ | ✅ |
+| Delete Section | ❌ | ✅ | ✅ |
+| Delete Any Article | ❌ | ✅ | ✅ |
+| Delete Any Comment | ❌ | ✅ | ✅ |
 | Ban Users | ❌ | ✅ | ✅ |
-| Unban Users | ❌ | ✅ | ✅ |
-| View Banned Users | ❌ | ✅ | ✅ |
+| Promote Administrators | ❌ | ❌ | ✅ |
+| Demote Administrators | ❌ | ❌ | ✅ |
 
-### Administrative Hierarchy
-| Action | Regular User | Administrator | Super Administrator |
-|--------|--------------|---------------|---------------------|
-| Become Administrator | Via Request | N/A | N/A |
-| Manage Own Admin Status | ❌ | ❌ | ✅ |
-| Demote Other Super Admins | ❌ | ❌ | ✅ |
-| Self-Demotion Prevention | N/A | N/A | ✅ |
+## Core Functional Requirements
 
-## Security and Session Requirements
+### User Profile Management
 
-### JWT Token Specification
-The system MUST implement JWT-based authentication with secure token management.
+#### Profile Structure
+THE user profile SHALL contain display name and biography text.
+THE system SHALL display user's articles and comments on their public profile.
 
-**Token Payload Structure:**
-```json
-{
-  "userId": "uuid-v4",
-  "email": "user@example.com",
-  "role": "user|administrator|superAdministrator",
-  "permissions": ["create_articles", "moderate_content", ...],
-  "iat": 1234567890,
-  "exp": 1234567950
-}
-```
+#### Profile Operations
+WHEN a user edits their profile, THE system SHALL validate display name length and bio content.
+WHEN viewing another user's profile, THE system SHALL display their public activity history.
 
-**Token Security Requirements:**
-- JWT secrets SHALL be securely stored and rotated periodically
-- Access tokens SHALL have 15-minute expiration for enhanced security
-- Refresh tokens SHALL be stored securely and validated on each use
-- Token revocation SHALL occur immediately upon password changes
-- Compromised tokens SHALL be blacklisted and rejected
+### Section Management
 
-### Session Security
-Active sessions must be monitored and secured against unauthorized access.
+#### Section Creation
+WHEN an administrator creates a section, THE system SHALL require name and description.
+THE system SHALL prevent duplicate section names.
 
-**Session Requirements:**
-- THE system SHALL limit concurrent sessions per user account
-- SESSION timeouts SHALL be enforced based on user activity
-- UNUSUAL login patterns SHALL trigger security alerts
-- PASSWORD change SHALL terminate all active sessions immediately
-- BANNED users SHALL have all active sessions invalidated instantly
+#### Section Browsing
+WHEN users browse sections, THE system SHALL display section name and description.
+WHEN users select a section, THE system SHALL display articles within that section.
 
-### Authentication Flow Details
+### Article Management System
 
-**Complete Login Sequence:**
+#### Article Creation
+WHEN a user creates an article, THE system SHALL require title, content, and section selection.
+THE user SHALL be able to attach multiple files and images to articles.
+THE user SHALL be able to add free-text tags to articles.
 
+#### Article Content Requirements
 ```mermaid
 graph LR
-  A["Login Page"] --> B["Credential Input"]
-  B --> C["Server Validation"]
-  C --> D{"Valid Credentials?"}
-  D -->|Yes| E["Generate JWT Tokens"]
-  D -->|No| F["Show Error Message"]
-  E --> G["Set HTTP-Only Cookies"]
-  G --> H["Redirect to Dashboard"]
-  
-  I["API Request"] --> J["Token Verification"]
-  J --> K{"Token Valid?"}
-  K -->|Yes| L["Process Request"]
-  K -->|No| M{"Refresh Token Available?"}
-  M -->|Yes| N["Issue New Access Token"]
-  M -->|No| O["Require Re-login"]
-  N --> L
+  A["Start Article Creation"] --> B{"Has Required Fields?"}
+  B -->|"No"| C["Show Validation Error"]
+  B -->|"Yes"| D["Process Attachments"]
+  D --> E["Validate File Types"]
+  E --> F["Save Article"]
+  F --> G["Display Success Message"]
 ```
 
-## Account Lifecycle Management
+#### Article Editing and Deletion
+WHEN a user edits their article, THE system SHALL allow modification of title, content, attachments, and tags.
+WHEN a user deletes their article, THE system SHALL remove the article and all associated comments.
 
-### User Registration to Active Participation
-Users progress through distinct stages from registration to active community participation.
+### Article Browsing and Search
 
-**Lifecycle Stages:**
-1. **Registration**: Account creation with email verification
-2. **Verification**: Email confirmation and account activation
-3. **Active**: Full participation in community discussions
-4. **Administrator** (Optional): Elevated privileges through approval process
-5. **Inactive**: Voluntary account deletion or administrative banning
+#### Article List Display
+THE article list SHALL display title, author, tags, comment count, and timestamp.
+THE system SHALL not display full article content in list view.
+
+#### Pagination and Sorting
+THE system SHALL paginate article lists with configurable page sizes.
+USERS SHALL be able to sort articles by newest first or oldest first.
+
+#### Search Functionality
+WHEN users search for articles, THE system SHALL search title and content fields.
+USERS SHALL be able to filter search results by tags.
+THE system SHALL paginate search results.
+
+### Comment System
+
+#### Comment Creation
+WHEN a user comments on an article, THE system SHALL require comment content.
+COMMENTS SHALL be single-level only with no nested replies.
+
+#### Comment Display
+THE system SHALL display comments sorted by oldest first.
+EACH comment SHALL show author, content, and timestamp.
+
+#### Comment Management
+USERS SHALL be able to edit their own comments.
+USERS SHALL be able to delete their own comments.
+
+## Administrator and Moderation System
 
 ### Administrator Promotion Process
-The pathway from regular user to administrator involves a structured approval system.
 
-**Promotion Requirements:**
-- WHEN a user submits admin request, THE system SHALL record reason and timestamp
-- SUPER administrators SHALL review pending requests with request details
-- UPON approval, THE user SHALL immediately receive administrator privileges
-- REJECTED requests SHALL include optional feedback for the applicant
-- PROMOTED administrators SHALL retain all original user capabilities
+#### Promotion Request
+WHEN a user requests administrator status, THE system SHALL require a reason text.
+THE system SHALL record the request timestamp and user information.
 
-### Banning and Access Control
-Administrative actions that restrict user access follow defined procedures.
+#### Request Approval
+WHEN a super administrator reviews promotion requests, THE system SHALL display pending requests.
+SUPER administrators SHALL be able to approve or reject promotion requests.
+WHEN approved, THE user SHALL become a regular administrator.
 
-**Banning Protocol:**
-- WHEN banning a user, THE administrator SHALL specify reason for documentation
-- BANNED users SHALL be immediately logged out of all active sessions
-- EXISTING content from banned users SHALL remain visible for context
-- BAN records SHALL be accessible to administrators for review
-- UNBANNING SHALL restore full user access with administrative approval
+### Administrator Hierarchy
 
-## Error Handling and Edge Cases
+#### Grade Management
+SUPER administrators SHALL be able to promote regular administrators to super administrator.
+SUPER administrators SHALL be able to demote other super administrators to regular administrator.
+SUPER administrators SHALL not be able to demote themselves.
 
-### Authentication Failure Scenarios
-Robust error handling ensures security while maintaining user experience.
+### Moderation Capabilities
 
-**Common Error Scenarios:**
-- IF login attempts exceed 5 failures within 15 minutes, THEN THE system SHALL temporarily lock account
-- WHEN account is locked, THEN THE system SHALL require password reset via email
-- IF JWT token validation fails, THEN THE system SHALL return HTTP 401 with specific error code
-- WHEN session expires during active use, THEN THE system SHALL prompt for re-authentication
+#### Content Moderation
+ADMINISTRATORS SHALL be able to delete any article regardless of ownership.
+ADMINISTRATORS SHALL be able to delete any comment regardless of ownership.
 
-### Edge Case Management
-Special scenarios require specific handling to maintain system integrity.
+#### User Management
+ADMINISTRATORS SHALL be able to ban users from the platform.
+ADMINISTRATORS SHALL be able to unban previously banned users.
+ADMINISTRATORS SHALL be able to view the list of banned users and ban reasons.
 
-**Edge Case Protocols:**
-- WHILE processing account deletion, THE system SHALL maintain transaction integrity
-- IF administrator attempts self-demotion, THEN THE system SHALL prevent the action
-- WHEN super administrator is the only remaining, THEN THE system SHALL prevent demotion
-- DURING administrative actions, THE system SHALL maintain audit trails for accountability
+### Banning System
 
-## Performance and Scalability Requirements
+#### Ban Process
+WHEN a user is banned, THE system SHALL record the ban reason.
+BANNED users SHALL not be able to log into the platform.
 
-### Authentication Performance
-Authentication systems must perform efficiently under varying load conditions.
+#### Content Visibility
+BANNED users' existing articles and comments SHALL remain visible.
+THE system SHALL display ban reasons to administrators.
 
-**Performance Specifications:**
-- THE authentication system SHALL process login requests within 2 seconds under normal load
-- JWT token validation SHALL complete within 100 milliseconds
-- SESSION management SHALL support concurrent users without degradation
-- PASSWORD hashing SHALL use industry-standard algorithms with appropriate cost factors
+## Performance and Security Requirements
 
-### Scalability Considerations
-Authentication infrastructure must scale with growing user base.
+### Performance Expectations
 
-**Scalability Requirements:**
-- THE system SHALL support horizontal scaling of authentication services
-- TOKEN validation SHALL be stateless to support distributed deployment
-- USER session data SHALL be efficiently distributed across service instances
-- AUTHENTICATION endpoints SHALL implement rate limiting to prevent abuse
+#### Response Time Requirements
+THE system SHALL load article lists within 2 seconds.
+THE system SHALL display individual articles within 1 second.
+SEARCH functionality SHALL return results within 3 seconds.
 
-This comprehensive authentication specification provides backend developers with all necessary information to implement a secure, scalable, and feature-complete authentication system for the Economic/Political Discussion Board platform.
+#### Scalability Considerations
+THE system SHALL support concurrent user sessions.
+ARTICLE and comment storage SHALL scale with user growth.
+THE database SHALL handle increasing content volume efficiently.
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+### Security Requirements
+
+#### Authentication Security
+USER passwords SHALL be stored using secure hashing algorithms.
+THE system SHALL implement rate limiting on authentication attempts.
+SESSION tokens SHALL expire after reasonable inactivity periods.
+
+#### Data Protection
+USER email addresses SHALL be protected from public exposure.
+PERSONAL information SHALL only be accessible to authorized users.
+FILE attachments SHALL be scanned for security threats.
+
+#### Content Security
+THE system SHALL prevent cross-site scripting attacks.
+USER-generated content SHALL be sanitized before display.
+FILE uploads SHALL be restricted to safe file types.
+
+## Business Rules and Validation
+
+### Content Validation Rules
+
+#### Article Validation
+ARTICLE titles SHALL have minimum 5 characters and maximum 200 characters.
+ARTICLE content SHALL have minimum 50 characters.
+TAGS SHALL be limited to 20 characters each with maximum 10 tags per article.
+
+#### File Attachment Rules
+FILE attachments SHALL be limited to 10MB per file.
+IMAGE attachments SHALL be limited to 5MB per image.
+THE system SHALL support common document and image formats.
+
+### User Behavior Constraints
+
+#### Rate Limiting
+USERS SHALL be limited to creating 10 articles per hour.
+USERS SHALL be limited to creating 50 comments per hour.
+THE system SHALL implement progressive rate limiting for abusive behavior.
+
+#### Content Quality
+THE system SHALL enforce minimum content quality standards.
+USERS SHALL not be able to post empty or spam-like content.
+
+### Error Handling Scenarios
+
+#### User-Facing Errors
+WHEN authentication fails, THE system SHALL provide clear error messages.
+WHEN content validation fails, THE system SHALL specify validation errors.
+WHEN system errors occur, THE system SHALL display user-friendly messages.
+
+#### Recovery Processes
+USERS SHALL be able to recover from failed operations.
+THE system SHALL preserve user work during network interruptions.
+DATA loss SHALL be prevented through proper transaction handling.
+
+## Success Metrics and KPIs
+
+### User Engagement Metrics
+- Monthly Active Users (MAU)
+- Daily Active Users (DAU)
+- Average session duration
+- Articles per active user
+- Comments per active user
+
+### Content Quality Metrics
+- Article creation rate
+- Comment-to-article ratio
+- User retention rates
+- Moderation action frequency
+
+### Technical Performance Metrics
+- System uptime percentage
+- Average response times
+- Error rates by functionality
+- Database performance indicators
+
+## Future Considerations
+
+### Feature Expansion
+THE system SHALL be designed to accommodate future feature additions.
+MODULAR architecture SHALL allow for easy integration of new capabilities.
+
+### Scalability Planning
+INFRASTRUCTURE SHALL support gradual user growth.
+DATABASE design SHALL accommodate increasing content volume.
+
+This requirements analysis provides comprehensive specifications for backend developers to implement the Economic/Political Discussion Board. The document focuses exclusively on business requirements and user workflows, leaving technical implementation decisions to the development team's expertise.

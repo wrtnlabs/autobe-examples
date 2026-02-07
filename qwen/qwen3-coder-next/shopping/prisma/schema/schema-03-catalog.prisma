@@ -1,0 +1,84 @@
+/// Top-level product categories with name and description for organizing the
+/// product catalog. Categories enable hierarchical navigation and product
+/// discovery. Each category can have multiple subcategories but only one
+/// parent (handled in separate subcategories table).
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name for display and navigation.
+  name String
+  
+  /// Category description with details about the category content.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  subcategories shopping_mall_subcategories[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Subcategories linked to parent categories for hierarchical product
+/// organization. This table enables multi-level category navigation
+/// supporting the shopping mall's product categorization system. Each
+/// subcategory belongs to exactly one parent category and cannot have
+/// further subcategories (single level of nesting only).
+///
+/// @namespace Catalog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_subcategories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category that this subcategory belongs to. {@link
+  /// shopping_mall_categories.id}.
+  shopping_mall_category_id String
+  
+  /// Name of the subcategory for display to customers.
+  name String
+  
+  /// Description of the subcategory providing additional context for
+  /// navigation.
+  description String?
+  
+  /// Timestamp when this subcategory was created.
+  created_at DateTime
+  
+  /// Timestamp when this subcategory was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this subcategory was soft-deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  
+  products shopping_mall_products[]
+  
+  @@unique([shopping_mall_category_id, name])
+  @@index([shopping_mall_category_id])
+  @@index([deleted_at])
+}

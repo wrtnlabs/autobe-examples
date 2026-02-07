@@ -1,0 +1,572 @@
+/// Audit trail of all moderator actions including content deletion, user
+/// bans, and other moderation activities.
+///
+/// This table provides a complete historical record of all moderation
+/// actions taken by community moderators. It serves as an accountability
+/// mechanism and auditing system for platform governance. Each record tracks
+/// who performed the action, what action was taken, when it occurred, and
+/// what content or user was affected.
+///
+/// The audit trail supports transparency and allows for review of moderation
+/// decisions. It also enables analytics on moderation patterns and helps
+/// prevent moderator abuse by providing oversight capabilities for community
+/// owners and platform administrators.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// community_platform_moderators.id}
+  moderator_id String
+  
+  /// Community where the moderation action occurred. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// User who was targeted by the action (for bans, warnings, etc.). {@link
+  /// community_platform_users.id}
+  target_user_id String?
+  
+  /// Post that was affected by the action (for deletions, approvals, etc.).
+  /// {@link community_platform_posts.id}
+  target_post_id String?
+  
+  /// Comment that was affected by the action (for deletions, approvals, etc.).
+  /// {@link community_platform_comments.id}
+  target_comment_id String?
+  
+  /// Type of moderation action performed.
+  action_type String
+  
+  /// Reason provided by the moderator for taking the action.
+  action_reason String?
+  
+  /// Additional context or metadata about the moderation action.
+  additional_metadata String?
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  targetUser community_platform_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_post_id])
+  @@index([target_comment_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_platform_moderator_actions_moderator_id_crea_c2c3c1ae")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_moderator_actions_community_id_crea_eeea7eb6")
+  // spellchecker: ignore-next-line
+  @@index([target_user_id, created_at], map: "community_platform_moderator_actions_target_user_id_cr_45d0e88d")
+}
+
+/// Comprehensive audit trail of all moderation activities for compliance and
+/// transparency purposes.
+///
+/// This table logs every moderation action performed across the platform,
+/// providing a complete audit trail for compliance, accountability, and
+/// dispute resolution. Each log entry captures who performed the action,
+/// what action was taken, which content or user was affected, and when it
+/// occurred.
+///
+/// The logs support various moderation workflows including content deletion,
+/// user banning, report handling, and community management actions. This
+/// centralized logging system ensures all moderation activities are properly
+/// recorded and can be reviewed for quality assurance and compliance
+/// auditing.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator who performed this action. {@link
+  /// community_platform_moderators.id}
+  moderator_id String
+  
+  /// The user who was targeted by this moderation action, if applicable.
+  /// {@link community_platform_users.id}
+  target_user_id String?
+  
+  /// The community where this moderation action occurred. {@link
+  /// community_platform_communities.id}
+  community_id String?
+  
+  /// The post that was targeted by this moderation action, if applicable.
+  /// {@link community_platform_posts.id}
+  target_post_id String?
+  
+  /// The comment that was targeted by this moderation action, if applicable.
+  /// {@link community_platform_comments.id}
+  target_comment_id String?
+  
+  /// Type of moderation action performed (e.g., 'delete_post', 'ban_user',
+  /// 'approve_report', 'dismiss_report').
+  action_type String
+  
+  /// Detailed description of the moderation action including reasoning and
+  /// context.
+  action_details String?
+  
+  /// The state of the target before the moderation action was taken.
+  previous_state String?
+  
+  /// The state of the target after the moderation action was taken.
+  new_state String?
+  
+  /// IP address of the moderator when performing the action for security
+  /// auditing.
+  ip_address String?
+  
+  /// User agent string of the moderator's browser for technical auditing.
+  user_agent String?
+  
+  /// Timestamp when the moderation action was logged.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser community_platform_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  
+  @@index([moderator_id, created_at])
+  @@index([action_type, created_at])
+  @@index([community_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_user_id, created_at], map: "community_platform_moderation_logs_target_user_id_crea_98bb230b")
+  // spellchecker: ignore-next-line
+  @@index([target_post_id, created_at], map: "community_platform_moderation_logs_target_post_id_crea_7597a579")
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id, created_at], map: "community_platform_moderation_logs_target_comment_id_c_898a7b44")
+}
+
+/// User appeals against community bans with status tracking and resolution
+/// workflow.
+///
+/// This table manages the ban appeal process where users can formally
+/// request reconsideration of community bans. Each appeal is tied to a
+/// specific ban instance and follows a structured workflow from submission
+/// through moderator review to final resolution. Appeals include detailed
+/// reasoning from the user, status tracking, moderator review notes, and
+/// timestamps for each stage of the process.
+///
+/// The appeal system provides transparency and due process for banned users
+/// while giving moderators a structured framework for reviewing ban
+/// decisions. Appeals can result in ban removal, modification, or upholding
+/// of the original ban with detailed explanations.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_ban_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the ban being appealed. {@link
+  /// community_platform_community_bans.id}.
+  community_ban_id String
+  
+  /// User who is appealing the ban. {@link community_platform_users.id}.
+  user_id String
+  
+  /// Moderator who reviewed the appeal. {@link
+  /// community_platform_moderators.id}.
+  moderator_id String?
+  
+  /// Detailed explanation provided by the user for why the ban should be
+  /// reconsidered.
+  appeal_reason String
+  
+  /// Current status of the appeal (pending, under_review, approved, rejected).
+  status String
+  
+  /// Internal notes from the moderator reviewing the appeal.
+  moderator_notes String?
+  
+  /// Detailed explanation provided to the user for the appeal decision.
+  resolution_reason String?
+  
+  /// Timestamp when the appeal was submitted by the user.
+  created_at DateTime
+  
+  /// Timestamp when the appeal record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal was soft deleted.
+  deleted_at DateTime?
+  
+  /// Timestamp when the appeal was assigned for moderator review.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the appeal was resolved with a final decision.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  ban community_platform_community_bans @relation(fields: [community_ban_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_ban_id])
+  @@index([user_id, status])
+  @@index([status, created_at])
+  @@index([moderator_id, status])
+}
+
+/// Stores community-specific moderation rules and configuration settings.
+///
+/// This table contains all moderation-related settings that are specific to
+/// individual communities. It includes auto-moderation thresholds, content
+/// filtering rules, spam detection parameters, and community-specific
+/// moderation behavior. Each community has exactly one set of moderation
+/// settings that controls how content and users are moderated within that
+/// community.
+///
+/// The settings include automated moderation features like auto-removal
+/// thresholds for reported content, spam detection sensitivity, content
+/// filtering keywords, user behavior monitoring, and custom moderation rules
+/// created by community owners and moderators. These settings allow
+/// communities to tailor their moderation approach to their specific needs
+/// and community guidelines.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community that these moderation settings belong to. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// Whether automated moderation is enabled for this community. When enabled,
+  /// certain moderation actions may be triggered automatically based on
+  /// configured rules.
+  auto_mod_enabled Boolean
+  
+  /// Spam filter sensitivity level from 1 (least sensitive) to 10 (most
+  /// sensitive). Controls how aggressively potential spam content is flagged.
+  spam_filter_sensitivity Int
+  
+  /// Number of reports required for automatic content removal. Content meeting
+  /// this threshold is automatically removed pending moderator review.
+  auto_remove_report_threshold Int
+  
+  /// Whether posts require moderator approval before being published to the
+  /// community.
+  require_post_approval Boolean
+  
+  /// Whether comments require moderator approval before being published to the
+  /// community.
+  require_comment_approval Boolean
+  
+  /// Maximum allowed length for posts in this community, in characters. Helps
+  /// prevent excessively long posts.
+  max_post_length Int?
+  
+  /// Maximum allowed length for comments in this community, in characters.
+  /// Helps prevent excessively long comments.
+  max_comment_length Int?
+  
+  /// Minimum user karma required to create posts in this community. Helps
+  /// mitigate spam and low-quality content.
+  min_karma_to_post Int?
+  
+  /// Minimum user karma required to create comments in this community. Helps
+  /// mitigate spam and low-quality content.
+  min_karma_to_comment Int?
+  
+  /// Whether to automatically lock posts that become highly controversial
+  /// (reaching a configured vote ratio threshold).
+  auto_lock_controversial Boolean
+  
+  /// Vote ratio threshold (upvotes/downvotes) that triggers automatic locking
+  /// of controversial posts.
+  controversial_threshold Float?
+  
+  /// When these moderation settings were initially created for the community.
+  created_at DateTime
+  
+  /// When these moderation settings were last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_id])
+  // spellchecker: ignore-next-line
+  @@index([auto_mod_enabled, spam_filter_sensitivity], map: "community_platform_moderation_settings_auto_mod_enable_cd376d62")
+  // spellchecker: ignore-next-line
+  @@index([require_post_approval, require_comment_approval], map: "community_platform_moderation_settings_require_post_ap_4bc10ef5")
+  @@index([updated_at])
+}
+
+/// Defines moderator permission levels and hierarchy within communities.
+///
+/// This table establishes the moderator role hierarchy system where
+/// community owners have the highest authority, followed by appointed
+/// moderators. Each role defines specific permissions for content
+/// management, user management, and community governance. The hierarchy
+/// ensures that owners can appoint and remove moderators, while moderators
+/// have elevated permissions but cannot remove each other or the owner.
+///
+/// Roles are community-specific, meaning a user can have different roles in
+/// different communities. The permission levels determine what actions each
+/// role can perform, including content deletion, user banning, moderator
+/// management, and report resolution.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where this role applies. {@link
+  /// community_platform_communities.id}
+  community_platform_community_id String
+  
+  /// Name of the moderator role (e.g., 'owner', 'moderator',
+  /// 'junior_moderator').
+  role_name String
+  
+  /// Numerical permission level where higher numbers indicate greater
+  /// authority.
+  permission_level Int
+  
+  /// Whether this role can delete posts and comments within the community.
+  can_manage_content Boolean
+  
+  /// Whether this role can ban and unban users from the community.
+  can_manage_users Boolean
+  
+  /// Whether this role can appoint and remove other moderators.
+  can_manage_moderators Boolean
+  
+  /// Whether this role can approve or dismiss content reports.
+  can_resolve_reports Boolean
+  
+  /// Whether this role can modify community settings and rules.
+  can_manage_settings Boolean
+  
+  /// Detailed description of the role's responsibilities and permissions.
+  description String?
+  
+  /// Timestamp when this role definition was created.
+  created_at DateTime
+  
+  /// Timestamp when this role definition was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this role definition was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, role_name], map: "community_platform_moderator_roles_community_platform__04f9c1a3")
+  @@index([permission_level])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, permission_level], map: "community_platform_moderator_roles_community_platform__a0a44fe1")
+}
+
+/// Defines ban types with duration configurations for community moderation.
+///
+/// This table stores the different types of bans that can be applied within
+/// communities, including temporary bans with configurable durations and
+/// permanent bans. Each ban type includes default duration settings,
+/// description, and configuration options that moderators can use when
+/// banning users from communities.
+///
+/// The ban types support flexible moderation workflows by allowing
+/// communities to define their own ban policies while maintaining
+/// consistency across the platform. Temporary bans can have specific
+/// durations (e.g., 1 day, 7 days, 30 days) while permanent bans remain
+/// until manually lifted.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_ban_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the ban type (e.g., 'temporary_1day',
+  /// 'permanent').
+  name String
+  
+  /// Human-readable description explaining the ban type's purpose and usage.
+  description String
+  
+  /// Whether this ban type represents a temporary ban with a finite duration.
+  is_temporary Boolean
+  
+  /// Default duration in days for temporary bans. Null for permanent bans.
+  default_duration_days Int?
+  
+  /// Minimum allowed duration in days for temporary ban customization.
+  min_duration_days Int?
+  
+  /// Maximum allowed duration in days for temporary ban customization.
+  max_duration_days Int?
+  
+  /// Whether this ban type is currently available for use by moderators.
+  is_active Boolean
+  
+  /// Timestamp when this ban type definition was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban type definition was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this ban type was soft-deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  @@index([is_temporary, is_active])
+  @@index([created_at])
+}
+
+/// Standardized report categories with descriptions and severity levels for
+/// content reporting.
+///
+/// This table defines the available report categories that users can select
+/// when reporting posts or comments. Each category includes a descriptive
+/// name, detailed explanation of what constitutes a violation, and a
+/// severity level to help moderators prioritize report handling.
+///
+/// Categories are used across the platform to ensure consistent reporting
+/// and moderation workflows. Moderators can reference these categories when
+/// reviewing reports and taking appropriate actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the report category (e.g., 'Spam', 'Harassment',
+  /// 'Inappropriate Content').
+  name String
+  
+  /// Detailed description explaining what constitutes a violation in this
+  /// category.
+  description String
+  
+  /// Severity level indicating the urgency and impact of reports in this
+  /// category (e.g., 'Low', 'Medium', 'High', 'Critical').
+  severity_level String
+  
+  /// Whether this report category is currently active and available for
+  /// selection.
+  is_active Boolean
+  
+  /// Timestamp when this report category was created.
+  created_at DateTime
+  
+  /// Timestamp when this report category was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([severity_level, is_active], map: "community_platform_report_categories_severity_level_is_8ce07f8c")
+  @@index([created_at])
+}
+
+/// Moderator decisions on user reports with approval/dismissal status and
+/// reasoning.
+///
+/// This table tracks the resolution of user reports by moderators, recording
+/// whether the report was approved (resulting in content deletion) or
+/// dismissed (content remains). Each decision includes the moderator's
+/// reasoning and timestamp for audit purposes. Decisions are linked to
+/// specific reports and the moderators who made them.
+///
+/// Moderator decisions serve as the official resolution of user reports and
+/// are used for transparency, audit trails, and moderator performance
+/// tracking. The decision process ensures consistent moderation across the
+/// platform.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_decisions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderator who made the decision. {@link
+  /// community_platform_moderators.id}
+  community_platform_moderator_id String
+  
+  /// Decision status indicating whether the report was approved or dismissed.
+  status String
+  
+  /// Moderator's explanation for the decision, providing transparency and
+  /// guidance.
+  reasoning String
+  
+  /// Timestamp when the moderator decision was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the moderator decision was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator decision was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_decisions_community_platf_4940783d")
+  @@index([status, created_at])
+}

@@ -1,0 +1,28 @@
+import { ForbiddenException } from "@nestjs/common";
+import { MyGlobal } from "../../MyGlobal";
+import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
+import { UserPayload } from "../../decorators/payload/UserPayload";
+
+export async function userAuthorize(request: {
+  headers: { authorization?: string };
+}): Promise<UserPayload> {
+  const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
+
+  if (payload.type !== "user") {
+    throw new ForbiddenException(`You're not ${payload.type}`);
+  }
+
+  // Query using appropriate field based on schema
+  const user = await MyGlobal.prisma.todo_app_users.findFirst({
+    where: {
+      id: payload.id, // Standalone actor table uses id directly
+      deleted_at: null, // Soft-delete check
+    },
+  });
+
+  if (user === null) {
+    throw new ForbiddenException("You're not enrolled");
+  }
+
+  return payload;
+}

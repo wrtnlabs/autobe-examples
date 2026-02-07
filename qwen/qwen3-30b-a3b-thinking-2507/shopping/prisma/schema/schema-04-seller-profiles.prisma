@@ -1,0 +1,93 @@
+/// Stores seller profile information including shop name, description, and
+/// logo URL for customer-facing displays. This table represents the primary
+/// seller identity data visible to customers, but is managed through seller
+/// accounts as a subsidiary entity.
+///
+/// @namespace SellerProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller's account, with {@link ecommerce_sellers.id}.
+  ecommerce_seller_id String
+  
+  /// Name of the seller's shop. Minimum 3 characters, maximum 50 characters.
+  shop_name String
+  
+  /// Description of the seller's shop and business. Maximum 500 characters.
+  shop_description String?
+  
+  /// URL reference to the seller's logo image. This field stores the location
+  /// of the logo file without storing the actual image data.
+  logo_url String?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  snapshots ecommerce_seller_profile_snapshots[]
+  
+  @@index([ecommerce_seller_id])
+}
+
+/// Immutable history of seller profile changes with timestamp, actor ID, and
+/// before/after field values.
+///
+/// Includes complete records of all modified profile fields (shop name,
+/// description, logo) in both before and after states, along with the
+/// timestamp of the change and the actor who initiated it.
+///
+/// @namespace SellerProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller profile being changed. {@link ecommerce_seller_profiles.id}.
+  ecommerce_seller_profiles_id String
+  
+  /// The seller actor who made the profile change. {@link
+  /// ecommerce_sellers.id}.
+  ecommerce_sellers_id String
+  
+  /// Shop name value before the profile change.
+  shop_name_before String
+  
+  /// Description value before the profile change.
+  description_before String
+  
+  /// Logo URI before the profile change (may be null if logo was deleted).
+  logo_before String?
+  
+  /// Shop name value after the profile change.
+  shop_name_after String
+  
+  /// Description value after the profile change.
+  description_after String
+  
+  /// Logo URI after the profile change (may be null if logo was deleted, or
+  /// new logo added).
+  logo_after String?
+  
+  /// Timestamp when the profile change occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sellerProfile ecommerce_seller_profiles @relation(fields: [ecommerce_seller_profiles_id], references: [id], onDelete: Cascade)
+  actor ecommerce_sellers @relation(fields: [ecommerce_sellers_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_profiles_id], map: "ecommerce_seller_profile_snapshots_ecommerce_seller_pr_03a5c031")
+  @@index([ecommerce_sellers_id])
+}

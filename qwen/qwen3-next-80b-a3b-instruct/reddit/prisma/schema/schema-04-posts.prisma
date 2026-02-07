@@ -1,0 +1,507 @@
+/// Core post entity storing title, content type, author, community, status,
+/// and timestamps; supports text, link, and image post types with dedicated
+/// data fields. This is a primary entity that users directly create, view,
+/// and manage through feeds (Home, Popular, Community). All content details
+/// (text, link, image) are stored in separate child tables. This model
+/// establishes relationships with community_members (author),
+/// community_communities (target community), and community_post_statuses
+/// (post status).
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link community_members.id}.
+  community_member_id String
+  
+  /// Target community's {@link community_communities.id}.
+  community_id String
+  
+  /// Current status of this post's visibility and moderation state {@link
+  /// community_post_statuses.id}.
+  community_post_status_id String
+  
+  /// Title of the post, minimum 5 characters and maximum 300 characters as
+  /// required by business rules. Used for search, display, and feed sorting.
+  title String
+  
+  /// Type of post content: 'text', 'link', or 'image'. This field determines
+  /// which child table contains the actual content data (community_post_texts,
+  /// community_post_links, or community_post_images).
+  content_type String
+  
+  /// Timestamp when the post was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last edited (e.g., title or content type
+  /// changed).
+  updated_at DateTime
+  
+  /// Optional timestamp indicating when the post was logically deleted by the
+  /// user or moderator. If null, the post is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author community_members @relation(fields: [community_member_id], references: [id], onDelete: Cascade)
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  status community_post_statuses @relation(fields: [community_post_status_id], references: [id], onDelete: Cascade)
+  
+  text community_post_texts?
+  postLink community_post_links?
+  edits community_post_edits[]
+  commentCount community_post_comments_counts?
+  viewStat community_post_view_stats?
+  feedEntries community_post_feeds[]
+  votes community_post_votes[]
+  popularFeedEntries community_mv_community_popular_feeds[]
+  feedPositions community_mv_community_feeds[]
+  feedIndices community_mv_post_feed_indices[]
+  comments community_comments[]
+  auditLogs community_audit_logs[]
+  
+  @@unique([title, community_id])
+  @@index([created_at])
+  @@index([community_id, created_at])
+  @@index([community_post_status_id])
+  @@index([community_id, community_post_status_id])
+  @@index([community_member_id, deleted_at])
+}
+
+/// Text content storage for text-type posts with full text content up to
+/// 50,000 characters, stripped and sanitized for security. References the
+/// parent post via {@link community_posts.id}, with one-to-one relationship
+/// enforced by unique constraint. This entity is always accessed indirectly
+/// through its parent post and never independently.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this text content belongs to. {@link community_posts.id}.
+  community_post_id String
+  
+  /// The full, sanitized text content of the post, up to 50,000 characters.
+  content String
+  
+  /// Timestamp when this text content was first created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the text content. Updated on post edit.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion. Nullable, indicates if this text content has
+  /// been logically deleted as part of post deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_post_id])
+}
+
+/// External link storage for link-type posts; contains clean URL and
+/// extracted domain name for display. This table implements a 1:1
+/// relationship with community_posts to avoid denormalization of link data
+/// within the main posts table, ensuring atomic values according to 1NF.
+/// Each link type post in community_posts has exactly one corresponding
+/// record here, ensuring data integrity and efficient retrieval for feed
+/// display.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated post that contains this link. {@link community_posts.id}.
+  community_post_id String
+  
+  /// The full clean external URL (https://domain.com/path) linked to in the
+  /// post. Must be validated during creation.
+  url String
+  
+  /// The extracted and cleaned domain name portion of the URL (e.g.,
+  /// 'youtube.com', 'github.com') for display in feeds. Used for filtering and
+  /// searching posts by domain.
+  domain_name String
+  
+  /// Timestamp when this link record was created. Derived from the parent
+  /// post's creation timestamp.
+  created_at DateTime
+  
+  /// Timestamp when this link record was last modified. Updated when the URL
+  /// is changed via post edit.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_post_id])
+}
+
+/// Image metadata for image-type posts; stores image file reference,
+/// thumbnail reference, original dimensions, and compressed size. This table
+/// holds immutable references to CDN-hosted image assets and their generated
+/// thumbnails. When a user uploads an image post, this table is populated
+/// with the original file reference, the generated thumbnail reference,
+/// dimensions of the original image, and the compressed file size in bytes.
+/// All fields are required as every image post must have full metadata.
+///
+/// This table is not a join or subsidiary entity - it is a primary entity
+/// that users directly interact with during image upload. Independent API
+/// endpoints are required for image upload, retrieval, and deletion. No
+/// other table contains these image-specific fields.
+///
+/// Referenced by: community_posts (which stores post_id and type to
+/// distinguish image posts).
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// CDN-accessible URL referencing the original uploaded image file (JPEG,
+  /// PNG, or WebP). Must be a valid, permanent URL after upload processing.
+  file_reference String
+  
+  /// CDN-accessible URL referencing the generated 320x240 thumbnail for feed
+  /// display. Created during image processing after upload.
+  thumbnail_reference String
+  
+  /// Width in pixels of the original uploaded image before compression or
+  /// resizing.
+  original_width Int
+  
+  /// Height in pixels of the original uploaded image before compression or
+  /// resizing.
+  original_height Int
+  
+  /// Size of the compressed image file in bytes after processing. Used for
+  /// bandwidth calculation and storage metrics.
+  compressed_size Int
+  
+  /// Timestamp when the image metadata was created and stored in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this image record. Always equals
+  /// created_at unless metadata is corrected, which is extremely rare.
+  updated_at DateTime
+  
+  /// Timestamp when this image record was logically deleted. Null if active.
+  /// The associated image file is never actually deleted from CDN.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([file_reference, created_at])
+}
+
+/// Immutable edit history of posts; stores original content, modified
+/// fields, timestamp, and editor ID for audit trail.
+///
+/// This subsidiary table captures every modification to a post after its
+/// initial creation. Each record represents one edit event, storing the
+/// exact state of the post before the edit, which fields were altered
+/// (title, content, etc.), when the edit occurred, and which user performed
+/// the edit. This audit trail is critical for moderation, accountability,
+/// and understanding content evolution without altering the primary post
+/// record. Edits are immutable—once recorded, they are never updated or
+/// deleted. No user interacts with this table directly; it is updated
+/// automatically via system logic when a post is modified.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post that was edited. {@link community_posts.id}.
+  community_post_id String
+  
+  /// Reference to the member who performed the edit. {@link
+  /// community_members.id}. This may be the original author or a moderator.
+  editor_id String
+  
+  /// The post title as it existed before this edit. Stored for audit purposes
+  /// to track title changes.
+  original_title String
+  
+  /// The complete post content (text, link, or image metadata) as it existed
+  /// before this edit. Stored for audit purposes to track content changes.
+  original_content String
+  
+  /// A JSON-encoded array of field names that were modified in this edit
+  /// (e.g., ["title", "content"]). Used for efficient audit filtering.
+  modified_fields String
+  
+  /// Timestamp when this edit was recorded. Follows platform standard for
+  /// temporal fields.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this edit record. Always equals
+  /// created_at since records are immutable.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Always null since edit records are never deleted
+  /// for audit integrity.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  editor community_members @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_post_id, created_at])
+  @@index([editor_id, created_at])
+  @@index([community_post_id, editor_id, created_at])
+}
+
+/// Denormalized counter for total number of comments on each post; updated
+/// atomically on comment creation/deletion for feed performance. This table
+/// exists solely to avoid expensive JOINs during feed generation when
+/// counting comments. It is maintained by triggers or event listeners that
+/// listen to community_comments insertions and deletions. Not directly
+/// managed by users - only system services update this table. The
+/// relationship with community_posts is 1:1, with each post having exactly
+/// one corresponding count record.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_comments_counts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the post this comment count belongs to. {@link
+  /// community_posts.id}.
+  community_post_id String
+  
+  /// The total number of comments on this post. Updated atomically on comment
+  /// creation/deletion.
+  comment_count Int
+  
+  /// Timestamp when this counter record was created.
+  created_at DateTime
+  
+  /// Timestamp when this counter record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the post has been deleted and this
+  /// counter is no longer active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_post_id])
+  
+  @@index([community_post_id])
+  @@index([updated_at])
+}
+
+/// Post status flags for moderation and display; tracks visibility flags
+/// such as 'deleted', 'flagged', 'approved', 'archived' and associated
+/// moderator action logs.
+///
+/// This subsidiary table is automatically managed by the system and
+/// moderators in response to post activities. It does not represent a
+/// user-managed entity but rather an internal state tracker that determines
+/// post visibility across feeds.
+///
+/// A 1:1 relationship exists between community_post_statuses and
+/// community_posts where each post has exactly one status record. Status
+/// changes are logged with optional moderator action context.
+///
+/// The status field is an enum (deleted, flagged, approved, archived) and
+/// controls whether the post appears in feeds:
+/// - 'deleted': post hidden from all users, but preserved for moderation audit
+/// - 'flagged': post marked for review, visible but prioritized for
+/// moderator attention
+/// - 'approved': post published and visible in normal feeds
+/// - 'archived': post kept active in database but excluded from public feeds
+/// (e.g. due to age or policy)
+///
+/// Status changes are optionally attributed to a moderator via moderator_id
+/// and action_comment, which capture the justification for the change.
+///
+/// @link community_posts.id
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator who last changed the status. {@link
+  /// community_moderators.id}. Null if system action or unknown.
+  moderator_id String?
+  
+  /// Current visibility status of the post. Allowed values: 'deleted',
+  /// 'flagged', 'approved', 'archived'.
+  status String
+  
+  /// Optional reason or comment from moderator regarding the status change
+  /// (e.g., 'Violates community policy', 'Content outdated, archived
+  /// manually').
+  action_comment String?
+  
+  /// Timestamp when the status was last modified by a moderator action. Null
+  /// if status was set by automated system.
+  action_timestamp DateTime?
+  
+  /// Timestamp when this status record was created.
+  created_at DateTime
+  
+  /// Timestamp when this status record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  posts community_posts[]
+  
+  @@index([moderator_id])
+  
+  @@index([status])
+}
+
+/// Aggregate view metadata for each post; records total views and unique
+/// viewer count for analytics and heat ranking. This subservient table is
+/// updated atomically on each view event to enable fast feed ranking without
+/// complex joins. Linked to community_posts via foreign key and follows its
+/// deletion lifecycle. Not independently accessible by users, only used
+/// internally for performance optimization.
+///
+/// Reference: {@link community_posts.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the post this view statistics record belongs to. {@link
+  /// community_posts.id}
+  community_post_id String
+  
+  /// Total number of views across all viewers for this post. Updated
+  /// atomically on each view event.
+  total_views Int
+  
+  /// Count of unique users who have viewed this post. Tracks distinct viewer
+  /// identities. Updated atomically on new viewer detection.
+  unique_viewers Int
+  
+  /// Timestamp when this view statistics record was created. Matches the
+  /// creation time of the associated post.
+  created_at DateTime
+  
+  /// Timestamp of the last time total_views or unique_viewers was updated.
+  /// Used for cache invalidation and tracking recency.
+  updated_at DateTime
+  
+  /// Timestamp when this record was logically deleted, matching the deletion
+  /// of its associated post. Nullable because record persists unless post is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_post_id])
+  
+  @@index([community_post_id])
+}
+
+/// Post distribution index for feed generation. Maps each post to its
+/// position in predefined feed types (home, popular, community) and sorting
+/// algorithms (hot, new, top, controversial). This denormalized index
+/// eliminates the need for complex JOINs and sorting during feed queries,
+/// improving feed load times from >2s to <1.5s. Automatically updated when a
+/// post is created, voted on, or deleted. Entries are removed when the
+/// associated post is marked as deleted in community_posts. Never
+/// manipulated directly by users - maintained entirely by system processes.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post this feed entry represents. {@link
+  /// community_posts.id}.
+  community_post_id String
+  
+  /// Type of feed this entry belongs to. Must be one of: 'home', 'popular',
+  /// 'community'. This determines which feed UI this post appears in.
+  feed_type String
+  
+  /// Sorting algorithm applied to this feed entry. Must be one of: 'hot',
+  /// 'new', 'top', 'controversial'. This determines the order within the feed.
+  sort_algorithm String
+  
+  /// Timestamp when this feed entry was first created. Used for logging and
+  /// debugging.
+  created_at DateTime
+  
+  /// Timestamp when this feed entry was last updated due to a vote, edit, or
+  /// deletion. Used for cache invalidation and batch pruning.
+  last_updated DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_post_id, feed_type, sort_algorithm], map: "community_post_feeds_community_post_id_feed_type_sort__1d59c9a6")
+  @@index([feed_type])
+  @@index([last_updated])
+  @@index([sort_algorithm, last_updated])
+}

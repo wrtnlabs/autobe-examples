@@ -1,26 +1,90 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
+import { IPageIShoppingMallRefundRequest } from "../../../../structures/IPageIShoppingMallRefundRequest";
 import { IShoppingMallRefundRequest } from "../../../../structures/IShoppingMallRefundRequest";
 
 /**
- * Submit a refund request for a delivered order item. This operation allows customers to request a refund for a product that has been delivered, provided the request is made within 7 calendar days of delivery confirmation. The operation specifically targets a single order item and requires the customer to provide a reason for the refund request, which must be between 10 and 500 characters in length.
+ * Retrieve all refund requests initiated by the authenticated customer.
  *
- * The system enforces strict validation: the order item must have a 'delivered' status, and the system will check the delivery confirmation timestamp to ensure the request is submitted within the 7-day window. This safeguard prevents post-delivery refund requests that exceed the allowed timeframe, maintaining fairness to sellers and preventing abuse of the refund system.
+ * This endpoint returns a complete list of all refund requests created by the current authenticated customer, providing full visibility into refund history including pending, approved, and rejected requests. Each refund request represents a customer's formal request to reverse payment for a specific order item, typically due to product dissatisfaction or delivery issues.
  *
- * The refund request is not instantly approved; it enters a pending state where the seller must review and explicitly approve or reject the request according to the business workflow documented in the requirements. During this pending phase, inventory levels remain unchanged. Only upon seller approval will the refund be processed and inventory restored through positive inventory records.
+ * The response includes the full refund request details: reason provided by the customer, current status (pending/approved/rejected), creation and update timestamps, and auto-approval deadline. This enables customers to track the status of their refund requests and understand expected resolution timelines.
  *
- * This operation supports the core business requirement that customers may request refunds within a limited timeframe after delivery, promoting responsible usage while protecting seller interests. It integrates with the front-end UI that shows eligible items for refund, ensuring customers only see items that meet the criteria.
+ * For audit and dispute resolution, this endpoint provides complete historical visibility into all refund activity. The refund requests are tied to specific order items, preserving the exact product, variant, price, and seller information as it existed at time of purchase. All refund request records are permanently preserved in the system with no deletion capability.
  *
- * This operation follows enterprise-standard practices by using a single immutable request object to capture the customer's intent, while the approval process remains separate and controlled by the seller.
- *
- * Related operations: PUT /orders/{orderId}/items/{orderItemId}/refund-response (seller responds to refund request).
+ * This operation is read-only and does not alter any data. The permanent record ensures compliance with financial and consumer protection regulations requiring immutable audit trails.
  *
  * @param props.connection
- * @param props.body Data needed to create a new refund request for a delivered order item.
- * @x-autobe-specification Create a new refund request in the system by validating that the order item exists, has a 'delivered' status, and was delivered within the last 7 calendar days. Associate the refund request with the authenticated customer. Store the provided reason with a length constraint of 10-500 characters. Set initial status to 'pending' and record the customer ID and timestamp. Query the shopping_mall_order_items table to verify the order item's status and delivery date. Validate the authenticated user owns the order item. Create a new record in the shopping_mall_refund_requests table with the provided reason, customer ID, order item ID, 'pending' status, and current timestamp. Return the created refund request object to the client. Reject with 403 Forbidden if customer is not authorized, 400 Bad Request if status is not delivered or too much time has passed since delivery, or if reason is too short or too long.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_refund_requests table for records where shopping_mall_customer_id matches the authenticated customer ID. Include all refund request fields: id, reason, status, created_at, updated_at, auto_approval_deadline. Join with shopping_mall_order_items to include order item reference (shopping_mall_order_item_id) for context. Order results by created_at descending. Return only active records (deleted_at is null). Do not filter by status - return all pending, approved, and rejected requests.
+ * @path /shoppingMall/customer/refund-requests
+ * @accessor api.functional.shoppingMall.customer.refund_requests.get
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function get(connection: IConnection): Promise<get.Response> {
+  return true === connection.simulate
+    ? get.simulate(connection)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...get.METADATA,
+          path: get.path(),
+          status: null,
+        },
+      );
+}
+export namespace get {
+  export type Response = IPageIShoppingMallRefundRequest;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/customer/refund-requests",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/customer/refund-requests";
+  export const random = (): IPageIShoppingMallRefundRequest =>
+    typia.random<IPageIShoppingMallRefundRequest>();
+  export const simulate = (_connection: IConnection): Response => {
+    return random();
+  };
+}
+
+/**
+ * Initiate a refund request for a delivered order item.
+ *
+ * Customers may request a refund for any order item with status 'delivered' within a 7-day window from the delivery date. This endpoint allows customers to submit a refund request by providing a reason for the refund, which will be reviewed by the seller. The system automatically approves the refund if the seller does not respond within 72 hours.
+ *
+ * This operation is essential for customer protection and ensures fair resolution of post-purchase issues. The refund request must be associated with a specific delivered order item, and the customer must provide a reason for the refund that is between 10 and 500 characters long.
+ *
+ * This operation directly interacts with the shopping_mall_refund_requests database table, which has the following constraints:
+ * - Must reference a valid shopping_mall_order_item_id with status 'delivered'
+ * - Must reference the customer_id who placed the original order
+ * - reason field must be 10-500 characters long
+ * - initial status is 'pending'
+ * - auto_approval_deadline is set 72 hours from created_at
+ *
+ * Only the customer who originally purchased the item may submit a refund request for that item. Duplicate refund requests for the same order item are prohibited by the @@unique([shopping_mall_order_item_id]) constraint on the shopping_mall_refund_requests table. The refund request system preserves all historical context to ensure accurate dispute resolution.
+ *
+ * @param props.connection
+ * @param props.body Details required to create a new refund request
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Create a new refund request in the shopping_mall_refund_requests table. Validate that the provided shopping_mall_order_item_id exists and has status 'delivered'. Validate that the shopping_mall_customer_id matches the customer who placed the original order. Create a new refund request entry with status 'pending', the provided reason, and the auto_approval_deadline set to 72 hours from current time. Return the created refund request object with assigned ID and generated timestamps.
  * @path /shoppingMall/customer/refund-requests
  * @accessor api.functional.shoppingMall.customer.refund_requests.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -50,11 +114,11 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Data needed to create a new refund request for a delivered order item.
+     * Details required to create a new refund request
      */
-    body: IShoppingMallRefundRequest.ICreate;
+    body: IShoppingMallRefundRequest;
   };
-  export type Body = IShoppingMallRefundRequest.ICreate;
+  export type Body = IShoppingMallRefundRequest;
   export type Response = IShoppingMallRefundRequest;
 
   export const METADATA = {
@@ -85,6 +149,186 @@ export namespace create {
     });
     try {
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a paginated list of refund requests filtered by various criteria.
+ *
+ * This endpoint allows authorized users to search for refund requests using status filters, date ranges, customer identifiers, and keyword searches on refund reasons. The endpoint is essential for customer service, seller dispute resolution, and administrative oversight in a marketplace with high volumes of transactions where immutable data records must be easily retrievable.
+ *
+ * The operation supports comprehensive search functionality including filtering by refund request status ('pending', 'approved', 'rejected'), date range for when the request was created, specific customer identifier, and keyword matching in the refund reason text. Results are returned in paginated format to handle large datasets efficiently.
+ *
+ * This endpoint is designed to complement the immutable snapshot architecture of the platform, providing rapid access to refund request history while respecting the principle that all records are preserved indefinitely. The search functionality operates on the current state of refund requests, not on snapshots, as requests can still be in 'pending' status and subject to change.
+ *
+ * @param props.connection
+ * @param props.body Search criteria and pagination parameters for refund requests
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_refund_requests table with filtering by status, customer_id, created_at date range, and reason keyword search. Apply pagination with cursor-based pagination for scalable results. Join with shopping_mall_customers to include customer name (or 'deleted user' if account deleted). Join with shopping_mall_order_items to include order number and product information. Filter to only return refund requests with deleted_at IS NULL. Return count of total matching records and pagination metadata. Implement indexing on status, created_at, and reason for performance optimization.
+ * @path /shoppingMall/customer/refund-requests
+ * @accessor api.functional.shoppingMall.customer.refund_requests.patch
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function patch(
+  connection: IConnection,
+  props: patch.Props,
+): Promise<patch.Response> {
+  return true === connection.simulate
+    ? patch.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...patch.METADATA,
+          path: patch.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace patch {
+  export type Props = {
+    /**
+     * Search criteria and pagination parameters for refund requests
+     */
+    body: IShoppingMallRefundRequest.IRequest;
+  };
+  export type Body = IShoppingMallRefundRequest.IRequest;
+  export type Response = IPageIShoppingMallRefundRequest.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/customer/refund-requests",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/customer/refund-requests";
+  export const random = (): IPageIShoppingMallRefundRequest.ISummary =>
+    typia.random<IPageIShoppingMallRefundRequest.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: patch.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: patch.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve the details of a specific refund request by its unique identifier.
+ *
+ * This API endpoint returns comprehensive information about a customer-initiated refund request for an order item with status 'delivered'. The refund request captures the customer's reason for requesting a refund, the status of the request (pending, approved, or rejected), and the automatic approval deadline.
+ *
+ * This endpoint is used by customers to review their own refund requests and by administrators to inspect refund request details during dispute resolution. The data provided here includes the exact reason text submitted by the customer, the current status of the request, and the timestamp when the system will automatically approve the request if the seller does not respond within 72 hours.
+ *
+ * The request ID is a unique UUID that identifies the specific refund request, and access is strictly controlled by authorization rules that prevent unauthorized access to refund requests not associated with the current user.
+ *
+ * Records may be soft deleted by administrators for compliance or system integrity reasons. When a refund request is soft deleted, it is marked with a deleted_at timestamp and is no longer accessible via this endpoint unless requested by an administrator with appropriate permissions.
+ *
+ * @param props.connection
+ * @param props.requestId The unique identifier of the refund request. This is the UUID primary key of the shopping_mall_refund_requests record.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Retrieve a single refund request by its unique ID from the shopping_mall_refund_requests table. Perform authorization check to ensure requester is either the original customer who submitted the request or an administrator. Return the complete refund request object including id, shopping_mall_order_item_id, shopping_mall_customer_id, reason, status, created_at, updated_at, deleted_at, and auto_approval_deadline. Handle case where request ID does not exist or is not accessible due to permissions by returning 404. Ensure no data exposure occurs for refund requests not associated with the requester. No database joins or external services required for this operation.
+ * @path /shoppingMall/customer/refund-requests/:requestId
+ * @accessor api.functional.shoppingMall.customer.refund_requests.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * The unique identifier of the refund request. This is the UUID primary key of the shopping_mall_refund_requests record.
+     */
+    requestId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallRefundRequest;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/customer/refund-requests/:requestId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/customer/refund-requests/${encodeURIComponent(props.requestId ?? "null")}`;
+  export const random = (): IShoppingMallRefundRequest =>
+    typia.random<IShoppingMallRefundRequest>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("requestId")(() => typia.assert(props.requestId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

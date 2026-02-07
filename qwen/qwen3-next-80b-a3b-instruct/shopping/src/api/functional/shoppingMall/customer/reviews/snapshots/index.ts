@@ -1,44 +1,36 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallReviewSnapshot } from "../../../../../structures/IPageIShoppingMallReviewSnapshot";
 
 /**
- * Retrieve all historical snapshots of a specific review.
+ * Retrieve the complete historical snapshot history of a specific review.
  *
- * This operation returns a paginated list of all immutable snapshots capturing changes made to a specific review in the system. Each snapshot contains the complete state of the review at the time of change, including rating, text content, deletion status, timestamps, and the actor (user or administrator) who performed the action. This functionality is critical for audit trails, dispute resolution, and compliance with the comprehensive snapshot preservation principle outlined in the requirements.
+ * This endpoint provides full audit access to all preserved states of a review, ensuring complete transparency for dispute resolution, compliance, and customer trust. Every edit or deletion of a review creates an immutable snapshot that preserves the review's rating, text, actor, and timestamps exactly as they existed at that moment.
  *
- * The snapshots are stored in the shopping_mall_review_snapshots database table and follow the Snapshot Principle defined in the requirements documentation. Each snapshot preserves the review's state before and after every modification (creation, edit, or deletion), ensuring complete historical integrity. The data can be accessed by the review author (the customer), the product seller, and administrators for audit and compliance purposes.
+ * The returned data includes every version of the review from its initial creation through all subsequent edits and final deletions. Each snapshot contains the actor's identity, which allows verification of who made each change. This endpoint is critical for enforcing the platform's snapshot principle that every business-relevant state change must be permanently recorded.
  *
- * This operation is exclusively read-only and does not modify any data. The responses are based on actual database schema definitions and requirements principles. Users can validate the sequence of changes through this endpoint, understanding how reviews evolved over time. Administrators can use this to investigate potential policy violations or customer disputes.
+ * Access to this endpoint is strictly limited to the customer who created the review and platform administrators. Regular users can only view their own review histories. Administrators may access any review's snapshot history for dispute resolution or compliance purposes.
  *
- * For auditing and dispute resolution, the system ensures that all snapshot data is preserved indefinitely, even if the original review or associated product is deleted. The snapshots include the actor ID, allowing traceability of who made each change. Multiple snapshots will be returned, ordered chronologically by timestamp, providing a complete timeline of the review's history.
+ * This API operation requires no request parameters beyond the review ID, since all historical data is stored within the shopping_mall_review_snapshots table. The system automatically orders snapshots chronologically by created_at timestamp for consistent viewing.
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the review whose snapshots are being retrieved. This UUID must correspond to an existing review in the database. The snapshot list will contain all historical modifications to this specific review, including creation, edits, and deletions.
- * @x-autobe-specification Query shopping_mall_review_snapshots table by reviewId parameter.
- * Apply pagination with pagination query parameters (page, limit).
- * Order results by createdAt timestamp ascending to show chronological sequence of changes.
- * Return only snapshots with matching reviewId.
- * Exclude any snapshots with null reviewId.
- * Validate that reviewId is a valid UUID format before querying.
- * Cache results for 5 minutes using reviewId as cache key.
- * Transform snapshot data into response format with appropriate field mapping: originalRating, originalText, editedRating, editedText, isDeleted, actorId, actorType, createdAt, snapshotId.
- * Generate 100 items per page as default limit.
- * Handle case where reviewId does not exist - return empty array.
- * Log all access events for audit trail purposes.
+ * @param props.reviewId The unique identifier of the review whose snapshot history is being requested.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_review_snapshots table for all records matching the review_id parameter. Join with shopping_mall_customers to retrieve actor display name. Order results by created_at ascending to show chronological history. Apply pagination with limit and offset. Filter results to include only snapshots belonging to the specified review. Return error if review does not exist. Include count of total snapshots in response metadata.
  * @path /shoppingMall/customer/reviews/:reviewId/snapshots
- * @accessor api.functional.shoppingMall.customer.reviews.snapshots.at
+ * @accessor api.functional.shoppingMall.customer.reviews.snapshots.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function at(
+export async function index(
   connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? at.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -48,18 +40,18 @@ export async function at(
           },
         },
         {
-          ...at.METADATA,
-          path: at.path(props),
+          ...index.METADATA,
+          path: index.path(props),
           status: null,
         },
       );
 }
-export namespace at {
+export namespace index {
   export type Props = {
     /**
-     * Unique identifier of the review whose snapshots are being retrieved. This UUID must correspond to an existing review in the database. The snapshot list will contain all historical modifications to this specific review, including creation, edits, and deletions.
+     * The unique identifier of the review whose snapshot history is being requested.
      */
-    reviewId: string & tags.Format<"uuid">;
+    reviewId: string;
   };
   export type Response = IPageIShoppingMallReviewSnapshot;
 
@@ -79,12 +71,12 @@ export namespace at {
     typia.random<IPageIShoppingMallReviewSnapshot>();
   export const simulate = (
     connection: IConnection,
-    props: at.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: at.path(props),
+      path: index.path(props),
       contentType: "application/json",
     });
     try {

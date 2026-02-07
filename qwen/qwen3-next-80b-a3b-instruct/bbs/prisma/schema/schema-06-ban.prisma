@@ -1,0 +1,49 @@
+/// Records each user ban event with reason, administrator who issued the
+/// ban, and timestamp. This table logs when a citizen has been banned from
+/// the platform by an administrator, including the reason for the ban and
+/// timestamps for when the ban was issued and (if applicable) lifted. The
+/// ban status of a user is determined by the existence of an active
+/// (unbanned_at is null) record in this table. The system tracks which
+/// administrator imposed each ban for accountability and audit purposes.
+///
+/// @namespace Ban
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen account that has been banned. {@link
+  /// economic_board_citizens.id}.
+  economic_board_citizens_id String
+  
+  /// The administrator who issued this ban. {@link
+  /// economic_board_administrators.id}.
+  economic_board_administrators_id String
+  
+  /// The reason provided by the administrator for imposing the ban. Must be at
+  /// least 10 characters according to requirements. This text will be
+  /// displayed to administrators viewing the banned users list.
+  ban_reason String
+  
+  /// The timestamp when the ban was issued. This is required for all ban
+  /// records to establish when the restriction began.
+  banned_at DateTime
+  
+  /// The timestamp when the ban was lifted, if applicable. If null, the ban is
+  /// still active. This allows tracking of both temporary and permanent bans,
+  /// and supports the unban functionality.
+  unbanned_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [economic_board_citizens_id], references: [id], onDelete: Cascade)
+  administrator economic_board_administrators @relation(fields: [economic_board_administrators_id], references: [id], onDelete: Cascade)
+  
+  @@index([banned_at])
+  @@index([economic_board_citizens_id])
+  @@index([economic_board_administrators_id])
+}

@@ -8,5 +8,8 @@ import typia, { tags } from "typia";
 export function prepare_random_community_platform_comment(
   input?: DeepPartial<ICommunityPlatformComment.ICreate>,
 ): ICommunityPlatformComment.ICreate {
-  return {};
+  return {
+    content: input?.content ?? RandomGenerator.content({ paragraphs: 1 }),
+    parent_id: input?.parent_id ?? typia.random<string & tags.Format<"uuid">>(),
+  };
 }

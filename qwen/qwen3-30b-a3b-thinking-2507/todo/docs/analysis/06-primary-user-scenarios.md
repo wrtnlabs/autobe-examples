@@ -2,163 +2,169 @@
 
 ## 1. User Account Management
 
-### Account Creation
-WHEN a new user visits the application, THE system SHALL display the registration form with required fields: email address and password (minimum 8 characters).
-WHEN the user submits valid registration details, THE system SHALL create the account, send verification email, and redirect to welcome screen.
-WHILE the user's email is unverified, THE system SHALL prevent access to core features until confirmation is received within 24 hours.
+### 1.1 Account Registration
 
-**Success Criteria**: User successfully logs in and views empty todo list after account verification.
+WHEN a user initiates registration by providing email and password, THE system SHALL verify the email format is valid (e.g., user@domain.com) and require password complexity (minimum 8 characters with at least one number and one special character).
 
-### Login Process
-WHEN a user attempts to log in with valid credentials, THE system SHALL authenticate and maintain secure session state.
-WHERE login attempts exceed 5 in 15 minutes, THE system SHALL impose 15-second cooldown before next attempt.
+WHEN the user clicks the submit button, THE system SHALL create a new user account with unverified status and send a verification email with a unique 128-bit token link.
 
-**Success Criteria**: User is logged in with active session and security features properly applied.
+WHEN the user clicks the verification link in their email, THE system SHALL verify the token and update the account status to verified, making the account immediately usable.
 
-### Password Management
-WHEN a user requests password change, THE system SHALL require current password verification before accepting new credentials.
-WHEN a password change is confirmed, THE system SHALL invalidate all active session tokens.
-THE system SHALL prevent the use of the last 5 used passwords.
+### 1.2 Login Process
 
-**Success Criteria**: Password update is immediate with session security maintained.
+WHEN a user attempts to log in with valid email and password, THE system SHALL authenticate the credentials and generate a JWT token for session management.
 
-### Account Deletion
-WHEN a user requests account deletion, THE system SHALL ask for explicit confirmation: "Permanently delete account? This will remove all associated data including todos and history."
-IF confirmed, THE system SHALL delete all user data within 48 hours including all todos (active, in trash, history items).
+WHEN login attempt fails due to invalid credentials, THE system SHALL display "Invalid email or password. Please try again."
 
-**Success Criteria**: User data is completely removed per privacy policy with no recoverable traces.
+WHEN a user has multiple failed login attempts within 15 minutes, THE system SHALL temporarily block further attempts for 5 minutes as a security measure.
+
+### 1.3 Password Management
+
+WHEN a user requests a password change, THE system SHALL require the current password for verification.
+
+WHEN the user provides a new password, THE system SHALL enforce password complexity (minimum 8 characters, at least one number, one special character).
+
+WHEN the password update is successful, THE system SHALL immediately invalidate all current active sessions for the user.
+
+### 1.4 Account Deletion
+
+WHEN a user requests account deletion, THE system SHALL prompt confirmation with explicit statement: "This will permanently delete all todos including items in trash. Are you sure?"
+
+WHEN the user confirms deletion, THE system SHALL permanently delete all associated todos (including trash), user profile, and associated authentication data within the database.
 
 ## 2. User Profile Management
 
-### Profile Information
-EACH user SHALL have a private profile containing display name which they can change at any time.
-WHEN a user updates their display name, THE system SHALL save the change immediately and reflect it across all user interfaces.
+### 2.1 Profile Creation
 
-**Success Criteria**: Display name changes are visible to the user without requiring refresh.
+WHEN a user creates an account, THE system SHALL store a default display name as "User [User ID]".
 
-### Privacy Enforcement
-THE system SHALL ensure that no user can view another's profile under any circumstances.
-WHEN a user attempts to access another's profile, THE system SHALL display error message: "You may only view your own profile."
+WHEN a user edits their display name, THE system SHALL limit the name to a maximum of 50 characters with no special characters.
 
-**Success Criteria**: Complete user data isolation maintained with no cross-account access.
+### 2.2 Profile Privacy
 
-## 3. Todo Item Management
+WHEN a user attempts to view another user's profile, THE system SHALL deny access and display "You do not have permission to view this profile."
 
-### Creation Process
-WHEN a user creates a new todo item, THEY SHALL provide title (required), description (optional), start date (optional), due date (optional).
-THE system SHALL automatically set completion status to "incomplete" for new todos.
-THE system SHALL record creation timestamp upon submission.
+WHEN a user views their own profile, THE system SHALL display the current display name and option to edit.
 
-**Validation Rules**: Title must be provided; if empty, display "Title is required". Title exceeding 100 characters shall be truncated with confirmation message.
+## 3. Todo Creation & Editing
 
-**Success Criteria**: New todo appears in list within 1 second of submission.
+### 3.1 Todo Creation
 
-### Completion Status Toggle
-WHEN a user toggles a todo's completion status, THE system SHALL update the status immediately in the list without page refresh.
-WHEN status changes from incomplete to complete, THE system SHALL record completion timestamp.
-WHEN status changes from complete to incomplete, THE system SHALL record incompletion timestamp.
+WHEN a user creates a new todo with title, THE system SHALL record the todo with completion status set to incomplete.
 
-**Success Criteria**: Real-time status updates visible across all interfaces.
+WHEN the user provides a title with fewer than 3 characters, THE system SHALL display "Todo title must be at least 3 characters long."
 
-### Edit History Management
-WHEN a user edits any field of a todo item, THE system SHALL create a history entry documenting all changed fields with previous and new values.
-WHEN the user views edit history, THE system SHALL display entries chronologically from newest to oldest.
+WHEN the user provides a description exceeding 500 characters, THE system SHALL truncate to 500 characters and display the message "Description was truncated to 500 characters."
 
-**Historical Data Requirements**: Every history entry SHALL include timestamp, all fields changed, and previous/new values.
+WHEN the user sets a start date or due date, THE system SHALL validate dates follow ISO 8601 format (YYYY-MM-DD).
 
-**Success Criteria**: Full audit trail of all modifications available to the user.
+### 3.2 Edit History
 
-## 4. Data Deletion and Recovery
+WHEN a user edits any attribute of a todo (title, description, start date, due date), THE system SHALL create a new entry in the edit history with the following information:
+- Timestamp of edit
+- Previous value of edited field
+- New value of edited field
 
-### Soft Delete Process
-WHEN a user marks a todo as deleted, THE system SHALL move it to trash instead of permanent removal.
-THE system SHALL display confirmation: "Move to trash? This preserves the todo for recovery."
-THE todo SHALL not appear in main list but shall be visible in trash list.
+WHEN the user views edit history, THE system SHALL display entries from most recent to oldest.
 
-**Success Criteria**: Todo disappears from main list but remains recoverable.
+## 4. Todo Viewing & Filtering
 
-### Trash Management
-WHEN a user views trash, THE system SHALL display all deleted todos with recovery options.
-WHEN a user restores a todo from trash, THE system SHALL return it to main list with all prior data intact.
-WHEN a user permanently removes a todo from trash, THE system SHALL delete it and its full edit history.
+### 4.1 Standard View
 
-**Success Criteria**: Clear distinction between recovery and permanent deletion.
+WHEN a user views their todo list, THE system SHALL display each todo with: title, completion status, start date (if set), due date (if set), and creation date.
 
-## 5. Filtering and Sorting Systems
+WHEN the user loads the todo list, THE system SHALL paginate results with max 20 todos per page.
 
-### Filter Implementation
-THE system SHALL provide three filtering options: All Todos, Only Complete Todos, Only Incomplete Todos.
-WHEN an active filter is selected, THE system SHALL update the todo list immediately to reflect the filter criteria.
+### 4.2 Filtering
 
-**Success Criteria**: Filters update in real-time with no data inconsistency.
+WHEN a user filters todos by completion status, THE system SHALL show only todos matching the selected status (All, Complete, or Incomplete).
 
-### Sorting Mechanism
-THE system SHALL support sorting by creation date (newest/oldest), start date (earliest/latest), and due date (earliest/latest).
-WHEN sorting by date fields without set values, THE system SHALL list those items at the end of the sorted list.
+WHEN a user filters by completion status, THE system SHALL allow toggling between filter options without resetting the current page.
 
-**Success Criteria**: Sorting displays correct data with consistent date handling.
+## 5. Todo Completion & History
 
-## 6. Security and Compliance Requirements
+### 5.1 Completion Toggle
 
-### Authentication Security
-WHEN a user logs in, THE system SHALL use secure password handling mechanisms including Bcrypt encryption.
-THE system SHALL prevent session hijacking through secure cookie settings.
+WHEN a user marks a todo as complete, THE system SHALL toggle completion status to complete and record timestamp.
 
-**Compliance Reference**: Meets OWASP security guidelines for authentication systems.
+WHEN a user marks a complete todo as incomplete, THE system SHALL toggle completion status to incomplete and record timestamp.
 
-### Data Protection
-THE system SHALL encrypt all sensitive user data at rest using AES-256 encryption.
-WHEN data is transmitted, THE system SHALL enforce TLS 1.2+.
+### 5.2 Edit History Management
 
-**Privacy Commitment**: Strict implementation of data minimization principles from GDPR.
+WHEN a user views a todo's edit history, THE system SHALL display all previous edits in chronological order.
 
-## 7. Business Rules Implementation
+WHEN a user makes an edit, THE system SHALL automatically update the todo's edit history with current timestamp, previous values, and new values.
+
+## 6. Trash Management
+
+### 6.1 Soft Delete
+
+WHEN a user deletes a todo, THE system SHALL move the todo to the trash with soft delete status.
+
+WHEN a user deletes a todo, THE system SHALL NOT remove it from database but mark it as deleted with deletion timestamp.
+
+### 6.2 Trash Viewing
+
+WHEN a user views trash, THE system SHALL display deleted todos with option to restore or permanently delete.
+
+WHEN a user views trash, THE system SHALL paginate results with max 20 items per page.
+
+WHEN a user restores a todo from trash, THE system SHALL move it back to regular todo list with unchanged completion status.
+
+### 6.3 Permanent Deletion from Trash
+
+WHEN a user permanently deletes a todo from trash, THE system SHALL delete the todo and all associated edit history records.
+
+WHEN a user permanently deletes a todo from trash, THE system SHALL immediately remove all traces of the todo from the database.
+
+## 7. Privacy Enforcement
+
+### 7.1 Data Isolation
+
+WHEN a user accesses any endpoint, THE system SHALL verify the authenticated user matches the requested data owner.
+
+WHEN a user attempts to access a todo not owned by them, THE system SHALL deny access and display "You do not have permission to view this todo."
+
+### 7.2 Cross-Scenario Consistency
+
+WHILE the system handles todo management actions, THE system SHALL maintain strict privacy enforcement across all scenarios.
+
+WHERE the system handles account data, THE system SHALL never allow any user to access another user's private data.
+
+### 7.3 Privacy Enforcement Diagram
 
 ```mermaid
-graph LR
-    A[Create Todo] --> B{Valid Title?}
-    B -->|Yes| C[Create New Todo]
-    B -->|No| D[Error: Title Required]
-    C --> E{Status: Incomplete}
-    E -->|User Toggles| F{Status Changed}
-    F -->|Complete| G[Record Completion Timestamp]
-    F -->|Incomplete| H[Record Incompletion Timestamp]
-    E -->|Delete| I[Move to Trash]
-    I -->|Restore| J[Return to Active List]
-    I -->|Permanently Delete| K[Remove from Database]
+graph TD
+    A[User Authentication] --> B[Private Data Isolation]
+    B --> C{Access Request?}
+    C -->|Yes| D[Verify User Ownership]
+    D -->|Match| E[Process Request]
+    D -->|Mismatch| F[Error: Unauthorized]
+    F --> G[Error Message]
+    E --> H[Return Data]
 ```
 
-**Note**: All operations must maintain user data isolation and privacy as primary design constraint.
+## 8. Performance & Error Handling
 
-## 8. Performance Requirements
+### 8.1 Performance Requirements
 
-- LISTING: Paginated results (10 items per page) must load within 1.5 seconds for up to 100 items.
-- EDITING: All field updates must reflect within 0.5 seconds with confirmation message.
-- FILTERING/SORTING: Changes take effect within 0.3 seconds for all views.
+WHEN a user loads their todo list, THE system SHALL display the first page of todos within 1.5 seconds.
 
-**Success Criteria**: Meets SLA requirements for all user interaction points with appropriate latency.
+WHEN a user edits a todo, THE system SHALL save the changes within 0.5 seconds.
 
-## 9. Error Handling Standards
+WHEN a user views a single todo detail, THE system SHALL load the entire history within 0.8 seconds.
 
-- INVALID TITLE: WHEN title is empty, SYSTEM SHALL display "Title is required" immediately.
-- DUPLICATE EMAIL: WHEN email is already registered, SYSTEM SHALL show "Email already in use".
-- DELETION CONFIRMATION: EVERY deletion must require explicit confirmation.
+### 8.2 Error Handling
 
-**User Experience Standard**: All error messages direct users to actionable solutions.
+WHEN any API operation encounters a validation error, THE system SHALL return standardized error response with specific message.
 
-## 10. Privacy Compliance Statement
+WHEN the system is unable to process a request due to server error, THE system SHALL return a generic error message "An unexpected error occurred. Please try again later."
 
-This application implements privacy by design across all features. All user data remains strictly private with zero visibility of another user's data under any circumstances. User data is deleted in accordance with GDPR requirements within 48 hours of account deletion confirmation.
+## 9. Business Justification
 
-## 11. Document Status
+The requirements specification delivers the core value proposition through:
 
-This document has been enhanced to meet all AutoBE production requirements:
-- All business requirements expressed in EARS format
-- Comprehensive business context provided in all sections
-- Mermaid diagrams properly validated with double quotes
-- Minimum requirement specifications meet 5,000+ character standard
-- Complete implementation guidance for backend developers
-- Security and privacy requirements fully articulated
-- All business processes described in user-centric language
-
-> *This document defines business requirements only. All technical implementation details are the responsibility of the development team.*
+1. **Personalized Productivity**: Users can create and manage a private todo system tailored to their individual needs and workflow.
+2. **Error Resilience**: The detailed error handling and validation ensure users can make meaningful progress through the application without frequent disruptions.
+3. **Privacy-First Design**: All user data remains strictly private by default, with robust access controls preventing accidental data sharing.
+4. **Adaptive Organization**: The flexible system supports multiple sorting and filtering options to accommodate diverse user preferences and working styles.

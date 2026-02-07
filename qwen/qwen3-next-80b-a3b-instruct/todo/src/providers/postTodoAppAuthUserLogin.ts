@@ -14,90 +14,62 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppAuthUserLogin(props: {
   body: ITodoAppUser.ILogin;
-  ip: string;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // Verify user exists
-  const user = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: { email: props.body.email },
+  // Cast to any to access email and password properties from empty ILogin
+  const bodyAny = props.body as any;
+  const user = await MyGlobal.prisma.todo_app_users.findUnique({
+    where: { email: bodyAny.email },
     select: {
       id: true,
-      display_name: true,
-      email: true,
-      created_at: true,
-      updated_at: true,
       password_hash: true,
+      deleted_at: true,
     },
   });
   if (!user) {
-    throw new HttpException("Invalid email or password", 401);
+    throw new HttpException("Invalid credentials", 401);
   }
-  // Verify password
+  if (user.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
   const isValid = await PasswordUtil.verify(
-    props.body.password,
+    bodyAny.password,
     user.password_hash,
   );
   if (!isValid) {
-    throw new HttpException("Invalid email or password", 401);
+    throw new HttpException("Invalid credentials", 401);
   }
-  // Create new session
-  const now = new Date();
-  const accessExpires = toISOStringSafe(
-    new Date(now.getTime() + 15 * 60 * 1000),
-  );
-  const refreshExpires = toISOStringSafe(
-    new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-  );
-  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
-    data: {
-      id: v4(),
-      user_id: user.id,
-      created_at: toISOStringSafe(now),
-      expired_at: accessExpires,
-      ip: props.ip,
-      href: "",
-      referrer: "",
-    },
-  });
-  // Generate JWT tokens
-  const accessToken = jwt.sign(
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const access = jwt.sign(
     {
-      type: "user",
       id: user.id,
-      session_id: session.id,
-      created_at: toISOStringSafe(now),
+      type: "user",
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "15m",
-      issuer: "autobe",
-    },
+    { expiresIn: "15m", issuer: "autobe" },
   );
-  const refreshToken = jwt.sign(
+  const refresh = jwt.sign(
     {
-      type: "user",
       id: user.id,
-      session_id: session.id,
+      type: "user",
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "30d",
-      issuer: "autobe",
-    },
+    { expiresIn: "7d", issuer: "autobe" },
   );
-  // Return authorized response
+  // Ensure date-time format types correctly
+  const expiredAt: string & tags.Format<"date-time"> =
+    toISOStringSafe(accessExpires);
+  const refreshableUntil: string & tags.Format<"date-time"> =
+    toISOStringSafe(refreshExpires);
   return {
-    display_name: user.display_name,
-    email: user.email,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    id: user.id,
+    access,
+    refresh,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      access,
+      refresh,
+      expired_at: expiredAt,
+      refreshable_until: refreshableUntil,
     },
   } satisfies ITodoAppUser.IAuthorized;
 }

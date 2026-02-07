@@ -1,222 +1,142 @@
-/// Sales channels where content is delivered (e.g., web, mobile) with their
-/// specific branding, delivery configuration, and feature sets. These
-/// channels represent distinct distribution methods for community platform
-/// content, allowing businesses to tailor the user experience across
-/// different access methods.
-///
-/// Each channel maintains its own branding, delivery configuration, and
-/// features while remaining part of the unified community platform. The
-/// system tracks channels as independent entities that users can manage and
-/// configure through the platform's administrative interface. Channel
-/// management includes adding new distribution channels, modifying existing
-/// channel configurations, and deactivating channels via soft delete.
+/// Centralized logging system for tracking application events, errors, and
+/// system activities, allowing administrators to monitor system health,
+/// detect issues, and debug application behavior. This log storage provides
+/// historical data for system analysis, performance monitoring, and security
+/// auditing. All logging entries are timestamped with creation and update
+/// times, with soft deletion capability to manage log retention policies
+/// without data loss.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_channels {
+model community_platform_system_logs {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel name (e.g., 'web', 'mobile') used for identification and display.
-  /// Must be unique across all channels.
-  name String
+  /// Log severity level indicating the importance of the log entry (e.g.,
+  /// 'INFO', 'WARNING', 'ERROR').
+  level String
   
-  /// Detailed description of the channel's purpose and scope for
-  /// administrative use. Used internally to understand channel context.
-  description String?
+  /// Main text content of the log message, providing details about the event
+  /// or error.
+  message String
   
-  /// Branding details including color schemes, logos, and visual elements
-  /// specific to this channel. Stored as a text description for flexibility.
-  branding String?
+  /// Additional contextual information about the log event, such as request
+  /// ID, user ID, or system component involved.
+  context String?
   
-  /// Configuration parameters for content delivery through this channel (e.g.,
-  /// CDN settings, compression levels). May store JSON as string when
-  /// necessary.
-  delivery_configuration String?
+  /// Structured data related to the log event, potentially containing
+  /// JSON-formatted details for advanced analysis.
+  data String?
   
-  /// Timestamp when channel was created, used for tracking channel lifecycle.
+  /// Timestamp of when the log entry was first created.
   created_at DateTime
   
-  /// Timestamp when channel was last updated, reflecting the most recent
-  /// modifications.
+  /// Timestamp of when the log entry was last modified.
   updated_at DateTime
   
-  /// Timestamp when channel was soft-deleted, null if the channel is currently
-  /// active.
+  /// Timestamp of when the log entry was marked for deletion (soft delete).
   deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  sections community_platform_sections[]
-  features community_platform_channel_features[]
-  
-  @@unique([name])
-  @@index([created_at])
 }
 
-/// Hierarchical content sections within channels for organizing posts and
-/// community content.
-///
-/// Stores sections that organize content within specific channels, providing
-/// a nested structure for content organization.
-///
-/// Each section belongs to one channel and can have multiple child sections
-/// to form a hierarchical organization for posts, community content, and
-/// channel-specific structures.
-///
-/// Sections are independently managed and queried for content organization
-/// without dependency on parent sections (e.g., users can filter to find all
-/// sections for a particular channel regardless of nesting).
+/// Application configuration parameters (e.g., timeout limits, feature
+/// flags, environment settings). Stores all system configuration settings
+/// that can be dynamically modified without code deployment.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_sections {
+model community_platform_system_configs {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent section in the hierarchy ({@link community_platform_sections.id}).
-  parent_id String?
+  /// Unique configuration parameter key (e.g., 'api_timeout',
+  /// 'feature_analytics_enabled'). This key must be globally unique across all
+  /// system configurations.
+  key String
   
-  /// Channel that contains this section ({@link
-  /// community_platform_channels.id}).
-  channel_id String
-  
-  /// Section display name, used for user interface and navigation.
-  name String
-  
-  /// Section description in natural language for detailed context.
-  description String?
-  
-  /// When the section was first created.
-  created_at DateTime
-  
-  /// When the section was last modified.
-  updated_at DateTime
-  
-  /// When the section was deleted (soft delete timestamp).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  parent community_platform_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  channel community_platform_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
-  
-  children community_platform_sections[] @relation("recursive")
-  
-  @@index([channel_id, created_at])
-  @@index([parent_id])
-}
-
-/// System-wide configuration settings that control platform behavior,
-/// feature activation, and default application parameters.
-///
-/// These configurations define global system behavior, feature flags, and
-/// default values for different application components. Each configuration
-/// has a name, value, and description to guide their use. The configurations
-/// are managed through a dedicated admin interface and do not require direct
-/// user input.
-///
-/// This table serves as a central repository for all configurable
-/// parameters, allowing the system to be adjusted to different operational
-/// requirements without code changes. Configurations can be enabled or
-/// disabled to toggle features on or off.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Configuration name that uniquely identifies this setting. Follows the
-  /// pattern 'namespace_setting' or 'feature_name'.
-  name String
-  
-  /// The current value for this configuration. May be a boolean, string,
-  /// number, or JSON string depending on the configuration.
+  /// Current value for the configuration parameter (will be interpreted based
+  /// on the 'type' field). For boolean types, uses 'true' or 'false' string
+  /// values.
   value String
   
-  /// Brief explanation of what this configuration controls and its purpose in
-  /// the system.
+  /// Description of what this configuration parameter controls and its purpose.
   description String
   
-  /// Indicates whether this configuration is enabled or disabled. Use for
-  /// toggleable features.
-  is_active Boolean
-  
-  /// Specifies the data type of the value. Possible types include: 'boolean',
-  /// 'string', 'number', 'json'.
+  /// The data type of the configuration parameter (e.g., 'int', 'boolean',
+  /// 'string', 'duration'). This determines how the 'value' should be
+  /// interpreted.
   type String
   
-  /// Timestamp when this configuration was first created.
+  /// Default value for the configuration parameter when it's newly created.
+  /// Will be used to restore to default if no value is set.
+  default_value String?
+  
+  /// Whether this configuration parameter is currently active and should be
+  /// applied to the system.
+  is_active Boolean
+  
+  /// Timestamp when this configuration entry was created.
   created_at DateTime
   
-  /// Timestamp when this configuration was last updated.
+  /// Timestamp when this configuration entry was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration was deleted. Null means not deleted.
+  /// Timestamp when this configuration entry was soft-deleted (if applicable).
+  /// Null means it's still active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([name])
+  @@unique([key])
+  @@index([type, is_active])
   @@index([is_active])
 }
 
-/// Individual feature configurations for platform channels, enabling atomic
-/// storage of channel-specific feature settings.
+/// System performance metrics for tracking response times, uptime, and
+/// resource utilization.
 ///
-/// Stores available channel features such as 'push notifications' and
-/// 'offline mode' that can be enabled or disabled for specific channels.
-/// Each entry represents a channel's configuration for a specific feature.
-/// Supports flexible feature management by allowing channel-specific
-/// customizations.
-///
-/// The features represent optional channel capabilities that may be enabled
-/// or disabled, with additional configuration stored for more complex
-/// features. Each channel maintains its own feature configuration, allowing
-/// for granular channel management.
+/// This table captures key performance indicators for monitoring system
+/// health and user experience. Includes metric type, value, and timestamp
+/// for historical tracking. Designed for efficient querying based on time
+/// ranges and metric types.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_channel_features {
+model community_platform_system_metrics {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Channel this feature is configured for. {@link
-  /// community_platform_channels.id}.
-  channel_id String
+  /// The type of performance metric (e.g., response_time, uptime, cpu_usage).
+  metric_type String
   
-  /// Feature name representing the capability or functionality (e.g., 'push
-  /// notifications', 'offline mode').
-  name String
+  /// Numerical value of the metric measurement (e.g., response time in
+  /// milliseconds, uptime percentage).
+  value Float
   
-  /// Indicates whether this feature is enabled for the channel.
-  is_enabled Boolean
+  /// Timestamp when the metric value was recorded.
+  timestamp DateTime
   
-  /// Additional configuration options for the feature in JSON format when
-  /// needed.
-  configuration String?
+  /// The timestamp when the metric record was created.
+  created_at DateTime
+  
+  /// The timestamp when the metric record was last updated.
+  updated_at DateTime
+  
+  /// The timestamp when the metric record was logically deleted (soft delete).
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  channel community_platform_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
-  
-  @@unique([channel_id, name])
-  @@index([channel_id, is_enabled])
+  @@index([timestamp])
+  @@index([metric_type, timestamp])
 }

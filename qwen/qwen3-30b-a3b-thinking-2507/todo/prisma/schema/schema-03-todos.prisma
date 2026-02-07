@@ -1,12 +1,7 @@
-/// Main table for storing all user todo items with required title, optional
-/// description, start and due dates, and completion status.
-///
-/// Each todo item belongs to a single user and is initially created with
-/// incomplete status by default. The table supports soft deletion to allow
-/// trashing items without permanent removal.
-///
-/// Todos can be searched across all items regardless of parent context,
-/// supporting independent user management and API operations.
+/// Core todo items that users create, view, edit, and manage. Includes
+/// required title, optional description, start date, due date, completion
+/// status, and soft delete tracking. Each todo item belongs to a single user
+/// account with strict user-data isolation enforced.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -17,53 +12,47 @@ model todo_todos {
   /// Primary Key.
   id String @id
   
-  /// Owner's {@link todo_users.id}.
-  todo_users_id String
+  /// Belongs to the user's account via {@link todo_users.id}.
+  todo_user_id String
   
-  /// Title of the todo item. Required for creation, cannot be blank.
+  /// Title of the todo item. Minimum 1 character required.
   title String
   
-  /// Optional description of the todo item. Can be left empty or empty string.
+  /// Optional description of the todo item.
   description String?
   
-  /// Optional start date for the todo item. Can be left empty if not
-  /// applicable.
+  /// Start date for the todo item.
   start_date DateTime?
   
-  /// Optional due date for the todo item. Can be left empty if not applicable.
+  /// Due date for completing the todo item.
   due_date DateTime?
   
-  /// Completion status of the todo item. New items are created with false
-  /// (incomplete) by default.
-  completed Boolean
+  /// Completion status. Defaults to false on creation.
+  is_completed Boolean
   
   /// Timestamp of when the todo item was created.
   created_at DateTime
   
-  /// Timestamp of when the todo item was last updated.
+  /// Timestamp of the last update to the todo item.
   updated_at DateTime
   
-  /// Timestamp of when the todo item was marked for deletion (soft delete).
+  /// Timestamp of soft deletion. Nullable for active items.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_users @relation(fields: [todo_users_id], references: [id], onDelete: Cascade)
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
   
   histories todo_histories[]
   
-  @@index([todo_users_id, created_at])
+  @@index([todo_user_id])
 }
 
-/// Tracks all edit history entries for todos including previous and new
-/// values for title, description, and date fields.
-///
-/// The history records are automatically created whenever a todo item is
-/// modified, capturing the previous and new values for all editable fields.
-/// History entries are stored permanently until the associated todo item is
-/// permanently deleted. Note that history entries are managed automatically
-/// and users cannot directly interact with or modify history records.
+/// Detailed record of all field modifications including timestamps, previous
+/// values, and new values for each todo edit. Each history entry captures
+/// atomic changes to title, description, start date, and due date fields
+/// when a todo is modified.
 ///
 /// @namespace Todos
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,50 +63,45 @@ model todo_histories {
   /// Primary Key.
   id String @id
   
-  /// The main todo item that was edited. {@link todo_todos.id}
-  todo_todo_id String
+  /// Related todo item's ID.
+  todo_id String
   
-  /// Title value before the edit. Set to null if this was the first title set.
-  previous_title String?
-  
-  /// Title value after the edit.
-  new_title String
-  
-  /// Description value before the edit. Set to null if this was the first
-  /// description set.
-  previous_description String?
-  
-  /// Description value after the edit.
-  new_description String
-  
-  /// Previous start date before the edit. Null if this was the first start
-  /// date.
-  previous_start_date DateTime?
-  
-  /// New start date after the edit.
-  new_start_date DateTime
-  
-  /// Previous due date before the edit. Null if this was the first due date.
-  previous_due_date DateTime?
-  
-  /// New due date after the edit.
-  new_due_date DateTime
-  
-  /// Timestamp of when the history entry was created.
+  /// Timestamp when the edit was recorded.
   created_at DateTime
   
-  /// Timestamp of when the history entry was last updated. This field is
-  /// typically the same as created_at for history entries.
+  /// Timestamp of the last update to the history record (should match
+  /// created_at for immutability).
   updated_at DateTime
   
-  /// Optional timestamp for soft deletion. History entries are only
-  /// soft-deleted when the parent todo is permanently deleted.
-  deleted_at DateTime?
+  /// Previous title value before edit. Null if title was not changed.
+  prev_title String?
+  
+  /// New title value after edit. Null if title was not changed.
+  new_title String?
+  
+  /// Previous description value before edit. Null if description was not
+  /// changed.
+  prev_description String?
+  
+  /// New description value after edit. Null if description was not changed.
+  new_description String?
+  
+  /// Previous start date value before edit. Null if start date was not changed.
+  prev_start_date DateTime?
+  
+  /// New start date value after edit. Null if start date was not changed.
+  new_start_date DateTime?
+  
+  /// Previous due date value before edit. Null if due date was not changed.
+  prev_due_date DateTime?
+  
+  /// New due date value after edit. Null if due date was not changed.
+  new_due_date DateTime?
   
   //----
   // RELATIONS
   //----
-  todo todo_todos @relation(fields: [todo_todo_id], references: [id], onDelete: Cascade)
+  todo todo_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
   
-  @@index([todo_todo_id, created_at])
+  @@index([todo_id, created_at])
 }

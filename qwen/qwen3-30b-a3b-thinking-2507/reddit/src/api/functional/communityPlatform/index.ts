@@ -1,6 +1,9 @@
 export * as auth from "./auth/index";
-export * as users from "./users/index";
-export * as user from "./user/index";
+export * as guest from "./guest/index";
+export * as members from "./members/index";
+export * as member from "./member/index";
 export * as communities from "./communities/index";
 export * as posts from "./posts/index";
-export * as feeds from "./feeds/index";
+export * as feed_caches from "./feed_caches/index";
+export * as report_categories from "./report_categories/index";
+export * as admin from "./admin/index";

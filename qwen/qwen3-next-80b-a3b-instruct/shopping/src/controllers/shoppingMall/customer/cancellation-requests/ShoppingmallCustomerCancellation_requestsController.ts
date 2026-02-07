@@ -1,20 +1,62 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
+import { IPageIShoppingMallCancellationRequest } from "../../../../api/structures/IPageIShoppingMallCancellationRequest";
 import { IShoppingMallCancellationRequest } from "../../../../api/structures/IShoppingMallCancellationRequest";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { getShoppingMallCustomerCancellationRequests } from "../../../../providers/getShoppingMallCustomerCancellationRequests";
+import { getShoppingMallCustomerCancellationRequestsRequestId } from "../../../../providers/getShoppingMallCustomerCancellationRequestsRequestId";
+import { patchShoppingMallCustomerCancellationRequests } from "../../../../providers/patchShoppingMallCustomerCancellationRequests";
 import { postShoppingMallCustomerCancellationRequests } from "../../../../providers/postShoppingMallCustomerCancellationRequests";
 
 @Controller("/shoppingMall/customer/cancellation-requests")
 export class ShoppingmallCustomerCancellation_requestsController {
   /**
-   * Initiate a cancellation request for an order item that is currently in 'paid' status. This functionality is critical to the shopping mall's refund and cancellation workflow where customers can request to cancel a purchase before shipment has been initiated. When a cancellation request is submitted, the system creates a record in the shopping_mall_cancellation_requests table which tracks the request's status, reason for cancellation, the customer who submitted it, the target order item, and the timestamp of submission. This request must include a reason of at least 10 characters as specified in the requirements. After submission, the system automatically sends a notification to the seller responsible for the order item, giving them 48 hours to approve or reject the request. If the seller does not respond within this window, the system automatically approves the cancellation and triggers inventory restoration and payment refund workflows. This operation is a non-idempotent creation of a business entity that requires user-provided context (the cancellation reason) and references the state of an order item, which itself is tracked in the shopping_mall_orders and shopping_mall_order_items tables. The operation does not change the order item's status directly but initiates a state transition workflow with explicit approval requirements. This endpoint is restricted to authenticated customers who own the order item and is not accessible to sellers or administrators directly - they interact with the request via PUT endpoints on the specific cancellation request ID once created. Successive attempts to create a cancellation request for the same order item are prevented by the system state if the item is no longer in 'paid' status. This operation directly supports business continuity by providing an official, auditable path for customer-initiated cancellations, ensuring compliance with consumer protection requirements and preventing unauthorized order modifications by user interface or system design in a temporal workflow context.
+   * Retrieve a list of all pending cancellation requests made by the authenticated customer.
+   *
+   * This endpoint provides customers with visibility into their cancellation request history and status. It returns all cancellation requests associated with the authenticated user's account, including details such as the order item being requested for cancellation, the reason provided by the customer, and the auto-approval countdown timer.
+   *
+   * For administrators, this endpoint provides oversight capability to monitor all customer cancellation requests across the platform, enabling timely intervention when necessary.
+   *
+   * Note: This operation does not implement soft deletion. The cancellation request records are preserved as immutable history records for audit and dispute resolution in accordance with the snapshot principle. The relationship to order_item_id confirms this is a historical record tied to a specific purchase event.
    *
    * @param connection
-   * @param body Request to create a new cancellation request for an order item.
-   * @x-autobe-specification Insert a new record into shopping_mall_cancellation_requests table with status 'pending', customer_id from JWT token, order_item_id from context needs to be derived from order context in service layer, reason provided in request, timestamp, and default values. Validate that the associated order item has status 'paid' before insertion. Raise error if order item status is not 'paid' or if another cancellation request already exists for this order item. Log cancellation request creation in audit trail. Notify seller via asynchronous messaging service. Start 48-hour timer for auto-approval workflow. Return cancellation_request_id and status 'pending' to client.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query shopping_mall_cancellation_requests table for records where customer_id matches the authenticated user's ID from JWT token. Return all cancellation requests with their associated order_item_id, reason, status, created_at, updated_at, and auto_approve_at fields. Sort results by created_at descending. Apply pagination with default limit of 10 records per page and support for offset-based pagination.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get()
+  public async get(
+    @CustomerAuth()
+    customer: CustomerPayload,
+  ): Promise<IPageIShoppingMallCancellationRequest> {
+    try {
+      return await getShoppingMallCustomerCancellationRequests({
+        customer,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initiate a cancellation request for a paid order item.
+   *
+   * This operation allows customers to formally request cancellation of an order item that has been paid for but not yet shipped. Customers must provide a detailed reason (10-500 characters) explaining why they wish to cancel the item. The system automatically identifies the customer from the order item context and sets the request status to 'pending'. The reason provided by the customer is stored and made available to the seller for response. This creates an immutable record of the customer's justification for cancellation, which is critical for dispute resolution and platform integrity.
+   *
+   * The endpoint does not return any response body because cancellation request creation is a stateless operation that only modifies the shopping_mall_cancellation_requests table. Success is indicated by HTTP 201 Created status, and failures (such as invalid order item status or missing reason) are communicated through appropriate HTTP error codes (400 Bad Request).
+   *
+   * A successful cancellation request triggers two system events: The cancellation_request record is created, and a notification is sent to the associated seller. This follows the platform's snapshot principle - the exact reason, timestamp, and context at the time of request creation are preserved permanently.
+   *
+   * @param connection
+   * @param body Request payload for creating a new cancellation request
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Validate that order_item_id refers to an existing order item with status 'paid'. Verify reason is 10-500 characters and not empty. Extract customer_id from the order_item's related customer through database join. Create new cancellation_requests record with status='pending', created_at=now(), updated_at=now(), auto_approve_at=now() + 48 hours. Log the request in system_logs with actor=customer_id and action='create_cancellation_request'. Return HTTP 201 Created with no response body. If order item status is not 'paid', return HTTP 400 Bad Request with message 'Cannot cancel items that are not in paid status'. If reason is missing or invalid length, return HTTP 400 Bad Request with message 'Reason must be between 10 and 500 characters'.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -23,11 +65,93 @@ export class ShoppingmallCustomerCancellation_requestsController {
     customer: CustomerPayload,
     @TypedBody()
     body: IShoppingMallCancellationRequest.ICreate,
-  ): Promise<IShoppingMallCancellationRequest> {
+  ): Promise<void> {
     try {
       return await postShoppingMallCustomerCancellationRequests({
         customer,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a filtered and paginated list of cancellation requests for order items.
+   *
+   * This operation enables customers and administrators to search through cancellation requests with complex criteria including status (pending, approved, rejected), associated customer, order item, and creation date range. Each request represents a customer-initiated effort to cancel a paid order item that has not yet been shipped, following the 48-hour auto-approval workflow defined in the business requirements.
+   *
+   * The response includes summary information for each cancellation request, optimized for list display while preserving critical context such as reason, status, and auto-approval deadline. This endpoint is essential for monitoring pending requests, identifying auto-approved cancellations, and handling administrative disputes.
+   *
+   * All queries are performed using the request body with structured filtering parameters. This design follows the standard pattern for complex list operations in the platform, ensuring consistent API behavior across all search endpoints. Note that cancellation requests are immutable records preserved for audit purposes, and this endpoint provides read-only access to historical request data.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for cancellation requests.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query shopping_mall_cancellation_requests table with filters for status, customer_id, order_item_id, created_at range, and auto_approve_at range. Return paginated results with cursor-based pagination. Join with shopping_mall_order_items and shopping_mall_customers to include order item details and customer display names where needed. Apply sorting by created_at descending. Include only records where auto_approve_at > now() or status != 'pending' to handle both pending and non-pending requests efficiently. Validate that request body filters are within allowed fields only.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async patch(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IShoppingMallCancellationRequest.IRequest,
+  ): Promise<IPageIShoppingMallCancellationRequest.ISummary> {
+    try {
+      return await patchShoppingMallCustomerCancellationRequests({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the complete details of a specific cancellation request made by a customer.
+   *
+   * This endpoint returns the full state of a cancellation request identified by its unique requestId. The response includes the cancellation reason provided by the customer, the current status (always 'pending' until resolved), the exact time the request was created, and the system-generated timestamp when it will be automatically approved if no seller responds.
+   *
+   * The endpoint enforces strict ownership validation: only the customer who initiated the request (via the associated order item) or an administrator can access this information. The data returned is immutable and reflects the exact state of the request at the moment of retrieval, preserving the context for dispute resolution.
+   *
+   * Cancellation requests are only created for order items with status 'paid'. Once submitted, the request triggers a 48-hour auto-approval countdown. This endpoint allows customers to track whether their request is still pending or has been automatically approved. Administrators can use this data for audit purposes and to identify potential seller inactivity patterns.
+   *
+   * For security, all requests are validated against the authenticated user's identity. The requestId parameter corresponds to the primary key in the shopping_mall_cancellation_requests table. This operation does not allow changing the request state - modifications can only be triggered by a seller's response or the auto-approval system.
+   *
+   * @param connection
+   * @param requestId The unique identifier of the cancellation request to retrieve.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query the shopping_mall_cancellation_requests table by id (requestId).
+   *
+   * Perform row-level authorization check: verify that either:
+   * 1. The underlying order item's customer_id matches the authenticated customer's ID (for customer access), or
+   * 2. The authenticated user has 'admin' role.
+   *
+   * If unauthorized, return 403 Forbidden.
+   *
+   * If found, return the full record with all fields: id, order_item_id, customer_id, reason, status, created_at, updated_at, auto_approve_at.
+   *
+   * If no record exists with the given requestId, return 404 Not Found.
+   *
+   * The response must include the exact values from the database without any transformation or filtering.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":requestId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("requestId")
+    requestId: string,
+  ): Promise<IShoppingMallCancellationRequest> {
+    try {
+      return await getShoppingMallCustomerCancellationRequestsRequestId({
+        customer,
+        requestId,
       });
     } catch (error) {
       console.log(error);

@@ -1,0 +1,68 @@
+/// Records every inventory change event for a product variant, including
+/// positive restocks, negative sales, and adjustment events, with reason and
+/// reference tracking.
+///
+/// Every inventory change (restock, sale, cancellation, refund, manual
+/// adjustment) is recorded as an immutable event. The quantity_change field
+/// uses a signed integer: positive values indicate inventory increases
+/// (restocks, refunds), negative values indicate decreases (sales,
+/// depletion). This table never stores current stock levels—those are
+/// computed by summing all history records. All changes are linked to the
+/// variant and optionally to the order, cancellation, or refund that
+/// triggered the change. This ensures complete audit trail and enables
+/// accurate stock reconciliation even after products or variants are
+/// deleted.
+///
+/// Reference: {@link shopping_mall_product_variants.id}.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the specific product variant that experienced this inventory
+  /// change. {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Net change in inventory quantity. Positive for restocks, refunds, and
+  /// adjustments adding stock. Negative for sales, cancellations, and
+  /// adjustments removing stock. Never zero.
+  quantity_change Int
+  
+  /// The business reason for the inventory change. Examples: 'order purchase',
+  /// 'cancellation refund', 'refund release', 'seller adjustment', 'damaged
+  /// goods', 'inventory count correction'.
+  reason String
+  
+  /// Optional reference to the triggering entity. Could link to
+  /// shopping_mall_order_items.id (for sales),
+  /// shopping_mall_cancellation_requests.id (for cancellations), or
+  /// shopping_mall_refund_requests.id (for refunds). Set to null for manual
+  /// adjustments.
+  reference_id String?
+  
+  /// Timestamp of the inventory change event. Mandatory for audit trail.
+  created_at DateTime
+  
+  /// Timestamp of last update to this record. For immutable records, this is
+  /// same as created_at.
+  updated_at DateTime
+  
+  /// Soft delete marker. Always null for inventory history as records are
+  /// permanently preserved.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_histories_shopping_mall_produc_065e82e8")
+  @@index([reference_id])
+  @@index([created_at])
+}

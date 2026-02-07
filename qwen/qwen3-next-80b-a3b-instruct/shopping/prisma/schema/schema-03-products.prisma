@@ -1,20 +1,24 @@
-/// Core product entities with name, description, category, base price, and
-/// seller association.
+/// Core product listings with name, description, category, and base price.
+/// Each product represents a distinct merchandise item that sellers can list
+/// for sale. Products contain the foundational information customers use to
+/// make purchasing decisions, including the product name, detailed
+/// description, category classification, and base price. All product
+/// variations (SKUs) are built on top of this core entity. Product edits
+/// trigger snapshots to preserve historical state for dispute resolution and
+/// audit purposes.
 ///
-/// Represents products listed for sale by sellers. Each product belongs to
-/// exactly one seller and one category.
-/// Products are accessible to customers for browsing and purchase, but can
-/// only be created, edited, or deleted by the owning seller.
-///
-/// Products are immutable in the sense that their specifications (name,
-/// description, price) are preserved in snapshots when sold, but active
-/// products can be modified by sellers.
-/// When a product is deleted, it is soft-deleted (deleted_at set) and
-/// becomes invisible to customers but remains accessible to administrators
-/// for audit purposes.
-///
-/// Requires full CRUD operations for seller management and search/filtering
-/// for customer discovery.
+/// - Products are owned by sellers who register them with required metadata
+/// - Products require a unique name and description in English
+/// - Products are categorized under system-defined categories
+/// - Base price must be positive and formatted with 2 decimal places
+/// - Product images are stored separately as child entities
+/// (shopping_mall_product_images)
+/// - Product variants are stored separately (shopping_mall_product_variants)
+/// - Product edits create immutable snapshots via shopping_mall_snapshots
+/// mechanism
+/// - Products can be logically deleted but never physically removed
+/// - All properties must be preserved exactly as entered by the seller
+/// without modification
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -25,73 +29,64 @@ model shopping_mall_products {
   /// Primary Key.
   id String @id
   
-  /// Seller who created and owns this product. {@link
-  /// shopping_mall_sellers.id}.
-  seller_id String
-  
-  /// Category this product belongs to. {@link shopping_mall_sections.id}.
-  category_id String
-  
-  /// Name of the product shown to customers. Required field for product
-  /// discovery.
+  /// The product name as provided by the seller. Must be unique within
+  /// seller's catalog and contain 3-200 characters. Represents the title
+  /// displayed to customers in search results and product listings.
   name String
   
-  /// Detailed description of the product including features, specifications,
-  /// and usage information.
+  /// Detailed description of the product written by the seller. Must be
+  /// 10-5,000 characters long. Contains product features, specifications,
+  /// usage instructions, and other information customers need to make informed
+  /// decisions. Preserved exactly as submitted in product snapshots.
   description String
   
-  /// Base price of the product. This may be overridden by product variants
-  /// (SKUs) which can have different prices.
+  /// The base price of the product in the platform's currency (USD). Must be a
+  /// positive number with at most two decimal places. This is the starting
+  /// price before variant-specific price overrides. Used for display and
+  /// calculation purposes.
   base_price Float
   
-  /// Timestamp when this product was created.
+  /// Timestamp when the product was initially created by the seller. This is
+  /// an immutable record of when the product entered the system.
   created_at DateTime
   
-  /// Timestamp when this product was last updated.
+  /// Timestamp of the most recent modification to the product. Updated
+  /// whenever the product name, description, category, or base price changes.
+  /// Used for determining freshness of product information.
   updated_at DateTime
   
-  /// Timestamp when this product was soft-deleted. When null, product is
-  /// active. When set, product is hidden from customers.
+  /// Timestamp when the product was logically deleted. If null, product is
+  /// active. If set, product is hidden from customer views but preserved in
+  /// snapshots and audit records. Only set when seller deletes or admin
+  /// suspends a product.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
-  category shopping_mall_sections @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  
+  snapshots shopping_mall_snapshots[]
   images shopping_mall_product_images[]
-  sales shopping_mall_sales[]
-  saleSnapshots shopping_mall_sale_snapshots[]
   orderItems shopping_mall_order_items[]
   reviews shopping_mall_reviews[]
+  variants shopping_mall_product_variants[]
   
-  @@index([category_id])
-  
-  @@index([seller_id, deleted_at])
   @@index([created_at])
   @@index([updated_at])
   @@index([deleted_at])
+  @@index([base_price])
 }
 
-/// Images associated with products, including display order and URLs.
+/// Images associated with a product. These are subsidiary entities managed
+/// only through the parent product. Images are ordered by sort_order and
+/// displayed during product viewing. Deleted when parent product is deleted,
+/// never independently.
 ///
-/// Stores multiple visual representations of products with precise ordering
-/// to determine thumbnail and display sequence. Each image is linked to a
-/// single product and has an explicit display order (0-indexed). Images are
-/// managed solely through their parent product - customers cannot upload or
-/// modify images directly, and sellers manage them only as part of product
-/// editing.
+/// Each image is referenced by exactly one product via foreign key. No image
+/// can exist without a parent product. Images are not searchable
+/// independently, nor editable independently—only through product edit
+/// flows.
 ///
-/// Every product edit creates a product snapshot that captures the exact set
-/// of images at that moment, preserving historical state. This table only
-/// stores current images in a normalized structure. When products are
-/// deleted, the images are also removed from the system.
-///
-/// The image_order field ensures consistent visual presentation across the
-/// platform, with order 0 being the primary or thumbnail image. The
-/// image_url field stores absolute URLs to the hosted images on the media
-/// server.
+/// @link shopping_mall_products.id
 ///
 /// @namespace Products
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -102,22 +97,29 @@ model shopping_mall_product_images {
   /// Primary Key.
   id String @id
   
-  /// Product this image belongs to. {@link shopping_mall_products.id}.
+  /// Product that this image belongs to. {@link shopping_mall_products.id}.
   shopping_mall_product_id String
   
-  /// Absolute URL to the hosted image, typically on an S3-compatible media
-  /// server.
+  /// The absolute URL path to the image file in storage. Must be a valid URI
+  /// reference.
   image_url String
   
-  /// Display order of the image, 0-indexed, defining sequence for thumbnail
-  /// (0) and subsequent images.
-  image_order Int
+  /// The width of the image in pixels. May be zero if dimensions are unknown
+  /// during upload.
+  width Int?
   
-  /// Timestamp when this image was first created and added to the product.
+  /// The height of the image in pixels. May be zero if dimensions are unknown
+  /// during upload.
+  height Int?
+  
+  /// Ordinal position for displaying this image relative to other images of
+  /// the product. Must be a positive integer. 0 = first, 1 = second, etc.
+  /// Required for ordered display.
+  sort_order Int
+  
+  /// Timestamp when this image was first uploaded. Required for audit trail
+  /// and chronological order.
   created_at DateTime
-  
-  /// Timestamp when this image was last modified (reordered or replaced).
-  updated_at DateTime
   
   //----
   // RELATIONS
@@ -125,5 +127,5 @@ model shopping_mall_product_images {
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_id, image_order], map: "shopping_mall_product_images_shopping_mall_product_id__e483dfaf")
+  @@index([shopping_mall_product_id, sort_order], map: "shopping_mall_product_images_shopping_mall_product_id__a574469b")
 }

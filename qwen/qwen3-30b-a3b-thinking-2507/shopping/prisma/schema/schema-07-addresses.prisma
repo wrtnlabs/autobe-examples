@@ -1,0 +1,94 @@
+/// Stores customers' shipping addresses with recipient name, phone, street,
+/// city, state, postal code, and country. Each address belongs to a specific
+/// customer and supports full address management for shipping purposes.
+///
+/// @namespace Addresses
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this address, references {@link ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Recipient's full name for shipping
+  recipient_name String
+  
+  /// Shipping contact phone number (E.164 format)
+  phone String
+  
+  /// Street address line
+  street String
+  
+  /// City name for delivery location
+  city String
+  
+  /// State or province code or name
+  state_province String
+  
+  /// Postal or zip code for shipping
+  postal_code String
+  
+  /// Country code or full name
+  country String
+  
+  /// Timestamp when address was first created
+  created_at DateTime
+  
+  /// Timestamp of last modification
+  updated_at DateTime
+  
+  /// Timestamp when address was deleted (soft deletion)
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([created_at])
+  @@index([ecommerce_customer_id, created_at])
+}
+
+/// Tracks the current default address for each customer using foreign key
+/// references. This table is managed exclusively through customer entity
+/// operations and does not require standalone UI or API interface.
+///
+/// **Business Context**: Each customer can have exactly one default address,
+/// which determines the shipping address for their orders. The relationship
+/// is 1:1 between customer and default address. When a customer changes
+/// their default address, the previously associated default address is
+/// automatically updated but not deleted, maintaining historical address
+/// reference.
+///
+/// @namespace Addresses
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_default_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Timestamp of when the address was set as default.
+  created_at DateTime
+  
+  /// Timestamp of when the default address was last modified.
+  updated_at DateTime
+  
+  /// Timestamp of when the address was marked as deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_customer_id])
+}

@@ -1,0 +1,98 @@
+/// Predefined reporting categories such as spam, inappropriate content,
+/// copyright violation. These categories serve as a standardized set for
+/// users to select when submitting reports of content.
+///
+/// Note: This is a subsidiary lookup table that is not managed by end users
+/// but is referenced by core reporting entities. It provides consistency in
+/// report categorization across the platform.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category name describing the type of report (e.g., spam, inappropriate
+  /// content, copyright violation).
+  name String
+  
+  /// Detailed explanation of when this report category should be used for
+  /// content moderation.
+  description String?
+  
+  /// Timestamp of when the category record was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the category record.
+  updated_at DateTime
+  
+  /// Timestamp of when the category record was marked as deleted for soft
+  /// delete. Null indicates not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  reports community_platform_reports[]
+  
+  @@unique([name])
+}
+
+/// Core reporting records with status, category, reason, and reference to
+/// reported content. Each report is submitted by a user, associated with a
+/// category, and linked to the content being reported for moderation
+/// processing.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report category's {@link community_platform_report_categories.id}
+  report_categories_id String
+  
+  /// Reporting user's {@link community_platform_members.id>
+  members_id String
+  
+  /// Current status of the report (pending, approved, rejected).
+  status String
+  
+  /// Detailed reason for the report (min 10 characters, max 500).
+  reason String
+  
+  /// Type of the reported content (post or comment).
+  reported_content_type String
+  
+  /// ID of the content being reported (references the corresponding post or
+  /// comment ID).
+  reported_content_id String
+  
+  /// Time when the report was created.
+  created_at DateTime
+  
+  /// Last time the report was modified.
+  updated_at DateTime
+  
+  /// Time when the report was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  category community_platform_report_categories @relation(fields: [report_categories_id], references: [id], onDelete: Cascade)
+  user community_platform_members @relation(fields: [members_id], references: [id], onDelete: Cascade)
+  
+  resolutions community_platform_moderation_reports_resolutions[]
+  
+  @@index([report_categories_id])
+  @@index([members_id])
+  
+  @@index([status, created_at])
+}

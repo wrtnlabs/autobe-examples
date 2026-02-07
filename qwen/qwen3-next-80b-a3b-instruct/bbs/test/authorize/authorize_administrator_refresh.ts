@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconomicDiscussionAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicDiscussionAdministrator";
+import type { IEconomicBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardAdministrator";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,14 +11,13 @@ import typia, { tags } from "typia";
 export async function authorize_administrator_refresh(
   connection: api.IConnection,
   props: {
-    body: IEconomicDiscussionAdministrator.IRefresh;
+    body: IEconomicBoardAdministrator.IRefresh;
   },
-): Promise<IEconomicDiscussionAdministrator.IAuthorized> {
-  const refreshInput = {
-    refresh_token: props.body.refresh_token ?? RandomGenerator.alphaNumeric(64),
-  } satisfies IEconomicDiscussionAdministrator.IRefresh;
-  return await api.functional.economicDiscussion.auth.administrator.refresh(
+): Promise<IEconomicBoardAdministrator.IAuthorized> {
+  return await api.functional.economicBoard.auth.administrator.refresh(
     connection,
-    { body: refreshInput },
+    {
+      body: props.body,
+    },
   );
 }

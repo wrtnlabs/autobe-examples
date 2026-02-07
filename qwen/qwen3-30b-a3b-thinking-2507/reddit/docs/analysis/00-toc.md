@@ -1,87 +1,135 @@
-# Community Platform Requirements Specification
+# Reddit-like Community Platform Requirements Specification
 
-## Introduction
-This comprehensive requirements specification details the functionality and business logic for the Reddit-like community platform. The document serves as the authoritative guide for backend implementation, defining all user interactions, business rules, and system behaviors without technical implementation details.
+## 1. User Account
 
-## Service Overview
-The platform enables users to create and participate in community-driven content sharing, featuring posts, comments, and social interaction mechanisms. It provides a structured environment for community members to engage through voting systems, subscriptions, and moderation tools, with all activities centered around community hubs.
+### 1.1 Account Creation
+WHEN a user submits registration form with valid email, password, and unique username, THE system SHALL create a new user account with a confirmation email sent to the provided address.
 
-## User Actors
-The system defines three core user actors based on permission levels:
+WHEN a user attempts to register with an already taken username, THE system SHALL reject the registration attempt and display a clear error message indicating the username availability.
 
-- **Registered User**: Standard user with full participation rights in communities they're subscribed to.
-- **Community Owner**: User who created a community with full moderation and management rights.
-- **Moderator**: User with limited moderation permissions granted by community owners.
+### 1.2 Authentication
+WHEN a user submits valid email and password for login, THE system SHALL authenticate the user and return a JWT token for subsequent secure API access.
 
-## Business Model
-### Core Value Proposition
-The platform connects users to community-driven content with a focus on user engagement through karma incentives. Content quality is prioritized through community-level moderation and voting systems.
+WHEN a user attempts login with invalid credentials more than 5 times within 15 minutes, THE system SHALL temporarily block further attempts for 30 minutes and inform the user of the security lockout.
 
-### Success Metrics
-- Daily active users (DAU) target: 5,000+ in first 3 months
-- Average posts per active user: ≥2 per week
-- Community growth rate: ≥15% weekly
+### 1.3 Password Management
+WHEN a user initiates a password change request with current password verification, THE system SHALL allow password update after confirming the current password matches the stored hash.
 
-## User Profile
-### Display Name
-WHEN a user registers, THE system SHALL require a display name between 2-50 characters, which MUST not contain special characters other than underscores and hyphens. WHEN a user updates their profile, THE system SHALL reject names containing reserved words (e.g., "admin").
+WHEN a user requests account deletion, THE system SHALL permanently remove all user data including posts, comments, and profile information within 24 hours, while retaining anonymized usage statistics for analytics.
 
-### Bio Text
-WHEN a user creates or edits their bio, THE system SHALL allow up to 500 characters with standard formatting support (bold, italics, line breaks). THE system SHALL strip any HTML tags to prevent security vulnerabilities.
+## 2. User Profile
 
-### Avatar Image
-WHEN a user uploads an avatar, THE system SHALL validate the image format (JPG, PNG), size (maximum 2MB), and aspect ratio (must be square). THE system SHALL generate a consistent thumbnail size (200x200 pixels) for display across all interfaces.
+### 2.1 Profile Information
+WHEN a user completes profile setup with a display name, bio, and avatar, THE system SHALL store the profile data and make it publicly accessible on the profile page.
 
-## Karma System
-### Karma Calculation
-THE system SHALL calculate total karma score as the sum of all upvotes on posts and comments minus all downvotes. KARMA SCORE SHALL be an integer value that can be negative.
+### 2.2 Profile Display
+WHEN a user views another user's profile, THE system SHALL display the user's display name, bio text, avatar image, total karma score, list of posts, and list of comments in chronological order by default.
 
-### Vote Impact
-WHEN a user upvotes a post, THE system SHALL increment the post author's karma by 1. WHEN a user downvotes a post, THE system SHALL decrement the author's karma by 1. WHEN a user changes their vote type, THE system SHALL adjust karma based on the new vote type without duplicate adjustments.
+WHEN a user requests to edit their profile, THE system SHALL allow updating of display name (max 30 characters), bio (max 255 characters), and avatar image (JPG/PNG, max 10MB).
 
-## Communities
-### Creation
-WHEN a user creates a new community, THE system SHALL require a unique name (10-50 characters, alphanumeric with underscores), a description (max 500 characters), and a square icon. THE system SHALL automatically assign the creator as community owner.
+## 3. Karma System
 
-### Subscription Management
-WHEN a user subscribes to a community, THE system SHALL track the subscription and require it to post in that community. WHEN a user unsubscribes, THE system SHALL remove them from the community's active subscriber list but preserve their profile data.
+### 3.1 Karma Calculation
+WHEN a user receives an upvote on a post or comment, THE system SHALL increase the user's karma score by 1.
 
-### Search & Browsing
-WHEN users search for communities, THE system SHALL return matches based on name, description, and subscriber count. THE system SHALL display communities with at least 10 subscribers in trending lists.
+WHEN a user receives a downvote on a post or comment, THE system SHALL decrease the user's karma score by 1.
 
-## Posts
-### Creation Process
-WHEN a user creates a post in a subscribed community, THE system SHALL require a title (10-100 characters) and content. A post SHALL be one of three types: text, link, or image. THE system SHALL validate content type requirements (e.g., URL for link posts).
+WHEN a user removes their vote on a post or comment, THE system SHALL adjust the karma score by -1 for an upvoted item or +1 for a downvoted item.
 
-### Post Types
-- **Text Post**: SHALL allow rich text content (max 10,000 characters) with markdown support.
-- **Link Post**: SHALL validate the URL format and store the domain name for display.
-- **Image Post**: SHALL accept only image files (JPG, PNG, GIF) up to 10MB.
+### 3.2 Negative Karma
+WHEN a user's karma score reaches a negative value, THE system SHALL continue to display the negative score without additional restrictions or special handling.
 
-### Post Display
-WHEN viewing a post, THE system SHALL display title, full content (truncated for text), author, community, vote score, comment count, and timestamp (formatted as "3 hours ago"). TEXT POSTS SHALL show first 200 characters, IMAGE POSTS SHALL show a thumbnail, and LINK POSTS SHALL show the domain name.
+## 4. Communities
 
-## Comments
-### Comment Structure
-WHEN a user creates a comment on a post, THE system SHALL allow nested replies for infinite depth. COMMENTS SHALL display author, content, vote score, time since posted, and any nested replies.
+### 4.1 Community Creation
+WHEN a user creates a new community with a unique name, description, and icon, THE system SHALL assign the creator as the community owner with full administrative privileges.
 
-### Reply Management
-WHEN a user replies to a comment, THE system SHALL track the parent-child relationship for nested structure. WHEN editing a comment, THE system SHALL preserve the comment's position in the conversation tree.
+WHEN a user attempts to create a community with a name that already exists, THE system SHALL reject the request with a clear error message about name availability.
 
-## Moderation & Reporting
-### Community Ownership
-THE community owner automatically has highest authority. THE system SHALL prevent the owner from being banned and restrict moderator removal to the owner.
+### 4.2 Community Management
+WHEN a user browses all communities, THE system SHALL display a paginated list showing community name, description, subscriber count, and icon in alphabetical order by community name.
 
-### Moderation Actions
-WHEN a moderator deletes a post, THE system SHALL notify the owner and author. WHEN a moderator bans a user, THE system SHALL prevent the banned user from creating posts or comments in that community, but NOT block profile viewing.
+WHEN a user searches communities by name, THE system SHALL filter and display matching communities without requiring exact matches.
 
-### Reporting System
-WHEN a user reports content, THE system SHALL require a text reason (max 200 characters). THE system SHALL store the report with metadata (reported content, reporter, reason) and allow moderators to approve or dismiss reports. DISMISSED reports SHALL be removed from the moderation queue.
+## 5. Subscription Management
 
-## Success Criteria Documentation
-All requirements SHALL meet these implementation criteria:
-- All business logic documented in EARS format
-- All sections expanded to minimum 200 words
-- No database schema or API details included
-- All Mermaid diagrams corrected to double-quote syntax
-- Clear separation between business requirements and technical implementation
+### 5.1 Subscribing
+WHEN a user subscribes to a community, THE system SHALL add the community to the user's subscription list and allow creating posts within that community.
+
+WHEN a user unsubscribes from a community, THE system SHALL remove the community from the user's subscription list and prevent future post creation in that community.
+
+### 5.2 Subscription Access
+WHEN a user is not subscribed to a community, THE system SHALL prevent them from creating new posts in that community, but still allow viewing the community's content.
+
+## 6. Posts
+
+### 6.1 Post Creation
+WHEN a user creates a post in a subscribed community, THE system SHALL require the post title and content (text, URL, or image). THE system SHALL enforce the post content type based on content provided (text, link, image).
+
+### 6.2 Post Types
+WHEN a user creates a text post, THE system SHALL store the full text content and display first 200 characters in feeds.
+
+WHEN a user creates a link post, THE system SHALL store the URL and display the domain name (e.g., youtube.com) in feeds.
+
+WHEN a user creates an image post, THE system SHALL store the image URL and display a thumbnail in feeds.
+
+## 7. Post Voting
+
+### 7.1 Voting Rules
+WHEN a user votes on a post, THE system SHALL track the vote and prevent multiple votes from the same user on the same post.
+
+WHEN a user changes their vote from up to down, THE system SHALL adjust the vote score by -2 (reversing the upvote and applying the downvote).
+
+## 8. Post Feeds
+
+### 8.1 Feed Access
+WHEN a user is logged in, THE system SHALL show Home Feed (posts from subscribed communities) as their default feed.
+
+WHEN a user is not logged in, THE system SHALL show Popular Feed (all communities) as the visible feed.
+
+### 8.2 Feed Sorting
+WHEN a user selects "Hot" sorting in any feed, THE system SHALL sort posts by (upvotes + (post age in hours × 0.5)) descending.
+
+WHEN a user selects "Top" with time filter "all time", THE system SHALL sort posts by total upvotes minus downvotes descending.
+
+## 9. Comments
+
+### 9.1 Comment Creation
+WHEN a user writes a comment on a post, THE system SHALL store the comment content and associate it with the post and user.
+
+WHEN a user replies to a comment, THE system SHALL create a nested comment structure with the parent comment reference.
+
+### 9.2 Comment Voting
+WHEN a user votes on a comment, THE system SHALL prevent multiple votes from the same user on the same comment.
+
+WHEN a user changes their vote on a comment, THE system SHALL adjust the comment's vote score accordingly.
+
+## 10. Community Moderation
+
+### 10.1 Moderator Roles
+WHEN a community owner adds a moderator, THE system SHALL grant the new moderator all moderator permissions while keeping owner status for the creator.
+
+WHEN a moderator attempts to remove the community owner, THE system SHALL reject the action with an error message.
+
+### 10.2 Moderation Actions
+WHEN a moderator deletes a post, THE system SHALL permanently remove the post from all feeds and content display.
+
+WHEN a moderator bans a user from a community, THE system SHALL prevent the user from creating posts and comments in that community while still allowing content viewing.
+
+## 11. Reporting System
+
+### 11.1 Report Submission
+WHEN a user reports a post or comment, THE system SHALL require a text reason (min 10 characters, max 500) as part of the submission.
+
+### 11.2 Report Resolution
+WHEN a moderator approves a report, THE system SHALL permanently delete the reported content.
+
+WHEN a moderator dismisses a report, THE system SHALL retain the content and remove the report from the moderation queue.
+
+## 12. Implementation Notes
+
+- All user interactions must be authenticated through JWT tokens with 24-hour expiration.
+- All API endpoints follow REST conventions with standard HTTP statuses.
+- Database schema will be generated automatically from these requirements using Prisma.
+- Business logic is completely separated from presentation layer.
+- All user-facing messages use natural language instead of technical terms.

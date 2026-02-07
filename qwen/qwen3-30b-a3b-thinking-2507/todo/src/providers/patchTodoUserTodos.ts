@@ -1,56 +1,95 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoTodo";
+import { ITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoTodo";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import jwt from "jsonwebtoken";
 import typia, { tags } from "typia";
 import { v4 } from "uuid";
+
 import { MyGlobal } from "../MyGlobal";
+import { UserPayload } from "../decorators/payload/UserPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { ITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoTodo";
-import { IPageITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoTodo";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { UserPayload } from "../decorators/payload/UserPayload";
 
 export async function patchTodoUserTodos(props: {
   user: UserPayload;
   body: ITodoTodo.IRequest;
 }): Promise<IPageITodoTodo.ISummary> {
-  const page = 1;
-  const limit = 10;
-  const skip = (page - 1) * limit;
-  const where: Prisma.todo_todosWhereInput = {
-    user: { id: props.user.id },
+  let whereInput: Prisma.todo_todosWhereInput = {
     deleted_at: null,
+    user: { id: props.user.id },
   };
-  let orderBy: Prisma.todo_todosOrderByWithRelationInput = {
+  // Add status filter if provided
+  if (props.body.status === "completed") {
+    whereInput = {
+      ...whereInput,
+      is_completed: true,
+    };
+  } else if (props.body.status === "incomplete") {
+    whereInput = {
+      ...whereInput,
+      is_completed: false,
+    };
+  }
+  // Build sort criteria
+  let orderByInput: Prisma.todo_todosOrderByWithRelationInput = {
     created_at: "desc",
   };
-  // Query database for paginated results
-  const todos = await MyGlobal.prisma.todo_todos.findMany({
-    where,
+  if (props.body.sortField === "startDate" && props.body.sortDirection) {
+    orderByInput = {
+      start_date: props.body.sortDirection as "asc" | "desc",
+    };
+  } else if (props.body.sortField === "dueDate" && props.body.sortDirection) {
+    orderByInput = {
+      due_date: props.body.sortDirection as "asc" | "desc",
+    };
+  }
+  // Handle pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 10;
+  const skip = (page - 1) * limit;
+  // Fetch the data
+  const data = await MyGlobal.prisma.todo_todos.findMany({
+    where: whereInput,
     skip,
     take: limit,
-    orderBy,
+    orderBy: orderByInput,
+    select: {
+      id: true,
+      title: true,
+      is_completed: true,
+      created_at: true,
+      due_date: true,
+      user: {
+        select: {
+          id: true,
+        },
+      },
+    },
   });
-  // Count total records (without pagination)
-  const total = await MyGlobal.prisma.todo_todos.count({ where });
-  // Transform todos to summary format with correct date conversions and null handling
-  const summaryTodos = todos.map((todo) => ({
-    id: todo.id,
-    title: todo.title,
-    is_complete: todo.completed,
-    start_date: todo.start_date
-      ? todo.start_date.toISOString().split("T")[0]
-      : null,
-    due_date: todo.due_date ? todo.due_date.toISOString().split("T")[0] : null,
-    created_at: toISOStringSafe(todo.created_at),
-  }));
-  // Build pagination metadata
+  // Transform each item using API-specific DTO mapping
+  const transformedData = await ArrayUtil.asyncMap(data, async (item) => {
+    return {
+      id: item.id,
+      title: item.title,
+      is_completed: item.is_completed,
+      created_at: toISOStringSafe(item.created_at),
+      due_date: item.due_date ? toISOStringSafe(item.due_date) : null,
+      user: {
+        id: item.user.id,
+      },
+    } as ITodoTodo.ISummary;
+  });
+  // Count total records
+  const total = await MyGlobal.prisma.todo_todos.count({
+    where: whereInput,
+  });
   return {
-    data: summaryTodos,
+    data: transformedData,
     pagination: {
       current: page,
       limit,

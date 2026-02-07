@@ -17,68 +17,80 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchTodoAppUserTodos(props: {
   user: UserPayload;
   body: ITodoAppTodo.IRequest;
-}): Promise<IPageITodoAppTodo.ISummary> {
-  const { user, body } = props;
-  const status = body.status || "all";
-  const sort = body.sort || "creation_date";
-  const order = body.order || "desc";
-  const page = body.page || 1;
-  const limit = body.limit || 20;
+}): Promise<IPageITodoAppTodo.ISum> {
+  // Default pagination values
+  const page = 1;
+  const limit = 100;
+  // Validate pagination values
+  if (page < 1) throw new HttpException("Page must be at least 1", 400);
+  if (limit < 1 || limit > 1000)
+    throw new HttpException("Limit must be between 1 and 1000", 400);
   const skip = (page - 1) * limit;
-  // Explicitly define type for whereConditions to include completion_status
-  type WhereConditions = {
-    user_id: string & tags.Format<"uuid">;
-    deleted_at: null;
-    completion_status?: boolean;
-  };
-  const whereConditions: WhereConditions = {
-    user_id: user.id,
+  // Define allowed sort fields and directions
+  const allowedSortBy = ["created_at", "start_date", "due_date"] as const;
+  const allowedSortDir = ["asc", "desc"] as const;
+  const sortBy = allowedSortBy[0]; // Use default sort field since IRequest has no sortBy
+  const sortDir = allowedSortDir[1]; // Use default sort direction since IRequest has no sortDir
+  // Apply filter conditions - completed not available on IRequest
+  const completedFilter = undefined;
+  // Base where clause
+  const where: Prisma.todo_app_todosWhereInput = {
+    todo_app_user_id: props.user.id,
     deleted_at: null,
   };
-  // Filter by status - only possible through completion_status which is in schema
-  if (status !== "all") {
-    whereConditions.completion_status = status === "complete";
+  // Apply completion filter - no completed field on IRequest, so skip
+  // if (completedFilter !== undefined) {
+  //   where.completed = completedFilter;
+  // }
+  // Build ORDER BY clause - use direct Prisma.SortOrder values, not object wrappers
+  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = {};
+  if (sortBy === "created_at") {
+    orderBy.created_at = sortDir;
+  } else if (sortBy === "start_date") {
+    // Use standard Prisma.SortOrder values, no _nulls_last/_nulls_first suffixes
+    orderBy.start_date = sortDir;
+  } else if (sortBy === "due_date") {
+    // Use standard Prisma.SortOrder values, no _nulls_last/_nulls_first suffixes
+    orderBy.due_date = sortDir;
   }
-  // Build order by conditions
-  let orderByCondition: Record<string, unknown>;
-  // For date fields, use case statement to handle nulls properly
-  if (sort === "creation_date") {
-    orderByCondition = { created_at: order === "desc" ? "desc" : "asc" };
-  } else if (sort === "start_date") {
-    orderByCondition = { start_date: order === "desc" ? "desc" : "asc" };
-  } else if (sort === "due_date") {
-    orderByCondition = { due_date: order === "desc" ? "desc" : "asc" };
-  } else {
-    orderByCondition = { created_at: order === "desc" ? "desc" : "asc" }; // default
-  }
-  // Query todos - this MUST match what's in database schema
+  // Fetch data
   const data = await MyGlobal.prisma.todo_app_todos.findMany({
-    where: whereConditions,
-    orderBy: orderByCondition,
+    where,
     skip,
     take: limit,
+    orderBy,
+    select: {
+      title: true,
+      completed: true,
+      start_date: true,
+      due_date: true,
+      created_at: true,
+    },
   });
+  // Transform dates to correct string type for ITodoAppTodo.ISum
+  const transformedData = data.map(
+    (todo) =>
+      ({
+        title: todo.title,
+        completed: todo.completed,
+        start_date: todo.start_date ? toISOStringSafe(todo.start_date) : null,
+        due_date: todo.due_date ? toISOStringSafe(todo.due_date) : null,
+        created_at: toISOStringSafe(todo.created_at),
+      }) as ITodoAppTodo.ISum,
+  );
   // Count total records
   const total = await MyGlobal.prisma.todo_app_todos.count({
-    where: whereConditions,
+    where,
   });
-  // Transform to ISummary
-  const transformedData: ITodoAppTodo.ISummary[] = data.map((todo) => ({
-    id: todo.id as string & tags.Format<"uuid">,
-    title: undefined,
-    completion_status: todo.completion_status,
-    created_at: todo.created_at ? toISOStringSafe(todo.created_at) : undefined,
-    start_date: todo.start_date ? toISOStringSafe(todo.start_date) : undefined,
-    due_date: todo.due_date ? toISOStringSafe(todo.due_date) : undefined,
-  }));
-  // Return paginated result
   return {
     data: transformedData,
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
+      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    } satisfies IPage.IPagination,
   };
 }

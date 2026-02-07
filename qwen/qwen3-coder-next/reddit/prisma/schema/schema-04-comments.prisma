@@ -1,0 +1,60 @@
+/// User-generated comments on posts, supporting threaded discussions with
+/// parent-child relationships. Each comment belongs to exactly one post and
+/// one author (user). Comments can be replies to other comments (unlimited
+/// threading depth) through the parent_comment_id field. Tracks vote scores
+/// and comment counts for nested discussions.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_platform_users.id}.
+  author_id String
+  
+  /// Parent post's {@link reddit_platform_posts.id}.
+  post_id String
+  
+  /// Parent comment's {@link reddit_platform_comments.id} for threaded
+  /// discussions.
+  parent_comment_id String?
+  
+  /// Comment text content.
+  content String
+  
+  /// Current vote score (upvotes - downvotes).
+  vote_score Int
+  
+  /// Count of direct child comments in this thread.
+  comment_count Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (nullable for active comments).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_platform_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  childComments reddit_platform_comments[] @relation("recursive")
+  moderationLogs reddit_platform_moderation_logs[]
+  activityLogs reddit_platform_user_activity_logs[]
+  commentVotes reddit_platform_comment_votes[]
+  
+  @@index([parent_comment_id])
+  
+  @@index([post_id, created_at])
+  @@index([author_id, created_at])
+}

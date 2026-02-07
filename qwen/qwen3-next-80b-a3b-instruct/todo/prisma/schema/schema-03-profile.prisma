@@ -1,0 +1,90 @@
+/// Stores the current display name for each authenticated user, linked by
+/// user_id. Includes creation and last edit timestamps. Ensures privacy by
+/// isolating profile data from todos and authentication.
+///
+/// This table is the canonical source for user display names. Each user has
+/// exactly one profile. The profile is edited independently of
+/// authentication credentials stored in todo_app_users. All profile updates
+/// are tracked in todo_app_profile_edits, but only the current value is
+/// stored here. The table enforces strict privacy: no user can view another
+/// user's display name or profile through any API endpoint.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated authenticated user's identifier. {@link todo_app_users.id}.
+  user_id String
+  
+  /// The user's chosen display name for UI presentation. Must be 1-32
+  /// characters, alphanumeric and spaces only. This is the only identifier
+  /// visible to the user in the interface. Cannot be null, as all
+  /// authenticated users must have a display name.
+  display_name String
+  
+  /// Timestamp when this profile was created. This records when the user first
+  /// set their display name upon account creation or first login.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit to this profile (i.e., display name
+  /// change). This is updated by application logic whenever the user changes
+  /// their display name.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  deletionRequests todo_app_user_deletion_requests[]
+  
+  @@unique([user_id])
+}
+
+/// Audit log of all display name changes for each user. Records timestamp,
+/// original display name, and new display name. Each entry is linked to a
+/// user via user_id and maintained for history tracking. This table is
+/// append-only and immutable - edit history entries are never updated or
+/// deleted. Used for compliance and accountability.
+///
+/// @link todo_app_users.id: Reference to the user who made the display name
+/// change.
+/// @link todo_app_profiles.id: Represents the profile whose display name was
+/// changed.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_profile_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who made the display name change. {@link
+  /// todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// The display name value before the change. May be empty if the display
+  /// name was set for the first time.
+  original_display_name String?
+  
+  /// The display name value after the change. Cannot be empty as profile must
+  /// have a display name.
+  new_display_name String
+  
+  /// ISO 8601 timestamp when the display name change was recorded. Always set.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+}

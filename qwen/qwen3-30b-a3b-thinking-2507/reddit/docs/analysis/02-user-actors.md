@@ -1,84 +1,135 @@
-# Reddit-like Community Platform Requirements Specification
+# Community Platform Requirements
 
-## 1. User Accounts
+## 1. Service Overview
+This application enables users to create and manage communities similar to Reddit where members can create posts, comment, vote, and interact based on community subscriptions. The system prioritizes user experience through community-focused features and comprehensive moderation tools.
 
-### 1.1 Registration
-WHEN a user provides email and password during registration, THEN the system SHALL validate email format as per RFC 5322 standards and require password with minimum 8 characters including alphanumeric and special characters. WHEN registration is successful, THEN the system SHALL send confirmation email with verification link. WHEN verification link is clicked, THEN the system SHALL activate the account and redirect to login.
+## 2. User Account Management
 
-### 1.2 Authentication
-WHEN a user attempts login with valid email and password, THEN the system SHALL authenticate against stored credentials and generate secure JWT token. WHEN login fails three consecutive times, THEN the system SHALL lock account for 15 minutes. WHEN password reset is requested, THEN the system SHALL send recovery email with time-limited token.
+### Core Authentication Requirements
 
-### 1.3 Account Management
-WHEN a user requests account deletion, THEN the system SHALL delete all associated posts, comments, karma, and personal data. WHEN a user changes password, THEN the system SHALL require current password verification before applying new password. WHEN profile updates are made, THEN the system SHALL update the user's display name, bio, and avatar images within 200ms.
+WHEN a user initiates registration, THE system SHALL require a unique email address, password, and username with minimum 3-character length.  
+IF the email is already registered, THEN THE system SHALL reject registration and display the error message "Email already in use."  
+WHEN a user provides a password with fewer than 8 characters or lacking special characters, THEN THE system SHALL reject registration and display "Password must be at least 8 characters and contain special characters."  
+WHEN a user submits login credentials, THE system SHALL validate credentials against the database and return a session token if valid.  
+WHEN a user enters an incorrect password, THEN THE system SHALL increment a failed login counter and deny access after 3 consecutive failures, displaying "Too many failed attempts - please try again in 15 minutes."  
+WHEN a user requests a password change, THE system SHALL send a password reset email with a time-limited token.  
+WHEN a user confirms password change via reset link, THE system SHALL update the password and invalidate all active sessions for that user.  
+WHEN a user deletes their account, THE system SHALL permanently remove all associated data including posts, comments, karma, and profile information without any possibility of recovery.
 
-## 2. User Profiles
+### Session Management Requirements
 
-### 2.1 Profile Display
-WHEN a user views another user's profile, THEN the system SHALL display the profile's display name, bio, avatar image, total karma score, and subscriber count. WHEN a user views their own profile, THEN the system SHALL include additional edit controls for profile information.
+WHEN a user logs in successfully, THE system SHALL create a secure session and return an access token (valid 15 minutes) and refresh token (valid 7 days) stored in HTTP-only cookies.  
+WHEN a user logs out, THE system SHALL invalidate the session token and delete the cookie, forcing a complete re-authentication.  
+WHEN a user's password is changed, THEN THE system SHALL revoke all active refresh tokens, requiring re-authentication on next login.  
+WHEN a session is invalidated (e.g., password change), THEN THE system SHALL remove all tokens from refresh token store immediately.
 
-### 2.2 Profile Management
-WHEN a user edits their display name, THEN the system SHALL allow maximum 25 characters with alphanumeric and space characters only. WHEN a user updates their bio, THEN the system SHALL allow maximum 500 characters with markdown formatting. WHEN a user uploads a new avatar, THEN the system SHALL automatically resize and compress the image to 200x200 pixels at 75% quality.
+## 3. User Profile Management
 
-## 3. Karma System
+WHEN a user views their own profile, THE system SHALL display their display name, bio text, avatar image, and total karma score.  
+WHEN a user views another user's profile, THE system SHALL display the public profile information including display name, bio, avatar, and total karma score.  
+WHEN a user edits their display name, THE system SHALL accept input between 3-20 characters with no special characters.  
+WHEN a user updates their bio text, THE system SHALL limit to 500 characters.  
+WHEN a user uploads a new avatar, THE system SHALL accept JPG/PNG files under 5MB.  
+WHEN a user views their profile page, THE system SHALL display a list of all posts they created and all comments they wrote.
 
-### 3.1 Karma Calculation
-WHEN a user upvotes a post or comment, THEN the system SHALL increment the author's karma by 1. WHEN a user downvotes a post or comment, THEN the system SHALL decrement the author's karma by 1. WHEN a user removes their vote, THEN the system SHALL adjust karma by +1 or -1 according to the previous vote.
+## 4. Karma System Requirements
 
-### 3.2 Karma Display
-WHEN a profile page loads, THEN the system SHALL display the user's total karma as a numeric value. WHEN karma is negative, THEN the system SHALL display it with a red background and prefix 'Negative: ' for visual distinction. When karma is zero, THEN the system SHALL display it as '0' without special formatting.
+WHEN a user receives an upvote on their post or comment, THEN THE system SHALL increase their karma score by 1.  
+WHEN a user receives a downvote on their post or comment, THEN THE system SHALL decrease their karma score by 1.  
+WHEN a user removes their vote on a post or comment, THEN THE system SHALL adjust the karma score by the opposite value of the previous vote.  
+WHEN a user has negative karma, THE system SHALL display it as a negative number (e.g., -5).  
+WHEN viewing a user profile, THE system SHALL always display the current total karma score.
 
-## 4. Communities
+## 5. Community Management Requirements
 
-### 4.1 Community Creation
-WHEN a user creates a new community, THEN the system SHALL require unique name, description (max 500 characters), and icon image. WHEN the community owner is set, THEN the system SHALL grant full moderation rights to that user only. WHEN community creation is complete, THEN the system SHALL assign a unique 8-character community code.
+### Community Creation Requirements
 
-### 4.2 Community Management
-WHEN a user searches communities by name, THEN the system SHALL return results matching any partial string in the name. WHEN a user browses all communities, THEN the system SHALL sort by subscriber count descending. WHEN a user views community details, THEN the system SHALL display description, icon, subscriber count, and last activity timestamp.
+WHEN a user wants to create a community, THE system SHALL require a unique name, description (max 500 characters), and icon image (JPG/PNG under 5MB).  
+IF the community name already exists, THEN THE system SHALL return error "Community name already taken."  
+WHEN a community is created, THE system SHALL automatically make the creator the owner with full moderation privileges.  
+THE owner SHALL be the only user who can delete the community.
 
-## 5. Posts
+### Community Operations Requirements
 
-### 5.1 Post Types
-WHEN a user selects text post type, THEN the system SHALL require text content with 10-5000 characters. WHEN a user selects link post type, THEN the system SHALL validate URL format and extract domain name for display. WHEN a user selects image post type, THEN the system SHALL accept images up to 10MB with common formats (JPG, PNG, GIF).
+WHEN a user browses communities, THE system SHALL display a list of all public communities with name, description, and subscriber count.  
+WHEN a user searches communities by name, THE system SHALL filter using partial matching on community name (case-insensitive).  
+WHEN a user subscribes to a community, THE system SHALL add them to the subscriber list of that community.  
+WHEN a user unsubscribes from a community, THE system SHALL remove them from the subscriber list.  
+WHEN a user views their subscribed communities, THE system SHALL list all communities they are subscribed to with names and subscriber counts.
 
-### 5.2 Post Display
-WHEN viewing post list, THEN the system SHALL show title, author username, community name, vote score, comment count, and time since posted. WHEN viewing image posts, THEN the system SHALL display a 100x100px thumbnail. WHEN viewing text posts, THEN the system SHALL show first 200 characters of content with 'Read More' link.
+## 6. Post Management Requirements
 
-## 6. Voting System
+### Post Creation Requirements
 
-### 6.1 Post and Comment Voting
-WHEN a user upvotes a post, THEN the system SHALL increment the vote score by 1 and prevent further votes from that user until they change their vote. WHENThe vote is removed by the user, THEN the system SHALL adjust the score by -1 for previous upvote or +1 for previous downvote. When the owner is changed, THEN the system SHALL prevent vote from that user on their post.
+WHEN a user creates a post in a community, THE system SHALL require title (min 5 characters, max 100 characters) and must select post type (text, link, image).  
+WHEN a post is text type, THE system SHALL require content (max 5000 characters).  
+WHEN a post is link type, THE system SHALL validate URL format and extract domain name for display.  
+WHEN a post is image type, THE system SHALL accept JPG/PNG files under 10MB.  
+WHEN a user creates a post, THE system SHALL automatically associate it with the community the user is subscribed to and the author.
 
-### 6.2 Vote Visibility
-WHEN viewing post details, THEN the system SHALL show the current vote score (upvotes - downvotes) prominently. WHEN the voting system is used, THEN the client SHALL show the user's current vote choice with visible styling (color-coding). The system SHALL update the vote count without refreshing the entire page.
+### Post Interaction Requirements
 
-## 7. Moderation
+WHEN a user views a single post, THE system SHALL display title, full content, author, community, vote score, comment count, and timestamp.  
+WHEN a user edits their own post, THE system SHALL allow content modification within post type constraints.  
+WHEN a user deletes their own post, THE system SHALL remove the post and all associated comments without affecting other content.  
+WHEN viewing a post in a feed, THE system SHALL display title, author, community, vote score, comment count, time since posted, and abbreviated content (first 200 characters for text, thumbnail for image, domain for link).
 
-### 7.1 Community Ownership
-WHEN a user creates a community, THEN the system SHALL grant them the highest authority (owner role). WHEN a community owner adds a moderator, THEN the system SHALL send confirmation notification to the new moderator. WHEN a moderator is added, THEN the system SHALL grant them all moderator capabilities within that community.
+## 7. Voting System Requirements
 
-### 7.2 Content Moderation
-WHEN a moderator deletes a post, THEN the system SHALL permanently remove it from all feeds and notify the author. WHEN a moderator bans a user, THEN the system SHALL prevent them from interacting with the community for the duration specified (default 30 days) with clear notification. WHEN a moderator views reports, THEN the system SHALL display all active reports with content details, reporter, and reason.
+WHEN a user upvotes a post or comment, THE system SHALL increment the vote score by 1 and record the vote.  
+WHEN a user downvotes a post or comment, THE system SHALL decrement the vote score by 1 and record the vote.  
+WHEN a user changes their vote from upvote to downvote, THE system SHALL adjust the score by -2.  
+WHEN a user changes their vote from downvote to upvote, THE system SHALL adjust the score by +2.  
+WHEN a user removes their vote, THE system SHALL revert the score by the previous vote value.  
+WHEN a user votes on a post or comment they own, THE system SHALL prevent voting (no change to score).
 
-## 8. Feed Systems
+## 8. Feed Management Requirements
 
-### 8.1 Feed Types
-WHEN a logged-in user views Home Feed, THEN the system SHALL show posts only from subscribed communities. WHEN viewing Popular Feed, THEN the system SHALL display posts from all communities regardless of login status. WHEN viewing Community Feed, THEN the system SHALL limit to posts from the selected community.
+### Feed Types Requirements
 
-### 8.2 Sorting and Pagination
-WHEN sorting by 'Hot,' THEN the system SHALL prioritize posts with high vote scores and recent activity. WHEN sorting by 'Top' with time filter 'This Year,' THEN the system SHALL display highest score posts made within the last 365 days. Pagination SHALL default to 20 items per page, with 'Load More' button for additional content.
+THE Home Feed SHALL display posts only from communities the user is subscribed to (requires login).  
+THE Popular Feed SHALL display posts from all communities (accessible to all users, including guests).  
+THE Community Feed SHALL display posts from one specific community (accessible to all users).
 
-## 9. Comment System
+### Sorting Requirements
 
-### 9.1 Comment Functionality
-WHEN a user writes a comment, THEN the system SHALL allow text up to 1000 characters. WHEN a user replies to a comment, THEN the system SHALL add a nested level with appropriate visual styling. When editing a comment, THEN the system SHALL show the previous content for comparison and maintain the edit history for moderation purposes.
+WHEN users sort by Hot, THE system SHALL prioritize posts with highest ratio of new votes to age (newer posts with more votes appear first).  
+WHEN users sort by New, THE system SHALL order by post creation date (newest first).  
+WHEN users sort by Top, THE system SHALL order by vote score (highest first), with optional time filter (today, week, month, year, all time).  
+WHEN users sort by Controversial, THE system SHALL prioritize posts with high vote count but score close to zero.
 
-### 9.2 Comment Sorting
-WHEN viewing comments, THEN the system SHALL default to 'Best' sort order (highest vote score). WHEN selecting 'Controversial,' THEN the system SHALL display comments with high vote counts but low net scores (close to zero) first. When sorting comments, THEN the client SHALL update the view immediately without full page reload.
+## 9. Comment Management Requirements
 
-## 10. Business Validation
+WHEN a user writes a comment on a post, THE system SHALL require comment text (max 1000 characters) and associate it with the post, user, and current timestamp.  
+WHEN a user replies to a comment, THE system SHALL create a nested comment with thread relationship.  
+WHEN a user edits their own comment, THE system SHALL allow content modification within text limit.  
+WHEN a user deletes their own comment, THE system SHALL remove the comment without affecting related posts.  
+WHEN viewing comments, THE system SHALL display author, content, vote score, time since posted, and nested replies.
 
-### 10.1 Data Validation
-WHEN user submits content, THEN the system SHALL validate all fields to match business rules. Email validation SHALL follow standard patterns. Text content SHALL prevent dangerous HTML. Vote actions SHALL prevent duplicate submissions from the same user.
+## 10. Moderation Workflow Requirements
 
-### 10.2 Error Handling
-WHEN validation fails, THEN the system SHALL provide specific error messages to the user. Login failures SHALL not reveal account existence. Account deletion requests SHALL require confirmation to prevent accidental data loss. All errors SHALL be logged with context for support purposes.
+### Moderator Role Requirements
+
+THE community creator SHALL be the owner with highest authority.  
+THE owner SHALL be able to add moderators to their community.  
+THE owner SHALL be able to remove moderators from their community.  
+MODERATORS SHALL be able to add other moderators to their community.  
+MODERATORS SHALL NOT be able to remove the owner from their community.  
+MODERATORS SHALL NOT be able to remove other moderators (only the owner can).
+
+### Moderation Actions Requirements
+
+WHEN a community moderator deletes a post, THE system SHALL remove the post from all feeds and delete all associated comments.  
+WHEN a community moderator deletes a comment, THE system SHALL remove the specific comment without affecting other content.  
+WHEN a community moderator bans a user from their community, THE system SHALL prevent that user from creating posts or comments in the community.  
+WHEN a community moderator unbans a user, THE system SHALL restore their permissions to create posts and comments.  
+WHEN a community moderator views banned users list, THE system SHALL display names and reason for ban.
+
+## 11. Reporting System Requirements
+
+WHEN a user reports a post or comment, THE system SHALL require providing a reason text (max 500 characters).  
+WHEN a report is submitted, THE system SHALL queue it for review by community moderators.  
+WHEN a moderator views reports for their community, THE system SHALL display the reported content, reporter user, and report reason.  
+WHEN a moderator approves a report, THE system SHALL delete the reported content and notify the reporter.  
+WHEN a moderator dismisses a report, THE system SHALL remove it from the report queue without action.  
+WHEN a moderator reviews a report, THE system SHALL require action (approve or dismiss) before removing from queue.

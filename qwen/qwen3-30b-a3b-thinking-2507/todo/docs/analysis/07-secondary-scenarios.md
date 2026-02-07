@@ -1,215 +1,238 @@
-# Multi-User Todo Application
+# Multi-User Todo Application Requirements Specification
 
-## 1. Service Overview
+## Service Overview
 
-The multi-user todo application enables individuals to create, manage, and organize personal to-do lists with complete privacy and advanced functionality. This service delivers a seamless experience for managing tasks across devices with robust synchronization and data integrity features.
+A private, multi-user todo management application where each user maintains their own private todo list with comprehensive management features including complete edit history tracking, soft deletion with trash management, and robust filtering and sorting capabilities.
 
-### Business Justification
-Individuals consistently struggle with task management applications that lack cross-device synchronization and privacy controls. This application addresses the need for a personal, secure to-do list that adapts to users' workflow patterns without sharing data with others.
+## Business Problem Definition
 
-### Core Value Proposition
-Users get a private, multi-device to-do list with:
-- Complete data privacy (no sharing with other users)
-- Real-time cross-device synchronization
-- Comprehensive task organization features
-- Robust history tracking
-- Intuitive interface for common and advanced task management scenarios
+Individuals need a secure, private, and robust todo application that allows them to:
 
-## 2. User Actors
+- Maintain personal todo lists without sharing with other users
+- Track task progress through completion states
+- Maintain edit history for auditing and recovery
+- Manage deleted items through multi-stage soft deletion
+- Organize tasks with flexible filtering and sorting
 
-| Actor | Permissions | Description |
-|-------|-------------|-------------|
-| User | Full access to their own todos | Regular application users who create, manage, and view their personal to-do lists |
+## Core Value Proposition
 
-*All operations are restricted to the current user's todos only.*
+Complete private todo management with:
 
-## 3. Functional Requirements
+- **Privacy-First Architecture**: No cross-user data sharing or visibility
+- **Complete Edit History**: Full audit trail of every change to todo items
+- **Robust Cleanup**: Multi-stage deletion with permanent removal option
+- **Customizable Task Organization**: Advanced filtering and sorting capabilities
 
-### 3.1 User Account Management
+## Service Operation Overview
 
-#### 3.1.1 User Registration
+Users interact with the todo application through the standard user lifecycle:
 
-WHEN a new user visits the registration page, THE system SHALL:
+1. **Account Creation**: Register with email/password
+2. **Authentication**: Login with credentials
+3. **To-Do Management**: Create, view, edit, complete, delete todos
+4. **Trash Management**: Restore or permanently delete from trash
+5. **Profile Management**: Edit name and change password
 
-- Present a form for email and password input
-- Validate email address format using standard email validation rules
-- Require a password with minimum 8 characters, including at least one uppercase letter, one lowercase letter, and one special character
-- Show real-time password strength feedback
-- Create a new user account in the database upon successful form submission
-- Send a confirmation email with validation link
-- Redirect the user to their default todo list upon successful registration
+## User Actors
 
-#### 3.1.2 User Login
+| Actor | Description |
+|-------|-------------|
+| User | Standard application user with full todo management capabilities |
+| Guest | Impatient users with limited capabilities (not applicable for this application) |
 
-WHEN a user attempts to log in with their credentials, THE system SHALL:
+## Primary User Scenarios
 
-- Verify the email address and password combination
-- Generate an authentication token upon successful verification
-- Set a secure, HTTP-only cookie for session management
-- Redirect the user to their default todo list
-- Return a meaningful error message if credentials are invalid
-- Implement rate limiting after 5 unsuccessful login attempts
+### User Registration and Authentication
 
-#### 3.1.3 Password Change
+**User Journey**:
 
-WHEN a user requests to change their password, THE system SHALL:
+1. User clicks 'Sign Up' on welcome screen
+2. System prompts for email and password
+3. System validates password complexity requirements
+4. System creates user account with verified email
+5. System provides verification email with confirmation link
+6. User completes verification via email link
+7. User can now log in with credentials
 
-- Require the current password to verify identity
-- Validate the new password against strength requirements
-- Display a success message upon successful password change
-- Invalidate the current session and force re-login with new password
-- Prevent password reuse for the previous 5 versions
+**EARS Requirements**:
 
-#### 3.1.4 Account Deletion
+- **WHEN** a user submits the registration form, **THE** system **SHALL** require email format validation before proceeding.
+- **WHEN** a user enters a password, **THE** system **SHALL** enforce minimum 12 characters including 1 uppercase, 1 number, and 1 special character.
+- **WHEN** a user attempts login with invalid credentials, **THE** system **SHALL** respond with 'Invalid email or password' within 3 seconds.
+- **WHEN** a user moves to the password reset flow, **THE** system **SHALL** prevent login attempts with old credentials until reset completes.
 
-WHEN a user requests account deletion, THE system SHALL:
+```mermaid
+graph TB
+    A[User on Welcome Screen] --> B{Clicks 'Sign Up'?}
+    B -->|Yes| C[Enter Email & Password]
+    C --> D[Validate Email Format]
+    D -->|Valid| E[Validate Password Complexity]
+    E -->|Pass| F[Create Account]
+    F --> G[Send Verification Email]
+    G --> H[User Clicks Verification Link]
+    H --> I[Account Verified]
+    I --> J[Login with Credentials]
+    D -->|Invalid| K[Show Email Error]
+    K --> C
+    E -->|Fail| L[Show Password Error]
+    L --> C
+``` 
 
-- Display a confirmation modal asking for explicit permission
-- Delete the user account from the database
-- Permanently delete all associated todos and edit history
-- Remove all associated data from the system without retention
-- Prevent the user from recovering deleted data after confirmation
-- Send a final confirmation email after successful deletion
+### Todo Management
 
-### 3.2 User Profile Management
+**User Journey**:
 
-#### 3.2.1 Profile Creation
+1. User selects 'Create New Todo' from main menu
+2. System displays form with required title and optional fields
+3. User enters title and any optional fields
+4. System saves the todo as incomplete
+5. User views the todo in their list
+6. User activates completion toggle
+7. System updates completion status
 
-WHEN a user completes registration, THE system SHALL:
+**EARS Requirements**:
 
-- Create a default profile with display name 'New User'
-- Allow the user to immediately edit their display name
+- **WHEN** a user creates a new todo, **THE** system **SHALL** require a title (minimum 2 characters).
+- **WHEN** a user saves a todo with a title of fewer than 2 characters, **THE** system **SHALL** display 'Title must be at least 2 characters' error.
+- **WHEN** a user attempts to modify a todo, **THE** system **SHALL** record all changed fields in the edit history.
+- **WHEN** a user deletes a todo, **THE** system **SHALL** move it to the trash rather than permanent deletion.
 
-#### 3.2.2 Display Name Editing
+### Trash Management
 
-WHEN a user changes their display name, THE system SHALL:
+**User Journey**:
 
-- Accept alphanumeric characters with spaces and underscores
-- Validate name length to 1-50 characters
-- Update the profile in the database
-- Reflect the new display name across all user interfaces immediately
-- Preserve all data integrity while updating profile information
+1. User views 'Trash' option from sidebar
+2. System displays paginated list of deleted todos
+3. User selects a todo to restore or permanently delete
+4. System updates status immediately
 
-### 3.3 Todo Management
+**EARS Requirements**:
 
-#### 3.3.1 Todo Creation
+- **WHEN** a user views the trash, **THE** system **SHALL** display 20 todos per page.
+- **WHEN** a user restores a todo from trash, **THE** system **SHALL** move it back to the main todo list.
+- **WHEN** a user permanently deletes a todo from the trash, **THE** system **SHALL** delete the todo and all its history immediately.
+- **WHEN** a user views a deleted todo, **THE** system **SHALL** indicate it was moved to trash 24 hours ago.
 
-WHEN a user creates a new todo, THE system SHALL:
+## Secondary & Special Scenarios
 
-- Require at least a title (minimum 1 character)
-- Allow optional description (maximum 500 characters)
-- Allow optional start date (future date only)
-- Allow optional due date (must be later than start date or empty)
-- Default to incomplete status
-- Assign a unique timestamp
-- Return the new todo in the response with all details
-- Record new todo in the user's edit history
+### Password Management
 
-#### 3.3.2 Todo Viewing (List)
+**Business Justification**: Password recovery and management are critical for user retention, security, and satisfaction, specifically in a private application where users must maintain strict account security.
 
-WHEN a user views their todo list, THE system SHALL:
+#### Password Recovery Requirements
 
-- Paginate results with default page size 10
-- Display title, completion status, start date (if set), due date (if set), and creation date
-- Support filtering by completion status (all, complete, incomplete)
-- Support sorting by creation date (newest/oldest), start date, or due date
-- Show todos without start/due dates at the end in their respective sorting categories
+- **User Journey**:
+  1. User clicks 'Forgot Password' on login screen
+  2. System prompts for registered email address
+  3. System sends password reset email with secure token
+  4. User clicks link in email to access reset form
+  5. User enters new password
+  6. System updates password and invalidates token
 
-#### 3.3.3 Todo Viewing (Detail)
-
-WHEN a user views a specific todo, THE system SHALL:
-
-- Display all fields including title, description, creation date, completion status, start date, and due date
-- Show the full edit history with timestamps and changes
-- Allow edit access for the user who created the todo
-- Prevent any editing capabilities for other users or other todos
-
-#### 3.3.4 Todo Completion Toggle
-
-WHEN a user toggles a todo's completion status, THE system SHALL:
-
-- Mark the todo as complete when toggled 'on'
-- Mark the todo as incomplete when toggled 'off'
-- Update the completion status in the database
-- Record the change in the edit history
-- Immediately update the UI across all devices
-
-#### 3.3.5 Todo Editing
-
-WHEN a user edits any field of an existing todo, THE system SHALL:
-
-- Allow modification of title (1-200 characters), description (max 500 characters), start date, and due date
-- Prevent edit on deleted todos
-- Record all field changes in the edit history
-- Validate date constraints (start date must be before due date when both set)
-- Update the current edit version timestamp
-
-#### 3.3.6 Edit History
-
-WHEN a user views edit history, THE system SHALL:
-
-- Show all edits in descending chronological order
-- Include timestamp, changed fields, and before/after values for each edit
-- Limit history to most recent 100 edits per todo
-- Allow users to view historical versions as needed
-- Maintain edit history even after deletion until permanent deletion
-
-#### 3.3.7 Todo Deletion
-
-WHEN a user deletes a todo, THE system SHALL:
-
-- Mark the todo as deleted with a timestamp
-- Remove the todo from the active list
-- Move the todo to the trash (un-deleted state)
-- Maintain all edit history for the todo
-- Record the deletion action in the system audit log
-
-#### 3.3.8 Trash Management
-
-WHEN a user views trash, THE system SHALL:
-
-- Paginate results with default page size 10
-- Display same information as active todos (title, creation date, etc.)
-- Allow restoration of deleted todos
-- Allow permanent deletion from trash (which deletes history)
-- Include the delete timestamp in trash view
-
-### 3.4 Bulk Operations (Secondary Scenarios)
-
-#### 3.4.1 Bulk Mark Complete
-
-WHEN a user selects multiple todos and requests to mark them all as complete, THE system SHALL:
-
-- Show confirmations with 'Marking X todos as complete'
-- Perform atomic update across all selected todos
-- Immediately update all selected todos to 'complete' status
-- Return success response with count of processed todos
-- Maintain all edit history records
-
-#### 3.4.2 Bulk Delete
-
-WHEN a user selects multiple todos for deletion, THE system SHALL:
-
-- Show confirmation with 'Deleting X todos from your list'
-- Move all selected todos to trash without individual confirmation
-- Update active todo count instantly
-- Record each deletion in system audit log with user ID and timestamp
-- Provide undo option for 15 minutes in trash view
+- **EARS Requirements**:
+  - **WHEN** a user requests password recovery, **THE** system **SHALL** send a reset email with a time-limited token (15 minutes).
+  - **WHEN** a user enters an invalid email, **THE** system **SHALL** respond with 'Email not found' after 4 seconds to prevent email enumeration.
+  - **WHEN** a user submits a new password, **THE** system **SHALL** validate against minimum 12 characters including 1 uppercase, 1 number, and 1 special character.
+  - **IF** a reset token is expired, **THEN** THE system **SHALL** display 'Token expired, please request new reset' with new request option.
+  - **WHILE** the password reset process is active, **THE** system **SHALL** prevent login attempts with old credentials.
 
 ```mermaid
 graph LR
-  A[User Selects Todos]
-  B{Action Type}
-  C[Mark Complete]
-  D[Delete]
-  E[Show Confirmation]
-  F[Perform Action]
-  G[Update UI]
-  A --> B
-  B -->|Mark Complete| C
-  B -->|Delete| D
-  C --> E
-  D --> E
-  E --> F
-  F --> G
-```
+    A[User on Login Screen] --> B{Clicks Forgot Password?}
+    B -->|Yes| C[Enter Registered Email]
+    C --> D[Validate Email]
+    D -->|Valid| E[Generate 15-min Token]
+    E --> F[Send Email with Link]
+    F --> G[User Clicks Link]
+    G --> H[Access Reset Form]
+    H --> I[Enter New Password]
+    I --> J[Validate Password]
+    J -->|Pass| K[Update Password]
+    J -->|Fail| L[Show Error]
+    K --> M[Invalidate Token]
+    M --> N[Show Success]
+    L --> H
+``` 
+
+### Todo Filtering and Sorting
+
+**Business Justification**: Users require flexible organization of their todos with advanced filtering and sorting capabilities to quickly find and prioritize tasks.
+
+#### Filtering Requirements
+
+- **User Journey**:
+  1. User filters the todo list by completion status
+  2. System responds with filtered results
+
+- **EARS Requirements**:
+  - **WHEN** a user activates 'All', **THE** system **SHALL** display all todos.
+  - **WHEN** a user activates 'Only Complete', **THE** system **SHALL** show only completed todos.
+  - **WHEN** a user activates 'Only Incomplete', **THE** system **SHALL** show only incomplete todos.
+  - **WHEN** no filter is applied, **THE** system **SHALL** default to showing 'All' todos.
+
+#### Sorting Requirements
+
+- **User Journey**:
+  1. User selects sort option (creation date, start date, or due date)
+  2. User selects direction (newest first or oldest first)
+  3. System displays todos in selected order
+
+- **EARS Requirements**:
+  - **WHEN** a user sorts by due date, **THE** system **SHALL** place todos without due dates at the end of the list.
+  - **WHEN** a user sorts by start date, **THE** system **SHALL** place todos without start dates at the end of the list.
+  - **WHEN** a user requests 'Oldest First' on creation date, **THE** system **SHALL** display earliest created todos first.
+  - **WHEN** a user requests 'Newest First' on creation date, **THE** system **SHALL** display most recently created todos first.
+
+## Exception Handling
+
+### User Management Exceptions
+
+| Exception | System Behavior | Customer Impact |
+|-----------|----------------|----------------|
+| Duplicate email during registration | 'Email already in use' error within 2 seconds | Prevents account creation with existing email |
+| Invalid password during login | 'Invalid email or password' standard response | Prevents unauthorized access |
+| New password fails complexity check | Specific validation error 'Password must have 12 characters, 1 uppercase, 1 number, 1 special character' | Guides users to create stronger password |
+
+### Todo Management Exceptions
+
+| Exception | System Behavior | Customer Impact |
+|-----------|----------------|----------------|
+| Deleted todo permanency | Confirm with 'Permanently delete?' yellow warning before execution |
+| Empty todo title | 'Title must be at least 2 characters' error message before submit |
+| Empty search term during filtering | Reset to 'All' todos and show placeholder search term |
+
+## Security and Compliance
+
+- **PASSWORD STORAGE**: Passwords stored as bcrypt hashes with salt, never in plaintext
+- **SESSION MANAGEMENT**: Auth tokens expiring after 24 hours of inactivity
+- **PRIVACY GUARANTEE**: No user data shared between accounts, including by API or database structure
+- **AUDIT TRAIL**: All user actions (including todo edits) logged with timestamp
+- **DATA RETENTION**: Deleted and permanent delete actions recorded for compliance
+
+## Performance Requirements
+
+- **LOADING TIME**: Main todos list loads within 2 seconds for user with 100 todos
+- **SORTING TIME**: Sorting operations complete within 500 millisecond window
+- **EDIT HISTORY**: Load time for complete edit history (10 entries) within 300 milliseconds
+- **TOKEN EXPIRATION**: Reset tokens expire exactly 15 minutes after generation
+
+## Minimum System Requirements
+
+This application meets all non-functional requirements:
+
+- Single-tenant architecture (one user per instance in practice)
+- No shared data between users
+- Secure password storage and reset workflows
+- Comprehensive edit history tracking
+- Multi-stage soft deletion process
+- Privacy by design across all user interactions
+
+## Identity Verification
+
+All user actions are authenticated through:
+
+- JWT tokens with expiration
+- Role-based access control (only 'user' role present)
+- Session management consistent with industry standards
+
+All requirements included in this specification are considered binding for development and will be automated through testing. System must meet all requirements at 100% compliance.

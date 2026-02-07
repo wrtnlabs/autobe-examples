@@ -18,11 +18,7 @@ export async function generate_random_todo_app_user_todos_create(
   const prepared: ITodoAppTodo.ICreate = prepare_random_todo_app_todo(
     props.body,
   );
-  const result: ITodoAppTodo = await api.functional.todoApp.user.todos.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
-  return result;
+  return await api.functional.todoApp.user.todos.create(connection, {
+    body: prepared,
+  });
 }

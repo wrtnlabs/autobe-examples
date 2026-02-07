@@ -1,0 +1,138 @@
+/// Represents specific purchasable variants of a product with unique SKU
+/// codes, option values (e.g., size, color), price overrides, and stock
+/// quantities. Each variant is owned by a seller and belongs to a single
+/// parent product. This is a primary business entity that customers can
+/// directly add to cart and purchase. All stock changes are tracked via
+/// immutable inventory_histories linked by variant_id.
+///
+/// @namespace ProductVariants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent product this variant belongs to. {@link
+  /// shopping_mall_products.id}.
+  product_id String
+  
+  /// The seller who owns and manages this variant. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Unique SKU code for this variant, mandatory and alphanumeric. Must be
+  /// 3-20 characters. Unique constraint ensures no duplicate SKUs across all
+  /// products.
+  sku String
+  
+  /// JSONB object containing all option name-value pairs (e.g., {\"color\":
+  /// \"red\", \"size\": \"large\"}) defining this variant. Stored as string
+  /// for schema flexibility and searching.
+  option_values String
+  
+  /// Optional price override for this variant. If null, uses the parent
+  /// product's base price. Must be zero or greater.
+  price_override Float?
+  
+  /// Current available stock quantity for this variant. Must be zero or
+  /// greater. Negative values not allowed. Increasing this triggers positive
+  /// inventory_histories. Decreasing triggers negative inventory_histories.
+  stock Int
+  
+  /// The timestamp when this variant was created. Never modified.
+  created_at DateTime
+  
+  /// The timestamp when this variant was last modified. Updated on every stock
+  /// or price change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If null, variant is active. If set, variant is
+  /// logically deleted and cannot be purchased.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  productVariantInventoryHistories shopping_mall_inventory_histories[]
+  cartItems shopping_mall_cart_items[]
+  orderItems shopping_mall_order_items[]
+  variantInventoryHistories shopping_mall_variant_inventory_histories[]
+  
+  @@unique([sku])
+  @@unique([product_id, sku])
+  @@index([product_id])
+  @@index([seller_id])
+  @@index([stock])
+}
+
+/// Immutable audit trail recording every inventory change event for product
+/// variants. Each record represents a single quantity adjustment with reason
+/// and reference, preserving the complete history of restocks, sales,
+/// cancellations, and inventory adjustments. This table enables accurate
+/// stock level calculation and provides forensic evidence for disputes.
+///
+/// @namespace ProductVariants
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_inventory_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant this inventory change affects. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The seller who initiated this inventory change (if manually adjusted).
+  /// May be null for system-initiated events like order fulfillment. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String?
+  
+  /// The order item that triggered this inventory change (e.g., if caused by
+  /// purchase, cancellation, or refund). Allows reverse lookup to order
+  /// context. May be null for manual adjustments. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String?
+  
+  /// The net change in stock quantity. Positive for restock/increase, negative
+  /// for depletion/reduction. Always records the exact quantity changed.
+  quantity_change Float
+  
+  /// The business reason for this inventory change. Examples: 'order
+  /// purchase', 'cancellation refund', 'seller adjustment','system restock'.
+  /// Must be human-readable and descriptive.
+  reason String
+  
+  /// The exact timestamp when this inventory change was recorded in the
+  /// system. Always set to the current time at commit.
+  created_at DateTime
+  
+  /// The timestamp of the last update to this record. Since this is an
+  /// immutable audit log, this will always equal created_at and will never be
+  /// modified after creation.
+  updated_at DateTime
+  
+  /// Optional JSON field for storing additional context about the inventory
+  /// change event (e.g., batch number, location, worker ID, system event ID).
+  /// Must be valid JSON if provided.
+  metadata String?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_variant_inventory_histories_shopping_mal_135f79f5")
+  @@index([seller_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_variant_inventory_histories_shopping_mal_8fa2d88e")
+}

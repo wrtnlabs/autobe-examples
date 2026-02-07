@@ -1,13 +1,10 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
-
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 export async function userAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<UserPayload> {
   const payload: UserPayload = jwtAuthorize({ request }) as UserPayload;
 
@@ -15,8 +12,6 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // payload.id contains top-level user table ID
-  // Query using appropriate field based on schema structure
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       id: payload.id,

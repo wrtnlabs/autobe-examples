@@ -1,161 +1,138 @@
-/// Sales channels representing different points of product accessibility
-/// including online stores, mobile applications, and physical retail
-/// locations. Each channel has branding configurations, operational
-/// settings, and status tracking for business management. Supports
-/// channel-level branding and configuration without requiring relationships
-/// to other entities.
+/// System-wide configuration parameters and default values for all components.
 ///
-/// Channels can be enabled or disabled through status transitions, with
-/// 'archived' status indicating historical tracking for auditing purposes.
-/// All configuration changes are managed through the channel entity itself
-/// without dependency on other components.
+/// This table stores all system-level configuration parameters as key-value
+/// pairs, with descriptions and timestamps.
 ///
-/// Branding configurations follow a standard URI format for centralized
-/// style management, allowing consistent visual presentation across all
-/// channel interfaces.
+/// Configurations affect multiple business domains including:
+/// - Order processing and management
+/// - User experience and interface defaults
+/// - Product catalog operations
+/// - Shipping and delivery policies
+///
+/// Each configuration is managed through a dedicated administrative
+/// interface and requires approval before being deployed to production.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model ecommerce_system_configs {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Name of the sales channel (e.g., 'Online Store', 'Mobile App'). Must be
-  /// unique across all channels.
-  channel_name String
-  
-  /// URI for channel branding configuration (logo, colors, etc.). Points to
-  /// centralized configuration storage.
-  branding_config String
-  
-  /// Current operational status: 'active' (operational), 'inactive'
-  /// (temporarily disabled), or 'archived' (historical record).
-  status String
-  
-  /// Timestamp when channel was created.
-  created_at DateTime
-  
-  /// Timestamp when channel was last modified.
-  updated_at DateTime
-  
-  /// Timestamp when channel was marked for deletion (soft delete).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  sections shopping_mall_sections[]
-  
-  @@unique([channel_name])
-}
-
-/// Hierarchical sections within sales channels for organizing content and
-/// products at multiple levels. Sections can be nested to form a tree
-/// structure, allowing for flexible categorization of content and product
-/// listings across different sales channels. All sections are associated
-/// with a specific channel and support a hierarchical ordering where
-/// sections can have parent sections for nested organizational structures.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The sales channel to which this section belongs.
-  shopping_mall_channel_id String
-  
-  /// The parent section for hierarchical nesting, if this section is a child
-  /// of another section.
-  parent_id String?
-  
-  /// The title of the section used for display purposes in the user interface.
-  name String
-  
-  /// A unique code identifier for the section, used to reference the section
-  /// in code and other internal systems.
-  code String
-  
-  /// Timestamp when the section was created.
-  created_at DateTime
-  
-  /// Timestamp when the section was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the section was soft-deleted (not null denotes deletion).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  channel shopping_mall_channels @relation(fields: [shopping_mall_channel_id], references: [id], onDelete: Cascade)
-  parent shopping_mall_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  
-  children shopping_mall_sections[] @relation("recursive")
-  
-  @@unique([shopping_mall_channel_id, code])
-  @@index([shopping_mall_channel_id])
-  @@index([parent_id])
-}
-
-/// System-wide configuration settings and feature flags for the entire
-/// platform.
-///
-/// Stores key-value pairs of system settings that control platform behavior,
-/// features, and operational parameters. Each configuration key is unique
-/// and represents a specific aspect of the platform's runtime behavior.
-/// Values can be simple strings, JSON objects, or complex structures
-/// depending on the configuration's purpose.
-///
-/// Configurations enable dynamic system behavior adjustments without code
-/// deployment, such as toggling features on/off, setting thresholds, or
-/// defining runtime parameters. All configuration changes create audit
-/// records for tracking system modifications.
-///
-/// The table follows a simple key-value structure with an intuitive key
-/// naming pattern to facilitate configuration management by administrators.
-/// Configuration changes are captured with precise timestamps and
-/// modification histories to support audit trails.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key name used to identify and retrieve the setting.
+  /// Unique key identifier for this configuration parameter.
   key String
   
-  /// Current value for the configuration setting. Accepts string, JSON, or
-  /// complex data structures as strings.
-  value String?
+  /// Value for this configuration parameter.
+  value String
   
-  /// Detailed explanation of what this configuration key controls and its
-  /// potential values.
-  description String?
+  /// Human-readable description of what this configuration parameter does.
+  description String
   
-  /// Timestamp when this configuration setting was created.
+  /// Timestamp when the configuration was first created.
   created_at DateTime
   
-  /// Timestamp when this configuration setting was last modified.
+  /// Timestamp when the configuration was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration setting was marked for deletion (soft
-  /// delete).
+  /// Timestamp when the configuration was soft deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([key])
-  @@index([created_at])
+}
+
+/// Current operational status of system components including health checks
+/// and service availability. Contains real-time indicators of component
+/// health state, tracking each component's operational status and the last
+/// time it was checked.
+///
+/// This table implements the Snapshot Principle by recording all data
+/// modifications in immutable form (via the general ecommerce_snapshots
+/// table), while this table itself serves as the operational view of system
+/// health across all domains. The health_score field provides a quantitative
+/// measure of system health for monitoring and alerting systems.
+///
+/// The status field (healthy, warning, unhealthy) follows standard
+/// monitoring terminology and is constrained to these values to ensure
+/// consistent interpretation and processing.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_system_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the system component being monitored (e.g., 'product_catalog',
+  /// 'order_processing', 'payment_gateway').
+  component_name String
+  
+  /// Current operational status of the component. Values are restricted to
+  /// 'healthy', 'warning', or 'unhealthy' based on monitoring thresholds.
+  status String
+  
+  /// Numerical health score between 0-100 representing system health state.
+  /// 100 = ideal, 0 = completely non-functional.
+  health_score Float
+  
+  /// Timestamp of the most recent health check for this component.
+  last_check_timestamp DateTime
+  
+  /// Timestamp of record creation.
+  created_at DateTime
+  
+  /// Timestamp of the last record update.
+  updated_at DateTime
+  
+  /// Timestamp of record soft deletion (null if not deleted).
+  deleted_at DateTime?
+}
+
+/// System-wide immutable storage for recording all data modifications
+/// according to the Snapshot Principle. Captures entity modification
+/// context, previous state, and temporal metadata for comprehensive audit
+/// trails and historical data analysis.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the snapshot entity.
+  id String @id
+  
+  /// The name of the table where the entity modification occurred (e.g.,
+  /// 'ecommerce_products' or 'ecommerce_orders').
+  entity_type String
+  
+  /// The primary key value of the modified entity instance, referenced as a
+  /// UUID.
+  entity_id String
+  
+  /// JSON-formatted string containing the previous state of the modified
+  /// entity, including all relevant fields for comparison.
+  snapshot_data String
+  
+  /// Timestamp of when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this snapshot (should be same as
+  /// created_at, but maintained for consistency).
+  updated_at DateTime
+  
+  /// Timestamp of when this snapshot was logically deleted (if applicable).
+  /// For audit purposes, this value is typically null.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([entity_type, entity_id])
 }

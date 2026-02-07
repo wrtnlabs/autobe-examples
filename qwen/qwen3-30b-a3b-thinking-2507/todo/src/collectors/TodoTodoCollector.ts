@@ -1,32 +1,29 @@
-import { Prisma } from "@prisma/sdk";
-import { ArrayUtil } from "@nestia/e2e";
-import { v4 } from "uuid";
-
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoTodo";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-class TodoTodoCollector {
-  static async collect(props: {
+export namespace TodoTodoCollector {
+  export async function collect(props: {
     body: ITodoTodo.ICreate;
     todoUsers: IEntity;
-    todoUserSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       title: props.body.title,
       description: props.body.description ?? null,
-      start_date: props.body.start_date ?? null,
-      due_date: props.body.due_date ?? null,
-      completed: false,
+      start_date: props.body.start_date,
+      due_date: props.body.due_date,
+      is_completed: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      user: {
-        connect: { id: props.todoUsers.id },
-      },
+      user: { connect: { id: props.todoUsers.id } },
     } satisfies Prisma.todo_todosCreateInput;
   }
 }

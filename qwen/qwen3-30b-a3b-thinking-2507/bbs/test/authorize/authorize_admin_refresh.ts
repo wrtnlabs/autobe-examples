@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconPoliticBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconPoliticBoardAdmin";
+import type { IEconomyPoliticsBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomyPoliticsBoardAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,12 +11,13 @@ import typia, { tags } from "typia";
 export async function authorize_admin_refresh(
   connection: api.IConnection,
   props: {
-    body: IEconPoliticBoardAdmin.IRefresh;
+    body: IEconomyPoliticsBoardAdmin.IRefresh;
   },
-): Promise<IEconPoliticBoardAdmin.IAuthorized> {
-  const refreshToken =
-    props.body?.refreshToken ?? RandomGenerator.alphaNumeric(100);
-  return await api.functional.econPoliticBoard.auth.admin.refresh(connection, {
-    body: { refreshToken },
-  });
+): Promise<IEconomyPoliticsBoardAdmin.IAuthorized> {
+  return await api.functional.economyPoliticsBoard.auth.admin.refresh(
+    connection,
+    {
+      body: props.body,
+    },
+  );
 }

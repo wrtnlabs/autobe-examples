@@ -1,13 +1,10 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
-
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
 export async function guestAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<GuestPayload> {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
@@ -15,19 +12,15 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // For guest users, the ID in payload maps directly to guest schema
-  const guest = await MyGlobal.prisma.community_platform_guests.findFirst({
+  // Query using correct model name 'community_guests' from loaded schema
+  const guest = await MyGlobal.prisma.community_guests.findFirst({
     where: {
       id: payload.id,
-      // Check for any guest-specific validation fields
-      // Since guest users are typically allowed only read access,
-      // no soft-delete or expiration checks are needed as they
-      // are temporary by design
     },
   });
 
   if (guest === null) {
-    throw new ForbiddenException("Guest access not authorized");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

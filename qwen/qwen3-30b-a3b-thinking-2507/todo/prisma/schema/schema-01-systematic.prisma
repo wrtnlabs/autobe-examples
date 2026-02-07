@@ -1,0 +1,79 @@
+/// System-wide configuration parameters including email templates, timeouts,
+/// and feature flags. Manages application-wide settings like email
+/// templates, expiration timeouts, and feature toggles.
+///
+/// This table stores all system-level parameters that affect application
+/// behavior and user experience, including:
+/// - Email verification timeout (15 minutes as per requirements)
+/// - Password reset timeout (60 minutes as per requirements)
+/// - Feature flags toggle for enabling/disabling features
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Time in minutes for email verification links to expire (e.g., 15).
+  email_verification_timeout Int
+  
+  /// Time in minutes for password reset tokens to expire (e.g., 60).
+  password_reset_timeout Int
+  
+  /// Serialized JSON string of feature flags enabled for the application.
+  feature_flags String
+  
+  /// Timestamp when the configuration record was created.
+  created_at DateTime
+  
+  /// Timestamp when the configuration record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the configuration record was soft-deleted. Nullable for
+  /// soft delete handling.
+  deleted_at DateTime?
+}
+
+/// System-wide audit log entries tracking all system-level events including
+/// user account changes and administrative actions.
+///
+/// Each audit entry records the event type, description, user context, and
+/// timestamp for complete historical tracing of system activities.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the audit event. {@link todo_users.id}.
+  todo_user_id String
+  
+  /// Type of the audit event (e.g., 'user.created', 'account.deleted').
+  event_type String
+  
+  /// Description of the audit event, with additional context if needed.
+  event_description String?
+  
+  /// Timestamp when the audit log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the audit log entry was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_user_id, created_at])
+}

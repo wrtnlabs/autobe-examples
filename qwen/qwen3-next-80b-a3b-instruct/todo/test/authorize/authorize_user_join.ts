@@ -15,8 +15,9 @@ export async function authorize_user_join(
   },
 ): Promise<ITodoAppUser.IAuthorized> {
   const joinInput = {
-    email: props.body?.email ?? `${RandomGenerator.alphaNumeric(8)}@example.io`,
-    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    // ITodoAppUser.IJoin is an empty object, so we don't need to provide any fields
+    // but we must still pass an object that satisfies the type
+    ...props.body,
   } satisfies ITodoAppUser.IJoin;
   return await api.functional.todoApp.auth.user.join(connection, {
     body: joinInput,

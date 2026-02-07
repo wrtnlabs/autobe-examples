@@ -1,38 +1,59 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
+import { IPageIShoppingMallOrder } from "../../../../structures/IPageIShoppingMallOrder";
 import { IShoppingMallOrder } from "../../../../structures/IShoppingMallOrder";
 
 export * as items from "./items/index";
-export * as metrics from "./metrics/index";
-export * as shipments from "./shipments/index";
 
 /**
- * Create a new order from a customer's shopping cart after successful checkout and payment processing. This operation aggregates selected product variants from the cart, captures shipping and billing information, and establishes the foundational record for order lifecycle management. Each order can contain multiple items from different sellers, and all product, variant, and seller data are captured in snapshots at the time of order creation to maintain historical consistency and support dispute resolution.
+ * Retrieve a filtered, sorted, and paginated list of your order history.
  *
- * This operation leverages our snapshot system to preserve the exact state of products, variants, and seller profiles at the time of purchase, ensuring future compliance and dispute resolution can reference the original transactional context. The system stores these snapshots in the shopping_mall_order_snapshots and shopping_mall_order_item_snapshots tables, which record the complete state of each entity as it existed at order placement.
+ * This operation enables customers to view their personal order history with advanced filtering options including order status (paid, shipped, delivered, cancelled, refunded), date range filtering, and total amount thresholds. The response returns paginated summary data optimized for list displays rather than full order details, improving performance for large result sets. Each summary includes essential information such as order number, total amount, status, creation date, and order item count, with full order details available via the GET /shopping_mall/customer/orders/{orderId} endpoint.
  *
- * The order is created with an initial status of 'paid' following the successful completion of payment processing during checkout. The operation links the order to the customer's specified shipping address and records all relevant order item details including quantities, prices, and product variants. For each order item, the system captures a snapshot of the product (name, description, images), the variant specifications (SKU, option values, price), and the seller's profile (shop name, logo) at the precise moment the order is placed, ensuring that even if sellers later change their product listings, the order record remains accurate and immutable.
+ * Filtering supports complex combinations: search for all paid orders in the last 90 days, or orders with total amount greater than $50. Date ranges can be specified as start/end dates or relative periods (last 7 days, this month, etc.). Order totals can be filtered using comparison operators (greater than, less than, between). For performance reasons, only the most relevant order summary data is returned, reducing payload size and improving response times.
  *
- * This operation is triggered exclusively through the checkout flow at /checkout/complete and requires authenticated customer authorization. Payment status is tracked separately from order status to allow for partial payments, payment failures, and refund scenarios that don't necessarily cancel the order entirely.
+ * This endpoint is designed to handle large datasets efficiently through offset/limit pagination, with support for sorting by any field (created_at, total_amount, status). Search filters are case-insensitive for text fields and exact matches for status codes. Results are automatically filtered to the authenticated customer's own orders only.
  *
- * Related operations: GET /orders/{orderId} (retrieve full order details), PATCH /orders (list orders with pagination), POST /orders/{orderId}/items/{orderItemId}/cancel (request item cancellation), POST /orders/{orderId}/items/{orderItemId}/refund (request item refund).
+ * Related operations: GET /shopping_mall/customer/orders/{orderId} to retrieve full details of a specific order, GET /shopping_mall/customer/orders/{orderId}/items to list all items in a specific order.
  *
  * @param props.connection
- * @param props.body Order creation details including the shipping address and payment confirmation.
- * @x-autobe-specification Create an order record in shopping_mall_orders table with status='paid' and current timestamp. For each cart item, create corresponding records in shopping_mall_order_items with status='paid' linked to the new order. For each order item, retrieve and store snapshots of product, variant, and seller profile in shopping_mall_order_item_snapshots and shopping_mall_order_snapshots tables using the current state of the referenced entities. Transfer cart item quantities to order items and clear the cart. Generate unique orderNumber in format 'ORD-YYYYMMDD-####' where #### is a sequential number. Calculate total price as sum of all order items (quantity * price per item). Associate order with customer and provided shipping addressId. Set paymentStatus to 'succeeded'. Create transaction record in payment processing system with order ID and transaction ID.
+ * @param props.body Search criteria and pagination parameters for your orders
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_orders table with pagination and comprehensive filtering.
+ *
+ * Apply filters for status (paid, shipped, delivered, cancelled, refunded), creation date range (start/end), customer_id, seller_id, and total_amount (with comparison operators: >, <, >=, <=, between).
+ *
+ * For customer requests, automatically filter by customer_id from JWT token.
+ *
+ * For admin requests, allow filtering across all customers and sellers.
+ *
+ * Support sorting by: created_at (asc/desc), total_amount (asc/desc), status (alphabetically).
+ *
+ * Implement cursor-based pagination: use offset/limit for small datasets, cursor-based for large datasets with >1000 records.
+ *
+ * Return only the summary fields: id, order_number, status, total_amount, created_at, customer_id, customer_email, order_item_count.
+ *
+ * Do not join order_items table in primary query - use subqueries or cached counts for performance.
+ *
+ * Handle empty or malformed filters gracefully by returning empty results.
+ *
+ * Log all search parameters for analytics and audit purposes.
+ *
+ * Apply rate limiting: 100 requests per minute per user.
  * @path /shoppingMall/customer/orders
- * @accessor api.functional.shoppingMall.customer.orders.create
+ * @accessor api.functional.shoppingMall.customer.orders.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function index(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -42,25 +63,25 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(),
+          ...index.METADATA,
+          path: index.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace index {
   export type Props = {
     /**
-     * Order creation details including the shipping address and payment confirmation.
+     * Search criteria and pagination parameters for your orders
      */
-    body: IShoppingMallOrder.ICreate;
+    body: IShoppingMallOrder.IRequest;
   };
-  export type Body = IShoppingMallOrder.ICreate;
-  export type Response = IShoppingMallOrder;
+  export type Body = IShoppingMallOrder.IRequest;
+  export type Response = IPageIShoppingMallOrder.ISummary;
 
   export const METADATA = {
-    method: "POST",
+    method: "PATCH",
     path: "/shoppingMall/customer/orders",
     request: {
       type: "application/json",
@@ -73,16 +94,16 @@ export namespace create {
   } as const;
 
   export const path = () => "/shoppingMall/customer/orders";
-  export const random = (): IShoppingMallOrder =>
-    typia.random<IShoppingMallOrder>();
+  export const random = (): IPageIShoppingMallOrder.ISummary =>
+    typia.random<IPageIShoppingMallOrder.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: create.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: create.path(),
+      path: index.path(),
       contentType: "application/json",
     });
     try {
@@ -101,21 +122,25 @@ export namespace create {
 }
 
 /**
- * Retrieve the complete details of a specific order, including all associated order items, shipment information, and historical snapshots of both order items and their variants.
+ * Retrieve complete details of a specific order by its unique identifier.
  *
- * This operation provides a comprehensive view of an order's entire lifecycle, accessible to the customer who placed the order, as well as administrators with appropriate permissions. The response includes the core order information such as order number, total price, payment status, and timestamps, combined with detailed information about each order item including product name, SKU, quantity, unit price, and seller details. Each order item is linked to its corresponding shipment information with carrier and tracking details, and historical snapshot versions of both the order item and its product variant at the time of order placement.
+ * This operation returns a comprehensive view of a customer's order, including all items purchased with their exact state at the time of purchase, preserving product specifications, pricing, and seller identity as immutable snapshots for audit and dispute resolution. This table serves as the immutable audit trail for all commercial transactions, preserving pricing, product details, and seller identity even if those details change later. Required for dispute resolution, financial reporting, and legal compliance. All data is frozen at checkout and never altered.
  *
- * All order items within the same order may originate from different sellers, and each item carries its own status (paid, shipped, delivered, cancelled, refunded) allowing for complex order scenarios. The system maintains immutable snapshots of each order item's state at the time of order creation, preserving critical information like product name, variant options, and pricing that may change after order placement. Similarly, the product variant details at purchase time are preserved in snapshot form to ensure accurate historical records for tax, warranty, or return purposes.
+ * The order head record captures the immutable state of the order at time of payment confirmation, including the customer's selected shipping address and the exact order status derived from its constituent order items. This ensures complete auditability and provides irrefutable evidence for dispute resolution and legal compliance.
  *
- * The response structure supports critical business processes including customer service inquiries, return and refund processing, dispute resolution, inventory reconciliation, and compliance auditing. Administrators use this detailed data for investigation of suspicious transactions, customer support, and performance monitoring of sellers and shipping providers.
+ * For each order item, the response includes the exact product name, description, category, and base price as they existed when the order was placed, regardless of any subsequent changes. Variant-specific details including SKU, option values (e.g., color, size), unit price, and stock quantity are preserved in their exact historical state. Seller information including shop name, description, and logo are captured as they appeared at purchase time to maintain brand integrity and reputation context.
  *
- * This endpoint requires the customer to be authenticated and authorized to access the specific order. For security reasons, the order must be associated with the authenticated user's account. Admin users can access any order regardless of ownership.
+ * The order header provides meta-information including order number, status, total amount, and creation/update timestamps. This operation is critical for customer self-service, enabling users to verify their purchase history with complete fidelity to the state of the marketplace at the time of transaction.
  *
- * Related operations: PATCH /orders (for browsing all orders), DELETE /orders/{orderId} (for order deletion if allowed by policy), POST /orders/{orderId}/items/{orderItemId}/cancel (for cancellation requests), and POST /orders/{orderId}/items/{orderItemId}/refund (for refund requests). A comprehensive history of all changes to this order is preserved in the snapshot records accessible through the IShoppingMallOrderSnapshots collection.
+ * This endpoint is exclusively available to the authenticated customer who placed the order, or to platform administrators with elevated privileges for dispute resolution and oversight purposes.
+ *
+ * Note: No other API operations need to be pre-executed to access this data. All information is fully contained within the order and its associated order items.
  *
  * @param props.connection
- * @param props.orderId Unique identifier of the target order
- * @x-autobe-specification Query shopping_mall_orders table by order_id (UUID). Join with shopping_mall_order_items to retrieve all order items for this order, filtering by order_id and excluding deleted items. Join with shopping_mall_sellers to get seller details (shop name, logo) for each order item. Join with shopping_mall_shipments to retrieve shipment information linked to the order via shipment-to-order-item association. Use shopping_mall_order_item_snapshots to get historical snapshot data for each order item at time of creation. Join with shopping_mall_sale_specifications to retrieve variant options and prices as they existed at purchase time. Apply pagination for order items using cursor-based pagination due to potentially large result sets. Ensure order_item_snapshots reference the correct snapshot version corresponding to the order creation timestamp. Include order total price calculation from sum of order_item quantities multiplied by unit prices. Return order status based on aggregation of item statuses and shipment delivery status. Implement rate limiting of 20 requests per minute per customer to prevent abuse.
+ * @param props.orderId The unique identifier of the order to retrieve as a UUID. This parameter references the primary key of the shopping_mall_orders table.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Retrieve order from shopping_mall_orders table using the orderId path parameter. Join with shopping_mall_order_items to get all order items. Include all snapshot fields from order_items: product_name, product_description, category_name, base_price, thumbnail_image, all_product_images, variant_sku, option_values, variant_price, stock_at_time_of_purchase, shop_name, shop_description, logo_url. Filter by order_id and ensure deleted_at is null. Return order header fields: order_number, status, total_amount, created_at, updated_at. All data must reflect the state at time of purchase, not current data. No caching allowed. Use database transaction for consistency.
  * @path /shoppingMall/customer/orders/:orderId
  * @accessor api.functional.shoppingMall.customer.orders.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -144,9 +169,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target order
+     * The unique identifier of the order to retrieve as a UUID. This parameter references the primary key of the shopping_mall_orders table.
      */
-    orderId: string;
+    orderId: string & tags.Format<"uuid">;
   };
   export type Response = IShoppingMallOrder;
 

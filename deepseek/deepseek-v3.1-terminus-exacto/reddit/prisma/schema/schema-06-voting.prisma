@@ -1,0 +1,397 @@
+/// Core vote records storing user votes on posts and comments with vote type
+/// and timestamps.
+///
+/// This table implements the voting system's core functionality by tracking
+/// individual user votes on content items. Each record represents a single
+/// vote cast by a user on either a post or a comment. The table supports
+/// both upvotes and downvotes and enforces the one-vote-per-user-per-content
+/// constraint through unique indexing.
+///
+/// The voting system integrates with karma calculation, where each vote
+/// affects the content author's karma score. Votes are used to calculate
+/// content scores for sorting algorithms and feed generation. The table
+/// maintains audit trails through timestamps and supports vote modification
+/// workflows.
+///
+/// Votes are subject to rate limiting and anti-abuse measures to prevent
+/// manipulation. The system tracks vote changes and removals for
+/// transparency and audit purposes. {@link community_platform_vote_scores}
+/// aggregates vote data for performance optimization.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link community_platform_users.id}
+  user_id String
+  
+  /// Post being voted on, if applicable. {@link community_platform_posts.id}
+  post_id String?
+  
+  /// Comment being voted on, if applicable. {@link
+  /// community_platform_comments.id}
+  comment_id String?
+  
+  /// Type of vote cast - either 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Timestamp when the vote was initially cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified or removed.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft-deleted (vote removal).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  karmaHistories community_platform_karma_histories[]
+  karmaRecords community_platform_karma_records[]
+  voteHistories community_platform_vote_histories[]
+  rateLimits community_platform_vote_rate_limits[]
+  
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+  @@index([vote_type, created_at])
+}
+
+/// Materialized view for pre-calculated vote statistics to enable fast
+/// content ranking and feed generation.
+///
+/// This materialized view aggregates individual vote records from {@link
+/// community_platform_votes} to provide efficient access to vote counts and
+/// scores for both posts and comments. The view is refreshed periodically or
+/// on-demand to maintain consistency with the underlying vote data.
+///
+/// Unlike a denormalized table, this approach maintains data integrity by
+/// deriving scores from the authoritative vote records while providing
+/// performance benefits for sorting and ranking operations. The view
+/// separates post and comment scoring through proper relational design.
+///
+/// This materialized view supports the platform's feed algorithms and
+/// content ranking requirements without violating normalization principles.
+/// {@link community_platform_posts.id} {@link
+/// community_platform_comments.id} {@link community_platform_votes.id}
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the scored post. {@link community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the scored comment. {@link community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Total number of upvotes calculated from individual vote records.
+  upvote_count Int
+  
+  /// Total number of downvotes calculated from individual vote records.
+  downvote_count Int
+  
+  /// Calculated score (upvote_count - downvote_count) for efficient sorting.
+  total_score Int
+  
+  /// Timestamp when the vote statistics were last calculated and refreshed.
+  last_calculated_at DateTime
+  
+  /// Timestamp when this score record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this score record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_vote_scores_community_platform_comm_5336fde5")
+  // spellchecker: ignore-next-line
+  @@index([total_score, last_calculated_at], map: "community_platform_vote_scores_total_score_last_calcul_c5827f4e")
+  @@index([last_calculated_at])
+}
+
+/// Individual karma impact records showing how each vote affected user karma
+/// scores.
+///
+/// This table tracks the specific karma change resulting from each vote
+/// action (upvote/downvote) on posts and comments. Each record represents a
+/// single karma impact event, allowing for transparent karma calculation and
+/// audit trails. The records support the voting system's requirement to show
+/// how votes directly affect user reputation scores.
+///
+/// Records are created when votes are cast, changed, or removed, providing
+/// complete visibility into karma calculation mechanics. This enables
+/// debugging karma discrepancies, supporting user appeals, and maintaining
+/// system integrity.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The vote that caused this karma impact. {@link
+  /// community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// The user whose karma was affected by this vote. {@link
+  /// community_platform_users.id}
+  community_platform_user_id String
+  
+  /// The amount of karma changed by this vote (+1 for upvote, -1 for downvote).
+  karma_change Int
+  
+  /// Type of content that was voted on (post or comment).
+  content_type String
+  
+  /// ID of the specific post or comment that was voted on.
+  content_id String
+  
+  /// The vote action that caused this karma change (upvote, downvote, remove).
+  vote_action String
+  
+  /// When this karma impact record was created.
+  created_at DateTime
+  
+  /// When this karma impact record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_karma_records_community_platform_us_3169fa3e")
+  @@index([community_platform_vote_id])
+  @@index([content_type, content_id])
+}
+
+/// Complete audit trail of all vote changes, removals, and modifications for
+/// transparency.
+///
+/// This table maintains a comprehensive history of every vote modification
+/// in the system, providing full transparency and audit capabilities. Each
+/// record captures the state of a vote before and after a change, including
+/// vote type transitions (upvote/downvote), vote removals, and vote
+/// creations. The history supports compliance requirements and enables
+/// rollback capabilities for moderation purposes.
+///
+/// Records are created whenever a vote is created, modified, or deleted,
+/// capturing the complete lifecycle of voting activity. This audit trail is
+/// essential for detecting vote manipulation, investigating disputes, and
+/// maintaining voting integrity across the platform.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the vote being modified. {@link community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// The vote type before the modification occurred. Null for newly created
+  /// votes.
+  previous_vote_type String?
+  
+  /// The vote type after the modification occurred.
+  new_vote_type String
+  
+  /// Type of modification performed: 'create', 'update', 'remove'.
+  modification_type String
+  
+  /// Optional reason for the modification, used for audit and moderation
+  /// purposes.
+  modification_reason String?
+  
+  /// Timestamp when this history record was created.
+  created_at DateTime
+  
+  /// Timestamp when this history record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_vote_id, created_at], map: "community_platform_vote_histories_community_platform_v_d33a871c")
+  // spellchecker: ignore-next-line
+  @@index([modification_type, created_at], map: "community_platform_vote_histories_modification_type_cr_cde2747c")
+  @@index([modification_reason])
+}
+
+/// Rate limiting records to prevent vote manipulation and enforce anti-abuse
+/// measures.
+///
+/// This table tracks vote attempts within configured time windows to prevent
+/// spam voting and manipulation. Each record represents a rate limit check
+/// associated with a specific vote attempt, tracking whether the vote was
+/// allowed or blocked due to rate limiting.
+///
+/// Rate limits are enforced based on user voting patterns, content type, and
+/// time windows. This table provides the audit trail needed for moderation
+/// and anti-abuse enforcement by linking each rate limit check to its
+/// corresponding vote record.
+///
+/// As a subsidiary entity, this table inherits user and content context from
+/// the parent vote record through the foreign key relationship.
+///
+/// {@link community_platform_votes.id}
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the vote attempt being rate limited. {@link
+  /// community_platform_votes.id}
+  community_platform_vote_id String
+  
+  /// Type of rate limit being enforced (post_vote, comment_vote, overall_vote,
+  /// etc.).
+  limit_type String
+  
+  /// Start of the rate limit window for this attempt.
+  window_start DateTime
+  
+  /// End of the rate limit window for this attempt.
+  window_end DateTime
+  
+  /// Current count of votes within this window at the time of attempt.
+  current_count Int
+  
+  /// Maximum allowed votes within this window.
+  limit_max Int
+  
+  /// Whether this vote attempt was blocked due to rate limiting.
+  enforced Boolean
+  
+  /// Timestamp when this rate limit record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_votes @relation(fields: [community_platform_vote_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_vote_id], map: "community_platform_vote_rate_limits_community_platform_237b8ee4")
+  @@index([limit_type, window_start])
+  @@index([created_at])
+}
+
+/// Materialized view for fast retrieval of vote statistics across all
+/// content types.
+///
+/// This table provides pre-computed vote statistics for posts and comments
+/// to enable efficient feed generation and content ranking. It aggregates
+/// vote data from the voting system to provide real-time vote counts,
+/// scores, and engagement metrics without requiring expensive joins and
+/// aggregations at query time.
+///
+/// The materialized view is refreshed periodically to maintain performance
+/// while providing accurate vote statistics for content sorting algorithms.
+/// It supports the Hot, New, Top, and Controversial sorting algorithms used
+/// in content feeds by providing immediate access to vote-based metrics.
+///
+/// This view integrates with both {@link community_platform_posts} and
+/// {@link community_platform_comments} to provide comprehensive vote
+/// statistics across all content types in the platform.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_content_vote_summaries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post content for vote statistics. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the comment content for vote statistics. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Total number of votes cast on this content item.
+  total_votes Int
+  
+  /// Number of upvotes received by this content item.
+  upvote_count Int
+  
+  /// Number of downvotes received by this content item.
+  downvote_count Int
+  
+  /// Net vote score calculated as upvote_count minus downvote_count.
+  vote_score Int
+  
+  /// Controversy metric calculated based on vote distribution patterns.
+  controversy_score Float
+  
+  /// Timestamp when this materialized view was last refreshed.
+  last_refreshed_at DateTime
+  
+  /// Timestamp when this vote summary record was created.
+  created_at DateTime
+  
+  /// Timestamp when this vote summary record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id], map: "community_platform_content_vote_summaries_community_pl_3ca4ea34")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id], map: "community_platform_content_vote_summaries_community_pl_8634965a")
+  // spellchecker: ignore-next-line
+  @@index([vote_score, last_refreshed_at], map: "community_platform_content_vote_summaries_vote_score_l_b8cfaea6")
+  // spellchecker: ignore-next-line
+  @@index([controversy_score, last_refreshed_at], map: "community_platform_content_vote_summaries_controversy__8739f11d")
+  // spellchecker: ignore-next-line
+  @@index([total_votes, last_refreshed_at], map: "community_platform_content_vote_summaries_total_votes__9b7e5638")
+}

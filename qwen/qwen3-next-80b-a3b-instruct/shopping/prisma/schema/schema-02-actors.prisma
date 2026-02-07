@@ -1,21 +1,12 @@
-/// Registered customer accounts with email/password authentication
-/// credentials and profile information (display name, phone number).
-///
-/// Represents an authenticated actor in the system with dedicated session
-/// management. Each customer account enables access to shopping cart, order
-/// placement, product reviews, and wishlist functionality. The account
-/// includes profile attributes for personalized experience while maintaining
-/// separation between identity and transactional data.
-///
-/// Customer accounts are created during registration and can be deleted by
-/// the user, but all associated order history and snapshots are preserved
-/// for legal and audit purposes. When deleted, the account becomes inactive
-/// but its transactional records remain intact for seller reference.
-///
-/// Email address serves as unique identifier for authentication and
-/// communication. Password is securely hashed and never stored in plain
-/// text. Display name is used for user interface presentation while phone
-/// number enables SMS notifications.
+/// Registered customer accounts with email/password credentials and
+/// authentication metadata. This is an actor table representing a true
+/// identity record in the system that owns sessions and credentials.
+/// Customers can browse products, make purchases, manage addresses, create
+/// wishlists, and write reviews. When a customer deletes their account, this
+/// record is soft-deleted but preserves all associated order history for
+/// legal compliance. The email and password_hash are required for
+/// authentication. Profile data such as name and phone are stored in
+/// separate tables.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -26,31 +17,24 @@ model shopping_mall_customers {
   /// Primary Key.
   id String @id
   
-  /// Customer email address used for authentication and communication. Must be
-  /// unique across all customers.
+  /// Unique email address used for authentication and communication. Must be a
+  /// valid email format.
   email String
   
-  /// Cryptographically hashed password for secure authentication. Never stored
-  /// in plain text.
+  /// Hashed password for secure authentication. Never store plaintext
+  /// passwords.
   password_hash String
   
-  /// Public display name for customer profile. May be edited by user during
-  /// account management.
-  display_name String?
-  
-  /// Customer phone number for notifications and contact purposes. Optional
-  /// field.
-  phone_number String?
-  
-  /// Timestamp when the customer account was created. Uses UTC timezone.
+  /// Timestamp when this customer account was created. Always recorded upon
+  /// registration.
   created_at DateTime
   
-  /// Timestamp of the last update to the customer account. Updated with every
-  /// profile change.
+  /// Timestamp of the last modification to this account. Updated whenever any
+  /// field changes.
   updated_at DateTime
   
-  /// Timestamp when the customer account was soft-deleted. If null, account is
-  /// active. This preserves audit trail while removing active access.
+  /// Soft deletion timestamp. Null if account is active. When non-null,
+  /// account is inactive but preserved for audit and order history linkage.
   deleted_at DateTime?
   
   //----
@@ -58,36 +42,45 @@ model shopping_mall_customers {
   //----
   sessions shopping_mall_customer_sessions[]
   passwordResets shopping_mall_customer_password_resets[]
-  emailVerifications shopping_mall_customer_email_verifications[]
-  seller shopping_mall_sellers?
-  favorites shopping_mall_sale_favorites[]
-  cartItems shopping_mall_cart_items[]
+  emailVerification shopping_mall_customer_email_verifications?
+  emailVerifications shopping_mall_seller_email_verifications[]
+  snapshots shopping_mall_snapshots[]
   orders shopping_mall_orders[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
   reviews shopping_mall_reviews[]
   reviewSnapshots shopping_mall_review_snapshots[]
   reviewVotes shopping_mall_review_votes[]
-  reviewReports shopping_mall_review_reports[]
-  refundRequests shopping_mall_refund_requests[]
   
   @@unique([email])
   @@index([created_at])
   @@index([updated_at])
   @@index([deleted_at])
+  @@index([email, deleted_at])
 }
 
-/// JWT session tokens for customer authentication with access and refresh
-/// token support.
+/// JWT access and refresh tokens for authenticated customer sessions with
+/// expiration tracking. This table is an append-only audit trail of login
+/// events for customer actors, ensuring security compliance by capturing
+/// connection metadata (IP, referrer) and enforcing token expiration.
 ///
-/// Tracks login events for customers with connection context and session
-/// lifecycle timestamps. This table provides an append-only audit trail of
-/// authentication sessions with IP addresses, request URLs, and referrers.
-/// Sessions are automatically expired after a limited period for security,
-/// and cannot be deleted or modified once created.
+/// This table is a child of shopping_mall_customers. Each customer can have
+/// multiple sessions (1:N relationship), representing concurrent or
+/// historical logins. Sessions are never modified or deleted - only
+/// appended. They can be invalidated by system policy or customer logout,
+/// but their records remain in the database for audit.
 ///
-/// Each session is tied to exactly one customer account. The system tracks
-/// multiple concurrent sessions per customer. Admins can view this data for
-/// security investigations but cannot directly manipulate session records -
-/// they only expire sessions via revocation.
+/// When a customer logs in, a new session record is created. The session
+/// remains valid until either:
+/// - The access token expires (30 minutes)
+/// - The refresh token expires (30 days)
+/// - The user logs out (system invalidates the refresh token)
+/// - The admin suspends the customer account
+///
+/// Never use this table for storing any business data. It exists solely for
+/// authentication security and audit purposes.
+///
+/// @\link shopping_mall_customers.id
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -98,52 +91,65 @@ model shopping_mall_customer_sessions {
   /// Primary Key.
   id String @id
   
-  /// The customer this session belongs to. {@link shopping_mall_customers.id}.
-  customer_id String
+  /// Customer identifier this session belongs to. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// IP address of the client device during login.
+  /// JWT access token used for API authentication. Expires 30 minutes after
+  /// creation.
+  access_token String
+  
+  /// JWT refresh token used to obtain new access tokens. Expires 30 days after
+  /// creation.
+  refresh_token String
+  
+  /// Client IP address from which the login request originated.
   ip String
   
-  /// URL of the connection request that initiated this session.
+  /// Full URL of the page where login occurred.
   href String
   
-  /// Referrer URL from which the user arrived at the application.
-  referrer String
+  /// Referrer URL that led the user to the login page.
+  referrer String?
   
-  /// Timestamp when the session was created.
+  /// Timestamp when this session was created and login occurred.
   created_at DateTime
   
-  /// Timestamp when the session expires. Sessions must expire for security;
-  /// null values are prohibited except in explicitly requested unlimited
-  /// session cases.
+  /// Timestamp when this session expires and becomes invalid. Always set to 30
+  /// days after created_at for refresh token.
   expired_at DateTime
+  
+  /// Flag indicating whether this session is still valid. True until token
+  /// expires or is invalidated by logout/admin action.
+  is_active Boolean
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
-  orders shopping_mall_orders[]
-  
-  @@index([customer_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+  @@index([access_token])
+  @@index([refresh_token])
+  @@index([expired_at])
 }
 
-/// Password reset tokens for customer accounts with expiration for secure
-/// recovery workflow.
+/// Password reset tokens with expiration for customer account recovery.
 ///
-/// Stores temporary, single-use tokens issued to customers during password
-/// recovery requests. Tokens are generated with cryptographic randomness and
-/// must expire after a short period to prevent abuse. When a customer
-/// requests password reset, the system generates one record with a unique
-/// token and expiration time. Customers use this token to access the
-/// password reset form. Once used or expired, the record is soft-deleted for
-/// audit tracking.
+/// This table enables secure, time-limited password reset functionality for
+/// customers. Each record represents a single password reset request, tied
+/// to a specific customer account and invalidated after expiration. The
+/// token is a cryptographically random string issued upon request and
+/// validated during reset. Expiration ensures security by limiting the
+/// window of vulnerability. This table is immutable after creation and
+/// referenced only by the authentication service. The customer_id foreign
+/// key ensures each reset is tied to an authentic customer account.
 ///
-/// This table is managed entirely by the authentication system. Customers
-/// cannot directly create, update, or delete entries - they are generated
-/// automatically during the reset workflow and cleaned up by background
-/// processes. This design ensures secure, auditable password recovery
-/// without exposing sensitive data.
+/// @see shopping_mall_customers.id for customer account linkage.
+/// @see shopping_mall_customer_sessions for active session tracking.
+/// @see shopping_mall_customer_email_verifications for email verification
+/// workflow.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -154,59 +160,44 @@ model shopping_mall_customer_password_resets {
   /// Primary Key.
   id String @id
   
-  /// Customer account requesting password reset. {@link
+  /// Reference to the customer account requesting password reset. {@link
   /// shopping_mall_customers.id}.
-  customer_id String
+  shopping_mall_customer_id String
   
-  /// Cryptographically secure, single-use token for password reset. Must be
-  /// uniquely generated and never reused.
+  /// Cryptographically random token issued for password reset. Must be unique
+  /// and expired after use.
   token String
   
-  /// Expiration timestamp after which the token becomes invalid. Must be set
-  /// to a short future time (e.g., 1-2 hours) for security.
+  /// Absolute expiration timestamp for the reset token. Token becomes invalid
+  /// after this point. Required by security policy.
   expires_at DateTime
   
-  /// Timestamp when the password reset token was generated. Used for tracking
-  /// and audit.
+  /// Timestamp when the password reset request was created. Required for audit
+  /// and expiration calculation.
   created_at DateTime
   
-  /// Timestamp when the password reset token was last modified. For audit
-  /// trail, though typically only created once.
+  /// Timestamp of last update to record. Required temporal field for all
+  /// business entities.
   updated_at DateTime
-  
-  /// Soft delete timestamp to maintain audit trail. When token is used or
-  /// expired, this field is populated to mark deletion without removing
-  /// record.
-  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
   @@unique([token])
   // spellchecker: ignore-next-line
-  @@index([customer_id, expires_at], map: "shopping_mall_customer_password_resets_customer_id_exp_eea3b13a")
-  @@index([expires_at])
+  @@unique([shopping_mall_customer_id, token], map: "shopping_mall_customer_password_resets_shopping_mall_c_a7f19076")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_password_resets_shopping_mall_c_08e0cfed")
 }
 
-/// Email verification tokens for customer registration and email change
-/// workflows.
-///
-/// Stores temporary one-time-use verification tokens that customers use to
-/// confirm their email addresses during registration or when changing their
-/// registered email. Once verified, the token is marked as expired and
-/// cannot be reused. This table supports tamper-proof user identity
-/// verification via encrypted tokens with expiry and status tracking.
-///
-/// Tokens are generated during registration or email update and are consumed
-/// only once. Upon successful verification, the customer's email status is
-/// updated in the parent customer table, and the verification token is
-/// marked as expired. Tokens expire after 24 hours for security.
-///
-/// This table is not directly modified by users — it is managed entirely by
-/// the authentication system during the email verification workflow, and its
-/// lifecycle is tied to the customer's email change or registration process.
+/// Email verification token record for customer account registration. Stores
+/// the unique verification token and its expiration timestamp to confirm
+/// email ownership. This subsidiary table is created during customer
+/// registration and deleted upon successful verification or expiration. Each
+/// customer can have at most one active verification record, linked to their
+/// {@link shopping_mall_customers.id}.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -217,63 +208,70 @@ model shopping_mall_customer_email_verifications {
   /// Primary Key.
   id String @id
   
-  /// Customer's account being verified. {@link shopping_mall_customers.id}.
-  customer_id String
+  /// Reference to the customer account being verified. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Email address to be verified. This must match the customer's target email.
-  email String
+  /// Unique verification token used to confirm email ownership during
+  /// registration.
+  token String
   
-  /// Unique, cryptographically secure verification token for one-time use.
-  /// Used in the verification URL.
-  verification_token String
-  
-  /// Expiry time of the verification token. Tokens expire 24 hours after
-  /// issuance for security.
+  /// Timestamp when this token expires. After this time, the verification will
+  /// no longer be valid and a new verification request must be made.
   expires_at DateTime
-  
-  /// Current status of the verification token. Must be one of: pending,
-  /// verified, expired.
-  status String
   
   /// Timestamp when this verification record was created.
   created_at DateTime
   
-  /// Timestamp when this record was last updated (e.g., status change).
+  /// Timestamp when this verification record was last updated.
   updated_at DateTime
   
-  /// Timestamp when this record was soft-deleted, if applicable. Used for
-  /// audit trails and compliance.
+  /// Timestamp when this verification record was logically deleted (e.g.,
+  /// after successful verification or manual cleanup). Null if still active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  @@unique([token])
   // spellchecker: ignore-next-line
-  @@unique([verification_token], map: "shopping_mall_customer_email_verifications_verificatio_8cfe8dd5")
-  // spellchecker: ignore-next-line
-  @@index([customer_id, status, expires_at], map: "shopping_mall_customer_email_verifications_customer_id_1b976b8c")
+  @@unique([shopping_mall_customer_id], map: "shopping_mall_customer_email_verifications_shopping_ma_8d78106c")
+  @@index([expires_at])
 }
 
-/// Registered seller accounts with email/password authentication credentials
-/// and shop profile information.
+/// Seller account records with authentication credentials and approval
+/// status. Each seller is a distinct actor with login access, independent
+/// profile management, and the ability to list products. Approval status
+/// determines whether the seller can operate on the platform.
 ///
-/// Represents a true actor in the system with its own authentication flow,
-/// distinct from customers and admins. Owns credentials and seller-specific
-/// profile data such as shop_name, shop_description, and logo_image_url.
-/// Serves as the root for permission and ownership relationships in the
-/// shopping mall platform.
+/// This table stores the canonical identity record for sellers on the
+/// platform. It is referenced by sessions (shopping_mall_seller_sessions),
+/// password resets (shopping_mall_seller_password_resets), and email
+/// verifications (shopping_mall_seller_email_verifications) for
+/// authentication purposes. Profile details (name, description, logo) are
+/// managed separately in shopping_mall_seller_profiles.
 ///
-/// Users must sign up as sellers with email and password, then undergo
-/// administrative approval before they can sell products. Suspended sellers
-/// can still process existing orders but cannot create new products or edit
-/// existing ones.
+/// A seller must be approved to list products and fulfill orders. Suspended
+/// sellers cannot log in or manage their shop. Rejected sellers cannot
+/// re-apply without admin intervention.
 ///
-/// Account deletion is permitted only when no pending orders, cancellations,
-/// or refunds exist. When deleted, the seller's profile information is
-/// removed but order history and snapshots are preserved for audit and legal
-/// purposes.
+/// Relationships:
+/// - Has many shopping_mall_seller_sessions (via seller_id)
+/// - Has many shopping_mall_seller_password_resets (via seller_id)
+/// - Has many shopping_mall_seller_email_verifications (via seller_id)
+/// - Has one shopping_mall_seller_profile (via seller_id)
+/// - Is referenced by shopping_mall_products (via seller_id)
+/// - Is referenced by shopping_mall_order_items (via seller_id)
+/// - Is referenced by shopping_mall_cancellation_requests (via seller_id)
+/// - Is referenced by shopping_mall_refund_requests (via seller_id)
+/// - Is referenced by shopping_mall_request_responses (via responder_id)
+/// -  Is referenced by shopping_mall_admin_actions (via actor_id)
+///
+/// All foreign key relationships point from child tables to this actor table
+/// - never reverse direction. Never add FKs to this table pointing to other
+/// tables.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -284,92 +282,67 @@ model shopping_mall_sellers {
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent user record. {@link shopping_mall_customers.id}.
-  user_id String
-  
-  /// Seller's email address used for authentication and communication. Must be
-  /// unique across all sellers.
+  /// Unique email address used for login and communication. Must be a valid
+  /// email format.
   email String
   
-  /// Hashed password for authentication. Never store plain text passwords.
+  /// BCrypt hash of the seller's password for authentication.
   password_hash String
   
-  /// The public name of the seller's shop as displayed to customers. Required
-  /// for storefront identity.
-  shop_name String
+  /// Current approval status of the seller account. Valid values: 'pending',
+  /// 'approved', 'rejected', 'suspended'. Determines account functionality:
+  /// only 'approved' sellers can list products and process orders.
+  approval_status String
   
-  /// Detailed description of the seller's shop, products, and value
-  /// proposition.
-  shop_description String?
-  
-  /// URL pointing to the seller's logo image used in shop display.
-  logo_image_url String?
-  
-  /// Indicates whether the seller account has been approved by an
-  /// administrator. Pending by default.
-  is_approved Boolean
-  
-  /// If rejected, contains the reason provided by the administrator for the
+  /// Reason for rejection of seller application. Only populated when
+  /// approval_status is 'rejected'. Must be provided by admin during
   /// rejection.
-  approval_rejection_reason String?
+  rejection_reason String?
   
-  /// Indicates whether the seller account has been suspended by an
-  /// administrator. Suspended sellers can still process existing orders but
-  /// cannot create new products.
-  is_suspended Boolean
+  /// Timestamp when the seller account was suspended by an administrator. If
+  /// null, account is not suspended. Suspended sellers cannot log in or manage
+  /// their shop.
+  suspended_at DateTime?
   
-  /// If suspended, contains the reason provided by the administrator.
-  suspension_reason String?
-  
-  /// Timestamp when this seller account was created.
+  /// Timestamp when the seller account was registered.
   created_at DateTime
   
-  /// Timestamp when this seller account was last updated.
+  /// Timestamp when the seller account was last updated.
   updated_at DateTime
   
-  /// Timestamp when this seller account was deleted (soft delete). If null,
-  /// account is active.
+  /// Timestamp when the seller account is logically deleted. If null, account
+  /// is active. This supports soft-deletion for audit purposes while
+  /// preventing login.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user shopping_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  sessions shopping_mall_seller_sessions[]
+  sellerSessions shopping_mall_seller_sessions[]
   passwordResets shopping_mall_seller_password_resets[]
-  emailVerifications shopping_mall_seller_email_verifications[]
-  products shopping_mall_products[]
-  sales shopping_mall_sales[]
-  saleSnapshots shopping_mall_sale_snapshots[]
+  emailVerification shopping_mall_seller_email_verifications?
   orderItems shopping_mall_order_items[]
-  sellerProfileSnapshots shopping_mall_seller_profile_snapshots[]
-  shipments shopping_mall_shipments[]
-  reviewSnapshots shopping_mall_review_snapshots[]
-  cancellationResponses shopping_mall_cancellation_requests[]
-  respondedRefundRequests shopping_mall_refund_requests[]
+  refundResponseSnapshots shopping_mall_refund_response_snapshots[]
+  variants shopping_mall_product_variants[]
+  inventoryHistories shopping_mall_variant_inventory_histories[]
+  profileSnapshots shopping_mall_seller_profile_snapshots[]
   
-  @@unique([user_id])
-  
+  @@unique([email, deleted_at])
   @@unique([email])
-  @@unique([shop_name])
+  @@index([approval_status])
+  @@index([suspended_at])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+  @@index([email, approval_status])
 }
 
-/// JWT session tokens for seller authentication with access and refresh
-/// token support.
-///
-/// Tracks active login sessions for sellers using stateless JWT tokens. Each
-/// session records the connection context including IP address, requested
-/// URL, and referrer source. Sessions expire after a predetermined timeout
-/// for security.
-///
-/// Repository for authentication state, managed through the authentication
-/// workflow rather than direct CRUD operations. Every login creates a new
-/// session, and logout or expiration invalidates the old one. This table is
-/// append-only for audit purposes.
-///
-/// The seller_id references the dedicated seller actor table, ensuring that
-/// each session is tied to exactly one approved seller account.
+/// JWT access and refresh tokens for authenticated seller sessions with
+/// expiration tracking. This table records each successful login event for
+/// sellers, storing connection context for security auditing. Each session
+/// is tied to exactly one seller and has a fixed expiration. Sessions are
+/// managed automatically by the authentication system and are never directly
+/// modified by users.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -380,50 +353,50 @@ model shopping_mall_seller_sessions {
   /// Primary Key.
   id String @id
   
-  /// Seller's {@link shopping_mall_sellers.id}.
-  seller_id String
+  /// Seller's account this session belongs to. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// Client IP address used for this session.
+  /// Client IP address from which the session was initiated.
   ip String
   
-  /// URL accessed that initiated this session.
+  /// Full URL of the page used to initiate the session (login page).
   href String
   
-  /// Referrer URL that linked to this login page.
+  /// Referrer URL from which the user navigated to the login page.
   referrer String
   
-  /// Date and time when the session was created.
+  /// Timestamp when this session was created and issued.
   created_at DateTime
   
-  /// Date and time when the session expires. Sessions must expire for
-  /// security; unlimited sessions are not permitted unless explicitly
-  /// requested.
+  /// Timestamp when this session expires and becomes invalid. Not nullable for
+  /// security.
   expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  @@index([seller_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
 }
 
-/// Password reset tokens with expiration for secure seller password recovery
-/// workflow.
+/// Password reset tokens for seller account recovery. When a seller
+/// initiates password recovery, a unique reset token is generated and stored
+/// with an expiration time. This record is destroyed upon successful reset
+/// or expiration. The token must be sufficiently random and
+/// cryptographically secure to prevent brute-force attacks, and the
+/// expiration ensures temporary access only. This table implements the
+/// password reset workflow as specified in 02-user-actors.md for sellers.
 ///
-/// Stores temporary password reset tokens for seller accounts as a security
-/// measure to facilitate password recovery. Each token is a unique, randomly
-/// generated string with a limited validity period (usually 1 hour) to
-/// prevent abuse.
+/// Linked to {@link shopping_mall_sellers} via seller_id. When a password
+/// reset is successful, this record is deleted. When expired, it is
+/// automatically purged by system cleanup. Never reused. Never updated after
+/// creation.
 ///
-/// When a seller initiates password reset, a new record is created with an
-/// expiration timestamp. The token can only be used once to reset the
-/// password to a new value, after which it becomes invalid. If the token
-/// expires or is used, a new reset request must be initiated.
-///
-/// This table is not for persistent storage of passwords or credentials, but
-/// for secure one-time password recovery operations with automatic cleanup
-/// via token expiration.
+/// This is a session-level authentication artifact, not a business entity.
+/// It represents temporary state in the seller's authentication flow.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -434,67 +407,60 @@ model shopping_mall_seller_password_resets {
   /// Primary Key.
   id String @id
   
-  /// The seller account for which this password reset token is issued. {@link
-  /// shopping_mall_sellers.id}.
-  seller_id String
+  /// The seller account for which this password reset token was generated.
+  /// {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// The unique, randomly generated password reset token. Must be a
-  /// cryptographically secure random string, typically 64+ characters in
-  /// length, to prevent brute-force attacks.
+  /// A unique, cryptographically secure token string used for password reset.
+  /// Must be generated with sufficient entropy to prevent guessing. This token
+  /// is used in the reset URL sent to the seller's email. Once used or
+  /// expired, this token becomes invalid.
   token String
   
-  /// The timestamp when this password reset token will expire and become
-  /// invalid. Tokens typically expire after 1 hour (3600 seconds) for
-  /// security.
-  expired_at DateTime
+  /// The exact date and time when this reset token expires. Reset requests are
+  /// only valid before this timestamp. After this time, the token cannot be
+  /// used and the seller must request a new password reset. Per requirements,
+  /// resets must expire after a reasonable timeframe.
+  expires_at DateTime
   
-  /// When the password reset token was generated and issued. Used for
-  /// calculating remaining validity window.
+  /// Timestamp when this password reset token was created and issued to the
+  /// seller.
   created_at DateTime
   
-  /// When this token was successfully used to reset the password. If null, the
-  /// token remains unused. Once used, the token becomes invalid and cannot be
-  /// used again.
-  used_at DateTime?
+  /// Timestamp of the last update to this token record. Never updated after
+  /// creation in this domain, but included for consistency with other
+  /// entities.
+  updated_at DateTime
+  
+  /// Timestamp when this token was logically deleted (used or expired). Used
+  /// to maintain audit trail. If null, token is still active and not yet used.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
   @@unique([token])
-  @@unique([seller_id, used_at])
-  @@index([expired_at])
-  @@index([seller_id, expired_at])
-  @@index([used_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_password_resets_shopping_mall_sel_bf4fc308")
+  @@index([expires_at])
+  @@index([deleted_at])
 }
 
-/// Email verification tokens for seller registration confirmation and email
-/// change verification.
-///
-/// Tracks one-time use tokens sent to sellers to verify their email
-/// addresses during registration or email change requests.
-///
-/// Each token has a short expiration period (typically 24-72 hours) for
-/// security.
-/// When a seller clicks the verification link, the token is consumed and the
-/// seller's email is marked as verified in the main shopping_mall_sellers
-/// table.
-/// Expired or used tokens are automatically purged by system processes.
-///
-/// This table is append-only - no updates or deletions are performed by the
-/// application.
-/// Tokens are invalidated by expiration or usage, not by removal from the
-/// table.
-///
-/// Only the seller who owns this verification token can use it to verify
-/// their email.
-///
-/// The token value is stored in plaintext because it's a one-time use
-/// cryptographic random string that should never be reused.
-///
-/// This table does not contain email addresses - they are referenced through
-/// the seller_id foreign key to principle shopping_mall_sellers table.
+/// Email verification tokens for seller registration. This table records the
+/// temporary verification tokens sent to new seller accounts to confirm
+/// email ownership before full activation. When a seller registers, a unique
+/// token is generated and sent to their email address. Until this token is
+/// verified (and verified_at is set), the seller account remains in a
+/// pending state and cannot access seller features. Tokens expire after a
+/// set time (e.g., 24 hours). This table is critical to ensuring that seller
+/// email addresses are valid and controlled by the registrant, preventing
+/// fraudulent registrations. Once verified, the seller may proceed with
+/// product listing and sales. This table is linked exclusively to
+/// shopping_mall_sellers and never referenced by other components. This is
+/// not a session table, but rather an authentication credential status table
+/// for the seller actor, making "actor" its correct stance.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -505,55 +471,62 @@ model shopping_mall_seller_email_verifications {
   /// Primary Key.
   id String @id
   
-  /// Seller who owns this email verification token. {@link
-  /// shopping_mall_sellers.id}.
-  seller_id String
+  /// The seller account that this email verification is associated with.
+  /// {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// Unique verification token sent to the seller's email address. This is a
-  /// randomly generated UUID string.
-  token String
+  /// The customer account that this email verification is associated with.
+  /// {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String?
   
-  /// When the verification token was generated. This is the timestamp of the
-  /// request to send verification.
+  /// Unique, random, 64-character alphanumeric token generated and sent via
+  /// email to confirm seller's email ownership. Token must be
+  /// cryptographically secure and unguessable.
+  email_verification_token String
+  
+  /// The absolute expiration timestamp for the verification token. After this
+  /// time, the token becomes invalid and must be regenerated. Always non-null
+  /// to enforce security.
+  expires_at DateTime
+  
+  /// The timestamp when the email verification was successfully completed by
+  /// the seller. Set to non-null if email link was clicked. If NULL,
+  /// verification is pending.
+  verified_at DateTime?
+  
+  /// Timestamp for when this email verification record was created.
   created_at DateTime
   
-  /// When the verification token expires. Sessions must expire for security.
-  /// Default: 72 hours after created_at.
-  expired_at DateTime
+  /// Timestamp for last modification of this record. Updated when token is
+  /// regenerated or when record is soft-deleted.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp to preserve audit trails. Null if active, non-null
+  /// if canceled or expired without verification.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
-  @@unique([token])
-  @@unique([seller_id, token])
   // spellchecker: ignore-next-line
-  @@index([seller_id, created_at], map: "shopping_mall_seller_email_verifications_seller_id_cre_7c069276")
+  @@unique([shopping_mall_seller_id], map: "shopping_mall_seller_email_verifications_shopping_mall_7c7e9a04")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id], map: "shopping_mall_seller_email_verifications_shopping_mall_9999319d")
+  
+  // spellchecker: ignore-next-line
+  @@unique([email_verification_token], map: "shopping_mall_seller_email_verifications_email_verific_3cc504ca")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_seller_email_verifications_shopping_mall_1fea7da1")
+  @@index([expires_at])
 }
 
-/// Platform administrator accounts with email/password authentication and
-/// 2FA enforcement for elevated privileges.
-///
-/// Represents a core actor type in the system with distinct authentication
-/// flow and elevated permissions that allow management of other
-/// administrators, sellers, products, orders, and customer accounts.
-///
-/// This is a canonical identity record used across the system for permission
-/// and ownership relationships. Each admin has a separate session table for
-/// authentication tracking.
-///
-/// Admins can be promoted to super administrator role through proper
-/// authorization workflow.
-///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// administrative account suspension.
-///
-/// The email address must be unique across all actor types (user, seller,
-/// admin) to prevent duplicate account creation.
-///
-/// 2FA (TOTP) is enforced for enhanced security when performing elevated
-/// privilege operations.
+/// System administrator accounts with elevated privileges and email/password
+/// authentication. This table serves as the authoritative identity record
+/// for admin users, referenced by shopping_mall_admin_sessions for session
+/// management.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -564,60 +537,39 @@ model shopping_mall_admins {
   /// Primary Key.
   id String @id
   
-  /// Unique email address for authentication. Must be unique across all actor
-  /// types (customer, seller, admin).
+  /// Unique email address used for administrator authentication.
   email String
   
-  /// Hashed password for authentication using bcrypt or equivalent algorithm.
-  /// Never store plain text passwords.
+  /// Hashed password for authentication. Never stored in plain text.
   password_hash String
   
   /// Timestamp when the admin account was created.
   created_at DateTime
   
-  /// Timestamp when the admin account was last updated.
+  /// Timestamp of the last update to the admin account.
   updated_at DateTime
   
-  /// Timestamp when the admin account was soft-deleted (if any). If null,
-  /// account is active.
+  /// Timestamp when the admin account was logically deleted (soft delete).
+  /// Nullable means account is active.
   deleted_at DateTime?
-  
-  /// Base32 encoded secret key used for Time-Based One-Time Password (TOTP)
-  /// 2FA implementation. null if 2FA is not enabled.
-  totp_secret String?
-  
-  /// Boolean flag indicating whether 2FA is enabled for this admin account.
-  totp_enabled Boolean
   
   //----
   // RELATIONS
   //----
   sessions shopping_mall_admin_sessions[]
-  passwordResets shopping_mall_admin_password_resets[]
-  emailVerifications shopping_mall_admin_email_verifications[]
-  reviewSnapshots shopping_mall_review_snapshots[]
+  adminActions shopping_mall_admin_actions[]
   
   @@unique([email])
 }
 
-/// Tracks login sessions for administrators, capturing connection metadata
-/// and temporal data for security audit trails.
+/// JWT access and refresh tokens for authenticated admin sessions with
+/// expiration tracking. Each record represents a single login session for an
+/// admin user and contains connection metadata including IP, referrer, and
+/// href. Sessions are append-only audit records and cannot be modified or
+/// deleted. Admin_id references the shopping_mall_admins table. All fields
+/// are required and immutable upon creation.
 ///
-/// This is an append-only session table that records every time an admin
-/// logs into the system. Each record represents a unique authentication
-/// session with details about the connection context and lifecycle.
-///
-/// Sessions are created during successful authentication and expire
-/// according to security policy. The system never deletes session records -
-/// they remain as an immutable audit trail of administrative activity.
-///
-/// The table enforces strong security by requiring all sessions to have a
-/// non-null expiration time. Unlimited sessions are prohibited by default to
-/// prevent security vulnerabilities.
-///
-/// Administrators can have multiple concurrent sessions, but each session is
-/// bound to a specific admin actor and cannot be reused across different
-/// actor types.
+/// @link shopping_mall_admins.id
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -628,26 +580,25 @@ model shopping_mall_admin_sessions {
   /// Primary Key.
   id String @id
   
-  /// Administrator account that initiated this session. {@link
+  /// Reference to the admin who initiated this session. {@link
   /// shopping_mall_admins.id}.
   admin_id String
   
-  /// IP address from which the admin logged in.
+  /// IP address from which the session was initiated.
   ip String
   
-  /// URL of the application that initiated this session (e.g.,
-  /// https://shopping-mall/admin/login).
+  /// The absolute URL of the page the admin was accessing when the session was
+  /// created.
   href String
   
-  /// Referrer URL indicating where the admin came from before initiating the
-  /// login (e.g., https://google.com).
+  /// The referrer URL that led the admin to the platform.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when the session was created (ISO 8601).
   created_at DateTime
   
-  /// Timestamp when the session expires. Must have a value; unlimited sessions
-  /// are prohibited for security.
+  /// Timestamp when the session expires and becomes invalid (ISO 8601). Must
+  /// be fixed at creation time, not updated.
   expired_at DateTime
   
   //----
@@ -655,29 +606,24 @@ model shopping_mall_admin_sessions {
   //----
   admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
-  @@index([admin_id, created_at])
+  @@unique([admin_id, created_at])
 }
 
-/// Password reset tokens with expiration for secure administrator password
-/// recovery workflow.
+/// Password reset token records for admin account recovery. Each token is
+/// issued in response to a password reset request, contains a unique
+/// cryptographic token string, and expires after a set period. Used to
+/// validate that a requestor owns the admin account before allowing password
+/// change.
 ///
-/// Stores temporary, single-use tokens generated when administrators request
-/// password recovery. Each token is linked to a specific administrator
-/// account and expires after a set time period to prevent token reuse and
-/// enhance security.
+/// - This is a session-type table: Auxiliary to authentication flow
+/// - Ties to one and only one admin via foreign key
+/// - Cosigned with an admin session (when used)
+/// - Deleted after use or expiration
+/// - Preserved for audit trail
+/// - Related to: {@link shopping_mall_admins.id}
 ///
-/// When a reset request is made, a unique token is generated and emailed to
-/// the administrator's registered email address. Once used to reset the
-/// password, the token is invalidated (though the record is preserved for
-/// audit purposes with a non-nullable expired_at field, in accordance with
-/// requirement "reset tokens expire"; tokens are automatically expired on
-/// use).
-///
-/// This table is purely a support entity for the authentication system, not
-/// directly managed by users. It is automatically created upon password
-/// reset request, updated upon token usage, but never directly queried or
-/// modified by administrators. Its lifecycle is managed entirely by the
-/// authentication system.
+/// All tokens are single-use. After reset, this record is marked as used and
+/// will be eventually purged by maintenance process.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -688,338 +634,32 @@ model shopping_mall_admin_password_resets {
   /// Primary Key.
   id String @id
   
-  /// Administrator account associated with this password reset request. {@link
+  /// Reference to the admin account requesting password reset. {@link
   /// shopping_mall_admins.id}.
   admin_id String
   
-  /// Unique, randomly generated token used for password reset. Must be
-  /// cryptographically secure and unguessable.
+  /// Unique hexadecimal token string used for password reset validation.
+  /// Generated cryptographically random, 64 characters long.
   token String
   
-  /// Expiration timestamp for the password reset token. Token becomes invalid
-  /// after this time. Not nullable to enforce security - all tokens expire and
-  /// none are permanent.
+  /// Timestamp when the reset token expires and becomes invalid. This is
+  /// enforced by application logic and database-level cleanup jobs.
   expires_at DateTime
   
-  /// Timestamp when the password reset request was generated. Used for
-  /// auditing the sequence of reset events.
+  /// Timestamp when the reset request was initiated.
   created_at DateTime
   
-  /// Timestamp when this token was successfully used to reset the password. If
-  /// NULL, the token has not been used yet. When used, this field is set and
-  /// the token is considered invalid.
+  /// Timestamp when this reset token was successfully used. Null if not yet
+  /// used.
   used_at DateTime?
   
-  //----
-  // RELATIONS
-  //----
-  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  @@index([admin_id, expires_at])
-  @@index([expires_at])
-  @@index([used_at])
-}
-
-/// Email verification tokens for administrator registration confirmation and
-/// email change verification.
-///
-/// These temporary tokens enable secure authentication workflow for
-/// administrator accounts during registration and email address changes.
-/// Each token is unique and expires after a defined period, after which it
-/// becomes invalid and must be regenerated.
-///
-/// The table tracks verification events tied to admin accounts, ensuring
-/// security through time-limited tokens. Tokens are issued when an admin
-/// registers or requests an email change, and must be validated before the
-/// account can be activated or email updated.
-///
-/// Verification tokens are immutable once created. Only one active token can
-/// exist per admin account at any time - previous tokens are automatically
-/// invalidated upon new token generation.
-///
-/// This table follows the session pattern of tracking authentication
-/// lifecycle events, with a one-to-many relationship to the admin actor
-/// table where each admin can have multiple verification events throughout
-/// their account lifecycle.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_admin_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The administrator account this email verification token belongs to.
-  /// {@link shopping_mall_admins.id}.
-  admin_id String
-  
-  /// Unique verification token for email confirmation. Generated
-  /// cryptographically and sent to the user's email address.
-  token String
-  
-  /// The email address being verified. This may be a new email address during
-  /// email change process or the primary email during registration.
-  email String
-  
-  /// Timestamp when this verification token was created. Always non-null.
-  created_at DateTime
-  
-  /// Timestamp when this verification token expires. Sessions must expire for
-  /// security - must be non-null as per session pattern.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  @@unique([admin_id])
-  @@index([admin_id, created_at])
-  @@index([expired_at])
-}
-
-/// System super administrator accounts with full authority over all
-/// administrators, using the same authentication pattern as regular
-/// administrators.
-///
-/// This table represents the highest level of identity in the system, with
-/// complete authority to manage all other administrator accounts including
-/// promotion, demotion, and oversight of all platform operations. Each super
-/// administrator has unique credentials and authentication flow that
-/// establishes their identity for system control.
-///
-/// Super administrators can perform all actions that regular administrators
-/// can, plus they have the exclusive ability to manage other administrators'
-/// privileges, create and remove super administrator accounts, and oversee
-/// system-wide configuration and governance.
-///
-/// This entity serves as the root of the administrative identity hierarchy,
-/// with dedicated session tracking and password reset functionality managed
-/// separately in the Actors component.
-///
-/// Soft deletion is supported to maintain audit trails while allowing
-/// deactivation of super administrator accounts if necessary for security or
-/// compliance reasons.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_super_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique email address used for authentication and communication. Cannot be
-  /// duplicated across any actor type.
-  email String
-  
-  /// Hashed password for authentication. Never store plain text passwords.
-  /// Required for login functionality.
-  password_hash String
-  
-  /// Timestamp when the super administrator account was created. Used for
-  /// audit trails and account age analysis.
-  created_at DateTime
-  
-  /// Timestamp when the super administrator account was last modified. Used to
-  /// track last activity and changes to account settings.
-  updated_at DateTime
-  
-  /// Timestamp when the super administrator account was soft-deleted. Allows
-  /// account deactivation while preserving historical records for audit
-  /// purposes. Null indicates active account.
+  /// Timestamp when this record was logically deleted (soft delete). Null
+  /// while active.
   deleted_at DateTime?
   
-  /// Fixed value 'super' indicating this is a system super administrator
-  /// account. This distinguishes it from regular administrator accounts and
-  /// enforces elevated privilege levels.
-  role String
-  
   //----
   // RELATIONS
   //----
-  sessions shopping_mall_super_admin_sessions[]
-  passwordResets shopping_mall_super_admin_password_resets[]
-  emailVerifications shopping_mall_super_admin_email_verifications[]
-  
-  @@unique([email])
-  @@index([created_at])
-  @@index([updated_at])
-  @@index([deleted_at])
-}
-
-/// JWT session tokens for super administrator authentication with access and
-/// refresh token support.
-///
-/// Tracks login sessions for super administrators, recording connection
-/// context and temporal metadata for audit and security purposes. Each
-/// session represents an active authentication session initiated by a
-/// super_admin user.
-///
-/// Sessions are append-only audit records that cannot be modified or
-/// deleted. When a super_admin logs in, a new session record is created.
-/// When the session expires or is terminated, expired_at is set to the
-/// termination time. This provides a complete history of super_admin access
-/// patterns for security monitoring.
-///
-/// The system enforces session expiration to maintain security posture.
-/// Unlimited sessions are prohibited unless explicitly requested by a
-/// super_admin with appropriate justification.
-///
-/// Relationship: One super_admin can have multiple concurrent sessions, but
-/// each session belongs to exactly one super_admin.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_super_admin_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The super administrator account that owns this session. References the
-  /// super_admin's primary key. {@link shopping_mall_super_admins.id}.
-  super_admin_id String
-  
-  /// The IP address from which the session was initiated.
-  ip String
-  
-  /// The URL of the page from which the user initiated the session.
-  href String
-  
-  /// The referrer URL indicating the originating source of this connection.
-  referrer String
-  
-  /// The exact timestamp when this session was created and authenticated. This
-  /// is immutable and represents the login event.
-  created_at DateTime
-  
-  /// The timestamp when this session will expire. Sessions must expire for
-  /// security. This field is NOT NULL - unlimited sessions are prohibited as a
-  /// security vulnerability unless explicitly requested.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  superAdmin shopping_mall_super_admins @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([super_admin_id, created_at], map: "shopping_mall_super_admin_sessions_super_admin_id_crea_d3f7a9d8")
-}
-
-/// Password reset tokens with expiration for secure super administrator
-/// password recovery workflow.
-///
-/// Expires automatically after 1 hour. Used only once per token. Each super
-/// administrator can have at most one active password reset request at a
-/// time. Reset token is invalidated upon successful password change or
-/// expiration.
-///
-/// System generates a cryptographically random token when a super admin
-/// initiates password recovery. Clear text passwords are never stored. Token
-/// is securely transmitted via email and eliminated after successful use or
-/// expiration.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_super_admin_password_resets {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Super administrator's account requesting password reset. {@link
-  /// shopping_mall_super_admins.id}.
-  super_admin_id String
-  
-  /// Cryptographically random, single-use token for password reset. Must be
-  /// URL-safe and expire after one hour.
-  token String
-  
-  /// Timestamp when the password reset request was generated.
-  created_at DateTime
-  
-  /// Timestamp when the password reset token expires. Must be exactly one hour
-  /// after created_at. Null means invalid/unassigned.
-  expires_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  superAdmin shopping_mall_super_admins @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([super_admin_id, token], map: "shopping_mall_super_admin_password_resets_super_admin__194f92ac")
-  @@index([expires_at])
-  @@index([super_admin_id])
-}
-
-/// Email verification tokens for super administrator registration
-/// confirmation and email change verification.
-///
-/// Tracks temporary verification tokens sent to super administrators during
-/// registration or email change workflows. Each token is unique and expires
-/// after a set time period. Once used to verify an email address, the token
-/// becomes invalid and cannot be reused.
-///
-/// This table is part of the authentication system for super_admin actors
-/// and follows the same pattern as other actor verification tables in the
-/// component. It serves as an append-only audit trail of email verification
-/// attempts, ensuring secure account activation and email change validation.
-///
-/// The token field contains a cryptographically secure random string that
-/// must be presented to complete the verification process. The expires_at
-/// field ensures tokens have limited lifespans for security. The used field
-/// tracks whether the token has been consumed during verification, which
-/// prevents token replay attacks. The created_at field provides an immutable
-/// timestamp of when the verification request was initiated.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_super_admin_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged super administrator's {@link shopping_mall_super_admins.id}.
-  super_admin_id String
-  
-  /// Unique cryptographically secure verification token. Must be unique across
-  /// all verifications.
-  token String
-  
-  /// Expiration timestamp for the verification token. After this time, the
-  /// token becomes invalid and cannot be used for verification.
-  expires_at DateTime
-  
-  /// Indicates whether the verification token has been consumed. True if the
-  /// token was successfully used to verify an email address; false if still
-  /// pending or expired.
-  used Boolean
-  
-  /// Timestamp when the verification token was created and sent to the super
-  /// administrator. This is immutable and indicates when the registration or
-  /// email change request was initiated.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  superAdmin shopping_mall_super_admins @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
-  
   @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([super_admin_id, created_at], map: "shopping_mall_super_admin_email_verifications_super_ad_7157b668")
-  // spellchecker: ignore-next-line
-  @@index([super_admin_id, expires_at, used], map: "shopping_mall_super_admin_email_verifications_super_ad_3a9c887b")
+  @@index([admin_id, expires_at])
 }

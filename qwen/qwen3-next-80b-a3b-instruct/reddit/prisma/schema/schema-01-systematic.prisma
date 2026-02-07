@@ -1,0 +1,553 @@
+/// Stores system-wide configuration parameters and feature flags that
+/// control platform behavior across all domains. This table serves as the
+/// centralized source of truth for feature toggles, performance limits, and
+/// global settings. Admins manage these configurations directly to
+/// enable/disable features, adjust thresholds, or apply platform-wide
+/// changes without deployment. Each record represents one configurable
+/// parameter identified by a unique name. Value field stores serialized data
+/// (string, JSON, or numeric) and type indicates the expected format. The
+/// enabled flag controls whether the configuration is active in the system.
+/// Changes here are immediately reflected across the entire platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_system_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration parameter. Must be unique across
+  /// the system. Examples: 'max_image_size', 'enable_karma_system',
+  /// 'post_content_max_length'.
+  name String
+  
+  /// The configuration value in serialized form (JSON string, boolean string,
+  /// numeric string, or plain text). Supports complex structures such as
+  /// {"limit":100, "enabled":true} for JSON objects.
+  value String?
+  
+  /// The expected data type of the value field (string, number, boolean,
+  /// json). Used by the application to deserialize and validate the
+  /// configuration at runtime.
+  type String
+  
+  /// Flag indicating whether this configuration is currently active in the
+  /// system. If false, the system ignores this configuration entry. Used for
+  /// feature toggles and safe rollouts.
+  enabled Boolean
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  migrationHistories community_migration_histories[]
+  
+  @@unique([name])
+}
+
+/// Tracks platform version, deployment state, and rollback history to enable
+/// safe, auditable upgrades and rollbacks across environments. This is a
+/// critical infrastructure entity that must be versioned and immutable in
+/// design.
+///
+/// Every time a new deployment occurs, a new record is created. The current
+/// active deployment for an environment is determined by the most recent
+/// created_at timestamp with status = 'success'. Rollbacks are tracked by
+/// setting rollback_target_id to reference the previous successful
+/// deployment. A failed deployment has status = 'failed' and creates a
+/// rollback request. The system never deletes or updates records — all
+/// changes are appended as new entries for full auditability.
+///
+/// Referenced by: Deployment pipelines, monitoring systems, maintenance
+/// scripts.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the previous successful deployment to roll back to. {@link
+  /// community_platform_metadata.id}
+  rollback_target_id String?
+  
+  /// Platform version identifier in format 'vX.Y.Z' or SHA commit hash.
+  /// Example: 'v1.4.0' or 'a1b2c3d4'.
+  version String
+  
+  /// Deployment environment context. Must be one of: 'dev', 'staging',
+  /// 'production'.
+  environment String
+  
+  /// Deployment status. Must be: 'pending', 'success', 'failed',
+  /// 'rollback_started', 'rollback_completed'.
+  status String
+  
+  /// Cryptographic checksum of the deployment bundle (e.g., SHA-256 of Docker
+  /// image digest or file tree). Used to verify integrity.
+  checksum String
+  
+  /// URL to the full changelog document or release notes for this deployment.
+  /// Must be a valid HTTPS URL.
+  changelog_url String
+  
+  /// Timestamp when this deployment record was created. Always non-null.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated (e.g., when status changed
+  /// from pending to success). Always non-null.
+  updated_at DateTime
+  
+  /// NULL unless the record is logically deleted (rare). Used for compliance
+  /// reasons. Always nullable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  rollbackTarget community_platform_metadata? @relation("recursive", fields: [rollback_target_id], references: [id], onDelete: Cascade)
+  
+  rollback community_platform_metadata? @relation("recursive")
+  
+  @@unique([rollback_target_id])
+  
+  @@unique([version, environment])
+  @@index([version])
+  @@index([environment])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Stores API key records used for system services and integrations to
+/// communicate with external systems.
+///
+/// Each API key is created by a system actor (member, moderator, or admin)
+/// and grants access to platform services.
+///
+/// This table is purely infrastructure, not a user-facing entity. Access
+/// keys are revoked via status update, not deletion.
+///
+/// Related entities:
+/// - {@link community_members} - creator if member
+/// - {@link community_moderators} - creator if moderator
+/// - {@link community_admins} - creator if admin
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_api_keys {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The actor (member, moderator, or admin) who created this API key. {@link
+  /// community_members.id} or {@link community_moderators.id} or {@link
+  /// community_admins.id}.
+  actor_id String
+  
+  /// The specific ID of the creator (member, moderator, or admin who created
+  /// key). This is a direct reference to whichever actor table owns it, for
+  /// performance and audit.
+  creator_id String
+  
+  /// The actual API key string value. Must be sufficiently random and
+  /// cryptographically secure.
+  key String
+  
+  /// Human-readable description of the key's purpose and integration point.
+  description String?
+  
+  /// Current status of the API key: 'active', 'revoked', or 'expired'.
+  status String
+  
+  /// Timestamp when the API key was generated.
+  created_at DateTime
+  
+  /// Timestamp when the API key was last modified (e.g. status change).
+  updated_at DateTime
+  
+  /// Expiration timestamp after which the key is invalid, even if status
+  /// remains 'active'.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  actor community_members @relation("community_api_keys_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
+  creator community_members @relation("community_api_keys_of_creator_id", fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  @@index([actor_id])
+  @@index([creator_id])
+  
+  @@unique([key])
+  @@index([status])
+  @@index([expired_at])
+  @@index([created_at])
+}
+
+/// Maintains a history of all system upgrades, patches, and database
+/// migrations applied to the platform. This table serves as an immutable
+/// audit trail, recording every version change and its details for system
+/// integrity, rollback capability, and operational transparency. Each record
+/// represents a single migration event and is never modified after creation.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_migration_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The actor who applied this migration. References either community_admins,
+  /// community_moderators, or community_members depending on user type.
+  applied_by_id String
+  
+  /// Reference to the target system configuration version in
+  /// community_system_configs.
+  target_version_id String?
+  
+  /// The semantic version number of the system being migrated to, following
+  /// format X.Y.Z (e.g., '1.2.3').
+  version String
+  
+  /// Unique identifier for the patch or migration script (e.g.,
+  /// 'add_post_view_stats_table' or 'migrate_karma_to_new_algorithm').
+  patch_name String
+  
+  /// Timestamp when this migration was applied to the database. Always
+  /// recorded in UTC.
+  applied_at DateTime
+  
+  /// The outcome of the migration application. Values: 'applied', 'failed',
+  /// 'rolled_back'.
+  status String
+  
+  /// Detailed description of what this migration changes, including SQL
+  /// statements, data transformations, or configuration updates.
+  description String
+  
+  /// MD5 or SHA256 checksum of the migration script file for integrity
+  /// verification.
+  checksum String?
+  
+  /// Execution duration of the migration script in milliseconds for
+  /// performance analysis.
+  duration_ms Int?
+  
+  /// Hash of the rollback script if one exists, enabling safe rollback
+  /// operations.
+  rollback_script_hash String?
+  
+  //----
+  // RELATIONS
+  //----
+  appliedBy community_admins @relation(fields: [applied_by_id], references: [id], onDelete: Cascade)
+  targetVersion community_system_configs? @relation(fields: [target_version_id], references: [id], onDelete: Cascade)
+  
+  @@index([target_version_id])
+  
+  @@unique([version, patch_name])
+  @@unique([applied_at, version])
+  @@index([applied_at])
+  @@index([applied_by_id])
+  @@index([status])
+  @@index([patch_name])
+}
+
+/// Tracks the operational status of critical platform services and
+/// subsystems for monitoring and alerts. Each record represents a snapshot
+/// of a service's current health at a point in time, enabling systematic
+/// monitoring and alerting based on service state changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_service_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the service being monitored (e.g., 'auth-service',
+  /// 'notification-worker', 'database-connector'). Must be a stable,
+  /// consistent identifier.
+  service_name String
+  
+  /// Current operational status of the service. Must be one of: 'healthy',
+  /// 'degraded', 'unavailable', 'unknown'.
+  status String
+  
+  /// Timestamp when the service status was last verified by the monitoring
+  /// system.
+  last_checked DateTime
+  
+  /// Detailed description of the current status state, including error
+  /// messages, performance metrics, or diagnostic information.
+  description String
+  
+  /// Timestamp when this status record was first created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this status record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this record was logically deleted (soft delete). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([service_name, last_checked])
+}
+
+/// Stores configuration for automated maintenance tasks such as data
+/// archiving, cleanup, and backup schedules. These configurations are
+/// system-level and not directly interacted with by end users, but crucial
+/// for system health and compliance.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_maintenance_configs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of maintenance task (e.g., 'data_archiving', 'cleanup', 'backup').
+  /// Must be one of the predefined system task types.
+  task_type String
+  
+  /// Cron expression defining the recurrence schedule for the maintenance task
+  /// (e.g., '0 2 * * *' for daily at 2 AM).
+  schedule_cron String
+  
+  /// Whether this maintenance task is currently active and should be executed
+  /// on schedule.
+  enabled Boolean
+  
+  /// Timestamp of the most recent successful execution of this maintenance
+  /// task.
+  last_run_at DateTime?
+  
+  /// Timestamp of the next scheduled execution for this maintenance task.
+  next_run_at DateTime?
+  
+  /// JSON-encoded configuration parameters specific to this task type (e.g.,
+  /// retention period, cleanup thresholds, bucket paths).
+  config_data String?
+  
+  /// Maximum number of times the system should attempt to execute this task
+  /// before marking it as failed.
+  max_retries Int
+  
+  /// Maximum execution time in seconds before the task is forcibly terminated
+  /// and treated as a failure.
+  timeout_seconds Int
+  
+  /// Email address to notify when this task fails or encounters critical
+  /// errors. May be null if no notification is required.
+  notification_email String?
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration was logically deleted (soft delete).
+  /// Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([task_type, enabled])
+}
+
+/// Stores system-wide announcements and notices that are displayed to all
+/// users across the platform. These messages are created and managed by
+/// administrators, not end users, and are intended for operational
+/// communications such as maintenance alerts, policy updates, or feature
+/// highlights. This table does not represent a user or business entity but
+/// serves as a system-level communication channel. Messages are published
+/// with scheduled visibility windows and follow a lifecycle (draft →
+/// published → archived).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_system_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Brief headline for the system message (max 200 characters).
+  title String
+  
+  /// Full HTML-formatted content of the announcement (up to 5000 characters).
+  /// Supports rich text formatting for display.
+  content String
+  
+  /// Timestamp when the message was initially created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the message was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the message becomes visible to end-users. May be in the
+  /// future for scheduled announcements.
+  published_at DateTime
+  
+  /// Timestamp after which the message is automatically hidden from users.
+  /// Nullable for permanent messages.
+  visible_until DateTime?
+  
+  /// Current lifecycle status of the message. Must be one of: 'draft',
+  /// 'published', or 'archived'.
+  status String
+}
+
+/// Tracks user counts, active sessions, and usage metrics for platform
+/// analytics and scaling decisions. Each record represents a snapshot of
+/// system state at a specific timestamp, capturing total registered users,
+/// active sessions, post creation rates, comment rates, and vote activity
+/// across the platform to inform infrastructure scaling and performance
+/// optimization decisions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_usage_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this usage snapshot was recorded. Always UTC timezone.
+  timestamp DateTime
+  
+  /// Total number of registered users in the system at the time of snapshot.
+  total_users Int
+  
+  /// Number of currently active user sessions (both authenticated and guest
+  /// sessions).
+  active_sessions Int
+  
+  /// Number of posts created in the last hour.
+  posts_created Int
+  
+  /// Number of comments created in the last hour.
+  comments_created Int
+  
+  /// Number of post and comment votes cast in the last hour.
+  votes_cast Int
+  
+  /// Number of new communities created in the last hour.
+  communities_created Int
+  
+  /// Number of user reports submitted (on posts or comments) in the last hour.
+  reports_submitted Int
+  
+  /// Average number of posts created per registered user over the last 24
+  /// hours.
+  avg_posts_per_user Float
+  
+  /// Average number of comments created per registered user over the last 24
+  /// hours.
+  avg_comments_per_user Float
+  
+  /// Average number of votes received per post over the last 24 hours.
+  avg_votes_per_post Float
+  
+  /// Average number of votes received per comment over the last 24 hours.
+  avg_votes_per_comment Float
+  
+  /// Average duration of user sessions in minutes over the last hour.
+  avg_session_duration Float
+  
+  /// Number of communities that have had at least one post or comment in the
+  /// last 24 hours.
+  active_community_count Int
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([timestamp])
+}
+
+/// Stores system-level cryptographic keys used for encrypting sensitive data
+/// including API secrets, JWT token signing, and user data encryption. This
+/// table is critical for platform security and requires strict key rotation
+/// policies. Only system administrators can manage these keys, and no
+/// user-facing functionality depends on direct access.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_crypto_keys {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Base64-encoded binary representation of the cryptographic key. Contains
+  /// the actual secret key material for encryption/decryption operations. Must
+  /// be stored securely and never exposed in logs.
+  key_value String
+  
+  /// Type of cryptographic key: 'rsa' for asymmetric, 'ec' for elliptic curve,
+  /// 'aes' for symmetric, 'sha256' for hash functions, 'jwt-signing' for JWT
+  /// token signing keys.
+  key_type String
+  
+  /// Specific cryptographic algorithm used with this key, such as 'RSA-2048',
+  /// 'ECDSA-P256', 'AES-256-CBC', 'SHA-256', 'RS256'. Must correspond to
+  /// key_type.
+  algorithm String
+  
+  /// Current lifecycle status of the key: 'active' (in current use),
+  /// 'compromised' (security breach suspected), 'expired' (time-based
+  /// expiration reached), or 'deprecated' (retired but retained for
+  /// decryption).
+  status String
+  
+  /// JSON-encoded object containing additional metadata: { 'version': '1.0',
+  /// 'issuer': 'AutoBE-System', 'usage': 'jwt-signing', 'effective_from':
+  /// '2026-01-01T00:00:00Z', 'expires_at': '2026-12-31T23:59:59Z' }. Allows
+  /// flexible storage of key-specific parameters.
+  key_metadata String
+  
+  /// Timestamp when this key was created and added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this key was last modified (e.g., status change or
+  /// metadata update).
+  updated_at DateTime
+  
+  /// Timestamp when this key was logically deleted (soft delete). Null if key
+  /// is still active or has not been deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([key_type, status])
+  @@index([created_at])
+  @@index([status])
+}

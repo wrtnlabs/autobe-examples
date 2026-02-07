@@ -1,0 +1,166 @@
+/// Customer reviews for products with ratings (1-5 stars) and optional text
+/// content
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced customer's shopping_mall_customers.id
+  customer_id String
+  
+  /// Referenced order item's shopping_mall_order_items.id
+  order_item_id String
+  
+  /// Rating score from 1 to 5 stars given by customer
+  rating Int
+  
+  /// Optional text content of the review written by customer
+  content String?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  snapshots shopping_mall_review_snapshots[]
+  
+  @@unique([order_item_id])
+  
+  @@index([customer_id])
+  @@index([order_item_id])
+}
+
+/// Review snapshots preserving state at time of edit or deletion. This table
+/// stores complete copies of customer reviews when they are modified,
+/// creating an immutable audit trail of all review changes. Each snapshot
+/// captures the review content, rating, and user information as it existed
+/// at the time of the edit or deletion, enabling historical analysis and
+/// dispute resolution.
+///
+/// Key relationships: References the original review in
+/// shopping_mall_reviews table, allowing retrieval of the current review
+/// state alongside its historical snapshots. Multiple snapshots can exist
+/// for a single review, creating a complete history of all modifications.
+///
+/// **IMPORTANT**: This is an immutable audit table - snapshots should never
+/// be modified or deleted once created, preserving the historical record for
+/// compliance and dispute resolution purposes.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key - Unique identifier for each review snapshot record.
+  id String @id
+  
+  /// Original review's {@link shopping_mall_reviews.id} that this snapshot
+  /// captures.
+  shopping_mall_review_id String
+  
+  /// Customer who wrote the review's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Product that was reviewed's {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Star rating given by the customer (1-5 stars). Captured rating value at
+  /// time of snapshot.
+  rating Int
+  
+  /// Text content of the review. Will be '[review deleted]' if review was
+  /// deleted.
+  text String
+  
+  /// When the original review was edited (if applicable). Null if this is the
+  /// original snapshot.
+  edited_at DateTime?
+  
+  /// When this snapshot was created (timestamp of the edit/delete action).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
+  @@index([customer_id, created_at])
+  @@index([product_id, created_at])
+}
+
+/// Aggregated product ratings calculated from customer reviews.
+///
+/// This table stores computed rating metrics for each product in the
+/// shopping mall platform. It maintains real-time aggregation of customer
+/// review data including average rating scores and review counts.
+///
+/// ## Business Purpose
+///
+/// - **Rating Aggregation**: Calculates and stores average ratings from
+/// customer reviews
+/// - **Review Counting**: Maintains accurate count of non-deleted reviews
+/// per product
+/// - **Performance Optimization**: Provides fast access to rating
+/// information without real-time aggregation
+/// - **Product Display**: Enables display of rating metrics in product
+/// listings and search results
+///
+/// ## Key Relationships
+///
+/// - References: {@link shopping_mall_products.id} - The product being rated
+/// - References: {@link shopping_mall_reviews.id} - Individual customer
+/// reviews (via foreign key)
+///
+/// ## Important Notes
+///
+/// - Ratings are automatically updated when reviews are added, edited, or
+/// deleted
+/// - Deleted reviews are excluded from rating calculations
+/// - The average_rating field stores decimal values (e.g., 4.5 stars)
+/// - This table enables efficient product sorting and filtering by rating
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_review_ratings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product being rated. References {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Average rating calculated from customer reviews (1.0-5.0 scale).
+  average_rating Float
+  
+  /// Total count of non-deleted customer reviews.
+  review_count Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Record deletion timestamp (soft delete). Nullable for active records.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@unique([product_id])
+}

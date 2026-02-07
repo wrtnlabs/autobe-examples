@@ -1,1007 +1,884 @@
-/// Customer accounts with email/password authentication credentials and
-/// profile information for registered buyers.
+/// Registered customer accounts with email/password authentication
+/// credentials for product browsing, ordering, and reviews. Customers are
+/// the primary consumer actors in the platform who can browse products,
+/// create wishlists, add items to cart, place orders, write reviews, and
+/// manage their profiles and addresses.
 ///
-/// Stores authentication credentials for customer login including email
-/// address and password hash. Contains profile information such as display
-/// name and phone number for customer identification and communication.
-/// Supports soft deletion where account deletion preserves historical order
-/// and review data while preventing new authentication.
+/// Each customer account requires email verification during registration and
+/// maintains authentication credentials for secure platform access. Customer
+/// profiles include display name and phone number for personalization and
+/// communication purposes. When customers delete their accounts, their
+/// profile information is removed but order history and reviews are
+/// preserved for seller records and legal compliance.
 ///
-/// The table maintains temporal tracking with created_at, updated_at, and
-/// deleted_at fields to support audit trails and account lifecycle
-/// management. Foreign key relationships establish connections to customer
-/// sessions, password reset workflows, and email verification processes.
+/// This table serves as the canonical identity record for customers across
+/// the platform and is referenced by orders, reviews, wishlists, and address
+/// management systems. {@link ecommerce_customer_sessions} tracks login
+/// sessions, {@link ecommerce_customer_password_resets} handles credential
+/// recovery, and {@link ecommerce_customer_email_verifications} manages
+/// registration confirmation.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_customers {
+model ecommerce_customers {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Customer's email address used for authentication, communication, and
-  /// account recovery. Must be unique across customer accounts.
+  /// Customer's email address used for authentication and communication. Must
+  /// be unique across all customer accounts.
   email String
   
-  /// Hashed password credential for customer authentication. Never stores
-  /// plain text passwords.
+  /// Securely hashed password for customer authentication. Stored using
+  /// industry-standard hashing algorithms.
   password_hash String
   
-  /// Customer's public display name shown in reviews, order communications,
-  /// and social features.
-  display_name String?
+  /// Customer's display name shown throughout the platform for personalization
+  /// and identification.
+  display_name String
   
-  /// Customer's phone number for delivery coordination and account
-  /// verification purposes.
-  phone_number String?
+  /// Customer's phone number for order notifications and account verification
+  /// purposes.
+  phone_number String
   
-  /// Timestamp when the customer account was first created during registration.
+  /// Timestamp when the customer account was created during registration.
   created_at DateTime
   
-  /// Timestamp when the customer account information was last modified.
+  /// Timestamp when the customer account was last updated, including profile
+  /// changes.
   updated_at DateTime
   
-  /// Timestamp when the customer account was soft deleted, preserving
-  /// historical data.
+  /// Timestamp when the customer account was deleted, enabling soft deletion
+  /// while preserving order history.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  sessions ecommerce_mall_customer_sessions[]
-  passwordResets ecommerce_mall_customer_password_resets[]
-  emailVerifications ecommerce_mall_customer_email_verifications[]
-  productViewStats ecommerce_mall_product_view_stats[]
-  saleReviews ecommerce_mall_sale_reviews[]
-  saleQuestions ecommerce_mall_sale_questions[]
-  favoriteSales ecommerce_mall_sale_favorites[]
-  saleViews ecommerce_mall_sale_view_stats[]
-  carts ecommerce_mall_carts[]
-  cartSnapshots ecommerce_mall_cart_snapshots[]
-  orders ecommerce_mall_orders[]
-  cancellationRequests ecommerce_mall_cancellation_requests[]
-  refundRequests ecommerce_mall_refund_requests[]
-  paymentTransactions ecommerce_mall_payment_transactions[]
-  deliveryConfirmations ecommerce_mall_delivery_confirmations[]
-  productReviews ecommerce_mall_product_reviews[]
-  productReviewVotes ecommerce_mall_product_review_votes[]
-  productReviewReports ecommerce_mall_product_review_reports[]
-  reviewEligibilities ecommerce_mall_review_eligibilities[]
-  auditTrails ecommerce_mall_inventory_audit_trails[]
-  notificationEvents ecommerce_mall_notification_events[]
-  notificationPreferences ecommerce_mall_notification_preference_of_customers[]
+  sessions ecommerce_customer_sessions[]
+  passwordResets ecommerce_customer_password_resets[]
+  emailVerifications ecommerce_customer_email_verifications[]
+  auditLogs ecommerce_audit_logs[]
+  dataSnapshots ecommerce_data_snapshots[]
+  platformEvents ecommerce_platform_event_of_customers[]
+  metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_customers[]
+  variantSnapshots ecommerce_variant_snapshots[]
+  shoppingCarts ecommerce_shopping_carts[]
+  orders ecommerce_orders[]
+  deliveryConfirmations ecommerce_delivery_confirmations[]
+  paymentTransactions ecommerce_payment_transactions[]
+  cancellationRequests ecommerce_cancellation_requests[]
+  refundRequests ecommerce_refund_requests[]
+  refundRequestModificationSnapshots ecommerce_refund_request_snapshots[]
+  reviews ecommerce_reviews[]
+  reviewVotes ecommerce_review_votes[]
+  reviewReports ecommerce_review_reports[]
+  reviewEdits ecommerce_review_edits[]
+  reviewHelpfulVotes ecommerce_review_helpful_votes[]
+  reviewFlags ecommerce_review_flags[]
+  administratorPromotionRequests ecommerce_administrator_promotions[]
+  administrativeActions ecommerce_administrative_action_of_customers[]
+  userBans ecommerce_admin_user_ban_of_customers[]
   
   @@unique([email])
   @@index([created_at])
-  @@index([updated_at])
-  @@index([display_name])
 }
 
 /// JWT session tokens for customer authentication with access and refresh
-/// token support and session management.
+/// token management.
 ///
-/// Tracks customer login sessions with connection context information
-/// including IP address, connection URL, and referrer for security auditing.
-/// Each session is associated with a specific customer account and includes
-/// expiration timestamps for secure session management.
+/// This table stores customer login sessions for authentication purposes.
+/// Each session record contains connection metadata including IP address,
+/// referrer information, and timestamps for session lifecycle management.
+/// Sessions are managed through authentication flows and provide secure
+/// access tokens for customer interactions with the platform.
 ///
-/// Sessions are managed through authentication workflows rather than direct
-/// CRUD operations, providing an append-only audit trail of customer login
-/// events. The session table supports JWT token management and secure
-/// authentication mechanisms for the e-commerce platform.
+/// The session records serve as an append-only audit trail of customer login
+/// events, supporting security monitoring and authentication state
+/// management. Sessions automatically expire based on configured timeouts
+/// and are used to validate customer access to platform features.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_customer_sessions {
+model ecommerce_customer_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated customer's {@link ecommerce_mall_customers.id}.
-  customer_id String
+  /// Belonged customer's {@link ecommerce_customers.id}.
+  ecommerce_customer_id String
   
-  /// IP address of the customer's connection for security auditing and
-  /// geographic tracking.
+  /// IP address of the customer connection for security tracking.
   ip String
   
-  /// Connection URL where the session was established for context tracking.
+  /// Current page URL where the session was created.
   href String
   
-  /// Referrer URL indicating where the customer came from before login.
-  referrer String
-  
-  /// Timestamp when the session was created for login event tracking.
-  created_at DateTime
-  
-  /// Timestamp when the session expires for secure session management.
-  /// Sessions must have expiration for security compliance.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
-  
-  saleQuestions ecommerce_mall_sale_questions[]
-  cancellationRequests ecommerce_mall_cancellation_requests[]
-  paymentTransactions ecommerce_mall_payment_transactions[]
-  productReviewSnapshots ecommerce_mall_product_review_snapshots[]
-  
-  @@index([customer_id, created_at])
-}
-
-/// Password reset tokens with expiration for secure customer password
-/// recovery workflow.
-///
-/// Manages one-time use tokens for customer password reset requests with
-/// built-in security constraints including expiration timestamps and usage
-/// status tracking. Each token is cryptographically secure and expires
-/// automatically to prevent unauthorized access.
-///
-/// Tokens are generated when customers initiate password reset requests and
-/// must be used within the validity period. The system tracks token usage to
-/// prevent replay attacks and ensure each token can only be used once for
-/// security purposes.
-///
-/// This table implements core authentication security protocols as
-/// referenced by the customer's {@link ecommerce_mall_customers.id} identity
-/// record. Soft deletion support maintains audit trails while allowing token
-/// cleanup after usage or expiration.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_customer_password_resets {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Customer requesting password reset. References the customer's {@link
-  /// ecommerce_mall_customers.id}.
-  ecommerce_mall_customer_id String
-  
-  /// Cryptographic hash of the password reset token for security. Stored as
-  /// hash to prevent token exposure even if database is compromised.
-  token_hash String
-  
-  /// Token expiration timestamp after which the token becomes invalid for
-  /// security protection.
-  expires_at DateTime
-  
-  /// Timestamp when the token was successfully used to reset the password.
-  /// Null indicates unused token.
-  used_at DateTime?
-  
-  /// Timestamp when the password reset request was created and token generated.
-  created_at DateTime
-  
-  /// Timestamp when the password reset record was last updated, typically when
-  /// token is used.
-  updated_at DateTime
-  
-  /// Soft deletion timestamp for audit trail maintenance. Null indicates
-  /// active record.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token_hash])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_customer_password_resets_ecommerce_mall_f8fe0193")
-  @@index([expires_at])
-}
-
-/// Email verification tokens for customer registration confirmation with
-/// expiration timestamps.
-///
-/// This table manages the email verification workflow for customer accounts,
-/// storing unique verification tokens that are sent to customers during
-/// registration. Each token has a limited validity period and is
-/// automatically invalidated once used or expired.
-///
-/// The verification process ensures customer email validity and prevents
-/// fraudulent account creation. Tokens are generated during registration and
-/// verified when customers click the confirmation link in their email.
-///
-/// The table maintains audit trails of verification attempts and supports
-/// security best practices through expiration enforcement and one-time use
-/// validation. Failed verification attempts are tracked for security
-/// monitoring and spam prevention.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_customer_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the customer account needing email verification. {@link
-  /// ecommerce_mall_customers.id}
-  ecommerce_mall_customer_id String
-  
-  /// Unique verification token sent to the customer's email address for
-  /// confirmation.
-  token String
-  
-  /// Expiration timestamp after which the verification token becomes invalid
-  /// for security.
-  expires_at DateTime
-  
-  /// Timestamp when the customer successfully verified their email address
-  /// using this token.
-  verified_at DateTime?
-  
-  /// Count of verification attempts made with this token for security
-  /// monitoring.
-  verification_attempts Int
-  
-  /// Timestamp when the verification token was generated and sent to the
-  /// customer.
-  created_at DateTime
-  
-  /// Timestamp when the verification record was last updated, including
-  /// verification attempts.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_customer_id, created_at], map: "ecommerce_mall_customer_email_verifications_ecommerce__019d1e3d")
-  @@index([expires_at])
-}
-
-/// Seller accounts with email/password authentication credentials and shop
-/// profile information requiring admin approval. Sellers must undergo
-/// approval process before they can list products and manage their shops on
-/// the platform. Each seller has business profile details and administrative
-/// status tracking for platform compliance.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_sellers {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Seller's email address used for authentication and business
-  /// communication. Must be unique across all sellers on the platform.
-  email String
-  
-  /// Hashed password for secure authentication. Stores bcrypt hash with salt
-  /// for protection of seller account credentials.
-  password_hash String
-  
-  /// Legal business name of the seller used for official registration and
-  /// customer-facing display.
-  business_name String
-  
-  /// Business phone number for official communication and customer support
-  /// contact.
-  contact_phone String
-  
-  /// Physical business address for verification and official correspondence.
-  /// Supports international address formats.
-  business_address String?
-  
-  /// Business tax identification number for regulatory compliance and
-  /// financial reporting.
-  tax_id String?
-  
-  /// Seller profile description explaining business focus, specialties, and
-  /// customer value proposition.
-  description String?
-  
-  /// Seller account status: pending_approval, approved, suspended, rejected.
-  /// Controls platform access and business operations.
-  status String
-  
-  /// Administrator who approved the seller registration. References
-  /// administrator's {@link ecommerce_mall_administrators.id}.
-  approved_by String?
-  
-  /// Timestamp when the seller was approved by an administrator for platform
-  /// access.
-  approved_at DateTime?
-  
-  /// Reason provided by administrator when rejecting a seller application.
-  /// Guides seller on improvements for reapplication.
-  rejection_reason String?
-  
-  /// Reason for account suspension when seller violates platform policies or
-  /// fails compliance requirements.
-  suspension_reason String?
-  
-  /// Timestamp of seller's last successful login for security monitoring and
-  /// account activity tracking.
-  last_login_at DateTime?
-  
-  /// Timestamp when the seller account was initially created and registration
-  /// submitted.
-  created_at DateTime
-  
-  /// Timestamp of last modification to seller account information. Updated on
-  /// profile changes and status updates.
-  updated_at DateTime
-  
-  /// Soft deletion timestamp indicating when the seller account was marked for
-  /// deletion while preserving business records.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  sessions ecommerce_mall_seller_sessions[]
-  passwordResets ecommerce_mall_seller_password_resets[]
-  emailVerifications ecommerce_mall_seller_email_verifications[]
-  products ecommerce_mall_products[]
-  sales ecommerce_mall_sales[]
-  salePromotions ecommerce_mall_sale_promotions[]
-  saleQuestionAnswers ecommerce_mall_sale_question_answers[]
-  orderItems ecommerce_mall_order_items[]
-  cancellationRequests ecommerce_mall_cancellation_requests[]
-  cancellationRequestResponses ecommerce_mall_cancellation_request_responses[]
-  refundRequests ecommerce_mall_refund_requests[]
-  shipments ecommerce_mall_shipments[]
-  inventoryOperations ecommerce_mall_inventory_operations[]
-  auditTrails ecommerce_mall_inventory_audit_trails[]
-  notificationPreferences ecommerce_mall_notification_preference_of_sellers[]
-  
-  @@unique([email])
-  @@index([status, created_at])
-}
-
-/// Seller login session records for authentication and connection tracking.
-///
-/// Tracks seller login sessions with connection context including IP
-/// address, URL, and referrer information for security auditing. Each
-/// session has a creation timestamp and expiration time to manage session
-/// lifecycle.
-///
-/// Sessions are managed through authentication workflows rather than direct
-/// CRUD operations. The table maintains an audit trail of seller login
-/// activity for security monitoring and compliance requirements.
-///
-/// Multiple concurrent sessions are supported per seller to accommodate
-/// different devices and browser sessions.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_seller_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged seller's {@link ecommerce_mall_sellers.id}.
-  seller_id String
-  
-  /// IP address of the connection where the session was created for security
-  /// auditing.
-  ip String
-  
-  /// Connection URL where the session was initiated for context tracking.
-  href String
-  
-  /// Referrer URL indicating the page that directed the seller to the login
-  /// page.
-  referrer String
-  
-  /// Session creation timestamp recording when the seller authenticated.
-  created_at DateTime
-  
-  /// Session expiration timestamp when the session becomes invalid for
-  /// security.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
-  
-  saleQuestionAnswers ecommerce_mall_sale_question_answers[]
-  cancellationRequestResponses ecommerce_mall_cancellation_request_responses[]
-  
-  @@index([seller_id, created_at])
-}
-
-/// Stores temporary password reset tokens for seller accounts with secure
-/// token hashing and expiration tracking.
-///
-/// Each record represents a password reset request initiated by a seller
-/// that needs to be completed within the expiration period. The token is
-/// securely hashed and uniquely generated for each reset attempt to prevent
-/// unauthorized password changes.
-///
-/// The table maintains audit trail information including creation timestamps
-/// and supports soft deletion to preserve security audit history while
-/// allowing cleanup of expired tokens. All password reset operations are
-/// tracked against the seller's active sessions to maintain security
-/// compliance.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_seller_password_resets {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Target seller account requiring password reset. {@link
-  /// ecommerce_mall_sellers.id}
-  ecommerce_mall_seller_id String
-  
-  /// Securely hashed password reset token used for authentication during
-  /// password recovery process. Should be generated uniquely for each reset
-  /// attempt.
-  token_hash String
-  
-  /// Timestamp when this password reset token expires and becomes invalid.
-  /// Password recovery must be completed before this time.
-  expires_at DateTime
-  
-  /// Timestamp when the password reset request was created and the token was
-  /// generated.
-  created_at DateTime
-  
-  /// Timestamp when this password reset record was last updated, typically
-  /// when the reset is completed or expired.
-  updated_at DateTime
-  
-  /// Timestamp when this password reset record was soft deleted, allowing
-  /// cleanup while maintaining audit trail integrity.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token_hash])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_password_resets_ecommerce_mall_s_b778cb03")
-  @@index([expires_at])
-}
-
-/// Email verification tokens for seller registration confirmation with
-/// expiration timestamps.
-///
-/// Stores verification tokens sent to seller email addresses during the
-/// registration process. Each token is associated with a specific seller
-/// account and must be verified within the expiration period to activate the
-/// seller's account.
-///
-/// Tokens follow security best practices with limited validity periods and
-/// one-time use constraints. Once verified, the token is marked as used and
-/// cannot be reused. Supports the seller registration approval workflow by
-/// ensuring email address authenticity.
-///
-/// Implements the snapshot architecture principle through immutable
-/// verification records that maintain the verification history for audit
-/// purposes even after account deletion considerations.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_seller_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Seller account requiring email verification. {@link
-  /// ecommerce_mall_sellers.id}
-  seller_id String
-  
-  /// Unique verification token string sent to the seller's email address.
-  /// Generated as a cryptographically secure random string.
-  token String
-  
-  /// Timestamp when this verification token expires and becomes invalid.
-  /// Tokens typically have short validity periods for security.
-  expires_at DateTime
-  
-  /// Timestamp when the seller successfully verified their email address using
-  /// this token. Null until verification occurs.
-  verified_at DateTime?
-  
-  /// Timestamp when this verification token was created and sent to the seller.
-  created_at DateTime
-  
-  /// Timestamp when this verification token record was last updated, typically
-  /// upon verification.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([seller_id, created_at], map: "ecommerce_mall_seller_email_verifications_seller_id_cr_6de086e4")
-  @@index([expires_at])
-}
-
-/// Administrator accounts with email/password authentication for platform
-/// management and oversight.
-///
-/// Stores credential information for administrator users who manage platform
-/// operations including seller approvals, category management, and user
-/// oversight. Administrators have elevated permissions compared to regular
-/// customers and sellers but fewer privileges than super administrators.
-///
-/// Required to have verified email addresses and secure password
-/// authentication following platform security standards. Supports account
-/// suspension/reactivation and maintains audit trails of administrative
-/// actions through created timestamps and soft deletion tracking.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_administrators {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Administrator's login email address used for authentication and platform
-  /// communications. Must be unique across all administrator accounts.
-  email String
-  
-  /// Securely hashed password for administrator authentication using
-  /// platform-approved cryptographic algorithms.
-  password_hash String
-  
-  /// Cryptographic salt used in password hashing to ensure password secrecy
-  /// and security.
-  password_salt String
-  
-  /// Administrator account status controlling login capability and platform
-  /// access. Possible values: 'active', 'suspended', 'pending_verification'.
-  status String
-  
-  /// Administrator's first name for identification and communication purposes.
-  first_name String
-  
-  /// Administrator's last name for identification and communication purposes.
-  last_name String
-  
-  /// Timestamp when the administrator account was created for audit trail
-  /// purposes.
-  created_at DateTime
-  
-  /// Timestamp when the administrator account was last updated for change
-  /// tracking.
-  updated_at DateTime
-  
-  /// Timestamp when the administrator account was soft deleted, allowing
-  /// recovery and preserving audit trails of terminated accounts.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  sessions ecommerce_mall_administrator_sessions[]
-  passwordResets ecommerce_mall_administrator_password_resets[]
-  emailVerifications ecommerce_mall_administrator_email_verifications[]
-  productReviewReports ecommerce_mall_product_review_reports[]
-  inventoryOperations ecommerce_mall_inventory_operations[]
-  resolvedLowStockAlerts ecommerce_mall_inventory_low_stock_alerts[]
-  inventoryCountVerifications ecommerce_mall_inventory_count_verifications[]
-  auditTrails ecommerce_mall_inventory_audit_trails[]
-  notificationPreferences ecommerce_mall_notification_preference_of_administrators[]
-  
-  @@index([status, created_at])
-  @@index([created_at])
-}
-
-/// Administrator login session records for authentication and connection
-/// tracking.
-///
-/// Stores JWT session tokens and connection context for authenticated
-/// administrator access.
-/// Captures IP address, connection URLs, and session expiration for security
-/// auditing.
-/// Maintains one-to-many relationship with administrators for active session
-/// management.
-///
-/// **Security Notes:** Sessions must expire for security compliance.
-/// Expired_at is mandatory and server-side enforced.
-/// Used for authentication workflows, not directly managed through
-/// administrator CRUD operations.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_administrator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the authenticated administrator's {@link
-  /// ecommerce_mall_administrators.id}.
-  administrator_id String
-  
-  /// IP address of the connection that created this session for security
-  /// auditing.
-  ip String
-  
-  /// Full connection URL including path and query parameters for session
-  /// context.
-  href String
-  
-  /// Referrer URL from HTTP headers indicating previous page navigation.
-  referrer String
-  
-  /// Timestamp when this session was created during administrator login.
-  created_at DateTime
-  
-  /// Timestamp when this session should expire for security compliance. Must
-  /// be non-null for security enforcement.
-  expired_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_sessions_administrator_id_eb82fcd1")
-}
-
-/// Password reset tokens with expiration for secure administrator password
-/// recovery workflow.
-///
-/// Stores unique tokens generated when administrators request password
-/// resets. Each token is associated with a specific administrator account
-/// and has a limited validity period for security. Tokens are single-use and
-/// automatically expire after a set duration to prevent unauthorized access.
-///
-/// The table maintains an audit trail of password reset requests while
-/// ensuring security through token expiration and administrator association.
-/// Failed attempts or expired tokens are tracked through the expiration
-/// mechanism rather than deletion to maintain security audit capabilities.
-///
-/// Password reset tokens are managed through the administrator
-/// authentication system and are not directly accessible to users for
-/// independent management.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_administrator_password_resets {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Administrator account requesting password reset. {@link
-  /// ecommerce_mall_administrators.id}
-  ecommerce_mall_administrator_id String
-  
-  /// Unique password reset token generated for administrator authentication.
-  /// Used to verify password reset requests and ensure single-use security.
-  token String
-  
-  /// Timestamp when the password reset token was created. Used for token
-  /// expiration calculation and audit trail.
-  created_at DateTime
-  
-  /// Timestamp when the password reset token expires. Tokens become invalid
-  /// after this time for security purposes.
-  expired_at DateTime
-  
-  /// Timestamp when the password reset token was successfully used. Null
-  /// indicates the token is still valid and unused.
-  used_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  administrator ecommerce_mall_administrators @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_administrator_id, created_at], map: "ecommerce_mall_administrator_password_resets_ecommerce_902a8363")
-  @@index([expired_at])
-}
-
-/// Email verification tokens for administrator account verification process
-/// with secure token generation and expiration management.
-///
-/// Stores verification tokens sent via email to administrators for account
-/// activation and email confirmation. Each token is uniquely generated and
-/// linked to a specific administrator account. Includes expiration
-/// timestamps to enforce security by automatically invalidating tokens after
-/// a defined period.
-///
-/// Tokens are managed through administrator authentication flows and are
-/// automatically cleared after successful verification or expiration. This
-/// table supports the security requirements for administrator account
-/// verification and email confirmation workflows specified in the
-/// authentication documentation.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_administrator_email_verifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the administrator account awaiting email verification via
-  /// this token. {@link ecommerce_mall_administrators.id}
-  ecommerce_mall_administrator_id String
-  
-  /// Unique verification token generated for email confirmation. Must be
-  /// securely random and sufficiently long to prevent guessing attacks.
-  token String
-  
-  /// Timestamp when this verification token expires for security purposes.
-  /// Tokens past this timestamp are automatically invalidated.
-  expires_at DateTime
-  
-  /// Timestamp when the email verification was successfully completed. Null
-  /// indicates pending verification.
-  verified_at DateTime?
-  
-  /// Timestamp when this verification token was created and sent to the
-  /// administrator's email.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  administrator ecommerce_mall_administrators @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
-  
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_administrator_id, created_at], map: "ecommerce_mall_administrator_email_verifications_ecomm_55f4e0eb")
-  @@index([expires_at])
-}
-
-/// Super administrator accounts with highest privileges for administrator
-/// management and platform oversight.
-///
-/// Represents the highest level of administrative authority in the
-/// e-commerce platform, capable of managing other administrators,
-/// configuring system-wide settings, and overseeing all platform operations.
-/// These accounts require email and password authentication and maintain
-/// comprehensive audit trails for security and compliance.
-///
-/// Super administrators have elevated permissions beyond regular
-/// administrators, including the ability to promote/demote other
-/// administrators, access sensitive system logs, and override certain
-/// business rules. Account deletion follows platform security protocols
-/// while preserving necessary audit trails.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_super_administrators {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique email address used for super administrator authentication and
-  /// communication. Must be validated and verified before account activation.
-  email String
-  
-  /// Securely hashed password for super administrator authentication. Never
-  /// stored in plain text and protected with industry-standard encryption.
-  password_hash String
-  
-  /// Timestamp when the super administrator account was created. Used for
-  /// audit trails and account lifecycle tracking.
-  created_at DateTime
-  
-  /// Timestamp when the super administrator account was last updated. Tracks
-  /// profile changes and security modifications.
-  updated_at DateTime
-  
-  /// Timestamp when the super administrator account was soft deleted. Allows
-  /// for account recovery and maintains audit trail integrity.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  sessions ecommerce_mall_super_administrator_sessions[]
-  passwordResets ecommerce_mall_super_administrator_password_resets[]
-  emailVerifications ecommerce_mall_super_administrator_email_verifications[]
-  notificationPreferences ecommerce_mall_notification_preference_of_super_administrators[]
-  
-  @@unique([email])
-  @@index([created_at])
-  @@index([updated_at])
-}
-
-/// JWT session tokens for super administrator authentication with access and
-/// refresh token support.
-///
-/// Stores login session data for super administrators, including connection
-/// context for security auditing. Each session is associated with exactly
-/// one super administrator and tracks authentication events with timestamps
-/// and connection metadata for audit trails.
-///
-/// Sessions record IP addresses, connection URLs, and referrer information
-/// for security monitoring. The expired_at field enforces session expiration
-/// for security compliance, preventing indefinite session persistence unless
-/// explicitly configured as nullable for special cases.
-///
-/// The composite index on super_administrator_id and created_at supports
-/// efficient session lookup and cleanup operations. Sessions follow the
-/// established authentication pattern used across all actor types in the
-/// platform.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_super_administrator_sessions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged super administrator's {@link
-  /// ecommerce_mall_super_administrators.id}.
-  ecommerce_mall_super_administrator_id String
-  
-  /// IP address of the connection that created this session.
-  ip String
-  
-  /// Connection URL where the session was created.
-  href String
-  
-  /// Referrer URL that directed to the session creation page.
+  /// Referring URL that directed the customer to the session creation page.
   referrer String
   
   /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when the session expires for security compliance. Sessions must
-  /// have expiration to prevent indefinite persistence.
+  /// Timestamp when the session expires and becomes invalid.
   expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  superAdministrator ecommerce_mall_super_administrators @relation(fields: [ecommerce_mall_super_administrator_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  reviewHelpfulVotes ecommerce_review_helpful_votes[]
   
   // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_super_administrator_id, created_at], map: "ecommerce_mall_super_administrator_sessions_ecommerce__cccb69c1")
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_sessions_ecommerce_customer_id_crea_bc77c226")
 }
 
-/// Password reset tokens with expiration for secure super administrator
-/// password recovery workflow.
+/// Password reset tokens with expiration for customer account password
+/// recovery.
 ///
-/// Stores temporary reset tokens that allow super administrators to securely
-/// reset their passwords when forgotten. Each token is associated with a
-/// specific super administrator account and includes expiration timestamps
-/// to ensure security. The tokens are generated upon password reset request
-/// and invalidated after use or expiration.
+/// This table stores temporary password reset tokens that allow customers to
+/// securely reset their passwords. Each token is uniquely generated and has
+/// a limited validity period to ensure security. The system tracks token
+/// usage to prevent reuse and maintains audit trails for security
+/// monitoring.
 ///
-/// Tokens are cryptographically secure and time-limited to prevent
-/// unauthorized access. The system tracks token creation, usage, and
-/// expiration to maintain audit trail and security compliance. Soft deletion
-/// is supported to preserve audit trails while allowing token cleanup after
-/// successful password resets.
+/// Tokens are linked to specific customer accounts and include expiration
+/// timestamps to enforce time-limited access. Once a token is used or
+/// expires, it becomes invalid for future password reset attempts. This
+/// approach ensures secure password recovery while preventing unauthorized
+/// access attempts.
+///
+/// {@link ecommerce_customers.id}
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_super_administrator_password_resets {
+model ecommerce_customer_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the super administrator requesting password reset. {@link
-  /// ecommerce_mall_super_administrators.id}
-  ecommerce_mall_super_administrator_id String
+  /// Customer account requesting password reset. {@link ecommerce_customers.id}
+  ecommerce_customer_id String
   
-  /// Cryptographically secure reset token used for password recovery
-  /// authentication.
+  /// Unique password reset token generated for secure authentication.
   token String
   
-  /// Expiration timestamp after which the reset token becomes invalid for
-  /// security.
+  /// Timestamp when the password reset token expires and becomes invalid.
   expires_at DateTime
   
-  /// Timestamp when the reset token was successfully used to change password.
+  /// Timestamp when the password reset token was successfully used. Null if
+  /// unused.
   used_at DateTime?
   
-  /// Timestamp when the reset token was created.
+  /// Timestamp when the password reset token was created.
   created_at DateTime
   
-  /// Timestamp when the reset token record was last updated.
+  /// Timestamp when the password reset token record was last updated.
   updated_at DateTime
   
-  /// Timestamp when the reset token was soft deleted for audit trail
-  /// preservation.
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_password_resets_ecommerce_customer__bc3110fa")
+  @@index([expires_at])
+}
+
+/// Seller accounts with email/password authentication credentials for
+/// product management and order processing.
+///
+/// This table stores the core identity information for sellers on the
+/// platform, including authentication credentials, shop profile details, and
+/// account status tracking. Sellers must register with email and password,
+/// and their accounts require administrator approval before they can sell
+/// products. The table supports the complete seller lifecycle from
+/// registration through active selling to account deletion with proper
+/// constraints.
+///
+/// Sellers are managed through {@link ecommerce_seller_sessions} for
+/// authentication sessions, {@link ecommerce_seller_password_resets} for
+/// credential recovery, and {@link ecommerce_seller_email_verifications} for
+/// registration confirmation. Seller profile changes are tracked through
+/// {@link ecommerce_seller_profile_snapshots} for data integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's email address used for authentication and communication. Must be
+  /// unique across all seller accounts.
+  email String
+  
+  /// Hashed password for seller authentication using secure hashing algorithm.
+  password_hash String
+  
+  /// Official name of the seller's shop as displayed to customers.
+  shop_name String
+  
+  /// Optional description of the seller's shop for customer information.
+  shop_description String?
+  
+  /// URL to the seller's shop logo image for branding purposes.
+  logo_image_url String?
+  
+  /// Current status of the seller account: 'pending_approval', 'approved',
+  /// 'rejected', 'suspended', or 'active'.
+  account_status String
+  
+  /// Reason provided by administrator for approval or rejection decision.
+  approval_reason String?
+  
+  /// Timestamp when the seller account was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was soft-deleted, preserving order
+  /// history.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  superAdministrator ecommerce_mall_super_administrators @relation(fields: [ecommerce_mall_super_administrator_id], references: [id], onDelete: Cascade)
+  sessions ecommerce_seller_sessions[]
+  passwordResets ecommerce_seller_password_resets[]
+  emailVerification ecommerce_seller_email_verifications?
+  auditLogs ecommerce_audit_logs[]
+  dataSnapshots ecommerce_data_snapshots[]
+  platformEvents ecommerce_platform_event_of_sellers[]
+  metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_sellers[]
+  products ecommerce_products[]
+  inventoryRecords ecommerce_inventory_records[]
+  variantSnapshots ecommerce_variant_snapshots[]
+  profileSnapshots ecommerce_seller_profile_snapshots[]
+  orderItems ecommerce_order_items[]
+  shipments ecommerce_shipments[]
+  orderItemPurchaseSnapshots ecommerce_order_item_purchase_snapshots[]
+  cancellationRequests ecommerce_cancellation_requests[]
+  refundRequests ecommerce_refund_requests[]
+  refundRequestModificationSnapshots ecommerce_refund_request_snapshots[]
+  cancellationResponseRecords ecommerce_cancellation_response_records[]
+  refundResponseRecords ecommerce_refund_response_records[]
+  reviewResponses ecommerce_review_responses[]
+  approvalQueue ecommerce_seller_approval_queues?
+  suspensions ecommerce_admin_seller_suspensions[]
+  administrativeActions ecommerce_administrative_action_of_sellers[]
+  userBans ecommerce_admin_user_ban_of_sellers[]
   
-  @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_super_administrator_id, created_at], map: "ecommerce_mall_super_administrator_password_resets_eco_6ad4912f")
-  // spellchecker: ignore-next-line
-  @@index([expires_at], map: "ecommerce_mall_super_administrator_password_resets_exp_ce3811ee")
+  @@unique([email])
+  @@index([account_status, created_at])
+  @@index([created_at])
 }
 
-/// Email verification tokens for super administrator account verification
-/// with expiration tracking and verification status management.
+/// Stores JWT session tokens for seller authentication with access and
+/// refresh token management. Each session tracks seller login events with
+/// connection metadata including IP address, user agent, and referrer
+/// information for security auditing. Sessions automatically expire based on
+/// configured timeout periods to maintain platform security.
 ///
-/// Provides secure email verification workflow for super administrator
-/// registration and email address changes. Each token has limited validity
-/// period enforced by expiration timestamp. Verification creates audit trail
-/// with timestamp upon successful confirmation.
+/// This table implements the mandatory registration requirement by ensuring
+/// all seller interactions are authenticated through valid sessions. The
+/// session management supports the multi-actor ecosystem by providing secure
+/// authentication for sellers to access their product management and order
+/// processing capabilities.
+///
+/// The table maintains security through token expiration, connection
+/// tracking, and audit trails. Each session is linked to a specific seller
+/// account and provides the authentication context needed for sellers to
+/// manage their shops, products, and customer orders.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model ecommerce_mall_super_administrator_email_verifications {
+model ecommerce_seller_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Foreign key referencing the associated super administrator requiring
-  /// email verification. {@link ecommerce_mall_super_administrators.id}
-  ecommerce_mall_super_administrator_id String
+  /// Associated seller account for this session. {@link ecommerce_sellers.id}
+  ecommerce_seller_id String
   
-  /// Unique verification token sent to the super administrator's email address
-  /// for account verification. Generated using secure cryptographic methods.
-  token String
+  /// JWT access token used for API authentication and authorization.
+  access_token String
   
-  /// Timestamp when this verification token expires and can no longer be used.
-  /// Enforces security by limiting token validity period.
-  expires_at DateTime
+  /// JWT refresh token used to obtain new access tokens when expired.
+  refresh_token String
   
-  /// Timestamp when the verification was successfully completed using this
-  /// token. Null indicates pending verification.
-  verified_at DateTime?
+  /// IP address of the client connection for security tracking.
+  ip_address String
   
-  /// Timestamp when this verification request was created. Used for audit
-  /// trail and token age tracking.
+  /// Client user agent string for browser/device identification.
+  user_agent String
+  
+  /// HTTP referrer URL indicating the source of the session initiation.
+  referrer String?
+  
+  /// Timestamp when the session was created.
   created_at DateTime
   
-  /// Timestamp when this verification record was last updated, typically when
-  /// verification is completed.
+  /// Timestamp when the session expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp of the last API call using this session for activity tracking.
+  last_accessed_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  platformEventInitiations ecommerce_platform_event_of_sellers[]
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  @@index([ecommerce_seller_id, created_at])
+  @@index([expires_at])
+}
+
+/// Stores password reset tokens for seller account password recovery. Each
+/// record contains a unique token, expiration timestamp, and references the
+/// seller who requested the password reset. Tokens are used for secure
+/// password recovery workflows and expire after a configurable period to
+/// maintain security.
+///
+/// This table supports the mandatory password reset functionality required
+/// for seller accounts. When a seller requests a password reset, a unique
+/// token is generated and stored here with an expiration timestamp. The
+/// seller receives the token via email and can use it to securely reset
+/// their password within the validity period. Expired tokens are
+/// automatically invalidated and cannot be reused.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who requested the password reset. {@link ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Unique password reset token used for verification. This token is sent to
+  /// the seller's email and must match exactly for password reset
+  /// authorization.
+  token String
+  
+  /// Timestamp when the password reset token expires. After this time, the
+  /// token becomes invalid and cannot be used for password recovery.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was successfully used. Null
+  /// indicates the token has not been used yet.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  superAdministrator ecommerce_mall_super_administrators @relation(fields: [ecommerce_mall_super_administrator_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_password_resets_ecommerce_seller_id_c_cbf54ec7")
+  @@index([expires_at])
+}
+
+/// Administrator accounts with elevated privileges for platform management
+/// and oversight. Administrators have access to system-wide management
+/// capabilities including seller approvals, category administration, user
+/// account oversight, and platform monitoring. This table stores the core
+/// identity and authentication credentials for administrative users.
+///
+/// Administrators are distinct from customers and sellers in the multi-actor
+/// ecosystem, requiring separate authentication flows and session
+/// management. Each administrator account enables access to administrative
+/// dashboard features and system configuration tools.
+///
+/// Administrator accounts are managed through a hierarchical system where
+/// super administrators can promote regular administrators and manage
+/// platform-wide settings. This table serves as the canonical identity
+/// record for all administrative users across the platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address used for authentication and communication.
+  /// Must be unique across all administrator accounts.
+  email String
+  
+  /// Securely hashed password for administrator authentication. Stored using
+  /// industry-standard hashing algorithms.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted, allowing for
+  /// account restoration if needed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions ecommerce_administrator_sessions[]
+  passwordResets ecommerce_administrator_password_resets[]
+  auditLogs ecommerce_audit_logs[]
+  dataSnapshots ecommerce_data_snapshots[]
+  platformEvents ecommerce_platform_event_of_administrators[]
+  metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_administrators[]
+  variantSnapshots ecommerce_variant_snapshots[]
+  refundRequestModificationSnapshots ecommerce_refund_request_snapshots[]
+  reviewModerationActions ecommerce_review_moderation_actions[]
+  reviewFlags ecommerce_review_flags[]
+  reviewReportStatusChanges ecommerce_review_report_statuses[]
+  reviewReportSnapshots ecommerce_review_report_snapshots[]
+  administrativeActions ecommerce_administrative_actions[]
+  platformOversights ecommerce_platform_oversights[]
+  sellerApprovalQueues ecommerce_seller_approval_queues[]
+  sellerApprovalResponses ecommerce_seller_approval_responses[]
+  categoryOperations ecommerce_admin_category_operations[]
+  userBans ecommerce_admin_user_bans[] @relation("ecommerce_admin_user_bans_of_administrator_id")
+  appealedBans ecommerce_admin_user_bans[] @relation("ecommerce_admin_user_bans_of_appeal_reviewer_id")
+  sellerSuspensions ecommerce_admin_seller_suspensions[]
+  adminUserBans ecommerce_admin_user_ban_of_administrators[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh token management. Stores active administrator sessions with
+/// security context including IP address, user agent, and token expiration
+/// timestamps. Each session belongs to exactly one administrator account and
+/// supports secure authentication flows with refresh token rotation.
+///
+/// Sessions are managed through authentication workflows rather than direct
+/// CRUD operations. They provide the security context for administrator
+/// actions and are automatically expired based on configured timeouts.
+/// Session records are append-only for audit trail purposes and support
+/// secure logout mechanisms.
+///
+/// This table implements the standard session pattern for actor
+/// authentication systems, providing the foundation for secure administrator
+/// access to platform management features.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link ecommerce_administrators.id}.
+  ecommerce_administrator_id String
+  
+  /// JWT access token used for API authentication. Contains administrator
+  /// identity and permissions encoded as a secure token.
+  access_token String
+  
+  /// JWT refresh token used to obtain new access tokens without
+  /// re-authentication. Supports secure token rotation.
+  refresh_token String
+  
+  /// IP address of the client device that initiated the session. Used for
+  /// security monitoring and access pattern analysis.
+  ip_address String
+  
+  /// HTTP User-Agent header from the client device. Identifies browser/device
+  /// type for session context.
+  user_agent String
+  
+  /// Timestamp when the session was created during administrator login.
+  created_at DateTime
+  
+  /// Timestamp when the session will automatically expire and require
+  /// re-authentication.
+  expires_at DateTime
+  
+  /// Timestamp when the session was last used for API authentication. Used for
+  /// session activity tracking.
+  last_used_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  
+  platformEvents ecommerce_platform_event_of_administrators[]
+  
+  @@unique([access_token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrator_id, created_at], map: "ecommerce_administrator_sessions_ecommerce_administrat_272a86dd")
+  @@index([expires_at])
+}
+
+/// Highest-level administrator accounts with system-wide configuration
+/// privileges and authentication credentials.
+///
+/// Super administrators have the highest level of access in the platform,
+/// including the ability to manage other administrators, perform system-wide
+/// configurations, and oversee all platform operations. This table stores
+/// the core authentication information and profile data for super
+/// administrator accounts.
+///
+/// Each super administrator account requires email verification during
+/// registration and maintains secure password authentication. Super
+/// administrators can manage their own credentials and sessions through
+/// dedicated support tables.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_super_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super administrator's email address used for authentication and
+  /// communication.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Timestamp when the super administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the super administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the super administrator account was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions ecommerce_super_administrator_sessions[]
+  passwordResets ecommerce_super_administrator_password_resets[]
+  auditLogs ecommerce_audit_logs[]
+  dataSnapshots ecommerce_data_snapshots[]
+  initiatedPlatformEvents ecommerce_platform_event_of_super_administrators[]
+  metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_super_administrators[]
+  administrativeActions ecommerce_administrative_actions[]
+  administratorPromotionApprovals ecommerce_administrator_promotions[]
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// JWT session tokens for super administrator authentication with connection
+/// context and session lifecycle management.
+///
+/// This table stores active login sessions for super administrators,
+/// tracking connection context, session lifecycle, and security metadata for
+/// audit purposes. Each session is associated with a specific super
+/// administrator account and follows the standard session table pattern.
+///
+/// Sessions are created during login and managed through authentication
+/// flows, not direct user CRUD operations. The table maintains an
+/// append-only audit trail of super administrator login events for security
+/// monitoring.
+///
+/// {@link ecommerce_super_administrators.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_super_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated super administrator account. {@link
+  /// ecommerce_super_administrators.id}
+  ecommerce_super_administrator_id String
+  
+  /// IP address of the connection that created this session.
+  ip String
+  
+  /// Full URL of the page where the session was created.
+  href String
+  
+  /// HTTP referrer header value from the session creation request.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and requires renewal.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@unique([token], map: "ecommerce_mall_super_administrator_email_verifications_78b2cb71")
+  @@index([ecommerce_super_administrator_id, created_at], map: "ecommerce_super_administrator_sessions_ecommerce_super_358324b4")
+}
+
+/// Password reset tokens with expiration for administrator account password
+/// recovery.
+///
+/// This table stores secure tokens generated when administrators request
+/// password reset functionality. Each token has a limited validity period
+/// and can only be used once for security purposes. The tokens are linked to
+/// specific administrator accounts and include temporal tracking for audit
+/// purposes.
+///
+/// When an administrator requests password reset, a new token is generated
+/// and stored here with an expiration timestamp. The token is sent to the
+/// administrator's email for verification. Once used successfully, the token
+/// is invalidated to prevent reuse.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator account requesting password reset. {@link
+  /// ecommerce_administrators.id}
+  ecommerce_administrator_id String
+  
+  /// Secure token generated for password reset verification.
+  token String
+  
+  /// Timestamp when the password reset token expires and becomes invalid.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset token was successfully used.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
   // spellchecker: ignore-next-line
-  @@index([ecommerce_mall_super_administrator_id, created_at], map: "ecommerce_mall_super_administrator_email_verifications_e5914f11")
+  @@index([ecommerce_administrator_id, created_at], map: "ecommerce_administrator_password_resets_ecommerce_admi_ef0d1c9a")
+  @@index([expired_at])
+}
+
+/// Password reset tokens with expiration for super administrator account
+/// password recovery. This table stores temporary tokens that allow super
+/// administrators to reset their passwords securely. Each token is
+/// single-use and expires after a set period for security purposes.
+///
+/// Super administrators can request password reset tokens when they forget
+/// their credentials. The system generates a unique token linked to their
+/// account with an expiration timestamp. When the super administrator uses
+/// the token to reset their password, the token is marked as used to prevent
+/// reuse.
+///
+/// This table maintains an audit trail of password reset attempts and
+/// ensures that only valid, unexpired tokens can be used for password
+/// recovery operations. {@link ecommerce_super_administrators.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_super_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target super administrator account for password reset. {@link
+  /// ecommerce_super_administrators.id}
+  ecommerce_super_administrator_id String
+  
+  /// Unique password reset token used for secure password recovery link
+  /// generation.
+  token String
+  
+  /// Timestamp when the password reset token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was successfully used to reset
+  /// the password. Null if unused.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_super_administrator_id, created_at], map: "ecommerce_super_administrator_password_resets_ecommerc_dd564920")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for customer registration confirmation.
+///
+/// This table stores temporary verification tokens sent to customers during
+/// the registration process to confirm their email address ownership. Each
+/// token has a limited validity period and is automatically invalidated
+/// after use or expiration.
+///
+/// The verification process ensures that customers provide valid email
+/// addresses they can access, which is critical for order notifications,
+/// password resets, and account security. Tokens are single-use and expire
+/// after a configurable timeframe to prevent unauthorized account creation.
+///
+/// This table supports the mandatory registration requirement where all
+/// users must authenticate through verified accounts before accessing
+/// platform features. Verification tokens are generated during registration
+/// and consumed when customers confirm their email addresses.
+///
+/// Related entities: {@link ecommerce_customers} for customer account
+/// linkage, {@link ecommerce_customer_sessions} for post-verification
+/// authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_customer_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer account requiring email verification. {@link
+  /// ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Unique verification token sent to customer's email address for
+  /// confirmation.
+  token String
+  
+  /// Timestamp when this verification token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the customer successfully verified their email using this
+  /// token. Null until verification is completed.
+  verified_at DateTime?
+  
+  /// Timestamp when this verification token was created.
+  created_at DateTime
+  
+  /// Timestamp when this verification token was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_email_verifications_ecommerce_custo_13653349")
+  @@index([expires_at])
+}
+
+/// Stores email verification tokens for seller registration confirmation
+/// with expiration tracking to ensure timely validation.
+///
+/// This table supports the mandatory email verification requirement for
+/// seller registration by generating unique tokens that sellers must
+/// validate to activate their accounts. Each token has a limited validity
+/// period to maintain security and prevent account creation abuse.
+///
+/// The verification process is initiated when a seller registers and
+/// requires successful token validation before the account can be approved
+/// for selling activities. Tokens are single-use and become invalid after
+/// verification or expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller account requiring email verification. {@link
+  /// ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Unique verification token generated for email validation. Used in
+  /// verification links sent to seller's email address.
+  token String
+  
+  /// Timestamp when this verification token expires. Tokens beyond this
+  /// timestamp cannot be used for verification.
+  expires_at DateTime
+  
+  /// Timestamp when this token was successfully used for verification. Null
+  /// indicates the token is still valid and awaiting use.
+  consumed_at DateTime?
+  
+  /// Timestamp when this verification token was generated and sent to the
+  /// seller.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_seller_id])
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_email_verifications_ecommerce_seller__bdb0c858")
+  @@index([expires_at])
 }

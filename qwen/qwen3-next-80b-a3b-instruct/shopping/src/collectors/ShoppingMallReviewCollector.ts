@@ -1,9 +1,8 @@
-import { Prisma } from "@prisma/sdk";
-import { ArrayUtil } from "@nestia/e2e";
-import { v4 } from "uuid";
-
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -11,27 +10,26 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallReviewCollector {
   export async function collect(props: {
     body: IShoppingMallReview.ICreate;
-    shoppingMallCustomers: IEntity; // from authorized actor
-    shoppingMallProducts: IEntity; // from path parameter productId
+    customer: IEntity;
+    orderItem: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       rating: props.body.rating,
       text: props.body.text ?? null,
-      is_deleted: false,
-      deleted_at: null,
       created_at: new Date(),
-      updated_at: new Date(),
-      customer: {
-        connect: { id: props.shoppingMallCustomers.id },
-      },
+      updated_at: null,
+      deleted_at: null,
       product: {
-        connect: { id: props.shoppingMallProducts.id },
+        connect: { id: props.orderItem.product_id },
       },
       orderItem: {
-        connect: { id: "" },
+        connect: { id: props.orderItem.id },
       },
-      parentReview: undefined,
+      customer: {
+        connect: { id: props.customer.id },
+      },
     } satisfies Prisma.shopping_mall_reviewsCreateInput;
   }
 }

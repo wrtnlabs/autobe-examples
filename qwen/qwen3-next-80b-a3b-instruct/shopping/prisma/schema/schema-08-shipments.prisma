@@ -1,0 +1,53 @@
+/// Core shipment record containing carrier, tracking number, and delivery
+/// status for grouped order items. Each shipment corresponds to one or more
+/// order items from the same seller and represents a physical delivery
+/// event. This table is immutable after creation, with status transitions
+/// managed by system logic to ensure audit integrity. Shipment records are
+/// never deleted and must persist for 7+ years for compliance.
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order item that this shipment contains. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Name of the shipping carrier (e.g., FedEx, UPS, DHL). Must be provided by
+  /// seller at shipment creation. Limited to 100 characters.
+  carrier String
+  
+  /// Unique tracking number assigned by the carrier. Must be provided by
+  /// seller. Alphanumeric, 8-32 characters. Used by customers to track
+  /// shipment.
+  tracking_number String
+  
+  /// Current status of this shipment. Must be one of: 'shipped', 'delivered',
+  /// 'auto-delivered'. Starts as 'shipped' when created. Changed to
+  /// 'delivered' by customer confirmation or automatically to 'auto-delivered'
+  /// after 14 days.
+  status String
+  
+  /// Timestamp when this shipment record was created. Used for auto-delivery
+  /// triggering after 14 days.
+  created_at DateTime
+  
+  /// Optional estimated delivery date provided by seller. Used for customer
+  /// expectation management but does not affect system logic.
+  estimated_delivery_date DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([tracking_number])
+  @@index([created_at])
+  @@index([status, created_at])
+  @@index([shopping_mall_order_item_id])
+}

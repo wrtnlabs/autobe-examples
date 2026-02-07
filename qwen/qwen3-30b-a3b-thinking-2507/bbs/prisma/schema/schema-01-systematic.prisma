@@ -1,50 +1,96 @@
-/// System-wide configuration settings and feature flags that control
-/// platform behavior, accessibility, and user experience across the entire
-/// application.
+/// Stores system error codes, handling strategies, and message templates for
+/// error handling scenarios including system-wide error configuration.
 ///
-/// Stores key-value pairs for configuration parameters, where the key
-/// represents the setting name (e.g., 'comment_min_length',
-/// 'article_max_tags') and the value represents the current setting value.
-/// This table also includes human-readable descriptions for each
-/// configuration setting.
+/// This table is used to define how different error types should be handled
+/// across the platform, with configurable message templates that support
+/// dynamic replacement of variables.
 ///
-/// These configuration settings can be modified through the platform's
-/// administrative interface to adjust platform behavior without requiring
-/// code changes. System configurations include settings related to content
-/// rules, user experience features, and platform capabilities.
+/// Critical for consistent error communication and user experience during
+/// error states.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model econ_politic_board_system_configs {
+model economy_politics_board_system_error_handling_rules {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique configuration key name (e.g., 'comment_min_length',
-  /// 'article_max_tags'). Used to identify this configuration setting.
-  name String
+  /// Unique error identifier that corresponds to specific error conditions.
+  error_code String
   
-  /// Current value of the configuration setting (e.g., '10', '5'). Can be a
-  /// number, string, or boolean represented as string.
-  value String
+  /// Strategy for handling this error type (e.g., 'retry', 'log', 'notify')
+  handling_strategy String
   
-  /// Human-readable description of what this configuration setting does and
-  /// its purpose in the system.
-  description String
+  /// Template string for error messages that will be dynamically rendered with
+  /// context variables.
+  message_template String
   
-  /// Timestamp when this configuration setting was added to the system.
+  /// Timestamp when the error configuration was created.
   created_at DateTime
   
-  /// Timestamp when this configuration setting was last modified.
+  /// Timestamp when the error configuration was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration setting was deleted (soft delete).
+  /// Timestamp when the error configuration was marked as deleted (soft
+  /// delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@unique([error_code], map: "economy_politics_board_system_error_handling_rules_err_02bb1962")
+}
+
+/// Defines measurable performance thresholds for critical system operations
+/// and user experience metrics. Includes response time requirements for
+/// search, content handling, and concurrent requests, with criticality
+/// levels indicating severity. All thresholds are system-defined and managed
+/// via configuration.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economy_politics_board_system_performance_thresholds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the performance metric (e.g., 'search_response_time',
+  /// 'request_throughput'). This is the identifier for the threshold category.
+  performance_metric String
+  
+  /// The threshold value against which performance is measured. For example, a
+  /// response time threshold of 200ms is represented as 200.0.
+  threshold_value Float
+  
+  /// Measurement unit for the threshold value (e.g., 'ms', 'sec',
+  /// 'requests_per_second'). Must be a valid metric unit.
+  unit String
+  
+  /// Criticality level of the threshold (high, medium, low). Indicates the
+  /// severity of the threshold breach.
+  criticality String
+  
+  /// Additional details and context about this threshold, including use cases
+  /// and business implications.
+  description String?
+  
+  /// Timestamp of when the threshold was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the threshold.
+  updated_at DateTime
+  
+  /// Timestamp of when the threshold was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([performance_metric], map: "economy_politics_board_system_performance_thresholds_p_6bbd6d07")
 }

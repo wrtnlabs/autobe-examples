@@ -1,0 +1,230 @@
+/// Main article entity containing title, content, author reference, and
+/// section association. Articles represent the core content of the
+/// discussion board and serve as the primary subject for user discussions,
+/// comments, and interactions. Each article belongs to a specific section
+/// and is authored by a registered user.
+///
+/// This table stores the essential article information including the title,
+/// content body, author reference, and section association. Related data
+/// such as file attachments, image attachments, and tags are stored in
+/// separate tables (discussion_board_article_files,
+/// discussion_board_article_images, discussion_board_tags,
+/// discussion_board_article_tags) to maintain proper normalization.
+///
+/// The soft delete pattern (deleted_at) is implemented to support content
+/// management while preserving historical data for audit purposes.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link discussion_board_members.id}.
+  author_id String
+  
+  /// Section's {@link discussion_board_sections.id} where this article is
+  /// published.
+  section_id String
+  
+  /// Article title (required, 1-200 characters).
+  title String
+  
+  /// Article content body (required, text content).
+  content String
+  
+  /// Number of times this article has been viewed.
+  view_count Int
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp for soft delete pattern. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author discussion_board_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  files discussion_board_article_files[]
+  images discussion_board_article_images[]
+  articleTags discussion_board_article_tags[]
+  comments discussion_board_comments[]
+  searchResults discussion_board_search_results[]
+  searchIndices discussion_board_search_indices[]
+  
+  @@index([author_id, created_at])
+  @@index([section_id, created_at])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// File attachments for articles with metadata about uploaded files.
+///
+/// This table stores all file attachments associated with articles on the
+/// discussion board. Each article can have multiple file attachments which
+/// are stored with their metadata including original filename, storage path,
+/// and file type information.
+///
+/// Key characteristics:
+/// - Files are always accessed through their parent article
+/// - Supports various file types with size tracking
+/// - Implements soft delete pattern for audit trail
+/// - Foreign key relationship to discussion_board_articles table
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article that this file belongs to. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Original filename as uploaded by the user.
+  original_name String
+  
+  /// File storage path or URL where the file is physically stored.
+  stored_path String
+  
+  /// MIME type of the file (e.g., 'application/pdf', 'image/png').
+  file_type String
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  /// Timestamp when the file attachment was created.
+  created_at DateTime
+  
+  /// Timestamp when the file attachment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the file was soft deleted (nullable means not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  @@index([discussion_board_article_id])
+}
+
+/// Image attachments for articles with metadata about uploaded images
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged article's {\link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename of the uploaded image
+  original_filename String
+  
+  /// Stored filename in the file system
+  stored_filename String
+  
+  /// Image MIME type (e.g., image/jpeg, image/png)
+  mime_type String
+  
+  /// File size in bytes
+  size Int
+  
+  /// Image width in pixels
+  width Int
+  
+  /// Image height in pixels
+  height Int
+  
+  /// Display order among multiple images
+  display_order Int
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, display_order], map: "discussion_board_article_images_discussion_board_artic_ed181826")
+}
+
+/// Tag entity for content categorization system. Tags enable users to
+/// categorize and filter articles by topics of interest. Each tag has a
+/// unique name that can be associated with multiple articles through the
+/// discussion_board_article_tags junction table.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tag name for content categorization. Must be unique across all tags.
+  name String
+  
+  /// Timestamp when the tag was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  articleTags discussion_board_article_tags[]
+  
+  @@unique([name])
+}
+
+/// Junction table connecting articles with their associated tags
+/// (many-to-many relationship). This table enables efficient querying of
+/// which tags belong to which articles and vice versa.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article this tag belongs to. {@link
+  /// discussion_board_articles.id}.
+  bbs_article_id String
+  
+  /// Reference to the tag assigned to the article. {@link
+  /// discussion_board_tags.id}.
+  tag_id String
+  
+  /// Timestamp when this article-tag relationship was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [bbs_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([bbs_article_id, tag_id])
+  @@index([bbs_article_id])
+  @@index([tag_id])
+}

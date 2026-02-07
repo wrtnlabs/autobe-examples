@@ -1,264 +1,285 @@
-# Reddit-like Community Platform
+# Requirements Specification: Reddit-like Community Platform
 
-## Introduction
+## 1. Service Overview
 
-The Community Platform is a social platform that enables users to create, follow, and engage with communities centered around shared interests. This platform is designed around core principles including community ownership, genuine engagement without algorithmic interference, and meaningful content quality over quantity.
+The platform solves the problem of fragmented online communities by providing a unified space where users can create and engage with topic-focused communities. Unlike traditional social media platforms that prioritize algorithmic content delivery, this platform centers around user-created communities as the fundamental organizational unit, enabling meaningful interactions while maintaining platform-wide cohesion. The core value proposition is delivering a seamless community experience that balances user autonomy with platform integrity.
 
-## Service Overview
+### Business Value
 
-### Business Justification
+WHEN users interact with the platform, THE system SHALL ensure that community building is prioritized over content amplification, leading to:
+- Reduced polarization through community-specific moderation
+- More meaningful user connections based on shared interests
+- Higher quality content creation by focusing on community-relevant topics
 
-The current market lacks a social platform that empowers users to control their content experience through community creation and ownership. Our platform addresses this gap by providing:
+## 2. User Account Requirements
 
-- A Reddit-like experience without engagement metrics-driven feeds
-- Community ownership through self-moderation
-- Karm-based reputation systems for authentic engagement
-- User control over content visibility through subscription-based navigation
+### 2.1 Registration and Authentication
 
-#### EARS Requirements
-WHEN a user signs up for the platform, THE platform SHALL allow the user to create a unique username and password.
-WHEN a user creates a community, THE platform SHALL automatically set them as the owner with full community management capabilities.
-WHEN a user posts content, THE platform SHALL make it visible to community subscribers only.
+WHEN a user wants to sign up for the platform, THE system SHALL require:
+- A valid, unique email address
+- A strong, unique password (minimum 8 characters, including uppercase, lowercase, and numeric characters)
+- A unique username (no spaces, minimum 3 characters)
+- Agreement to the terms of service
 
-### Value Proposition
+THE system SHALL generate a welcome email with verification link within 1 minute of registration request.
 
-#### For Users
+WHEN a user submits their registration information, THE system SHALL validate all input fields and display specific error messages for each validation failure.
 
-The Community Platform provides an authentic Reddit experience with modern enhancements:
-- **Personalized community discovery** through subscription model rather than algorithmic following
-- **Karma-based reputation** reflecting meaningful community contributions
-- **True profile ownership** with display names, bios, and avatars
-- **Complete content control** including post editing and deletion
-- **Moderation transparency** showing community health metrics
+### 2.2 Account Management
 
-#### EARS Requirements
-WHEN a user posts content, THE platform SHALL display their karma score next to their contributions.
-WHEN a user joins a community, THE platform SHALL require that community to have at least one active moderator.
-WHEN a user reports content, THE platform SHALL show the report reason to moderation team members.
+WHEN a user wants to change their password, THE system SHALL:
+- Require the user's current password for authentication
+- Verify the new password meets security requirements
+- Notify the user via email of the password change
 
-#### For Communities
+WHEN a user requests account deletion, THE system SHALL:
+- Confirm the request through a second authentication step
+- Display a warning of irreversible data deletion
+- Delete all user content, including posts, comments, and associated karma
+- Provide an option to restore the account within 14 days of deletion
 
-Communities gain:
-- **Complete ownership and moderation tools** controlled by community owners
-- **Scalable infrastructure** capable of supporting both small and large communities
-- **Karma-based metrics** showing community health and engagement quality
-- **Integrated reporting system** for efficient content moderation
+### 2.3 Authentication Workflow
 
-#### For Moderators
+THE system SHALL implement JWT-based authentication with the following requirements:
+- Sessions expire after 30 minutes of inactivity
+- Session tokens are stored in HTTP-only cookies
+- Password reset tokens expire after 1 hour
+- All authentication endpoints require HTTPS
 
-Moderators benefit from:
-- **Clear authority levels** within communities (owner vs. moderator)
-- **Comprehensive moderation tools** for content management
-- **Reporting interface** showing all content reports for their community
-- **Banning capabilities** to protect community health
+## 3. User Profile Requirements
 
-#### EARS Requirements
-WHEN a community owner adds a moderator, THE platform SHALL make that user visible in the moderators list.
-WHEN a moderator deletes content, THE platform SHALL log the action with timestamp and user ID.
-WHEN a user requests community deletion, THE platform SHALL require owner confirmation.
+### 3.1 Profile Components
 
-### Core Features Implementation
+WHEN a user views their profile, THE system SHALL display:
+- Their display name (defaulting to username if blank)
+- A customizable bio text (maximum 255 characters)
+- The user's avatar image (JPEG/PNG, max 5MB)
+- Their current karma score prominently at the top
 
-#### User Identity System
+WHEN a user views another user's profile, THE system SHALL allow viewing with no restrictions, but shall not display private information (e.g., email address).
 
-##### Account Management
+### 3.2 Profile Interactions
 
-- **Registration**: Users sign up with email and password, with unique username choice (10-30 characters alphanumeric)
-- **Login**: Email and password credentials are required for access
-- **Password Management**: Users can change password with confirmation email validation
-- **Account Deletion**: Deleting account removes all associated content (posts, comments, karma) within 24 hours
+WHEN a user edits their profile, THE system SHALL:
+- Allow updates to display name, bio, and avatar
+- Validate all input fields against length and format requirements
+- Display a success message upon saving
 
-##### Profile Management
+WHEN a user views their profile, THE system SHALL display a list of their posts (with title, community, and creation date) and comments (with content preview, community, and creation date), filtered by post type.
 
-- **Display Name**: 1-30 characters, must be unique across system
-- **Bio Text**: 0-250 characters, HTML-friendly
-- **Avatar Image**: Supported formats (JPEG, PNG, GIF), max 5MB
-- **Profile Viewing**: All users can view any other user's profile
+## 4. Karma System Requirements
 
-##### EARS Requirements
-WHEN a user creates a profile, THE platform SHALL enforce unique display name requirement.
-WHEN a user updates their bio, THE platform SHALL limit text to 250 characters.
-WHEN a user deletes their account, THE platform SHALL permanently remove all associated data within 24 hours.
+### 4.1 Karma Mechanics
 
-#### Community Architecture
+WHEN a user receives an upvote on a post or comment, THE system SHALL increase their karma score by 1.
 
-##### Community Creation
+WHEN a user receives a downvote on a post or comment, THE system SHALL decrease their karma score by 1.
 
-- **Required Fields**: Unique name (2-50 characters), description (0-500 characters), icon image (max 5MB)
-- **Ownership**: User who creates community becomes owner
-- **Browsing**: Public list of all communities with subscriber count display
-- **Search**: Search by community name (fuzzy match)
+WHEN a user changes an upvote to a downvote, THE system SHALL adjust their karma score by -2.
 
-##### Subscription Management
+WHEN a user changes a downvote to an upvote, THE system SHALL adjust their karma score by +2.
 
-- **Subscribe**: Toggle button for communities users want to follow
-- **Unsubscribe**: Toggle button to remove subscription
-- **Subscription List**: View all communities user is subscribed to
-- **Required for Posting**: Must be subscribed to create posts in community
+WHEN a user removes their vote, THE system SHALL adjust their karma score according to their previous vote:
+- Previous upvote: decrease by 1
+- Previous downvote: increase by 1
 
-##### EARS Requirements
-WHEN a user creates a community, THE platform SHALL ensure name uniqueness across all communities.
-WHEN a user subscribes to a community, THE platform SHALL display the community's current subscriber count.
-WHEN a user views their subscriptions, THE platform SHALL list communities with last activity timestamp.
+### 4.2 Karma Display and Usage
 
-#### Content Management
+THE system SHALL update karma scores in real-time across all user interactions.
 
-##### Post Types
+WHEN a user views their profile, THE system SHALL display their karma score as a numeric value at the top.
 
-| Type | Description | Requirements |
-|------|-------------|--------------|
-| Text | Written content | Mandatory title, text content (20-5000 characters) |
-| Link | External URL | Mandatory title, valid URL | 
-| Image | Uploaded image | Mandatory title, image file (JPG/PNG/GIF, max 10MB) |
+WHEN a user views another user's profile, THE system SHALL display their karma score below the profile title.
 
-##### Post Operations
+## 5. Communities Requirements
 
-- **Creation**: In any subscribed community with a valid post type
-- **Editing**: For user's own posts
-- **Deletion**: For user's own posts
-- **Viewing**: Post details including title, full content, author, community, vote score, comment count, and timestamp
+### 5.1 Community Creation
 
-##### EARS Requirements
-WHEN a user creates a post, THE platform SHALL validate post type requirements.
-WHEN a user edits a post, THE platform SHALL allow changes to all content fields except community selection.
-WHEN a user deletes a post, THE platform SHALL remove it from all feeds and update community post count.
+WHEN a user creates a new community, THE system SHALL require:
+- A unique community name (min 3 characters, max 50 characters)
+- A descriptive community description (min 10 characters)
+- A community icon image (JPEG/PNG, max 5MB)
+- A URL-safe slug (automatically generated from community name)
 
-#### Post Voting System
+THE system SHALL prevent duplicate community names across the entire platform.
 
-- **Vote Types**: Upvote (+1 karma), Downvote (-1 karma)
-- **Vote Limits**: One vote per user per post
-- **Vote Changes**: Change vote type (upvote to downvote) by re-voting
-- **Vote Removal**: Clear vote to reset to zero
-- **Score Calculation**: Total upvotes - total downvotes
+### 5.2 Community Ownership Structure
 
-##### EARS Requirements
-WHEN a user votes on a post, THE platform SHALL increment/decrement karma and update scores.
-WHEN a user changes vote type, THE platform SHALL adjust karma accordingly.
-WHEN a user removes a vote, THE platform SHALL revert to previous score without affecting karma.
+WHEN a user creates a community, THE system SHALL:
+- Assign the user as the community owner
+- Automatically grant the owner the highest authority within the community
+- Store the owner relationship in the community ownership records
 
-#### Content Display
+WHEN a user is the owner of a community, THE system SHALL prevent the owner from being removed by other users.
 
-##### Post List View
+## 6. Subscribing Requirements
 
-Each post in feeds shows:
-- Title (truncated to 100 characters)
-- Author username
-- Community name
-- Vote score
-- Comment count
-- Time since posted (e.g., '3 hours ago')
-- Content type indicator:
-  - Text: first 200 characters of content
-  - Link: domain name of URL (e.g., 'youtube.com')
-  - Image: image thumbnail
+### 6.1 Subscription Management
 
-##### EARS Requirements
-WHEN a user views a post list, THE platform SHALL display truncated content based on type.
-WHEN a user views a text post in list, THE platform SHALL show first 200 characters.
-WHEN a user views a link post in list, THE platform SHALL display domain name without protocol.
+WHEN a user views a community page, THE system SHALL display a "Subscribe" button if they are not already subscribed.
 
-#### Community Feed Implementation
+WHEN a user clicks "Subscribe", THE system SHALL add them to the community's subscription list.
 
-All three feed types (Home, Popular, Community) use the same content display rules and support identical sorting options:
+WHEN a user is subscribed to a community, THE system SHALL automatically include the community's posts in their Home Feed.
 
-| Sort Type | Behavior | Time Filter Options |
-|-----------|----------|---------------------|
-| Hot | Recent posts with many upvotes | All sorts with time filters |
-| New | Most recent posts | Today, this week, this month, this year, all time |
-| Top | Highest vote score | Today, this week, this month, this year, all time |
-| Controversial | Posts with many votes but score near zero | All time |
+### 6.2 Subscription Visibility
 
-##### EARS Requirements
-WHEN a user selects 'Top' sort, THE platform SHALL apply correct time filter options.
-WHEN a user views the Popular feed, THE platform SHALL show posts from all communities without authentication requirement.
-WHEN a user views the Home feed, THE platform SHALL show only posts from subscribed communities.
+THE system SHALL display the subscription count for each community on the community browse page.
 
-#### Community Moderation
+THE system SHALL allow users to view all communities they are subscribed to, with search and sorting capabilities.
 
-##### Moderator Roles
+## 7. Posts Requirements
 
-- **Community Owner**: Highest authority, can add/remove moderators
-- **Moderator**: Can add other moderators but cannot remove owner or other moderators
-- **Moderator Actions**: Delete posts, delete comments, ban users from community
+### 7.1 Post Types
 
-##### Ban Management
+WHEN a user creates a post in a community, THE system SHALL present three post type options:
+- Text post: Requires a title and content (text editor)
+- Link post: Requires a title and URL (valid HTTP/HTTPS)
+- Image post: Requires a title and image upload (JPEG/PNG, max 5MB)
 
-- **Banned Users**: Cannot create posts or comments within community, can view content
-- **Ban Visibility**: Moderators can view list of banned users
-- **Ban Removal**: Moderators can unban users
+THE system SHALL require a title for all post types.
 
-##### EARS Requirements
-WHEN a community owner adds a moderator, THE platform SHALL make that user visible in the moderators list.
-WHEN a moderator deletes a post, THE platform SHALL log the action with timestamp.
-WHEN a user is banned from a community, THE platform SHALL prevent them from posting or commenting in that community.
+### 7.2 Post Lifecycle
 
-#### Reporting System
+WHEN a user edits their post, THE system SHALL allow modifications to the post content within a 24-hour window.
 
-##### Report Process
+WHEN a user deletes their post, THE system SHALL:
+- Remove the post from all feeds
+- Recalculate all karma related to this post
+- Notify the community owner if the post was on the community home page
 
-- **User Report**: Provides content, reason text (10-500 characters)
-- **Moderator Review**: View all reports for their community, view report reason
-- **Report Resolution**: Approve (delete content) or dismiss (keep content)
-- **Dismissed Reports**: Automatically removed from report queue
+## 8. Feeds Requirements
 
-##### EARS Requirements
-WHEN a user submits a report, THE platform SHALL require report reason text between 10-500 characters.
-WHEN a moderator dismisses a report, THE platform SHALL remove it from the report queue.
-WHEN a moderator approves a report, THE platform SHALL delete the reported content and notify user who reported.
+### 8.1 Feed Types
 
-#### Technical Implementation Notes
+THE system SHALL provide three distinct feed views:
+- **Home Feed**: Shows posts only from communities the user is subscribed to (logged-in users only)
+- **Popular Feed**: Shows posts from all communities across the platform (available to everyone)
+- **Community Feed**: Shows posts from one specific community (available to everyone)
+
+### 8.2 Sorting Options
+
+WHEN a user accesses any feed, THE system SHALL provide the following sorting options:
+- **Hot**: Most recent posts with high engagement appear first
+- **New**: Most recently created posts appear first
+- **Top**: Highest vote score for selected time frame (today, week, month, year, all time)
+- **Controversial**: Posts with many votes but score close to zero appear first
+
+THE system SHALL paginate all feeds with 20 items per page, with loading indicators for large datasets.
+
+## 9. Comment Requirements
+
+### 9.1 Comment Features
+
+WHEN a user creates a comment, THE system SHALL:
+- Allow creation of threaded replies (unlimited depth)
+- Display the comment author's username
+- Allow editing of comments within 24 hours
+- Allow deletion of personal comments
+
+WHEN a user views a comment, THE system SHALL display:
+- The author's username
+- The content text
+- The vote score
+- Time since posted in natural language (e.g., "3 hours ago")
+
+### 9.2 Comment Structure
+
+THE system SHALL implement a comment tree structure that properly nests replies and sub-replies.
+
+WHEN a comment has replies, THE system SHALL display a 'Replies' count and provide an interactive button to expand/collapse replies.
+
+## 10. Community Moderation Requirements
+
+### 10.1 Moderator Roles
+
+WHEN a community owner adds a new moderator, THE system SHALL:
+- Grant the user moderator privileges for that specific community
+- Record the addition in the community moderation log
+- Notify the new moderator via email
+
+WHEN a moderator is removed from a community (by owner), THE system SHALL:
+- Revoke all moderator privileges for that community
+- Record the removal in the moderation log
+- Notify the previous moderator via email
+
+### 10.2 Moderation Actions
+
+WHEN a moderator deletes a post, THE system SHALL:
+- Notify the post author with reason for deletion
+- Remove the post from all feeds immediately
+- Recalculate karma for the author
+
+WHEN a moderator bans a user from a community, THE system SHALL:
+- Prevent the user's future posts/comments in that community
+- Record the ban date and reason in the moderation log
+- Notify the user via email
+
+## 11. Reporting Requirements
+
+### 11.1 User Reporting
+
+WHEN a user reports a post or comment, THE system SHALL:
+- Require a reason text (min 5 characters, max 255 characters)
+- Store the report with the reporter's ID, content ID, and reason
+- Prevent the reporter from reporting the same content multiple times
+
+THE system SHALL provide a confirmation message upon reporting.
+
+### 11.2 Moderation Response
+
+WHEN a moderator views a report, THE system SHALL show:
+- The content being reported
+- The reporter's username
+- The reason for the report
+- An approval/dismiss button
+
+WHEN a moderator approves a report, THE system SHALL:
+- Delete the reported content
+- Notify the reporter of the action
+- Add a note of the moderation action to the content's history
+
+## Business Flow Diagram
 
 ```mermaid
-graph LR
-  A[User Registration] --> B[Profile Creation]
-  B --> C[Community Selection]
-  C --> D[Content Creation]
-  D --> E[Voting & Comments]
-  E --> F[Community Moderation]
-  F --> G[Business Value]
-  style A fill:#d4f0d4,stroke:#333
-  style B fill:#d4e2f0,stroke:#333
-  style C fill:#f0e0d4,stroke:#333
-  style D fill:#e0f0d4,stroke:#333
-  style E fill:#d4e0f0,stroke:#333
-  style F fill:#f0d4e0,stroke:#333
-  style G fill:#e0d4f0,stroke:#333
+graph TD
+    A[User Registers] --> B[User Creates Community]
+    B --> C[User Subscribes to Communities]
+    C --> D[User Creates Posts]
+    D --> E[User Votes on Posts]
+    E --> F[Communities Grow]
+    F --> G[Users Become Active Community Members]
+    G --> H[Community Moderators Manage Content]
+    H --> I[Positive Community Growth Loop]
+    I --> D
 ```
 
-## Business Model
+## Success Metrics Validation
 
-### Revenue Strategy
+For the business to be viable, the platform must meet these critical success criteria:
+- Users must find the community model valuable enough to create community ownership (minimum 2 communities per user per month)
+- Users must maintain engagement with at least 3 communities per week
+- A minimum of 50% of community owners must upgrade to premium tier within 6 months
+- The platform must maintain a minimum 3:1 active member to content creator ratio
+- The system must generate at least 100,000 community interactions per month before monetization via ads
 
-- **Basic Platform**: Free for all users and communities
-- **Premium Subscription**: Optional paid features including:
-  - Custom community themes
-  - Ad-free experience for primary communities
-  - Advanced analytics for community owners
-  - Priority content promotion
-- **Community Monetization**:
-  - Optional sponsored posts (with clear labeling)
-  - Community-sponsored content campaigns
-  - Premium community features
+### Performance Guarantee
 
-### Success Metrics
+THE system SHALL ensure:
+- Communities list loads in under 1.5 seconds for up to 500 communities
+- Feed items load with 20 items per page in under 2 seconds
+- Vote processing occurs within 500 milliseconds
+- System handles 50,000 concurrent users with 99.9% uptime
+- Platform scales to handle 1,000+ concurrent community interactions
 
-| Metric | Target (3 months) | Target (12 months) | Target (24 months) |
-|--------|------------------|------------------|------------------|
-| DAU (Daily Active Users) | 5,000 | 50,000 | 250,000 |
-| Community Creation Rate | 50/week | 500/week | 2,000/week |
-| Average Posts/Community | 20 | 100 | 300 |
-| Average Comments/Post | 10 | 25 | 50 |
-| Premium Subscription Rate | 0.5% | 5% | 15% |
-| Positive Community Sentiment | 70% | 80% | 90% |
+### Security Compliance
 
-### Performance Expectations
+ALL user passwords SHALL be stored using bcrypt with cost factor 12.
 
-- Page load times for community feeds: Under 2 seconds for 95% of users
-- Search response times for community names: Under 0.5 seconds
-- Content loading (posts, comments): Load 20 items within 1.5 seconds
-- Voting operations: Under 0.5 seconds
-- API response times for core features: Under 1 second in 95% of requests
+ALL session data SHALL use secure, HTTP-only cookies.
 
-## Business Justification
+All API endpoints SHALL implement input validation for security vulnerabilities.
 
-The Community Platform fills a critical need in today's social media landscape by providing a Reddit-like experience focused on authentic community building. It empowers users with meaningful content discovery and community ownership while creating sustainable value through community-focused monetization. By prioritizing community health and user control over engagement metrics, the platform differentiates itself from mainstream social networks.
+All authentication tokens SHALL follow industry standard best practices for JWT security.
+
+Password reset tokens SHALL expire after 1 hour of inactivity.

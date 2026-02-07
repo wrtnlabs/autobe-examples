@@ -1,0 +1,127 @@
+/// Stores the real-time karma score for each user, updated atomically with
+/// every vote on posts or comments. Represents the user's reputation across
+/// the platform and is used for display on profiles, ranking, and moderation
+/// influence. Each user (member, moderator, admin) has exactly one karma
+/// score record, linked via actor_type and actor_id to their corresponding
+/// actor table.
+///
+/// @namespace Karma System
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_karma_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ID of the actor (member, moderator, or admin) to whom this karma
+  /// score belongs. {@link community_members.id}, {@link
+  /// community_moderators.id}, or {@link community_admins.id}.
+  actor_id String?
+  
+  /// Current total karma score of the user. Incremented with upvotes,
+  /// decremented with downvotes, reversed when votes are removed.
+  karma_score Int
+  
+  /// Timestamp when the karma score record was created.
+  created_at DateTime
+  
+  /// Timestamp when the karma score was last updated due to a vote action.
+  updated_at DateTime
+  
+  /// Timestamp when the karma record was soft-deleted due to user account
+  /// deletion. Nullable because active records are common.
+  deleted_at DateTime?
+  
+  /// The type of actor (member, moderator, admin) this karma belongs to. Used
+  /// for polymorphic relationship with actor tables. Stored as lookup value,
+  /// not foreign key, because Prisma does not support polymorphic FK. Valid
+  /// values: 'member', 'moderator', 'admin'.
+  actor_type String
+  
+  //----
+  // RELATIONS
+  //----
+  actor community_members? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  @@unique([actor_id, actor_type])
+  @@index([karma_score])
+}
+
+/// Logs every change to a user's karma with delta, source (post/comment),
+/// and timestamp for audit and reversal operations.
+///
+/// This table records all intermediate step deltas that contribute to the
+/// current karma score in community_karma_scores.
+///
+/// Each entry corresponds to exactly one vote action
+/// (upvote/downvote/removed) on a post or comment. The source_id references
+/// either a post (community_posts) or comment (community_comments) by their
+/// primary key, identified by source_type.
+///
+/// Karma is recalculated in real-time when a vote changes, and this table
+/// provides the full history necessary for:
+/// - Auditing and verification
+/// - Reversing karma if a post/comment is deleted
+/// - Generating karma history reports for users
+/// - Preventing manipulation by tracking exact deltas
+///
+/// Karma can never be manually edited. All changes MUST flow through this log.
+///
+/// Ownership:
+/// - mem_id → community_members.id (actor)
+/// - source_id → community_posts.id OR community_comments.id (polymorphic)
+///
+/// All entries are immutable. No updates or deletes allowed. New records only.
+///
+/// @namespace Karma System
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_karma_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user whose karma changed. Links to @\link community_members.id.
+  mem_id String
+  
+  /// The type of content that triggered the karma change. Must be either
+  /// 'post' or 'comment'. The source_id must correspond to a row in the
+  /// respective table: (source_type='post' → community_posts.id,
+  /// source_type='comment' → community_comments.id).
+  source_type String
+  
+  /// The ID of the post or comment that caused this karma change. Must
+  /// correspond to source_type (e.g., if source_type='post', source_id
+  /// references community_posts.id). Can be null ONLY if karma change
+  /// originated from system (invalid in spec, but reserved for future).
+  source_id String?
+  
+  /// The exact delta amount applied to the user's karma. Only +1 (upvote =
+  /// +1), -1 (downvote = -1), or 0 (reversal = cancels prior delta). This
+  /// table records the absolute change, not the total score.
+  delta_amount Int
+  
+  /// The reason or automation trigger code for this karma change. Use only:
+  /// 'upvote_released', 'downvote_released', 'upvote_removed', or
+  /// 'downvote_removed'. This is atomic and your leading field for
+  /// auditability.
+  reason String
+  
+  /// Timestamp when the karma change occurred. Immutable. Always set by system
+  /// on insert.
+  created_at DateTime
+  
+  /// Timestamp of last update to this record. Always same as created_at.
+  /// Immutable in practice. Required for ORM consistency.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member community_members @relation(fields: [mem_id], references: [id], onDelete: Cascade)
+  
+  @@unique([source_type, source_id, mem_id])
+  @@index([mem_id, created_at])
+}

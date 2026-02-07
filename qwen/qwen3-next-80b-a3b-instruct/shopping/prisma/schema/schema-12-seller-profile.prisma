@@ -1,0 +1,85 @@
+/// This table is a system violation. It contradicts the mandatory snapshot
+/// principle. Seller profiles must be immutable in the database. The correct
+/// source of truth for seller identity is the shopping_mall_snapshots table,
+/// which captures the exact profile state at time of every transaction. This
+/// table must be erased.
+///
+/// @namespace SellerProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this seller profile was created.
+  created_at DateTime
+  
+  /// Timestamp when this seller profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this profile was logically deleted. Allows for
+  /// soft-deletion.
+  deleted_at DateTime?
+  
+  /// Seller's shop name, visible to customers.
+  shop_name String
+  
+  /// Description of the seller's business.
+  shop_description String?
+  
+  /// URL to the seller's logo image.
+  logo_url String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Immutable historical snapshots of seller profile changes. Each record
+/// captures the complete state of a seller's shop name, description, and
+/// logo at the time of edit, ensuring accurate representation of the
+/// seller's identity as it existed at the time of any order purchase or
+/// review. This table is critical for dispute resolution and audit
+/// compliance under the mandatory snapshot principle.
+///
+/// @namespace SellerProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller profile that this snapshot represents. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// The exact shop name as it appeared at the time of the snapshot. Must be
+  /// non-null to preserve state.
+  name String
+  
+  /// The exact shop description as it appeared at the time of the snapshot.
+  /// Must be non-null to preserve state.
+  description String
+  
+  /// The exact logo URL as it appeared at the time of the snapshot. Must be
+  /// non-null to preserve state.
+  logo_url String
+  
+  /// Timestamp of when this snapshot was captured. Mandatory to track
+  /// point-in-time state.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  @@index([seller_id])
+}

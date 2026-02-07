@@ -1,0 +1,39 @@
+/// Individual user votes on comments, tracking vote type
+/// (upvote/downvote/none) and timestamps for audit trail. Each comment can
+/// have multiple votes from different users, with each user able to vote
+/// once per comment.
+///
+/// @namespace CommentVotes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_platform_users.id}.
+  user_id String
+  
+  /// Comment being voted on. {@link reddit_platform_comments.id}.
+  comment_id String
+  
+  /// Type of vote cast by the user (upvote/downvote/none).
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, comment_id])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+}

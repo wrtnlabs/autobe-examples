@@ -1,13 +1,10 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize";
+import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
 import { AdministratorPayload } from "../../decorators/payload/AdministratorPayload";
 
 export async function administratorAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<AdministratorPayload> {
   const payload: AdministratorPayload = jwtAuthorize({ request }) as AdministratorPayload;
 
@@ -15,12 +12,11 @@ export async function administratorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using the administrator table directly since it's the primary actor
-  // Check for soft-delete and active status if those fields exist in schema
-  const administrator = await MyGlobal.prisma.economic_discussion_administrators.findFirst({
+  // Query using appropriate field based on schema
+  const administrator = await MyGlobal.prisma.economic_board_administrators.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.id, // Standalone role - direct ID lookup
+      deleted_at: null,  // Soft-delete check
     },
   });
 

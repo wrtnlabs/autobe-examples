@@ -1,104 +1,293 @@
-# Functional Requirements
+# Economic/Political Discussion Board Requirements
 
-## 4.1 User Account Management
+## Service Overview
+> This platform enables community-driven discussion around economic and political topics. Users can create, manage, and discuss articles in categorized sections. Administrators oversee content quality and platform integrity.
 
-### 4.1.1 Account Creation
-WHEN a new user registers with a valid email address and password, THE system SHALL provide a confirmation email with a verification link within 2 seconds. THE system SHALL validate the email format using the pattern [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.
+### Core Features
+- User account management with secure authentication
+- Profile customization for personal branding
+- Section-based article organization
+- Multi-format article support (text, images, files)
+- Comprehensive commenting system
+- Administrative content governance
+- Advanced search capabilities
 
-### 4.1.2 Account Login
-WHEN a user attempts to log in with a valid email and password, THE system SHALL authenticate the credentials using bcrypt hashing in under 500ms. THE system SHALL generate a JWT access token with a 1 hour expiration time and a refresh token valid for 30 days.
+### User Journey Overview
+1. **Registration**: Users sign up with email and password
+2. **Profile Setup**: Customize display name and bio
+3. **Article Creation**: Create articles in designated sections with attachments and tags
+4. **Discussion Participation**: Comment on articles and engage with others
+5. **Administrative Oversight**: Administrators manage sections and content
 
-### 4.1.3 Password Management
-WHEN a user requests password reset, THE system SHALL send a secure reset token via email that expires after 1 hour. THE system SHALL require a new password with at least 12 characters, including at least 1 uppercase letter, 1 lowercase letter, 1 numeric character, and 1 special character.
+## Business Model
 
-### 4.1.4 Account Deletion
-WHEN a user deletes their account, THE system SHALL remove all personal data within 24 hours, including associated articles, comments, and profile information. THE system SHALL immediately revoke all session tokens, ensuring the user cannot log in again.
+### Primary Value Proposition
+A safe, moderated platform for economic and political discussions where users can share insights, debate topics, and participate in meaningful conversations.
 
-## 4.2 User Profile Management
+### User Engagement Model
+- **Content Creation**: Users generate articles on current topics
+- **Content Discovery**: Users browse sections and search content
+- **Community Interaction**: Users engage through comments and profiles
+- **Moderation**: Administrators ensure respectful, relevant discussions
 
-### 4.2.1 Profile Creation
-WHEN a user creates a new account, THE system SHALL prompt for display name and bio text as optional profile fields. THE system SHALL store the display name as a string with maximum length of 30 characters and the bio as a text field with maximum length of 500 characters.
+### Revenue Strategy (Future)
+- Premium member options with enhanced features
+- Advertisement opportunities for relevant business content
+- Sponsored topic sections for corporate partnerships
 
-### 4.2.2 Profile Editing
-WHEN a user edits their profile, THE system SHALL allow updating the display name and bio. THE system SHALL validate new display names to prevent offensive or inappropriate content using the blacklist filtering mechanism.
+## User Actors and Capabilities
 
-### 4.2.3 Profile Viewing
-WHEN a user views another user's profile, THE system SHALL display the display name, bio, list of articles written by the author, and list of comments written by the author. THE system SHALL paginate the article and comment lists with 10 items per page.
+### 1. Regular User
+**Authentication**: Email and password login
 
-## 4.3 Section Management
+**Core Capabilities**:
+- User Registration
+  WHEN a user provides valid email and password, THE system SHALL create a new account within 3 seconds
+  WHEN a user registration attempt fails, THE system SHALL provide specific error messages (invalid email format, password too short)
 
-### 4.3.1 Section Creation
-WHEN an administrator creates a new section, THE system SHALL require a section name (maximum 50 characters) and description (maximum 250 characters). THE system SHALL ensure section names are unique across all sections.
+- Profile Management
+  WHEN a user edits their display name, THE system SHALL validate name length (5-32 characters)
+  WHEN a user updates their bio, THE system SHALL sanitize HTML content to prevent XSS attacks
 
-### 4.3.2 Section Editing
-WHEN an administrator edits a section, THE system SHALL allow modification of the section name and description. THE system SHALL prevent deletion of sections that contain articles.
+- Article Management
+  WHEN a user creates an article, THE system SHALL require title and content (both at least 10 characters)
+  WHEN a user attaches files, THE system SHALL limit to 20 files per article with max 10MB each
 
-### 4.3.3 Section Viewing
-WHEN a user views all sections, THE system SHALL display the section name, description, and the number of articles in each section. THE system SHALL sort sections alphabetically by name.
+- Commenting
+  WHEN a user submits a comment, THE system SHALL require at least 5 characters of content
+  WHEN a comment contains profanity, THE system SHALL automatically flag it for moderation
 
-## 4.4 Article Management
+### 2. Regular Administrator
+**Authentication**: Must be approved by Super Administrator
 
-### 4.4.1 Article Creation
-WHEN a user creates a new article, THE system SHALL require title (minimum 5 characters, maximum 100 characters), content (minimum 50 characters), and section selection. THE system SHALL allow attaching up to 10 files of any format with maximum total size of 50MB. THE system SHALL allow up to 5 tags (each max 20 characters, no spaces).
+**Core Capabilities**:
+- Section Management
+  WHEN an administrator creates a section, THE system SHALL validate section name uniqueness
+  WHEN an administrator deletes a section, THE system SHALL prompt for article migration
 
-### 4.4.2 Article Editing
-WHEN a user edits their own article, THE system SHALL allow modification of title, content, attachments, and tags. THE system SHALL save edits as new version of the article with version history retained.
+- Content Moderation
+  WHEN an administrator deletes an article, THE system SHALL notify the author
+  WHEN an administrator bans a user, THE system SHALL record reason and timestamp
 
-### 4.4.3 Article Deletion
-WHEN a user deletes their article, THE system SHALL remove the article and all attachments. THE system SHALL adjust the article count for the user and section.
+- User Management
+  WHEN an administrator bans a user, THE system SHALL prevent login attempts
+  WHEN an administrator reviews ban requests, THE system SHALL display user submission reason
 
-### 4.4.4 Article Listing
-WHEN a user views articles in a section, THE system SHALL display the title, author, tags, comment count, and time posted for each article. THE system SHALL paginate results with 15 articles per page. THE system SHALL allow sorting by newest first or oldest first.
+### 3. Super Administrator
+**Authentication**: Must be approved by existing Super Administrator
 
-## 4.5 Commenting System
+**Core Capabilities**:
+- Administrator Management
+  WHEN a Super Administrator approves an administrator request, THE system SHALL grant regular administrator permissions
+  WHEN a Super Administrator demotes a Super Administrator, THE system SHALL prevent self-demotion
 
-### 4.5.1 Comment Creation
-WHEN a user adds a comment to an article, THE system SHALL require comment text (minimum 10 characters, maximum 500 characters). THE system SHALL store the comment with the author's display name, the comment text, and the date/time of posting.
+- Platform Governance
+  WHEN a Super Administrator reviews all banned users, THE system SHALL display user, reason, and date
+  WHEN a Super Administrator views all pending administrator requests, THE system SHALL list reasons
 
-### 4.5.2 Comment Management
-WHEN a user views comments on an article, THE system SHALL display all comments sorted by oldest first. THE system SHALL show each comment's author, content, and posting time.
+## Functional Requirements
 
-### 4.5.3 Comment Editing and Deletion
-WHEN a user edits their own comment, THE system SHALL allow modification of the comment text. WHEN a user deletes their comment, THE system SHALL remove the comment and update the article's comment count.
+### 1. User Account Management
 
-## 4.6 Administration Capabilities
+**User Registration**
+- Users sign up with email and password
+  REQUIREMENT: Users MUST provide valid email address (must match standard format)
+  REQUIREMENT: Password MUST be at least 8 characters with alphanumeric and special characters
 
-### 4.6.1 Administrative Accounts
-WHEN a user submits a request to become an administrator, THE system SHALL require a reason for the request (minimum 50 characters). THE system SHALL notify super administrators of pending requests. WHEN approved, THE system SHALL grant regular administrator permissions to the user.
+**User Authentication**
+- Users log in with email and password
+  REQUIREMENT: Login process SHALL fail after 5 attempts with 15-minute lockout
+  REQUIREMENT: Session tokens SHALL expire after 24 hours of inactivity
 
-### 4.6.2 Administrator Roles
-WHEN a super administrator promotes a regular administrator, THE system SHALL change their role to super administrator. WHEN a super administrator demotes a super administrator, THE system SHALL change their role to regular administrator. THE system SHALL prevent self-demotion of super administrators.
+**Password Management**
+- Users can change their password
+  REQUIREMENT: Change process SHALL require current password
+  REQUIREMENT: New password MUST be stronger than old password
 
-### 4.6.3 Section Management
-WHEN an administrator creates a new section, THE system SHALL require a section name and description as described in 4.3.1. WHEN an administrator edits or deletes a section, THE system SHALL prevent changes to sections that contain articles.
+**Account Deletion**
+- Users can delete their account
+  REQUIREMENT: Account deletion SHALL permanently remove all associated content
+  REQUIREMENT: Deletion process SHALL require multi-step confirmation (email + password)
 
-### 4.6.4 Content Moderation
-WHEN an administrator deletes an article, THE system SHALL remove the article and its attachments. WHEN an administrator deletes a comment, THE system SHALL immediately remove the comment. THE system SHALL not delete user accounts or profiles as part of content moderation.
+### 2. User Profile System
 
-### 4.6.5 User Management
-WHEN an administrator bans a user, THE system SHALL record the ban reason (minimum 10 characters) and prevent the user from logging in. THE system SHALL keep the user's articles and comments visible. WHEN an administrator unbans a user, THE system SHALL restore the user's access to the platform.
+**Profile Creation**
+- Each user has a profile with display name and bio
+  REQUIREMENT: Display name MUST be between 5-32 characters
+  REQUIREMENT: Bio SHALL allow up to 250 characters with basic HTML formatting
 
-## 4.7 Banning System
+**Profile Customization**
+- Users can edit display name and bio
+  REQUIREMENT: Edit process SHALL not change email address
+  REQUIREMENT: Edits SHALL be immediately visible to other users
 
-### 4.7.1 Banning Process
-WHEN an administrator bans a user, THE system SHALL record the ban reason, the date/time of banning, and the administrator who performed the action. THE system SHALL prevent the user from logging in or posting new content.
+**Profile Viewing**
+- Users can view other users' profiles
+  REQUIREMENT: Profile view SHALL show public info (display name, bio, article count)
+  REQUIREMENT: Profile page SHALL list all articles and comments created by user
 
-### 4.7.2 Ban Reason Visibility
-WHEN a user views their ban status, THE system SHALL display the ban reason to the user only after the ban is lifted or when specifically requested by the user. THE system SHALL require super administrator approval to view the ban reason during active ban.
+### 3. Section Management
 
-### 4.7.3 Banned User Content
-WHEN a user is banned, THE system SHALL maintain all their existing articles and comments. THE system SHALL display the original author of banned users' content with a 'Banned User' badge.
+**Section Creation**
+- Sections are created and managed by administrators
+  REQUIREMENT: Section creation SHALL require unique name per platform
+  REQUIREMENT: Section description SHALL be at least 20 characters
 
-## 4.8 Business Rules
+**Section Browsing**
+- Users can view list of all sections
+  REQUIREMENT: Section list SHALL display name and description
+  REQUIREMENT: Section list SHALL be alphabetically ordered by name
 
-### 4.8.1 Article Requirements
-THE system SHALL reject article creation attempts with titles < 5 characters or content < 50 characters. THE system SHALL block articles with more than 5 tags or tags containing special characters.
+**Article Browsing by Section**
+- Users can browse articles within specific section
+  REQUIREMENT: Section browsing SHALL display title, author, tags, and comment count
+  REQUIREMENT: Article list SHALL be paginated with 20 items per page
 
-### 4.8.2 Comment Requirements
-THE system SHALL require comments to be at least 10 characters and not exceed 500 characters. THE system SHALL filter comments for inappropriate content using the blacklisted words list.
+### 4. Article System
 
-### 4.8.3 Content Moderation
-THE system SHALL allow administrators to delete any article or comment immediately. THE system SHALL maintain a complete audit log of all moderation actions with time, user, and action type recorded.
+**Article Creation**
+- Users create articles in any section
+  REQUIREMENT: Article creation SHALL require title (minimum 5 characters)
+  REQUIREMENT: Article creation SHALL require content (minimum 50 characters)
 
-### 4.8.4 User Limitations
-THE system SHALL limit users to 5 articles per day. THE system SHALL allow users to delete their own accounts but prevent deletion of accounts with more than 10 published articles (requires administrator approval).
+**Attachments**
+- Users can attach files (images, documents)
+  REQUIREMENT: Attachments SHALL be stored as file records with download URLs
+  REQUIREMENT: Max 20 attachments per article, each <= 10MB
+
+**Tags**
+- Users can add tags to articles
+  REQUIREMENT: Tags SHALL be free text with maximum 30 characters each
+  REQUIREMENT: Max 5 tags per article
+
+**Article Editing**
+- Users can edit their articles
+  REQUIREMENT: Edit process SHALL maintain publication date
+  REQUIREMENT: Changes SHALL be visible immediately to all users
+
+**Article Deletion**
+- Users can delete their articles
+  REQUIREMENT: Deletion SHALL trigger immediate content removal
+  REQUIREMENT: Author SHALL receive confirmation of deletion
+
+### 5. Article Listing System
+
+**Pagination**
+- List is paginated (20 articles per page)
+  REQUIREMENT: Page navigation SHALL show current page, total pages, and previous/next links
+  REQUIREMENT: Pagination SHALL maintain current sort criteria
+
+**Sorting**
+- Users can sort articles by:
+  - Newest first
+  - Oldest first
+  REQUIREMENT: Sorting SHALL update article display without reload
+  REQUIREMENT: Default sort SHALL be newest first
+
+**Article Listing Display**
+- Each article shows: title, author, tags, comment count, time posted
+  REQUIREMENT: Title SHALL be a clickable link to full article
+  REQUIREMENT: Time posted SHALL use relative timestamp (e.g., 2 hours ago)
+
+### 6. Article Viewing
+
+**Full Article Display**
+- Users view single article with full content
+  REQUIREMENT: Article display SHALL show title, author, content, attachments
+  REQUIREMENT: Attachments SHALL be downloadable
+  REQUIREMENT: Tags and publication date SHALL be visible
+
+### 7. Commenting System
+
+**Comment Creation**
+- Users write comments on articles
+  REQUIREMENT: Comments SHALL require minimum 5 characters
+  REQUIREMENT: Comments SHALL be displayed in chronological order
+
+**Comment Viewing**
+- Users view all comments on article
+  REQUIREMENT: Comment view SHALL display author, content, timestamp
+  REQUIREMENT: Comments SHALL show timestamp in relative format
+
+**Comment Editing/Deletion**
+- Users can edit/delete their own comments
+  REQUIREMENT: Editing SHALL preserve comment date
+  REQUIREMENT: Deletion SHALL remove comment immediately and update comment count
+
+### 8. Search and Filtering
+
+**Search**
+- Search by title or content
+  REQUIREMENT: Search SHALL match partial words
+  REQUIREMENT: Search SHALL return results within 2 seconds
+
+**Tag Filtering**
+- Filter articles by tags
+  REQUIREMENT: Filter SHALL show tag frequency
+  REQUIREMENT: Multiple tags SHALL return articles matching ALL tags
+
+### 9. Administrative System
+
+**Administrator Request Management**
+- Any user can submit request to become administrator
+  REQUIREMENT: Request SHALL require justification text
+  REQUIREMENT: Pending requests SHALL display submission date and reason
+
+**Approval Process**
+- Super Administrators approve/reject requests
+  REQUIREMENT: Approval SHALL require Super Administrator credentials
+  REQUIREMENT: Approval process SHALL send notification to user
+
+**Administrative Powers**
+- Administrator capabilities beyond normal users
+  REQUIREMENT: Administrators SHALL create sections
+  REQUIREMENT: Administrators SHALL delete any article
+  REQUIREMENT: Administrators SHALL delete any comment
+
+### 10. Banning System
+
+**Ban Process**
+- Administrators can ban users
+  REQUIREMENT: Ban SHALL require recorded reason (min 10 characters)
+  REQUIREMENT: Banned users SHALL be barred from all platform features
+
+**Ban Management**
+- Administrators view banned users
+  REQUIREMENT: Banned user list SHALL include user, reason, date
+  REQUIREMENT: Banned users SHALL remain visible in historical articles
+
+## Business Processes
+
+### Article Creation Workflow
+
+```mermaid
+graph TD
+  A[User clicks "Create Article"] --> B[Select Section]
+  B --> C[Enter Title and Content]
+  C --> D[Add Tags]
+  D --> E[Add Attachments]
+  E --> F[Submit]
+  F --> G[Article Created]
+  G --> H[Visible in Section]
+```
+
+### Commenting Workflow
+
+```mermaid
+graph TD
+  A[User Views Article] --> B[Clicks "Add Comment"]
+  B --> C[Enters Comment Text]
+  C --> D[Submits Comment]
+  D --> E[Comment Appears]
+  E --> F[Others View Comment]
+```
+
+### Administrator Approval Workflow
+
+```mermaid
+graph TD
+  A[User Submits Request] --> B[Requests Pending]
+  B --> C{Super Admin Reviews}
+  C -->|Approve| D[User Becomes Admin]
+  C -->|Reject| E[User Notified]
+```

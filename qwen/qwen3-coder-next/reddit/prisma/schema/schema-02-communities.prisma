@@ -1,0 +1,158 @@
+/// Core community entity storing community configuration including name,
+/// description, icon, owner reference, and subscriber count. Communities
+/// form the organizational backbone where users gather around shared
+/// interests.
+///
+/// Key relationships:
+/// - Owner relationship through reddit_platform_users table
+/// - Subscription management through reddit_platform_community_subscriptions
+/// table
+/// - Moderator assignments through reddit_platform_community_roles table
+///
+/// Important behavioral notes:
+/// - Each community must have exactly one owner (defined during creation)
+/// - Community name must be unique across the entire platform
+/// - Subscriber count is tracked denormalized for performance but can be
+/// calculated from subscriptions table
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link reddit_platform_users.id}. The user who created this
+  /// community and has full administrative control.
+  owner_id String
+  
+  /// Unique community name used for identification and URL routing. Must be
+  /// unique across the entire platform.
+  name String
+  
+  /// Community description text explaining its purpose and rules. Supports
+  /// markdown formatting.
+  description String?
+  
+  /// URL to the community icon image for visual identification.
+  icon_url String?
+  
+  /// Current number of subscribers to this community. Denormalized for
+  /// performance but can be calculated from subscriptions table.
+  subscriber_count Int
+  
+  /// Timestamp when this community was created. Not nullable for audit trail.
+  created_at DateTime
+  
+  /// Timestamp when this community was last updated. Not nullable for audit
+  /// trail.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  owner reddit_platform_users @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  subscriptions reddit_platform_community_subscriptions[]
+  communityRoles reddit_platform_community_roles[]
+  posts reddit_platform_posts[]
+  postViewStats reddit_platform_post_view_stats[]
+  moderationLogs reddit_platform_moderation_logs[]
+  activityLogs reddit_platform_user_activity_logs[]
+  moderatorRoles reddit_platform_moderator_roles[]
+  bans reddit_platform_bans[]
+  
+  @@unique([owner_id])
+  
+  @@unique([name])
+  @@index([owner_id])
+}
+
+/// User subscription records linking users to communities they follow.
+/// Records are automatically created when users subscribe to communities and
+/// deleted when they unsubscribe. Used to track user engagement and enable
+/// personalized feed filtering.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who subscribed to the community. {@link
+  /// reddit_platform_users.id}.
+  user_id String
+  
+  /// Reference to the community being subscribed to. {@link
+  /// reddit_platform_communities.id}.
+  community_id String
+  
+  /// Timestamp when the subscription was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([user_id, community_id], map: "reddit_platform_community_subscriptions_user_id_commun_28384ab0")
+}
+
+/// Moderator role assignments linking users to communities with owner or
+/// moderator privileges.
+///
+/// This table manages the relationship between users and communities,
+/// defining their role (owner or moderator) and establishing the authority
+/// structure within each community. Owners have full management rights
+/// including adding/removing moderators, while moderators have limited
+/// authority to manage content and users within their assigned community.
+///
+/// The role field uses an enum to restrict possible values to 'owner' and
+/// 'moderator', ensuring data integrity and preventing invalid role
+/// assignments. Each user-community combination must be unique to prevent
+/// duplicate role assignments.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_community_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who has been assigned a role in the community. {@link
+  /// reddit_platform_users.id}.
+  user_id String
+  
+  /// Community where the user has been assigned a role. {@link
+  /// reddit_platform_communities.id}.
+  community_id String
+  
+  /// Role type assigned to the user in this community (owner or moderator).
+  role String
+  
+  /// Timestamp when the role assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when the role assignment was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, community_id])
+  @@index([community_id])
+}

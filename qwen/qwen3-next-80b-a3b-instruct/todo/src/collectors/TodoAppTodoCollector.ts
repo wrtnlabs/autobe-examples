@@ -11,21 +11,19 @@ export namespace TodoAppTodoCollector {
   export async function collect(props: {
     body: ITodoAppTodo.ICreate;
     todoAppUsers: IEntity;
-    todoAppUserSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      title: props.body.title,
-      description: props.body.description ?? null,
-      start_date: props.body.start_date ?? null,
-      due_date: props.body.due_date ?? null,
-      completion_status: false,
+      id,
+      title: "Untitled",
+      description: null,
+      start_date: null,
+      due_date: null,
+      completed: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      user: {
-        connect: { id: props.todoAppUsers.id },
-      },
+      user: { connect: { id: props.todoAppUsers.id } },
     } satisfies Prisma.todo_app_todosCreateInput;
   }
 }

@@ -1,594 +1,404 @@
-# Reddit-Style Community Platform — Functional Requirements Specification
+# Community Platform - System Overview
 
-## Introduction
+## Platform Overview
 
-The communityPlatform is a Reddit-like online community platform designed to empower users to create, share, and discuss content within topic-specific communities. The platform enables organic content discovery through karma-based voting, threaded comments, and community moderation. It is built to foster engagement, promote healthy discourse, and provide intuitive tools for content curation and moderation.
+The Community Platform is a Reddit-like online forum system designed to enable users to form, join, and participate in interest-based communities. The system facilitates content sharing through posts and discussions through comments, supported by a reputation system (karma), voting mechanisms, and community moderation tools. The primary goal is to create a scalable, user-driven platform where engagement is incentivized through visibility, reputation, and participation.
 
-This platform is not a social network in the traditional sense — it is a content-centric community system where value is generated through user contributions, reputation, and community governance. The design prioritizes user autonomy, transparency, and moderation scalability.
+## User Actors
 
-## Authentication & Profile
+The platform defines four distinct user roles with progressively expanding permissions:
 
-### User Registration
+### Guest
+- Can view all public feeds (Popular, Community)
+- Can view post and comment content
+- Can view community and user profiles
+- Cannot create, edit, delete, or vote on any content
+- Cannot subscribe to communities
+- Cannot access Home Feed or personal profiles
 
-WHEN a user attempts to register,
-THE system SHALL require an email address, a password, and a unique username.
-SHALL validate that the email address conforms to standard email format.
-SHALL validate that the password meets minimum complexity requirements (at least 8 characters).
-SHALL validate that the username is not already in use.
-SHALL create a new user account with default karma of 0.
-SHALL emit an authentication token upon successful registration.
-SHALL require email verification as optional, but log the unverified status.
+### Member
+- All guest permissions
+- Can register with email and password
+- Can choose a unique username
+- Can log in and maintain a persistent session
+- Can create, edit, and delete their own posts
+- Can create, edit, and delete their own comments
+- Can upvote or downvote posts and comments
+- Can change or remove votes
+- Can subscribe to communities
+- Can view their own profile, karma, and activity
+- Can edit their display name, bio, and avatar
+- Can delete their account (triggers deletion of all content)
 
-WHEN username registration fails due to duplication,
-THE system SHALL respond with an error message: "Username already exists. Please choose another."
+### Moderator
+- All member permissions
+- Can delete any post or comment within communities they moderate
+- Can ban users from communities they moderate
+- Can unban users from communities they moderate
+- Can view all reports within their communities
+- Can approve or dismiss reports
+- Can add other members as moderators (except owners)
+- Cannot remove the community owner
+- Cannot remove other moderators
+- Cannot manage platform-wide settings
 
-WHEN email registration fails due to invalid format,
-THE system SHALL respond with an error message: "Please enter a valid email address."
+### Admin
+- All moderator permissions
+- Can manage all communities, users, and settings globally
+- Can override any moderation decision
+- Can ban or unban any user platform-wide
+- Can view and act on all reports across all communities
+- Can add or remove moderators or owners from any community
+- Can access system-wide logs and analytics
+- Can configure platform-level features and policies
 
-WHEN password registration fails due to insufficient complexity,
-THE system SHALL respond with an error message: "Password must be at least 8 characters long."
+## Core Features
 
-### User Login
+### Authentication & Account Management
 
-WHEN a user attempts to log in,
-THE system SHALL accept email and password credentials.
-SHALL verify that the email exists and is associated with an active account.
-SHALL verify that the provided password matches the stored hash.
-SHALL issue a JWT token valid for 7 days.
-SHALL record the login timestamp for activity tracking.
+WHEN a user registers for the first time, THE system SHALL require an email address and password, and allow selection of a unique username.
 
-WHEN login fails due to invalid email or password,
-THE system SHALL respond with an error message: "Invalid email or password."
+WHEN a user logs in, THE system SHALL authenticate credentials and issue a JWT access token with expiration ≤30 minutes and a refresh token with expiration ≤30 days.
 
-WHEN login fails due to account being deactivated,
-THE system SHALL respond with an error message: "This account has been deactivated."
+WHEN a user changes their password, THE system SHALL validate the current password and enforce a minimum length of 8 characters, then update the credential store.
 
-### Password Change
+WHEN a user deletes their account, THE system SHALL permanently remove:
+- All user posts
+- All user comments
+- All user karma history
+- All user profile data
+- All pending vote records
+- All subscription records
+- All report records made by the user
 
-WHEN a user requests to change their password,
-THE system SHALL require the current password and two new password inputs for confirmation.
-SHALL verify the current password matches the stored hash.
-SHALL validate that the new password meets complexity requirements (at least 8 characters).
-SHALL update the password hash and invalidate all active sessions.
-SHALL log the password change event.
+IF a user account is deleted, THEN THE system SHALL nullify and anonymize any reference to the user in posts and comments (e.g., "[deleted]"), but preserve the content and votes for context.
 
-WHEN the current password is incorrect,
-THE system SHALL respond with an error message: "Current password is incorrect."
+### User Profiles
 
-WHEN the two new password inputs do not match,
-THE system SHALL respond with an error message: "New passwords do not match."
-
-### Account Deletion
-
-WHEN a user requests to delete their account,
-THE system SHALL require confirmation of the password.
-SHALL verify account authentication.
-SHALL delete all posts created by the user (cascade-delete).
-SHALL delete all comments created by the user (cascade-delete).
-SHALL delete the user profile and authentication record.
-SHALL invalidate all active sessions belonging to this user.
-SHALL log the deletion as irreversible.
-
-WHEN password confirmation fails,
-THE system SHALL respond with an error message: "Incorrect password. Deletion cancelled."
-
-### Profile Editing
-
-WHEN a user edits their profile,
-THE system SHALL allow updates to display name, bio, and avatar image.
-SHALL validate display name length (1–100 characters).
-SHALL validate bio length (0–500 characters).
-SHALL validate avatar image format (JPEG, PNG, GIF; max 5MB).
-SHALL update profile record with new values.
-SHALL preserve previous avatar as backup if update is requested.
-
-WHEN display name exceeds 100 characters,
-THE system SHALL respond with an error message: "Display name must be 100 characters or fewer."
-
-WHEN bio exceeds 500 characters,
-THE system SHALL respond with an error message: "Bio must be 500 characters or fewer."
-
-WHEN avatar upload exceeds 5MB or uses unsupported format,
-THE system SHALL respond with an error message: "Avatar must be a JPEG, PNG, or GIF under 5MB."
-
-### Public Profile Viewing
-
-WHEN a user views another user’s public profile,
-THE system SHALL display:
-- The display name
-- The bio text
-- The avatar image
+WHEN a user navigates to any profile page, THE system SHALL display:
+- Display name (editable only by owner)
+- Bio text (editable only by owner)
+- Avatar image URL (editable only by owner)
 - Total karma score
-- List of all posts created by the user
-- List of all comments written by the user
+- List of all posts authored by that user (with post title, community, date, and score)
+- List of all comments authored by that user (with post title, content preview, date, and score)
 
-SHALL NOT display any private information such as email, registration date, or IP history.
-SHALL enforce that the profile belongs to an active account.
+WHILE a user is viewing their own profile, THE system SHALL display an edit button to modify display name, bio, and avatar.
 
-WHEN viewing a deleted user’s profile,
-THE system SHALL show: "This user’s account has been deleted."
+WHEN a post or comment author is deleted, THE system SHALL display "[deleted]" in place of the username on all associated content.
 
-WHEN viewing a profile of a user who has no posts or comments,
-THE system SHALL display: "This user has not yet created any content."
+### Karma System
 
-## Communities
+WHEN a user upvotes a post or comment, THE system SHALL increase the author's karma by 1.
 
-### Community Creation
+WHEN a user downvotes a post or comment, THE system SHALL decrease the author's karma by 1.
 
-WHEN a user creates a community,
-THE system SHALL require:
-- A unique community name (alphanumeric, hyphen, underscore only)
-- A description (up to 500 characters)
-- An icon image (JPEG, PNG, GIF; max 2MB)
+WHEN a user removes their vote from a post or comment, THE system SHALL adjust the author's karma by reversing the prior vote impact:
+- If the prior vote was upvote → karma decreases by 1
+- If the prior vote was downvote → karma increases by 1
 
-SHALL assign the creator as the community owner.
-SHALL set initial subscriber count to 1 (the creator).
-SHALL record the creation timestamp.
+WHILE a user has an active vote on a post or comment, THE system SHALL NOT allow a second vote.
 
-WHEN community name is not unique,
-THE system SHALL respond with an error message: "Community name already taken. Please choose another."
+WHERE a user's karma is negative, THE system SHALL still display the negative score without restriction.
 
-WHEN community name contains invalid characters,
-THE system SHALL respond with an error message: "Community name may only contain letters, numbers, hyphens, and underscores."
+THE system SHALL NOT allow karma to be manipulated by third-party bots or duplicate accounts. Karma is updated in real-time on vote changes.
 
-WHEN icon upload exceeds 2MB or uses unsupported format,
-THE system SHALL respond with an error message: "Community icon must be a JPEG, PNG, or GIF under 2MB."
+### Communities
 
-### Community Browsing
+WHEN a user creates a community, THE system SHALL:
+- Assign the user as the owner
+- Require a unique community name (alphanumeric and underscores only)
+- Accept a description field (max 500 characters)
+- Accept an optional icon image URL
+- Initialize the subscriber count to 1
 
-WHEN a user browses all communities,
-THE system SHALL list:
+WHEN a user subscribes to a community, THE system SHALL:
+- Add the user to the community subscriber list
+- Increase the community’s subscriber count by 1
+- Grant permission to create posts and comments in that community
+
+WHEN a user unsubscribes from a community, THE system SHALL:
+- Remove the user from the subscriber list
+- Decrease the community’s subscriber count by 1
+- Revoke permission to create posts or comments in that community
+
+WHEN a user visits a community page, THE system SHALL display:
 - Community name
-- Community description (truncated to 120 characters)
-- Community icon
+- Description
+- Avatar icon
 - Subscriber count
-- Creation timestamp
+- List of recent posts (sorted by selected criteria)
+- Button to subscribe or unsubscribe
 
-SHALL sort alphabetically by community name by default.
-SHALL provide pagination with 20 communities per page.
+WHILE a user is browsing communities, THE system SHALL:
+- Display all public communities
+- Allow search by community name (case-insensitive prefix match)
+- Sort results by subscriber count descending
 
-WHEN a user searches for communities by name,
-THE system SHALL match partial or full names using case-insensitive substring search.
-SHALL return results sorted by relevance: exact match first, then prefix match, then substring match.
+The system SHALL NOT allow two communities to have identical names.
 
-### Community Subscription
+### Posts
 
-WHEN a user subscribes to a community,
-THE system SHALL validate that the user is not already subscribed.
-SHALL increment the community’s subscriber count by 1.
-SHALL record the subscription timestamp.
-SHALL return confirmation status.
+WHEN a user creates a post, THE system SHALL:
+- Require a title (minimum 5 characters, maximum 300 characters)
+- Require one of three content types: text, link, or image
+- Require the user to be subscribed to the target community
+- Associate the post with the community and author
+- Set initial vote score to 0
+- Set comment count to 0
+- Set creation timestamp
 
-WHEN a user unsubscribes from a community,
-THE system SHALL validate that the user is subscribed.
-SHALL decrement the community’s subscriber count by 1.
-SHALL remove the subscription record.
-SHALL return confirmation status.
+WHEN a user submits a text post, THE system SHALL:
+- Accept up to 50,000 characters of text
+- Render the text as plain HTML with paragraph and line-break formatting
 
-WHEN a user tries to subscribe to a non-existent community,
-THE system SHALL respond with an error message: "Community not found."
+WHEN a user submits a link post, THE system SHALL:
+- Accept a valid URL (https:// or http://)
+- Extract and display the domain name (e.g., "youtube.com")
+- Validate the URL is not blocked by platform policy
 
-WHEN a user tries to subscribe to their own community (as owner),
-THE system SHALL silently accept the subscription (no error, no duplicate).
+WHEN a user submits an image post, THE system SHALL:
+- Accept an image file in JPEG, PNG, or WebP format
+- Resize and compress the image to a maximum size of 2048px on the longest side
+- Store the image at a CDN-accessible URL
+- Generate a 320x240 thumbnail for feed display
 
-### Community Feed
+WHEN a user edits their own post, THE system SHALL:
+- Allow modification of title, content type, or content
+- Preserve original post ID and creation timestamp
+- Log the edit history internally (not visible to users)
 
-WHEN a user views a community feed,
-THE system SHALL display all public posts from that community.
-SHALL include posts from users regardless of their subscription status.
-SHALL allow sorting by: Hot, New, Top (with time filters), Controversial.
-SHALL support pagination (20 posts per page).
-SHALL not require authentication.
+WHEN a user deletes their own post, THE system SHALL:
+- Remove the post from all feeds
+- Set the post status to "deleted"
+- Update the comment count on affected posts to 0
+- Preserve votes and comment content for moderation review
+- Do not delete comments made by other users
 
-WHEN viewing a community feed for a non-existent community,
-THE system SHALL respond with an error message: "Community not found."
+IF a user attempts to create a post in a community they are not subscribed to, THEN THE system SHALL reject the request with HTTP 403.
 
-## Posts
+### Post Voting
 
-### Post Creation
+WHEN a user upvotes a post, THE system SHALL:
+- Add an upvote record to the post if one doesn't exist
+- If the user previously downvoted, remove the downvote and add an upvote
+- Increase the post’s vote score by 1
+- Increase the author's karma by 1
 
-WHEN a user creates a post,
-THE system SHALL require:
-- A title (1–300 characters)
-- Exactly one of: text content, link URL, or image upload
-- A valid community ID to which the post is addressed
+WHEN a user downvotes a post, THE system SHALL:
+- Add a downvote record to the post if one doesn't exist
+- If the user previously upvoted, remove the upvote and add a downvote
+- Decrease the post’s vote score by 1
+- Decrease the author's karma by 1
 
-SHALL validate that the user is subscribed to the target community.
-SHALL validate that the title is not empty or whitespace-only.
-SHALL validate that links are valid URLs (http/https).
-SHALL validate that image uploads are JPEG, PNG, or GIF under 10MB.
-SHALL assign the post to the user as creator.
-SHALL set initial vote score to 0.
-SHALL set comment count to 0.
-SHALL record creation timestamp.
-SHALL return the generated post object with unique ID.
+WHEN a user removes their vote from a post, THE system SHALL:
+- Remove the voter's record
+- Adjust the vote score by ±1 based on the prior vote
+- Adjust the author's karma by ±1 based on the prior vote
 
-WHEN a user attempts to create a text post with empty content,
-THE system SHALL respond with an error message: "Text posts must include at least one character of content."
+THE system SHALL allow only one active vote per user per post.
 
-WHEN a user attempts to create a link post with invalid URL,
-THE system SHALL respond with an error message: "Please enter a valid URL (starting with http:// or https://)."
+IF a user attempts to vote on a deleted post, THEN THE system SHALL return HTTP 404.
 
-WHEN a user attempts to create an image post exceeding 10MB or with unsupported format,
-THE system SHALL respond with an error message: "Image post must be a JPEG, PNG, or GIF under 10MB."
+### Post Feeds
 
-WHEN a user tries to post in a community they are not subscribed to,
-THE system SHALL respond with an error message: "You must subscribe to this community before posting."
+WHEN a logged-in user accesses the Home Feed, THE system SHALL:
+- Show only posts from communities the user is subscribed to
+- Exclude posts from unsubscribed or banned communities
 
-WHEN a user tries to create a post with no selection (no text, link, or image),
-THE system SHALL respond with an error message: "You must select one type of content: text, link, or image."
+WHEN any user (logged in or guest) accesses the Popular Feed, THE system SHALL:
+- Show posts from all communities
+- Exclude posts from moderated or banned communities
 
-### Post Editing
+WHEN any user accesses the Community Feed for a specific community, THE system SHALL:
+- Show only posts belonging to that community
+- Include posts from banned users (unless the community is locked)
 
-WHEN a user edits their own post,
-THE system SHALL allow changes to title, text content, link URL, or image.
-SHALL allow edits only within 24 hours of creation.
-SHALL record edit timestamp and increment edit counter.
-SHALL append "[Edited]" to the post title upon edit.
+WHEN sorting a feed by "Hot", THE system SHALL:
+- Rank posts by a weighted score based on time decay and vote ratio
+- Favor posts with high recent engagement
+- Formula: score = log10(upvotes + 1) / ((hours since posted) + 2)
 
-WHEN edit request is made after 24 hours,
-THE system SHALL respond with an error message: "You can only edit your posts within 24 hours of posting."
+WHEN sorting a feed by "New", THE system SHALL:
+- Rank by creation timestamp descending
+- Include all posts regardless of vote count
 
-WHEN editing a link post and changing the URL to invalid,
-THE system SHALL respond with an error message: "Invalid URL. Must start with http:// or https://."
+WHEN sorting a feed by "Top", THE system SHALL:
+- Rank by vote score descending
+- Apply a time filter (Today, This Week, This Month, This Year, All Time)
+- If no filter is selected, use "All Time"
 
-WHEN editing an image post and uploading an invalid image,
-THE system SHALL respond with an error message: "Invalid image file. Must be JPEG, PNG, or GIF under 10MB."
+WHEN sorting a feed by "Controversial", THE system SHALL:
+- Rank by total votes (upvotes + downvotes) descending
+- Then by score proximity to zero: score = 1 / (1 + ABS(vote score))
+- Only include posts with total votes ≥ 10
 
-### Post Deletion
+ALL feeds SHALL be paginated with 20 items per page
 
-WHEN a user deletes their own post,
-THE system SHALL remove the post from public view.
-SHALL decrement the author’s karma by the total vote score of the deleted post.
-SHALL cascade-delete all comments under the post.
-SHALL retain a soft-deleted record for moderation auditing.
-
-WHEN a user attempts to delete someone else’s post,
-THE system SHALL respond with an error message: "You can only delete your own posts."
-
-### Post Visibility and Feeds
-
-WHEN a user views the Home Feed,
-THE system SHALL return only posts from communities they are subscribed to.
-SHALL require authentication.
-SHALL support sorting: Hot, New, Top, Controversial.
-SHALL paginate results with 20 posts per page.
-
-WHEN a user views the Popular Feed,
-THE system SHALL return posts from all communities across the platform.
-SHALL allow access without authentication.
-SHALL sort by the "hot" formula: (log(upvotes + 1) / (time since creation in hours + 2))
-SHALL paginate results with 20 posts per page.
-
-WHEN a user views the Community Feed,
-THE system SHALL return all posts from one specific community.
-SHALL allow access without authentication.
-SHALL support sorting: Hot, New, Top (with filters), Controversial.
-SHALL paginate results with 20 posts per page.
-
-### Post Display in Feeds
-
-WHEN a post is displayed in any feed list,
-THE system SHALL show:
+WHEN displaying a post in a feed, THE system SHALL show:
 - Title
 - Author username
 - Community name
 - Vote score
 - Comment count
-- Time since posted (relative, e.g., "3 hours ago")
+- Time since posted (e.g., "3 hours ago")
+- For text posts: the first 200 characters of content (with "..." if truncated)
+- For image posts: a thumbnail (320x240)
+- For link posts: the domain name of the URL (e.g., "youtube.com")
 
-WHEN the post is a text post,
-THE system SHALL display the first 200 characters of content, truncated with "..."
+### Comments
 
-WHEN the post is a link post,
-THE system SHALL display the domain name of the URL (e.g., "reddit.com", "youtube.com")
+WHEN a user creates a comment, THE system SHALL:
+- Link the comment to a post or parent comment
+- Allow up to 5,000 characters
+- Set initial score to 0
+- Set creation timestamp
 
-WHEN the post is an image post,
-THE system SHALL display a 120x90 pixel thumbnail of the image.
+WHEN a user replies to a comment, THE system SHALL:
+- Create the reply as a child of the parent comment
+- Allow unlimited nesting depth
+- Display replies under the parent with visual indentation
 
-WHEN a post has no content (empty text post),
-THE system SHALL display: "[Empty text post]"
+WHEN a user edits their own comment, THE system SHALL:
+- Allow modification of content only
+- Preserve original comment ID and timestamp
+- Log edit history internally
 
-## Post Voting
+WHEN a user deletes their own comment, THE system SHALL:
+- Remove the comment from display
+- Set the comment status to "deleted"
+- Preserve the comment record for moderation history
+- Decrement the comment count on the associated post or parent comment
 
-### Vote Submission
+IF a user attempts to comment on a deleted post, THEN THE system SHALL return HTTP 404.
 
-WHEN a user upvotes a post,
-THE system SHALL:
-- Check if the user already voted on this post
-- If no vote exists: add upvote, increment karma by 1
-- If downvote exists: convert to upvote, change karma by +2
-- If upvote exists: remove vote, change karma by -1
+### Comment Voting
 
-WHEN a user downvotes a post,
-THE system SHALL:
-- Check if the user already voted on this post
-- If no vote exists: add downvote, decrement karma by 1
-- If upvote exists: convert to downvote, change karma by -2
-- If downvote exists: remove vote, change karma by +1
+WHEN a user upvotes a comment, THE system SHALL:
+- Add an upvote record to the comment if one doesn't exist
+- If the user previously downvoted, remove the downvote and add an upvote
+- Increase the comment’s score by 1
+- Increase the comment author's karma by 1
 
-WHEN a user removes their vote,
-THE system SHALL:
-- Remove existing vote (up or down)
-- Adjust karma by the inverse of the removed vote
-- Do not change existing vote direction
+WHEN a user downvotes a comment, THE system SHALL:
+- Add a downvote record to the comment if one doesn't exist
+- If the user previously upvoted, remove the upvote and add a downvote
+- Decrease the comment’s score by 1
+- Decrease the comment author's karma by 1
 
-WHEN a user attempts to vote on a non-existent post,
-THE system SHALL respond with an error message: "Post not found."
+WHEN a user removes their vote from a comment, THE system SHALL:
+- Remove the voter's record
+- Adjust the comment score by ±1 based on the prior vote
+- Adjust the comment author's karma by ±1 based on the prior vote
 
-WHEN a user attempts to vote after being banned from the post’s community,
-THE system SHALL respond with an error message: "You are banned from this community and cannot vote."
+THE system SHALL allow only one active vote per user per comment.
 
-### Vote Aggregation and Display
-
-WHEN a post’s score is calculated,
-THE system SHALL compute: total upvotes minus total downvotes.
-SHALL store raw count of upvotes and downvotes separately.
-SHALL not allow score to be manually set.
-SHALL update score instantaneously upon every vote change.
-
-WHEN a post’s score is displayed,
-THE system SHALL show only the computed net score.
-
-WHEN the net score is negative,
-THE system SHALL show the score as a negative number (e.g., "-5").
-
-## Comments
-
-### Comment Creation
-
-WHEN a user writes a comment on a post,
-THE system SHALL require:
-- Comment text (1–1000 characters)
-- Target post ID
-
-SHALL allow nested replies: a reply to a comment is treated as a child comment.
-SHALL assign comment to the user as author.
-SHALL set initial vote score to 0.
-SHALL record creation timestamp.
-SHALL increment the parent post’s comment count by 1.
-
-WHEN comment text is empty or whitespace-only,
-THE system SHALL respond with an error message: "Comment cannot be empty."
-
-WHEN comment text exceeds 1000 characters,
-THE system SHALL respond with an error message: "Comment must be 1000 characters or fewer."
-
-WHEN replying to a non-existent post or comment,
-THE system SHALL respond with an error message: "Target post or comment not found."
-
-### Comment Editing
-
-WHEN a user edits their own comment,
-THE system SHALL allow changes to content.
-SHALL allow edits only within 24 hours of creation.
-SHALL record edit timestamp and increment edit counter.
-
-WHEN edit request is made after 24 hours,
-THE system SHALL respond with an error message: "You can only edit your comments within 24 hours of posting."
-
-### Comment Deletion
-
-WHEN a user deletes their own comment,
-THE system SHALL remove the comment from public view.
-SHALL decrement the author’s karma by the total vote score of the deleted comment.
-SHALL decrement the parent post or comment’s child count by 1.
-SHALL retain a soft-deleted record for moderation auditing.
-
-WHEN a user attempts to delete someone else’s comment,
-THE system SHALL respond with an error message: "You can only delete your own comments."
-
-### Comment Display
-
-WHEN a comment is displayed, either on a feed or post,
-THE system SHALL show:
-- Author username
-- Comment text
-- Vote score
-- Time since posted (relative)
-- Nested replies (recursively loaded)
-
-WHEN a comment's parent is deleted,
-THE system SHALL display: "This comment was made on a deleted post or comment."
+IF a user attempts to vote on a deleted comment, THEN THE system SHALL return HTTP 404.
 
 ### Comment Sorting
 
-WHEN comments on a post are sorted by "Best",
-THE system SHALL rank by vote score descending, then by creation time ascending.
+WHEN sorting comments on a post by "Best", THE system SHALL:
+- Rank by vote score descending
+- Show top-rated comments first
 
-WHEN comments on a post are sorted by "New",
-THE system SHALL rank by creation time descending.
+WHEN sorting comments on a post by "New", THE system SHALL:
+- Rank by creation timestamp descending
+- Show newest replies first
 
-WHEN comments on a post are sorted by "Controversial",
-THE system SHALL rank by total votes (upvotes + downvotes) descending, filtered by score between -2 and +2.
+WHEN sorting comments on a post by "Controversial", THE system SHALL:
+- Rank by total votes (upvotes + downvotes) descending
+- Then by score proximity to zero: score = 1 / (1 + ABS(vote score))
+- Only include comments with total votes ≥ 5
 
-## Post and Comment Voting System (Unified)
+ALL comment threads SHALL be loaded with a depth limit of 1,000 nodes to prevent performance degradation
 
-The voting rules are identical for both posts and comments:
+### Moderation System
 
-WHEN any voting action occurs (upvote, downvote, remove),
-THE system SHALL:
-- Enforce one vote per user per entity (post or comment)
-- Record each vote as a separate entity with user ID, target ID, vote type, timestamp
-- Update aggregated score in real time
-- Adjust author karma as: +1 for upvote, -1 for downvote, neutral on removal
-- Allow vote changes (up → down → remove, etc.)
-- Prevent voting by banned users
-- Prevent voting by non-authenticated users
-
-WHEN an actor removes their previous vote,
-THE system SHALL reduce the associated author’s karma by the previous vote value.
-
-WHEN karma for an actor reaches negative values,
-THE system SHALL display negative karma as-is without minimum cap.
-
-## Reporting System
-
-### Report Submission
-
-WHEN a user reports a post or comment,
-THE system SHALL require:
-- Target entity ID (post or comment)
-- Reason text (10–500 characters)
-
-SHALL record reporter ID, target ID, reason, report timestamp.
-SHALL increment report counter on target.
-
-WHEN reason is less than 10 characters,
-THE system SHALL respond with an error message: "Report reason must be at least 10 characters long."
-
-WHEN reason exceeds 500 characters,
-THE system SHALL respond with an error message: "Report reason cannot exceed 500 characters."
-
-WHEN reporting a non-existent or deleted entity,
-THE system SHALL respond with an error message: "Cannot report this content. It may have been removed."
-
-### Report Moderation Dashboard
-
-WHEN a moderator views reports,
-THE system SHALL list:
-- Reported entity (post or comment)
-- Reporter username
-- Reason text
-- Report timestamp
-- Status (Pending, Approved, Dismissed)
-
-SHALL sort by report timestamp descending.
-SHALL paginate results (20 reports per page).
-SHALL allow filtering by entity type (post/comment) and status.
-
-### Report Action
-
-WHEN a moderator approves a report,
-THE system SHALL:
-- Delete the reported entity (post or comment)
-- Record the moderator ID and approval timestamp
-- Set report status to "Approved"
-- Increase reporter karma by 1 (incentive)
-- Notify reporter: "Your report has been approved. Content removed."
-
-WHEN a moderator dismisses a report,
-THE system SHALL:
-- Leave the reported entity unchanged
-- Set report status to "Dismissed"
-- Remove the report from active list (soft delete)
-- Notify reporter: "Your report has been dismissed. No action taken."
-
-WHEN a moderator approves a report on a post they did not create,
-THE system SHALL still allow the action if they are moderator of the community.
-
-## Moderation System
-
-### Moderator Management
-
-WHEN an owner adds a moderator,
-THE system SHALL:
-- Verify the user is a member of the community
-- Verify the user is not already a moderator
+WHEN a community owner adds a moderator, THE system SHALL:
+- Grant the user "moderator" role for that community
 - Add the user to the community’s moderator list
-- Notify the user: "You have been appointed as moderator of [Community Name]."
+- Allow the moderator to perform moderation actions in that community
 
-WHEN an owner removes a moderator,
-THE system SHALL:
-- Verify the user is a moderator of the community
-- Remove the user from the moderator list
-- Notify the user: "You have been removed as moderator of [Community Name]."
+WHEN a community owner removes a moderator, THE system SHALL:
+- Remove the moderator from the community’s moderator list
+- Revoke all moderator permissions for that community
 
-WHEN a moderator attempts to add another moderator,
-THE system SHALL:
-- Allow the addition
-- Add the new moderator to the list
+WHEN a moderator bans a user from a community, THE system SHALL:
+- Add the user to the community’s banned users list
+- Prevent the user from posting or commenting in that community permanently
+- Preserve existing posts and comments (they remain viewable)
+- Notify the user via internal notification
 
-WHEN a moderator attempts to remove a moderator,
-THE system SHALL respond with an error message: "Only community owners can remove moderators."
+WHEN a moderator unbans a user, THE system SHALL:
+- Remove the user from the community’s banned users list
+- Restore the user’s ability to post and comment in that community
+- Do not restore deleted content
 
-WHEN a moderator attempts to remove the owner,
-THE system SHALL respond with an error message: "You cannot remove the community owner."
+WHEN a user reports a post or comment, THE system SHALL:
+- Require a reason (minimum 10 characters, maximum 500 characters)
+- Store the report with timestamp, reporter ID, reported content ID, and reason
+- Notify moderators of the community
 
-### User Banning
+WHEN a moderator views a report, THE system SHALL:
+- See the reported content (post or comment)
+- See the reporter's username (anonymized if reporter deleted)
+- See the report reason
+- See the time of reporting
+- Choose to "Approve" or "Dismiss"
 
-WHEN a moderator bans a user from a community,
-THE system SHALL:
-- Record the ban (user ID, community ID, moderator ID, reason)
-- Add the user to the community’s banned list
-- Prevent the user from posting or commenting in that community
-- Allow the user to view community content
-- Notify the user: "You have been banned from [Community Name] by [Moderator]. Reason: [reason]."
+WHEN a moderator approves a report, THE system SHALL:
+- Delete the reported content
+- Apply a moderation log entry
+- Notify the author (if still active) that the content was removed
+- Move the report to "resolved" status
 
-WHEN a moderator unbans a user,
-THE system SHALL:
-- Remove the user from the banned list
-- Restore posting and commenting privileges
-- Notify the user: "You have been unbanned from [Community Name]."
+WHEN a moderator dismisses a report, THE system SHALL:
+- Keep the reported content
+- Mark the report as "dismissed" and remove from active report list
+- No notification sent to author
 
-WHEN a banned user attempts to post or comment in the community,
-THE system SHALL respond with an error message: "You are banned from this community and cannot post or comment."
+THE system SHALL NOT allow moderators to delete reports they have made.
 
-### Banned User List
+THE system SHALL NOT allow moderators to remove community owners.
 
-WHEN a moderator views the banned users list,
-THE system SHALL display:
-- Username
-- Ban timestamp
-- Moderator who banned them
-- Ban reason
+THE system SHALL NOT allow moderators to remove other moderators.
 
-SHALL allow re-unban with single click.
+## Performance Expectations
 
-## Business Rules Summary
+WHEN a user loads the Home Feed, THE system SHALL render all 20 initial posts within 1.5 seconds.
 
-### User Identity
-- Each user is uniquely identified by username
-- Email is for login only — not visible to others
-- Profile data is owned solely by user
+WHEN a user loads the Popular Feed with no filters, THE system SHALL render 20 posts within 2 seconds.
 
-### Content Ownership
-- Posts and comments are owned by creator
-- Owner has full edit/delete rights within 24 hours
-- Moderator/owner can override ownership only for moderation
+WHEN a user loads a single post with its comment thread (up to 500 comments), THE system SHALL render the page within 2.5 seconds.
 
-### Karma Integrity
-- Karma is calculated only from votes on user’s own content
-- Removal of vote reverses karma adjustment
-- No karma earned from moderation actions
+WHEN a user posts an image, THE system SHALL complete upload and thumbnail generation within 10 seconds.
 
-### Access Control Matrix
+WHEN a user submits a vote, THE system SHALL update the vote score and karma in real-time (∆ ≤ 100ms).
 
-| Actor | View Posts | View Comments | Vote | Create Post | Edit Post | Delete Post | Create Comment | Edit Comment | Delete Comment | Subscribe | Ban | Add Mod | Remove Mod | Delete Community |
-|-------|------------|---------------|------|-------------|-----------|-------------|----------------|--------------|----------------|-----------|-----|---------|------------|------------------|
-| Guest | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Member | ✅ | ✅ | ✅ | ✅ (subscribed only) | ✅ (self, 24h) | ✅ (self) | ✅ | ✅ (self, 24h) | ✅ (self) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Moderator | ✅ | ✅ | ✅ | ✅ (subscribed) | ✅ (self, 24h) | ✅ (any) | ✅ | ✅ (self, 24h) | ✅ (any) | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Owner | ✅ | ✅ | ✅ | ✅ | ✅ (self, 24h) | ✅ (any) | ✅ | ✅ (self, 24h) | ✅ (any) | ✅ | ✅ | ✅ | ✅ | ✅ |
+WHEN a user searches for a community by name, THE system SHALL return results in ≤ 500ms.
 
-### Feed Types and Visibility
+WHEN a user edits a post or comment, THE system SHALL persist the change in ≤ 300ms.
 
-| Feed Type | Auth Required | Sources | Sorting Options | Pagination |
-|-----------|---------------|---------|-----------------|------------|
-| Home | ✅ | Subscribed communities | Hot, New, Top, Controversial | ✅ |
-| Popular | ❌ | All communities | Hot (default), New, Top, Controversial | ✅ |
-| Community | ❌ | One specific community | Hot, New, Top, Controversial | ✅ |
+## Success Metrics
 
-### Data Retention
-- Posts: Soft-deleted for 30 days, then purged
-- Comments: Soft-deleted for 30 days, then purged
-- Reports: Dismissed reports purged after 30 days
-- Ban records: Persisted indefinitely
-- Vote records: Persisted indefinitely
+- 80% of registered users submit at least one post within 7 days
+- 60% of users are subscribed to at least two communities
+- 50% of posts receive at least one vote
+- 70% of comments receive at least one vote
+- Average comment thread depth ≥ 3 levels
+- 90% of community moderator actions are approved/dismissed within 24 hours
+- 95% of reported content is actioned within 48 hours
+- Less than 0.5% of all posts are flagged as abusive or inappropriate
 
-### Performance Requirements
-- Feed load time: < 500ms for 20 posts
-- Comment thread load time: < 800ms for 100 nested replies
-- Karma calculation: Real-time update
-- Search: 100ms latency for community name search
+## Related Documents
 
-### Error Handling
-- All errors must return HTTP 4xx or 5xx with structured JSON message
-- No stack traces or internal data exposed
-- Error messages must be user-friendly and actionable
-
-- No database schemas, API endpoints, or ORM models are defined here — these are left to backend implementation.
-
----
-
-> *This document is written entirely in natural business language. All requirements follow EARS format where applicable. No technical implementation details are included. This specification is sufficient for backend development team to implement the application from scratch.*
+- For detailed authentication flow, see [Authentication Flow](./03-authentication-flow.md)
+- For user actor definitions and permissions, see [User Actors](./02-user-actors.md)
+- For karma system logic, see [Karma System](./04-karma-system.md)
+- For community structure and management, see [Communities](./05-communities.md)
+- For post creation and types, see [Posts](./06-posts.md)
+- For post voting mechanics, see [Post Voting](./07-post-voting.md)
+- For feed organization and sorting, see [Post Feeds](./08-post-feeds.md)
+- For comments hierarchy and editing, see [Comments](./09-comments.md)
+- For comment voting and sorting, see [Comment Voting](./10-comment-voting.md)
+- For moderation roles and actions, see [Moderation System](./11-moderation-system.md)

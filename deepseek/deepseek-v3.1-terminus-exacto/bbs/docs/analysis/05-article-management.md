@@ -1,8 +1,8 @@
 # Article Management Requirements Specification
 
-## Executive Summary
+## Overview
 
-This document specifies the complete requirements for article management within the Economic/Political Discussion Board platform. Articles serve as the primary content mechanism for user discussions, covering economic and political topics across various sections.
+The article management system enables users to create, edit, and manage discussion articles within the Economic/Political Discussion Board platform. Articles serve as the primary content units for discussions, allowing users to share insights, analysis, and opinions on economic and political topics.
 
 ## Article Creation Process
 
@@ -10,299 +10,218 @@ This document specifies the complete requirements for article management within 
 
 ```mermaid
 graph LR
-  A["User Navigates to Section"] --> B["Click Create Article Button"]
-  B --> C["Article Creation Form"]
-  C --> D["Fill Required Fields"]
-  D --> E["Add Optional Attachments"]
-  E --> F["Submit Article"]
-  F --> G["System Validation"]
-  G --> H{"Validation Passed?"}
-  H -->|"Yes"| I["Save Article"]
-  H -->|"No"| J["Show Error Messages"]
-  I --> K["Redirect to Article Page"]
+  A["User Selects Create Article"] --> B["Choose Target Section"]
+  B --> C["Enter Article Title"]
+  C --> D["Write Article Content"]
+  D --> E["Add Tags (Optional)"]
+  E --> F["Attach Files/Images (Optional)"]
+  F --> G{"Review Article"}
+  G -->|"Submit"| H["Article Published"]
+  G -->|"Save Draft"| I["Article Saved as Draft"]
 ```
 
-### Required Article Fields
+### Section Selection
+WHEN creating a new article, THE system SHALL require the user to select one section from the available sections.
+WHEN no sections exist, THE system SHALL prevent article creation and display appropriate message.
 
-**EARS Requirements for Article Creation:**
+### Title Requirements
+THE article title SHALL be required and must contain between 5 and 200 characters.
+THE system SHALL validate that the title is unique within the selected section.
 
-**WHEN** a user initiates article creation, **THE** system **SHALL** present a form with the following required fields:
-- Title input field (maximum 200 characters)
-- Content text area (minimum 50 characters, maximum 10,000 characters)
-- Section selection dropdown
+### Content Requirements
+THE article content SHALL be required and must contain between 100 and 10,000 characters.
+THE system SHALL support plain text formatting with line breaks and paragraphs.
 
-**WHEN** a user submits an article, **THE** system **SHALL** validate that:
-- Title is not empty and contains at least 3 characters
-- Content contains at least 50 characters
-- A valid section is selected
+## Article Content Specifications
 
-**IF** any required field is missing or invalid, **THEN THE** system **SHALL** display specific error messages indicating which fields require correction.
+### Content Structure
+Each article SHALL contain the following required elements:
+- Title: Primary identifier and headline
+- Content: Main body text
+- Section: Categorization context
+- Author: User who created the article
+- Creation timestamp: When the article was published
 
-## Content Requirements
+### Optional Elements
+Each article MAY contain:
+- Tags: Free-text categorization labels
+- File attachments: Supporting documents
+- Image attachments: Visual content
 
-### Title Specifications
-- **Minimum length**: 3 characters
-- **Maximum length**: 200 characters
-- **Allowed characters**: Unicode characters including letters, numbers, spaces, and common punctuation
-- **Validation rules**: Must not consist solely of whitespace characters
+## Attachment Management
 
-### Content Specifications
-- **Minimum length**: 50 characters
-- **Maximum length**: 10,000 characters
-- **Format**: Plain text with basic formatting support (line breaks preserved)
-- **Content filtering**: Basic profanity filtering for offensive language
+### File Attachment Specifications
+WHEN attaching files to articles, THE system SHALL support common document formats including PDF, DOC, DOCX, TXT.
+THE system SHALL limit individual file size to 10MB.
+THE system SHALL limit total attachments per article to 5 files.
 
-### Section Assignment
-- **WHEN** creating an article, **THE** user **SHALL** select exactly one section from available sections
-- **THE** section selection **SHALL** be mandatory
-- **WHERE** sections exist, **THE** system **SHALL** display all active sections in alphabetical order
+### Image Attachment Specifications
+WHEN attaching images to articles, THE system SHALL support common image formats including JPG, PNG, GIF.
+THE system SHALL limit individual image size to 5MB.
+THE system SHALL limit total images per article to 10 images.
+THE system SHALL automatically resize large images to appropriate display dimensions.
 
-## Attachment Handling
+### Attachment Upload Process
+```mermaid
+graph LR
+  A["User Clicks Attach"] --> B["Select File/Image"]
+  B --> C["System Validates File"]
+  C --> D{"Validation Passed?"}
+  D -->|"Yes"| E["File Uploaded"]
+  D -->|"No"| F["Show Error Message"]
+  E --> G["Attachment Added to Article"]
+```
 
-### File Attachment Requirements
-
-**EARS Requirements for File Attachments:**
-
-**WHEN** attaching files to articles, **THE** system **SHALL** support:
-- Multiple file attachments per article
-- Maximum file size: 10MB per file
-- Maximum total attachment size: 50MB per article
-- Supported file types: PDF, DOC, DOCX, TXT, ZIP
-
-**WHEN** a user uploads a file, **THE** system **SHALL** validate:
-- File size does not exceed 10MB
-- File type is within allowed formats
-- Total attachment size does not exceed 50MB
-
-**IF** a file exceeds size limits or has invalid type, **THEN THE** system **SHALL** reject the upload and display appropriate error message.
-
-### Image Attachment Requirements
-
-**WHEN** attaching images to articles, **THE** system **SHALL** support:
-- Multiple image attachments per article
-- Maximum image size: 5MB per image
-- Maximum total image size: 25MB per article
-- Supported image types: JPG, JPEG, PNG, GIF
-- Automatic image compression for large images
-- Image preview generation for thumbnails
-
-### Attachment Management
-
-**WHEN** editing an article, **THE** user **SHALL** be able to:
-- Add new attachments
-- Remove existing attachments
-- Replace existing attachments
-- View attachment previews
-
-**THE** system **SHALL** maintain attachment metadata including:
-- Original filename
-- File size
-- Upload timestamp
-- MIME type
+### Attachment Display
+WHEN viewing an article with attachments, THE system SHALL display downloadable links for each attachment.
+THE system SHALL show file names and sizes for document attachments.
+THE system SHALL display image thumbnails that can be expanded to full size.
 
 ## Tagging System
 
 ### Tag Creation and Management
+WHEN adding tags to articles, THE system SHALL allow free-text tag entry.
+THE system SHALL support multiple tags per article, with a maximum of 10 tags.
+THE system SHALL automatically normalize tag formatting (trim whitespace, lowercase conversion).
 
-**EARS Requirements for Article Tagging:**
+### Tag Validation
+THE system SHALL validate that each tag contains between 1 and 50 characters.
+THE system SHALL prevent duplicate tags within the same article.
 
-**WHEN** creating or editing an article, **THE** user **SHALL** be able to:
-- Add multiple free-text tags
-- Each tag limited to 30 characters
-- Maximum of 10 tags per article
-- Tags are case-insensitive for matching
+### Tag Display
+WHEN displaying articles, THE system SHALL show tags as clickable links that filter articles by tag.
+THE system SHALL display tags in a consistent visual format.
 
-**WHEN** saving tags, **THE** system **SHALL**:
-- Trim whitespace from tag text
-- Convert tags to lowercase for consistency
-- Remove duplicate tags
-- Validate tag length and count limits
-
-**IF** a user attempts to add more than 10 tags, **THEN THE** system **SHALL** display an error message indicating the tag limit.
-
-### Tag Display and Organization
-
-**THE** system **SHALL** display tags as clickable links that filter articles by tag
-**WHERE** tags exist, **THE** system **SHALL** show the most popular tags across the platform
-
-## Editing and Deletion
+## Article Editing and Deletion
 
 ### Article Editing Capabilities
+WHEN editing an article, THE user SHALL be able to modify:
+- Title
+- Content
+- Tags (add, remove, modify)
+- Attachments (add new, remove existing)
 
-**EARS Requirements for Article Editing:**
+THE system SHALL preserve the original section assignment during editing.
+THE system SHALL record edit history with timestamps.
 
-**WHEN** a user edits their own article, **THE** system **SHALL** allow modification of:
-- Article title
-- Article content
-- Section assignment
-- Attachments (add/remove/replace)
-- Tags (add/remove/modify)
-
-**WHEN** an administrator edits any article, **THE** system **SHALL** allow the same modifications as the article owner.
-
-**THE** system **SHALL** track edit history including:
-- Timestamp of each edit
-- User who made the edit
-- Fields that were modified
+### Ownership-Based Editing
+WHEN a user attempts to edit an article, THE system SHALL verify that the user is the article author.
+IF the user is not the article author, THEN THE system SHALL prevent editing and display appropriate message.
 
 ### Article Deletion Process
-
-**WHEN** a user deletes their own article, **THE** system **SHALL**:
+WHEN deleting an article, THE system SHALL:
 - Remove the article from public view
 - Delete all associated comments
-- Remove all attached files and images
-- Update article counts in user profiles
+- Remove all file and image attachments from storage
+- Update user profile statistics
 
-**WHEN** an administrator deletes an article, **THE** system **SHALL** perform the same actions as user deletion.
-
-**IF** an article is deleted, **THEN THE** system **SHALL** notify the article owner (if different from the deleter).
+### Confirmation Requirements
+WHEN a user initiates article deletion, THE system SHALL display a confirmation dialog.
+THE confirmation dialog SHALL clearly state that deletion is permanent and affects all associated content.
 
 ## Article Display Requirements
 
-### Single Article View
+### Full Article View
+WHEN displaying a single article, THE system SHALL show:
+- Complete article title
+- Author information with link to profile
+- Full article content with proper formatting
+- Section information with link to section
+- All tags with filtering capabilities
+- All file and image attachments
+- Creation and last edit timestamps
+- Comment section with all comments
 
-**WHEN** viewing a single article, **THE** system **SHALL** display:
-- Article title
-- Author information (display name with link to profile)
-- Full article content with preserved formatting
-- Section name with link to section
-- Publication timestamp
-- Last edit timestamp (if edited)
-- All attached files with download links
-- All attached images with previews
-- All tags associated with the article
-- Comment count
+### Content Formatting
+THE system SHALL preserve line breaks and paragraph structure in article content.
+THE system SHALL display content in a readable font size and line spacing.
 
-**THE** system **SHALL** format the content with:
-- Preserved line breaks and paragraphs
-- Basic text formatting (bold, italics if supported)
-- Responsive layout for different screen sizes
+### Attachment Display
+WHEN displaying file attachments, THE system SHALL provide:
+- Download links for each file
+- File type icons
+- File size information
+- Preview capability for supported document types
 
-### Attachment Display and Download
+WHEN displaying image attachments, THE system SHALL provide:
+- Thumbnail images
+- Full-size view on click
+- Image navigation controls for multiple images
 
-**WHEN** displaying attachments, **THE** system **SHALL**:
-- Show file attachments as downloadable links with file type icons
-- Display image attachments as embedded previews
-- Provide original filename and file size information
-- Ensure secure download links with proper access controls
+## Integration Requirements
 
-**WHEN** a user downloads an attachment, **THE** system **SHALL**:
-- Serve the file with correct MIME type
-- Use the original filename for download
-- Track download statistics
-- Validate user permissions to access the attachment
+### Section Integration
+THE article management system SHALL integrate with section management to ensure:
+- Articles are always associated with valid sections
+- Section deletion properly handles associated articles
+- Section browsing displays appropriate article lists
 
-## Permission and Access Control
+### User Profile Integration
+THE article management system SHALL update user profile statistics when:
+- Articles are created
+- Articles are deleted
+- Articles receive comments
 
-### User Permissions Matrix
-
-| Action | Regular User | Administrator | Super Administrator |
-|--------|--------------|---------------|---------------------|
-| Create article in any section | ✅ | ✅ | ✅ |
-| Edit own articles | ✅ | ✅ | ✅ |
-| Delete own articles | ✅ | ✅ | ✅ |
-| Edit any article | ❌ | ✅ | ✅ |
-| Delete any article | ❌ | ✅ | ✅ |
-| Attach files/images | ✅ | ✅ | ✅ |
-| Add/remove tags | ✅ | ✅ | ✅ |
-| View article edit history | ❌ | ✅ | ✅ |
-
-### Access Control Rules
-
-**WHILE** a user is logged in, **THE** system **SHALL** allow article creation and management based on their permission level.
-
-**IF** a user is banned, **THEN THE** system **SHALL** prevent them from creating or editing articles while allowing existing articles to remain visible.
-
-**WHERE** section-specific permissions exist, **THE** system **SHALL** enforce section access rules.
+### Search Integration
+THE article management system SHALL support search functionality by:
+- Indexing article titles and content
+- Supporting tag-based filtering
+- Providing search result relevance scoring
 
 ## Performance Requirements
 
 ### Article Loading Performance
-
-**THE** system **SHALL** load individual articles within 2 seconds under normal load conditions.
-
-**WHEN** displaying articles with multiple images, **THE** system **SHALL** implement lazy loading for optimal performance.
-
-**THE** system **SHALL** implement efficient pagination for article lists with response times under 1 second.
+WHEN loading a full article view, THE system SHALL display the article content within 2 seconds.
+WHEN loading article lists, THE system SHALL display the first page within 1 second.
 
 ### Attachment Handling Performance
+WHEN uploading attachments, THE system SHALL process files within 30 seconds for maximum file size.
+WHEN downloading attachments, THE system SHALL begin download within 1 second.
 
-**WHEN** uploading attachments, **THE** system **SHALL** provide progress indicators for large files.
+## Error Handling
 
-**THE** system **SHALL** process image compression asynchronously to avoid blocking the user interface.
+### Creation Errors
+IF article creation fails due to validation errors, THEN THE system SHALL:
+- Display specific error messages
+- Preserve entered content
+- Highlight problematic fields
 
-## Error Handling and Validation
+### Editing Errors
+IF article editing fails, THEN THE system SHALL:
+- Preserve the original article content
+- Display appropriate error message
+- Allow retry of the editing operation
 
-### Creation and Editing Errors
+### Attachment Errors
+IF file attachment fails, THEN THE system SHALL:
+- Display specific error reason (size, format, etc.)
+- Allow selection of alternative files
+- Preserve other article content
 
-**IF** article creation fails due to validation errors, **THEN THE** system **SHALL**:
-- Preserve user-entered data in the form
-- Display specific error messages for each invalid field
-- Provide clear instructions for correction
+## Business Rules
 
-**IF** attachment upload fails, **THEN THE** system **SHALL**:
-- Identify the specific reason (size, type, etc.)
-- Allow retry or removal of problematic attachments
-- Maintain other successfully uploaded attachments
+### Content Ownership
+THE system SHALL enforce that only article authors can edit or delete their articles.
+Administrators SHALL have override capabilities for content moderation.
 
-### Access Control Errors
+### Content Visibility
+Articles SHALL be immediately visible upon publication unless the author is banned.
+Banned users' articles SHALL remain visible but marked as from banned users.
 
-**IF** a user attempts to edit an article they don't own, **THEN THE** system **SHALL**:
-- Display "Access Denied" message
-- Log the unauthorized access attempt
-- Redirect to appropriate page
-
-## Business Rules and Constraints
-
-### Content Moderation
-
-**WHILE** an article exists in the system, **THE** administrators **SHALL** have authority to moderate content according to platform guidelines.
-
-**IF** an article violates platform rules, **THEN THE** administrators **SHALL** be able to edit or delete the article with appropriate audit trail.
-
-### Data Retention
-
-**WHEN** a user deletes their account, **THE** system **SHALL** automatically delete all articles owned by that user.
-
-**THE** system **SHALL** maintain article edit history for audit purposes for 90 days after article deletion.
-
-## Integration Points
-
-### User Profile Integration
-
-**THE** article management system **SHALL** integrate with user profiles to:
-- Display author information with profile links
-- Update user article counts in real-time
-- Sync user display name changes across all articles
-
-### Section System Integration
-
-**THE** article system **SHALL** integrate with section management to:
-- Validate section assignments during article creation
-- Provide section-based article filtering
-- Maintain article counts per section
-
-### Comment System Integration
-
-**THE** article system **SHALL** integrate with comments to:
-- Display accurate comment counts on articles
-- Synchronize article deletion with comment removal
-- Provide context for comment threads
+### Editing Limitations
+Users SHALL be able to edit their articles indefinitely after publication.
+THE system SHALL maintain edit history for transparency.
 
 ## Success Criteria
 
-### Functional Completeness
+### User Experience Metrics
+- 95% of article creation attempts should succeed on first try
+- Article editing should complete within 5 seconds for text-only changes
+- Attachment uploads should have 99% success rate for valid files
 
-- All article creation, editing, and deletion functions work correctly
-- Attachment system handles multiple file types and sizes appropriately
-- Tagging system provides flexible categorization
-- Permission system enforces access controls effectively
+### System Performance Metrics
+- Article pages should load completely within 3 seconds
+- Search functionality should return results within 2 seconds
+- Tag filtering should update results within 1 second
 
-### User Experience
-
-- Article creation process is intuitive and efficient
-- Editing capabilities provide comprehensive content management
-- Attachment handling is seamless and reliable
-- Performance meets user expectations for loading and interaction
-
-This specification provides complete business requirements for article management functionality, enabling backend developers to implement a robust article system that meets user needs for economic and political discussion.
+This document provides comprehensive requirements for the article management system that backend developers can use to implement robust article creation, editing, and display functionality for the Economic/Political Discussion Board platform.

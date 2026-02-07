@@ -1,11 +1,12 @@
-import { Prisma } from "@prisma/sdk";
-import { ArrayUtil } from "@nestia/e2e";
-import typia, { tags } from "typia";
-
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoTodo";
+import { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { TodoUserAtSummaryTransformer } from "./TodoUserAtSummaryTransformer";
 
 export namespace TodoTodoAtSummaryTransformer {
   export type Payload = Prisma.todo_todosGetPayload<ReturnType<typeof select>>;
@@ -14,10 +15,15 @@ export namespace TodoTodoAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        completed: true,
+        description: true,
         start_date: true,
         due_date: true,
+        is_completed: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        user: TodoUserAtSummaryTransformer.select(),
+        todo_histories: { select: {} },
       },
     } satisfies Prisma.todo_todosFindManyArgs;
   }
@@ -25,14 +31,10 @@ export namespace TodoTodoAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
-      is_complete: input.completed,
-      start_date: input.start_date
-        ? toISOStringSafe(input.start_date).split("T")[0]
-        : undefined,
-      due_date: input.due_date
-        ? toISOStringSafe(input.due_date).split("T")[0]
-        : undefined,
-      created_at: toISOStringSafe(input.created_at),
+      is_completed: input.is_completed,
+      created_at: input.created_at.toISOString(),
+      due_date: input.due_date ? input.due_date.toISOString() : null,
+      user: await TodoUserAtSummaryTransformer.transform(input.user),
     };
   }
 }

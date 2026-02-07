@@ -1,0 +1,181 @@
+/// Customer wishlists containing product references for potential future
+/// purchases. Each customer can have multiple wishlists with different
+/// products, allowing them to save items for later consideration or
+/// purchase. This table supports the customer shopping experience by
+/// preserving product interest over time.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Referenced product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for historical preservation.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  histories shopping_mall_wishlist_histories[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_wishlists_shopping_mall_customer_id_shop_a6054a7f")
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlists_shopping_mall_customer_id_crea_13b2d35f")
+}
+
+/// Customer shopping cart items containing selected product variants and
+/// quantities for potential purchase. This table represents items that
+/// customers have added to their shopping cart but not yet purchased. Each
+/// cart item links a customer to a specific product variant with a quantity
+/// selection.
+///
+/// Key characteristics:
+/// - Customers can add multiple variants to their cart for later purchase
+/// - Same variant can only exist once per customer (duplicates combine
+/// quantities)
+/// - Cart items are removed when order is placed
+/// - Items become unavailable if variants are deleted or run out of stock
+/// - Quantity is validated against available stock before adding to cart
+///
+/// This table supports the shopping experience workflow where customers
+/// browse products, add items to cart, review their selection, and
+/// eventually proceed to checkout.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}. Required field
+  /// establishing the customer who owns this cart item.
+  shopping_mall_customer_id String
+  
+  /// Selected product variant's {@link shopping_mall_product_variants.id}.
+  /// Required field linking to the specific product variant in the cart.
+  shopping_mall_product_variant_id String
+  
+  /// Number of units of the selected variant added to cart. Must be positive
+  /// integer, validated against available stock before adding to cart.
+  quantity Int
+  
+  /// Timestamp when this cart item was created. Automatically set when item is
+  /// first added to cart.
+  created_at DateTime
+  
+  /// Timestamp when this cart item was last modified. Updated when quantity
+  /// changes or item is edited.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL for active cart items, populated when item is
+  /// removed (added to order, deleted by customer, or variant becomes
+  /// unavailable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  historyItems shopping_mall_cart_histories[]
+  
+  @@index([shopping_mall_product_variant_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_variant_id], map: "shopping_mall_carts_shopping_mall_customer_id_shopping_a7bad0ac")
+  @@index([shopping_mall_customer_id, created_at])
+}
+
+/// History of wishlist item additions and removals. This subsidiary table
+/// tracks all changes to customer wishlists, enabling audit trails and
+/// historical analysis of customer preferences. Each record represents a
+/// single action (addition or removal) on a wishlist item, linked to the
+/// parent wishlist record.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent wishlist record that this history entry belongs to. {@link
+  /// shopping_mall_wishlists.id}.
+  wishlist_id String
+  
+  /// Type of action performed on the wishlist item (added or removed).
+  action_type String
+  
+  /// Timestamp when the wishlist history record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  wishlist shopping_mall_wishlists @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  
+  @@index([wishlist_id, created_at])
+}
+
+/// History of shopping cart item modifications and checkouts. Records all
+/// changes to cart items including additions, quantity updates, and checkout
+/// events for audit trail and historical tracking.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the shopping cart being modified. {@link
+  /// shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Timestamp when the cart history record was created.
+  created_at DateTime
+  
+  /// Type of cart operation performed. Values: 'add_item', 'update_quantity',
+  /// 'remove_item', 'checkout'.
+  operation_type String
+  
+  /// JSON snapshot of cart item state at the time of operation.
+  item_json String
+  
+  //----
+  // RELATIONS
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cart_id, created_at], map: "shopping_mall_cart_histories_shopping_mall_cart_id_cre_f7d36940")
+  @@index([operation_type, created_at])
+}

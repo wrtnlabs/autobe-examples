@@ -1,0 +1,727 @@
+/// Shopping carts containing customer-selected items before checkout. Each
+/// cart represents a customer's shopping session containing multiple line
+/// items for specific product variants. Shopping carts function as the
+/// parent container for cart items that will convert to order items upon
+/// successful payment processing.
+///
+/// This table establishes the connection between customers and their
+/// shopping selections {@link ecommerce_customers.id}, while cart items
+/// {@link ecommerce_cart_items.id} provide detailed product and variant
+/// information with quantities. The cart lifecycle supports session
+/// management with soft deletion tracking for abandoned cart analysis and
+/// order conversion patterns.
+///
+/// Key business workflows include:
+/// - Active cart retrieval for session continuation
+/// - Cart item management with quantity optimization
+/// - Order conversion with timestamp preservation
+/// - Cart abandonment tracking and analysis
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who owns this shopping cart. {@link
+  /// ecommerce_customers.id}
+  customer_id String
+  
+  /// Timestamp when the shopping cart was first created. Allows tracking of
+  /// cart lifecycle and conversion patterns.
+  created_at DateTime
+  
+  /// Timestamp when shopping cart was last modified. Tracks customer activity
+  /// and cart interaction frequency.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for when cart is no longer active. Differentiates
+  /// between active carts and historical data for session management.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_shipping_carts[]
+  cartItems ecommerce_cart_items[]
+  
+  @@index([customer_id, deleted_at])
+  @@index([deleted_at])
+}
+
+/// Individual items added to shopping carts representing specific product
+/// variant selections with quantities.
+///
+/// Each cart item represents a customer's selection of a specific product
+/// variant with a desired quantity. This table serves as the intermediary
+/// between shopping carts and product variants, enabling customers to build
+/// their shopping list before proceeding to checkout. Cart items are
+/// automatically validated against current stock availability and removed if
+/// variants become unavailable.
+///
+/// **Relationships**:
+/// - Belongs to a specific shopping cart via {@link
+/// ecommerce_shopping_carts.id}
+/// - References the specific product variant being selected via {@link
+/// ecommerce_product_variants.id}
+/// - Indirectly references the parent product via {@link
+/// ecommerce_products.id} for catalog integrity
+///
+/// **Business Rules**:
+/// - Quantity must be greater than 0
+/// - Each cart item represents a unique variant selection within a given cart
+/// - Cart items are automatically removed when their associated variants
+/// become out of stock
+/// - Cart items are temporary and cleared upon order creation or cart
+/// abandonment
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the shopping cart this item belongs to. {@link
+  /// ecommerce_shopping_carts.id}
+  shopping_cart_id String
+  
+  /// References the specific product variant selected by the customer. {@link
+  /// ecommerce_product_variants.id}
+  product_variant_id String
+  
+  /// References the parent product for catalog integrity and search
+  /// optimization. {@link ecommerce_products.id}
+  product_id String
+  
+  /// Quantity of the selected product variant that the customer wants to
+  /// purchase. Must be greater than 0 and must not exceed available stock when
+  /// validated.
+  quantity Int
+  
+  /// Timestamp when this cart item was first created. Used for audit trails
+  /// and cart item lifecycle tracking.
+  created_at DateTime
+  
+  /// Timestamp when this cart item was last modified (quantity change or other
+  /// updates).
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was soft-deleted. Used for cart cleanup and
+  /// audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingCart ecommerce_shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  product ecommerce_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  @@index([product_variant_id])
+  
+  @@unique([shopping_cart_id, product_variant_id])
+  @@index([shopping_cart_id, created_at])
+  @@index([product_id, product_variant_id])
+  @@index([deleted_at])
+}
+
+/// Central order management table storing customer order information and
+/// derived status.
+///
+/// Represents complete orders containing items from potentially multiple
+/// sellers with customer identification and order lifecycle tracking. Orders
+/// preserve purchase context even when customer accounts are deleted for
+/// legal and business records. The overall order status is derived from the
+/// status of its constituent order items according to the platform's defined
+/// status hierarchy.
+///
+/// Each order may contain items from different sellers but maintains a
+/// single billing relationship with the customer. Order records are
+/// permanently preserved for audit trails and legal compliance requirements,
+/// tracking the complete purchase lifecycle from creation through final
+/// resolution (delivery, cancellation, or refund).
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed this order, referenced from customer's {@link
+  /// ecommerce_customers.id}. Required even if customer account is later
+  /// deleted to maintain order audit trail.
+  customer_id String
+  
+  /// Timestamp when the order was first created and payment was successfully
+  /// processed.
+  created_at DateTime
+  
+  /// Timestamp when order information was last modified, including status
+  /// changes from item lifecycle transitions.
+  updated_at DateTime
+  
+  /// Timestamp when order was soft-deleted. Orders are typically preserved
+  /// indefinitely but may be hidden under certain conditions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  metadataRegistryRelationshipSubtypes ecommerce_metadata_registry_relationship_of_orders[]
+  inventoryRecords ecommerce_inventory_records[]
+  items ecommerce_order_items[]
+  paymentTransactions ecommerce_payment_transactions[]
+  administrativeActions ecommerce_administrative_action_of_orders[]
+  
+  @@index([customer_id, created_at])
+  @@index([created_at])
+}
+
+/// Individual purchased items representing specific product variants within
+/// orders, with seller attribution for fulfillment management. Each order
+/// item captures the purchase transaction details including quantity, unit
+/// price, seller reference, and maintains individual status tracking
+/// independent of other items in the same order.
+///
+/// Order items support the platform's multi-seller model where a single
+/// order can contain items from different sellers. Each item tracks its
+/// specific lifecycle status (paid, shipped, delivered, cancelled, refunded)
+/// and enables granular cancellation and refund processing. The
+/// purchase-time information ensures financial integrity by fixing product
+/// variant details at the moment of transaction.
+///
+/// Order items are subsidiary entities that exist solely within the context
+/// of their parent order {@link ecommerce_orders.id}. They facilitate
+/// partial order modifications where customers can cancel or request refunds
+/// for individual items without affecting other items in the same order.
+/// Each item maintains references to its originating seller {@link
+/// ecommerce_sellers.id} for fulfillment and to the product variant {@link
+/// ecommerce_product_variants.id} for inventory restoration purposes during
+/// cancellations and refunds.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order that this item belongs to. References the parent order's
+  /// {@link ecommerce_orders.id}.
+  order_id String
+  
+  /// Seller responsible for fulfilling this order item. References the
+  /// seller's {@link ecommerce_sellers.id} for order management and
+  /// communication.
+  seller_id String
+  
+  /// Product variant that was purchased. References the specific variant's
+  /// {@link ecommerce_product_variants.id}.
+  product_variant_id String
+  
+  /// Number of units purchased for this specific product variant. Quantity is
+  /// immutable after order creation to preserve purchase integrity.
+  quantity Int
+  
+  /// Individual price per unit at time of purchase. This price is fixed and
+  /// preserved for financial audit purposes regardless of subsequent product
+  /// price changes.
+  unit_price Float
+  
+  /// Calculated total price for this line item (quantity × unit_price).
+  /// Pre-calculated field for efficient querying and reporting.
+  total_price Float
+  
+  /// Current lifecycle status of this order item. Valid values: 'paid'
+  /// (awaiting shipment), 'shipped' (in transit), 'delivered' (received),
+  /// 'cancelled' (cancelled before shipment), 'refunded' (refunded after
+  /// delivery).
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  shipmentItems ecommerce_shipment_items[]
+  purchaseSnapshots ecommerce_order_item_purchase_snapshots[]
+  statusHistories ecommerce_order_item_status_histories[]
+  cancellationRequest ecommerce_cancellation_requests?
+  refundRequests ecommerce_refund_requests[]
+  review ecommerce_reviews?
+  
+  @@index([order_id])
+  @@index([seller_id, status])
+  @@index([product_variant_id])
+}
+
+/// Represents physical shipments sent by sellers to fulfill customer orders.
+/// Each shipment contains order items from the same seller and includes
+/// tracking information for delivery confirmation.
+///
+/// Shipments are created by sellers when they prepare order fulfillment
+/// packages. A single shipment can contain multiple order items but must
+/// originate from the same seller to maintain shipping efficiency and
+/// accountability. Tracking information includes carrier details and
+/// tracking numbers that customers can use to monitor delivery progress.
+///
+/// Shipments progress through statuses: created → shipped → delivered.
+/// Delivery confirmation can be provided by customers manually or
+/// automatically after 14 days to ensure proper order status updates. {@link
+/// ecommerce_shipment_items.id} connect each shipment to specific order
+/// items being fulfilled.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller who created and manages this shipment package. Links to the seller
+  /// responsible for fulfillment and tracking updates. {@link
+  /// ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Unique tracking identifier provided by the carrier for shipment
+  /// monitoring and delivery confirmation.
+  tracking_number String
+  
+  /// Name of the shipping carrier handling this shipment (e.g., UPS, FedEx,
+  /// USPS). Limited to known carrier options for data integrity.
+  carrier_name String
+  
+  /// Current status of the shipment progression: 'created', 'shipped',
+  /// 'delivered'. Controls order item status updates and delivery confirmation
+  /// workflows.
+  shipment_status String
+  
+  /// Timestamp when the shipment record was initially created by the seller.
+  created_at DateTime
+  
+  /// Timestamp when the shipment record was last modified, including status
+  /// changes and tracking updates.
+  updated_at DateTime
+  
+  /// Timestamp when the seller confirmed the shipment was handed over to the
+  /// carrier for delivery.
+  shipped_at DateTime?
+  
+  /// Timestamp when delivery was confirmed either by customer or automatically
+  /// after 14 days.
+  delivered_at DateTime?
+  
+  /// Carrier-provided estimated delivery date for customer expectation
+  /// management.
+  estimated_delivery DateTime?
+  
+  /// Cost of shipping this particular shipment package for seller expense
+  /// tracking.
+  shipping_cost Float?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  metadataRegistryRelationshipMappings ecommerce_metadata_registry_relationship_of_shipments[]
+  shipmentItems ecommerce_shipment_items[]
+  deliveryConfirmation ecommerce_delivery_confirmations?
+  
+  @@unique([tracking_number])
+  @@index([ecommerce_seller_id, created_at])
+  @@index([shipment_status, created_at])
+}
+
+/// Association table linking shipments to the specific order items they
+/// contain. This enables sellers to bundle multiple order items into single
+/// shipments or ship items individually. Each record represents an order
+/// item included in a specific shipment package.
+///
+/// When a seller creates a shipment, they select one or more order items
+/// from their products to include. This association allows for proper
+/// tracking of which items are shipped together, enabling customers to track
+/// delivery per shipment rather than per individual item. The relationship
+/// supports the business requirement that different sellers always ship
+/// separately, while allowing sellers flexibility in how they bundle items
+/// from their own inventory.
+///
+/// This table is essential for the shipping and delivery confirmation
+/// workflow, as delivery confirmation applies to all items within a shipment
+/// simultaneously.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipment that contains this order item. {@link ecommerce_shipments.id}
+  ecommerce_shipment_id String
+  
+  /// The order item included in this shipment. {@link ecommerce_order_items.id}
+  ecommerce_order_item_id String
+  
+  /// Timestamp when this shipment-item association was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment ecommerce_shipments @relation(fields: [ecommerce_shipment_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_shipment_id, ecommerce_order_item_id], map: "ecommerce_shipment_items_ecommerce_shipment_id_ecommer_0a78db59")
+  @@index([ecommerce_shipment_id])
+  @@index([ecommerce_order_item_id])
+}
+
+/// Tracks customer delivery confirmations for shipments. When a customer
+/// confirms delivery of a shipment, all items within that shipment are
+/// marked as delivered. Confirmation records are immutable once created and
+/// serve as audit trail for delivery verification.
+///
+/// Each confirmation is tied to a specific shipment and the customer who
+/// confirmed delivery. The system uses these records to automatically update
+/// order item statuses and provides proof of delivery for dispute
+/// resolution. If customers do not manually confirm delivery within 14 days,
+/// the system automatically creates a confirmation record to mark items as
+/// delivered.
+///
+/// Delivery confirmations are critical for order completion workflows and
+/// provide legal verification that customers received their purchased items.
+/// {@link ecommerce_shipments.id} represents the shipment being confirmed,
+/// while {@link ecommerce_customers.id} identifies the confirming customer.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_delivery_confirmations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shipment being confirmed for delivery. {@link ecommerce_shipments.id}.
+  ecommerce_shipment_id String
+  
+  /// The customer who confirmed the delivery. {@link ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Timestamp when the customer confirmed delivery. Used for tracking
+  /// confirmation timing and automatic delivery logic.
+  confirmed_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  shipment ecommerce_shipments @relation(fields: [ecommerce_shipment_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_shipment_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, confirmed_at], map: "ecommerce_delivery_confirmations_ecommerce_customer_id_74e0ab7a")
+  @@index([confirmed_at])
+}
+
+/// Payment processing records and transaction status tracking for order
+/// payments.
+///
+/// This table stores all payment transaction attempts for orders, including
+/// both successful and failed payments. It integrates with external payment
+/// gateways to handle authorization, processing, and reconciliation. Each
+/// transaction record tracks the payment lifecycle from initial
+/// authorization attempt through completion or failure.
+///
+/// Payment transactions are created when customers proceed to checkout and
+/// are essential for the order creation workflow. Only successful payment
+/// transactions result in order creation and stock deduction. Failed
+/// payments can be retried, with each attempt creating a new transaction
+/// record for audit purposes.
+///
+/// The table supports multiple payment methods, gateway-specific transaction
+/// IDs, and detailed status tracking for reconciliation with external
+/// payment providers. All payment attempts are preserved for audit trails
+/// and dispute resolution.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_payment_transactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated order for this payment transaction. {@link ecommerce_orders.id}
+  order_id String?
+  
+  /// Customer who initiated the payment. {@link ecommerce_customers.id}
+  customer_id String
+  
+  /// Payment method used for this transaction (e.g., credit_card, paypal,
+  /// bank_transfer).
+  payment_method String
+  
+  /// Total payment amount in the platform's base currency.
+  amount Float
+  
+  /// Currency code for the payment transaction (e.g., USD, EUR, KRW).
+  currency String
+  
+  /// External payment gateway's transaction identifier for reconciliation.
+  gateway_transaction_id String?
+  
+  /// Name of the external payment gateway used for this transaction.
+  gateway_name String
+  
+  /// Current status of the payment transaction (pending, authorized,
+  /// completed, failed, refunded).
+  status String
+  
+  /// Reason for payment failure if the transaction was unsuccessful.
+  failure_reason String?
+  
+  /// Payment gateway authorization code for approved transactions.
+  authorization_code String?
+  
+  /// Number of payment retry attempts for this transaction sequence.
+  retry_count Int
+  
+  /// Raw response data from the payment gateway for debugging and
+  /// reconciliation.
+  gateway_response_data String?
+  
+  /// Timestamp when the payment transaction was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the payment transaction was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the payment transaction was successfully completed.
+  completed_at DateTime?
+  
+  /// Timestamp when the payment transaction failed.
+  failed_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  order ecommerce_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([gateway_transaction_id, gateway_name], map: "ecommerce_payment_transactions_gateway_transaction_id__7bc83362")
+  @@index([customer_id, created_at])
+  @@index([order_id, created_at])
+  @@index([status, created_at])
+  @@index([gateway_name, created_at])
+}
+
+/// Immutable snapshots of product and variant information specifically
+/// captured at the time of purchase. This table preserves the complete state
+/// of products, variants, and seller information as they existed when an
+/// order was placed, ensuring financial integrity and preventing disputes by
+/// maintaining purchase-time data even if products are later modified or
+/// deleted.
+///
+/// Each snapshot contains denormalized copies of all relevant product fields
+/// including name, description, base price, category information, variant
+/// details such as SKU code and option values, variant-specific pricing, and
+/// seller profile information. These snapshots are created automatically
+/// when orders are placed and serve as the authoritative record for what
+/// customers actually purchased.
+///
+/// The snapshot system is critical for the platform's financial integrity,
+/// as it prevents sellers from changing product details after purchase and
+/// ensures that customers receive exactly what they ordered. Snapshots are
+/// immutable and cannot be modified or deleted, providing a permanent audit
+/// trail for dispute resolution and legal compliance.
+///
+/// This table is referenced by {@link ecommerce_order_items} to establish
+/// the purchase-time context for each ordered item, and it maintains
+/// relationships to the original {@link ecommerce_products}, {@link
+/// ecommerce_product_variants}, and {@link ecommerce_sellers} entities that
+/// existed at the time of purchase.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_order_item_purchase_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order item that this snapshot preserves. {@link
+  /// ecommerce_order_items.id}.
+  ecommerce_order_item_id String
+  
+  /// Reference to the product as it existed at purchase time. {@link
+  /// ecommerce_products.id}.
+  ecommerce_product_id String
+  
+  /// Reference to the product variant as it existed at purchase time. {@link
+  /// ecommerce_product_variants.id}.
+  ecommerce_product_variant_id String
+  
+  /// Reference to the seller as they existed at purchase time. {@link
+  /// ecommerce_sellers.id}.
+  ecommerce_seller_id String
+  
+  /// The product name as it existed at the time of purchase. This is preserved
+  /// even if the product name is later changed by the seller.
+  product_name String
+  
+  /// The product description as it existed at the time of purchase. This
+  /// preserves the exact description customers saw when making their purchase
+  /// decision.
+  product_description String
+  
+  /// The product's base price as it existed at the time of purchase. This
+  /// serves as the reference price before any variant-specific pricing is
+  /// applied.
+  product_base_price Float
+  
+  /// The SKU code of the purchased variant as it existed at purchase time.
+  /// This ensures the exact variant identification is preserved.
+  variant_sku String
+  
+  /// The combination of option values for the purchased variant (e.g.,
+  /// 'Red/Large'). This preserves the specific variant configuration chosen by
+  /// the customer.
+  variant_option_values String
+  
+  /// The actual price paid for this specific variant at purchase time. This
+  /// may differ from the product base price if variant-specific pricing was
+  /// applied.
+  variant_price Float
+  
+  /// The seller's shop name as it existed at the time of purchase. This
+  /// preserves the shop identity that customers trusted when making their
+  /// purchase.
+  seller_shop_name String
+  
+  /// The seller's shop description as it existed at the time of purchase. This
+  /// maintains the seller's reputation context at the moment of transaction.
+  seller_shop_description String?
+  
+  /// The category name that the product belonged to at purchase time. This
+  /// preserves the product categorization context for historical reference.
+  category_name String
+  
+  /// The category description as it existed at purchase time. This maintains
+  /// the categorization context that influenced the customer's purchase
+  /// decision.
+  category_description String?
+  
+  /// Timestamp when this purchase snapshot was created, which corresponds to
+  /// the moment the order was successfully placed and payment was processed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
+  variant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_product_variant_id], map: "ecommerce_order_item_purchase_snapshots_ecommerce_prod_89637d11")
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_order_item_id], map: "ecommerce_order_item_purchase_snapshots_ecommerce_orde_335fcdc2")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_product_id, created_at], map: "ecommerce_order_item_purchase_snapshots_ecommerce_prod_08b019fb")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_order_item_purchase_snapshots_ecommerce_sell_8b80c480")
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of order item status changes throughout the
+/// order lifecycle.
+///
+/// This table captures every status transition for individual order items,
+/// providing a complete audit trail for order processing workflows. Each
+/// record documents when an order item moved between core lifecycle states:
+/// 'paid' (payment completed), 'shipped' (seller dispatched), 'delivered'
+/// (customer received), 'cancelled' (pre-shipment cancellation), or
+/// 'refunded' (post-delivery refund). This audit trail is essential for
+/// dispute resolution, performance analysis, and understanding the complete
+/// order processing timeline.
+///
+/// The status history maintains referential integrity with {@link
+/// ecommerce_order_items.id} and supports status change analysis across the
+/// platform. It enables tracking of processing times, identifying
+/// bottlenecks, and providing customers with detailed order progress
+/// information.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_order_item_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the specific order item whose status change is being tracked.
+  /// {@link ecommerce_order_items.id}
+  ecommerce_order_item_id String
+  
+  /// The status of the order item before this transition. Null for the initial
+  /// 'paid' status when order is first created.
+  previous_status String?
+  
+  /// The status the order item transitioned to during this change event. Must
+  /// be one of: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'.
+  new_status String
+  
+  /// Timestamp when this status transition occurred, recorded with timezone
+  /// information for accurate chronological ordering.
+  created_at DateTime
+  
+  /// Optional description explaining why the status change occurred,
+  /// particularly useful for cancellations and refunds requiring reason
+  /// specification.
+  reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_order_item_id, created_at], map: "ecommerce_order_item_status_histories_ecommerce_order__814f8520")
+  @@index([new_status, created_at])
+}

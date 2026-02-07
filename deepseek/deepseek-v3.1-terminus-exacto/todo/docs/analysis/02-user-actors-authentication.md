@@ -1,331 +1,290 @@
 # User Actors and Authentication Requirements
 
-## Document Overview
+## Introduction
 
-This document defines the complete authentication and authorization system for the Multi-User Todo Application. It specifies user actor definitions, authentication workflows, security requirements, and privacy guarantees that ensure each user's data remains completely private and secure.
+This document defines the user actors, authentication requirements, and account management workflows for the multi-user Todo application. The system provides a private, personal task management solution where each user's data is completely isolated from other users.
 
-## User Actor Definition
+## User Actor Definitions
 
-### Primary User Actor
+### Authenticated User
 
-The application supports a single primary user actor:
+The primary actor in the Todo application is the authenticated user who manages personal todos, profile settings, and account operations.
 
-**User** - Authenticated individuals who can manage their personal todo lists
-
-**Capabilities:**
-- Create, view, edit, and delete their own todos
-- Manage todo completion status
-- View edit history of their todos
-- Access trash management functionality
-- Manage their personal profile information
-
-**Restrictions:**
-- Cannot view, access, or modify any other user's data
-- Cannot share or collaborate on todos with other users
-- Cannot access system-level administration functions
-
-## Authentication System Requirements
-
-### Core Authentication Functions
-
-**WHEN a user registers for an account, THE system SHALL create a new user account with email verification.**
-
-**WHEN a user logs in with valid credentials, THE system SHALL authenticate the user and establish a secure session.**
-
-**WHEN a user logs out, THE system SHALL terminate the user session and invalidate authentication tokens.**
-
-**THE system SHALL maintain user sessions securely with appropriate token expiration.**
-
-**WHEN authentication fails, THE system SHALL provide appropriate error messages without revealing sensitive information.**
-
-### Registration Requirements
-
-**WHEN a new user registers, THE system SHALL:**
-- Validate email format and uniqueness
-- Validate password strength requirements
-- Create user account with initial profile
-- Send email verification if required
-- Generate secure authentication tokens
-
-**Registration Data Requirements:**
-- Email address (unique identifier)
-- Password (minimum 8 characters with complexity)
-- Display name (optional, defaults to email username)
-
-### Login Requirements
-
-**WHEN a user attempts to log in, THE system SHALL:**
-- Validate email format
-- Verify password against stored hash
-- Check account status (active/suspended)
-- Generate new authentication tokens
-- Record login activity
-- Return user profile information
-
-**Login Response SHALL Include:**
-- User ID
-- Display name
-- Authentication tokens
-- Account status
-
-## Password Management
-
-### Password Change
-
-**WHEN a user requests to change their password, THE system SHALL:**
-- Verify current password
-- Validate new password meets complexity requirements
-- Update password hash securely
-- Invalidate existing sessions if required by security policy
-- Send confirmation notification
-
-**Password Complexity Requirements:**
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one number
-- At least one special character
-
-### Password Reset
-
-**WHEN a user requests password reset, THE system SHALL:**
-- Verify email address exists
-- Generate secure reset token with expiration
-- Send reset instructions to verified email
-- Allow password reset within specified time window
-- Require re-authentication after successful reset
-
-## Account Deletion Process
-
-### User-Initiated Account Deletion
-
-**WHEN a user requests account deletion, THE system SHALL:**
-- Require password confirmation for security
-- Permanently delete all user data including:
-  - User profile information
-  - All todos (including those in trash)
-  - All todo edit history
-  - User session data
-- Remove user from authentication systems
-- Send confirmation of account deletion
-
-**Data Cleanup Requirements:**
-- Immediate removal of all user-related data
-- No retention period for deleted accounts
-- Complete eradication of user presence from system
-- Audit trail of account deletion event
-
-### Soft Delete vs Permanent Delete
-
-**WHEN a user deletes a todo, THE system SHALL move it to trash (soft delete).**
-
-**WHEN a user permanently deletes from trash, THE system SHALL remove the todo and its history permanently.**
-
-**WHEN a user deletes their account, THE system SHALL perform permanent deletion of all data.**
-
-## Privacy and Security Requirements
-
-### Data Privacy Enforcement
-
-**THE system SHALL ensure complete data isolation between users.**
-
-**WHEN any data access request occurs, THE system SHALL verify the requesting user owns the data.**
-
-**THE system SHALL prevent any cross-user data visibility or access.**
-
-### Authentication Token Management
-
-**JWT Token Requirements:**
-- Token type: JSON Web Tokens (JWT)
-- Access token expiration: 30 minutes
-- Refresh token expiration: 7 days
-- Token storage: Secure httpOnly cookies
-- Token payload must include: userId, role, permissions
+**Actor Characteristics:**
+- **Name**: User
+- **Type**: Member
+- **Description**: Authenticated user who can manage personal todos, profile, and account settings
+- **Permissions**: Full access to own todos, profile data, and account operations
 
 **JWT Payload Structure:**
 ```json
 {
-  "userId": "unique-user-id",
+  "userId": "unique-user-identifier",
   "role": "user",
-  "permissions": ["todo:create", "todo:read", "todo:update", "todo:delete"],
-  "iat": 1234567890,
-  "exp": 1234567890
+  "permissions": ["todo:create", "todo:read", "todo:update", "todo:delete", "profile:manage", "account:manage"]
 }
 ```
 
-### Session Security
+## Authentication Requirements
 
-**THE system SHALL implement secure session management with:**
-- HTTPS-only communication
-- Secure cookie flags (HttpOnly, Secure, SameSite)
-- Session timeout after 30 minutes of inactivity
-- Automatic token refresh mechanisms
-- Protection against session hijacking
+### User Registration
+
+**WHEN** a new user attempts to register, **THE** system **SHALL** validate the email format and password strength.
+
+**Registration Process:**
+1. User provides email address and password
+2. System validates email format and ensures uniqueness
+3. System validates password meets security requirements
+4. User account is created with default profile settings
+5. Email verification is sent to the provided address
+
+**EARS Requirements:**
+- **WHEN** a user submits registration information, **THE** system **SHALL** validate that the email is unique and properly formatted.
+- **WHEN** email validation fails, **THE** system **SHALL** return an appropriate error message.
+- **WHEN** password validation fails, **THE** system **SHALL** indicate the specific security requirements not met.
+
+### User Login
+
+**WHEN** a user attempts to log in, **THE** system **SHALL** authenticate credentials and establish a secure session.
+
+**Login Process:**
+1. User enters email and password
+2. System verifies credentials against stored data
+3. System generates JWT token with user information
+4. User session is established with appropriate permissions
+
+**EARS Requirements:**
+- **WHEN** valid credentials are provided, **THE** system **SHALL** generate a JWT token and establish user session.
+- **IF** credentials are invalid, **THEN THE** system **SHALL** return authentication failure without indicating whether email or password was incorrect.
+- **WHILE** a user is authenticated, **THE** system **SHALL** maintain session security and validate token integrity.
+
+### Session Management
+
+**THE** system **SHALL** implement secure session management with token expiration and refresh capabilities.
+
+**Token Specifications:**
+- **Access Token Expiration**: 30 minutes
+- **Refresh Token Expiration**: 30 days
+- **Token Storage**: Secure HTTP-only cookies
+- **Token Rotation**: Refresh tokens are rotated on each use
+
+**EARS Requirements:**
+- **WHEN** an access token expires, **THE** system **SHALL** allow token refresh using a valid refresh token.
+- **IF** a refresh token is compromised, **THEN THE** system **SHALL** invalidate all tokens for that user.
+- **WHILE** a user session is active, **THE** system **SHALL** validate token authenticity on each request.
+
+## Account Management Workflows
+
+### Password Change
+
+**WHEN** a user requests to change their password, **THE** system **SHALL** verify current password and apply new password securely.
+
+**Password Change Process:**
+1. User provides current password for verification
+2. User enters new password meeting security requirements
+3. System validates new password strength
+4. Password is updated and all active sessions are notified
+5. User receives confirmation of successful password change
+
+**EARS Requirements:**
+- **WHEN** a user submits a password change request, **THE** system **SHALL** require current password verification.
+- **IF** current password verification fails, **THEN THE** system **SHALL** deny the password change request.
+- **WHERE** password changes occur, **THE** system **SHALL** enforce password security requirements.
+
+### Account Deletion
+
+**WHEN** a user requests account deletion, **THE** system **SHALL** permanently remove all user data including todos and edit history.
+
+**Account Deletion Process:**
+1. User confirms account deletion intention
+2. System performs comprehensive data cleanup:
+   - Permanent deletion of all user todos
+   - Removal of todo edit history
+   - Deletion of user profile data
+   - Invalidation of all active sessions
+3. User receives confirmation of account deletion
+4. All data is irrecoverably removed from the system
+
+**EARS Requirements:**
+- **WHEN** account deletion is confirmed, **THE** system **SHALL** permanently remove all user-associated data.
+- **IF** deletion confirmation is not provided, **THEN THE** system **SHALL** cancel the deletion process.
+- **WHERE** account deletion occurs, **THE** system **SHALL** ensure complete data removal including items in trash.
+
+## Profile Management Requirements
+
+### User Profile Structure
+
+Each user has a profile containing:
+- Display name (required)
+- Email address (immutable after registration)
+- Account creation timestamp
+- Last profile update timestamp
+
+**EARS Requirements:**
+- **THE** user profile **SHALL** contain a display name that can be edited by the user.
+- **WHEN** a user updates their display name, **THE** system **SHALL** record the update timestamp.
+- **WHERE** profile information exists, **THE** system **SHALL** ensure it is only accessible to the profile owner.
+
+### Profile Editing
+
+**WHEN** a user edits their profile, **THE** system **SHALL** validate changes and update the profile information.
+
+**Profile Editing Process:**
+1. User accesses profile editing interface
+2. User modifies display name
+3. System validates the new display name
+4. Profile is updated with new information
+5. Update timestamp is recorded
+
+**EARS Requirements:**
+- **WHEN** a user submits profile changes, **THE** system **SHALL** validate the display name format.
+- **IF** display name validation fails, **THEN THE** system **SHALL** return specific validation errors.
+- **WHILE** profile editing is in progress, **THE** system **SHALL** maintain data consistency.
 
 ## Permission Matrix
 
-| Action | User |
-|--------|------|
-| Register new account | ✅ |
-| Login to account | ✅ |
-| Logout from account | ✅ |
-| View own profile | ✅ |
-| Edit own profile | ✅ |
-| Change password | ✅ |
-| Delete own account | ✅ |
-| Create todos | ✅ |
-| View own todos | ✅ |
-| Edit own todos | ✅ |
-| Delete own todos | ✅ |
+| Action | Authenticated User |
+|--------|-------------------|
+| Create new todo | ✅ |
+| View own todo list | ✅ |
+| View single todo details | ✅ |
+| Edit own todo | ✅ |
+| Mark todo complete/incomplete | ✅ |
+| Delete todo (soft delete) | ✅ |
+| View trash (deleted todos) | ✅ |
+| Restore todo from trash | ✅ |
+| Permanently delete todo from trash | ✅ |
 | View todo edit history | ✅ |
-| Access trash | ✅ |
-| Restore from trash | ✅ |
-| Permanently delete from trash | ✅ |
+| Filter todos by status | ✅ |
+| Sort todos by various criteria | ✅ |
+| Edit user profile | ✅ |
+| Change password | ✅ |
+| Delete user account | ✅ |
 | View other users' data | ❌ |
 | Modify other users' data | ❌ |
-| System administration | ❌ |
 
-## Error Handling Scenarios
+## Security Considerations
 
-### Authentication Failures
+### Data Privacy
 
-**IF invalid credentials are provided during login, THEN THE system SHALL return generic error message.**
+**THE** system **SHALL** ensure complete data isolation between users.
 
-**IF account is locked or suspended, THEN THE system SHALL inform user appropriately.**
+**EARS Requirements:**
+- **WHERE** user data exists, **THE** system **SHALL** enforce strict access controls.
+- **WHEN** data access is attempted, **THE** system **SHALL** verify user ownership.
+- **IF** unauthorized access is detected, **THEN THE** system **SHALL** log the attempt and deny access.
 
-**IF authentication token is expired, THEN THE system SHALL require re-authentication.**
+### Authentication Security
 
-### Security Violations
+**THE** system **SHALL** implement industry-standard authentication security measures.
 
-**IF unauthorized data access is attempted, THEN THE system SHALL log the event and deny access.**
+**Security Measures:**
+- Password hashing with salt and appropriate work factor
+- Rate limiting on authentication attempts
+- Secure token transmission (HTTPS only)
+- Session timeout enforcement
+- Cross-site request forgery (CSRF) protection
 
-**IF multiple failed login attempts occur, THEN THE system SHALL implement temporary account lockout.**
+**EARS Requirements:**
+- **WHEN** authentication attempts exceed reasonable limits, **THE** system **SHALL** implement temporary lockouts.
+- **WHERE** passwords are stored, **THE** system **SHALL** use secure hashing algorithms.
+- **WHILE** user sessions are active, **THE** system **SHALL** protect against session hijacking.
 
-## Business Rules and Constraints
+### Error Handling
 
-### Account Management Rules
+**WHEN** authentication errors occur, **THE** system **SHALL** provide appropriate feedback without revealing sensitive information.
 
-**WHILE a user account is active, THE system SHALL maintain complete data privacy.**
+**Error Scenarios:**
+- Invalid credentials: Generic error message
+- Account locked: Temporary lockout notification
+- Token expiration: Redirect to login
+- Permission denied: Access denied message
 
-**WHERE account deletion is requested, THE system SHALL perform complete data removal.**
+**EARS Requirements:**
+- **IF** authentication fails, **THEN THE** system **SHALL** return generic error messages.
+- **WHEN** permission checks fail, **THE** system **SHALL** log the attempt and deny access.
+- **WHERE** security incidents occur, **THE** system **SHALL** follow established security protocols.
 
-**THE system SHALL enforce email uniqueness across all user accounts.**
+## Token Management Strategy
 
-### Privacy Enforcement Rules
+### JWT Implementation
 
-**THE system SHALL implement row-level security ensuring users can only access their own data.**
+**THE** system **SHALL** use JSON Web Tokens (JWT) for authentication with the following specifications:
 
-**WHERE data queries are executed, THE system SHALL automatically filter by user ID.**
+**Access Token:**
+- Type: JWT
+- Expiration: 30 minutes
+- Claims: userId, role, permissions, iat, exp
+- Signature: HMAC SHA-256
 
-**THE system SHALL audit all data access attempts for security monitoring.**
+**Refresh Token:**
+- Type: JWT  
+- Expiration: 30 days
+- Storage: Secure HTTP-only cookie
+- Rotation: New token issued on each refresh
 
-## Performance Requirements
+**EARS Requirements:**
+- **WHEN** a token is issued, **THE** system **SHALL** include necessary claims for authorization.
+- **IF** token validation fails, **THEN THE** system **SHALL** require re-authentication.
+- **WHERE** token management occurs, **THE** system **SHALL** follow secure token practices.
 
-### Authentication Performance
-
-**THE system SHALL authenticate users within 2 seconds under normal load.**
-
-**THE system SHALL handle concurrent login requests from multiple users.**
-
-**THE system SHALL maintain session state efficiently for active users.**
-
-### Security Performance
-
-**THE system SHALL perform password hashing with appropriate computational cost.**
-
-**THE system SHALL validate JWT tokens efficiently without database queries.**
-
-**THE system SHALL implement rate limiting for authentication endpoints.**
-
-## Implementation Considerations
-
-### Authentication Flow Diagram
+### Token Refresh Flow
 
 ```mermaid
 graph LR
-  A["User Registration"] --> B["Email Verification"]
-  B --> C["Account Activation"]
-  D["User Login"] --> E["Credential Validation"]
-  E --> F["Token Generation"]
-  F --> G["Session Establishment"]
-  H["API Request"] --> I["Token Validation"]
-  I --> J["User Context Setup"]
-  J --> K["Data Access with Filtering"]
-  L["User Logout"] --> M["Token Invalidation"]
-  M --> N["Session Cleanup"]
+  A["User Request with Expired Token"] --> B{"Valid Refresh Token?"}
+  B -->|"Yes"| C["Issue New Access Token"]
+  C --> D["Rotate Refresh Token"]
+  D --> E["Process User Request"]
+  B -->|"No"| F["Require Re-authentication"]
+  F --> G["Redirect to Login"]
 ```
-
-### Data Access Security Pattern
-
-**THE system SHALL implement automatic user-based data filtering:**
-- All database queries must include user ID filter
-- API endpoints must validate user ownership of requested resources
-- No direct database access without authentication context
-
-### Audit and Monitoring
-
-**THE system SHALL log all authentication events including:**
-- Successful and failed login attempts
-- Password change requests
-- Account deletion events
-- Suspicious activity patterns
-
-## Enhanced Security Considerations
-
-### Multi-Factor Authentication (Future Enhancement)
-
-**THE system SHALL support optional multi-factor authentication for enhanced security.**
-
-**WHERE MFA is enabled, THE system SHALL require secondary verification during login.**
-
-### Session Management Enhancements
-
-**THE system SHALL provide session management capabilities allowing users to:**
-- View active sessions
-- Terminate specific sessions remotely
-- Receive notifications for suspicious login attempts
-
-### Security Event Monitoring
-
-**THE system SHALL implement comprehensive security event monitoring:**
-- Real-time detection of unusual login patterns
-- Automated alerts for potential security breaches
-- Detailed audit logs for forensic analysis
 
 ## User Experience Requirements
 
-### Authentication Flow User Experience
+### Authentication Flow
 
-**THE system SHALL provide intuitive authentication interfaces:**
-- Clear error messages for failed authentication attempts
-- Progressive disclosure of complexity requirements during registration
-- Seamless password recovery workflows
-- Consistent authentication experience across all application interfaces
+**THE** authentication process **SHALL** provide clear feedback and intuitive user experience.
 
-### Account Management User Experience
+**Performance Expectations:**
+- Login response time: Under 2 seconds
+- Registration processing: Under 3 seconds
+- Password change: Under 2 seconds
+- Profile updates: Under 1 second
 
-**THE system SHALL ensure account management features are accessible:**
-- Easy-to-find account deletion options
-- Clear confirmation dialogs for destructive operations
-- Comprehensive profile management capabilities
-- Intuitive password change workflows
+**EARS Requirements:**
+- **WHEN** users interact with authentication features, **THE** system **SHALL** provide immediate feedback.
+- **WHERE** authentication processes occur, **THE** system **SHALL** maintain responsive performance.
+- **IF** authentication processes experience delays, **THEN THE** system **SHALL** provide progress indicators.
 
-## Compliance and Regulatory Requirements
+### Error Recovery
 
-### Data Protection Compliance
+**WHEN** authentication errors occur, **THE** system **SHALL** provide clear recovery paths.
 
-**THE system SHALL comply with relevant data protection regulations:**
-- Implement appropriate data minimization practices
-- Provide user data export capabilities
-- Support right-to-erasure requests
-- Maintain transparent data processing practices
+**Recovery Scenarios:**
+- Invalid credentials: Clear instructions for correction
+- Account lockout: Information about lockout duration
+- Token expiration: Smooth redirect to login
+- Network errors: Retry mechanisms with guidance
 
-### Security Standards Compliance
+**EARS Requirements:**
+- **WHEN** authentication failures occur, **THE** system **SHALL** provide actionable recovery steps.
+- **IF** users encounter repeated authentication issues, **THEN THE** system **SHALL** offer alternative authentication methods.
+- **WHERE** error recovery is needed, **THE** system **SHALL** maintain user confidence and trust.
 
-**THE system SHALL adhere to industry security standards:**
-- Implement OWASP security guidelines
-- Follow secure coding practices
-- Regular security vulnerability assessments
-- Penetration testing and security audits
+## Compliance and Standards
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+**THE** system **SHALL** adhere to relevant security and privacy standards.
+
+**Applicable Standards:**
+- OWASP Authentication Security Guidelines
+- GDPR compliance for user data protection
+- Industry best practices for password security
+- Secure session management standards
+
+**EARS Requirements:**
+- **WHERE** user data is processed, **THE** system **SHALL** comply with data protection regulations.
+- **WHEN** authentication mechanisms are implemented, **THE** system **SHALL** follow security best practices.
+- **IF** compliance requirements change, **THEN THE** system **SHALL** adapt authentication processes accordingly.
+
+This document defines the complete authentication and user management requirements for the multi-user Todo application. All technical implementation decisions, including specific API designs, database schemas, and architectural choices, are at the discretion of the development team based on these business requirements.

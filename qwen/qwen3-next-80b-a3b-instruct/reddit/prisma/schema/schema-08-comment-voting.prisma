@@ -1,0 +1,37 @@
+/// Materialized view for performance optimization of comment vote scoring.
+/// Stores the aggregated total upvotes, total downvotes, and net score for
+/// each comment. Updated atomically whenever votes are added, changed, or
+/// removed. This table enables efficient sorting of comments by 'Best'
+/// algorithm without real-time calculation. Only maintained by system
+/// processes, not direct user operations.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_comment_vote_summaries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment this summary belongs to. {@link
+  /// community_comments.id}.
+  community_comment_id String
+  
+  /// Total number of upvotes on this comment.
+  total_upvotes Int
+  
+  /// Total number of downvotes on this comment.
+  total_downvotes Int
+  
+  /// Net vote score calculated as total_upvotes - total_downvotes. Used for
+  /// 'Best' comment sorting algorithm.
+  net_score Int
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_comments @relation(fields: [community_comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_comment_id])
+  @@index([net_score])
+}

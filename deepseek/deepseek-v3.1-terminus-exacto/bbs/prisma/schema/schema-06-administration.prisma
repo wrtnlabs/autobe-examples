@@ -1,0 +1,372 @@
+/// Tracks administrator promotion requests with workflow status and approval
+/// tracking.
+///
+/// This table stores the complete lifecycle of administrator promotion
+/// requests, from initial submission through super administrator review to
+/// final decision. Each request includes the user's justification for
+/// seeking administrator status, current workflow state, and timestamps for
+/// audit purposes. The table supports the hierarchical administrator system
+/// by enabling super administrators to review and process promotion requests
+/// according to platform governance policies.
+///
+/// Promotion requests transition through pending, approved, or rejected
+/// states, with detailed tracking of decision timestamps and reviewer
+/// information. This ensures compliance with the administrator promotion
+/// process requirements and maintains a complete audit trail of all
+/// promotion activities.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the promotion request. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Administrator record created when request is approved, or null if
+  /// pending/rejected. {@link discussion_board_administrators.id}
+  discussion_board_administrator_id String?
+  
+  /// User-provided justification for seeking administrator status, between
+  /// 50-500 characters as required.
+  reason String
+  
+  /// Current workflow status: 'pending', 'approved', or 'rejected'.
+  status String
+  
+  /// Timestamp when the promotion request was approved by a super
+  /// administrator.
+  approved_at DateTime?
+  
+  /// Timestamp when the promotion request was rejected by a super
+  /// administrator.
+  rejected_at DateTime?
+  
+  /// Super administrator who reviewed and decided on the promotion request.
+  /// {@link discussion_board_super_admins.id}
+  reviewer_discussion_board_super_admin_id String?
+  
+  /// Optional notes from the super administrator explaining the approval or
+  /// rejection decision.
+  reviewer_notes String?
+  
+  /// Timestamp when the promotion request was initially submitted.
+  created_at DateTime
+  
+  /// Timestamp when the promotion request was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators? @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  approvals discussion_board_administrator_promotion_approvals[]
+  workflowTransitions discussion_board_promotion_request_workflows[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_id], map: "discussion_board_administrator_promotion_requests_disc_c8519619")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_administrator_promotion_requests_disc_b4559960")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "discussion_board_administrator_promotion_requests_stat_f24c0968")
+  // spellchecker: ignore-next-line
+  @@index([reviewer_discussion_board_super_admin_id, approved_at], map: "discussion_board_administrator_promotion_requests_revi_b5619ce4")
+}
+
+/// Central record for administrator assignments and grade management. Tracks
+/// which users have administrator privileges, their current grade level
+/// (regular or super administrator), and maintains promotion/demotion
+/// history. This table serves as the authoritative source for administrator
+/// status across the platform.
+///
+/// Each record represents an administrator assignment for a specific user,
+/// linking to the appropriate authentication tables based on the current
+/// grade level. The table supports the hierarchical administrator system
+/// where super administrators can promote regular administrators and manage
+/// grade changes.
+///
+/// {@link discussion_board_users.id} provides the base user identity, while
+/// {@link discussion_board_admins.id} and {@link
+/// discussion_board_super_admins.id} link to the appropriate authentication
+/// tables based on the current administrator grade.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user's base identity. {@link discussion_board_users.id}
+  user_id String
+  
+  /// Reference to regular administrator authentication when applicable. {@link
+  /// discussion_board_admins.id}
+  admin_id String?
+  
+  /// Reference to super administrator authentication when applicable. {@link
+  /// discussion_board_super_admins.id}
+  super_admin_id String?
+  
+  /// Current administrator grade level. Valid values: 'regular' for regular
+  /// administrators, 'super' for super administrators.
+  grade String
+  
+  /// Timestamp when the user was first promoted to administrator status.
+  promoted_at DateTime
+  
+  /// Timestamp of the most recent grade change (promotion to super admin or
+  /// demotion to regular admin).
+  grade_changed_at DateTime?
+  
+  /// Indicates whether the administrator assignment is currently active.
+  /// Inactive assignments represent historical records.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for archiving administrator assignments.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
+  
+  promotionApprovals discussion_board_administrator_promotion_approvals[]
+  promotionRequest discussion_board_administrator_promotion_requests?
+  capabilities discussion_board_administrator_capabilities[]
+  
+  @@index([admin_id])
+  @@index([super_admin_id])
+  
+  @@unique([user_id])
+  @@index([grade, is_active])
+  @@index([promoted_at])
+  @@index([grade_changed_at])
+}
+
+/// Tracks user banning actions with comprehensive audit trail support.
+///
+/// This table records all user bans issued by administrators, including the
+/// ban reason, duration, status, and the administrator who performed the
+/// ban. It supports both temporary and permanent bans, tracks ban appeals,
+/// and provides administrators with complete visibility into ban history and
+/// current ban statuses.
+///
+/// Each ban record links to the banned user and the administrator who issued
+/// the ban, creating a complete audit trail for moderation actions. The
+/// table supports the requirement that banned users' content remains visible
+/// while preventing them from logging in.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who is banned. {@link discussion_board_users.id}
+  banned_user_id String
+  
+  /// Reference to the administrator who issued the ban. {@link
+  /// discussion_board_admins.id}
+  banning_administrator_id String
+  
+  /// Detailed explanation of why the user was banned, as entered by the
+  /// administrator.
+  ban_reason String
+  
+  /// Type of ban duration: 'temporary' for time-limited bans or 'permanent'
+  /// for indefinite bans.
+  ban_duration_type String
+  
+  /// Number of days for temporary bans. Null for permanent bans.
+  ban_duration_days Int?
+  
+  /// Timestamp when the ban was issued and became effective.
+  ban_started_at DateTime
+  
+  /// Timestamp when the ban expires for temporary bans. Null for permanent
+  /// bans.
+  ban_ends_at DateTime?
+  
+  /// Current status of the ban: 'active', 'expired', 'revoked', or 'appealed'.
+  ban_status String
+  
+  /// Status of any ban appeal: 'none', 'pending', 'under_review', 'approved',
+  /// or 'rejected'.
+  appeal_status String
+  
+  /// Reason provided by the user for appealing the ban, if applicable.
+  appeal_reason String?
+  
+  /// Timestamp when the appeal was reviewed by an administrator.
+  appeal_reviewed_at DateTime?
+  
+  /// Reference to the administrator who reviewed the appeal. {@link
+  /// discussion_board_admins.id}
+  appeal_reviewer_id String?
+  
+  /// Explanation provided by the administrator for the appeal decision.
+  appeal_decision_reason String?
+  
+  /// Timestamp when the ban was revoked by an administrator.
+  revoked_at DateTime?
+  
+  /// Reference to the administrator who revoked the ban. {@link
+  /// discussion_board_admins.id}
+  revoked_by_id String?
+  
+  /// Reason provided for revoking the ban.
+  revocation_reason String?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  bannedUser discussion_board_users @relation(fields: [banned_user_id], references: [id], onDelete: Cascade)
+  banningAdministrator discussion_board_admins @relation(fields: [banning_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([banned_user_id, ban_status])
+  // spellchecker: ignore-next-line
+  @@index([banning_administrator_id, created_at], map: "discussion_board_user_bans_banning_administrator_id_cr_9d025303")
+  @@index([ban_status, ban_ends_at])
+  @@index([appeal_status, created_at])
+}
+
+/// Tracks the workflow status and transitions for administrator promotion
+/// requests.
+///
+/// This table maintains the complete lifecycle of promotion requests from
+/// initial submission through review and final decision. Each workflow
+/// record represents a specific status change in the promotion request
+/// process, allowing for audit trail and status tracking.
+///
+/// Workflow records are created whenever a promotion request changes status,
+/// providing a comprehensive history of the review process. This enables
+/// administrators to track how long requests spend in each status and
+/// identify bottlenecks in the approval workflow.
+///
+/// {@link discussion_board_administrator_promotion_requests.id}
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_promotion_request_workflows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The promotion request being tracked in this workflow. {@link
+  /// discussion_board_administrator_promotion_requests.id}
+  discussion_board_administrator_promotion_request_id String
+  
+  /// Current workflow status of the promotion request. Valid values:
+  /// 'pending', 'under_review', 'approved', 'rejected'
+  status String
+  
+  /// Optional notes or comments about the status change for audit purposes.
+  notes String?
+  
+  /// Timestamp when this workflow status was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  promotionRequest discussion_board_administrator_promotion_requests @relation(fields: [discussion_board_administrator_promotion_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_promotion_request_id, created_at], map: "discussion_board_promotion_request_workflows_discussio_f73ddb29")
+  @@index([status])
+}
+
+/// Records specific capabilities assigned to administrators and their
+/// permission levels.
+///
+/// This table enables granular permission management by tracking which
+/// capabilities each administrator possesses and at what permission level.
+/// Assigns different administrative capabilities (e.g., content moderation,
+/// user management, section administration) to individual administrators
+/// with specific permission levels.
+///
+/// Each capability assignment is timestamped for audit purposes and supports
+/// soft deletion for capability revocation. Administrators can have multiple
+/// capabilities assigned, and capabilities can be assigned to multiple
+/// administrators.
+///
+/// Relationships:
+/// - References {@link discussion_board_administrators.id} for the parent
+/// administrator record
+/// - Maintains unique constraints to prevent duplicate capability
+/// assignments per administrator
+/// - Supports capability tracking and permission level management for audit
+/// purposes
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_capabilities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent administrator record. {@link
+  /// discussion_board_administrators.id}.
+  discussion_board_administrator_id String
+  
+  /// Type of capability being assigned (e.g., 'content_moderation',
+  /// 'user_management', 'section_admin', 'system_config').
+  capability_type String
+  
+  /// Permission level for the capability (e.g., 'read_only', 'full_access',
+  /// 'limited_scope').
+  permission_level String
+  
+  /// Identifier of the administrator who assigned this capability.
+  assigned_by String
+  
+  /// Timestamp when the capability was assigned.
+  created_at DateTime
+  
+  /// Timestamp when the capability assignment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the capability was revoked (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_id, capability_type], map: "discussion_board_administrator_capabilities_discussion_23db3fa3")
+  // spellchecker: ignore-next-line
+  @@index([assigned_by, created_at], map: "discussion_board_administrator_capabilities_assigned_b_b8d38f6e")
+}

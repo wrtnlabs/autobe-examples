@@ -1,0 +1,687 @@
+/// Main table storing citizen account information including email, password
+/// hash, display name, bio, and account status (active/banned/deleted).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication. Must be verified before account
+  /// activation.
+  email String
+  
+  /// bcrypt hash of the user's password for secure authentication.
+  password_hash String
+  
+  /// Publicly visible name for profile presentation. Must be unique among all
+  /// citizens.
+  display_name String
+  
+  /// Optional personal bio text displayed on user profile. Limited to 500
+  /// characters.
+  bio String?
+  
+  /// Timestamp when the citizen account was created. Always set to current
+  /// server time in Asia/Seoul timezone.
+  created_at DateTime
+  
+  /// Timestamp when the citizen account was last updated. Automatically
+  /// updated on any profile change.
+  updated_at DateTime
+  
+  /// Timestamp when the account was deleted (soft delete). Null indicates
+  /// active account.
+  deleted_at DateTime?
+  
+  /// Timestamp when the account was banned. Null indicates account is not
+  /// banned.
+  banned_at DateTime?
+  
+  /// Boolean flag indicating whether email verification has been completed.
+  /// Defaults to false on account creation.
+  is_verified Boolean
+  
+  /// Boolean flag indicating whether account is currently banned. Maintained
+  /// for query performance and synchronization with banned_at timestamp.
+  is_banned Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  sessions economic_board_citizen_sessions[]
+  passwordResets economic_board_citizen_password_resets[]
+  profile economic_board_profiles?
+  articles economic_board_articles[]
+  uploadedFiles economic_board_article_files[]
+  comments economic_board_comments[]
+  bans economic_board_bans[]
+  fileAttachments economic_board_file_attachments[]
+  adminRequests economic_board_admin_requests[]
+  
+  @@unique([email])
+  @@unique([display_name])
+}
+
+/// Stores JWT access and refresh tokens for citizen sessions, with creation
+/// and expiration timestamps for session management.
+///
+/// This is a session table that maintains the authentication state of
+/// citizens. Each record represents a single login session and contains
+/// connection metadata to track where and when users logged in. Session
+/// tables only maintain connection context and temporal information - they
+/// do not store user profile data or authentication credentials.
+///
+/// Session records are created during authentication and invalidated during
+/// logout or expiration. The expired_at field ensures sessions have limited
+/// lifetimes for security, while the created_at field allows auditing of
+/// login patterns.
+///
+/// This table is referenced exclusively by the authentication flow and is
+/// never directly accessed by business logic or frontend interfaces.
+/// Instead, users interact with the system using JWT tokens obtained from
+/// these sessions.
+///
+/// @link economic_board_citizens.id
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizen_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen who owns this session. {@link economic_board_citizens.id}.
+  economic_board_citizen_id String
+  
+  /// The IP address from which the session was initiated. Used for security
+  /// auditing and geolocation purposes.
+  ip String
+  
+  /// The URL path the user was visiting when initiating the session. Tracks
+  /// user entry point into the system.
+  href String
+  
+  /// The previous web page that linked to the authentication endpoint. Used
+  /// for traffic analysis and security detection.
+  referrer String
+  
+  /// Timestamp when this session was created. This field is mandatory for all
+  /// session records to enable auditing of login events.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Sessions have a limited lifetime for
+  /// security. When expired_at is reached, the session is no longer valid and
+  /// the user must re-authenticate.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [economic_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_citizen_id, created_at], map: "economic_board_citizen_sessions_economic_board_citizen_e09de559")
+}
+
+/// Holds email verification tokens for citizen registration, enabling secure
+/// confirmation of email ownership before account activation. This table
+/// stores temporary verification tokens that citizens use to confirm their
+/// email addresses during registration. Each token has a limited lifespan
+/// enforced by an expiration timestamp, ensuring tokens cannot be used
+/// indefinitely. Once verified, the token is invalidated and no longer
+/// usable. This table maintains the security of the registration process by
+/// preventing unauthorized email address changes.
+///
+/// This table is exclusively used for citizen verification and is not shared
+/// with administrators or super administrators. Foreign key relationships
+/// with the citizen actor (economic_board_citizens) are managed by the
+/// Authorization Agent and not modeled in this schema since the actor table
+/// is in a separate component.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizen_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The citizen account ID that this verification token belongs to. This
+  /// references the citizen actor account that is undergoing email
+  /// verification.
+  citizen_id String
+  
+  /// The unique verification token generated for email confirmation. This
+  /// token is sent to the user's email address and must be presented to
+  /// complete registration.
+  token String
+  
+  /// The timestamp when this verification token expires and becomes invalid.
+  /// Tokens must be used before this time to complete email verification.
+  expires_at DateTime
+  
+  /// The timestamp when this verification token was created.
+  created_at DateTime
+  
+  /// The timestamp when this token was successfully used to verify the email
+  /// address. Null if the token has not been used yet.
+  used_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([token])
+  @@unique([citizen_id])
+  @@index([expires_at])
+  @@index([used_at])
+}
+
+/// Stores password reset tokens for citizens with expiration timestamps to
+/// enable secure password recovery workflows. Each record represents a
+/// single password reset request initiated by a citizen. The token is a
+/// unique, random string that must be presented to reset the password. The
+/// expires_at field ensures tokens are temporary and invalid after a set
+/// period (e.g., 1 hour). When used, the record is deleted to prevent replay
+/// attacks. This table is only referenced by the authentication service and
+/// has no direct user-facing interface. Foreign key to
+/// economic_board_citizens.id. The table follows the session stance because
+/// it tracks a specific authentication workflow tied to the citizen actor.
+///
+/// Related entities:
+/// - {@link economic_board_citizens} - citizen account owning this reset
+/// request
+/// - {@link economic_board_citizen_sessions} - other authentication session
+/// records
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_citizen_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Citizen account that requested this password reset. {@link
+  /// economic_board_citizens.id}.
+  economic_board_citizen_id String
+  
+  /// Unique, random token string generated for this password reset request.
+  /// Must be URL-safe and cryptographically random. Used in the reset link
+  /// sent via email.
+  token String
+  
+  /// Timestamp when this password reset token expires. After this time, the
+  /// token becomes invalid and cannot be used to reset the password. Typically
+  /// set to 1 hour after created_at.
+  expires_at DateTime
+  
+  /// Timestamp when this password reset request was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [economic_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_citizen_id], map: "economic_board_citizen_password_resets_economic_board__0ee33b35")
+}
+
+/// Main table storing administrator account information including email,
+/// password hash, display name, bio, and account status
+/// (active/banned/deleted). This table serves as the canonical identity
+/// record for administrators, with its own authentication flow and session
+/// tracking managed separately in economic_board_administrator_sessions.
+/// Administrators use this identity to perform elevated operations including
+/// section management and banning users. All administrators must be properly
+/// authenticated before accessing administrative features.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication. Must be a
+  /// valid business email address.
+  email String
+  
+  /// Hashed password using bcrypt algorithm with cost factor of 12. Never
+  /// stored in plain text. Used for secure authentication verification.
+  password_hash String
+  
+  /// Public-facing identifier displayed to other users on articles and
+  /// comments. Must be unique across all user types. Maximum 50 characters.
+  display_name String
+  
+  /// Short biography text describing the administrator's background or areas
+  /// of expertise. Maximum 500 characters.
+  bio String?
+  
+  /// Account status indicating whether the administrator is active, banned, or
+  /// deleted. Valid values: 'active', 'banned', 'deleted'.
+  status String
+  
+  /// Timestamp when the administrator account was created. Always set to
+  /// server time (Asia/Seoul) at account creation.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated. Automatically
+  /// updated on any profile modification.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was logically deleted. NULL if
+  /// account is still active. Used for soft deletion to preserve audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions economic_board_administrator_sessions[]
+  emailVerifications economic_board_administrator_email_verifications[]
+  passwordResets economic_board_administrator_password_resets[]
+  sectionCreations economic_board_section_creations[]
+  sectionDeletions economic_board_section_deletions[]
+  bansIssueds economic_board_bans[]
+  
+  @@unique([email])
+  @@index([status])
+}
+
+/// Stores JWT access and refresh tokens for administrator sessions, with
+/// creation and expiration timestamps for session management. Each session
+/// is tied to exactly one administrator via administrator_id, maintains
+/// connection metadata (IP address, referrer, href), and enforces session
+/// lifecycle through generated and expired timestamps. This table follows
+/// the session stance pattern: append-only audit trail of login events,
+/// managed through authentication flows and not direct user CRUD operations.
+/// Every record represents a single login event, with no duplicate sessions
+/// for any administrator at any given time. A session becomes invalid when
+/// expired_at is reached or when the administrator logs out, changes
+/// password, or is banned.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator this session belongs to. {@link
+  /// economic_board_administrators.id}.
+  administrator_id String
+  
+  /// IP address from which the administrator logged in. Captured at time of
+  /// session creation.
+  ip String
+  
+  /// The full URL path and query string that the administrator was accessing
+  /// when logging in.
+  href String
+  
+  /// The URL that referred the administrator to the login page. Optional
+  /// field, may be null if no referrer information is available.
+  referrer String?
+  
+  /// Timestamp when this session was created and the administrator
+  /// successfully logged in. Always set to the server's current time
+  /// (Asia/Seoul timezone) at login.
+  created_at DateTime
+  
+  /// Timestamp when this session expires and becomes invalid. Always set to
+  /// created_at + 14 days (336 hours) for refresh token expiration, or +20
+  /// minutes (1200 seconds) for access token expiration. Used to enforce
+  /// session lifetime.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator economic_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "economic_board_administrator_sessions_administrator_id_47666d80")
+}
+
+/// Holds email verification tokens for administrator registration, enabling
+/// secure confirmation of email ownership before account activation. Each
+/// verification token is single-use and expires after 7 days. This table
+/// enables the administrator registration workflow by confirming that the
+/// email address provided during signup belongs to the user. The token is
+/// sent via email and must be presented to complete registration. Once the
+/// token is verified, the record is marked as deleted_at but retained for
+/// audit purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_administrator_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator account this verification belongs to. {@link
+  /// economic_board_administrators.id}.
+  economic_board_administrator_id String
+  
+  /// Unique verification token generated for the email confirmation link. Must
+  /// be URL-safe and generated with cryptographically secure randomization.
+  /// Used once and invalidated upon successful verification.
+  token String
+  
+  /// Timestamp when the email verification record was created. Set to the
+  /// exact time of registration request.
+  created_at DateTime
+  
+  /// Timestamp when the verification token expires. Must be set to 7 days
+  /// after created_at for security.
+  expired_at DateTime
+  
+  /// Timestamp when the verification record was marked as deleted (after
+  /// successful verification). Used for soft deletion and audit trail. NULL
+  /// means the token is still active and unverified.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator economic_board_administrators @relation(fields: [economic_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  @@index([expired_at])
+  // spellchecker: ignore-next-line
+  @@index([economic_board_administrator_id, created_at], map: "economic_board_administrator_email_verifications_econo_2ad23be5")
+}
+
+/// Stores password reset tokens for administrators with expiration
+/// timestamps to enable secure password recovery workflows. Each token is
+/// unique, single-use, and expires after 24 hours. This table is referenced
+/// by the authentication service when administrators request password reset
+/// via email. When a reset token is used, it is immediately invalidated and
+/// removed from this table. The table is append-only and never updated once
+/// created.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator account this reset request belongs to. {@link
+  /// economic_board_administrators.id}.
+  administrator_id String
+  
+  /// The unique, cryptographically secure password reset token generated for
+  /// the administrator. This token must be URL-safe and unique across the
+  /// system.
+  token String
+  
+  /// The timestamp when the reset token expires. Tokens are valid for 24 hours
+  /// from creation and are automatically invalidated after this time.
+  expires_at DateTime
+  
+  /// The timestamp when the password reset request was created. Used for
+  /// auditing and calculating token validity duration.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator economic_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id], map: "economic_board_administrator_password_resets_administr_5a035926")
+  @@index([expires_at])
+  @@index([created_at])
+}
+
+/// Main table storing superAdministrator account information including
+/// email, password hash, display name, bio, and account status
+/// (active/banned/deleted). This table serves as the canonical identity
+/// record for super administrators who have elevated permissions to manage
+/// admin requests, promote/demote other administrators, and perform all
+/// administrative actions without restriction. Super administrators are
+/// distinct actor entities with their own authentication flows and cannot be
+/// demoted by regular administrators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_super_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and authentication.
+  email String
+  
+  /// BCrypt hashed password for secure authentication. Never stored in plain
+  /// text.
+  password_hash String
+  
+  /// Public display name shown on user profiles and content interactions.
+  display_name String
+  
+  /// Optional biography or personal statement about the super administrator.
+  bio String?
+  
+  /// Account status: 'active', 'banned', or 'deleted'. Determines whether the
+  /// user can authenticate.
+  status String
+  
+  /// Timestamp when the super administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the super administrator's account
+  /// information.
+  updated_at DateTime
+  
+  /// Timestamp when the account was marked as deleted (soft delete). Nullable
+  /// - indicates active account if null.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministratorSessions economic_board_super_administrator_sessions[]
+  emailVerification economic_board_super_administrator_email_verifications?
+  passwordResets economic_board_super_administrator_password_resets[]
+  processedAdminRequests economic_board_admin_requests[]
+  
+  @@unique([email])
+  @@index([status])
+}
+
+/// Stores JWT access and refresh tokens for superAdministrator sessions,
+/// with creation and expiration timestamps for session management.
+///
+/// This table is a session tracking entity for the superAdministrator actor
+/// type. Each record represents a single authenticated session started by a
+/// superAdministrator. The table contains session metadata including IP
+/// address, referrer, and href, which are essential for security auditing
+/// and session monitoring. This table does not store actual token values but
+/// captures the context of the login session. When a superAdministrator logs
+/// in, a new record is created; when they log out or the session expires,
+/// the record remains for audit purposes but becomes inactive. This
+/// structure enables tracking of login patterns, geographic locations, and
+/// potential security incidents.
+///
+/// {@link economic_board_super_administrators.id} references the
+/// superAdministrator who initiated the session.
+///
+/// Note: This table follows the strict session pattern defined in the AutoBE
+/// architecture and must NOT contain any additional fields beyond those
+/// specified in the core design principles.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_super_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the superAdministrator who initiated this session. {@link
+  /// economic_board_super_administrators.id}.
+  super_administrator_id String
+  
+  /// The IP address from which the session was initiated. Used for security
+  /// monitoring and geolocation tracking.
+  ip String
+  
+  /// The URL of the page the superAdministrator was on when initiating the
+  /// session. Used for navigation context and potential security analysis.
+  href String
+  
+  /// The referrer URL indicating the source from which the superAdministrator
+  /// navigated to the platform. Used for traffic analysis and security
+  /// auditing.
+  referrer String
+  
+  /// The exact timestamp when the session was created. This field is required
+  /// for session duration calculation and security audit trails.
+  created_at DateTime
+  
+  /// The exact timestamp when the session will expire. This field is required
+  /// for automatic session cleanup and to enforce session timeouts as a
+  /// security practice.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator economic_board_super_administrators @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([super_administrator_id, created_at], map: "economic_board_super_administrator_sessions_super_admi_42a01ff3")
+}
+
+/// Holds verification tokens for superAdministrator registration, enabling
+/// secure confirmation of email ownership before account activation. Each
+/// super administrator can have one verification record at a time, linked by
+/// foreign key to economic_board_super_administrators. This table is used
+/// during the registration flow to validate email ownership before granting
+/// superAdministrator privileges. Once the verification token is used, the
+/// used flag is set to true and the record is retained for audit purposes.
+/// This is a critical security mechanism that prevents unauthorized account
+/// creation and ensures all superAdministrators have valid, verified email
+/// addresses before being granted elevated privileges. {@link
+/// economic_board_super_administrators}.
+///
+/// Note: This table follows the same pattern as
+/// economic_board_citizen_email_verifications,
+/// economic_board_administrator_email_verifications, and other
+/// actor-specific verification tables, ensuring consistency across the
+/// authorization component.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_super_administrator_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the superAdministrator account that this verification record
+  /// belongs to. {@link economic_board_super_administrators.id}.
+  economic_board_super_administrator_id String
+  
+  /// Cryptographically secure random token used for verifying email ownership
+  /// during registration. Must be a high-entropy, unpredictable string.
+  token String
+  
+  /// Timestamp when this verification token expires and becomes invalid. All
+  /// tokens have a limited lifetime for security.
+  expires_at DateTime
+  
+  /// Flag indicating whether this verification token has been successfully
+  /// used to verify the superAdministrator's email. Once set to true, the
+  /// token cannot be reused.
+  used Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator economic_board_super_administrators @relation(fields: [economic_board_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([token], map: "economic_board_super_administrator_email_verifications_7f492143")
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_super_administrator_id], map: "economic_board_super_administrator_email_verifications_d48e1f7b")
+  // spellchecker: ignore-next-line
+  @@index([expires_at], map: "economic_board_super_administrator_email_verifications_621cf718")
+}
+
+/// Stores password reset tokens for superAdministrators with expiration
+/// timestamps to enable secure password recovery workflows. Each record
+/// represents a single password reset attempt tied to one
+/// superAdministrator. Tokens are single-use and expire after a set period.
+/// When a token is used, the record is marked as deleted. This table is
+/// purely operational and contains no business data beyond authentication
+/// state.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_super_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the superAdministrator who requested the password reset.
+  /// {@link economic_board_super_administrators.id}.
+  economic_board_super_administrator_id String
+  
+  /// Unique, random token string used to authenticate the password reset
+  /// request. Must be cryptographically secure and single-use.
+  token String
+  
+  /// The timestamp when the reset token expires. After this time, the token is
+  /// invalid and cannot be used.
+  expires_at DateTime
+  
+  /// The timestamp when this password reset request was created.
+  created_at DateTime
+  
+  /// Soft delete timestamp. When the token is used or expired and purged, this
+  /// field is set to record deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator economic_board_super_administrators @relation(fields: [economic_board_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_super_administrator_id, token], map: "economic_board_super_administrator_password_resets_eco_df5cf16c")
+  // spellchecker: ignore-next-line
+  @@index([expires_at], map: "economic_board_super_administrator_password_resets_exp_8ece6430")
+  // spellchecker: ignore-next-line
+  @@index([economic_board_super_administrator_id, created_at], map: "economic_board_super_administrator_password_resets_eco_278309fc")
+  // spellchecker: ignore-next-line
+  @@index([deleted_at], map: "economic_board_super_administrator_password_resets_del_92b2f859")
+}

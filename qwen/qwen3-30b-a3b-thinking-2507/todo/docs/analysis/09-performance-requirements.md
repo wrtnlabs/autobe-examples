@@ -1,127 +1,217 @@
-# Performance Requirements for Multi-User Todo Application
+# Multi-User Todo Application Requirements Specification
 
-## Introduction
+## 1. User Account Management
 
-This document specifies clear performance expectations for the Multi-User Todo Application from the user's perspective. These requirements are designed to ensure that the application delivers a seamless, responsive experience that meets user expectations for productivity-focused applications.
+### Registration and Authentication Requirements
 
-## Response Time Requirements
+WHEN a user provides a valid email address and password to register, THE system SHALL:
+- Validate email format (e.g., user@domain.com)
+- Enforce password complexity (minimum 8 characters, one uppercase, one lowercase, one number)
+- Create a new user account with unverified status
+- Generate and send verification email with unique 128-bit token
 
-### Core User Actions
+IF the email is already registered, THEN THE system SHALL respond with error code 'USER_EMAIL_EXISTS' and message 'This email address is already associated with an account.'
 
-WHEN a user performs an action such as creating a new todo, THE system SHALL respond with visible feedback within 1 second.
+IF the password fails complexity validation, THEN THE system SHALL respond with error code 'INVALID_PASSWORD' and message 'Password must be at least 8 characters with one uppercase, one lowercase, and one number.'
 
-WHEN a user views their todo list, THE system SHALL display the first page of todos with full information (title, completion status, date information) within 2 seconds.
+### Login and Session Management
 
-WHEN a user filters their todo list (by completion status, date, etc.), THE system SHALL display the filtered results within 1.5 seconds on average.
+WHEN a user provides a valid email and password, THE system SHALL:
+- Verify account existence and active status
+- Compare provided password with stored hash
+- Generate a secure JWT token with claims including user_id, role 'user', and permissions
 
-WHEN a user marks a todo as complete or incomplete, THE system SHALL update the display without user waiting (instantly perceived).
+WHEN a user remains authenticated, THE system SHALL:
+- Maintain session state for 30 minutes
+- Prevent session fixation by generating new token on login
+- Automatically expire session after 30 minutes of inactivity
 
-WHEN a user edits a todo's title, description, or dates, THE system SHALL save the changes and update the display within 1 second.
+### Password Management
 
-WHEN a user restores a todo from the trash or permanently deletes a todo, THE system SHALL provide confirmation without noticeable delay.
+WHEN a user requests to change their password, THE system SHALL:
+- Verify current password
+- Ensure new password meets complexity requirements
+- Update password hash in database
 
-### Data Loading Considerations
+IF current password verification fails, THEN THE system SHALL respond with HTTP 401 Unauthorized and 'Current password is invalid.'
 
-WHEN viewing a user's todos where the number of todos reaches 100, THE system SHALL display the initial page of results within 2.5 seconds.
+IF new password fails complexity validation, THEN THE system SHALL respond with HTTP 400 Bad Request and 'New password must be at least 8 characters with one uppercase, one lowercase, and one number.'
 
-WHEN a user navigates to the trash (which may contain up to 300 items), THE system SHALL display the initial page of trash items within 3 seconds.
+### Account Deletion
 
-WHEN a user filters by a date range with 100+ todos in the range, THE system SHALL return the results within 2 seconds.
+WHEN a user requests account deletion, THE system SHALL:
+- Verify current password
+- Confirm deletion request
+- Permanently delete all user data including todos, edit history, and profile
 
-### Edge Cases and Special Handling
+IF password verification fails, THEN THE system SHALL respond with HTTP 401 Unauthorized and 'Password verification required to proceed with account deletion.'
 
-WHEN a user is viewing a todo list with very large descriptions (1000+ characters), THE system SHALL display the title, status, and dates within 1 second, with the full description loading in the background without interrupting the user experience.
+IF deletion is confirmed, THEN THE system SHALL respond with HTTP 204 No Content and immediately remove all associated records.
 
-WHEN a user's connection speed is slow (e.g., 3G network), THE system SHALL provide visual feedback indicating progress and maintain a responsive experience, with initial todo items loading within 4 seconds.
+## 2. User Profile Management
 
-## Throughput Expectations
+### Profile Data Requirements
 
-### Standard Usage
+WHEN a user creates or updates their profile, THE system SHALL:
+- Allow setting display name with minimum 2 characters
+- Accept a maximum display name length of 50 characters
+- Store display name for user personalization
 
-THE system SHALL maintain smooth performance for up to 100 concurrent users on standard hardware configurations without noticeable slowdown.
+WHEN a user views another user's profile, THE system SHALL deny access with HTTP 403 Forbidden and 'You do not have permission to view this profile.'
 
-THE system SHALL handle 500 todo creation/editing operations per minute with no user-visible delays, maintaining the 1-second response time requirement.
+### Privacy Enforcement
 
-### Peak Usage
+THE system SHALL enforce complete isolation of user profiles. ALL user data SHALL be accessible only to the user who created it.
 
-THE system SHALL support temporary spikes to 300 concurrent users during typical work hours (9:00-17:00) while maintaining response times under 2 seconds.
+WHEN processing profile requests, THE system SHALL automatically filter to show only the authenticated user's profile.
 
-THE system SHALL handle 2000 operation requests per minute for a period of 15 minutes without degradation in performance (keeping response times under user experience thresholds).
+## 3. Todo Creation
 
-### Data Processing
+### Core Creation Requirements
 
-WHEN processing the edit history of a single todo with 50+ edits, THE system SHALL generate a paginated view within 2 seconds on the user's device.
+WHEN a user creates a new todo, THE system SHALL:
+- Require title with minimum 3 characters
+- Accept description up to 500 characters
+- Accept start date and due date in ISO 8601 format
+- Set completion status to 'incomplete' by default
 
-WHEN a user restores a complete todo (with all previous edit history) from the trash, THE system SHALL load the complete history within 1.5 seconds.
+IF the title is less than 3 characters, THEN THE system SHALL display error 'Todo title must be at least 3 characters long.'
 
-## Scalability Goals
+IF the description exceeds 500 characters, THEN THE system SHALL truncate to 500 and display 'Description was truncated to 500 characters.'
 
-### Initial Deployment
+## 4. Todo Viewing and Filtering
 
-THE system SHALL operate efficiently on standard AWS server instances (e.g., t3.medium) supporting up to 500 users with no performance degradation.
+### List View Requirements
 
-### Growth Phase 1 (First Year)
+WHEN a user views their todo list, THE system SHALL:
+- Paginate results (default 20 items per page)
+- Display title, completion status, start date (if set), due date (if set), and creation date
+- Return results sorted by creation date (newest first) by default
 
-THE system SHALL scale horizontally to support up to 5,000 users with the same user experience performance standards (1-2 second response times).
+WHEN a user filters by completion status, THE system SHALL:
+- Show all todos (all statuses)
+- Show only complete todos
+- Show only incomplete todos
 
-THE system SHALL maintain performance during typical usage patterns, even with growth to 1,000 new users per month.
+### Sorting Capability Requirements
 
-### Growth Phase 2 (Two Years)
+WHEN a user sorts by creation date, THE system SHALL:
+- Order from newest to oldest (default)
+- Order from oldest to newest (secondary option)
 
-THE system SHALL scale to support up to 50,000 users within a reasonable timeframe (2-3 months of planning and deployment), without requiring significant changes to the core application architecture.
+WHEN a user sorts by start date, THE system SHALL:
+- Place todos with start date first
+- Place todos without start date at the end
+- Order from earliest to latest (default)
+- Order from latest to earliest (secondary option)
 
-THE system SHALL automatically scale to meet demand during known peak usage periods (e.g., start of work week, project due dates), maintaining response times under 2 seconds for 95% of user actions.
+WHEN a user sorts by due date, THE system SHALL:
+- Place todos with due date first
+- Place todos without due date at the end
+- Order from earliest to latest (default)
+- Order from latest to earliest (secondary option)
 
-## Error Rate Targets
+## 5. Todo Editing and History
 
-### User Error Handling
+### Edit History Requirements
 
-THE system SHALL respond to invalid input (e.g., empty title on todo creation) with immediate visible feedback within 0.5 seconds.
+WHEN a user edits any field of a todo, THE system SHALL:
+- Record a new edit history entry
+- Store timestamp of the edit
+- Record previous values of edited fields
+- Store new values of edited fields
 
-THE system SHALL provide helpful error messages for 99% of error conditions that occur during normal user operation.
+WHEN a user views edit history, THE system SHALL:
+- Display history ordered from most recent to oldest
+- Show all fields that were changed
+- Include full timestamp of each edit
+- Provide clear visual indication of what changed
 
-### System Error Tolerance
+### Error Handling for Edits
 
-THE system SHALL experience no more than 2% of actions failing to complete with an error state under normal load conditions (50 concurrent users).
+IF edited title is less than 3 characters, THEN THE system SHALL display 'Todo title must be at least 3 characters long.'
 
-THE system SHALL recover from transient errors (like network interruptions during API calls) for 98% of user actions without requiring user re-attempt.
+IF edited description exceeds 500 characters, THEN THE system SHALL truncate to 500 and display 'Description was truncated to 500 characters.'
 
-### Availability Requirements
+## 6. Todo Deletion and Trash
 
-THE system SHALL maintain at least 99.9% uptime during standard business hours (8:00-18:00 UTC) to ensure users can access their todo lists without interruption.
+### Soft Deletion Requirements
 
-WHEN the system encounters an error during critical actions (deletion, restoration), THE system SHALL provide a clear alternative action path or recovery option to the user.
+WHEN a user deletes a todo, THE system SHALL:
+- Move the todo to a soft-deleted state (trash)
+- Update completion status to 'deleted'
+- Maintain all history data for the todo
+- Remove from regular todo list view
 
-## User Experience Performance Summary
+WHEN a user views their trash, THE system SHALL:
+- Display paginated list of deleted todos
+- Show title, deletion timestamp, and original dates
+- Allow restoration or permanent deletion
 
-The Multi-User Todo Application must deliver an experience that feels instantly responsive and reliable for users. Performance expectations are defined through user experience rather than technical measurements. All performance criteria described here should be interpreted through the lens of user perception, focusing on 'feeling responsive' to the user rather than specific technical metrics.
+### Permanent Deletion Requirements
 
-## Mermaid Diagram: User Experience Performance Flow
+WHEN a user permanently deletes a todo from trash, THE system SHALL:
+- Remove all associated data
+- Delete the todo record
+- Delete all edit history for the todo
+- Update database to reflect permanent removal
 
-```mermaid
-graph LR
-    A["User Action"] --> B{"Response Time?"}
-    B -->|Less than 1 sec| C["Instant Feedback"]
-    B -->|1-2 sec| D["Seamless Experience"]
-    B -->|2-3 sec| E["Slight Delay Noticeable"]
-    B -->|3+ sec| F["User Noticeable Delays"]
-    
-    C --> G["User Continues Task"]
-    D --> G
-    E --> H["User Checks Connection"]
-    F --> I["User Attempts Action Again"]
-    
-    G --> J["Task Completed"]
-    H --> J
-    I --> J
-```
+## 7. Privacy and Isolation
 
-## Testing and Validation
+### Data Isolation Requirements
 
-WHEN developers implement performance features, THE system SHALL provide measurable user experience metrics to validate that performance expectations are met.
+THE system SHALL enforce complete data isolation between users. ALL data SHALL be accessible only to the user who created it.
 
-THE system SHALL provide a performance dashboard for the engineering team to monitor performance against requirements (response times, error rates, etc.).
+WHEN processing any todo request, THE system SHALL automatically filter results using the current user's ID.
 
-## Business Impact
+WHEN a user attempts to access another user's data, THE system SHALL respond with HTTP 403 Forbidden and 'You do not have permission to access this resource.'
 
-Meeting these performance expectations is critical for user adoption and retention in a productivity-focused application. Users who experience slow performance are likely to abandon the application in favor of alternatives.
+## 8. Performance Requirements
+
+### Response Time Expectations
+
+WHEN a user loads their first todo page, THE system SHALL display 20 todos within 1.0 second.
+
+WHEN a user filters their todos by completion status, THE system SHALL display results within 1.2 seconds.
+
+WHEN a user toggles completion status, THE system SHALL update immediately with response within 0.5 seconds.
+
+## 9. Security Requirements
+
+### Password Handling
+
+THE system SHALL store all passwords using bcrypt with minimum 12 rounds of hashing.
+
+### Authentication
+
+THE system SHALL include the following claims in JWT tokens: user_id, role (default 'user'), permissions array.
+
+### Session Management
+
+THE system SHALL require password verification for sensitive operations (password change, account deletion) to prevent unauthorized access.
+
+## 10. Error Handling Requirements
+
+### Consistent Error Messaging
+
+ALL error responses SHALL:
+- Have appropriate HTTP status codes (400, 401, 403, 500)
+- Provide a machine-readable error code
+- Include a clear user-friendly message
+
+WHEN a validation error occurs, THE system SHALL provide specific field information with error message.
+
+### User Experience
+
+All errors SHALL maintain positive user experience with helpful guidance and clear paths to resolution.
+
+## 11. Business Logic Summary
+
+The application ensures users can:
+1. Create personalized todo lists with rich scheduling and customization
+2. Maintain edit histories for all work
+3. Organize tasks through flexible sorting and filtering
+4. Maintain complete privacy of their activities
+5. Manage data through safe deletion workflows
+
+This system empowers users with a focused, private productivity experience that handles all core task management needs without data exposure to others.

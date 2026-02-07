@@ -1,0 +1,169 @@
+/// Full-text search index mapping article IDs to searchable text fields
+/// (title and content). This table enables fast keyword matching on article
+/// titles and content without scanning original article data. Each entry
+/// represents one searchable text unit associated with an article. Maintains
+/// referential integrity with articles table and provides optimized
+/// full-text search capabilities through GIN indexing.
+///
+/// @namespace Search
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_search_indices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated article in the economic_board_articles table.
+  /// {@link economic_board_articles.id}
+  article_id String
+  
+  /// Combined text content of the article title and body content for full-text
+  /// search capabilities. This field is indexed with a GIN index to enable
+  /// efficient fuzzy matching and text search operations
+  searchable_text String
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  @@unique([article_id])
+}
+
+/// Normalized, de-duplicated list of all tags used across articles. Each tag
+/// is stored once with a unique ID, enabling efficient filtering and
+/// reducing data redundancy. Tag text is stored in lowercase after trimming
+/// whitespace to ensure case-insensitive matching. This table serves as the
+/// canonical source for filtering articles by tag. No other component should
+/// maintain a duplicate tag list.
+///
+/// @namespace Search
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_search_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The normalized tag text. Stored in lowercase after trimming whitespace to
+  /// ensure case-insensitive matches during filtering. Maximum 50 characters.
+  text String
+  
+  /// Timestamp when this tag was first created and inserted into the system.
+  created_at DateTime
+  
+  /// Timestamp when this tag was last updated (if ever modified).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  articleTags economic_board_search_article_tags[]
+  
+  @@unique([text])
+  @@index([created_at])
+}
+
+/// Junction table defining the many-to-many relationship between articles
+/// and tags. Each row represents an association between one article and one
+/// tag, allowing filtering of articles by any combination of tags using AND
+/// logic. This table eliminates data redundancy and enables efficient search
+/// filtering while maintaining third normal form.
+///
+/// @namespace Search
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_search_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the article being tagged. {@link economic_board_articles.id}.
+  article_id String
+  
+  /// References the tag associated with the article. {@link
+  /// economic_board_search_tags.id}.
+  tag_id String
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  tag economic_board_search_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  
+  @@unique([article_id, tag_id])
+  @@index([article_id])
+  @@index([tag_id])
+}
+
+/// Cache table storing search query parameters and result metadata for
+/// pagination and sorting. Each record represents one unique search query
+/// with its parameters (keywords, sort direction, tags), result count, and
+/// pagination metadata to avoid repeated query execution on identical
+/// requests. This table enables fast retrieval of previously executed
+/// searches by storing the combination of search criteria and results,
+/// improving response times for repetitive queries on the same search
+/// parameters.
+///
+/// @namespace Search
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_search_results {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to article that this search result is associated with. This
+  /// allows counting articles matching the search criteria. {@link
+  /// economic_board_articles.id}.
+  article_id String?
+  
+  /// Full text search terms entered by the user. Stores the complete search
+  /// query string for matching against future requests. Must be non-null as
+  /// every search must have terms.
+  search_terms String
+  
+  /// Sorting direction for the search results. Must be either 'newest' or
+  /// 'oldest' as specified in search requirements. This value determines
+  /// whether results are ordered by creation date descending or ascending.
+  sort_direction String
+  
+  /// Page number of the search results being cached. Represents the current
+  /// page of results (1-based indexing) as specified in the pagination
+  /// requirements.
+  page Int
+  
+  /// Number of results per page. Specifies how many articles are displayed per
+  /// page in the pagination system, typically 20 as required.
+  per_page Int
+  
+  /// Total number of articles matching this search query. Represents the total
+  /// count of results across all pages for this specific search criteria.
+  result_count Int
+  
+  /// Timestamp when this search result cache entry was created. Used for cache
+  /// expiration and analytics. Follows standard temporal field pattern and
+  /// uses server time (Asia/Seoul).
+  created_at DateTime
+  
+  /// JSON-encoded array of tag names used for filtering search results. Stores
+  /// multiple tags in string format to enable efficient tag-based filtering
+  /// without requiring junction table joins.
+  tag_filters String?
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles? @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  @@index([article_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([search_terms, sort_direction, page, per_page, tag_filters], map: "economic_board_search_results_search_terms_sort_direct_0f316024")
+  @@index([created_at])
+  @@index([result_count])
+}

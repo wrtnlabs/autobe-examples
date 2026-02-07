@@ -1,9 +1,0 @@
-export * as auth from "./auth/index";
-export * as members from "./members/index";
-export * as communities from "./communities/index";
-export * as posts from "./posts/index";
-export * as comments from "./comments/index";
-export * as dashboard from "./dashboard/index";
-export * as analytics from "./analytics/index";
-export * as search from "./search/index";
-export * as reports from "./reports/index";

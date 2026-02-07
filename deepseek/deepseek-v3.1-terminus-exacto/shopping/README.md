@@ -113,8 +113,8 @@ When you've created a new backend project through this template project, you can
 
 Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
-✅ analyze | actors: 4, documents: 21 | 98.25 % | 2,232,814 | 483 sec
-✅ database | namespaces: 10, models: 104 | 89.26 % | 21,281,777 | 2050 sec
+✅ analyze | actors: 4, documents: 11 | 100.00 % | 893,294 | 1196 sec
+✅ database | namespaces: 7, models: 99 | 93.68 % | 14,614,790 | 2097 sec
 ⬜ interface | | | | 
 ⬜ test | | | | 
 ⬜ realize | | | | 
@@ -133,19 +133,19 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 355 | 33 | 2 | 322 | 90.70 %
+total | 280 | 16 | 2 | 264 | 94.29 %
 analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
-analyzeWrite | 21 | 0 | 1 | 21 | 100.00 %
-analyzeReview | 35 | 1 | 0 | 34 | 97.14 %
-databaseGroup | 3 | 0 | 0 | 3 | 100.00 %
+analyzeWrite | 11 | 0 | 0 | 11 | 100.00 %
+analyzeReview | 15 | 0 | 0 | 15 | 100.00 %
+databaseGroup | 2 | 0 | 0 | 2 | 100.00 %
 databaseGroupReview | 2 | 0 | 0 | 2 | 100.00 %
-databaseAuthorization | 3 | 0 | 0 | 3 | 100.00 %
-databaseAuthorizationReview | 2 | 0 | 0 | 2 | 100.00 %
-databaseComponent | 33 | 5 | 0 | 28 | 84.85 %
-databaseComponentReview | 32 | 8 | 0 | 24 | 75.00 %
-databaseSchema | 113 | 18 | 1 | 95 | 84.07 %
-databaseSchemaReview | 107 | 0 | 0 | 107 | 100.00 %
-databaseCorrect | 3 | 1 | 0 | 2 | 66.67 %
+databaseAuthorization | 2 | 0 | 0 | 2 | 100.00 %
+databaseAuthorizationReview | 1 | 0 | 0 | 1 | 100.00 %
+databaseComponent | 21 | 4 | 0 | 17 | 80.95 %
+databaseComponentReview | 16 | 3 | 0 | 13 | 81.25 %
+databaseSchema | 103 | 4 | 0 | 99 | 96.12 %
+databaseSchemaReview | 104 | 5 | 2 | 99 | 95.19 %
+databaseCorrect | 2 | 0 | 0 | 2 | 100.00 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

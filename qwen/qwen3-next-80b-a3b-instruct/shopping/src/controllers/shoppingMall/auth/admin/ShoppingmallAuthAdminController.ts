@@ -4,28 +4,27 @@ import typia from "typia";
 
 import { IShoppingMallAdmin } from "../../../../api/structures/IShoppingMallAdmin";
 import { postShoppingMallAuthAdminJoin } from "../../../../providers/postShoppingMallAuthAdminJoin";
+import { postShoppingMallAuthAdminLogin } from "../../../../providers/postShoppingMallAuthAdminLogin";
 import { postShoppingMallAuthAdminRefresh } from "../../../../providers/postShoppingMallAuthAdminRefresh";
 
 @Controller("/shoppingMall/auth/admin")
 export class ShoppingmallAuthAdminController {
   /**
-   * This operation allows a super administrator to manually create a new administrator account within the system, providing immediate access to administrative controls without relying on an application process.
+   * The join operation allows new administrators to register an account on the shoppingMall platform by providing a unique email address and a secure password. The system first validates that the email follows standard email format (RFC 2822) and checks against the shopping_mall_admins table to ensure no existing admin exists with the same email. If the email is taken, the operation fails with a 409 Conflict response. Upon validation, the password is cryptographically hashed using bcrypt with a cost factor of 12. The new admin record is inserted into the shopping_mall_admins table with a server-generated createdAt timestamp and the hashed password. Concurrently, a unique email verification token (UUIDv4) is created and stored in the shopping_mall_admin_email_verifications table with a 24-hour expiration, linked via foreign key to the new admin's ID. Upon successful completion, the system issues a JWT access token valid for 30 minutes and a refresh token valid for 30 days. The response body contains both tokens in the IShoppingMallAdmin.IAuthorized type. No user-facing password confirmation is required—this is handled server-side for security. The operation is designed to be atomic: failure at any stage (email conflict, database constraint, token generation) rolls back the entire transaction to preserve integrity. Connection to the shopping_mall_admin_email_verifications table ensures users remain unverified until they click the verification link, preventing unauthorized access even if the email is compromised. This flow mirrors enterprise SSO registration patterns while ensuring compliance with the snapshot principle by logging registration as an immutable admin action in system logs.
    *
-   * This is a direct registration pathway (equivalent to 'join') that bypasses standard approval workflows. The system creates an entry in the shopping_mall_admins table with admin_email, admin_password_hash, admin_role='admin', and admin_is_active=true.
+   * The IShoppingMallAdmin.IJoin request body must contain exactly email and password fields. No other fields are allowed. The email must be a valid RFC 2822-compliant email address and must not already exist in the shopping_mall_admins table. The password must be at least 12 characters long, containing at least one uppercase letter, one lowercase letter, one number, and one special character. These validations are enforced both in the DTO schema and server-side before hashing. The IShoppingMallAdmin.IAuthorized response body contains the accessToken and refreshToken as strings in UUIDv4 format, both base64-encoded JWT tokens. The payload includes the admin's ID as sub, role as admin, and exp timestamps. This structure ensures stateless authentication compatible with NestJS guard decorators.
    *
-   * Key database schema fields: admin_email, admin_password_hash, admin_role, admin_created_at, admin_updated_at. The admin_password_hash is generated using bcrypt from the password provided in the request body. The admin_email must be globally unique and not conflict with existing customer or seller emails.
+   * This operation does not require pre-execution of other API operations. No prerequisites are defined because this is the initial account creation signal. No other API endpoints must be called before this one. This is the entry point for admin authentication.
    *
-   * This operation is exclusively for super administrators. The system ensures the created admin receives an initial JWT access token and refresh token for login. A session record is created in shopping_mall_admin_sessions.
-   *
-   * This operation does not trigger referral notifications or onboarding emails — those are handled explicitly by the user who invokes it.
-   *
-   * This operation is available only to super administrators. Access is strictly controlled via the authorizationActor: superAdmin.
+   * The authorization type is explicitly set to "join" to indicate this is a registration operation, recognized by the Realize Agent for generating the correct @UseGuards(JoinGuard) decorator. System logs will capture the IP address and user agent from the request header for audit purposes, stored in the shopping_mall_system_logs table as an "admin_register" event.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Credentials to create the new admin account including email and password.
-   * @x-autobe-specification Service layer validates JWT and extracts admin context. Ensures admin is authenticated. Creates a new admin account for a user with role 'admin' if user is not already a customer or seller. Validates admin_email (unique), admin_password_hash, and active status. Returns 201 with new admin ID and initial session token.
+   * @param body Payload for admin registration, containing email and password. Used for creating new admin accounts during join operation.
+   * @x-autobe-authorization-type join
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Create a new admin account. Validates email format, checks for existing email in shopping_mall_admins table, hashes password using bcrypt, inserts new admin record with createdAt timestamp generated server-side, creates corresponding shopping_mall_admin_email_verifications record with random token, and returns JWT access and refresh tokens. Transaction must be atomic: if email exists, roll back entire operation. Email verification token is generated as UUIDv4 and stored with 24-hour expiration.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -47,23 +46,45 @@ export class ShoppingmallAuthAdminController {
   }
 
   /**
-   * This operation refreshes an administrator’s expired access token using a valid, unexpired refresh token. This prevents admin users from being logged out during extended administrative sessions.
-   *
-   * Key schema fields: refresh_token (in Authorization header), admin_session_id, refresh_token_expires_at. The system checks the provided refresh token against the most recent session recording in shopping_mall_admin_sessions. If expired or unverified, the operation returns 401.
-   *
-   * Upon success, a new access token (15-minute life) and a new refresh token (7-day life) are generated and returned. The old refresh token is invalidated and removed from the session store. The new refresh token is stored as the active token.
-   *
-   * This operation is protected — it requires a valid refresh token to function. It is designed to be called silently when the access token expires, enabling seamless admin experience.
-   *
-   * This operation is available only to authenticated admin users holding a valid refresh token. The authorizationType is defined as "refresh". It does not require the JWT access token to be valid — only the refresh token.
-   *
-   * No prerequisites are required for this operation. Access is strictly controlled via the authorizationType: "refresh".
+   * The login operation authenticates an existing administrator by verifying their email and password credentials against the shopping_mall_admins table. The system first locates the admin record by email address. If no record is found, returns 404 Not Found. If the record exists and the admin is marked as banned (via admin status field, which can be set by super admin), returns 403 Forbidden. The system then uses bcrypt to compare the bcrypt-hashed password stored in the database with the provided plaintext password. If the password does not match, returns 401 Unauthorized. Next, the system checks the shopping_mall_admin_email_verifications table to ensure the admin's email address has been verified. If no matching record exists or the record has expired, returns 403 Forbidden with message 'Email must be verified before login'. If all validations pass, the system generates a new JWT access token valid for 30 minutes and a refresh token valid for 30 days. The refresh token is stored in the shopping_mall_admin_sessions table with the admin's ID, token hash, expiration timestamp, device fingerprint, and IP address. The response returns the access and refresh tokens in the IShoppingMallAdmin.IAuthorized response body. Passwords are compared using bcrypt’s secure hashing algorithm, ensuring no plaintext passwords are ever transmitted or stored. This operation requires no prerequisites, as it is the primary entry point for administrative sessions. The Realize Agent uses the authorizationType: "login" to generate appropriate @UseGuards(LoginGuard) decorators on controller endpoints. Session tracking via shopping_mall_admin_sessions enables future session termination or concurrent login detection. For compliance with the snapshot principle, every login attempt is logged in shopping_mall_system_logs with success/failure status, timestamp, IP address, and user agent. This ensures forensic auditability of all admin logins in case of unauthorized access attempts.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh token to acquire a new access token.
-   * @x-autobe-specification Service layer validates refresh token against storage in shopping_mall_admin_sessions. If valid and not expired, generates new access token and refresh token. Extends session lifetime. Updates session record with new token values. Returns 200 with new tokens. Returns 401 if invalid or expired refresh token.
+   * @param body Payload for admin authentication, containing email and password for login.
+   * @x-autobe-authorization-type login
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Authenticate an existing admin by validating email and password. Looks up admin in shopping_mall_admins table, compares password hash using bcrypt, validates account status (not banned), checks if email is verified via shopping_mall_admin_email_verifications, and generates new JWT tokens. Password must match exactly (case-sensitive). Returns 401 if invalid credentials, 403 if email unverified, 404 if admin nonexistent. Tokens include admin ID, role, and expiration timestamps encoded in JWT payload. Refresh token is stored in shopping_mall_admin_sessions table with expiration and IP/user agent for session tracking.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post("login")
+  public async login(
+    @Ip()
+    ip: string,
+    @TypedBody()
+    body: IShoppingMallAdmin.ILogin,
+  ): Promise<IShoppingMallAdmin.IAuthorized> {
+    try {
+      return await postShoppingMallAuthAdminLogin({
+        ip,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * The refresh operation enables administrators to obtain a new access token without re-entering credentials, by presenting a valid refresh token stored in the shopping_mall_admin_sessions table. The system decodes the provided refresh token and retrieves the corresponding session record from the database. If the session record does not exist, is expired, or has been revoked (e.g. via admin logout via client token deletion), returns 401 Unauthorized. If valid, the system generates a new JWT access token valid for 30 minutes, with the same admin ID, role, and claims as the original. This new access token is returned in the IShoppingMallAdmin.IAuthorized response body. The refresh token itself remains unchanged and reusable until its original 30-day expiration (unless rotation policy is implemented in future versions). This operation is stateless in that the refresh token is not invalidated after use, allowing concurrent renewal from different clients (e.g., web and mobile app) if needed. If the refresh token is rotated (a future enhancement), a new refresh token would be returned alongside the new access token, but current implementation retains the existing one. The operation provides no opportunity for credential changes—this is purely a token renewal mechanism. No prerequisities required: refresh may be called independently under a valid session context. The Realize Agent uses authorizationType: "refresh" to generate @UseGuards(RefreshGuard) decorators that require a valid refresh token in the request header. Logging is critical: every refresh attempt is recorded in shopping_mall_system_logs with success status and actor context, supporting audit trails for token misuse detection or account takeover investigations. This operation ensures seamless user experience while maintaining the stateless, security-first architecture mandated by the platform.
+   *
+   * @setHeader token.access Authorization
+   *
+   * @param connection
+   * @param body Payload for refreshing JWT access token, containing refresh token in authorization header. No body body expected in request, enforced by OpenAPI spec.
+   * @x-autobe-authorization-type refresh
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Renew the admin's JWT access token using a valid refresh token. Validates refresh token against shopping_mall_admin_sessions table, checks if token is expired or revoked, generates new access token with 30-minute expiration, and optionally reissues new refresh token (if configured). Returns 401 if refresh token invalid or 404 if session not found. Does not invalidate existing sessions on renewal (stateless refresh).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

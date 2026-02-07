@@ -1,0 +1,250 @@
+/// Customer-initiated cancellation requests for order items with status
+/// 'pending', including reason, requester, and auto-approval countdown.
+/// Follows 09-cancellation-refund.md specifications for 48-hour timeout.
+///
+/// This table captures requests made by customers to cancel order items that
+/// have been paid but not yet shipped. Each request is associated with one
+/// specific order item, contains a customer-provided reason (10-500
+/// characters), and has an auto-approval countdown clock. If the seller
+/// doesn't respond within 48 hours, the system automatically approves the
+/// cancellation and restores inventory. This table is critical for dispute
+/// resolution between customers and sellers, preserving the exact request
+/// context at the time it was submitted.
+///
+/// The cancellation request is independent of the order item itself and
+/// follows a specific lifecycle: initiation → pending → auto-approved or
+/// seller-response. This separation allows for better audit trails, separate
+/// permission logic, and clear separation of concerns from order management.
+///
+/// The customer_id is derived through the order_item_id foreign key rather
+/// than stored directly to maintain referential integrity and avoid
+/// duplication. This design ensures that a cancellation request can only be
+/// made for an order item that the customer has previously purchased. This
+/// provides a built-in ownership validation layer.
+///
+/// This table has been deliberately designed as a primary entity because:
+/// - Customers can view, initiate, and monitor cancellation requests
+/// independently
+/// - Administrative interfaces need to list and manage all pending
+/// cancellations
+/// - Business intelligence needs to analyze cancellation patterns across
+/// customer base
+/// - Multiple systems (notifications, auto-approval, inventory) need to
+/// reference these requests
+///
+/// Following 09-cancellation-refund.md specifications: Only customers who
+/// purchased the item can request cancellation, only on 'paid' items, reason
+/// must be 10-500 characters, 48-hour auto-approval is mandatory.
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item that this cancellation request pertains to. {@link
+  /// shopping_mall_order_items.order_item_id}.
+  order_item_id String
+  
+  /// The customer who initiated this cancellation request. This is derived
+  /// from the order item, ensuring only buyers can request cancellation.
+  /// {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// The reason provided by the customer for requesting cancellation. Must be
+  /// between 10 and 500 characters as specified in 09-cancellation-refund.md.
+  /// This field captures the customer's narrative for the request and will be
+  /// displayed to the seller for response.
+  reason String
+  
+  /// The current status of the cancellation request. Always 'pending' until
+  /// seller responds or auto-approved by system. Values are strictly
+  /// controlled by application logic per 09-cancellation-refund.md.
+  status String
+  
+  /// Timestamp when the cancellation request was created. This is set by the
+  /// system and cannot be modified by users.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated. Initially set
+  /// to created_at, then updated when status changes (such as auto-approval).
+  updated_at DateTime
+  
+  /// Timestamp when this request will be automatically approved if no seller
+  /// response occurs first. Set to created_at + 48 hours as mandated in
+  /// 09-cancellation-refund.md. Used by automated job to process pending
+  /// requests.
+  auto_approve_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  requestResponse shopping_mall_request_responses?
+  
+  @@unique([order_item_id])
+  @@index([customer_id])
+  
+  @@index([order_item_id])
+  @@index([auto_approve_at])
+}
+
+/// Customer-initiated refund requests for order items with status
+/// 'delivered'. Captures refund reason, requester, and auto-approval
+/// countdown. Follows 72-hour timeout rule: if seller doesn't respond within
+/// 72 hours, system automatically approves the request. Each refund request
+/// is tied to exactly one order item and one customer. Refund requests are
+/// immutable records with status transitions and must not be edited after
+/// submission. For audit, all changes are captured in central
+/// shopping_mall_snapshots table. This table is primary mode of interaction
+/// for refund workflow.
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item being refunded. References the exact state of the product,
+  /// variant, and price as they existed at time of purchase. {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// The customer who initiated this refund request. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Textual reason provided by the customer for the refund request (minimum
+  /// 10 characters, maximum 500). This is the primary field used in dispute
+  /// resolution and is preserved verbatim in the immutable snapshot.
+  reason String
+  
+  /// Current state of the refund request. Values: 'pending', 'approved',
+  /// 'rejected'. Initial state is 'pending'. After seller response or
+  /// auto-approval, it transitions to 'approved' or 'rejected'. Status changes
+  /// are recorded in shopping_mall_snapshots.
+  status String
+  
+  /// Timestamp of when the refund request was created by the customer. Must be
+  /// in ISO 8601 format.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this row (e.g., when status changes).
+  /// Must be in ISO 8601 format.
+  updated_at DateTime
+  
+  /// Used for soft deletion. If null, the request is active. If set, the
+  /// request has been logically deleted (only by admin override with audit
+  /// trail).
+  deleted_at DateTime?
+  
+  /// The exact timestamp when this refund request will be automatically
+  /// approved if the seller has not responded. Calculated as created_at + 72
+  /// hours. Used by background job scheduler to auto-approve pending requests.
+  auto_approval_deadline DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  requestResponse shopping_mall_request_responses?
+  refundResponseSnapshot shopping_mall_refund_response_snapshots?
+  
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, status], map: "shopping_mall_refund_requests_shopping_mall_customer_i_1237f3e9")
+  @@index([auto_approval_deadline])
+}
+
+/// Seller responses to cancellation or refund requests. Contains decision
+/// (approve/reject), reason for rejection (if applicable), and timestamp.
+/// Each request has exactly one response. Immutable after creation for audit
+/// trail compliance. References either a cancellation request or refund
+/// request, but never both. This table is the authoritative audit record of
+/// seller decisions in the dispute resolution process.
+///
+/// **Relationship**: One response exists for each cancellation or refund
+/// request (1:1). When a request is created, the response is created later
+/// by the seller. The response is immutable – once saved, the decision and
+/// reason cannot be modified. This table is referenced by the
+/// cancellation/refund request tables for status resolution and audit.
+///
+/// **Key Constraint**: A response must reference exactly one of the parent
+/// request tables — shopping_mall_cancellation_requests or
+/// shopping_mall_refund_requests — via mutual exclusivity enforced at
+/// application layer. Both FKs are required at the database level for
+/// referential integrity, but application logic ensures only one is
+/// populated.
+///
+/// **Snapshot Integration**: All changes to request status are tracked via
+/// this response record. The snapshot of the decision and reason is
+/// preserved here, not in the global shopping_mall_snapshots table, as this
+/// is a core business decision with direct financial and inventory
+/// consequences.
+///
+/// **Audit Role**: This table is the legal evidence of seller behavior in
+/// dispute resolution. Administrators use this table to review seller
+/// responsiveness, approval rates, and response quality.
+///
+/// **Referenced by**:
+/// shopping_mall_cancellation_requests.request_response_id,
+/// shopping_mall_refund_requests.request_response_id
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_request_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cancellation request being responded to. {@link
+  /// shopping_mall_cancellation_requests.id}. Exactly one of
+  /// cancellation_request_id or refund_request_id must be set.
+  cancellation_request_id String
+  
+  /// The refund request being responded to. {@link
+  /// shopping_mall_refund_requests.id}. Exactly one of cancellation_request_id
+  /// or refund_request_id must be set.
+  refund_request_id String
+  
+  /// The seller's decision on the request. Must be exactly 'approve' or
+  /// 'reject'. This is a constrained business decision with direct impact on
+  /// inventory and customer experience.
+  decision String
+  
+  /// The reason provided by the seller for rejecting the request. Must be at
+  /// least 10 characters if used. Must be null if decision is 'approve'. This
+  /// field is required for audit and transparency when rejection occurs.
+  reason String?
+  
+  /// Timestamp when the seller submitted the response. Cannot be modified
+  /// after creation. Follows ISO 8601 format and is used for auto-approval
+  /// timeout calculations (48h for cancellations, 72h for refunds).
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  
+  @@unique([cancellation_request_id])
+  @@unique([refund_request_id])
+  
+  @@index([cancellation_request_id])
+  @@index([refund_request_id])
+  @@index([decision, created_at])
+  @@index([created_at])
+}

@@ -1,463 +1,105 @@
-# TodoApp Functional Requirements Specification
+# Welcome to TodoApp
 
-## Introduction
+TodoApp is a private, secure, multi-user to-do application designed for individuals who need a personal task management system with strict data isolation. Unlike collaborative task tools, TodoApp operates on the principle that **each user's data is completely private and inaccessible to all others**, even within the same system instance. This document provides an overview of the system's scope, core features, and organizational structure for the development team.
 
-TodoApp is a private, single-user-per-account task management application designed with absolute data isolation and privacy as its foundational principles. This specification document provides comprehensive, implementation-ready requirements for developing the backend application with strict adherence to the business requirement that no user can access, view, or even detect the existence of another user's data under any circumstances.
+## System Scope
 
-All development must ensure complete logical and technical segregation of user data. The system is not designed for collaboration, sharing, or any form of cross-user interaction. Every feature has been architected to enforce individual user data sovereignty.
+TodoApp is a backend application serving a single-user-per-account model. Every user has a completely isolated data environment. There is no concept of shared tasks, team spaces, or user-to-user visibility. This is not a group productivity tool — it is a personal, private, and secure to-do manager with enterprise-grade data isolation.
 
-## User Authentication
+The system serves one primary user group: **authenticated users** who create, manage, and track their own personal tasks. No guest accounts, no administrators, and no shared data exist within the system.
 
-### User Registration
+The scope includes:
+- User account lifecycle (registration, login, password reset, account deletion)
+- Profile management (display name edit)
+- Todo lifecycle (creation, viewing, editing, completion, soft-deletion, restoration, permanent deletion)
+- Edit history tracking
+- Trash management
+- Filtering and sorting of todo lists
+- API-mediated data access with strict ownership validation
 
-WHEN a user submits an email and password to register an account, THE system SHALL validate that:
+The system deliberately excludes:
+- User-to-user interaction or visibility
+- Shared folders or groups
+- Public or semi-public tasks
+- Commenting, tagging, or collaboration features
+- Administrative dashboards or user management
 
-- The email address follows standard email format (local-part@domain)
-- The password is at least 8 characters in length
-- The email address is not already registered in the system
+## Key Features
 
-IF the email address is already registered, THEN THE system SHALL return a generic error message: "Invalid email or password" without indicating whether the issue was with the email or password.
+### User Account Management
+Users can register, log in, change their password, and permanently delete their account. All associated data — including todos, edit history, and trash contents — is irreversibly deleted upon account deletion.
 
-WHEN validation passes, THE system SHALL create a new user account with:
-- A unique identifier (UUID)
-- The provided email address in encrypted form
-- The password stored as a bcrypt-hashed value
-- A default display name set to the email address prefix (text before @)
-- The account creation timestamp
-- All data tied exclusively to the new user's UUID
+### User Profile
+Each user has a private display name. Users can change it at any time, but **no other user can view, search, or reference another user's display name**. Profile data is never exposed through any API endpoint or interface.
 
-### User Login
+### Todo Creation
+Users create todos with a required title, and optional description, start date, and due date. Todos default to an incomplete state. All fields respect ISO 8601 format for dates when provided.
 
-WHEN a user submits an email and password to log in, THE system SHALL validate that:
+### Todo Viewing
+Users can retrieve paginated lists of their todos and view individual todos in full detail. Todos displayed in lists include: title, completion status, start date (if set), due date (if set), and creation timestamp.
 
-- The email address corresponds to an existing, active user account
-- The provided password matches the stored bcrypt hash
+### Todo Completion Toggle
+Users can toggle todos between complete and incomplete states in a single atomic operation. No intermediate status exists. The original creation timestamp is preserved through all state changes.
 
-IF authentication fails, THEN THE system SHALL return the same generic error message regardless of whether the email doesn't exist or the password is incorrect: "Invalid email or password."
+### Todo Editing
+Users can edit any field of their todos (title, description, start date, due date). Each edit triggers a new history entry, storing the old and new values for that field at that time. **Only the owner can edit a todo.**
 
-WHEN authentication succeeds, THE system SHALL issue:
-- A JWT access token with expiration of 15 minutes
-- A refresh token stored as a hashed value in the database with 30-day expiration
+### Edit History
+Every edit made to a todo creates a chronological log entry recording:
+- Timestamp of edit
+- Changed field(s) and their prior value
+- Changed field(s) and their new value
 
-THE JWT access token SHALL contain the following payload:
--"sub": the user's unique UUID identifier
--"email": the user's email address (for identification)
--"actor": the string literal "user"
--"iat": issuance timestamp
--"exp": expiration timestamp (15 minutes after issuance)
+History entries are sorted from most recent to oldest. Users can view the full edit history of any of their todos.
 
-WHEN a user successfully logs in, THE system SHALL redirect them to their todos dashboard.
+### Todo Deletion
+Deletion is soft; todos are moved to a private “trash” area and are no longer visible in the main list. Data retention is guaranteed with no auto-purge.
 
-### Password Change
+### Trash Management
+The trash is a separate, paginated view accessible only to the authenticated user who deleted the todos. From trash, users may:
+- Restore a todo to its original state in the main list
+- Permanently delete the todo (and its entire edit history)
 
-WHEN a user requests to change their password, THE system SHALL require:
+Permanent deletion from trash is irreversible and purges all history data.
 
-- The current password
-- The new password (minimum 8 characters)
-- Confirmation of the new password
+### Filtering and Sorting
+Users can filter their todo list by completion status: All, Complete, or Incomplete. They can sort by:
+- Creation date (newest or oldest first)
+- Start date (earliest or latest first; todos without start date appear last)
+- Due date (earliest or latest first; todos without due date appear last)
 
-WHEN the current password is validated, THE system SHALL compare the new password with the confirmation field.
-IF the passwords do not match, THEN THE system SHALL return "Passwords do not match."
+Sorting and filtering can be combined. Default sort is creation date, newest first.
 
-WHEN passwords match and are valid, THE system SHALL:
+## User Privacy
 
-- Hash the new password using bcrypt
-- Replace the old password hash with the new one in the database
-- Immediately invalidate all active refresh tokens associated with the account
-- Reissue a fresh refresh token upon successful change
+Privacy is the foundational and non-negotiable principle of TodoApp.
 
-IF a user attempts to change their password while logged out, THEN THE system SHALL require them to re-authenticate before proceeding with password change.
+**ALL** user data is owned exclusively by the user who created it. Data isolation is enforced:
+- At the API layer: every request must include and validate a user ID; no data from another user is ever returned.
+- At the database layer: all queries include a WHERE clause matching the authenticated user ID; no queries can bypass this filter.
+- At the application layer: no shared caches, no user-identifiable metadata leaked in responses, no audit logs exposing cross-user information.
 
-### Account Deletion
+Users cannot view others' profiles. Users cannot view others' todos, in main list or trash. Users cannot view others' edit history. No export, import, or data-sharing features exist or will be added.
 
-WHEN a user initiates account deletion, THE system SHALL require explicit confirmation of this irreversible action.
+Fault tolerance and logging are designed to preserve privacy: error messages do not reveal existence or non-existence of another user's data. System diagnostics never expose user identifiers or data relationships across accounts.
 
-WHEN confirmation is received, THE system SHALL:
+## Document Organization
 
-- Mark the user account as "deleted" with a timestamp
-- Immediately invalidate all active authentication tokens (both access and refresh) for this user
-- Initiate a full soft-deletion cascade of all user data:
-  - Soft-delete all todos (set is_deleted = true and deleted_at = current timestamp)
-  - Permanently delete all edit history records associated with the user's todos
-  - Delete the user profile data
+This document serves as the Table of Contents (ToC) for the TodoApp system documentation. All other documents reference this ToC and adhere to the structured documentation format.
 
-WHEN a user attempts to log in after account deletion, THE system SHALL return: "User account does not exist or has been deleted."
+The 10 associated requirement documents are: 
 
-WHEN a user attempts to register with an email previously associated with a deleted account, THE system SHALL allow new registration and create a fresh account.
+- [Service Overview](./01-service-overview.md) — Business justification and market positioning
+- [User Actors](./02-user-actors.md) — Authentication, JWT, data isolation enforcement
+- [User Profile](./03-user-profile.md) — Display name management and privacy constraints
+- [Create Todo](./04-create-todo.md) — Input validation and default behavior
+- [View Todo List](./05-view-todo-list.md) — Pagination, filtering, sorting, response structure
+- [Toggle Todo](./06-toggle-todo.md) — Atomic state transition logic
+- [Edit Todo](./07-edit-todo.md) — Change detection and history entry generation
+- [Delete Todo](./08-delete-todo.md) — Soft-delete mechanics and visibility rules
+- [Trash](./09-trash.md) — Restoration, purge, and history handling
+- [Filters and Sort](./10-filters-and-sort.md) — Complex sorting behavior and edge cases
 
-## User Profile Management
-
-### Display Name Definition
-
-WHEN a user has not set a custom display name, THE system SHALL generate a default display name using the email address prefix (everything before @).
-
-FOR EXAMPLE: User with email "john.doe@example.com" shall have default display name "john.doe".
-
-### Display Name Update
-
-WHEN a user updates their display name, THE system SHALL validate that:
-
-- The display name is not empty or whitespace only
-- The display name does not exceed 50 characters
-- The display name does not contain any control characters or HTML/JS injection sequences
-
-IF the display name is empty, whitespace, or exceeds 50 characters, THEN THE system SHALL reject the update and return an appropriate error: "Display name must be 1-50 non-whitespace characters."
-
-WHEN validation passes, THE system SHALL:
-
-- Replace the existing display_name field with the new value
-- Update the updated_at timestamp
-- Return the updated profile data to the client
-
-### Profile Access
-
-WHEN a user requests their own profile information, THE system SHALL return:
-
-- The display name
-- The account creation date
-- The email address (for display purposes)
-- The last login timestamp
-
-IF a user attempts to access another user's profile, THEN THE system SHALL return HTTP 404 Not Found with message "User not found."
-
-## Todo Creation
-
-### Todo Entity Requirements
-
-WHEN a user creates a todo, THE system SHALL require:
-
-- A non-empty title with 1-200 characters
-
-WHEN a user creates a todo, THE system SHALL permit:
-
-- A description field with maximum 2,000 characters (can be empty)
-- A start date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ) (can be null)
-- A due date in ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ) (can be null)
-
-WHEN a todo is created, THE system SHALL automatically set:
-
-- completion_status = false (incomplete)
-- created_at = timestamp of creation
-- updated_at = timestamp of creation
-- is_deleted = false
-- user_id = authenticated user's UUID
-
-### Validation Rules
-
-WHEN a todo title is submitted with 0 characters, THEN THE system SHALL reject the request with code "TODO_MISSING_TITLE."
-
-WHEN a todo title exceeds 200 characters, THEN THE system SHALL reject the request with code "TODO_TITLE_TOO_LONG."
-
-WHEN a start date or due date is submitted in invalid ISO 8601 format, THEN THE system SHALL reject the request with code "TODO_INVALID_DATE."
-
-WHEN a due date is provided and is before the start date, THE system SHALL accept the todo but SHALL record this inconsistency in the edit history (user-visible).
-
-WHEN a todo is created with an empty description, THE system SHALL store an empty string.
-
-WHEN a todo is created without a start date, THE system SHALL store null.
-
-WHEN a todo is created without a due date, THE system SHALL store null.
-
-### Todo Storage
-
-EVERY todo created SHALL belong exclusively to the authenticated user.
-
-WHEN a todo is created, THE system SHALL not store any reference to other users.
-
-WHEN a todo is created, THE system SHALL not include any metadata, tags, or context that could link it to other users.
-
-## Todo Viewing
-
-### Todo List Retrieval
-
-WHEN a user requests their todo list, THE system SHALL return:
-
-- Only todos where user_id = authenticated user's UUID
-- Each todo shall include: title, completion_status, created_at, start_date (if not null), due_date (if not null)
-
-WHEN the user requests pagination, THE system SHALL:
-
-- Default to 20 todos per page
-- Accept page parameter as a positive integer
-- Return total count for pagination controls
-
-WHEN the user requests more than 100 todos per page, THE system SHALL default to 20 todos per page and log the anomalous request.
-
-### Single Todo Retrieval
-
-WHEN a user requests a single todo by ID, THE system SHALL:
-
-- Return the full detail: title, description, completion_status, created_at, updated_at, start_date (if not null), due_date (if not null)
-
-IF the requested todo_id does not exist, THEN THE system SHALL return HTTP 404 Not Found.
-
-IF the todo_id exists but belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
-
-## Todo Completion Toggle
-
-### Completion Status Update
-
-WHEN a user marks a todo as complete, THE system SHALL:
-
-- Set completion_status = true
-- Update the updated_at timestamp
-
-WHEN a user marks a todo as incomplete, THE system SHALL:
-
-- Set completion_status = false
-- Update the updated_at timestamp
-
-WHEN a todo is toggled, THE system SHALL create an edit history entry.
-
-IF the todo_id provided does not exist, THEN THE system SHALL return HTTP 404 Not Found.
-
-IF the todo_id belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
-
-## Todo Editing
-
-### Editable Fields
-
-WHEN a user edits a todo, THE system SHALL allow modification of:
-
-- Title (1-200 characters)
-- Description (≤ 2,000 characters)
-- Start date (ISO 8601 or null)
-- Due date (ISO 8601 or null)
-
-### Edit Validation
-
-WHEN a user submits an edit with an empty title, THEN THE system SHALL return code "TODO_MISSING_TITLE."
-
-WHEN a user submits an edit with a title > 200 characters, THEN THE system SHALL return code "TODO_TITLE_TOO_LONG."
-
-WHEN a user submits an edit with invalid date format, THEN THE system SHALL return code "TODO_INVALID_DATE."
-
-WHEN a user attempts to change a field to the same value, THE system SHALL still create an edit history entry recording "no change."
-
-### Edit History Trigger
-
-WHEN any field of a todo is modified, THE system SHALL create a new entry in the edit history table with:
-
-- The timestamp of the edit
-- The previous value of the title (if changed) or "no change"
-- The previous value of the description (if changed) or "no change"
-- The previous value of the start date (if changed) or "no change"
-- The previous value of the due date (if changed) or "no change"
-
-WHEN a todo is edited, THE system SHALL update the updated_at field to the current timestamp.
-
-IF a user attempts to edit a todo that belongs to another user, THEN THE system SHALL return HTTP 404 Not Found.
-
-## Edit History
-
-### History Record Structure
-
-EVERY edit history entry SHALL contain:
-
-- history_id (UUID)
-- todo_id (foreign key to todos table)
-- edited_at (timestamp)
-- previous_title (string or null)
-- previous_description (string or null)
-- previous_start_date (timestamp or null)
-- previous_due_date (timestamp or null)
-- edited_by (user_id)
-
-### Access Control
-
-WHEN a user requests the edit history for a todo, THE system SHALL:
-
-- Return only history entries where todo_id belongs to the authenticated user
-- Sort results by edited_at descending (most recent first)
-
-IF a user attempts to access edit history for a todo they do not own, THEN THE system SHALL return HTTP 404 Not Found.
-
-IF a user attempts to access edit history for a non-existent todo, THEN THE system SHALL return HTTP 404 Not Found.
-
-### History Persistence
-
-WHEN a todo is deleted (soft delete), ALL corresponding edit history records SHALL be retained.
-
-WHEN a todo is permanently deleted, ALL edit history records for that todo SHALL be permanently removed.
-
-WHEN a user account is deleted, ALL edit history records for that user's todos SHALL be permanently removed.
-
-## Todo Deletion
-
-### Soft Deletion Process
-
-WHEN a user deletes a todo, THE system SHALL:
-
-- Set is_deleted = true
-- Set deleted_at = current timestamp
-- Preserve all other todo data including description and dates
-- Move the todo out of the regular todo list view
-- Preserve all edit history records
-- Update the updated_at timestamp
-
-WHEN a todo is soft-deleted, THE system SHALL NOT create an edit history entry for the deletion itself.
-
-WHEN a todo is soft-deleted, THE system SHALL still allow it to be restored.
-
-### Access Control
-
-WHEN a user attempts to delete a todo belonging to another user, THE system SHALL return HTTP 404 Not Found.
-
-WHEN a user attempts to delete a non-existent todo, THE system SHALL return HTTP 404 Not Found.
-
-## Trash Management
-
-### Trash List Access
-
-WHEN a user requests their trash, THE system SHALL:
-
-- Return only todos where is_deleted = true AND user_id = authenticated user's UUID
-- Return each todo with: title, created_at, deleted_at, completion_status
-- Paginate results with default 20 items per page
-
-IF the trash is empty, THE system SHALL return: "Your trash is empty."
-
-### Todo Restoration
-
-WHEN a user restores a todo from trash, THE system SHALL:
-
-- Set is_deleted = false
-- Set deleted_at = null
-- Update the updated_at timestamp
-- Return the todo to the normal todo list
-
-IF the todo being restored does not exist, THE system SHALL return HTTP 404 Not Found.
-
-IF the todo belongs to another user, THE system SHALL return HTTP 404 Not Found.
-
-### Permanent Deletion
-
-WHEN a user permanently deletes a todo from trash, THE system SHALL:
-
-- Remove the todo record from the todos table entirely
-- Remove all associated edit history records from the edit_history table
-- Return confirmation message: "Todo and its history have been permanently deleted."
-
-WHEN a todo is permanently deleted, THE system SHALL guarantee that NO TRACE of the data remains in the database.
-
-## Filtering
-
-### Completion Status Filters
-
-WHEN a user applies the filter "All", THE system SHALL return todos regardless of completion status.
-
-WHEN a user applies the filter "Complete", THE system SHALL return only todos where completion_status = true.
-
-WHEN a user applies the filter "Incomplete", THE system SHALL return only todos where completion_status = false.
-
-WHEN a user applies an invalid filter parameter, THE system SHALL default to "All".
-
-WHEN a user applies any filter, THE system SHALL ensure that only todos belonging to the authenticated user are returned.
-
-## Sorting
-
-### Sort by Creation Date
-
-WHEN a user sorts by creation_date ascending, THE system SHALL order todos by created_at field ascending.
-
-WHEN a user sorts by creation_date descending, THE system SHALL order todos by created_at field descending.
-
-### Sort by Start Date
-
-WHEN a user sorts by start_date ascending, THE system SHALL:
-
-- Order todos by start_date field ascending
-- Place todos with null start_date at the end of the list
-
-WHEN a user sorts by start_date descending, THE system SHALL:
-
-- Order todos by start_date field descending
-- Place todos with null start_date at the end of the list
-
-### Sort by Due Date
-
-WHEN a user sorts by due_date ascending, THE system SHALL:
-
-- Order todos by due_date field ascending
-- Place todos with null due_date at the end of the list
-
-WHEN a user sorts by due_date descending, THE system SHALL:
-
-- Order todos by due_date field descending
-- Place todos with null due_date at the end of the list
-
-### Default Sort Order
-
-WHEN a user does not specify a sort order, THE system SHALL default to sorting by creation_date descending (newest first).
-
-WHEN a user applies an invalid sort parameter, THE system SHALL default to creation_date descending.
-
-## Privacy and Security Architecture
-
-### Data Isolation Enforcement
-
-THE system SHALL guarantee that all database queries include an explicit WHERE clause filtering by user_id = authenticated_user_id.
-
-THE system SHALL never include a user_id or any other identity identifier from another user in any query, response, or log.
-
-WHEN any API endpoint is accessed, THE system SHALL:
-
-- Validate authentication token
-- Extract user UUID from token
-- Scope every database query to that user UUID
-- Reject any request that attempts to inject external user IDs
-
-### Query Scope Enforcement
-
-EVERY SQL query SHALL follow this pattern:
-
-SELECT * FROM todos WHERE user_id = ? AND [other conditions];
-
-THE system SHALL NEVER use queries like:
-
-SELECT * FROM todos WHERE id = ?; // without user_id constraint
-
-IF any database query bypasses user_id filtering, THE system SHALL be considered a critical security failure and trigger an immediate system lockdown.
-
-### Error Message Consistency
-
-WHEN a resource does not belong to the authenticated user, THE system SHALL return HTTP 404 Not Found, NEVER HTTP 403 Forbidden.
-
-WHEN a resource does not exist, THE system SHALL return HTTP 404 Not Found.
-
-WHEN a resource is accessible to the user but requires authentication, THE system SHALL return HTTP 401 Unauthorized.
-
-THE rationale is that by returning 404 instead of 403 for unauthorized access to resources belonging to others, we prevent any data leakage about whether a resource exists for other users.
-
-### Audit Logging
-
-SYSTEM logs SHALL record only:
-
-- Timestamp
-- HTTP method and endpoint
-- HTTP status code
-- User ID (for successful authenticated requests)
-- Request length
-- Execution time
-
-SYSTEM logs SHALL NEVER record:
-
-- Any todo content (title, description, dates)
-- Email addresses or display names
-- JWT tokens or refresh tokens
-- Personal identifiers beyond user UUID
-- The existence of other users
-
-## Conclusion
-
-This document provides a complete, implementation-ready specification for TodoApp, covering all functional requirements in EARS format with explicit business rules, validation constraints, privacy enforcement, and edge case handling.
-
-Every requirement has been designed around the non-negotiable principle that **no user can see, access, or even detect the existence of any data belonging to another user**.
-
-The system is designed for single-user productivity with absolute data isolation as a foundational architectural principle - not an optional layer.
-
-Implementation must be done with 100% compliance to these specifications to ensure security, privacy, and reliability.
-
-All subsequent phases (database design, APIs, testing) must be derived from these requirements without modification.
+All documents are written with the assumption that developers have full autonomy in choosing architecture, API design, database schema, and implementation model — so long as business requirements and privacy guarantees are fully met.
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

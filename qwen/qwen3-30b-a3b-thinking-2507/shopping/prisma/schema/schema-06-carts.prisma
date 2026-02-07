@@ -1,157 +1,135 @@
-/// User cart records for shopping selection before order commitment.
+/// Main cart container for customer shopping sessions, storing active cart
+/// instances with creation timestamps and user association.
 ///
-/// Stores active shopping selections with cart status and customer
-/// reference. Carts represent temporary state where users can add/remove
-/// items, adjust quantities, and apply discounts before converting to an
-/// order. Each cart is associated with a specific customer and has a status
-/// indicating its current lifecycle stage (e.g., active, expired).
+/// This table represents the central shopping cart instance that customers
+/// actively manage during their shopping journey. The cart tracks all items
+/// added to it, current cart status, and user context. Multiple carts are
+/// possible per customer, with each representing a separate shopping
+/// session.
 ///
-/// Carts are automatically expired after a period of inactivity to free up
-/// resources. When a customer proceeds to checkout, the cart is transformed
-/// into an order record, preserving the cart's contents as order items with
-/// snapshots of product details at purchase time.
+/// Relationship with ecommerce_customers: Each cart belongs to exactly one
+/// customer account, enabling user-specific cart management and session
+/// tracking.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_carts {
+model ecommerce_carts {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Associated customer's {@link shopping_mall_customers.id}.
-  customer_id String
+  /// The customer who owns this cart. {@link ecommerce_customers.id}.
+  ecommerce_customer_id String
   
-  /// Current cart status. Valid values: 'active', 'expired',
-  /// 'converted_to_order'. Status transitions are managed during the shopping
-  /// workflow.
-  status String
-  
-  /// Timestamp when the cart was created.
+  /// Timestamp when the cart was first created.
   created_at DateTime
   
   /// Timestamp when the cart was last modified.
   updated_at DateTime
   
-  /// Timestamp when the cart was soft-deleted. Null indicates cart is active.
+  /// Timestamp when the cart was soft-deleted. Null indicates active cart.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
-  items shopping_mall_cart_items[]
-  snapshots shopping_mall_cart_snapshots[]
+  items ecommerce_cart_items[]
+  snapshots ecommerce_cart_snapshots[]
   
-  @@index([customer_id, status])
+  @@index([ecommerce_customer_id])
 }
 
-/// Tracks items added to user shopping carts, including product variants,
-/// quantities, and prices at time of addition. Each cart item records
-/// variant details and current pricing to ensure shopping experience matches
-/// transaction context even if product details later change.
+/// Cart line items containing product variants, quantities, and prices at
+/// time of addition for each shopping session.
 ///
-/// Cart items exist as a direct user-managed entity where customers
-/// add/remove products and adjust quantities. This requires independent
-/// management capabilities including:
-/// - Updating quantities for existing items
-/// - Removal of specific items without affecting entire cart
-/// - Historical tracking of items added at different times
-/// - Price preservation from add time to cart commitment
-///
-/// The model references active carts (shopping_mall_carts) to associate
-/// items with shopping sessions and product variants
-/// (shopping_mall_product_variants) for full catalog context.
-///
-/// Snapshots are handled by the cart_snapshots table, so this model focuses
-/// on current cart state without historical preservation fields.
+/// - Each cart item represents a product variant added to a customer's cart
+/// at a specific price point.
+/// - price_at_addition stores the price at time of addition (historical
+/// accuracy for pricing changes).
+/// - Foreign key to ecommerce_carts for cart context.
+/// - Foreign key to ecommerce_product_variants for product relationship.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_items {
+model ecommerce_cart_items {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Cart that the item belongs to. {@link shopping_mall_carts.id}.
-  cart_id String
+  /// Cart containing this item. {@link ecommerce_carts.id}.
+  ecommerce_carts_id String
   
-  /// Product variant included in the cart. {@link
-  /// shopping_mall_product_variants.id}.
-  product_variant_id String
+  /// Product variant associated with this cart item. {@link
+  /// ecommerce_product_variants.id}.
+  ecommerce_product_variants_id String
   
-  /// Number of this product variant in the cart. Must be at least 1 and
-  /// reflect real inventory levels.
+  /// Quantity of the product variant in the cart.
   quantity Int
   
-  /// Price of the product variant at the time it was added to the cart,
-  /// preserving historical accuracy even if prices change later.
-  price_at_time Float
+  /// Price of the product variant at time of addition (for historical
+  /// accuracy).
+  price_at_addition Float
   
-  /// Timestamp when the cart item was added to the cart.
+  /// Timestamp when cart item was created.
   created_at DateTime
   
-  /// Timestamp when the cart item was last modified (e.g., quantity update).
+  /// Timestamp when cart item was last updated.
   updated_at DateTime
   
-  /// Timestamp when the cart item was soft-deleted (e.g., when removed from
-  /// cart).
+  /// Timestamp when cart item was marked as deleted (soft delete).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  cart shopping_mall_carts @relation(fields: [cart_id], references: [id], onDelete: Cascade)
-  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  cart ecommerce_carts @relation(fields: [ecommerce_carts_id], references: [id], onDelete: Cascade)
+  variant ecommerce_product_variants @relation(fields: [ecommerce_product_variants_id], references: [id], onDelete: Cascade)
   
-  @@index([product_variant_id])
-  
-  @@unique([cart_id, product_variant_id])
-  @@index([cart_id])
+  @@index([ecommerce_carts_id])
+  @@index([ecommerce_product_variants_id])
 }
 
-/// Immutable historical records of cart state changes capturing modification
-/// details for audit and traceability purposes.
+/// Point-in-time snapshots of cart state changes to maintain audit history
+/// of item additions, removals, and quantity modifications.
 ///
-/// Stores the complete cart state at the time of modification including all
-/// items, their quantities, and prices. Enables detailed tracking of cart
-/// changes without interfering with current cart operations. All historical
-/// data remains accessible for customer support, order recovery, and system
-/// diagnostics.
-///
-/// Provides a full audit trail of cart state transitions (additions,
-/// removals, modifications) with timestamps and references to corresponding
-/// cart entities. Supports soft deletion for historical record maintenance.
+/// Captures the complete state of a shopping cart at the moment when it was
+/// modified, including customer information, cart status, and all item
+/// quantities. Enables historical analysis, rollback of cart modifications,
+/// and audit trails for system debugging.
 ///
 /// @namespace Carts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_cart_snapshots {
+model ecommerce_cart_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Cart entity this snapshot refers to. {@link shopping_mall_carts.id}.
-  cart_id String
+  /// Cart record this snapshot belongs to. {@link ecommerce_carts.id}.
+  ecommerce_cart_id String
   
-  /// Snapshot creation timestamp.
+  /// Timestamp when this cart snapshot was created (recorded by system).
   created_at DateTime
   
-  /// Snapshot update timestamp.
+  /// Timestamp when this cart snapshot was last updated (same as created_at
+  /// for snapshots).
   updated_at DateTime
   
-  /// Deletion timestamp for soft delete.
+  /// Timestamp when this cart snapshot was deleted (if deleted, used for soft
+  /// deletion).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  cart shopping_mall_carts @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  cart ecommerce_carts @relation(fields: [ecommerce_cart_id], references: [id], onDelete: Cascade)
   
-  @@index([cart_id])
+  @@index([ecommerce_cart_id, created_at])
 }

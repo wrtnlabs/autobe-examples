@@ -1,0 +1,1097 @@
+/// Core table for administrative action metadata and actor information.
+/// Contains the essential information about who performed the action and
+/// when, while delegating target-specific details to subtype tables.
+///
+/// This table serves as the parent entity for all administrative
+/// interventions, maintaining the actor relationships and basic action
+/// categorization while avoiding polymorphic foreign key violations.
+/// Target-specific details are stored in dedicated subtype tables for each
+/// entity type (orders, products, customers, sellers).
+///
+/// Key relationships include: the administrator who performed the action
+/// {@link ecommerce_administrators.id} and the super administrator who
+/// performed the action {@link ecommerce_super_administrators.id} for proper
+/// actor attribution.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrative_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the administrative action. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String?
+  
+  /// Super administrator who performed the administrative action. {@link
+  /// ecommerce_super_administrators.id}
+  super_administrator_id String?
+  
+  /// Category of administrative action performed. Common types:
+  /// ORDER_CANCELLATION, ORDER_REFUND, PRODUCT_DELETION, CUSTOMER_BAN,
+  /// SELLER_BAN, PRODUCT_VISIBILITY, CATEGORY_MANAGEMENT.
+  action_type String
+  
+  /// Brief description of the administrative action performed for quick
+  /// reference and audit trail purposes.
+  general_description String
+  
+  /// Timestamp when the administrative action was performed.
+  created_at DateTime
+  
+  /// Timestamp when the administrative action record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  superAdministrator ecommerce_super_administrators? @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
+  
+  orderAction ecommerce_administrative_action_of_orders?
+  productActions ecommerce_administrative_action_of_products[]
+  customerTargets ecommerce_administrative_action_of_customers[]
+  sellerTargets ecommerce_administrative_action_of_sellers[]
+  
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_administrative_actions_administrator_id_crea_0d3c5649")
+  // spellchecker: ignore-next-line
+  @@index([super_administrator_id, created_at], map: "ecommerce_administrative_actions_super_administrator_i_766c6aaf")
+  @@index([action_type, created_at])
+}
+
+/// Central platform monitoring and oversight records for tracking system
+/// health, compliance status, and administrative monitoring activities.
+///
+/// This table serves as the comprehensive oversight log for platform
+/// administrators to monitor system health, track compliance metrics, and
+/// maintain operational oversight. Records oversight checks performed by
+/// administrators including health monitoring, compliance verification,
+/// system performance tracking, and platform-wide operational assessments.
+///
+/// The table captures oversight activities such as: system health checks,
+/// compliance status monitoring, operational metrics review, incident
+/// tracking, and administrative oversight actions performed by authorized
+/// administrators. Each oversight record includes the checking
+/// administrator, oversight type, metrics captured during monitoring, and
+/// any findings or recommendations.
+///
+/// Related to: {@link ecommerce_administrators.id} for administrators
+/// performing oversight activities, and {@link
+/// ecommerce_administrative_actions.id} for related administrative
+/// interventions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_oversights {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed this platform oversight activity. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String
+  
+  /// Type of oversight activity performed such as 'health_check',
+  /// 'compliance_audit', 'performance_review', 'security_scan', or
+  /// 'operational_assessment'.
+  oversight_type String
+  
+  /// JSON payload containing platform metrics, system health indicators,
+  /// compliance status, and operational statistics captured during the
+  /// oversight check.
+  metrics_json String
+  
+  /// Administrator findings, observations, or recommendations resulting from
+  /// the oversight activity summary and conclusion.
+  findings String?
+  
+  /// Severity classification of oversight findings such as 'info', 'warning',
+  /// 'critical', or 'emergency'.
+  severity_level String
+  
+  /// Whether the findings from this oversight activity have been addressed and
+  /// resolved.
+  resolved Boolean
+  
+  /// Timestamp when this oversight activity was performed and recorded.
+  created_at DateTime
+  
+  /// Timestamp when this oversight record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([administrator_id, created_at])
+  @@index([oversight_type, created_at])
+  @@index([severity_level, created_at])
+  @@index([resolved, created_at])
+}
+
+/// Tracks administrator promotion requests and approval workflow.
+///
+/// This table manages the complete lifecycle of requests from users
+/// (customers or sellers) seeking to become administrators. Each request
+/// includes the user's justification, current status, and tracks the
+/// approval process by super administrators. The workflow supports pending,
+/// approved, and rejected states with comprehensive audit trails.
+///
+/// Requests are created by users and reviewed by super administrators who
+/// can approve or reject based on platform needs. Approved requests result
+/// in the user being promoted to regular administrator status.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrator_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the promotion request. {@link ecommerce_customers.id}
+  /// or {@link ecommerce_sellers.id}.
+  requesting_user_id String
+  
+  /// Super administrator who approved or rejected the request. {@link
+  /// ecommerce_super_administrators.id}.
+  approving_super_administrator_id String?
+  
+  /// Justification provided by the user for why they should become an
+  /// administrator.
+  request_reason String
+  
+  /// Current status of the promotion request: pending, approved, rejected.
+  status String
+  
+  /// Reason provided by super administrator for approval or rejection decision.
+  approval_reason String?
+  
+  /// Timestamp when the promotion request was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the promotion request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the promotion request was soft deleted for audit
+  /// preservation.
+  deleted_at DateTime?
+  
+  /// Timestamp when the promotion request was approved by super administrator.
+  approved_at DateTime?
+  
+  /// Timestamp when the promotion request was rejected by super administrator.
+  rejected_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  requestingUser ecommerce_customers @relation(fields: [requesting_user_id], references: [id], onDelete: Cascade)
+  approvingSuperAdministrator ecommerce_super_administrators? @relation(fields: [approving_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  promotionRequest ecommerce_administrator_promotion_requests?
+  
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([requesting_user_id, created_at], map: "ecommerce_administrator_promotions_requesting_user_id__338da080")
+  // spellchecker: ignore-next-line
+  @@index([approving_super_administrator_id, approved_at], map: "ecommerce_administrator_promotions_approving_super_adm_05c46080")
+}
+
+/// Stores seller registration requests with approval status tracking,
+/// administrator assignments, and review timelines. This table manages the
+/// seller approval workflow where sellers register and await administrator
+/// approval before gaining selling capabilities.
+///
+/// The approval queue tracks the complete lifecycle of seller registration
+/// requests from submission through approval or rejection. Each request
+/// includes the seller's registration information, assigned administrator
+/// for review, status progression, and timeline tracking for service level
+/// monitoring.
+///
+/// When a seller registration is approved, the seller gains full selling
+/// capabilities. Rejected registrations preserve the rejection reason and
+/// allow sellers to submit new registration requests. {@link
+/// ecommerce_sellers.id} represents the seller awaiting approval, while
+/// {@link ecommerce_administrators.id} represents the administrator handling
+/// the review.
+///
+/// This table supports the platform's seller onboarding process with proper
+/// audit trails and workflow management.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_approval_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller registration request reference. {@link ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Assigned administrator for review. {@link ecommerce_administrators.id}
+  ecommerce_administrator_id String?
+  
+  /// Current approval status of the seller registration request. Values:
+  /// 'pending', 'under_review', 'approved', 'rejected'.
+  status String
+  
+  /// Date and time when the seller registration request was submitted.
+  submission_date DateTime
+  
+  /// Date and time when an administrator began reviewing the request.
+  review_start_date DateTime?
+  
+  /// Date and time when the request was approved.
+  approval_date DateTime?
+  
+  /// Date and time when the request was rejected.
+  rejection_date DateTime?
+  
+  /// Reason provided by administrator for rejecting the registration request.
+  rejection_reason String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  
+  approvalResponses ecommerce_seller_approval_responses[]
+  
+  @@unique([ecommerce_seller_id])
+  @@index([status, submission_date])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrator_id, status], map: "ecommerce_seller_approval_queues_ecommerce_administrat_ff50624c")
+  @@index([submission_date])
+}
+
+/// Records administrator responses to seller approval requests with
+/// approval/rejection decisions and reasons.
+///
+/// This table stores the official responses from administrators when
+/// reviewing seller registration requests. Each response includes the
+/// decision (approved or rejected), the reason for the decision, and which
+/// administrator provided the response. This creates an audit trail for
+/// seller approval workflows and ensures transparency in the approval
+/// process.
+///
+/// Responses are linked to specific seller approval requests via {@link
+/// ecommerce_seller_approval_queues.id} and reference the administrator who
+/// made the decision via {@link ecommerce_administrators.id}. This maintains
+/// a complete record of the approval process for compliance and dispute
+/// resolution purposes.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_approval_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller approval request being responded to. {@link
+  /// ecommerce_seller_approval_queues.id}.
+  seller_approval_queue_id String
+  
+  /// Reference to the administrator who provided the response. {@link
+  /// ecommerce_administrators.id}.
+  administrator_id String
+  
+  /// The decision made by the administrator (approved or rejected).
+  decision String
+  
+  /// Detailed reason provided by the administrator for their decision.
+  reason String?
+  
+  /// Timestamp when the administrator provided the response.
+  responded_at DateTime
+  
+  /// Timestamp when the response record was created.
+  created_at DateTime
+  
+  /// Timestamp when the response record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  sellerApprovalQueue ecommerce_seller_approval_queues @relation(fields: [seller_approval_queue_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([seller_approval_queue_id], map: "ecommerce_seller_approval_responses_seller_approval_qu_097a08bc")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, responded_at], map: "ecommerce_seller_approval_responses_administrator_id_r_30511557")
+  @@index([decision, responded_at])
+}
+
+/// Logs category creation, editing, and deletion actions performed by
+/// administrators with operation details.
+///
+/// This table serves as an audit trail for all administrative category
+/// operations, preserving the state of categories at the time of each
+/// operation. Each record captures a single administrative action on a
+/// category, including the operation type, category details at the time of
+/// operation, and the administrator who performed the action.
+///
+/// Category operations include creation of new categories, editing of
+/// existing category names and descriptions, and deletion of categories. For
+/// edit operations, the table stores the category state before and after the
+/// modification to provide complete audit capability.
+///
+/// This audit trail is essential for platform integrity, dispute resolution,
+/// and compliance with data modification tracking requirements.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_category_operations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the category operation. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String
+  
+  /// Category that was operated on. {@link ecommerce_categories.id}
+  category_id String
+  
+  /// Type of category operation performed: create, edit, or delete.
+  operation_type String
+  
+  /// Category name before the operation, if applicable for edit operations.
+  category_name_before String?
+  
+  /// Category description before the operation, if applicable for edit
+  /// operations.
+  category_description_before String?
+  
+  /// Parent category ID before the operation, if applicable for edit
+  /// operations.
+  parent_category_id_before String?
+  
+  /// Category name after the operation, if applicable for create and edit
+  /// operations.
+  category_name_after String?
+  
+  /// Category description after the operation, if applicable for create and
+  /// edit operations.
+  category_description_after String?
+  
+  /// Parent category ID after the operation, if applicable for create and edit
+  /// operations.
+  parent_category_id_after String?
+  
+  /// Additional details about the operation, such as reason for deletion or
+  /// specific changes made.
+  operation_details String?
+  
+  /// Timestamp when the category operation was performed.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  category ecommerce_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_admin_category_operations_administrator_id_c_0fa92181")
+  @@index([category_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([operation_type, created_at], map: "ecommerce_admin_category_operations_operation_type_cre_71f70efc")
+}
+
+/// Child table storing additional context and history for administrator
+/// promotion requests that supplements the main promotion table.
+///
+/// This table complements the main ecommerce_administrator_promotions table
+/// by storing request-specific audit information, communication history, or
+/// supporting documentation that doesn't belong in the core promotion
+/// record. It maintains a 1:1 relationship with parent promotions, ensuring
+/// data is properly normalized without duplicating core promotion
+/// attributes.
+///
+/// The table follows proper child table design principles where parent
+/// fields (request_reason, status, approval_reason, timestamps) are accessed
+/// via FK relationship rather than duplication. This maintains data
+/// integrity and supports the administrator promotion workflow defined in
+/// the platform requirements.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrator_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent administrator promotion record. {@link
+  /// ecommerce_administrator_promotions.id}
+  ecommerce_administrator_promotion_id String
+  
+  /// Optional supporting information or context for the promotion request that
+  /// supplements the main request reason.
+  additional_context String?
+  
+  /// Timestamp when this request record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administratorPromotion ecommerce_administrator_promotions @relation(fields: [ecommerce_administrator_promotion_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_administrator_promotion_id], map: "ecommerce_administrator_promotion_requests_ecommerce_a_d51eb665")
+  @@index([created_at])
+}
+
+/// Records user banning actions performed by administrators with ban
+/// duration, reasons, and appeal handling. This table supports the
+/// platform's user management capabilities where administrators can ban
+/// customers, sellers, and administrators from accessing the platform.
+///
+/// Each ban record captures the banning administrator, user type, ban
+/// details, and appeal handling. The actual user references are maintained
+/// through subtype tables that ensure type-safe foreign key relationships to
+/// specific user tables (customers, sellers, or administrators).
+///
+/// The system tracks when bans are created, modified, and lifted to maintain
+/// comprehensive audit trails for administrative oversight. This design
+/// supports the platform's multi-actor requirement while maintaining proper
+/// normalization and referential integrity.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the banning action. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String
+  
+  /// Administrator who reviewed the appeal, if applicable. {@link
+  /// ecommerce_administrators.id}
+  appeal_reviewer_id String?
+  
+  /// Type of user being banned (customer, seller, administrator) to determine
+  /// which user table to reference.
+  user_type String
+  
+  /// Detailed reason for the banning action as specified by the administrator.
+  ban_reason String
+  
+  /// Duration of the ban in days. Null indicates permanent ban.
+  ban_duration_days Int?
+  
+  /// Timestamp when the ban was initially imposed.
+  banned_at DateTime
+  
+  /// Timestamp when the ban was lifted, if applicable.
+  lifted_at DateTime?
+  
+  /// Current status of any appeal (pending, approved, rejected, none).
+  appeal_status String
+  
+  /// Reason provided by the user for appealing the ban.
+  appeal_reason String?
+  
+  /// Timestamp when the appeal was reviewed by an administrator.
+  appeal_reviewed_at DateTime?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation("ecommerce_admin_user_bans_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
+  appealReviewer ecommerce_administrators? @relation("ecommerce_admin_user_bans_of_appeal_reviewer_id", fields: [appeal_reviewer_id], references: [id], onDelete: Cascade)
+  
+  customerBans ecommerce_admin_user_ban_of_customers[]
+  bannedSellers ecommerce_admin_user_ban_of_sellers[]
+  administratorBans ecommerce_admin_user_ban_of_administrators[]
+  
+  @@index([appeal_reviewer_id])
+  
+  @@index([administrator_id, created_at])
+  @@index([user_type, created_at])
+  @@index([appeal_status, created_at])
+  @@index([banned_at, lifted_at])
+}
+
+/// Records seller account suspension actions performed by administrators
+/// with suspension periods, reasons, and reinstatement tracking.
+///
+/// When an administrator suspends a seller account, this table captures the
+/// suspension details including the duration, reason for suspension, and
+/// tracks when the suspension is lifted. Suspended sellers cannot create new
+/// products or edit existing products, but can still process existing orders
+/// and respond to cancellation/refund requests. The suspension record
+/// preserves the administrative action for audit purposes and supports
+/// reinstatement workflows.
+///
+/// Each suspension follows a clear lifecycle: created as active, then
+/// transitions to lifted when manually ended by an administrator, or expired
+/// when the scheduled end date is reached. Status changes are tracked for
+/// audit purposes and administrative oversight.
+///
+/// This table supports the platform's seller management system by providing
+/// temporary or permanent account restrictions while maintaining order
+/// processing continuity for existing customer transactions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_seller_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Suspended seller's identity reference. {@link ecommerce_sellers.id}
+  seller_id String
+  
+  /// Administrator who performed the suspension action. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String
+  
+  /// Reason provided by the administrator for suspending the seller account.
+  suspension_reason String
+  
+  /// Date and time when the suspension becomes effective.
+  suspension_start_date DateTime
+  
+  /// Date and time when the suspension is scheduled to end. Null indicates
+  /// indefinite suspension.
+  suspension_end_date DateTime?
+  
+  /// Current status of the suspension (active, lifted, expired). This field
+  /// tracks the suspension lifecycle.
+  status String
+  
+  /// Date and time when the suspension was lifted or expired. Populated when
+  /// status changes from active to lifted or expired.
+  reinstatement_date DateTime?
+  
+  /// Reason for lifting the suspension, if applicable. Required when status is
+  /// 'lifted'.
+  reinstatement_reason String?
+  
+  /// Timestamp when the suspension record was created.
+  created_at DateTime
+  
+  /// Timestamp when the suspension record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the suspension record was soft deleted. Null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([seller_id, suspension_start_date], map: "ecommerce_admin_seller_suspensions_seller_id_suspensio_c6d74cc8")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_admin_seller_suspensions_administrator_id_cr_c9e0926e")
+  // spellchecker: ignore-next-line
+  @@index([status, suspension_end_date], map: "ecommerce_admin_seller_suspensions_status_suspension_e_b4ce5271")
+  @@index([status, seller_id])
+}
+
+/// Stores platform-wide performance metrics, system health indicators, and
+/// operational statistics for administrative oversight.
+///
+/// This table captures comprehensive monitoring data including system
+/// performance metrics, user activity statistics, transaction volumes, and
+/// platform health indicators. Administrators use this data to monitor
+/// platform performance, identify trends, and make informed decisions about
+/// system scaling and optimization.
+///
+/// The metrics are collected at regular intervals and provide historical
+/// tracking of platform performance over time. This enables administrators
+/// to detect performance degradation, monitor growth patterns, and ensure
+/// platform stability.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_monitoring_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the metric being tracked (e.g., 'active_users',
+  /// 'orders_per_hour', 'response_time').
+  metric_name String
+  
+  /// Numerical value of the metric measurement.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value (e.g., 'users', 'orders',
+  /// 'milliseconds').
+  metric_unit String?
+  
+  /// Timestamp when this metric was collected.
+  collection_timestamp DateTime
+  
+  /// Time interval over which the metric was collected (e.g., 'hourly',
+  /// 'daily', 'real-time').
+  collection_interval String?
+  
+  /// Category of the metric for grouping purposes (e.g., 'performance',
+  /// 'usage', 'business', 'system_health').
+  metric_category String
+  
+  /// Indicates whether this is an aggregated metric or a raw measurement.
+  is_aggregated Boolean
+  
+  /// Time period over which aggregation was performed (e.g., 'last_hour',
+  /// 'last_day', 'last_week').
+  aggregation_period String?
+  
+  /// Warning threshold value for this metric.
+  threshold_warning Float?
+  
+  /// Critical threshold value for this metric.
+  threshold_critical Float?
+  
+  /// Timestamp when this metric record was created.
+  created_at DateTime
+  
+  /// Timestamp when this metric record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([metric_name, collection_timestamp], map: "ecommerce_platform_monitoring_metrics_metric_name_coll_d9e70a6c")
+  // spellchecker: ignore-next-line
+  @@index([metric_category, collection_timestamp], map: "ecommerce_platform_monitoring_metrics_metric_category__537c06ef")
+  @@index([collection_timestamp])
+  // spellchecker: ignore-next-line
+  @@index([is_aggregated, collection_timestamp], map: "ecommerce_platform_monitoring_metrics_is_aggregated_co_773c4b87")
+}
+
+/// Records administrative actions specifically targeting orders, such as
+/// forced cancellations or refunds.
+///
+/// This subsidiary table extends the base administrative actions with
+/// order-specific intervention details. It tracks platform administrator
+/// interventions on orders when standard customer-seller workflows are
+/// insufficient or require platform oversight. Actions include forced
+/// cancellation of order items or entire orders, and forced refund
+/// processing for delivered items.
+///
+/// Each record links to a parent administrative action that contains common
+/// metadata like action type, administrator, timestamps, and general
+/// reasoning. This table adds order-specific scope details to maintain
+/// proper normalization while providing comprehensive audit trails for
+/// compliance and dispute resolution.
+///
+/// Administrative order actions are managed through their parent
+/// administrative actions, upholding the platform's financial integrity
+/// standards through proper hierarchical data modeling.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrative_action_of_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent administrative action that this order-specific action extends.
+  /// {@link ecommerce_administrative_actions.id}
+  ecommerce_administrative_action_id String
+  
+  /// Order targeted by the administrative action. {@link ecommerce_orders.id}
+  ecommerce_order_id String
+  
+  /// Specific scope of the action - which order items were affected or if
+  /// entire order was targeted, with detailed item-level information when
+  /// applicable.
+  scope_details String
+  
+  /// Order-specific reasoning that supplements the general reason in the
+  /// parent administrative action, providing context specific to this order
+  /// intervention.
+  order_specific_reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
+  order ecommerce_orders @relation(fields: [ecommerce_order_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_administrative_action_id], map: "ecommerce_administrative_action_of_orders_ecommerce_ad_699432ae")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_order_id], map: "ecommerce_administrative_action_of_orders_ecommerce_or_74919248")
+}
+
+/// Records administrative actions specifically targeting products, such as
+/// deletions, visibility changes, or other product-specific interventions
+/// performed by administrators. This table provides detailed tracking of
+/// product-focused administrative actions for audit and oversight purposes.
+///
+/// Administrators can perform various actions on products including deletion
+/// for policy violations, visibility changes, or other product-specific
+/// interventions. Each action is recorded here with the specific product
+/// targeted, while inheriting common administrative action metadata from the
+/// parent administrative action record.
+///
+/// This table works in conjunction with {@link
+/// ecommerce_administrative_actions} to provide comprehensive administrative
+/// oversight while maintaining the specific product-focused context required
+/// for proper audit trails and accountability.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrative_action_of_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main administrative action record. {@link
+  /// ecommerce_administrative_actions.id}
+  administrative_action_id String
+  
+  /// Product targeted by the administrative action. {@link
+  /// ecommerce_products.id}
+  product_id String
+  
+  /// Detailed description of the administrative action, including the reason
+  /// for the action and any specific instructions or context.
+  action_details String?
+  
+  /// State of the product before the administrative action was performed,
+  /// preserving the product's previous status or configuration.
+  previous_state String?
+  
+  /// State of the product after the administrative action was performed,
+  /// recording the new status or configuration.
+  new_state String?
+  
+  //----
+  // RELATIONS
+  //----
+  administrativeAction ecommerce_administrative_actions @relation(fields: [administrative_action_id], references: [id], onDelete: Cascade)
+  product ecommerce_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([administrative_action_id], map: "ecommerce_administrative_action_of_products_administra_11ba3218")
+  @@index([product_id])
+}
+
+/// Records administrative actions specifically targeting customers, such as
+/// account bans or restrictions. This table links administrative actions
+/// from {@link ecommerce_administrative_actions} to specific customer
+/// accounts from {@link ecommerce_customers} when administrators take
+/// actions against customers.
+///
+/// Each record represents a single customer targeted by an administrative
+/// action, allowing for tracking of which customers were affected by
+/// specific administrative interventions. This enables comprehensive audit
+/// trails and reporting on customer-specific administrative oversight.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrative_action_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrative action that targeted this customer.
+  /// {@link ecommerce_administrative_actions.id}
+  ecommerce_administrative_action_id String
+  
+  /// Reference to the customer account that was targeted by this
+  /// administrative action. {@link ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Timestamp when this customer targeting record was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer targeting record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this customer targeting record was soft deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrative_action_id, ecommerce_customer_id], map: "ecommerce_administrative_action_of_customers_ecommerce_7294946d")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_administrative_action_of_customers_ecommerce_48ae6455")
+}
+
+/// Links administrative actions to specific seller targets with
+/// seller-specific intervention details for tracking account suspensions,
+/// selling restrictions, and other seller-specific administrative measures.
+///
+/// This table serves as a junction between administrative actions and the
+/// sellers they target, capturing specific seller-focused intervention
+/// details that differentiate these actions from generic administrative
+/// measures. Each record represents a specific administrative action applied
+/// to a particular seller, with seller-specific context such as suspension
+/// duration, restriction types, and intervention scope.
+///
+/// Administrative actions targeting sellers include account suspensions with
+/// specific durations, restrictions on selling privileges, forced product
+/// removals, and other interventions necessary for platform integrity and
+/// policy enforcement. This table ensures that all such actions are properly
+/// recorded with seller-specific context and linked to both the action
+/// details and the affected seller.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_administrative_action_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrative action being applied. {@link
+  /// ecommerce_administrative_actions.id}
+  ecommerce_administrative_action_id String
+  
+  /// Reference to the seller account being targeted by the administrative
+  /// action. {@link ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Specific type of seller intervention, such as 'account_suspension',
+  /// 'selling_restriction', 'product_removal', or 'warning_issued'.
+  intervention_type String
+  
+  /// Duration of account suspension in days, if applicable. Null for
+  /// non-suspension interventions.
+  suspension_duration_days Int?
+  
+  /// Scope of selling restrictions applied, such as 'all_products',
+  /// 'specific_categories', or 'new_listings_only'.
+  restriction_scope String?
+  
+  /// Date and time when the administrative intervention becomes effective.
+  effective_from DateTime
+  
+  /// Date and time when the administrative intervention expires, if applicable.
+  effective_until DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_administrative_action_id, ecommerce_seller_id], map: "ecommerce_administrative_action_of_sellers_ecommerce_a_1660483a")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, effective_from], map: "ecommerce_administrative_action_of_sellers_ecommerce_s_d06cbf59")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrative_action_id], map: "ecommerce_administrative_action_of_sellers_ecommerce_a_00d05d19")
+  // spellchecker: ignore-next-line
+  @@index([intervention_type, effective_from], map: "ecommerce_administrative_action_of_sellers_interventio_cebbd8d8")
+  @@index([effective_until])
+}
+
+/// Links administrative user bans to specific customer accounts when
+/// customers are banned from the platform. This table establishes the
+/// relationship between user ban records and the customer accounts they
+/// affect, ensuring proper tracking of customer-specific ban actions.
+///
+/// Each record represents a specific customer account that has been banned
+/// through an administrative action. This table supports the platform's user
+/// management capabilities by providing a clear audit trail of which
+/// customers have been banned and which administrative ban record was used
+/// to enforce the restriction.
+///
+/// The relationship maintains referential integrity between the
+/// administration and authorization domains, allowing administrators to
+/// track ban enforcement while preserving customer account information for
+/// historical and audit purposes.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_user_ban_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrative user ban record that imposed this
+  /// customer ban. {@link ecommerce_admin_user_bans.id}
+  ecommerce_admin_user_ban_id String
+  
+  /// Reference to the customer account that has been banned. {@link
+  /// ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Timestamp when this customer ban relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when this customer ban relationship was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this customer ban relationship was soft-deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userBan ecommerce_admin_user_bans @relation(fields: [ecommerce_admin_user_ban_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_admin_user_ban_id, ecommerce_customer_id], map: "ecommerce_admin_user_ban_of_customers_ecommerce_admin__b2601ecb")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_admin_user_ban_of_customers_ecommerce_custom_4945272e")
+  @@index([created_at])
+}
+
+/// Links administrative user banning actions to specific seller accounts,
+/// establishing which sellers are affected by each banning action.
+///
+/// This table creates a many-to-many relationship between user banning
+/// records and seller accounts, allowing tracking of which sellers have been
+/// banned through administrative actions. Each record represents a specific
+/// seller being affected by a particular banning action, supporting the
+/// platform's user management capabilities.
+///
+/// When an administrator bans a seller account, a record is created here
+/// linking the banning action to the seller. This enables comprehensive
+/// tracking of seller banning history and supports appeal processes and
+/// reinstatement workflows.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_user_ban_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrative banning action. {@link
+  /// ecommerce_admin_user_bans.id}
+  ecommerce_admin_user_ban_id String
+  
+  /// Reference to the seller account being banned. {@link ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Timestamp when this ban relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban relationship was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this ban relationship was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userBan ecommerce_admin_user_bans @relation(fields: [ecommerce_admin_user_ban_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_admin_user_ban_id, ecommerce_seller_id], map: "ecommerce_admin_user_ban_of_sellers_ecommerce_admin_us_1dcb10e7")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_admin_user_ban_of_sellers_ecommerce_seller_i_9181356b")
+}
+
+/// Links user bans to specific administrator accounts when administrators
+/// are banned from the platform.
+///
+/// This table establishes the relationship between ban records created by
+/// administrators and the targeted administrator accounts. It ensures that
+/// each ban action is properly associated with the specific administrator
+/// account being restricted, providing a clear audit trail for
+/// administrative actions against other administrators.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_user_ban_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the ban record that applies to this administrator. {@link
+  /// ecommerce_admin_user_bans.id}
+  admin_user_ban_id String
+  
+  /// Reference to the administrator account being banned. {@link
+  /// ecommerce_administrators.id}
+  administrator_id String
+  
+  /// Timestamp when this ban relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban relationship was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  adminUserBan ecommerce_admin_user_bans @relation(fields: [admin_user_ban_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([admin_user_ban_id, administrator_id], map: "ecommerce_admin_user_ban_of_administrators_admin_user__4ce6ec84")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_admin_user_ban_of_administrators_administrat_ea60a309")
+}

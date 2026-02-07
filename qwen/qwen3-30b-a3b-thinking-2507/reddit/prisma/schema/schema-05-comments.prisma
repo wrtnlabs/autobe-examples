@@ -1,0 +1,81 @@
+/// Main comments table storing content, user relationships, and hierarchy
+/// (with parent_id for nested replies). Includes text content of comments.
+/// Supports nested comment replies via parent_id reference. Owned by
+/// registered users (community_platform_members).
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created the comment. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Parent comment for nested conversation structure. {@link
+  /// community_platform_comments.id}.
+  parent_id String?
+  
+  /// The content of the comment (max 500 characters).
+  content String
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  children community_platform_comments[] @relation("recursive")
+  edits community_platform_comment_edits[]
+  
+  @@index([community_platform_member_id])
+  @@index([parent_id])
+  
+  @@index([created_at])
+}
+
+/// Edit history tracking to store timestamps and user modifications with
+/// references to original comments.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original comment being edited. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Timestamp when the edit record was created.
+  created_at DateTime
+  
+  /// Timestamp when the edit record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the edit record was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_edits_community_platform_co_1c3aa05f")
+}

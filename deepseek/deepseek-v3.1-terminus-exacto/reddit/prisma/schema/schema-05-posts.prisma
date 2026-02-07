@@ -1,0 +1,1133 @@
+/// Main post entity storing core post information including title, type,
+/// author, community, and metadata.
+///
+/// This table represents the central post entity in the Reddit-like
+/// community platform. Each post belongs to exactly one community and is
+/// created by one authenticated user. Posts can be one of three types: text
+/// posts (with content), link posts (with URL), or image posts (with image
+/// references). The table tracks post lifecycle including creation, editing,
+/// deletion, and moderation status.
+///
+/// Posts are independently managed entities that users can create, search,
+/// filter, and manage across all communities. This primary stance ensures
+/// comprehensive API endpoints for post operations including creation,
+/// retrieval, updating, and deletion.
+///
+/// The table integrates with other components through foreign key
+/// relationships: {@link community_platform_users.id} for author
+/// identification, {@link community_platform_communities.id} for community
+/// assignment, and references to specialized content tables for
+/// type-specific data storage.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created this post. {@link community_platform_users.id}
+  author_id String
+  
+  /// Community where this post is published. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// Post title that appears in feeds and post listings. Required for all post
+  /// types.
+  title String
+  
+  /// Type of post: 'text', 'link', or 'image'. Determines which content table
+  /// stores the actual post data.
+  post_type String
+  
+  /// Current status of the post: 'active', 'deleted', 'moderated', or 'draft'.
+  /// Controls visibility and management.
+  status String
+  
+  /// Flag indicating if post contains Not Safe For Work content. Affects
+  /// content filtering.
+  is_nsfw Boolean
+  
+  /// Flag indicating if post contains spoiler content. Requires user consent
+  /// to view.
+  is_spoiler Boolean
+  
+  /// Flag indicating if post comments are locked. Prevents new comments while
+  /// preserving existing ones.
+  is_locked Boolean
+  
+  /// Flag indicating if post is pinned in its community. Appears at top of
+  /// community feed.
+  is_pinned Boolean
+  
+  /// Flag indicating if post is archived. Prevents further voting and comments
+  /// after age threshold.
+  is_archived Boolean
+  
+  /// Timestamp when the post was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Null indicates post is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author community_platform_users @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  karmaHistories community_platform_karma_histories[]
+  communityReports community_platform_community_reports[]
+  communityLogModerationActions community_platform_community_logs[]
+  snapshots community_platform_post_snapshots[]
+  content community_platform_post_contents?
+  postVotes community_platform_post_votes[]
+  postReports community_platform_post_reports[]
+  postModerationActions community_platform_post_moderation_actions[]
+  statistic community_platform_post_statistics?
+  image community_platform_post_images?
+  link community_platform_post_links?
+  drafts community_platform_post_drafts[]
+  views community_platform_post_views[]
+  typeRule community_platform_post_type_rules?
+  contentText community_platform_post_content_texts?
+  contentImages community_platform_post_content_images[]
+  votes community_platform_votes[]
+  voteScores community_platform_vote_scores[]
+  voteSummaries community_platform_content_vote_summaries[]
+  comments community_platform_comments[]
+  contentDiscoveries community_platform_content_discoveries[]
+  feedContentApps community_platform_feed_content_relationships[]
+  feedItemRelationships community_platform_feed_item_posts[]
+  moderationActions community_platform_moderator_actions[]
+  moderationLogActions community_platform_moderation_logs[]
+  
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([post_type, created_at])
+  @@index([status, created_at])
+  @@index([is_pinned, created_at])
+}
+
+/// Audit trail for post edits and deletions, preserving historical versions
+/// for moderation and version control.
+///
+/// This table captures point-in-time snapshots of posts whenever they are
+/// edited or deleted, allowing for content restoration, moderation review,
+/// and auditing of post changes. Each snapshot preserves the complete state
+/// of a post including its title, content, type, and metadata at the time
+/// the snapshot was created.
+///
+/// Snapshots are automatically created when posts are edited by users or
+/// moderated by community administrators. The table supports comprehensive
+/// audit trails by capturing who made changes, when they were made, and the
+/// reason for the modification (user edit, moderator action, etc.). This
+/// historical record is essential for content moderation, dispute
+/// resolution, and maintaining community standards.
+///
+/// The table integrates with the post lifecycle management system through
+/// {@link community_platform_posts.id} and supports moderation workflows by
+/// preserving content that may have been deleted or heavily modified.
+/// Snapshots are preserved indefinitely for audit purposes and can be
+/// referenced to restore previous versions or investigate content changes.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original post that this snapshot captures. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Reason for creating this snapshot, such as 'user edit', 'moderator
+  /// deletion', or 'content restoration'. Provides context for the change.
+  reason String
+  
+  /// Timestamp when this snapshot was created. Used to establish the
+  /// chronological order of post changes and audit trail sequencing.
+  created_at DateTime
+  
+  /// Reference to the moderator who triggered this snapshot if it was a
+  /// moderation action. {@link community_platform_moderators.id}
+  moderator_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_snapshots_community_platform_p_fff76d8e")
+}
+
+/// Type-specific content storage for text posts, link posts, and image posts.
+///
+/// This table stores the actual content of posts based on their type. Each
+/// post can be one of three types:
+/// - Text posts: Store rich text content with formatting
+/// - Link posts: Store URL and extracted metadata for link sharing
+/// - Image posts: Store image upload information and thumbnails
+///
+/// The content is managed through the main post entity and provides the
+/// specific data needed for each post type. This separation allows for
+/// efficient storage and retrieval of different content types while
+/// maintaining data integrity.
+///
+/// {@link community_platform_posts.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_contents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main post entity. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Type of post content: 'text', 'link', or 'image'. Determines which
+  /// content field contains the actual data.
+  content_type String
+  
+  /// Rich text content for text posts. Contains formatted text with markdown
+  /// or HTML support.
+  text_content String?
+  
+  /// URL for link posts. Must be a valid HTTP/HTTPS URL.
+  link_url String?
+  
+  /// Extracted title from the linked page for link posts.
+  link_title String?
+  
+  /// Extracted description or summary from the linked page.
+  link_description String?
+  
+  /// Stored filename for uploaded image posts.
+  image_filename String?
+  
+  /// MIME type of the uploaded image for proper rendering.
+  image_mime_type String?
+  
+  /// Size of the uploaded image file in bytes.
+  image_file_size Int?
+  
+  /// Image dimensions in format 'widthxheight' (e.g., '800x600').
+  image_dimensions String?
+  
+  /// Timestamp when the post content was created.
+  created_at DateTime
+  
+  /// Timestamp when the post content was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post content was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  linkMetadatum community_platform_post_content_links?
+  
+  @@unique([community_platform_post_id])
+  @@index([content_type, created_at])
+  @@index([created_at])
+}
+
+/// Individual vote records tracking user votes on posts with vote type and
+/// timestamps.
+///
+/// This table stores each user's vote on each post, allowing for vote
+/// changes, removals, and audit trails. Each record represents a single vote
+/// instance with the vote type (upvote or downvote), timestamp, and
+/// relationship to both the voting user and the target post.
+///
+/// The vote system follows the requirement that each user can only vote once
+/// per post, but can change their vote type or remove it entirely. This
+/// table enables the calculation of post scores by aggregating vote types
+/// and supports the karma system by tracking vote impact on user reputation.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting user's identity. {@link community_platform_users.id}
+  user_id String
+  
+  /// Target post being voted on. {@link community_platform_posts.id}
+  post_id String
+  
+  /// Type of vote: 'upvote' or 'downvote'. Determines whether the vote adds or
+  /// subtracts from the post score.
+  vote_type String
+  
+  /// Timestamp when the vote was initially cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified or changed.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was removed, allowing for soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  voteHistories community_platform_post_vote_histories[]
+  
+  @@unique([user_id, post_id])
+  @@index([post_id, created_at])
+  @@index([user_id, created_at])
+}
+
+/// Tracks user reports on posts with reporting reasons and moderation status.
+///
+/// This table stores reports submitted by users against posts that violate
+/// community guidelines or platform rules. Each report includes the
+/// reporting user, the reported post, a detailed reason for reporting, and
+/// the current moderation status. Reports can be reviewed by community
+/// moderators who can approve (delete the post) or dismiss (keep the post)
+/// the report.
+///
+/// The reporting system supports community self-moderation by allowing users
+/// to flag inappropriate content. Reports are processed according to
+/// community-specific moderation rules and contribute to maintaining
+/// platform content quality.
+///
+/// Reports reference the {@link community_platform_posts.id} being reported,
+/// the {@link community_platform_users.id} submitting the report, and
+/// optionally the {@link community_platform_moderators.id} resolving the
+/// report.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The reported post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// The user who submitted the report's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// The moderator who resolved the report's {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String?
+  
+  /// Detailed explanation provided by the user for why they are reporting the
+  /// post.
+  reason String
+  
+  /// Current status of the report: 'reported', 'under_review', 'approved',
+  /// 'dismissed'.
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was resolved by a moderator.
+  resolved_at DateTime?
+  
+  /// Explanation provided by the moderator for their decision.
+  resolution_reason String?
+  
+  /// Timestamp when the report was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  reporter community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  resolver community_platform_moderators? @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id], map: "community_platform_post_reports_community_platform_mod_3fa97be4")
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, community_platform_user_id], map: "community_platform_post_reports_community_platform_pos_9d2b8bc8")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, status], map: "community_platform_post_reports_community_platform_pos_def59a0e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_post_reports_community_platform_use_6a5f260b")
+}
+
+/// Tracks moderator actions specifically performed on posts, including post
+/// deletions, approvals, and ban enforcement actions. Each record represents
+/// a single moderation action taken by a moderator on a specific post, with
+/// details about the action type, reasoning, and any associated user bans.
+///
+/// This table serves as the audit trail for post-specific moderation
+/// activities, allowing for transparency and accountability in community
+/// management. Actions are linked to both the moderator who performed them
+/// and the post that was affected, with optional user ban associations for
+/// enforcement actions.
+///
+/// Moderators can perform various actions on posts including deleting
+/// inappropriate content, approving flagged posts, or banning users who
+/// violate community guidelines. Each action is timestamped and includes the
+/// moderator's reasoning for the decision.
+///
+/// {@link community_platform_moderators.id} represents the moderator who
+/// performed the action. {@link community_platform_posts.id} identifies the
+/// post that was moderated. {@link community_platform_users.id} optionally
+/// references any user who was banned as a result of the action.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed this action. {@link
+  /// community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// Post that was moderated. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// User who was banned as a result of this action, if applicable. {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String?
+  
+  /// Type of moderation action performed (delete, approve, ban, warn, etc.).
+  action_type String
+  
+  /// Moderator's explanation for taking this action.
+  reason String
+  
+  /// Duration of ban in days, if this action included a ban. Null if no ban
+  /// was applied.
+  ban_duration_days Int?
+  
+  /// Timestamp when this moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp when this moderation action record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  bannedUser community_platform_users? @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id], map: "community_platform_post_moderation_actions_community_p_43fe87b0")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, created_at], map: "community_platform_post_moderation_actions_community_p_40b10cc6")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_moderation_actions_community_p_7e02e3df")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_platform_post_moderation_actions_action_type_4eb1d92f")
+}
+
+/// Aggregated raw statistics for posts including view counts, comment
+/// counts, and vote counts for performance optimization.
+///
+/// This table stores pre-calculated aggregated data from individual user
+/// interactions to enable fast retrieval of post performance metrics. It
+/// tracks raw counts of views, comments, and votes that serve as the
+/// foundation for feed algorithm calculations and content analytics.
+///
+/// The statistics are updated periodically through background processes that
+/// aggregate data from individual action tables. This denormalized approach
+/// provides performance benefits for feed generation while maintaining data
+/// integrity through scheduled updates.
+///
+/// Related entities: {@link community_platform_posts.id} for the post being
+/// tracked, {@link community_platform_post_views.id} for view count
+/// aggregation, {@link community_platform_comments.id} for comment count
+/// aggregation, {@link community_platform_votes.id} for vote count
+/// aggregation.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post these statistics belong to. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Total number of views the post has received.
+  total_view_count Int
+  
+  /// Number of unique users who have viewed the post.
+  unique_viewer_count Int
+  
+  /// Total number of comments on the post.
+  total_comment_count Int
+  
+  /// Total number of upvotes received.
+  total_upvote_count Int
+  
+  /// Total number of downvotes received.
+  total_downvote_count Int
+  
+  /// Timestamp of the most recent view.
+  last_view_timestamp DateTime?
+  
+  /// Timestamp of the most recent comment.
+  last_comment_timestamp DateTime?
+  
+  /// Timestamp of the most recent vote.
+  last_vote_timestamp DateTime?
+  
+  /// When these statistics were first created.
+  created_at DateTime
+  
+  /// When these statistics were last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for statistics removal.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id], map: "community_platform_post_statistics_community_platform__7ca5ce91")
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_post_statistics_community_platform__d94e11ba")
+  @@index([updated_at])
+  @@index([last_view_timestamp])
+  @@index([last_comment_timestamp])
+  @@index([last_vote_timestamp])
+}
+
+/// Image storage and metadata for image posts including upload information
+/// and thumbnails.
+///
+/// This table stores all image-related metadata for image-type posts,
+/// including original image information, thumbnail variants, and processing
+/// status. Each image post references exactly one record in this table that
+/// contains the actual image storage details and metadata. The table
+/// supports multiple thumbnail sizes for optimized display across different
+/// devices and contexts.
+///
+/// Images are stored externally with this table containing metadata
+/// references. The processing status tracks whether thumbnails have been
+/// generated and the image is ready for display.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent image post. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Original filename of the uploaded image as provided by the user.
+  original_filename String
+  
+  /// Size of the original image file in bytes.
+  file_size Int
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
+  mime_type String
+  
+  /// Width of the original image in pixels.
+  width Int
+  
+  /// Height of the original image in pixels.
+  height Int
+  
+  /// Unique storage identifier for the original image file.
+  storage_key String
+  
+  /// Storage identifier for the small thumbnail variant (e.g., 150x150).
+  thumbnail_small_key String?
+  
+  /// Storage identifier for the medium thumbnail variant (e.g., 400x400).
+  thumbnail_medium_key String?
+  
+  /// Storage identifier for the large thumbnail variant (e.g., 800x800).
+  thumbnail_large_key String?
+  
+  /// Current processing status of the image (pending, processing, completed,
+  /// failed).
+  processing_status String
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id])
+  @@index([processing_status])
+}
+
+/// Stores URL validation and metadata for link posts, including domain
+/// extraction and preview data.
+///
+/// This table contains link-specific information for posts that are of type
+/// 'link'. It validates URLs, extracts domain information for
+/// categorization, and stores preview metadata for generating link previews.
+/// Each link post has exactly one entry in this table, establishing a 1:1
+/// relationship with the parent post.
+///
+/// The domain extraction field enables community-specific link
+/// categorization and filtering, while the preview metadata supports rich
+/// link preview functionality in the user interface. URL validation ensures
+/// that only properly formatted links are stored in the system.
+///
+/// This table works in conjunction with {@link community_platform_posts} to
+/// provide comprehensive link post functionality within the community
+/// platform.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that contains this link. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// The validated URL for the link post. Must be a properly formatted
+  /// HTTP/HTTPS URL that passes validation checks.
+  url String
+  
+  /// Extracted domain name from the URL for categorization and filtering
+  /// purposes. This field is automatically populated during URL validation.
+  domain String
+  
+  /// Title extracted from the link preview metadata, used for displaying link
+  /// information without requiring full page load.
+  title String?
+  
+  /// Description extracted from the link preview metadata, providing a summary
+  /// of the linked content.
+  description String?
+  
+  /// URL of the preview image extracted from the link metadata for rich link
+  /// previews.
+  image_url String?
+  
+  /// URL of the favicon or site icon extracted from the link metadata.
+  favicon_url String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([community_platform_post_id])
+  @@index([domain])
+}
+
+/// Temporary storage for post drafts with auto-save functionality. Stores
+/// draft-specific content and metadata that differs from published posts.
+/// Drafts are automatically saved during post creation and can be resumed
+/// later.
+///
+/// Each draft belongs to a specific post entity and maintains draft-specific
+/// attributes that don't exist in the published post. Drafts can be
+/// converted to published posts or discarded by the user. Key features
+/// include auto-save tracking, draft expiration after 30 days of inactivity,
+/// and content preservation during editing sessions.
+///
+/// Drafts maintain the same validation rules as published posts but allow
+/// for temporary storage before final submission. All common post attributes
+/// (title, post_type, community_id, author_id) are managed through the
+/// parent post relationship.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_drafts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post that this draft belongs to. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Whether auto-save is enabled for this draft. Defaults to true.
+  auto_save_enabled Boolean
+  
+  /// Timestamp of the last automatic save operation.
+  last_auto_save_at DateTime
+  
+  /// Current status of the draft: 'active', 'converted', 'discarded', or
+  /// 'expired'.
+  draft_status String
+  
+  /// When the draft was first created.
+  created_at DateTime
+  
+  /// When the draft was last modified.
+  updated_at DateTime
+  
+  /// When the draft will expire if not converted to a post.
+  expires_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_drafts_community_platform_post_f52e7dcd")
+  @@index([draft_status, expires_at])
+}
+
+/// Tracks individual post views for analytics and trending content
+/// identification.
+///
+/// Each record represents a single view of a post by a user, capturing the
+/// timestamp and metadata for analytics purposes. This data is used to
+/// identify trending content, calculate view counts, and analyze user
+/// engagement patterns.
+///
+/// The view tracking supports both authenticated users (tracked by user ID)
+/// and anonymous users (tracked by session or IP). Views are aggregated to
+/// provide post-level analytics and trending algorithms.
+///
+/// This table integrates with {@link community_platform_posts} for post
+/// reference and {@link community_platform_users} for user tracking when
+/// available.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_views {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The viewed post's identifier. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// The viewing user's identifier when authenticated. {@link
+  /// community_platform_users.id}
+  community_platform_user_id String?
+  
+  /// Timestamp when the post was viewed.
+  viewed_at DateTime
+  
+  /// IP address of the viewer for anonymous tracking.
+  ip_address String?
+  
+  /// Browser or client user agent string for analytics.
+  user_agent String?
+  
+  /// HTTP referrer URL indicating where the view originated.
+  referrer String?
+  
+  /// Anonymous session identifier for tracking unique viewers.
+  session_id String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  user community_platform_users? @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, viewed_at], map: "community_platform_post_views_community_platform_post__02002a63")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, viewed_at], map: "community_platform_post_views_community_platform_user__585cec9f")
+  @@index([viewed_at])
+}
+
+/// Validation rules and requirements for different post types (text, link,
+/// image). This table defines the specific validation constraints that each
+/// post type must follow, including minimum/maximum length requirements,
+/// allowed formats, and content validation rules. These rules are enforced
+/// during post creation and editing to ensure content quality and platform
+/// consistency.
+///
+/// Each rule set applies to a specific post type and defines the business
+/// logic constraints that posts of that type must satisfy. The rules are
+/// referenced by validation workflows during post creation and editing
+/// operations.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_type_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post that these rules apply to. {@link
+  /// community_platform_posts.id}
+  post_id String
+  
+  /// Minimum required length for post titles in characters.
+  min_title_length Int
+  
+  /// Maximum allowed length for post titles in characters.
+  max_title_length Int
+  
+  /// Minimum required length for post content in characters.
+  min_content_length Int?
+  
+  /// Maximum allowed length for post content in characters.
+  max_content_length Int?
+  
+  /// Comma-separated list of allowed URL domains for link posts.
+  allowed_url_domains String?
+  
+  /// Comma-separated list of allowed image formats for image posts.
+  allowed_image_formats String?
+  
+  /// Maximum allowed file size for images in bytes.
+  max_image_size Int?
+  
+  /// Whether this post type requires content to be provided.
+  requires_content Boolean
+  
+  /// Whether this post type requires a URL to be provided.
+  requires_url Boolean
+  
+  /// Whether this post type requires an image to be provided.
+  requires_image Boolean
+  
+  /// Whether these validation rules are currently active and enforced.
+  is_active Boolean
+  
+  /// Timestamp when these validation rules were created.
+  created_at DateTime
+  
+  /// Timestamp when these validation rules were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when these validation rules were soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_id])
+  @@index([is_active])
+  @@index([created_at])
+}
+
+/// Stores rich text content specifically for text-type posts, including
+/// markdown source, rendered HTML, and formatting metadata.
+///
+/// This table contains the detailed content for text posts, supporting
+/// markdown formatting and rich text rendering. Each entry corresponds to
+/// exactly one text post in the {@link community_platform_posts} table,
+/// providing the content body, formatting information, and rendering
+/// metadata needed for display.
+///
+/// The table supports both raw markdown storage for editing purposes and
+/// rendered HTML for efficient display. It also tracks content length,
+/// formatting complexity, and validation status to ensure content quality
+/// and proper rendering across different platforms.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_content_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent text post. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Raw markdown source content as entered by the user. Supports full
+  /// markdown syntax including headers, lists, code blocks, and inline
+  /// formatting.
+  markdown_content String
+  
+  /// HTML content rendered from the markdown source for efficient display.
+  /// This field is automatically generated and updated when markdown content
+  /// changes.
+  rendered_html String
+  
+  /// Character count of the markdown content for validation and display
+  /// purposes.
+  content_length Int
+  
+  /// Indicates the complexity of formatting used in the content (basic,
+  /// intermediate, advanced) based on markdown features utilized.
+  formatting_level String
+  
+  /// Indicates whether the content contains embedded image references that
+  /// require special handling.
+  has_images Boolean
+  
+  /// Indicates whether the content contains code blocks that require syntax
+  /// highlighting.
+  has_code_blocks Boolean
+  
+  /// Timestamp when the content was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the content was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id], map: "community_platform_post_content_texts_community_platfo_ab92f188")
+  // spellchecker: ignore-next-line
+  @@index([formatting_level, created_at], map: "community_platform_post_content_texts_formatting_level_a24c8e53")
+  @@index([content_length])
+  // spellchecker: ignore-next-line
+  @@index([has_images, has_code_blocks], map: "community_platform_post_content_texts_has_images_has_c_d1d7e667")
+}
+
+/// Stores link-specific metadata and validation information for link posts,
+/// including domain extraction, validation status, and cached metadata for
+/// performance optimization. This table supports link post functionality
+/// without duplicating core link data stored in the parent table.
+///
+/// Unlike the parent post_contents table which stores the core link URL,
+/// title, and description, this subsidiary table focuses on link-specific
+/// processing metadata such as domain extraction for categorization,
+/// validation status for link integrity, and cached metadata for performance
+/// optimization. This separation ensures proper normalization while
+/// supporting specialized link post functionality.
+///
+/// Each link metadata record is tied to exactly one post content record
+/// through the post_content_id foreign key, maintaining proper relationship
+/// management while avoiding data duplication. The table supports efficient
+/// link categorization through domain-based indexing and validation
+/// tracking.
+///
+/// This table integrates with the broader post content system through the
+/// community_platform_post_contents table, providing link-specific
+/// enhancements without violating normalization principles.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_content_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent post content record. {@link
+  /// community_platform_post_contents.id}
+  post_content_id String
+  
+  /// Extracted domain name from the URL for categorization and filtering
+  /// purposes.
+  domain String
+  
+  /// URL to the favicon or site icon extracted from the linked webpage.
+  favicon_url String?
+  
+  /// URL to a preview image extracted from the linked webpage for rich
+  /// previews.
+  preview_image_url String?
+  
+  /// Indicates whether the URL passed validation checks and is accessible.
+  is_valid Boolean
+  
+  /// Timestamp of the last URL validation check to ensure link integrity.
+  last_validation_at DateTime?
+  
+  /// Timestamp when the link metadata was created.
+  created_at DateTime
+  
+  /// Timestamp when the link metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the link metadata was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  postContent community_platform_post_contents @relation(fields: [post_content_id], references: [id], onDelete: Cascade)
+  
+  @@unique([post_content_id])
+  @@index([domain])
+  @@index([is_valid, created_at])
+  @@index([last_validation_at])
+}
+
+/// Stores image upload information and metadata for image posts. Contains
+/// file details, dimensions, and processing status for images uploaded to
+/// the platform.
+///
+/// Each image record belongs to exactly one post and provides the necessary
+/// metadata for image display, processing, and storage management. Images
+/// are processed through various stages (uploaded, processing, ready,
+/// failed) to ensure proper handling and optimization.
+///
+/// The table maintains audit trails for image modifications and supports
+/// soft deletion when images are removed from posts. Image dimensions and
+/// file size information enable responsive display and storage optimization.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_content_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that contains this image. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Original filename of the uploaded image as provided by the user.
+  filename String
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
+  mime_type String
+  
+  /// Width of the image in pixels.
+  width Int
+  
+  /// Height of the image in pixels.
+  height Int
+  
+  /// Size of the image file in bytes.
+  file_size Int
+  
+  /// Path to the image file in the storage system.
+  storage_path String
+  
+  /// Processing status of the image (uploaded, processing, ready, failed).
+  status String
+  
+  /// Timestamp when the image record was created.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id], map: "community_platform_post_content_images_community_platf_678061ca")
+  @@index([status, created_at])
+  @@index([mime_type])
+  @@index([file_size])
+}
+
+/// Complete audit trail of vote changes, removals, and modifications for
+/// transparency and karma calculation tracking.
+///
+/// This table maintains a permanent record of all vote-related activities on
+/// posts, providing full visibility into vote history for audit purposes and
+/// accurate karma calculation. Each record captures a specific vote change
+/// event, including the type of change (vote modification, removal, or
+/// initial vote), the previous vote value (if applicable), and the new vote
+/// value.
+///
+/// The audit trail supports transparency by allowing users and moderators to
+/// see the complete voting history of a post, which is essential for
+/// maintaining trust in the karma system. It also enables accurate karma
+/// recalculation when votes are changed or removed, ensuring that user karma
+/// scores reflect the true voting behavior.
+///
+/// This table integrates with the {@link community_platform_post_votes}
+/// table as its parent entity, tracking changes to individual vote records
+/// rather than post-level voting directly. The historical records are
+/// append-only and cannot be modified once created, ensuring the integrity
+/// of the audit trail.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_vote_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent vote record that this history entry tracks.
+  /// {@link community_platform_post_votes.id}
+  community_platform_post_vote_id String
+  
+  /// Type of vote history event: 'initial_vote', 'vote_change',
+  /// 'vote_removal', or 'vote_modification'.
+  vote_history_type String
+  
+  /// The previous vote value before the change occurred. Null for initial
+  /// votes.
+  previous_vote_value Int?
+  
+  /// The new vote value after the change occurred. Null for vote removals.
+  new_vote_value Int?
+  
+  /// Timestamp when the vote history record was created for audit purposes.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  vote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_vote_id, created_at], map: "community_platform_post_vote_histories_community_platf_22ff08bf")
+}

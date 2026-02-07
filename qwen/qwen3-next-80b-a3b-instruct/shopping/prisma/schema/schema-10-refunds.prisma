@@ -1,0 +1,43 @@
+/// Immutable snapshots of seller refund responses. Captures exact decision
+/// and reason at time of response for audit trail.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_response_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refers to the original refund request this snapshot belongs to. {@link
+  /// shopping_mall_refund_requests.id}.
+  refund_request_id String
+  
+  /// The seller who made this response. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// The seller's decision on the refund request. Must be exactly "approve" or
+  /// "reject".
+  decision String
+  
+  /// The reason provided by the seller for the decision. Minimum 10
+  /// characters, maximum 500 characters.
+  reason String
+  
+  /// The exact timestamp when the seller submitted this response.
+  responded_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  @@unique([refund_request_id])
+  
+  @@index([refund_request_id])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, responded_at], map: "shopping_mall_refund_response_snapshots_seller_id_resp_a0e30ffb")
+  @@index([decision])
+}

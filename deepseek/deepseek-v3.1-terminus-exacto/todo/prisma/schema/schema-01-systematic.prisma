@@ -1,450 +1,1562 @@
-/// System-wide configuration settings and feature flags that control
-/// application behavior.
+/// System-wide configuration settings and parameters for application operation.
 ///
-/// Stores global application settings, feature flags, and configuration
-/// parameters that affect the entire system. Each configuration entry
-/// represents a specific setting that can be toggled, configured, or
-/// enabled/disabled to control application behavior across different
-/// environments.
+/// Stores key-value pairs that control various aspects of the application
+/// behavior, including feature flags, system-wide settings, performance
+/// parameters, and operational configurations. Each configuration entry has
+/// a unique key and supports type-safe values through separate data type
+/// tables.
 ///
-/// Configurations support various scopes including global, channel-specific,
-/// and section-specific settings. The system maintains audit trails for
-/// configuration changes and supports versioning through snapshot patterns.
+/// Maintains audit trail capabilities through reference to {@link
+/// todo_app_system_metadata.id} for logging configuration changes and system
+/// administration purposes. System administrators can modify these settings
+/// to control application behavior without requiring code changes.
 ///
-/// Configuration values can include boolean flags, numeric values, string
-/// parameters, and JSON objects for complex settings. Each configuration is
-/// validated against its defined type constraints and business rules.
+/// This table serves as the primary configuration registry, with actual
+/// values stored in type-specific subsidiary tables to ensure data integrity
+/// and type safety.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_configurations {
+model todo_app_system_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Target channel for channel-specific configurations. {@link
-  /// todo_app_channels.id}.
-  todo_app_channel_id String?
+  /// Associated system metadata entry for audit trail and change tracking.
+  /// Referenced system metadata's {@link todo_app_system_metadata.id}.
+  system_metadata_id String
   
-  /// Target section for section-specific configurations. {@link
-  /// todo_app_sections.id}.
-  todo_app_section_id String?
+  /// Unique configuration key identifier used to reference this setting
+  /// throughout the application.
+  config_key String
   
-  /// Unique configuration key identifier used to reference the setting in code.
-  key String
-  
-  /// Configuration value stored as string with type validation applied.
-  value String
-  
-  /// Data type of the configuration value (boolean, number, string, json).
+  /// Data type of the configuration value: 'string', 'boolean', 'number',
+  /// 'json'. Defines which subsidiary table contains the actual value.
   value_type String
   
-  /// Human-readable description explaining the configuration's purpose and
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration setting.
+  description String
+  
+  /// Timestamp when this configuration entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration entry was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  systemMetadata todo_app_system_metadata @relation(fields: [system_metadata_id], references: [id], onDelete: Cascade)
+  
+  stringValues todo_app_system_configuration_strings[]
+  booleanConfiguration todo_app_system_configuration_booleans?
+  configurationNumber todo_app_system_configuration_numbers?
+  jsonConfigurations todo_app_system_configuration_jsons[]
+  
+  @@unique([config_key])
+  @@index([value_type, config_key])
+  // spellchecker: ignore-next-line
+  @@index([system_metadata_id, created_at], map: "todo_app_system_configurations_system_metadata_id_crea_cada02d9")
+}
+
+/// Comprehensive audit trail for security events and system operations.
+///
+/// Records system-wide audit events including user authentication attempts,
+/// data modifications, system configuration changes, and security incidents.
+/// Each entry includes timestamp, event type, user context (when
+/// applicable), source IP address, and detailed event description. Supports
+/// compliance requirements and forensic investigation capabilities.
+///
+/// Tracks both automated system events and user-initiated operations. Events
+/// are categorized by severity and type to enable targeted monitoring and
+/// alerting. Audit entries are append-only and cannot be modified or deleted
+/// to maintain audit trail integrity.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the audited action, if applicable. Null for
+  /// system-initiated or anonymous events. {@link todo_app_users.id}
+  user_id String?
+  
+  /// Category of the audit event (e.g., authentication, data_modification,
+  /// system_configuration, security_incident).
+  event_type String
+  
+  /// Specific subcategory of the event for detailed classification (e.g.,
+  /// login_success, login_failure, create_todo, update_todo).
+  event_subtype String?
+  
+  /// Severity level of the event (info, warning, error, critical) for
+  /// filtering and alerting purposes.
+  severity String
+  
+  /// Detailed description of the audit event including specific actions
+  /// performed and relevant context.
+  description String
+  
+  /// Source IP address from which the event originated.
+  ip_address String?
+  
+  /// HTTP user agent string from the client that initiated the event.
+  user_agent String?
+  
+  /// Identifier of the specific resource affected by the event (e.g., todo ID
+  /// for todo modifications).
+  resource_id String?
+  
+  /// Type of resource affected by the event (e.g., todo, user,
+  /// system_configuration).
+  resource_type String?
+  
+  /// Additional JSON-formatted metadata providing context-specific details
+  /// about the event.
+  metadata String?
+  
+  /// Timestamp when the audit event was recorded by the system.
+  created_at DateTime
+  
+  /// Timestamp when the audit entry was last updated (typically same as
+  /// created_at for audit trails).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([event_type, created_at])
+  @@index([user_id, created_at])
+  @@index([severity, created_at])
+  @@index([resource_type, resource_id])
+}
+
+/// Tracks metadata for system operations, maintenance activities, and
+/// version control. This table serves as the central repository for system
+/// operational metadata, recording information about maintenance windows,
+/// system updates, configuration changes, and operational events. Each entry
+/// captures the type of operation, associated version information, status
+/// tracking, and audit trail data.
+///
+/// Key relationships include references to system configuration tables for
+/// operational context and maintenance windows for scheduled operations. The
+/// metadata supports audit trails, compliance requirements, and operational
+/// monitoring across the application infrastructure.
+///
+/// This table is essential for maintaining system reliability, tracking
+/// operational changes, and providing comprehensive audit capabilities for
+/// system administrators.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of system operation being tracked (e.g., maintenance, update,
+  /// configuration_change, backup, migration).
+  operation_type String
+  
+  /// Version identifier for the operation, typically following semantic
+  /// versioning or internal versioning schemes.
+  operation_version String
+  
+  /// Current status of the operation (e.g., pending, in_progress, completed,
+  /// failed, rolled_back).
+  status String
+  
+  /// Detailed description of the operation, including purpose, scope, and any
+  /// relevant notes.
+  description String?
+  
+  /// Timestamp when the operation was initiated or scheduled to begin.
+  started_at DateTime?
+  
+  /// Timestamp when the operation was completed or finalized.
+  completed_at DateTime?
+  
+  /// Timestamp when the metadata record was created.
+  created_at DateTime
+  
+  /// Timestamp when the metadata record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  systemConfigurations todo_app_system_configurations[]
+  
+  @@unique([operation_type, operation_version])
+  @@index([operation_type, status])
+  @@index([status, created_at])
+  @@index([started_at, completed_at])
+}
+
+/// System error logging and tracking for debugging and monitoring purposes.
+///
+/// Captures application errors, exceptions, and warning events across all
+/// system components. Provides comprehensive error context including stack
+/// traces, request information, and affected user sessions. Essential for
+/// debugging production issues, monitoring system health, and identifying
+/// patterns in application failures.
+///
+/// Errors are categorized by severity and component to facilitate alerting
+/// and prioritization. Each error includes detailed context for effective
+/// troubleshooting including user sessions, request parameters, and
+/// environmental state. {@link todo_app_users.id} {@link
+/// todo_app_user_sessions.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User session where the error occurred. {@link todo_app_users.id}
+  user_id String?
+  
+  /// Specific session instance where the error occurred. {@link
+  /// todo_app_user_sessions.id}
+  user_session_id String?
+  
+  /// Timestamp when the error occurred and was logged.
+  created_at DateTime
+  
+  /// Type of error or exception (e.g., ValidationError, DatabaseError,
+  /// AuthenticationError).
+  error_type String
+  
+  /// Human-readable error message describing what went wrong.
+  error_message String
+  
+  /// Full stack trace or detailed error context for debugging.
+  stack_trace String?
+  
+  /// Error severity level (critical, error, warning, info).
+  severity String
+  
+  /// System component where the error originated (e.g., authentication, todos,
+  /// api).
+  component String
+  
+  /// API endpoint or route where the error occurred.
+  request_path String?
+  
+  /// HTTP method (GET, POST, PUT, DELETE) of the failed request.
+  request_method String?
+  
+  /// Limited request parameters stored as string for debugging (main context
+  /// moved to detail table).
+  request_parameters String?
+  
+  /// User agent string from the client that triggered the error.
+  user_agent String?
+  
+  /// IP address of the client that triggered the error.
+  ip_address String?
+  
+  /// Timestamp when the error was marked as resolved or handled.
+  resolved_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  userSession todo_app_user_sessions? @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
+  
+  errorLogDetail todo_app_error_log_details?
+  errorLogContext todo_app_error_log_contexts?
+  
+  @@index([user_session_id])
+  
+  @@unique([error_type, component, created_at])
+  @@index([created_at])
+  @@index([severity, created_at])
+  @@index([component, created_at])
+  @@index([error_type, created_at])
+  @@index([user_id, created_at])
+  @@index([resolved_at])
+}
+
+/// Manages feature flags for controlled feature deployments and A/B testing
+/// capabilities.
+///
+/// Feature flags enable gradual rollout of new features, selective user
+/// targeting, and controlled experimentation without requiring code
+/// deployments. Each flag can be independently configured with targeting
+/// rules, rollout percentages, and activation status to precisely control
+/// feature availability.
+///
+/// This table supports A/B testing by tracking feature flag assignments and
+/// ensuring consistent user experiences across sessions. Flags can be
+/// configured for global enablement, user segmentation, percentage-based
+/// rollout, or targeted activation based on specific criteria.
+///
+/// **Important**: Feature flags are managed independently of application
+/// code, allowing operations teams to control feature availability in
+/// real-time without developer intervention.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the feature flag used in application code.
+  name String
+  
+  /// Human-readable description explaining the feature flag's purpose and
   /// usage.
   description String
   
-  /// Configuration scope (global, channel, section) determining visibility and
-  /// access.
-  scope String
+  /// Indicates whether the feature flag is currently active and should be
+  /// evaluated.
+  enabled Boolean
   
-  /// Configuration status (active, inactive, deprecated) controlling
-  /// availability.
-  status String
-  
-  /// Timestamp when the configuration was initially created.
-  created_at DateTime
-  
-  /// Timestamp when the configuration was last modified.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  channel todo_app_channels? @relation(fields: [todo_app_channel_id], references: [id], onDelete: Cascade)
-  section todo_app_sections? @relation(fields: [todo_app_section_id], references: [id], onDelete: Cascade)
-  
-  @@unique([key])
-  @@index([scope, status])
-  @@index([todo_app_channel_id, status])
-  @@index([todo_app_section_id, status])
-}
-
-/// Application channels representing different access points or deployment
-/// environments for the todo application.
-///
-/// Channels define different entry points and deployment contexts for the
-/// application, such as web interfaces, mobile apps, API endpoints, or
-/// different deployment environments (production, staging, development).
-/// Each channel has specific configuration that determines how the
-/// application behaves within that context.
-///
-/// Channel metadata includes identification fields, status tracking
-/// indicating whether the channel is active or inactive, priority levels for
-/// channel routing decisions, and URL patterns or access specifications. The
-/// system uses channel information to apply environment-specific
-/// configuration and access control policies.
-///
-/// Channels are managed as infrastructure components rather than user-facing
-/// entities, with changes typically made during deployment or configuration
-/// updates rather than through user-driven CRUD operations. Relationships
-/// with other systematic components ensure consistent configuration across
-/// the application ecosystem.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_channels {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Human-readable name for the channel, such as "Web Interface", "Mobile
-  /// App", "API Gateway", etc. Used for display and identification purposes.
-  name String
-  
-  /// Unique machine-readable code identifier for the channel. Used for
-  /// programmatic channel selection and routing decisions. Examples: "web",
-  /// "mobile", "api", "admin".
-  channel_code String
-  
-  /// Type classification of the channel indicating its purpose and access
-  /// pattern. Valid types: "web", "mobile", "api", "internal", "integration".
-  channel_type String
-  
-  /// Current operational status of the channel. Valid values: "active",
-  /// "inactive", "maintenance". Controls whether the channel is accessible.
-  status String
-  
-  /// Priority level for channel selection and routing decisions. Lower numbers
-  /// indicate higher priority. Used when multiple channels are available for
-  /// the same functionality.
-  priority Int
-  
-  /// URL pattern or base path that identifies requests originating from this
-  /// channel. Used for request routing and channel-specific configuration
-  /// application.
-  base_url_pattern String?
-  
-  /// Detailed description of the channel's purpose, capabilities, and intended
-  /// usage context. Provides context for system administrators managing
-  /// deployment environments.
-  description String?
-  
-  /// Timestamp when the channel configuration was initially created in the
-  /// system.
-  created_at DateTime
-  
-  /// Timestamp when the channel configuration was last modified. Tracked for
-  /// configuration change auditing.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  configurations todo_app_configurations[]
-  sections todo_app_sections[]
-  
-  @@unique([channel_code])
-  @@unique([name])
-  @@index([channel_type, status])
-  @@index([priority])
-  @@index([created_at])
-}
-
-/// Hierarchical sections within channels for organizing application
-/// components and system structure.
-///
-/// Sections provide organizational hierarchy within application channels,
-/// enabling structured content organization and navigation. Each section can
-/// have parent-child relationships to create nested organizational
-/// structures that support complex application layouts.
-///
-/// Sections are referenced by other system components for organizational
-/// context and are managed as independent infrastructure entities. The
-/// hierarchical structure allows for flexible organization patterns while
-/// maintaining referential integrity through parent-child relationships.
-///
-/// Channel association ensures sections are properly scoped within specific
-/// application deployment environments or access points.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_sections {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Associated channel's {@link todo_app_channels.id}.
-  todo_app_channel_id String
-  
-  /// Parent section's {@link todo_app_sections.id} for hierarchical
-  /// organization.
-  parent_id String?
-  
-  /// Unique section code identifier for system reference and navigation.
-  code String
-  
-  /// Display name of the section for organizational purposes.
-  name String
-  
-  /// Detailed description explaining the section's purpose and usage context.
-  description String?
-  
-  /// Sort order for section display within parent context.
-  order Int
-  
-  /// Timestamp when the section was created.
-  created_at DateTime
-  
-  /// Timestamp when the section was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the section was soft deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  channel todo_app_channels @relation(fields: [todo_app_channel_id], references: [id], onDelete: Cascade)
-  parent todo_app_sections? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
-  
-  configurations todo_app_configurations[]
-  children todo_app_sections[] @relation("recursive")
-  
-  @@unique([code])
-  @@unique([todo_app_channel_id, name])
-  @@index([todo_app_channel_id, parent_id])
-  @@index([parent_id])
-  @@index([order])
-}
-
-/// Core application metadata including version information and system
-/// statistics.
-///
-/// Contains infrastructure-level data that supports the entire application
-/// system, such as version tracking, operational statistics, and system
-/// configuration metadata. This table provides centralized metadata
-/// management for application monitoring, version control, and system health
-/// tracking.
-///
-/// Stores version information including current application version,
-/// database schema version, and compatibility information. Also maintains
-/// system statistics such as user count, active session count, and
-/// performance metrics for monitoring purposes.
-///
-/// This metadata is managed through system operations and background
-/// processes rather than direct user interaction. It serves as a
-/// foundational component for system administration, monitoring, and
-/// operational visibility across the entire application infrastructure.
-///
-/// Relationships with other systematic infrastructure tables provide
-/// comprehensive system management capabilities while maintaining clear
-/// separation from user-facing business logic domains.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_metadata {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Current application version number in semantic versioning format (e.g.,
-  /// 1.0.0). Used for version tracking and compatibility verification.
-  version String
-  
-  /// Database schema version number that corresponds to this application
-  /// version. Used for schema migration tracking and compatibility checking.
-  schema_version String
-  
-  /// Build timestamp or date when this application version was deployed. Helps
-  /// tracking deployment history and system updates.
-  build_date String
-  
-  /// Total number of registered users in the system. Used for system growth
-  /// monitoring and capacity planning.
-  total_users Int
-  
-  /// Current number of active user sessions. Provides real-time visibility
-  /// into system usage and load.
-  active_sessions Int
-  
-  /// Total number of todos created in the system. Statistical metric for
-  /// monitoring application usage patterns.
-  total_todos Int
-  
-  /// Number of API requests processed today. Operational metric for monitoring
-  /// system load and performance.
-  api_requests_today Int
-  
-  /// Number of consecutive days the system has been operational. Measures
-  /// system reliability and stability.
-  uptime_days Int
-  
-  /// Timestamp of the last successful system backup. Critical for disaster
-  /// recovery monitoring and data safety assurance.
-  last_backup DateTime?
-  
-  /// Indicates whether the system is currently in maintenance mode. Used for
-  /// system administration and operational control.
-  maintenance_mode Boolean
-  
-  /// Timestamp when this metadata record was created. Typically corresponds to
-  /// initial system setup or version deployment.
-  created_at DateTime
-  
-  /// Timestamp when this metadata record was last updated. Tracks changes to
-  /// system metadata and statistics.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([version])
-  @@index([updated_at])
-}
-
-/// Global application settings and preferences that affect all users across
-/// the entire system.
-///
-/// Stores configuration parameters that control application behavior,
-/// feature toggles, system defaults, and user experience preferences.
-/// Settings are maintained as key-value pairs with type validation to ensure
-/// data integrity.
-///
-/// Managed by system administrators through dedicated settings management
-/// interfaces. Changes to these settings can impact all users and should be
-/// carefully controlled and monitored through proper audit trails.
-///
-/// This table provides centralized configuration management for application
-/// customization, A/B testing, feature rollouts, and system behavior tuning
-/// without requiring code deployments.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier for the setting, following reverse domain notation
-  /// (e.g., 'app.features.advanced_editing'). Used to retrieve and reference
-  /// specific settings programmatically.
-  key String
-  
-  /// Setting value stored as string with type validation determined by the
-  /// type field. Contains the actual configuration data that controls
-  /// application behavior.
-  value String
-  
-  /// Data type of the setting value to enforce validation. Valid values:
-  /// 'string', 'boolean', 'number', 'json'. Determines how the value field
-  /// should be parsed and validated.
-  type String
-  
-  /// Human-readable description explaining the setting's purpose, usage, and
-  /// impact. Provides context for administrators managing application
-  /// configuration.
-  description String
-  
-  /// Restricts access to sensitive settings that should only be modified by
-  /// system administrators. True: admin-level access required; False: broader
-  /// administrative access allowed.
-  admin_only Boolean
-  
-  /// Timestamp when the setting was first created and added to the system
-  /// configuration.
-  created_at DateTime
-  
-  /// Timestamp when the setting was last modified, providing audit trail for
-  /// configuration changes.
-  updated_at DateTime
-  
-  /// Timestamp when the setting was soft-deleted, allowing for reversible
-  /// configuration removal without permanent data loss.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([key])
-  @@index([admin_only, created_at])
-}
-
-/// Feature flag management and rollout configurations for controlled feature
-/// releases.
-///
-/// Stores feature toggle settings that control functionality availability
-/// across the application. Each feature can be completely disabled, enabled
-/// for all users, or gradually rolled out to a percentage of users for A/B
-/// testing.
-///
-/// Features support percentage-based rollouts where access is granted to a
-/// specified percentage of users, allowing controlled feature releases and
-/// gradual deployment strategies. Feature status can be tracked
-/// (development, testing, production) with specific rollout percentages for
-/// each environment.
-///
-/// The configuration field stores JSON settings for advanced feature
-/// behaviors, A/B testing parameters, and environment-specific
-/// configurations. Features are managed independently with audit trails for
-/// changes to rollout settings and configurations.
-///
-/// Feature flags enable decoupling deployment from feature releases,
-/// supporting safe deployments and gradual rollouts with minimal risk.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_features {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique name identifier for the feature. Used as the feature key in
-  /// application code to check feature availability.
-  name String
-  
-  /// Detailed description explaining the feature's purpose and functionality.
-  /// Used for documentation and administrative interfaces.
-  description String?
-  
-  /// Current feature status. Valid values: 'development', 'testing',
-  /// 'production', 'disabled'. Controls feature rollout stage and access
-  /// policies.
-  status String
-  
-  /// Percentage of users who can access this feature (0-100). Used for gradual
-  /// feature rollouts and A/B testing.
+  /// Percentage of users (0-100) for whom the feature should be enabled during
+  /// gradual rollout.
   rollout_percentage Int
   
-  /// JSON configuration data for feature-specific settings, A/B testing
-  /// parameters, and environment-specific behaviors.
-  configuration String?
+  /// Scope definition specifying targeting criteria (global, user-based,
+  /// percentage-based, etc.).
+  target_scope String
   
-  /// Timestamp when the feature flag was first created.
+  /// JSON configuration detailing specific targeting criteria and activation
+  /// conditions.
+  targeting_rules String?
+  
+  /// Timestamp when the feature flag was initially created in the system.
   created_at DateTime
   
   /// Timestamp when the feature flag configuration was last modified.
   updated_at DateTime
   
-  /// Timestamp when the feature flag was soft-deleted. Null indicates the
-  /// feature is active.
+  /// Timestamp when the feature flag was soft-deleted (for cleanup and audit
+  /// purposes).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   @@unique([name])
+  @@index([enabled, created_at])
+  @@index([target_scope, enabled])
+}
+
+/// API rate limiting configuration and enforcement tracking.
+///
+/// This table manages rate limiting policies for different API endpoints,
+/// user types, and access scopes. It tracks both configuration settings and
+/// real-time usage to enforce API rate limits effectively. Each entry
+/// defines a specific rate limiting policy with its enforcement parameters
+/// and tracks current usage within the defined time windows.
+///
+/// Rate limiting rules cascade from most specific to general: per-user
+/// limits override global limits, endpoint-specific limits override general
+/// API limits. The system uses this table to determine when to throttle
+/// requests and track enforcement events for auditing purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_api_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive name for this rate limiting rule for administrative reference.
+  rate_limit_name String
+  
+  /// Type of rate limit: global, user_level, endpoint_specific, or ip_based.
+  rate_limit_type String
+  
+  /// Maximum number of requests allowed within the specified time window.
+  requests_limit Int
+  
+  /// Time window in seconds during which the requests limit applies.
+  time_window_seconds Int
+  
+  /// Optional identifier for the scope (endpoint path, user_id, IP address, or
+  /// '*').
+  scope_identifier String?
+  
+  /// Current number of requests counted within the current time window.
+  current_usage_count Int
+  
+  /// Timestamp when the current measurement window started.
+  window_start_time DateTime
+  
+  /// Whether this rate limiting rule is currently active and enforced.
+  is_enabled Boolean
+  
+  /// Detailed description of this rate limiting rule's purpose and usage.
+  description String?
+  
+  /// Timestamp when this rate limiting rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this rate limiting rule was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([rate_limit_type, scope_identifier])
+  // spellchecker: ignore-next-line
+  @@index([rate_limit_type, scope_identifier, is_enabled], map: "todo_app_api_rate_limits_rate_limit_type_scope_identif_0bb3c0de")
+  @@index([window_start_time])
+  @@index([is_enabled])
+}
+
+/// System health monitoring and status tracking for availability monitoring.
+/// Stores health check results from various system components including
+/// database connectivity, API endpoints, external service dependencies, and
+/// internal system metrics. Each health check record represents a
+/// point-in-time assessment of system health with detailed status
+/// information and diagnostic data.
+///
+/// Health checks are performed at regular intervals to monitor system
+/// availability and performance. The table tracks check types, status
+/// values, response times, error details, and metadata for comprehensive
+/// monitoring and alerting. This data supports system reliability analysis,
+/// performance monitoring, and proactive issue detection.
+///
+/// Related entities include {@link todo_app_system_configurations} for
+/// health check configuration settings and {@link todo_app_error_logs} for
+/// correlating health check failures with system errors.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_health_checks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of health check being performed (e.g., 'database', 'api',
+  /// 'external_service', 'internal_system').
+  check_type String
+  
+  /// Specific name identifier for the health check (e.g.,
+  /// 'postgres_connection', 'api_health_endpoint', 'payment_gateway').
+  check_name String
+  
+  /// Health check result status (e.g., 'healthy', 'degraded', 'unhealthy',
+  /// 'timeout', 'error').
+  status String
+  
+  /// Response time in milliseconds for the health check operation. Null if
+  /// check failed or timed out.
+  response_time Int?
+  
+  /// Detailed error message if the health check failed. Null for successful
+  /// checks.
+  error_message String?
+  
+  /// Timestamp when the health check was performed.
+  check_timestamp DateTime
+  
+  /// Timestamp when this health check record was created.
+  created_at DateTime
+  
+  /// Timestamp when this health check record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([check_type, check_name, check_timestamp], map: "todo_app_system_health_checks_check_type_check_name_ch_409ba75e")
+  @@index([status, check_timestamp])
+  @@index([check_type, check_timestamp])
+  @@index([check_timestamp])
+}
+
+/// Background job scheduling and execution tracker for system operations.
+///
+/// This table manages all background job processing including scheduling,
+/// execution status tracking, retry logic, and job lifecycle monitoring. It
+/// supports both system-generated and user-initiated background tasks.
+///
+/// Each job tracks scheduling parameters, execution timing, status
+/// transitions, and completion results. The system uses this table for job
+/// prioritization, failure recovery, and performance monitoring.
+///
+/// Relationships:
+/// - References {@link todo_app_users.id} for job ownership and auditing
+/// - No other foreign key relationships required for this systematic component
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_background_jobs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user who submitted or initiated this background job. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String?
+  
+  /// Descriptive name of the background job for identification and monitoring.
+  name String
+  
+  /// Detailed description of the job's purpose and operations.
+  description String?
+  
+  /// Current execution status of the job: 'pending', 'running', 'completed',
+  /// 'failed', 'canceled'.
+  status String
+  
+  /// JSON-encoded parameters and configuration for the job execution.
+  parameters String?
+  
+  /// Timestamp when the job is scheduled to start execution.
+  scheduled_at DateTime
+  
+  /// Timestamp when the job execution actually began.
+  started_at DateTime?
+  
+  /// Timestamp when the job execution completed or failed.
+  completed_at DateTime?
+  
+  /// Number of retry attempts made for this job.
+  retry_count Int
+  
+  /// Maximum number of retry attempts allowed before permanent failure.
+  max_retries Int
+  
+  /// Error message captured when job execution fails.
+  error_message String?
+  
+  /// Detailed reason for job failure, including stack traces if available.
+  failure_reason String?
+  
+  /// Timestamp when the job record was created.
+  created_at DateTime
+  
+  /// Timestamp when the job record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the job was soft-deleted for cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id])
+  
+  @@unique([name, scheduled_at])
+  @@index([status, scheduled_at])
+  @@index([scheduled_at, status])
+}
+
+/// Tracks data migration operations and schema changes for version control
+/// and audit purposes.
+///
+/// This table provides comprehensive tracking of all database migration
+/// operations executed on the system. It captures execution details, status
+/// changes, and error information to ensure reliable schema evolution
+/// management. Each migration is uniquely identified by name and version
+/// combination for precise version control.
+///
+/// Maintains audit trail for compliance and debugging purposes, recording
+/// execution timestamps, duration, and rollback capabilities. Supports
+/// reliable deployment workflows by tracking migration states including
+/// pending, running, completed, and failed statuses.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_data_migrations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the migration operation.
+  migration_name String
+  
+  /// Version identifier for ordering and dependency management.
+  version String
+  
+  /// Current execution status of the migration: pending, running, completed,
+  /// or failed.
+  status String
+  
+  /// Timestamp when the migration was executed, null if not yet executed.
+  executed_at DateTime?
+  
+  /// Duration of migration execution in milliseconds, null if not executed.
+  execution_duration Int?
+  
+  /// Whether this migration can be rolled back if needed.
+  rollback_available Boolean
+  
+  /// Detailed error information if migration failed, null if successful.
+  error_details String?
+  
+  /// Human-readable description of the migration purpose and changes.
+  description String?
+  
+  /// Timestamp when the migration tracking record was created.
+  created_at DateTime
+  
+  /// Timestamp when the migration tracking record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([migration_name, version])
   @@index([status, created_at])
-  @@index([rollout_percentage])
+  @@index([executed_at])
+}
+
+/// System notification management and delivery tracking for application-wide
+/// notifications.
+///
+/// This table handles the complete lifecycle of system notifications
+/// including creation, delivery attempts, status tracking, and audit trails.
+/// Notifications can target specific users or be system-wide broadcasts. The
+/// system supports retry mechanisms for failed deliveries and maintains
+/// comprehensive tracking of notification states.
+///
+/// Notifications are categorized by type (system alerts, user notifications,
+/// maintenance announcements) and priority levels to ensure appropriate
+/// delivery handling. Each notification records delivery attempts, failures,
+/// and final status for audit purposes.
+///
+/// This infrastructure table supports application operations by providing
+/// reliable notification delivery while maintaining system stability and
+/// performance.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target user for personalized notifications. Nullable for system-wide
+  /// broadcasts. {@link todo_app_users.id}
+  todo_app_user_id String?
+  
+  /// Category of notification (system_alert, user_notification, maintenance,
+  /// security, performance).
+  notification_type String
+  
+  /// Delivery priority level (low, normal, high, critical).
+  priority String
+  
+  /// Notification subject line or title.
+  subject String
+  
+  /// Full notification message content.
+  message String
+  
+  /// Current delivery status (pending, sent, delivered, failed, expired).
+  delivery_status String
+  
+  /// Delivery channel (email, in_app, push, sms, webhook).
+  delivery_method String
+  
+  /// Number of delivery attempts made.
+  retry_count Int
+  
+  /// Maximum allowed delivery attempts before marking as failed.
+  max_retries Int
+  
+  /// Timestamp of the most recent delivery attempt.
+  last_attempt_at DateTime?
+  
+  /// Scheduled time for next delivery attempt if retries remain.
+  next_retry_at DateTime?
+  
+  /// Timestamp when notification was successfully sent.
+  sent_at DateTime?
+  
+  /// Timestamp when notification was confirmed delivered.
+  delivered_at DateTime?
+  
+  /// Timestamp when notification expires and should not be delivered.
+  expires_at DateTime?
+  
+  /// Reason for delivery failure if applicable.
+  failure_reason String?
+  
+  /// Additional delivery metadata in JSON format.
+  metadata String?
+  
+  /// Timestamp when notification was created.
+  created_at DateTime
+  
+  /// Timestamp when notification was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  @@index([todo_app_user_id, created_at])
+  @@index([delivery_status, next_retry_at])
+  @@index([notification_type, priority])
+  @@index([expires_at])
+}
+
+/// Cache management system table responsible for cache configuration,
+/// invalidation tracking, and performance monitoring.
+///
+/// This table stores system-wide cache configurations including cache key
+/// patterns, invalidation rules, TTL settings, and performance metrics. It
+/// tracks cache hit/miss ratios, memory usage, and operational statistics to
+/// support caching optimization and monitoring across the application.
+///
+/// The cache management system provides centralized control over caching
+/// strategies, allowing configuration of distinct caching approaches for
+/// different data domains or API endpoints. As a subsidiary table, it
+/// supports the primary application functionality by optimizing performance
+/// without direct user interaction.
+///
+/// Performance metrics enable proactive optimization and debugging of
+/// caching behavior based on production usage patterns observed across the
+/// todo application ecosystem.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_cache_managements {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Pattern template for cache keys used by this cache configuration.
+  /// Examples: 'user_profile:{userId}', 'todo_list:{userId}:{status}',
+  /// 'api_response:{endpoint}:{params}'. Must be unique across all
+  /// configurations.
+  cache_key_pattern String
+  
+  /// Caching strategy applied (e.g., 'time_based', 'event_based', 'manual',
+  /// 'hybrid'). Determines invalidation behavior and cache lifecycle
+  /// management.
+  cache_strategy String
+  
+  /// Time-to-live setting in seconds for automatic cache expiration. Null
+  /// indicates manual invalidation strategy without automatic expiration.
+  time_to_live_seconds Int?
+  
+  /// Maximum cache size in megabytes for this configuration. Null indicates no
+  /// size limit for dynamic memory allocation.
+  max_cache_size Int?
+  
+  /// Whether this cache configuration is currently active and being applied
+  /// across the application.
+  enabled Boolean
+  
+  /// Timestamp of the most recent cache invalidation event for this
+  /// configuration. Used for debugging and performance analysis.
+  last_invalidation_at DateTime?
+  
+  /// Total number of cache hits recorded for this configuration. Incremented
+  /// on successful cache retrievals.
+  hit_count Int
+  
+  /// Total number of cache misses recorded for this configuration. Incremented
+  /// on cache misses requiring backend retrieval.
+  miss_count Int
+  
+  /// Average response time in milliseconds for cache operations under this
+  /// configuration. Calculated periodically from operational metrics.
+  average_response_time_ms Int?
+  
+  /// Current memory usage in megabytes for this cache configuration. Monitored
+  /// for resource allocation and performance tuning.
+  memory_usage_mb Int?
+  
+  /// Timestamp when this cache configuration was initially created and
+  /// activated.
+  created_at DateTime
+  
+  /// Timestamp when this cache configuration was last modified, including
+  /// performance metric updates or settings changes.
+  updated_at DateTime
+  
+  /// Timestamp when this cache configuration was soft-deleted. Null indicates
+  /// active configuration.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@unique([cache_key_pattern])
+  @@index([cache_strategy, enabled])
+  @@index([last_invalidation_at])
+  @@index([hit_count, miss_count])
+  @@index([created_at])
+  @@index([enabled, cache_strategy])
+}
+
+/// Tracks scheduled maintenance windows and system downtime events for the
+/// Todo application.
+///
+/// This table manages planned maintenance schedules and tracks actual
+/// downtime events. Each record represents a maintenance window with defined
+/// start and end times, status tracking, and impact assessment. Maintenance
+/// windows can be scheduled in advance or created for emergency downtime
+/// situations.
+///
+/// The table supports various maintenance window states including scheduled,
+/// active, completed, and canceled. It also tracks the impact level of
+/// maintenance events to help communicate system availability to users.
+///
+/// Maintenance windows are essential for system reliability and user
+/// communication, providing clear visibility into planned downtime and
+/// tracking actual system availability metrics.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_maintenance_windows {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive title of the maintenance window for identification and
+  /// communication purposes.
+  title String
+  
+  /// Detailed description of the maintenance work being performed and its
+  /// impact on users.
+  description String?
+  
+  /// Planned start time of the maintenance window when system changes will
+  /// begin.
+  scheduled_start_at DateTime
+  
+  /// Planned end time of the maintenance window when normal operations should
+  /// resume.
+  scheduled_end_at DateTime
+  
+  /// Actual start time when maintenance activities began, recorded for
+  /// tracking purposes.
+  actual_start_at DateTime?
+  
+  /// Actual end time when maintenance activities completed and system resumed
+  /// normal operations.
+  actual_end_at DateTime?
+  
+  /// Current status of the maintenance window: scheduled, active, completed,
+  /// or canceled.
+  status String
+  
+  /// Impact level indicating the severity of system disruption: low, medium,
+  /// high, or critical.
+  impact_level String
+  
+  /// Timestamp when the maintenance window was initially scheduled and created.
+  created_at DateTime
+  
+  /// Timestamp when the maintenance window record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the maintenance window was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([scheduled_start_at, scheduled_end_at], map: "todo_app_maintenance_windows_scheduled_start_at_schedu_d13e23ee")
+  @@index([status, scheduled_start_at])
+  // spellchecker: ignore-next-line
+  @@index([impact_level, scheduled_start_at], map: "todo_app_maintenance_windows_impact_level_scheduled_st_c62c46d4")
+  @@index([created_at])
+}
+
+/// Stores string-type configuration values with proper type safety and
+/// validation.
+///
+/// This table represents individual string configuration values within the
+/// system configuration management infrastructure. Each record stores a
+/// specific string value with validation metadata, ensuring type safety and
+/// data integrity for system configuration parameters.
+///
+/// Configuration values support various system operations including feature
+/// flags, application settings, and runtime parameters. The table maintains
+/// proper relationships with parent configuration entities while avoiding
+/// field duplication.
+///
+/// {@link todo_app_system_configurations.id} provides the parent
+/// configuration context for these string values.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_configuration_strings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent system configuration entity that owns this string value. {@link
+  /// todo_app_system_configurations.id}
+  todo_app_system_configuration_id String
+  
+  /// Actual string configuration value with proper validation and formatting.
+  configuration_value String
+  
+  /// Regular expression pattern for validating the configuration value format.
+  validation_pattern String?
+  
+  /// Maximum allowed length for the configuration value.
+  max_length Int?
+  
+  /// Minimum required length for the configuration value.
+  min_length Int?
+  
+  //----
+  // RELATIONS
+  //----
+  stringConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_system_configuration_id, configuration_value], map: "todo_app_system_configuration_strings_todo_app_system__359f7af5")
+}
+
+/// Stores boolean-type configuration values with proper type safety and
+/// validation.
+///
+/// This table is part of the system configuration infrastructure and
+/// provides type-safe storage for boolean configuration parameters. Each
+/// record represents a specific boolean configuration value that can be used
+/// throughout the application. The table ensures proper validation and
+/// maintains referential integrity with the parent configuration registry.
+///
+/// Boolean configurations are typically used for feature flags, system
+/// toggles, and operational switches that control application behavior. The
+/// table supports the systematic component's configuration management system
+/// by providing specialized storage for boolean values with appropriate
+/// constraints.
+///
+/// Access temporal information and configuration metadata through the parent
+/// table {@link todo_app_system_configurations.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_configuration_booleans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent system configuration entry. {@link
+  /// todo_app_system_configurations.id}
+  todo_app_system_configuration_id String
+  
+  /// The actual boolean configuration value. This field stores the true/false
+  /// state that controls system behavior or feature flags.
+  value Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_system_configuration_id], map: "todo_app_system_configuration_booleans_todo_app_system_091ba630")
+  @@index([value])
+}
+
+/// Stores numeric configuration values with proper type safety and validation.
+///
+/// This table provides a dedicated storage mechanism for numeric system
+/// configuration values, ensuring type safety and validation constraints.
+/// Each record represents a specific numeric configuration setting that can
+/// be referenced by the main system configuration table.
+///
+/// Numeric configurations are used for system parameters that require
+/// mathematical operations, ranges, or specific numeric constraints.
+/// Examples include timeout values, threshold limits, capacity settings, and
+/// performance tuning parameters.
+///
+/// The table maintains referential integrity with the main system
+/// configurations table while providing specialized storage for numeric
+/// values with appropriate validation rules.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_configuration_numbers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent system configuration entry. {@link
+  /// todo_app_system_configurations.id}
+  todo_app_system_configuration_id String
+  
+  /// The actual numeric configuration value. This field stores the numeric
+  /// setting that can be used for system parameters requiring mathematical
+  /// operations or specific numeric constraints.
+  value Float
+  
+  //----
+  // RELATIONS
+  //----
+  systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
+  
+  validation todo_app_system_configuration_number_validations?
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_system_configuration_id], map: "todo_app_system_configuration_numbers_todo_app_system__2d7d14af")
+}
+
+/// Stores JSON configuration values with proper type safety and validation.
+/// This table holds complex configuration data in JSON format that requires
+/// structured validation and type safety enforcement. Each configuration
+/// value is associated with a system configuration entry for proper grouping
+/// and management.
+///
+/// JSON configuration values stored here can represent complex data
+/// structures like feature flag configurations, API endpoint settings, or
+/// system parameter groupings. The table includes validation metadata to
+/// ensure JSON schema compliance and proper type handling throughout the
+/// application.
+///
+/// This table works in conjunction with {@link
+/// todo_app_system_configurations} to provide a comprehensive configuration
+/// management system that supports both simple and complex configuration
+/// needs.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_configuration_jsons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent system configuration entry. {@link
+  /// todo_app_system_configurations.id}
+  todo_app_system_configuration_id String
+  
+  /// Unique identifier for this JSON configuration entry within the system
+  /// configuration group.
+  configuration_key String
+  
+  /// The actual JSON configuration data stored as a string with proper JSON
+  /// schema validation.
+  json_value String
+  
+  /// JSON schema definition used to validate the json_value field for type
+  /// safety.
+  json_schema String?
+  
+  /// Version identifier for the JSON configuration schema to support backward
+  /// compatibility.
+  version String
+  
+  /// Indicates whether this JSON configuration is currently active and should
+  /// be used by the system.
+  is_active Boolean
+  
+  //----
+  // RELATIONS
+  //----
+  systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_system_configuration_id, configuration_key], map: "todo_app_system_configuration_jsons_todo_app_system_co_e4409e48")
+  @@index([is_active])
+  @@index([version])
+}
+
+/// Extended error context and detailed debugging information that doesn't
+/// fit atomicity requirements of main error logs table.
+///
+/// This table serves as a container for comprehensive debugging data that
+/// extends beyond the main error log entry. It provides developers with
+/// additional context needed for troubleshooting complex error scenarios
+/// without duplicating information already stored in the parent error log.
+///
+/// The data stored here is accessed during debugging sessions and provides
+/// supplemental information to the main error log entry.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_details {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent error log entry. {@link todo_app_error_logs.id}
+  todo_app_error_log_id String
+  
+  /// Additional debugging information and context not covered by specialized
+  /// debugging tables.
+  debugging_context String?
+  
+  /// Timestamp when this error detail record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  errorLog todo_app_error_logs @relation(fields: [todo_app_error_log_id], references: [id], onDelete: Cascade)
+  
+  requestContexts todo_app_error_log_detail_request_contexts[]
+  responseContext todo_app_error_log_detail_response_contexts?
+  environmentContexts todo_app_error_log_detail_environment_contexts[]
+  userContexts todo_app_error_log_detail_user_contexts[]
+  
+  @@unique([todo_app_error_log_id])
+  @@index([created_at])
+}
+
+/// Stores business operation context and specific entity references for
+/// errors that occurred during business workflows. This table provides
+/// additional context for debugging and audit trail purposes, linking errors
+/// to specific business operations and entities.
+///
+/// Each record represents a business context associated with an error logged
+/// in {@link todo_app_error_logs}, capturing information about the operation
+/// being performed, affected entities, and workflow state at the time of the
+/// error. This context helps developers understand what business process was
+/// interrupted and which entities were involved when troubleshooting errors.
+///
+/// The table maintains referential integrity with the main error logs table
+/// and supports comprehensive error analysis by preserving the business
+/// context in which errors occurred.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_contexts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent error log entry. {@link todo_app_error_logs.id}
+  todo_app_error_log_id String
+  
+  /// Type of business operation being performed when the error occurred, such
+  /// as 'todo_creation', 'user_registration', or 'todo_completion'.
+  business_operation_type String
+  
+  /// Type of entity involved in the operation, such as 'todo', 'user', or
+  /// 'session'.
+  entity_type String?
+  
+  /// Identifier of the specific entity involved in the operation, if
+  /// applicable.
+  entity_id String?
+  
+  /// State of the business workflow at the time of the error, providing
+  /// context for where in the process the failure occurred.
+  workflow_state String?
+  
+  /// JSON string containing parameters and context data for the operation
+  /// being performed.
+  operation_parameters String?
+  
+  /// Additional user context information relevant to the error, such as user
+  /// actions or session state.
+  user_context String?
+  
+  /// Timestamp when the error context was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the error context was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the error context was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  errorLog todo_app_error_logs @relation(fields: [todo_app_error_log_id], references: [id], onDelete: Cascade)
+  
+  @@unique([todo_app_error_log_id])
+  // spellchecker: ignore-next-line
+  @@index([business_operation_type, created_at], map: "todo_app_error_log_contexts_business_operation_type_cr_e432cd9a")
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+}
+
+/// Stores validation constraints for numeric configuration values, including
+/// minimum and maximum value limits, validation rules, and constraint
+/// metadata. This table ensures that numeric configuration values adhere to
+/// specified constraints and provides comprehensive validation rules for
+/// system configuration management.
+///
+/// Each validation record corresponds to exactly one numeric configuration
+/// value in {@link todo_app_system_configuration_numbers}, establishing a
+/// 1:1 relationship for constraint enforcement. The validation constraints
+/// include minimum and maximum value limits, validation type categorization,
+/// and constraint metadata that configuration values must satisfy.
+///
+/// This table supports the systematic component's configuration management
+/// system by providing validation rules that maintain data integrity,
+/// prevent invalid configuration values from being applied to the system,
+/// and enable audit trail tracking through soft deletion capabilities.
+///
+/// Common validation types include: 'range' (minimum/maximum constraints),
+/// 'positive_only' (values > 0), 'non_negative' (values >= 0),
+/// 'integer_only' (whole numbers only), and custom constraint definitions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_system_configuration_number_validations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the numeric configuration value that this validation applies
+  /// to. {@link todo_app_system_configuration_numbers.id}
+  todo_app_system_configuration_number_id String
+  
+  /// The minimum allowed value for the numeric configuration. Configuration
+  /// values below this limit are considered invalid. Null indicates no minimum
+  /// constraint.
+  minimum_value Float?
+  
+  /// The maximum allowed value for the numeric configuration. Configuration
+  /// values above this limit are considered invalid. Null indicates no maximum
+  /// constraint.
+  maximum_value Float?
+  
+  /// Type of validation constraint being applied, such as 'range',
+  /// 'positive_only', 'non_negative', 'integer_only', or custom constraint
+  /// definitions.
+  validation_type String
+  
+  /// Human-readable description of the validation constraint for
+  /// administrative purposes and audit trail.
+  constraint_description String?
+  
+  /// Timestamp when this validation constraint was created.
+  created_at DateTime
+  
+  /// Timestamp when this validation constraint was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this validation constraint was soft-deleted for audit
+  /// trail and data retention compliance. Null indicates active validation
+  /// constraint.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  configurationNumber todo_app_system_configuration_numbers @relation(fields: [todo_app_system_configuration_number_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_system_configuration_number_id], map: "todo_app_system_configuration_number_validations_todo__8477c709")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([validation_type, created_at], map: "todo_app_system_configuration_number_validations_valid_f6c68fe6")
+  @@index([deleted_at])
+}
+
+/// Stores HTTP request-specific debugging information including payloads,
+/// headers, and parameters for error analysis.
+///
+/// This table captures detailed HTTP request context that was active when an
+/// error occurred, providing comprehensive debugging information for
+/// developers. It stores request method, URL, headers, query parameters, and
+/// request payloads to help reproduce and diagnose issues.
+///
+/// Each record is associated with a specific error log entry through {@link
+/// todo_app_error_logs.id} and provides the complete request context that
+/// led to the error condition.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_detail_request_contexts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the error log detail record. {@link
+  /// todo_app_error_log_details.id}
+  todo_app_error_log_detail_id String
+  
+  /// HTTP method of the request (GET, POST, PUT, DELETE, etc.).
+  http_method String
+  
+  /// Full URL of the HTTP request including path and query parameters.
+  request_url String
+  
+  /// HTTP request headers in JSON format for debugging and analysis.
+  request_headers String?
+  
+  /// URL query parameters in JSON format for request context analysis.
+  query_parameters String?
+  
+  /// Request body payload for POST/PUT requests, stored as text for debugging.
+  request_payload String?
+  
+  /// Content-Type header value indicating the format of the request payload.
+  content_type String?
+  
+  /// User-Agent header value for client identification and debugging.
+  user_agent String?
+  
+  /// Client IP address for security auditing and request tracing.
+  ip_address String?
+  
+  /// Timestamp when this request context record was created.
+  created_at DateTime
+  
+  /// Timestamp when this request context record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_request_contexts_todo_app_er_d18ed1c9")
+  // spellchecker: ignore-next-line
+  @@index([http_method, created_at], map: "todo_app_error_log_detail_request_contexts_http_method_99a291c5")
+  // spellchecker: ignore-next-line
+  @@index([ip_address, created_at], map: "todo_app_error_log_detail_request_contexts_ip_address__f4b4df60")
+}
+
+/// Stores HTTP response-specific debugging information including payloads
+/// and status details.
+///
+/// This table captures detailed response context information for error
+/// logging purposes, including HTTP response payloads, status codes,
+/// headers, and timing information. It serves as an extension to the main
+/// error logs table, providing comprehensive debugging context for HTTP
+/// response-related errors.
+///
+/// The table maintains a one-to-one relationship with error log details,
+/// ensuring each response context is uniquely associated with a specific
+/// error log detail entry. This allows for detailed analysis of HTTP
+/// response behavior during error scenarios.
+///
+/// {@link todo_app_error_log_details.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_detail_response_contexts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the error log detail entry that this response context belongs
+  /// to. {@link todo_app_error_log_details.id}
+  todo_app_error_log_detail_id String
+  
+  /// Raw HTTP response payload captured during the error scenario.
+  response_payload String?
+  
+  /// HTTP status code returned in the response.
+  response_status_code Int?
+  
+  /// HTTP response headers captured as JSON string.
+  response_headers String?
+  
+  /// Response timing in milliseconds for performance analysis.
+  response_timing_ms Int?
+  
+  /// Size of the response payload in bytes.
+  response_size_bytes Int?
+  
+  /// Content-Type header value from the response.
+  response_content_type String?
+  
+  /// Content-Encoding header value from the response.
+  response_encoding String?
+  
+  /// Timestamp when this response context was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this response context was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_error_log_detail_id], map: "todo_app_error_log_detail_response_contexts_todo_app_e_23efecd2")
+  // spellchecker: ignore-next-line
+  @@index([response_status_code, created_at], map: "todo_app_error_log_detail_response_contexts_response_s_b7ab1e26")
+  // spellchecker: ignore-next-line
+  @@index([response_timing_ms], map: "todo_app_error_log_detail_response_contexts_response_t_2a51471f")
+}
+
+/// Stores environment-specific debugging information including variables and
+/// configuration values that provide context for error debugging.
+///
+/// This table captures the runtime environment state at the time an error
+/// occurred, including environment variables, configuration settings, and
+/// system context that can help developers reproduce and debug issues. Each
+/// record is associated with a specific error log detail entry and provides
+/// the environmental context that existed when the error was logged.
+///
+/// Records in this table are created automatically when errors are logged
+/// and provide valuable debugging information that might not be captured in
+/// the main error log details.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_detail_environment_contexts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the error log detail entry that this environment context
+  /// belongs to. {@link todo_app_error_log_details.id}
+  todo_app_error_log_detail_id String
+  
+  /// JSON string containing the relevant environment variables and their
+  /// values at the time of the error.
+  environment_variables String?
+  
+  /// JSON string containing application configuration settings that were
+  /// active when the error occurred.
+  configuration_values String?
+  
+  /// JSON string containing system-level context information like memory
+  /// usage, process information, and system metrics.
+  system_context String?
+  
+  /// Description of the runtime environment including Node.js version,
+  /// platform, architecture, and other runtime details.
+  runtime_environment String?
+  
+  /// Timestamp when this environment context record was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_environment_contexts_todo_ap_5cc819a4")
+}
+
+/// Stores user-specific debugging information including session data and
+/// user context for error logs.
+///
+/// This table captures user-related context information when errors occur,
+/// providing valuable debugging information such as user session details,
+/// browser information, and user-specific state. It connects to error log
+/// details to enrich error tracking with user context.
+///
+/// The table supports comprehensive debugging by linking errors to specific
+/// user sessions and providing contextual information about the user's
+/// environment and state at the time of the error.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_error_log_detail_user_contexts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the error log detail record. {@link
+  /// todo_app_error_log_details.id}
+  todo_app_error_log_detail_id String
+  
+  /// Reference to the user who experienced the error. {@link todo_app_users.id}
+  todo_app_user_id String?
+  
+  /// Reference to the user session active during the error. {@link
+  /// todo_app_user_sessions.id}
+  todo_app_user_session_id String?
+  
+  /// Browser or client user agent string from the HTTP request.
+  user_agent String?
+  
+  /// IP address of the user's connection when the error occurred.
+  ip_address String?
+  
+  /// URL that was being accessed when the error occurred.
+  request_url String?
+  
+  /// Referrer URL that led to the error page.
+  referrer_url String?
+  
+  /// User's browser language preference from Accept-Language header.
+  browser_language String?
+  
+  /// User's screen resolution if available from client-side reporting.
+  screen_resolution String?
+  
+  /// User's timezone information if available from client-side reporting.
+  timezone String?
+  
+  /// Timestamp when this user context record was created.
+  created_at DateTime
+  
+  /// Timestamp when this user context record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
+  user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  userSession todo_app_user_sessions? @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_user_contexts_todo_app_error_3a4f634b")
+  // spellchecker: ignore-next-line
+  @@index([todo_app_user_id, created_at], map: "todo_app_error_log_detail_user_contexts_todo_app_user__26817384")
+  // spellchecker: ignore-next-line
+  @@index([todo_app_user_session_id, created_at], map: "todo_app_error_log_detail_user_contexts_todo_app_user__d7504e11")
+  @@index([created_at])
 }

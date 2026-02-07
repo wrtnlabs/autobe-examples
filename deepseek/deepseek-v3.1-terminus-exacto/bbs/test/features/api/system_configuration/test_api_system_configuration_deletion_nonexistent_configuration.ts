@@ -1,0 +1,46 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
+import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
+import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+
+/**
+ * Test the error handling when attempting to delete a non-existent system configuration.
+ * The scenario validates that the system properly returns a 404 error when trying to delete
+ * a configuration that doesn't exist, ensuring that the deletion operation fails gracefully
+ * and provides appropriate error messaging for invalid configuration IDs.
+ */
+export async function test_api_system_configuration_deletion_nonexistent_configuration(
+  connection: api.IConnection,
+): Promise<void> {
+  // Create a super admin connection and authenticate
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  const authorized = await authorize_super_admin_join(superAdminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: typia.random<string & tags.Format<"password">>(),
+      privilege_level: "super_admin",
+    } satisfies IDiscussionBoardSuperAdmin.IJoin,
+  });
+  // Generate a random UUID that doesn't exist in the system
+  const nonExistentConfigurationId = typia.random<
+    string & tags.Format<"uuid">
+  >();
+  // Attempt to delete the non-existent configuration and validate 404 error
+  await TestValidator.error("delete non-existent configuration", async () => {
+    await api.functional.discussionBoard.superAdmin.system_configurations.erase(
+      superAdminConnection,
+      {
+        configurationId: nonExistentConfigurationId,
+      },
+    );
+  });
+}

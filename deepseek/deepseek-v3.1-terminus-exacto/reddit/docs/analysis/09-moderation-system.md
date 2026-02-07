@@ -1,236 +1,404 @@
-# Community Platform Moderation System Requirements
+# Reddit-like Community Platform Requirements Specification
 
 ## Executive Summary
 
-The moderation system provides community owners and moderators with the tools necessary to maintain content quality, enforce community guidelines, and manage user behavior within their communities. This system establishes a clear hierarchy of authority while ensuring accountability and transparency in all moderation actions.
+This document specifies the complete requirements for a Reddit-like community platform that enables users to create communities, share content, engage through voting and commenting, and participate in moderated discussions. The platform implements a karma-based reputation system, comprehensive content feeds, and robust moderation tools.
 
-## Moderator Hierarchy
+## User Account Management
 
-### Role Definitions
+### User Registration
+- **WHEN** a user registers for an account, **THE** system **SHALL** require:
+  - Valid email address format verification
+  - Password meeting minimum security requirements (8+ characters, mixed case, numbers)
+  - Unique username that hasn't been previously registered
+- **THE** system **SHALL** send email verification to confirm account ownership
+- **WHILE** email verification is pending, **THE** user **SHALL** have limited platform access
+
+### User Authentication
+- **WHEN** a user attempts to log in, **THE** system **SHALL**:
+  - Verify email and password combination
+  - Implement secure session management with JWT tokens
+  - Support session persistence with configurable timeout periods
+  - Provide logout functionality that invalidates session tokens
+
+### Account Management
+- **WHEN** a user changes their password, **THE** system **SHALL**:
+  - Require current password verification
+  - Enforce password complexity requirements
+  - Invalidate all existing sessions for security
+  - Send email notification of password change
+
+### Account Deletion
+- **WHEN** a user deletes their account, **THE** system **SHALL**:
+  - Remove all user-generated content (posts, comments, votes)
+  - Anonymize user data in accordance with privacy regulations
+  - Maintain platform integrity by preserving content relationships
+  - Send confirmation email with deletion details
+
+## User Profile System
+
+### Profile Creation and Management
+- **WHEN** a user creates their profile, **THE** system **SHALL** provide:
+  - Display name (editable, 2-50 characters)
+  - Bio text field (optional, 0-500 characters)
+  - Avatar image upload with size and format validation
+  - Profile visibility settings (public/private)
+
+### Profile Viewing
+- **WHEN** viewing any user profile, **THE** system **SHALL** display:
+  - User's display name, bio, and avatar
+  - Total karma score with breakdown (post karma, comment karma)
+  - Complete post history with pagination
+  - Complete comment history with pagination
+  - Account creation date and activity statistics
+
+### Profile Editing Permissions
+- **THE** system **SHALL** enforce that users can only edit their own profiles
+- **WHILE** editing profiles, **THE** system **SHALL** provide real-time validation
+- **WHERE** avatar changes are concerned, **THE** system **SHALL** support image cropping and optimization
+
+## Karma Scoring System
+
+### Karma Calculation Rules
+- **WHEN** a user receives an upvote on their post, **THE** system **SHALL** increase their karma by 1
+- **WHEN** a user receives a downvote on their post, **THE** system **SHALL** decrease their karma by 1
+- **WHEN** vote changes occur, **THE** system **SHALL** recalculate karma accordingly
+- **THE** karma system **SHALL** support negative values without lower bound
+
+### Karma Impact Scenarios
+- **IF** a post receives multiple votes, **THEN THE** karma impact **SHALL** be calculated as net votes
+- **WHILE** content exists, **THE** karma **SHALL** update in real-time with vote changes
+- **WHERE** deleted content is concerned, **THE** system **SHALL** maintain karma history integrity
+
+## Community Management
+
+### Community Creation
+- **WHEN** a user creates a community, **THE** system **SHALL** require:
+  - Unique community name (3-50 characters, alphanumeric)
+  - Community description (10-500 characters)
+  - Community icon image upload
+  - Initial community rules and guidelines
+
+### Community Discovery
+- **THE** system **SHALL** provide comprehensive community browsing:
+  - Alphabetical listing of all communities
+  - Search functionality by community name
+  - Category-based filtering
+  - Popular communities highlighting
+
+### Community Information Display
+- **FOR EACH** community, **THE** system **SHALL** show:
+  - Current subscriber count
+  - Community creation date
+  - Active moderator list
+  - Recent activity statistics
+  - Community rules and description
+
+## Subscription System
+
+### Subscription Management
+- **WHEN** a user subscribes to a community, **THE** system **SHALL**:
+  - Add the community to the user's subscription list
+  - Enable post creation permissions in that community
+  - Include community posts in the user's home feed
+  - Update community subscriber count
+
+### Subscription Requirements
+- **THE** system **SHALL** require subscription for post creation
+- **WHILE** unsubscribed, **THE** user **SHALL** retain content viewing permissions
+- **WHERE** subscription changes occur, **THE** feed updates **SHALL** be immediate
+
+### Subscription Interface
+- **THE** system **SHALL** provide users with:
+  - Complete list of their subscribed communities
+  - Quick unsubscribe functionality
+  - Subscription management dashboard
+  - Recommended communities based on interests
+
+## Post Creation and Management
+
+### Post Types and Requirements
+- **THE** system **SHALL** support three post types:
+  - **Text Post**: Requires title (5-300 characters) and text content (10-40,000 characters)
+  - **Link Post**: Requires title and valid URL with preview generation
+  - **Image Post**: Requires title and image upload with format/size validation
+
+### Post Creation Workflow
+
+```mermaid
+graph TD
+    A["User Selects Community"] --> B{"User Subscribed?"}
+    B -->|Yes| C["Choose Post Type"]
+    B -->|No| D["Subscription Required"]
+    C --> E["Enter Post Details"]
+    E --> F["Content Validation"]
+    F --> G["Post Published"]
+    G --> H["Appear in Feeds"]
+    D --> I["Subscribe Prompt"]
+    I --> C
+```
+
+### Post Editing and Deletion
+- **WHEN** users edit their posts, **THE** system **SHALL**:
+  - Maintain post history for transparency
+  - Show edit timestamps to other users
+  - Preserve original content for moderation purposes
+- **WHEN** posts are deleted, **THE** system **SHALL**:
+  - Remove from all feeds and searches
+  - Maintain data integrity for 30 days
+  - Adjust karma scores accordingly
+
+### Post Display Requirements
+- **WHEN** viewing a single post, **THE** system **SHALL** show:
+  - Complete post content with formatting
+  - Author information and community
+  - Vote score and comment count
+  - Post creation timestamp
+  - Edit history if applicable
+
+## Voting System
+
+### Voting Rules and Constraints
+- **WHEN** a user votes on content, **THE** system **SHALL**:
+  - Allow only one vote per user per content item
+  - Support upvote (+1), downvote (-1), and vote removal
+  - Update vote scores in real-time
+  - Adjust author karma accordingly
+
+### Vote Change Scenarios
+- **IF** a user changes their vote, **THEN THE** system **SHALL**:
+  - Calculate the net change in score
+  - Update the content's vote total immediately
+  - Adjust author karma by the difference
+  - Maintain vote history for audit purposes
+
+### Vote Integrity
+- **THE** system **SHALL** prevent self-voting on user's own content
+- **WHILE** content exists, **THE** voting **SHALL** remain available
+- **WHERE** deleted accounts are concerned, **THE** votes **SHALL** be anonymized
+
+## Content Feeds System
+
+### Feed Types and Access
+
+#### Home Feed
+- **WHEN** a logged-in user views their home feed, **THE** system **SHALL**:
+  - Show posts only from subscribed communities
+  - Provide personalized content recommendations
+  - Support all sorting options (Hot, New, Top, Controversial)
+  - Implement efficient pagination for large datasets
+
+#### Popular Feed
+- **WHEN** any user views the popular feed, **THE** system **SHALL**:
+  - Show posts from all communities across the platform
+  - Highlight trending and high-engagement content
+  - Support the same sorting options as home feed
+  - Be accessible to both logged-in and logged-out users
+
+#### Community Feed
+- **WHEN** viewing a specific community's feed, **THE** system **SHALL**:
+  - Show only posts from that community
+  - Display community information and statistics
+  - Support community-specific sorting preferences
+  - Be accessible to all users regardless of subscription status
+
+### Sorting Algorithms
+
+#### Hot Sorting
+- **THE** hot algorithm **SHALL** prioritize:
+  - Recent posts with high engagement
+  - Time-decay factor for older content
+  - Vote velocity and comment activity
+  - Community-specific trending patterns
+
+#### Top Sorting
+- **THE** top algorithm **SHALL** support time filters:
+  - Today: Highest scoring posts from last 24 hours
+  - This Week: Top posts from last 7 days
+  - This Month: Best content from last 30 days
+  - This Year: Annual highlights
+  - All Time: Historically highest-scoring content
+
+#### Controversial Sorting
+- **THE** controversial algorithm **SHALL** highlight:
+  - Posts with high vote counts but scores near zero
+  - Content generating significant discussion
+  - Balanced upvote/downvote ratios
+  - Engagement-driven controversy metrics
+
+### Feed Display Requirements
+
+```mermaid
+graph LR
+    A["Post in Feed"] --> B["Title Display"]
+    A --> C["Author Info"]
+    A --> D["Community Info"]
+    A --> E["Vote Score"]
+    A --> F["Comment Count"]
+    A --> G["Time Posted"]
+    A --> H{"Post Type"}
+    H -->|Text| I["200 Char Preview"]
+    H -->|Image| J["Thumbnail Display"]
+    H -->|Link| K["Domain Display"]
+    B --> L["Complete Post View"]
+    C --> L
+    D --> L
+    E --> L
+    F --> L
+    G --> L
+    I --> L
+    J --> L
+    K --> L
+```
+
+## Comment System
+
+### Comment Creation and Threading
+- **WHEN** users comment on posts, **THE** system **SHALL**:
+  - Support unlimited comment nesting depth
+  - Provide real-time comment preview
+  - Enforce content length limits (1-10,000 characters)
+  - Support rich text formatting options
+
+### Comment Management
+- **WHEN** users edit comments, **THE** system **SHALL**:
+  - Show edit history with timestamps
+  - Maintain comment thread integrity
+  - Preserve original content for moderation
+- **WHEN** comments are deleted, **THE** system **SHALL**:
+  - Show "[deleted]" placeholder
+  - Maintain thread structure
+  - Adjust author karma accordingly
+
+### Comment Voting
+- **THE** comment voting system **SHALL** mirror post voting rules
+- **WHEN** comment votes occur, **THE** system **SHALL**:
+  - Update scores in real-time
+  - Affect author karma scores
+  - Support the same vote change scenarios
+
+### Comment Sorting Options
+- **THE** system **SHALL** provide multiple sorting methods:
+  - **Best**: Highest vote score comments first
+  - **New**: Most recent comments first
+  - **Controversial**: High engagement, balanced votes
+  - **Oldest**: Chronological order from creation
+
+## Moderation System
+
+### Moderator Role Hierarchy
 
 #### Community Owner
-- THE community creator SHALL automatically become the community owner
-- THE owner SHALL have the highest level of authority within their community
-- THE owner SHALL be able to appoint moderators from community subscribers
-- THE owner SHALL be able to remove any moderator from their community
-- THE owner SHALL be the only role capable of transferring ownership
+- **WHEN** a user creates a community, **THE** system **SHALL** designate them as owner
+- **THE** owner **SHALL** have ultimate authority over community management
+- **WHERE** moderator management is concerned, **THE** owner **SHALL** be the only user who can remove moderators
 
 #### Community Moderator
-- WHEN appointed by the owner or existing moderators, THE user SHALL become a moderator
-- THE moderator SHALL have elevated permissions for content management
-- THE moderator SHALL be able to perform moderation actions within their assigned community
-- THE moderator SHALL NOT be able to remove the community owner
-- THE moderator SHALL NOT be able to remove other moderators (only owner can remove moderators)
+- **WHEN** moderators are appointed, **THE** system **SHALL** grant defined permissions
+- **WHILE** acting as moderators, **THE** users **SHALL** perform content management actions
+- **IF** moderators attempt unauthorized actions, **THEN THE** system **SHALL** enforce permission boundaries
 
-### Moderator Appointment Process
+### Moderation Actions
 
-```mermaid
-graph LR
-  A["Community Owner"] --> B["Appoint Moderator"]
-  B --> C{"Is User Subscribed?"}
-  C -->|"Yes"| D["Send Moderator Invitation"]
-  C -->|"No"| E["Show Error: Must Subscribe First"]
-  D --> F["User Accepts Invitation"]
-  F --> G["User Becomes Moderator"]
-  D --> H["User Declines Invitation"]
-  H --> I["Invitation Expires After 7 Days"]
-```
+#### Content Management
+- **WHEN** moderators delete content, **THE** system **SHALL**:
+  - Remove from public visibility immediately
+  - Notify content authors with reason
+  - Maintain audit records for 30 days
+  - Adjust karma scores accordingly
 
-**Moderator Appointment Rules:**
-- WHEN appointing a moderator, THE system SHALL verify the user is subscribed to the community
-- THE moderator invitation SHALL expire after 7 days if not accepted
-- THE community owner SHALL receive notification when a user accepts moderator role
-- THE system SHALL maintain audit log of all moderator appointments
+#### User Management
+- **WHEN** moderators ban users, **THE** system **SHALL**:
+  - Prevent banned users from creating content
+  - Allow continued content viewing
+  - Support temporary and permanent bans
+  - Provide comprehensive ban management interface
 
-## Moderator Permissions
-
-### Content Management Permissions
-
-| Action | Community Owner | Moderator | Regular User |
-|--------|----------------|-----------|--------------|
-| Delete any post in community | ✅ | ✅ | ❌ |
-| Delete any comment in community | ✅ | ✅ | ❌ |
-| Edit any post in community | ❌ | ❌ | ❌ |
-| Edit any comment in community | ❌ | ❌ | ❌ |
-| Pin posts to community top | ✅ | ✅ | ❌ |
-| Lock posts (disable comments) | ✅ | ✅ | ❌ |
-| Mark posts as NSFW | ✅ | ✅ | ❌ |
-| Approve reported content | ✅ | ✅ | ❌ |
-| Dismiss reported content | ✅ | ✅ | ❌ |
-
-### User Management Permissions
-
-| Action | Community Owner | Moderator | Regular User |
-|--------|----------------|-----------|--------------|
-| Ban users from community | ✅ | ✅ | ❌ |
-| Unban users from community | ✅ | ✅ | ❌ |
-| View banned users list | ✅ | ✅ | ❌ |
-| View moderation logs | ✅ | ✅ | ❌ |
-| Remove moderators | ✅ | ❌ | ❌ |
-| Transfer ownership | ✅ | ❌ | ❌ |
-
-### Content Moderation Actions
-
-#### Post Deletion
-- WHEN a moderator deletes a post, THE system SHALL remove the post from all feeds
-- THE post author SHALL receive notification of post deletion
-- THE notification SHALL include reason for deletion if provided
-- THE deleted post SHALL be moved to moderation archive for 30 days
-- AFTER 30 days, THE system SHALL permanently delete the post data
-
-#### Comment Deletion
-- WHEN a moderator deletes a comment, THE system SHALL remove the comment from the thread
-- THE comment author SHALL receive notification of comment deletion
-- THE notification SHALL include reason for deletion if provided
-- THE system SHALL update comment counts on the parent post
-- Nested comments under deleted comment SHALL also be removed
-
-## User Banning System
-
-### Banning Process
+### Moderation Workflow
 
 ```mermaid
-graph LR
-  A["Moderator Action"] --> B["Initiate User Ban"]
-  B --> C["Select Ban Duration"]
-  C --> D{"Ban Type"}
-  D -->|"Temporary"| E["Set Duration (1-30 days)"]
-  D -->|"Permanent"| F["Indefinite Ban"]
-  E --> G["Apply Temporary Ban"]
-  F --> H["Apply Permanent Ban"]
-  G --> I["Notify User of Ban"]
-  H --> I
-  I --> J["Update User Permissions"]
-  J --> K["Log Ban Action"]
+graph TD
+    A["Content Reported"] --> B["Moderator Notification"]
+    B --> C["Review Content"]
+    C --> D{"Action Decision"}
+    D -->|Approve Report| E["Delete Content"]
+    D -->|Dismiss Report| F["Keep Content"]
+    E --> G["Notify Parties"]
+    F --> H["Update Report Status"]
+    G --> I["Case Closed"]
+    H --> I
 ```
 
-### Banning Rules
-- WHEN banning a user, THE moderator SHALL select ban duration (temporary or permanent)
-- THE banned user SHALL receive notification explaining the ban
-- THE notification SHALL include ban duration and reason
-- DURING ban period, THE user SHALL NOT be able to create posts or comments in the community
-- THE banned user SHALL still be able to view community content
-- THE banned user SHALL NOT be able to vote on content in the banned community
+## Reporting System
 
-### Ban Duration Options
-- Temporary bans: 1 day, 3 days, 7 days, 14 days, 30 days
-- Permanent bans: indefinite duration
-- WHEN temporary ban expires, THE system SHALL automatically restore user permissions
-- THE user SHALL receive notification when ban is lifted
+### Report Creation
+- **WHEN** users report content, **THE** system **SHALL**:
+  - Require specific reason selection
+  - Support custom reason text (10-500 characters)
+  - Record reporter identity for moderation
+  - Immediately notify community moderators
 
-### Ban Appeals Process
-- THE banned user SHALL be able to appeal the ban decision
-- WHEN appealing, THE user SHALL provide explanation for reconsideration
-- THE community moderators SHALL review appeal within 7 days
-- IF appeal is approved, THE ban SHALL be lifted immediately
-- IF appeal is denied, THE ban SHALL continue for original duration
+### Report Categories
+- **THE** reporting system **SHALL** support standardized categories:
+  - Spam or commercial content
+  - Harassment or bullying
+  - Hate speech
+  - Misinformation
+  - Copyright violation
+  - Other (with custom reason requirement)
 
-## Reporting System Integration
+### Report Resolution
+- **WHEN** moderators resolve reports, **THE** system **SHALL**:
+  - Provide clear approve/dismiss options
+  - Record resolution details in moderation log
+  - Notify reporting users of outcome
+  - Prevent duplicate reporting for 24 hours
 
-### Report Review Process
-- WHEN a report is submitted, THE system SHALL notify community moderators
-- THE moderators SHALL see all reports in a dedicated moderation queue
-- EACH report SHALL show: reported content, reporter username, report reason, and timestamp
-- THE moderator SHALL be able to view the reported content in context
+## Performance and Scalability Requirements
 
-### Report Resolution Actions
-- WHEN reviewing a report, THE moderator SHALL have two options:
-  - Approve report: delete the reported content
-  - Dismiss report: keep the content and remove from queue
-- THE moderator SHALL provide reason for their decision
-- THE reporter SHALL receive notification of report resolution
-- IF content is deleted, THE content author SHALL receive deletion notification
+### Response Time Expectations
+- **THE** platform **SHALL** load main feeds within 2 seconds
+- **WHEN** performing actions, **THE** system **SHALL** respond within 1 second
+- **THE** voting system **SHALL** update scores in real-time (<500ms)
+- **WHILE** handling high traffic, **THE** system **SHALL** maintain performance
 
-### Report Statistics
-- THE system SHALL track report resolution rates per moderator
-- THE system SHALL identify frequently reported users
-- THE system SHALL flag users who submit excessive false reports
-- REPORT statistics SHALL be visible to community owner only
+### Concurrent User Support
+- **THE** system **SHALL** support 10,000+ concurrent users
+- **WHILE** under load, **THE** platform **SHALL** maintain functionality
+- **WHERE** content creation is concerned, **THE** system **SHALL** handle peak usage
 
-## Security and Logging Requirements
+## Security and Privacy Requirements
 
-### Audit Logging
-- THE system SHALL log all moderator actions with timestamp and user identification
-- EACH log entry SHALL include: action type, target content/user, moderator username, and reason
-- THE audit logs SHALL be retained for 2 years
-- ONLY community owner SHALL have access to complete moderation logs
+### Data Protection
+- **THE** system **SHALL** encrypt sensitive user data
+- **WHILE** storing passwords, **THE** system **SHALL** use industry-standard hashing
+- **WHERE** personal information is concerned, **THE** system **SHALL** comply with privacy regulations
 
-### Action Confirmation
-- WHEN performing destructive actions (deletion, banning), THE system SHALL require confirmation
-- THE confirmation dialog SHALL clearly state the action being taken
-- THE moderator SHALL have option to provide reason for the action
-- WITHOUT confirmation, THE action SHALL not proceed
+### Access Control
+- **THE** system **SHALL** enforce role-based permissions
+- **WHEN** unauthorized access is attempted, **THE** system **SHALL** deny and log
+- **WHERE** moderation actions occur, **THE** system **SHALL** verify authority
 
-### Rate Limiting
-- TO prevent abuse, THE system SHALL limit moderation actions:
-  - Maximum 50 post deletions per moderator per day
-  - Maximum 20 user bans per moderator per day
-  - Maximum 100 comment deletions per moderator per day
-- WHEN limits are exceeded, THE system SHALL require owner approval
+## Error Handling and Recovery
 
-## Performance Requirements
+### User-Facing Errors
+- **WHEN** errors occur, **THE** system **SHALL** provide clear, actionable messages
+- **WHILE** recovering from errors, **THE** system **SHALL** maintain data integrity
+- **WHERE** content creation fails, **THE** system **SHALL** preserve draft data
 
-### Response Time
-- Moderation actions SHALL complete within 2 seconds
-- Report queue loading SHALL complete within 1 second
-- Ban list viewing SHALL complete within 1 second
-- Moderator appointment process SHALL complete within 3 seconds
+### System Resilience
+- **THE** platform **SHALL** handle network interruptions gracefully
+- **WHILE** experiencing outages, **THE** system **SHALL** provide status updates
+- **WHERE** data corruption occurs, **THE** system **SHALL** have recovery procedures
 
-### Scalability
-- THE moderation system SHALL support communities with up to 1 million subscribers
-- THE system SHALL handle 100 concurrent moderators per large community
-- Report processing SHALL scale linearly with community size
-- Moderation logs SHALL be efficiently searchable and filterable
+## Success Metrics
 
-## Error Handling
+The platform will be considered successful when:
+- User registration completion rate exceeds 95%
+- Content creation success rate reaches 99%
+- Average response time for all actions is under 1 second
+- User satisfaction scores exceed 4.5/5.0
+- Moderation response time is under 24 hours for 95% of reports
+- Platform uptime exceeds 99.9% availability
 
-### Permission Errors
-- IF unauthorized user attempts moderation action, THE system SHALL return HTTP 403
-- THE error message SHALL clearly indicate insufficient permissions
-- THE system SHALL log unauthorized access attempts
-
-### Content Not Found
-- IF moderator attempts action on non-existent content, THE system SHALL return HTTP 404
-- THE error message SHALL indicate the content could not be found
-- THE system SHALL verify content existence before applying actions
-
-### Concurrent Moderation
-- WHEN multiple moderators act on same content simultaneously, THE system SHALL use optimistic locking
-- THE last successful action SHALL prevail
-- THE system SHALL notify moderators of concurrent modification conflicts
-
-## Integration Points
-
-### User Authentication Integration
-- Moderator permissions SHALL be verified against JWT token claims
-- THE system SHALL check moderator status on each moderation action
-- Permission changes SHALL be reflected in user session within 5 minutes
-
-### Content System Integration
-- Post deletion SHALL trigger update of all relevant feeds
-- Comment deletion SHALL update parent post comment counts
-- User banning SHALL immediately restrict content creation permissions
-
-### Notification System Integration
-- ALL moderation actions SHALL generate appropriate user notifications
-- Notification delivery SHALL be asynchronous and non-blocking
-- Users SHALL be able to manage notification preferences for moderation actions
-
-## Business Rules
-
-### Moderator Accountability
-- EACH moderation action SHALL be attributable to specific moderator
-- Moderators SHALL not be able to perform anonymous actions
-- THE community owner SHALL be able to review all moderator activity
-
-### Content Preservation
-- DELETED content SHALL be preserved in archive for 30 days for dispute resolution
-- AFTER 30 days, THE content SHALL be permanently deleted
-- DURING archive period, THE content SHALL not be publicly accessible
-
-### User Privacy
-- Moderator access to user information SHALL be limited to what is necessary for moderation
-- Personal user data SHALL not be exposed to moderators unnecessarily
-- Moderation actions SHALL respect user privacy rights
-
-This document provides comprehensive requirements for the moderation system that backend developers can use to implement robust community management functionality while maintaining security, accountability, and user experience standards.
+> *This document provides comprehensive business requirements for the Reddit-like community platform. All technical implementation details are at the discretion of the development team.*

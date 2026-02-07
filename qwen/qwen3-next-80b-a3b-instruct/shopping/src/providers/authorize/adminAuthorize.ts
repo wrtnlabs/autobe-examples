@@ -1,13 +1,10 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 export async function adminAuthorize(request: {
-  headers: {
-    authorization?: string;
-  };
+  headers: { authorization?: string };
 }): Promise<AdminPayload> {
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
@@ -15,19 +12,15 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query admin_session table for active session linked to admin
-  const adminSession = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
+  // Admin table directly stores user data; check soft-delete
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
-      id: payload.session_id,
-      expired_at: { gt: new Date() },
-      admin: {
-        id: payload.id,
-        deleted_at: null,
-      },
+      id: payload.id,
+      deleted_at: null,
     },
   });
 
-  if (adminSession === null) {
+  if (admin === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

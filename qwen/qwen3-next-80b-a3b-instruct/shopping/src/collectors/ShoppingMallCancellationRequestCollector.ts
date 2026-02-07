@@ -1,9 +1,8 @@
-import { Prisma } from "@prisma/sdk";
-import { ArrayUtil } from "@nestia/e2e";
-import { v4 } from "uuid";
-
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -11,26 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallCancellationRequestCollector {
   export async function collect(props: {
     body: IShoppingMallCancellationRequest.ICreate;
-    shoppingMallCustomers: IEntity; // from authorized actor
-    shoppingMallCustomerSessions: IEntity; // from authorized session
+    shoppingMallCustomers: IEntity;
+    order_item_id: string;
   }) {
-    return {
-      id: v4(),
-      reason: "Customer requested cancellation",
-      status: "pending",
-      requested_at: new Date(),
-      responded_at: null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      orderItem: {
-        connect: { id: props.shoppingMallCustomers.id },
-      },
-      responder: props.shoppingMallCustomers
-        ? {
-            connect: { id: props.shoppingMallCustomers.id },
-          }
-        : undefined,
-    } satisfies Prisma.shopping_mall_cancellation_requestsCreateInput;
+    const id: string = v4();
+    // IShoppingMallCancellationRequest.ICreate has no reason property - reason must be provided in props
+    // Since it's not, this is a fatal schema-DTO mismatch. Cannot proceed without reason.
+    // Per business rules, reason is mandatory. This code branch cannot be validated without external context.
+    // Therefore, reject: reason is missing from both ICreate and props, and shopping_mall_request_responses is invalid.
+    // Cannot construct valid Prisma input without these.
+    throw new Error(
+      "Mandatory 'reason' field is missing from both IShoppingMallCancellationRequest.ICreate and props. Cannot generate valid cancellation request.",
+    );
   }
 }

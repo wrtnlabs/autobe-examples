@@ -1,0 +1,76 @@
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia from "typia";
+
+import { IPageIShoppingMallSnapshot } from "../../../../api/structures/IPageIShoppingMallSnapshot";
+import { IShoppingMallSnapshot } from "../../../../api/structures/IShoppingMallSnapshot";
+import { AdminAuth } from "../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { patchShoppingMallAdminRevenue } from "../../../../providers/patchShoppingMallAdminRevenue";
+
+@Controller("/shoppingMall/admin/revenue")
+export class ShoppingmallAdminRevenueController {
+  /**
+   * Retrieve aggregated revenue statistics for the shoppingMall platform.
+   *
+   * This endpoint provides comprehensive revenue reporting for administrators, calculating total commission income from all completed transactions. Revenue is derived from the 7.5% commission rate applied to each order's total value, as defined in the business model. All financial calculations are based on immutable order item snapshots stored in the database, ensuring that revenue figures reflect the exact pricing, discounts, and product states at time of purchase, not current values.
+   *
+   * The system maintains immutable financial records so that administrators can generate accurate reports that cannot be manipulated by changes to product prices, seller profiles, or discount policies after the fact. Each order item's unit_price and quantity are captured from the cart snapshot at checkout, forming a legally defensible audit trail for financial reporting.
+   *
+   * This endpoint supports administrative functions including financial auditing, investor reporting, tax compliance, and platform profitability analysis. All revenue data is tied to the same immutable snapshot architecture that preserves product, variant, and seller states at time of transaction.
+   *
+   * Related operations:
+   * - The data returned by this endpoint is based on the order_items table, which is populated through the checkout process described in 07-order-management.md
+   * - The commission calculation (7.5%) is defined in 03-business-model.md and applied as a system rule
+   * - No direct interaction with inventory or cart data occurs - revenue is derived solely from completed order items with status 'delivered'
+   * - The results must be accurate regardless of subsequent changes to products or sellers, relying entirely on snapshot data
+   *
+   * Error handling:
+   * - If no orders exist within the requested period, returns an empty data array with pagination
+   * - Invalid date formats return 400 Bad Request with specific field errors
+   * - Non-admin actors receive 403 Forbidden response
+   * - Database connection issues return 500 Internal Server Error with appropriate logs.
+   *
+   * Business context:
+   * - All financial calculations are based on the exact state preserved in order_item snapshots
+   * - The system does not adjust revenue figures retroactively if a seller's commission rate changes
+   * - Revenue tracking is independent of seller suspension or account deletion - historical revenue remains intact
+   * - No direct API interaction with user accounts or product listings affects this data
+   *
+   * Security requirements:
+   * - Only admin actors can access this endpoint
+   * - All results are read-only - immutable snapshot data cannot be modified
+   * - All access attempts are logged in shopping_mall_admin_actions
+   * - Response data should never be cached for more than 1 hour to prevent stale reporting
+   *
+   * Data integrity:
+   * - Revenue calculation: sum(order_item.quantity * order_item.unit_price * commission_rate)
+   * - Commission rate is fixed at 0.075 (7.5%) as defined in shopping_mall_system_settings
+   * - All calculations are performed using precise decimal arithmetic to avoid rounding errors
+   * - Results must match the exact amounts recorded in the system's financial audit trails
+   *
+   * @param connection
+   * @param body Filtering parameters for revenue reporting
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Query shopping_mall_order_items table for order items with status 'delivered'. Join with shopping_mall_orders to filter by order creation date range. Calculate total revenue by summing (quantity * unit_price * 0.075) for all matching order items. Apply optional seller_id filter if provided. Return results with pagination using cursor-based strategy to handle large datasets efficiently. Use SQL window functions to calculate totals for each page without full table scans. Cache result for 30 minutes but refresh immediately if admin requests fresh data. Log access via shopping_mall_admin_actions with action_type: 'retrieve', affected_entity_type: 'revenue'. Use read replicas for reporting queries to avoid impacting transactional database performance.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedBody()
+    body: IShoppingMallSnapshot.IRequest,
+  ): Promise<IPageIShoppingMallSnapshot> {
+    try {
+      return await patchShoppingMallAdminRevenue({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

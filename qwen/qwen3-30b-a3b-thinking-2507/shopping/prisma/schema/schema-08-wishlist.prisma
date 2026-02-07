@@ -1,0 +1,47 @@
+/// Tracks items added to customer wishlists with product references,
+/// timestamps, and current price values. Each wishlist item belongs to a
+/// specific customer and product variant with current price at time of
+/// addition. Allows users to manage their wishlists independently with all
+/// necessary business context.
+///
+/// - Customer relationship: @link ecommerce_customers.id
+/// - Product variant relationship: @link ecommerce_product_variants.id
+///
+/// @namespace Wishlist
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who added this item to their wishlist. {@link
+  /// ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Product variant associated with this wishlist item. {@link
+  /// ecommerce_product_variants.id}.
+  ecommerce_product_variant_id String
+  
+  /// Current price of product variant at time of wishlist addition.
+  price Float
+  
+  /// Timestamp when item was added to wishlist.
+  created_at DateTime
+  
+  /// Timestamp when wishlist item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when item was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_customer_id])
+  @@index([ecommerce_product_variant_id])
+}

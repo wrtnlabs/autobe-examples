@@ -1,0 +1,662 @@
+/// Stores customer product reviews submitted after successful product
+/// delivery. Each review represents customer feedback for a specific product
+/// purchased through a particular order item. Reviews include star ratings
+/// (1-5) and optional text content, and are subject to editing with snapshot
+/// preservation.
+///
+/// Reviews can only be created for products that the customer has purchased
+/// and received (delivered status). Each customer can write one review per
+/// product per order. The system calculates product average ratings from all
+/// non-deleted reviews. Reviews are displayed on product detail pages sorted
+/// by newest first.
+///
+/// When customers edit their reviews, immutable snapshots are created
+/// through the ecommerce_review_edits table to preserve the audit trail.
+/// Review deletion removes the review from public display but preserves all
+/// snapshots for historical reference.
+///
+/// This table serves as the foundation for the platform's customer feedback
+/// system, enabling sellers to receive product feedback and customers to
+/// share their purchasing experiences.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who wrote the review. {@link ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Product being reviewed. {@link ecommerce_products.id}
+  ecommerce_product_id String
+  
+  /// Specific order item that enabled this review (must be delivered). {@link
+  /// ecommerce_order_items.id}
+  ecommerce_order_item_id String
+  
+  /// Star rating from 1 to 5 stars representing customer satisfaction level.
+  /// Required field for all reviews.
+  rating Int
+  
+  /// Optional text content providing detailed customer feedback about the
+  /// product experience. Maximum 5000 characters.
+  content String?
+  
+  /// Indicates whether the review has been deleted by the customer. Deleted
+  /// reviews are not displayed publicly but snapshots are preserved.
+  is_deleted Boolean
+  
+  /// Timestamp when the review was initially submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified. Updated on every edit
+  /// operation.
+  updated_at DateTime
+  
+  /// Timestamp when the review was deleted, if applicable. Null for active
+  /// reviews.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  
+  votes ecommerce_review_votes[]
+  reports ecommerce_review_reports[]
+  reviewEdits ecommerce_review_edits[]
+  moderationActions ecommerce_review_moderation_actions[]
+  helpfulVotes ecommerce_review_helpful_votes[]
+  flags ecommerce_review_flags[]
+  sellerResponse ecommerce_review_responses?
+  
+  @@unique([ecommerce_order_item_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_customer_id, ecommerce_product_id, ecommerce_order_item_id], map: "ecommerce_reviews_ecommerce_customer_id_ecommerce_prod_b168d0a6")
+  @@index([ecommerce_product_id, created_at])
+  @@index([ecommerce_customer_id, created_at])
+  @@index([rating, created_at])
+}
+
+/// Tracks helpful votes from customers on product reviews to surface the
+/// most useful feedback. Each vote records whether a customer found a review
+/// helpful or not, with constraints preventing duplicate voting on the same
+/// review.
+///
+/// This table supports the review quality system by allowing customers to
+/// vote on review helpfulness, which helps surface high-quality content and
+/// provides feedback to reviewers. Votes are managed through review
+/// operations and do not require independent API endpoints.
+///
+/// Votes reference {@link ecommerce_customers.id} for the voting customer
+/// and {@link ecommerce_reviews.id} for the target review being voted on.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who cast the vote. {@link ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Review that received the vote. {@link ecommerce_reviews.id}.
+  ecommerce_review_id String
+  
+  /// Whether the customer found the review helpful (true) or not helpful
+  /// (false).
+  helpful Boolean
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_customer_id, ecommerce_review_id], map: "ecommerce_review_votes_ecommerce_customer_id_ecommerce_3ce32b42")
+  @@index([ecommerce_review_id, created_at])
+  @@index([ecommerce_customer_id, created_at])
+}
+
+/// Stores customer-reported review issues for inappropriate content
+/// detection and quality maintenance. This table supports the platform's
+/// content moderation workflow by allowing customers to flag reviews that
+/// violate platform guidelines or contain inappropriate content.
+///
+/// Reports are linked to both the reporting customer and the target review,
+/// enabling comprehensive moderation tracking. The core report information
+/// is separated from workflow state to ensure proper normalization and audit
+/// trail management. Status changes and workflow transitions are tracked in
+/// a separate subsidiary table following established platform patterns.
+///
+/// This table plays a critical role in maintaining review quality and
+/// platform integrity by providing a structured mechanism for
+/// community-driven content moderation while preserving data integrity
+/// through proper relationship design.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the report. {@link ecommerce_customers.id}
+  customer_id String
+  
+  /// Review being reported for inappropriate content. {@link
+  /// ecommerce_reviews.id}
+  review_id String
+  
+  /// Timestamp when the report was submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft-deleted.
+  deleted_at DateTime?
+  
+  /// Detailed description of why the review was reported, including specific
+  /// concerns or guideline violations.
+  report_reason String
+  
+  /// Categorization of the report type for moderation prioritization (e.g.,
+  /// 'spam', 'inappropriate', 'misinformation').
+  report_category String
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  review ecommerce_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  
+  statusTransitions ecommerce_review_report_statuses[]
+  snapshots ecommerce_review_report_snapshots[]
+  
+  @@unique([customer_id, review_id])
+  @@index([review_id, created_at])
+}
+
+/// Immutable snapshots of review modifications capturing rating changes and
+/// content edits for audit trails.
+///
+/// Maintains complete audit trail of all review edits made by customers,
+/// preserving both numeric rating changes (1-5 stars) and text content
+/// modifications. Each record captures the exact state before and after
+/// modification, ensuring data integrity for dispute resolution and
+/// compliance. This snapshot system aligns with the platform's financial
+/// integrity requirements where all customer-facing content modifications
+/// must be tracked.
+///
+/// Edits are linked back to the original {@link ecommerce_reviews.id} and
+/// the {@link ecommerce_customers.id} who performed the modification.
+/// Snapshots cannot be modified or deleted after creation, preserving the
+/// complete history of review evolution over time.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the review being modified. {@link ecommerce_reviews.id}
+  ecommerce_review_id String
+  
+  /// Reference to the customer who made the edit. {@link
+  /// ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Timestamp when the review edit was made. This represents the exact moment
+  /// the modification occurred.
+  edited_at DateTime
+  
+  /// Rating value (1-5 stars) before the edit occurred. Captures the previous
+  /// state for accurate change tracking.
+  rating_before Int
+  
+  /// Rating value (1-5 stars) after the edit was applied. Captures the new
+  /// state for accurate change tracking.
+  rating_after Int
+  
+  /// Text content of the review before the edit occurred. May be empty string
+  /// if review had no text content previously.
+  content_before String?
+  
+  /// Text content of the review after the edit was applied. May be empty
+  /// string if review has no text content after edit.
+  content_after String?
+  
+  /// Timestamp when this edit snapshot record was created. Matches edited_at
+  /// but maintained for audit consistency.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
+  editingCustomer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([ecommerce_customer_id])
+  
+  @@index([ecommerce_review_id, edited_at])
+}
+
+/// Tracks administrative moderation actions performed on customer reviews.
+/// Each action records the administrator who performed it, the specific type
+/// of action taken, reason for moderation, and current status. This table
+/// supports platform content quality enforcement and policy compliance.
+///
+/// Moderation actions include content removal, rating adjustments, review
+/// suspensions, and warnings. Actions are logged for audit purposes and
+/// follow a workflow with status tracking. This table integrates with the
+/// parent review's snapshot system for data integrity preservation.
+///
+/// Child table of {@link ecommerce_reviews} - accesses review data through
+/// foreign key relationship.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_moderation_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the moderation action. {@link
+  /// ecommerce_administrators.id}
+  ecommerce_administrator_id String
+  
+  /// Target review being moderated. {@link ecommerce_reviews.id}
+  ecommerce_review_id String
+  
+  /// Type of moderation action performed (e.g., 'remove_content',
+  /// 'adjust_rating', 'suspend_review', 'restore_review', 'warning').
+  action_type String
+  
+  /// Detailed reason for the moderation action, explaining the policy
+  /// violation or quality concern.
+  reason String
+  
+  /// Current status of the moderation action (e.g., 'pending', 'completed',
+  /// 'requires_followup', 'cancelled').
+  status String
+  
+  /// Optional additional notes or context about the moderation decision.
+  additional_notes String?
+  
+  /// Timestamp when the moderation action was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_review_id, status, created_at], map: "ecommerce_review_moderation_actions_ecommerce_review_i_fdb4c619")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrator_id, created_at], map: "ecommerce_review_moderation_actions_ecommerce_administ_ed9d8f35")
+  @@index([status, created_at])
+}
+
+/// Tracks customer votes on review helpfulness to surface quality content.
+///
+/// Each record represents a single helpful vote cast by a customer on a
+/// product review. The system uses these votes to identify and prioritize
+/// the most useful reviews for other customers' shopping decisions. Votes
+/// are unique per customer per review to prevent ballot stuffing and ensure
+/// fair helpfulness metrics.
+///
+/// **Voting Integrity**: Customers can only submit one helpful vote per
+/// review, enforced by a unique constraint on (review_id, customer_id). This
+/// prevents gaming the system and ensures each vote represents genuine
+/// customer feedback.
+///
+/// **Helpfulness Metrics**: The system calculates review helpfulness scores
+/// by counting the number of votes each review receives. Reviews with higher
+/// helpful votes receive priority placement in product listing pages to help
+/// customers make informed purchasing decisions.
+///
+/// {@link ecommerce_reviews.id} contains the target review being voted on,
+/// while {@link ecommerce_customers.id} identifies the customer casting the
+/// vote. The {@link ecommerce_customer_sessions.id} provides audit trail
+/// context for when and how the vote was submitted.
+///
+/// **Audit Trail**: Each vote includes comprehensive timestamp tracking to
+/// provide temporal context for voting patterns and enable analytics on vote
+/// recency and engagement trends. The session relationship ensures proper
+/// attribution of voting activity.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_helpful_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target review receiving the helpful vote. {@link ecommerce_reviews.id}
+  review_id String
+  
+  /// Customer who cast the helpful vote. {@link ecommerce_customers.id}
+  customer_id String
+  
+  /// Customer session when the helpful vote was cast. {@link
+  /// ecommerce_customer_sessions.id}
+  customer_session_id String
+  
+  /// Timestamp when the customer cast their helpful vote.
+  created_at DateTime
+  
+  /// Timestamp when the helpful vote record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the helpful vote was soft-deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review ecommerce_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customerSession ecommerce_customer_sessions @relation(fields: [customer_session_id], references: [id], onDelete: Cascade)
+  
+  @@unique([review_id, customer_id])
+  @@index([review_id, created_at])
+  @@index([customer_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([customer_session_id, created_at], map: "ecommerce_review_helpful_votes_customer_session_id_cre_d814f429")
+}
+
+/// Tracks customer-reported issues with reviews for inappropriate content
+/// detection and moderation workflow.
+///
+/// This table records when customers flag reviews as problematic,
+/// inappropriate, or violating platform guidelines. Each flag includes the
+/// reporting customer, the targeted review, a reason for the flag, and
+/// comprehensive status tracking for the moderation process. Flags support
+/// the platform's content quality maintenance by allowing customers to
+/// report issues and administrators to review and take appropriate action.
+///
+/// The moderation workflow progresses through status changes: pending (new
+/// report), under_review (assigned to administrator), resolved (action taken
+/// with details). Administrators can assign flags to themselves for review,
+/// track resolution actions, and maintain a complete audit trail for
+/// platform integrity and compliance.
+///
+/// This system ensures that reported content receives proper attention while
+/// maintaining accountability and transparency throughout the moderation
+/// process.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review being reported for inappropriate content. {@link
+  /// ecommerce_reviews.id}
+  ecommerce_review_id String
+  
+  /// The customer who reported the review issue. {@link ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// The administrator assigned to review and resolve this flag. {@link
+  /// ecommerce_administrators.id}
+  ecommerce_administrator_id String?
+  
+  /// Detailed explanation from the customer about why the review was flagged
+  /// as problematic.
+  reason String
+  
+  /// Current status of the flag in the moderation workflow: pending,
+  /// under_review, or resolved.
+  status String
+  
+  /// Action taken by administrator when resolving the flag: no_action,
+  /// review_removed, warning_issued, etc.
+  resolution_action String?
+  
+  /// Additional details about the resolution action and reasoning.
+  resolution_details String?
+  
+  /// Timestamp when the review flag was initially submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the review flag was last modified, typically when status
+  /// changes.
+  updated_at DateTime
+  
+  /// Timestamp when the flag was assigned to an administrator for review.
+  assigned_at DateTime?
+  
+  /// Timestamp when the flag was resolved by an administrator.
+  resolved_at DateTime?
+  
+  /// Timestamp when the flag was soft-deleted for GDPR compliance.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_review_id, ecommerce_customer_id], map: "ecommerce_review_flags_ecommerce_review_id_ecommerce_c_ce2e2169")
+  @@index([status, created_at])
+  @@index([ecommerce_customer_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrator_id, assigned_at], map: "ecommerce_review_flags_ecommerce_administrator_id_assi_f1fab7a5")
+}
+
+/// Seller responses to customer reviews, allowing sellers to address
+/// feedback, thank customers, or provide additional information about their
+/// products.
+///
+/// This table establishes a communication channel between sellers and
+/// customers regarding product reviews. Sellers can respond to reviews to
+/// thank customers, address concerns, or clarify product information. Each
+/// response maintains a direct relationship to the original review and the
+/// responding seller, creating a transparent feedback loop that enhances
+/// customer trust and seller accountability.
+///
+/// Responses can be edited by sellers to correct information or improve
+/// clarity, with timestamps tracking when responses were created and last
+/// updated. The system supports comprehensive review management by linking
+/// responses to the review ecosystem through {@link ecommerce_reviews.id}.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who created this response. References the seller's {@link
+  /// ecommerce_sellers.id}.
+  seller_id String
+  
+  /// The customer review being responded to. References the original review's
+  /// {@link ecommerce_reviews.id}.
+  ecommerce_review_id String
+  
+  /// The content of the seller's response to the customer review. Should
+  /// address the review feedback professionally and constructively.
+  body String
+  
+  /// Timestamp when the seller created this response.
+  created_at DateTime
+  
+  /// Timestamp when the seller last edited this response. Updated whenever
+  /// modifications are made.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
+  
+  @@unique([ecommerce_review_id])
+  @@index([seller_id, created_at])
+  @@index([ecommerce_review_id, created_at])
+}
+
+/// Tracks status transitions and workflow management for review reports,
+/// providing a complete audit trail of moderation actions and decisions.
+///
+/// Each record represents a specific status change in the lifecycle of a
+/// review report, capturing when the change occurred, who initiated it, and
+/// any relevant notes about the transition. This enables comprehensive
+/// workflow tracking and dispute resolution capabilities for review
+/// moderation processes.
+///
+/// The table maintains referential integrity with {@link
+/// ecommerce_review_reports.id} and supports administrative oversight
+/// through actor tracking.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_report_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated review report's {@link ecommerce_review_reports.id}.
+  ecommerce_review_report_id String
+  
+  /// Administrator who performed the status change, if applicable. {@link
+  /// ecommerce_administrators.id}.
+  ecommerce_administrator_id String?
+  
+  /// Status value before the transition occurred.
+  previous_status String
+  
+  /// Status value after the transition occurred.
+  new_status String
+  
+  /// Optional explanation or notes about why the status change occurred.
+  transition_reason String?
+  
+  /// Timestamp when the status transition was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the status transition record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  reviewReport ecommerce_review_reports @relation(fields: [ecommerce_review_report_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_review_report_id, created_at], map: "ecommerce_review_report_statuses_ecommerce_review_repo_ec0191a5")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_administrator_id, created_at], map: "ecommerce_review_report_statuses_ecommerce_administrat_c19c1510")
+  @@index([new_status, created_at])
+}
+
+/// Immutable snapshots capturing the complete state of review reports at
+/// specific points in time for audit trail and financial integrity.
+///
+/// This table implements the snapshot pattern required by the platform's
+/// financial integrity system. Each snapshot denormalizes the complete state
+/// of a review report at the moment of modification, including all fields
+/// from the parent report. This ensures that even if the original report is
+/// modified or deleted, the snapshot preserves the exact state for dispute
+/// resolution and audit purposes.
+///
+/// The snapshots capture the review report's status, reason, category, and
+/// relationships at the time of creation. They are essential for maintaining
+/// data integrity in financial contexts and provide a complete audit trail
+/// for dispute resolution.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_review_report_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review report being snapshotted. {@link ecommerce_review_reports.id}
+  ecommerce_review_report_id String
+  
+  /// Administrator who created this snapshot. {@link
+  /// ecommerce_administrators.id}
+  actor_id String?
+  
+  /// Timestamp when this snapshot was created.
+  snapshot_created_at DateTime
+  
+  /// The reason for the report at the time of snapshot creation.
+  report_reason String
+  
+  /// The category of the report at the time of snapshot creation.
+  report_category String
+  
+  /// Customer who submitted the report at snapshot time. {@link
+  /// ecommerce_customers.id}
+  customer_id String
+  
+  /// Review being reported at snapshot time. {@link ecommerce_reviews.id}
+  review_id String
+  
+  /// Description of what changed in this snapshot.
+  change_description String?
+  
+  //----
+  // RELATIONS
+  //----
+  reviewReport ecommerce_review_reports @relation(fields: [ecommerce_review_report_id], references: [id], onDelete: Cascade)
+  actor ecommerce_administrators? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_review_report_id, snapshot_created_at], map: "ecommerce_review_report_snapshots_ecommerce_review_rep_6fee0957")
+  // spellchecker: ignore-next-line
+  @@index([actor_id, snapshot_created_at], map: "ecommerce_review_report_snapshots_actor_id_snapshot_cr_4c6716e0")
+  // spellchecker: ignore-next-line
+  @@index([customer_id, snapshot_created_at], map: "ecommerce_review_report_snapshots_customer_id_snapshot_8cd8c357")
+  // spellchecker: ignore-next-line
+  @@index([review_id, snapshot_created_at], map: "ecommerce_review_report_snapshots_review_id_snapshot_c_c29e2696")
+}

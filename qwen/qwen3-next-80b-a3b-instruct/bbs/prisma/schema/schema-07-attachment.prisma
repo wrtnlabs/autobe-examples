@@ -1,0 +1,254 @@
+/// Primary table storing metadata for file attachments uploaded to articles,
+/// including filename, size, MIME type, upload timestamp, and a foreign key
+/// to an actor's unique identifier. This is the central entity that enforces
+/// the polymorphic ownership pattern through 1NF decomposition. Each file
+/// attachment has exactly one owner, but that owner type can be a citizen,
+/// administrator, or superAdministrator, each with their own subsidiary
+/// table for type-safe references.
+///
+/// @namespace Attachment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_file_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier of the actor who uploaded this file. This is a
+  /// polymorphic reference that can point to any actor in the system, with the
+  /// actual actor type determined by which subsidiary table contains the
+  /// matching record. {@link economic_board_citizens.id}, {@link
+  /// economic_board_administrators.id}, or {@link
+  /// economic_board_super_administrators.id}.
+  actor_identifier String
+  
+  /// The original name of the uploaded file as provided by the user. This
+  /// field is used for display and search purposes. Must be preserved exactly
+  /// as provided for compliance with file identification.
+  file_name String
+  
+  /// The size of the uploaded file in bytes. Required to enforce upload quotas
+  /// and display file size information.
+  file_size Int
+  
+  /// The MIME type of the file determined during upload validation. This
+  /// ensures security by verifying the file type before allowing storage and
+  /// download.
+  mime_type String
+  
+  /// The timestamp when the file was uploaded. This field is required for
+  /// audit trails and temporal sorting of uploads.
+  created_at DateTime
+  
+  /// The timestamp when the file metadata was last updated. This field is
+  /// required for consistency tracking and allows the system to detect recent
+  /// modifications.
+  updated_at DateTime
+  
+  /// The timestamp when this file attachment was logically deleted. May be
+  /// null if file is still active. Used for soft deletion to preserve audit
+  /// history without losing file metadata.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  actor economic_board_citizens @relation(fields: [actor_identifier], references: [id], onDelete: Cascade)
+  
+  citizenAttachment economic_board_file_attachment_of_citizens?
+  administrator economic_board_file_attachment_of_administrators?
+  superAdministratorUpload economic_board_file_attachment_ofs?
+  
+  @@unique([file_name, actor_identifier])
+  @@index([actor_identifier, created_at])
+}
+
+/// Stores metadata for image attachments uploaded to articles, including
+/// original filename, size, dimensions, MIME type, upload timestamp,
+/// uploader ID, and paths to original and optimized thumbnail/medium
+/// versions.
+///
+/// This is a purely subsidiary entity - image attachments cannot exist
+/// independently from their parent article. They are always created,
+/// updated, and deleted through article operations.
+///
+/// All metadata is stored with maximum fidelity to support responsive image
+/// delivery, file integrity checking, and audit trails. Original filenames
+/// are preserved for user reference while unique storage paths ensure
+/// security and avoid conflicts. Thumbnail and medium versions are optimized
+/// for performance while maintaining the original for archival purposes.
+///
+/// Referenced by economic_board_articles via one-to-many relationship: each
+/// article can have multiple image attachments, but each image belongs to
+/// exactly one article.
+///
+/// @namespace Attachment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_image_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent article that this image is attached to. {@link
+  /// economic_board_articles.id}.
+  economic_board_article_id String
+  
+  /// The original filename as provided by the user during upload. Preserved
+  /// for user reference and metadata purposes.
+  original_filename String
+  
+  /// File size in bytes. Used for storage quota calculations and download
+  /// progress tracking.
+  size Int
+  
+  /// Image width in pixels. Used for responsive display and layout
+  /// calculations.
+  width Int
+  
+  /// Image height in pixels. Used for responsive display and layout
+  /// calculations.
+  height Int
+  
+  /// MIME type of the image (e.g., image/jpeg, image/png). Used for
+  /// content-type headers during delivery and validation.
+  mime_type String
+  
+  /// Timestamp when the image was uploaded. Matches the article creation
+  /// timestamp context when possible.
+  upload_timestamp DateTime
+  
+  /// The UUID of the user who uploaded this image. References
+  /// economic_board_citizens, economic_board_administrators, or
+  /// economic_board_super_administrators via polymorphic relation handled at
+  /// application layer.
+  uploader_id String
+  
+  /// Storage path to the original, unmodified image file. Used for direct
+  /// downloads and archival access.
+  original_path String
+  
+  /// Storage path to the 300x300 pixel thumbnail version. Used for efficient
+  /// display in article lists and previews.
+  thumbnail_path String
+  
+  /// Storage path to the 1200x1200 pixel optimized version. Used for detailed
+  /// view in article content pages.
+  medium_path String
+  
+  /// Standard temporal field - record creation time.
+  created_at DateTime
+  
+  /// Standard temporal field - record last update time.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [economic_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_article_id, upload_timestamp], map: "economic_board_image_attachments_economic_board_articl_50c548a1")
+  @@index([uploader_id, created_at])
+}
+
+/// Subsidiary table for file attachments uploaded by citizens. Each record
+/// establishes a 1:1 relationship with a primary file_attachment record,
+/// ensuring only citizens can upload files through this path. This table
+/// enforces access control by restricting file uploads to citizen users
+/// while using the generic economic_board_file_attachments as the core
+/// storage mechanism.
+///
+/// @namespace Attachment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_file_attachment_of_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique file attachment record this citizen is associated with. {@link
+  /// economic_board_file_attachments.id}.
+  economic_board_file_attachment_id String
+  
+  /// Timestamp when this association was created. Standard temporal field for
+  /// audit trail.
+  created_at DateTime
+  
+  /// Timestamp when this association was last updated. Standard temporal field
+  /// for audit trail.
+  updated_at DateTime
+  
+  /// Timestamp when this association was logically deleted. Standard
+  /// soft-delete field for audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  fileAttachment economic_board_file_attachments @relation(fields: [economic_board_file_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_file_attachment_id], map: "economic_board_file_attachment_of_citizens_economic_bo_d6949a9c")
+}
+
+/// Subsidiary table for file attachments uploaded by administrators. Each
+/// record establishes a 1:1 relationship with a primary file_attachment
+/// record, ensuring only administrators can upload files through this path.
+///
+/// @namespace Attachment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_file_attachment_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Primary file attachment record this subsidiary record belongs to. {@link
+  /// economic_board_file_attachments.id}
+  file_attachment_id String
+  
+  //----
+  // RELATIONS
+  //----
+  fileAttachment economic_board_file_attachments @relation(fields: [file_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([file_attachment_id], map: "economic_board_file_attachment_of_administrators_file__a65b4075")
+}
+
+/// Subsidiary table for file attachments uploaded by superAdministrators.
+/// Each record establishes a 1:1 relationship with a primary file_attachment
+/// record, ensuring only superAdministrators can upload files through this
+/// path. This enables role-based upload authorization without duplicating
+/// metadata.
+///
+/// @namespace Attachment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_file_attachment_ofs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the primary file attachment record. This enforces a 1:1
+  /// relationship where each superAdministrator upload corresponds to exactly
+  /// one file_attachment.
+  economic_board_file_attachment_id String
+  
+  //----
+  // RELATIONS
+  //----
+  fileAttachment economic_board_file_attachments @relation(fields: [economic_board_file_attachment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_file_attachment_id], map: "economic_board_file_attachment_ofs_economic_board_file_285e97de")
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_file_attachment_id], map: "economic_board_file_attachment_ofs_economic_board_file_959f1986")
+}

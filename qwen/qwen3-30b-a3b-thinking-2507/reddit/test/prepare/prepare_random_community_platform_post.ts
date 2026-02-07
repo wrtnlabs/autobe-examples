@@ -9,15 +9,23 @@ export function prepare_random_community_platform_post(
   input?: DeepPartial<ICommunityPlatformPost.ICreate>,
 ): ICommunityPlatformPost.ICreate {
   return {
-    title: input?.title ??
-      RandomGenerator.paragraph({
-        sentences: typia.random<number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<5>>(),
-      }),
-    content: input?.content ??
-      RandomGenerator.content({
-        paragraphs: typia.random<number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<4>>(),
-      }),
-    type: RandomGenerator.pick(["text", "link", "image"] as const),
-    community_id: typia.random<string & tags.Format<"uuid">>(),
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
+    content_type: RandomGenerator.pick(["text", "link", "image"] as const),
+    textContent:
+      input?.content_type === "text"
+        ? (input?.textContent ?? RandomGenerator.paragraph({ sentences: 3 }))
+        : undefined,
+    url:
+      input?.content_type === "link"
+        ? (input?.url ??
+          typia.random<string & tags.MaxLength<2000> & tags.Format<"uri">>())
+        : undefined,
+    imageUrl:
+      input?.content_type === "image"
+        ? (input?.imageUrl ??
+          typia.random<string & tags.MaxLength<2000> & tags.Format<"uri">>())
+        : undefined,
+    community_id:
+      input?.community_id ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

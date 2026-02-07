@@ -1,10 +1,11 @@
-export * as auth from "./auth/index";
-export * as sellers from "./sellers/index";
 export * as products from "./products/index";
-export * as inventory from "./inventory/index";
+export * as shipments from "./shipments/index";
 export * as cancellation_requests from "./cancellation_requests/index";
 export * as refund_requests from "./refund_requests/index";
-export * as analytics from "./analytics/index";
+export * as seller_profile_snapshots from "./seller_profile_snapshots/index";
+export * as verification from "./verification/index";
+export * as reset_request from "./reset_request/index";
+export * as reset from "./reset/index";
+export * as sessions from "./sessions/index";
 export * as dashboard from "./dashboard/index";
-export * as analysis from "./analysis/index";
-export * as admins from "./admins/index";
+export * as seller from "./seller/index";

@@ -1,0 +1,98 @@
+/// Customer reviews and ratings for products. Each review includes a
+/// numerical rating (1-5), text comments, and references to both the
+/// associated product and the customer who provided the review. Reviews are
+/// created when customers submit feedback after purchase and serve as a key
+/// input for product recommendations and quality evaluation.
+///
+/// The table establishes relationships with both ecommerce_products (1:N)
+/// and ecommerce_customers (1:N), as a single product can have multiple
+/// reviews and a single customer can leave multiple reviews.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_product_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to the product being reviewed. {@link ecommerce_products.id}
+  product_id String
+  
+  /// Review was written by this customer. {@link ecommerce_customers.id}
+  customer_id String
+  
+  /// Numerical customer rating for the product (1-5). Must be between 1 and 5
+  /// per business rules.
+  rating Int
+  
+  /// Optional text comment from customer describing their experience with the
+  /// product.
+  comment String?
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft-deleted (null means active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  product ecommerce_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  snapshots ecommerce_product_review_snapshots[]
+  
+  @@index([product_id])
+  @@index([customer_id])
+}
+
+/// Immutable historical snapshots of product review modifications with
+/// before/after values and timestamps. Captures all changes made to product
+/// reviews for audit trail and history tracking. This table is append-only
+/// and should not be modified directly by users.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_product_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product review this snapshot belongs to. {@link
+  /// ecommerce_product_reviews.id}.
+  ecommerce_product_review_id String
+  
+  /// JSON representation of the review before modification. Contains all
+  /// review fields including rating, comment, and author ID.
+  before String
+  
+  /// JSON representation of the review after modification. Contains all review
+  /// fields including rating, comment, and author ID.
+  after String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated (typically same as
+  /// created_at for append-only tables).
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was marked as deleted (for soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review ecommerce_product_reviews @relation(fields: [ecommerce_product_review_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_product_review_id], map: "ecommerce_product_review_snapshots_ecommerce_product_r_15563233")
+}

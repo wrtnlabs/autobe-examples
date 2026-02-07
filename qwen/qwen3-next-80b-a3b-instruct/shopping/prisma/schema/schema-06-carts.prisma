@@ -1,0 +1,88 @@
+/// Temporary storage of product variants selected by customers before
+/// checkout. Stores the quantity of each variant chosen and preserves a
+/// snapshot of the product name, description, variant options, price, and
+/// seller profile state at the time of addition to ensure pricing and
+/// product description integrity throughout the checkout process.
+///
+/// All snapshot fields (product_name, product_description, variant_options,
+/// variant_price, seller_shop_name, seller_logo) are immutably captured at
+/// the moment of cart addition - meaning they reflect the exact state of the
+/// product, variant, and seller profile at the time of customer addition,
+/// not the current state. This prevents pricing fraud, product description
+/// manipulation, and seller reputation changes from affecting past checkout
+/// decisions.
+///
+/// Customers can add, remove, or modify quantities of items in their cart.
+/// Items are removed from cart upon successful checkout and transferred to
+/// shopping_mall_order_items with their snapshot preserved. If a seller
+/// edits their shop profile or a product is modified, the cart items remain
+/// unchanged - this is critical for the snapshot principle.
+///
+/// The parent entity is the customer (shopping_mall_customers). Only one
+/// cart item per variant per customer is allowed (unique index enforced).
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant currently in cart. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// The customer who owns this cart item. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Number of units of this variant in the cart. Must be >= 1.
+  quantity Int
+  
+  /// The exact product name as it existed at time of cart addition. Preserved
+  /// for invoice accuracy and dispute resolution.
+  snapshot_product_name String
+  
+  /// The exact product description as it existed at time of cart addition.
+  /// Preserved for invoice accuracy and dispute resolution.
+  snapshot_product_description String
+  
+  /// JSON string containing exact variant option values at time of cart
+  /// addition. Example: {"color":"blue","size":"large"}. Preserved to ensure
+  /// accurate product state history.
+  snapshot_variant_options String
+  
+  /// The exact variant price (including overrides) as it existed at time of
+  /// cart addition. Preserved for accurate billing, even if the current price
+  /// changes.
+  snapshot_variant_price Float
+  
+  /// The exact shop name of the seller at time of cart addition. Preserved for
+  /// accurate seller identification in order history.
+  snapshot_seller_shop_name String
+  
+  /// The URL pointer to the seller's logo at time of cart addition. Preserved
+  /// to show exact seller branding during checkout.
+  snapshot_seller_logo String
+  
+  /// Timestamp when this cart item was created.
+  created_at DateTime
+  
+  /// Timestamp when this cart item was last modified (quantity updated).
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was logically deleted (e.g., cleared from
+  /// cart or checkout completed). If null, item is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([customer_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_customer_id_shopping_mall_pro_afdfddb9")
+  @@index([customer_id])
+  @@index([shopping_mall_product_variant_id])
+}

@@ -1,0 +1,238 @@
+/// Core article entity containing title, content, section reference, author
+/// reference, and publication metadata. Articles are the primary content
+/// units on the economic discussion board, created and managed by citizens.
+/// Each article is assigned to exactly one section and authored by exactly
+/// one citizen. This table is the foundation for all article-related
+/// operations including creation, editing, deletion, searching, and viewing.
+/// Foreign keys link to economic_board_citizens (author) and
+/// economic_board_sections (section). All temporal fields (created_at,
+/// updated_at, deleted_at) are included to support soft deletion, audit
+/// trails, and time-based queries. This table is designed for full-text
+/// search capability using GIN indexes on title and content.
+///
+/// @namespace Article
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen author of this article. {@link
+  /// economic_board_citizens.id}.
+  economic_board_citizen_id String
+  
+  /// Reference to the section this article belongs to. {@link
+  /// economic_board_sections.id}.
+  economic_board_section_id String
+  
+  /// Article title (required), limited to 200 characters. Used for search,
+  /// display in lists, and metadata.
+  title String
+  
+  /// Full text content of the article (required), limited to 50,000
+  /// characters. This is the main body of the article content, where users
+  /// express their economic or political analysis and arguments.
+  content String
+  
+  /// Timestamp when the article was first created. Immutable, used for sorting
+  /// articles by publication date. Follows Asia/Seoul timezone.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the article's title or content.
+  /// Updated on every edit within the allowed time window.
+  updated_at DateTime
+  
+  /// Timestamp when the article was logically deleted. Null if active. Used
+  /// for soft deletion to preserve audit trails while hiding inactive content
+  /// from users.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author economic_board_citizens @relation(fields: [economic_board_citizen_id], references: [id], onDelete: Cascade)
+  section economic_board_sections @relation(fields: [economic_board_section_id], references: [id], onDelete: Cascade)
+  
+  fileAttachments economic_board_article_files[]
+  images economic_board_article_images[]
+  viewStat economic_board_article_view_stats?
+  comments economic_board_comments[]
+  imageAttachments economic_board_image_attachments[]
+  searchIndex economic_board_search_indices?
+  searchTags economic_board_search_article_tags[]
+  searchResults economic_board_search_results[]
+  
+  // spellchecker: ignore-next-line
+  @@index([economic_board_citizen_id, created_at], map: "economic_board_articles_economic_board_citizen_id_crea_0555554d")
+  // spellchecker: ignore-next-line
+  @@index([economic_board_section_id, created_at], map: "economic_board_articles_economic_board_section_id_crea_ed07f30c")
+  @@index([created_at])
+  @@index([deleted_at])
+  // spellchecker: ignore-next-line
+  @@index([economic_board_section_id, deleted_at], map: "economic_board_articles_economic_board_section_id_dele_ab9c2896")
+}
+
+/// Stores metadata for all non-image file attachments to articles, including
+/// original filename, size, MIME type, and storage path. This is a
+/// subsidiary entity that exists only in the context of an article and is
+/// managed through article creation/editing, not independently.
+///
+/// @namespace Article
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article to which this file is attached. {@link
+  /// economic_board_articles.id}
+  economic_board_article_id String
+  
+  /// The user who uploaded this file. {@link economic_board_citizens.id} or
+  /// {@link economic_board_administrators.id} or {@link
+  /// economic_board_super_administrators.id}
+  uploaded_by_id String
+  
+  /// The original filename as provided by the user during upload.
+  original_filename String
+  
+  /// Size of the file in bytes.
+  size_bytes Int
+  
+  /// MIME type of the file (e.g., application/pdf, text/plain).
+  mime_type String
+  
+  /// The secure storage path where the file is stored (e.g.,
+  /// /files/uuid-filename.pdf).
+  storage_path String
+  
+  /// Timestamp when the file was uploaded.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this file's metadata.
+  updated_at DateTime
+  
+  /// Timestamp when the file was logically deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [economic_board_article_id], references: [id], onDelete: Cascade)
+  uploader economic_board_citizens @relation(fields: [uploaded_by_id], references: [id], onDelete: Cascade)
+  
+  @@index([uploaded_by_id])
+  
+  @@index([economic_board_article_id])
+  @@index([created_at])
+}
+
+/// Store metadata for all image attachments to articles, including original
+/// filename, dimensions, thumbnail paths, and storage locations. Each image
+/// is associated with exactly one article (many images per article). This
+/// table stores the physical and metadata attributes of uploaded images,
+/// including original dimensions and optimized versions for display. Images
+/// are never accessed directly by users but are embedded within article
+/// content, making this a subsidiary entity managed solely through its
+/// parent article.
+///
+/// @namespace Article
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article this image is attached to. {@link
+  /// economic_board_articles.id}.
+  economic_board_article_id String
+  
+  /// The original filename provided by the user when uploading the image.
+  original_filename String
+  
+  /// The width of the original image in pixels.
+  width Int
+  
+  /// The height of the original image in pixels.
+  height Int
+  
+  /// The MIME type of the image (e.g., image/jpeg, image/png) to ensure
+  /// correct rendering.
+  mime_type String
+  
+  /// The storage path where the original, full-resolution image is stored.
+  original_path String
+  
+  /// The storage path where the thumbnail (300x300px) version of this image is
+  /// stored.
+  thumbnail_path String
+  
+  /// The storage path where the medium-sized (1200x1200px) version of this
+  /// image is stored for viewing in article detail.
+  medium_path String
+  
+  /// Timestamp of when the image was uploaded and stored.
+  uploaded_at DateTime
+  
+  /// Reference to the citizen who uploaded this image. {@link
+  /// economic_board_citizens.id}.
+  economic_board_citizen_id String
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [economic_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_article_id, original_filename], map: "economic_board_article_images_economic_board_article_i_1808a68a")
+  @@index([economic_board_article_id])
+}
+
+/// Aggregated view statistics for articles, tracking total views and unique
+/// viewers per article.
+///
+/// This table provides performance metrics for article engagement without
+/// storing individual view events, which would be inefficient at scale. All
+/// values are aggregate counters updated on each view, with atomic
+/// increments to handle concurrent traffic.
+///
+/// @namespace Article
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article this view statistics belongs to. {@link
+  /// economic_board_articles.id}.
+  economic_board_article_id String
+  
+  /// Total number of times this article has been viewed by any user, including
+  /// multiple views by the same user.
+  total_views Int
+  
+  /// Number of unique users who have viewed this article at least once.
+  unique_viewers Int
+  
+  /// Timestamp when this view statistics record was first created.
+  created_at DateTime
+  
+  /// Timestamp when this view statistics record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  article economic_board_articles @relation(fields: [economic_board_article_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_article_id], map: "economic_board_article_view_stats_economic_board_artic_71963555")
+}

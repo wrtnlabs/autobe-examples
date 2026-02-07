@@ -1,0 +1,99 @@
+/// Stores community metadata including unique name, description, icon URL,
+/// and owner reference. This table serves as the primary entity representing
+/// communities in the platform, with each community owned by exactly one
+/// user (actor).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who created this community ({@link
+  /// community_platform_members.id}).
+  owner_id String
+  
+  /// Unique name of the community (used in URLs, must be unique across all
+  /// communities).
+  name String
+  
+  /// Detailed description of the community, explaining what it's about and
+  /// what users can expect.
+  description String?
+  
+  /// URL pointing to an image file used as the community's icon (e.g., PNG,
+  /// JPG).
+  icon_url String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted; null means not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  owner community_platform_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  subscriptions community_platform_community_subscriptions[]
+  posts community_platform_posts[]
+  bans community_platform_moderation_bans[]
+  
+  @@unique([name])
+  @@index([owner_id])
+}
+
+/// Tracks user subscriptions to communities with timestamps for subscription
+/// management.
+///
+/// This table represents the relationship between users and communities,
+/// recording when a user subscribes to a community. It supports community
+/// subscription management features including:
+/// - Tracking active subscriptions for feed display
+/// - Managing community membership status
+/// - Supporting user subscription history
+/// - Enforcing unique subscriptions (prevents duplicate subscriptions for
+/// same user-community pair)
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Subscribing user's {@link community_platform_members.id}.
+  user_id String
+  
+  /// When the subscription was created.
+  created_at DateTime
+  
+  /// When the subscription was last updated.
+  updated_at DateTime
+  
+  /// When the subscription was deleted (soft delete) or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, user_id], map: "community_platform_community_subscriptions_community_i_dbbf772d")
+}

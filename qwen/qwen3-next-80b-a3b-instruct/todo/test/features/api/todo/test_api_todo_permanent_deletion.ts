@@ -15,26 +15,21 @@ import { authorize_user_refresh } from "../../../authorize/authorize_user_refres
 export async function test_api_todo_permanent_deletion(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user connection and authenticate
+  // Create a new user and authenticate
   const userConnection: api.IConnection = { host: connection.host };
-  const user: ITodoAppUser.IAuthorized = await authorize_user_join(
-    userConnection,
-    {
-      body: {
-        email: typia.random<string & tags.Format<"email">>(),
-        password: RandomGenerator.alphaNumeric(16),
-      },
-    },
-  );
-  // Generate a random valid UUID for a non-existent todo
-  const nonExistentTodoId: string = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  // Test deletion of a non-existent todo item — should return 404 (not found)
-  await TestValidator.error(
-    "deletion of non-existent todo should return 404",
+  const authResult = await authorize_user_join(userConnection, {
+    body: {} satisfies ITodoAppUser.IJoin,
+  });
+  typia.assert(authResult);
+  // Generate a random todo ID that doesn't exist
+  const nonExistentTodoId = typia.random<string & tags.Format<"uuid">>();
+  // Try to permanently delete a todo that doesn't exist
+  // Expected to throw 404 Not Found error
+  await TestValidator.httpError(
+    "deleting non-existent todo should return 404",
+    404,
     async () => {
-      await api.functional.todoApp.user.todos.erase(userConnection, {
+      await api.functional.todoApp.user.trash.erase(userConnection, {
         todoId: nonExistentTodoId,
       });
     },

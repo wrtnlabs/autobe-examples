@@ -1,0 +1,131 @@
+/// Main section configuration with name, description, and status. Represents
+/// an organization category for articles on the discussion board (e.g.,
+/// Politics, Economy). Each section serves as a thematic container for
+/// articles that are directly navigated and browsed by users, and managed
+/// exclusively by administrators through creation, editing, and deletion
+/// operations.
+///
+/// @namespace Section
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique name of the section that appears in the navigation UI. Must be
+  /// unique across all sections.
+  name String
+  
+  /// Detailed description of the section's focus and purpose. Used in section
+  /// listings and search indexing.
+  description String
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was logically deleted (soft-delete). Null
+  /// means active.
+  deleted_at DateTime?
+  
+  /// Current status of the section. Values: 'active', 'deleted'. Used to
+  /// control visibility without physical deletion.
+  status String
+  
+  //----
+  // RELATIONS
+  //----
+  sectionCreations economic_board_section_creations[]
+  deletionEvents economic_board_section_deletions[]
+  articles economic_board_articles[]
+  
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Audit trail recording when a section was created, by which administrator,
+/// and which section was created. This immutable historical record tracks
+/// administrative actions on the section entity for compliance and debugging
+/// purposes. Each record represents a single section creation event linked
+/// to the administrator who performed it and the section that was created.
+/// {@link economic_board_sections.id} and {@link
+/// economic_board_administrators.id}.
+///
+/// @namespace Section
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_section_creations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section that was created. {@link
+  /// economic_board_sections.id}.
+  section_id String
+  
+  /// Reference to the administrator who created this section. {@link
+  /// economic_board_administrators.id}.
+  creator_id String
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  section economic_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  creator economic_board_administrators @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  @@index([section_id])
+  @@index([creator_id])
+  
+  @@index([created_at])
+}
+
+/// Audit trail that records every deletion event of a section on the
+/// economic_board platform. Each record contains the ID of the section that
+/// was deleted, the administrator who performed the deletion, and the
+/// precise timestamp of the deletion event. This table ensures transparency
+/// in administrative actions and enables forensic analysis of section
+/// lifecycle. References to the original section (economic_board_sections)
+/// and the administering administrator (economic_board_administrators)
+/// maintain referential integrity even after the section itself is removed
+/// from active records.
+///
+/// @namespace Section
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_section_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The section that was deleted. References the original section in
+  /// economic_board_sections. {@link economic_board_sections.id}.
+  section_id String
+  
+  /// The administrator who performed the section deletion. References the
+  /// administrator account in economic_board_administrators. {@link
+  /// economic_board_administrators.id}.
+  administrator_id String
+  
+  /// The precise timestamp when the section deletion was recorded. This is the
+  /// audit timestamp indicating when the deletion event occurred.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  section economic_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  administrator economic_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([section_id])
+  @@index([administrator_id])
+  @@index([created_at])
+}

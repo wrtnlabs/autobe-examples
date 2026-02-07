@@ -1,1 +1,1 @@
-export * as econPoliticBoard from "./econPoliticBoard/index";
+export * as economyPoliticsBoard from "./economyPoliticsBoard/index";

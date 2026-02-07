@@ -1,14 +1,7 @@
-/// User account profiles with email authentication and profile information
-/// for the todo application.
-///
-/// Stores verified user details including email, password hash for secure
-/// authentication, and optional profile display name. Each user account is
-/// uniquely identified and requires email verification before full access.
-///
-/// Email verification status is tracked to prevent unauthorized access. User
-/// accounts support soft deletion through the deleted_at field while
-/// preserving historical user data. The user's display name can be
-/// optionally set but is only visible to the user themselves.
+/// Registered user accounts with email/password credentials and
+/// authentication metadata. Each user has a unique email address and
+/// password hash stored using bcrypt. All personal data is isolated at user
+/// level with strict privacy enforcement.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -19,26 +12,22 @@ model todo_users {
   /// Primary Key.
   id String @id
   
-  /// Email address for login and verification, must be unique across all users.
+  /// User's email address for authentication and verification. Must be unique
+  /// across all users.
   email String
   
-  /// Secure hash of user's password for authentication, never stored as
-  /// plaintext.
+  /// Password hash stored using bcrypt with work factor 12. Never stores
+  /// plaintext passwords.
   password_hash String
   
-  /// Optional public display name visible only to the user themselves.
-  display_name String?
-  
-  /// Indicates if the user has completed email verification process.
-  email_verified Boolean
-  
-  /// Timestamp when user account was created.
+  /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp when user account details were last updated.
+  /// Timestamp when the user account was last updated (password changes,
+  /// profile updates, etc.).
   updated_at DateTime
   
-  /// Timestamp when user account was soft deleted. Null indicates active
+  /// Timestamp when the user account was soft-deleted. Null means active
   /// account.
   deleted_at DateTime?
   
@@ -48,21 +37,16 @@ model todo_users {
   sessions todo_user_sessions[]
   passwordResets todo_user_password_resets[]
   emailVerifications todo_user_email_verifications[]
+  auditLogs todo_audit_logs[]
   todos todo_todos[]
   
   @@unique([email])
 }
 
-/// JWT session tokens for user authentication with access and refresh
-/// tokens, 15-minute expiration.
-///
-/// Stores connection metadata for user login sessions including IP address,
-/// connection URL, and referrer URL. Each session is tied to a specific user
-/// account and expires after 15 minutes for security.
-///
-/// Uses append-only audit trail pattern with created_at and expired_at
-/// timestamps. Follows strict authorization session management standards for
-/// the todo application.
+/// JWT session tokens with access/refresh support and token expiry
+/// management. Tracks user login sessions for authentication lifecycle and
+/// session validity. Associated with the user actor through foreign key
+/// relationship.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -73,22 +57,22 @@ model todo_user_sessions {
   /// Primary Key.
   id String @id
   
-  /// User of this session's {@link todo_users.id}.
+  /// User this session belongs to. {@link todo_users.id}.
   todo_user_id String
   
-  /// Client IP address used to establish the connection.
+  /// IP address where session was created.
   ip String
   
-  /// Original connection URL used during session establishment.
+  /// Original URL from which session was created.
   href String
   
-  /// Source URL that referred the user to this connection.
+  /// Referrer URL for the session.
   referrer String
   
-  /// Timestamp when the session was created.
+  /// Timestamp when session was created.
   created_at DateTime
   
-  /// Timestamp when the session expires after 15 minutes.
+  /// Timestamp when session expires and is automatically invalidated.
   expired_at DateTime
   
   //----
@@ -99,21 +83,16 @@ model todo_user_sessions {
   @@index([todo_user_id, created_at])
 }
 
-/// Stores password reset tokens for users with expiration times to securely
-/// reset user account passwords.
+/// Records password reset tokens with 60-minute expiration and usage
+/// tracking for user authentication flows. Handles secure token generation,
+/// validation, and cleanup.
 ///
-/// Each token is uniquely associated with a user account and automatically
-/// expires after a predefined period. Tokens are generated during password
-/// recovery workflows and require verification before resetting credentials.
-/// The table supports soft deletion to manage expired or canceled tokens
-/// without data loss.
-///
-/// This table is managed through the user account entity and requires no
-/// independent API endpoints.
-///
-/// Relationship summary:
-/// - One user can have multiple password reset tokens (1:N)
-/// - Tokens reference user account for validation context
+/// This table is managed through user authentication services without direct
+/// user interaction, requiring:
+/// - Unique token generation for each reset attempt
+/// - 60-minute time-based expiration
+/// - Usage tracking to prevent token reuse
+/// - Secure storage of token values for verification
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -124,50 +103,44 @@ model todo_user_password_resets {
   /// Primary Key.
   id String @id
   
-  /// User's ID this password reset is for. {@link todo_users.id}.
+  /// User account associated with this password reset request. {@link
+  /// todo_users.id}.
   todo_user_id String
   
-  /// Unique token string generated for password reset process. Must be long
-  /// and cryptographically secure for security.
+  /// Unique token string for password reset verification.
   token String
   
-  /// Expiration timestamp of the password reset token. After this time, the
-  /// token becomes invalid for password resets.
+  /// Timestamp when token expires (60-minute validity).
   expires_at DateTime
   
-  /// Timestamp when the password reset token was generated.
+  /// Timestamp when token was successfully used to reset password.
+  used_at DateTime?
+  
+  /// Entry creation timestamp.
   created_at DateTime
   
-  /// Timestamp when the token was deleted (soft delete). If non-null, token is
-  /// considered expired or canceled.
-  deleted_at DateTime?
+  /// Last modification timestamp.
+  updated_at DateTime
   
   //----
   // RELATIONS
   //----
   user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
   
+  @@index([todo_user_id])
+  
   @@unique([token])
   @@index([expires_at])
-  @@index([todo_user_id])
-  @@index([created_at])
 }
 
-/// Email verification tokens used during user registration to confirm new
-/// account activation.
+/// Email verification tokens with 15-minute expiration for user account
+/// verification. Stores unique tokens, target email, expiration timestamp,
+/// and related to user account.
 ///
-/// Stores tokens generated when users sign up for the application, requiring
-/// email verification before account activation. Each token includes an
-/// expiration to prevent abuse and ensure timely verification.
-///
-/// Tokens are tied to specific user accounts and emails, with expiration
-/// automatically triggering token invalidation after a set period. The
-/// system does not store personal identity data beyond the email address
-/// associated with the token.
-///
-/// Soft deletion is supported to maintain audit trails while allowing token
-/// cleanup, with records kept for historical analysis of verification
-/// attempts.
+/// This is a subsidiary entity managed through the parent user account, not
+/// requiring independent CRUD endpoints. The token is auto-generated,
+/// unique, and expires after 15 minutes as required by authentication
+/// process.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -178,30 +151,25 @@ model todo_user_email_verifications {
   /// Primary Key.
   id String @id
   
-  /// User account associated with this verification request. {@link
+  /// User account associated with this email verification token. {@link
   /// todo_users.id}.
   todo_user_id String
   
-  /// Unique verification token string. Must be cryptographically secure and
-  /// unique across all tokens.
+  /// Unique verification token for email confirmation. Generated as random
+  /// string, stored hashed.
   token String
   
-  /// Email address being verified. Must match the email used during
-  /// registration.
-  email String
+  /// Token expiration timestamp (15 minutes from creation). Required for
+  /// security and session management.
+  expires_at DateTime
   
-  /// Token expiration timestamp. MUST NOT NULL as tokens must expire for
-  /// security.
-  expired_at DateTime
-  
-  /// Timestamp when token was generated.
+  /// Timestamp when the verification token was created.
   created_at DateTime
   
-  /// Timestamp of last token update (should match creation if token doesn't
-  /// change).
+  /// Timestamp when the verification token was last modified.
   updated_at DateTime
   
-  /// Timestamp when token was soft-deleted (NULL for active tokens).
+  /// Timestamp when the verification token was soft-deleted.
   deleted_at DateTime?
   
   //----
@@ -209,6 +177,7 @@ model todo_user_email_verifications {
   //----
   user todo_users @relation(fields: [todo_user_id], references: [id], onDelete: Cascade)
   
+  @@index([todo_user_id])
+  
   @@unique([token])
-  @@index([todo_user_id, expired_at])
 }

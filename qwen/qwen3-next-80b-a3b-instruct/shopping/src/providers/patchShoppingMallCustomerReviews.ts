@@ -1,64 +1,52 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallReview";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import jwt from "jsonwebtoken";
 import typia, { tags } from "typia";
 import { v4 } from "uuid";
+
 import { MyGlobal } from "../MyGlobal";
+import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
-import { IPageIShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallReview";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-
 export async function patchShoppingMallCustomerReviews(props: {
   customer: CustomerPayload;
-  body: IShoppingMallReview;
+  body: IShoppingMallReview.IRequest;
 }): Promise<IPageIShoppingMallReview.ISummary> {
-  // Since IShoppingMallReview is {} and has no properties, we cannot filter by product_id or apply pagination
-  // Query all reviews for a summary calculation
-  const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
-    where: {
-      is_deleted: { not: true }, // Exclude admin-deleted reviews from display (customer-deleted still contribute to average)
-    },
+  // Type assertion to access pagination parameters as per operation specification
+  // This is necessary because the IRequest type is incorrectly defined as empty
+  // while the operation specification requires page and limit properties.
+  const bodyWithPagination = props.body as any;
+  const page = bodyWithPagination.page ?? 1;
+  const limit = bodyWithPagination.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Query database using schema and specification
+  const where: Prisma.shopping_mall_reviewsWhereInput = {
+    deleted_at: null,
+  } satisfies Prisma.shopping_mall_reviewsWhereInput;
+  const data = await MyGlobal.prisma.shopping_mall_reviews.findMany({
+    where,
+    skip,
+    take: limit,
     orderBy: { created_at: "desc" },
   });
-  // Count total reviews (including deleted ones for totalCount)
-  const total = await MyGlobal.prisma.shopping_mall_reviews.count();
-  // Calculate average rating using only non-deleted reviews (customer-deleted reviews still contribute to average)
-  const nonDeletedReviews =
-    await MyGlobal.prisma.shopping_mall_reviews.findMany({
-      where: {
-        is_deleted: { not: true }, // Include in average calculation only when not deleted by admin
-      },
-      select: { rating: true },
-    });
-  const totalRating = nonDeletedReviews.reduce(
-    (sum, review) => sum + review.rating,
-    0,
-  );
-  const averageRating =
-    nonDeletedReviews.length > 0
-      ? Number((totalRating / nonDeletedReviews.length).toFixed(1))
-      : 0;
-  // Calculate review count from total reviews (excluding admin-deleted reviews)
-  const reviewCount = total;
-  // Create summary response
+  const total = await MyGlobal.prisma.shopping_mall_reviews.count({ where });
+  // Return empty object array per IShoppingMallReview.ISummary = {}
+  const emptyReviewArray: {}[] = data.map(() => ({}));
   return {
-    data: [
-      {
-        averageRating,
-        reviewCount,
-      },
-    ],
+    data: emptyReviewArray,
     pagination: {
-      current: 1, // Default to first page since pagination parameters not supported
-      limit: 100, // Default limit since pagination parameters not supported
-      records: total,
-      pages: Math.ceil(total / 100), // Default pages based on default limit
-    },
+      current: page satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    } satisfies IPage.IPagination,
   };
 }

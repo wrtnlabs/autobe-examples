@@ -1,45 +1,61 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallOrderItem } from "../../../../../api/structures/IPageIShoppingMallOrderItem";
 import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingMallOrderItem";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { getShoppingMallCustomerOrdersOrderIdItems } from "../../../../../providers/getShoppingMallCustomerOrdersOrderIdItems";
 import { getShoppingMallCustomerOrdersOrderIdItemsOrderItemId } from "../../../../../providers/getShoppingMallCustomerOrdersOrderIdItemsOrderItemId";
+import { patchShoppingMallCustomerOrdersOrderIdItems } from "../../../../../providers/patchShoppingMallCustomerOrdersOrderIdItems";
 
 @Controller("/shoppingMall/customer/orders/:orderId/items")
 export class ShoppingmallCustomerOrdersItemsController {
   /**
-   * Retrieve all order items associated with a specific order.
+   * Retrieve a paginated, filtered, and sorted list of order items associated with a specific order.
    *
-   * This operation returns a complete list of all items that make up a particular order, including detailed product information, pricing, quantities, seller details, and item status. It is used by both customers to review their order contents and by sellers to manage their portion of multi-seller orders.
+   * This operation provides comprehensive access to all order items linked to a given order, permitting filtering by item status (paid, shipped, delivered, cancelled, refunded), sorting by creation date or total amount, and pagination for large result sets. The data returned is sourced entirely from immutable snapshots embedded within order_items, ensuring that pricing, product descriptions, variant options, and seller profiles are displayed exactly as they existed at time of purchase. No live data or current states are used - every field in the response reflects the frozen snapshot state at checkout.
    *
-   * The operation retrieves data from the shopping_mall_order_items table, which contains the core order item information with fields including quantity, unit price, and status. It joins with shopping_mall_products to retrieve product names, descriptions, and category information. It also joins with shopping_mall_sellers to provide seller names, logo URLs, and shop information. Additionally, it links with shopping_mall_order_item_snapshots to ensure historical accuracy of product and seller states at the time of order creation, preserving the integrity of transaction records for auditing and dispute resolution purposes.
+   * The endpoint enforces strict access control: customers can only access their own order's items, sellers can only access items where their seller_id matches, and administrators have full view across all orders. Order items cannot be modified, edited, or deleted; this endpoint is strictly read-only to preserve the forensic integrity of transaction history as mandated by the snapshot principle in 12-snapshot-principle.md.
    *
-   * For performance optimization, the query uses efficient indexing on the orderId parameter, ensuring fast response times even with large order histories. Only the customer who created the order or the associated seller can access this data.
+   * This endpoint interacts with shopping_mall_order_items, leveraging the snapshot_data JSONB field to reconstruct historical product and seller state. It does not join with live products, variants, or sellers - those references exist only for historical context, not current state. Status transitions (paid → shipped → delivered) are automatically derived from item-level transitions and reflected in the order's overall status as per 07-order-management.md.
    *
-   * Historical state of products and sellers at order creation is preserved in linked shopping_mall_order_item_snapshots records. Order items are hard-deleted from the system when purged, but their state is preserved in snapshots for audit purposes.
+   * Critical patterns:
+   * - All product_name, product_description, variant_sku, and shop_name fields in the response are snapshot values from the time of purchase
+   * - No dynamic price calculation - unit_price is immutable from snapshot
+   * - All pagination uses cursor-based (after/before) rather than offset-based to handle large datasets efficiently
+   * - Requests do not perform any filtering on computed fields (e.g., total_amount) but only on stored snapshot values
    *
-   * Related operations include GET /orders/{orderId} for comprehensive order details.
+   * External dependencies:
+   * - Must validate that requested orderId exists and user has permission to view
+   * - Must ensure no snapshot data is altered by any internal logic
+   * - Must not expose any raw database fields (e.g., created_at)
+   * - Must return snapshot data, not live records
+   *
+   * For consistency: All operations should always treat order items as historical records - never as editable entities.
    *
    * @param connection
-   * @param orderId Unique identifier of the target order (UUID format). This parameter is required to identify the specific order whose items are being retrieved. Must be a valid UUID.
-   * @x-autobe-specification Query shopping_mall_order_items table filtered by orderId. Join with shopping_mall_products to get product names and descriptions. Join with shopping_mall_sellers to get seller information. Join with shopping_mall_order_item_snapshots for historical state at order creation. Return paginated results with pagination metadata. Implement efficient indexing on orderId field for performance.
+   * @param orderId The unique identifier of the order whose items are being retrieved. Must be a valid UUID that exists in the shopping_mall_orders table.
+   * @param body Search criteria, sort order, and pagination tokens for filtering and navigating order items. Allows status filtering, sorting by field, and cursor-based pagination. Queries the shopping_mall_order_items table using snapshot_data field to ensure retrieval of immutable historical records as defined in 12-snapshot-principle.md.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query shopping_mall_order_items table for all records with matching order_id. Apply filters for status if provided in request body. Sort using specified field and direction. Implement cursor-based pagination with after/before parameters to handle large result sets. For each result, include: product_name, product_description, category_name, base_price, thumbnail_image, all_product_images, variant_sku, option_values, variant_price, stock_at_time_of_purchase, shop_name, shop_description, logo_url, quantity, unit_price, item_total, status, created_at, updated_at. Do NOT join with live product, variant, or seller tables - use ONLY snapshot data. Return total record count for pagination metadata. Log access for audit trail per 07-order-management.md.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
+  @TypedRoute.Patch()
   public async index(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
-  ): Promise<IPageIShoppingMallOrderItem> {
+    orderId: string,
+    @TypedBody()
+    body: IShoppingMallOrderItem.IRequest,
+  ): Promise<IPageIShoppingMallOrderItem.ISummary> {
     try {
-      return await getShoppingMallCustomerOrdersOrderIdItems({
+      return await patchShoppingMallCustomerOrdersOrderIdItems({
         customer,
         orderId,
+        body,
       });
     } catch (error) {
       console.log(error);
@@ -48,18 +64,26 @@ export class ShoppingmallCustomerOrdersItemsController {
   }
 
   /**
-   * Retrieve detailed information about a specific item within a customer's order. This operation accesses the shopping_mall_order_items table to fetch comprehensive data about an individual product item in an order, including all relevant contextual information from related entities.
+   * Retrieve a specific order item with complete snapshot data as it existed at the time of purchase.
    *
-   * The operation provides full visibility into the product detail as it was at the time of purchase, including the product name, description, base price, and seller information. It also retrieves the specific variant selected (color, size, etc.), its price, and stock quantity at purchase time. The seller's shop name and logo are included to maintain historical accuracy. The item's status and fulfillment information are returned to show current state.
+   * This endpoint provides the exact state of a product variant, including product details, pricing, and seller identity, as they existed at the moment of purchase. This immutable snapshot is critical for dispute resolution, financial auditing, and legal compliance, as it preserves the complete transaction context even if product details, pricing, or seller profiles have changed since the purchase.
    *
-   * This endpoint is essential for customers who need to verify order details, check historical pricing, and review product specifications after purchase. It is also critical for customer service agents handling inquiries and for sellers managing support requests.
+   * The response includes all fields from the order item snapshot: product name and description, category information, base price, product images, variant SKU and option values, variant price, stock quantity at time of purchase, seller shop name, description, and logo. This ensures customers and administrators can verify exactly what was purchased and under what conditions.
    *
-   * For audit and dispute resolution, this operation provides a complete snapshot of the purchase transaction as recorded in the system. The data structure ensures consistency with the product snapshots and order snapshots that are maintained for compliance purposes.
+   * All data is retrieved directly from the shopping_mall_order_items table which stores complete snapshots of every transaction. The snapshot fields are maintained as immutable records and are never updated after creation.
+   *
+   * Authentication: Customers can access their own order items. Administrators can access any order item on the platform.
+   *
+   * Related endpoints: GET /orders/{orderId} (retrieves entire order), PATCH /orders (searches all order items), GET /shopping_mall_products/{productId} (retrieves current product state, which may differ from snapshot).
+   *
+   * Error handling: Returns 404 if the order item does not exist or is deleted, 403 if the requesting user is not authorized to access this order item, and 500 for internal server errors.
    *
    * @param connection
-   * @param orderId Unique identifier of the target order (in UUID format)
-   * @param orderItemId Unique identifier of the target order item (in UUID format)
-   * @x-autobe-specification Query shopping_mall_order_items table by order_id and item_id to retrieve the specific order item. Join with shopping_mall_orders to validate ownership and order status. Join with shopping_mall_products to get product name and description. Join with shopping_mall_product_variants to get variant options and pricing. Join with shopping_mall_sellers to get seller information. Return all fields from shopping_mall_order_items with expanded reference data from related tables. Apply authorization check to ensure requesting user owns the order.
+   * @param orderId The unique identifier of the order that contains this item. Represents the ordering context and must match the order_id field in shopping_mall_order_items.
+   * @param orderItemId The unique identifier of the specific order item to retrieve. Must match the id field in shopping_mall_order_items.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query shopping_mall_order_items table by order_id and id to retrieve the specific order item with all snapshot fields. Return the full snapshot data including product_name, product_description, category_id, category_name, base_price, thumbnail_image, all_product_images, variant_sku, option_values, variant_price, stock_at_time_of_purchase, shop_name, shop_description, and logo_url. Validate that the requesting user has permission to access this order item (customer must own the order or be an administrator). If the item doesn't exist or is logically deleted, return 404. Return the entire record as JSON object with all snapshot fields.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":orderItemId")
@@ -67,9 +91,9 @@ export class ShoppingmallCustomerOrdersItemsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
+    orderId: string,
     @TypedParam("orderItemId")
-    orderItemId: string & tags.Format<"uuid">,
+    orderItemId: string,
   ): Promise<IShoppingMallOrderItem> {
     try {
       return await getShoppingMallCustomerOrdersOrderIdItemsOrderItemId({

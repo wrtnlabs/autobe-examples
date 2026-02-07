@@ -1,0 +1,215 @@
+/// Head record for completed customer purchases, storing order metadata
+/// including creation timestamp and shipping address at time of purchase.
+/// This table captures the immutable state of the order at time of payment
+/// confirmation, including the customer's selected shipping address and the
+/// exact order status derived from its constituent order items. Orders serve
+/// as the primary transaction record of the platform and must be preserved
+/// indefinitely for legal compliance and dispute resolution.
+///
+/// Relationships:
+/// - Belongs to one customer (via shopping_mall_customers.id)
+/// - Contains multiple order items (via shopping_mall_order_items.order_id)
+/// - Associated with one or more shipments (via
+/// shopping_mall_shipments.order_id)
+/// - References snapshots of customer profile and shipping address at time
+/// of purchase (stored in shopping_mall_snapshots)
+///
+/// This table does NOT store individual product or variant details - those
+/// are captured in shopping_mall_order_items and their corresponding
+/// snapshots in shopping_mall_snapshots. The order head serves as a
+/// container and status manager for the complete transaction.
+///
+/// Key principles:
+/// - Immutable at creation - changes only through status transitions
+/// - No denormalization of product/variant data - relies on child tables
+/// - Full audit trail via global snapshot system
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who placed this order. {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Unique order number in format 'ORD-YYYYMMDD-NNNN' where NNNN is a
+  /// sequential number within the same day.
+  order_number String
+  
+  /// Derived status of the entire order based on the status of its constituent
+  /// items: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded', or
+  /// 'partially completed'. This field is calculated by application logic from
+  /// order_items status and should not be modified directly.
+  status String
+  
+  /// Total order amount including all items, calculated as sum of
+  /// order_items.item_total. Does not include shipping fees since they are not
+  /// part of platform transactions.
+  total_amount Float
+  
+  /// Timestamp when the order was created upon successful payment confirmation.
+  created_at DateTime
+  
+  /// Timestamp when the order status was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order was logically deleted. NULL means active.
+  /// Required for soft delete pattern across all business entities.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  orderItems shopping_mall_order_items[]
+  
+  @@unique([order_number])
+  @@unique([customer_id, created_at])
+  @@index([status])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([customer_id, status])
+  @@index([customer_id, created_at, status])
+}
+
+/// Line item record for each product variant purchased in an order,
+/// capturing the exact state of the product, variant, and seller as it
+/// existed at the time of purchase. This table serves as the immutable audit
+/// trail for all commercial transactions, preserving pricing, product
+/// details, and seller identity even if those details change later. Required
+/// for dispute resolution, financial reporting, and legal compliance. All
+/// data is frozen at checkout and never altered. References to live
+/// product/variant/seller tables are maintained only for historical context
+/// and reporting.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent order that this item belongs to. {@link
+  /// shopping_mall_orders.id}
+  order_id String
+  
+  /// Reference to the product variant that was purchased at time of purchase.
+  /// {@link shopping_mall_product_variants.id}
+  variant_id String
+  
+  /// Reference to the product parent of the purchased variant at time of
+  /// purchase. {@link shopping_mall_products.id}
+  product_id String
+  
+  /// Reference to the seller who offered this product at time of purchase.
+  /// {@link shopping_mall_sellers.id}
+  seller_id String
+  
+  /// Number of units purchased. Must be ≥1.
+  quantity Int
+  
+  /// Exact unit price of the variant at the time of purchase, as captured in
+  /// the cart snapshot. This value is immutable and should never be
+  /// recalculated or updated from current pricing.
+  unit_price Float
+  
+  /// Current status of this order item. Must be one of: 'paid', 'shipped',
+  /// 'delivered', 'cancelled', 'refunded'. Status changes are audited and
+  /// immutable after transition.
+  status String
+  
+  /// Timestamp when this order item was created, at the moment of successful
+  /// payment.
+  created_at DateTime
+  
+  /// Timestamp when this order item's status was last changed.
+  updated_at DateTime
+  
+  /// Timestamp when this order item was logically deleted. Null means not
+  /// deleted.
+  deleted_at DateTime?
+  
+  /// Exact product name as it appeared at time of purchase. Preserved in
+  /// snapshot for audit and dispute resolution.
+  product_name String
+  
+  /// Exact product description as it appeared at time of purchase. Preserved
+  /// in snapshot for audit and dispute resolution.
+  product_description String
+  
+  /// The category identifier as it existed at time of purchase. Preserved for
+  /// historical categorization reporting.
+  category_id String
+  
+  /// The category name as it existed at time of purchase. Preserved for
+  /// historical categorization reporting.
+  category_name String
+  
+  /// The product's base price as it existed at time of purchase. Preserved for
+  /// historical pricing analysis.
+  base_price Float
+  
+  /// URL of the product's thumbnail image as it existed at time of purchase.
+  /// Preserved in snapshot for historical display.
+  thumbnail_image String
+  
+  /// JSON array of all product image URLs as they existed at time of purchase.
+  /// Preserved for full historical product representation.
+  all_product_images String
+  
+  /// Exact SKU code of the purchased variant as it existed at time of
+  /// purchase. Preserved for inventory reconciliation and item identification.
+  variant_sku String
+  
+  /// JSON object containing all option name-value pairs (e.g., {\"color\":
+  /// \"red\", \"size\": \"large\"}) as they existed at time of purchase.
+  /// Preserved for accurate product specification audit.
+  option_values String
+  
+  /// The variant's price override (if any) as it existed at time of purchase.
+  /// Preserved for accurate pricing audit.
+  variant_price Float
+  
+  /// The variant's stock quantity at the exact moment of purchase. Preserved
+  /// to verify inventory accuracy and prevent overselling disputes.
+  stock_at_time_of_purchase Int
+  
+  /// Exact shop name of the seller as it existed at time of purchase.
+  /// Preserved to maintain seller identity integrity in transactions.
+  shop_name String
+  
+  /// Exact shop description as it existed at time of purchase. Preserved to
+  /// maintain seller reputation context and prevent manipulation.
+  shop_description String
+  
+  /// Exact seller logo URL as it existed at time of purchase. Preserved to
+  /// maintain visual brand context in order history.
+  logo_url String
+  
+  //----
+  // RELATIONS
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  shipments shopping_mall_shipments[]
+  cancellationRequest shopping_mall_cancellation_requests?
+  refundRequests shopping_mall_refund_requests[]
+  review shopping_mall_reviews?
+  inventoryHistories shopping_mall_variant_inventory_histories[]
+  
+  @@index([product_id])
+  
+  @@index([order_id, status])
+  @@index([variant_id])
+  @@index([seller_id])
+}

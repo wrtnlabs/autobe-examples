@@ -1,215 +1,111 @@
 # Multi-User Todo Application Requirements Specification
 
-## 1. Service Overview
+## Overview
 
-The Multi-User Todo Application provides a completely private task management solution where each user maintains exclusive ownership of their personal to-do list. The system ensures absolute data isolation between users, with no possibility of cross-user data access or sharing. All features are designed to support individual task management with zero social or collaborative functionality.
+This document specifies the comprehensive requirements for the multi-user Todo application, ensuring all features meet business needs while maintaining privacy and data integrity.
 
-### Core Value Proposition
+## Service Prefix
 
-> *'A private, personal workspace where your to-do list remains exclusively yours - never shared, never visible to others, and fully under your control.'*
+The application service prefix is `todo`. All technical artifacts will follow this convention (e.g., service names, database tables).
 
-Users can create, manage, and permanently delete todos without any risk of exposure to other users. The application focuses on providing a simple, secure, and fully private task management experience.
+## User Actors
 
-## 2. User Actors
+- **Registered User**: Primary user type with full access to todo management features
+- **Guest**: Unauthenticated user with limited access to registration and login
 
-### Core User Actor: User
+## Core Requirements
 
-The *User* is the only actor type in the system and represents an authenticated individual who owns and manages their personal to-do list. The User actor has the following business-level permissions and capabilities:
+### User Account Management
 
-#### Core Permissions Matrix
+**WHEN** a user initiates registration, **THE** system **SHALL** require email and password to create a new account with valid format (email: valid@domain.com, password: ≥8 characters with numbers/symbols).
 
-| Functionality | Permission Status | Business Justification |
-|---------------|-------------------|------------------------|
-| Create New Todo | ✅ Allowed | Enables core task management purpose |
-| View Own Todos | ✅ Allowed | Essential to application's primary value |
-| Edit Own Todos | ✅ Allowed | Necessary for task update operations |
-| Delete Own Todos (to trash) | ✅ Allowed | Core data manipulation capability |
-| Restore Deleted Todos | ✅ Allowed | Required for data integrity recovery |
-| Permanently Delete from Trash | ✅ Allowed | Ensures complete data elimination |
-| View Other Users' Profiles | ❌ Forbidden | Critical privacy requirement |
-| View Other Users' Todos | ❌ Forbidden | Essential data privacy rule |
+**WHEN** a user submits login credentials, **THE** system **SHALL** verify against existing users and return a JWT token on successful authentication with 1-hour session expiration.
 
-#### User Data Isolation Requirements
+**WHEN** a user requests password change, **THE** system **SHALL** require current password verification before allowing new password entry.
 
-1. **Complete Data Separation**
+**WHEN** a user requests account deletion, **THE** system **SHALL** permanently delete all associated todos (including trash entries) and user profile data after confirmation prompt.
 
-   WHEN a user accesses the application, THE system SHALL enforce complete separation of user data such that NO data from any other user is ever displayed, processed, or accessible to the current user.
+### User Profile Management
 
-   IF a user attempts to access another user's todos, THEN THE system SHALL deny access and display a user-friendly error message *'You can only view your own todos. This action has been blocked for your security.'*.
+**WHEN** a user creates an account, **THE** system **SHALL** default display name to the email's local part (e.g., `john.doe` for `john.doe@domain.com`).
 
-2. **Account Deletion Impact**
+**WHEN** a user edits their display name, **THE** system **SHALL** validate against existing users' display names and reject duplicates.
 
-   WHEN a user requests to delete their account, THE system SHALL permanently delete their profile, todos, and all associated data including edit history.
+**WHEN** a user views another user's profile, **THE** system **SHALL** return HTTP 403 Forbidden with message "Access denied: User profiles are private to each owner."
 
-   IF a user confirms account deletion, THEN THE system SHALL perform a cascade delete operation affecting all related data, with confirmation *'Your entire account and todos have been permanently deleted. This action cannot be undone.'*.
+### Todo Lifecycle
 
-## 3. Primary User Scenarios
+**WHEN** a user creates a todo, **THE** system **SHALL** default to incomplete status and record creation timestamp.
 
-### 3.1. User Registration and Initialization
+**WHEN** a user marks a todo as complete, **THE** system **SHALL** update the status to completed and record completion timestamp.
 
-#### Scenario: New User Sign Up
+**WHEN** a user marks a todo as incomplete, **THE** system **SHALL** update status to incomplete and clear completion timestamp.
 
-1. WHEN a new user visits the application, THE system SHALL display a registration form with fields for email and password.
-2. WHEN the user submits valid email and password, THE system SHALL store the user's credentials securely with hashing.
-3. IF the email is already registered, THEN THE system SHALL display *'This email is already in use. Please choose another or click "Forgot Password" to retrieve access.'*.
-4. AFTER account creation, THE system SHALL redirect the user to a welcome screen showing *'Welcome to your private Todos, [Display Name]!'* and guide them to create their first todo.
+### Edit History Tracking
 
-#### Scenario: User Login
+**WHEN** any todo field is modified, **THE** system **SHALL** create a history entry with timestamp and changed fields (only recording actual value changes).
 
-1. WHEN a user opens the login page, THE system SHALL display fields for email and password.
-2. IF the user provides a valid email format, THEN THE system SHALL accept it for login attempt.
-3. WHEN a user submits incorrect credentials, THE system SHALL display *'Invalid email or password. Please try again.'* without revealing which part was incorrect.
-4. IF 5 login attempts fail within 15 minutes, THEN THE system SHALL lock the account for 15 minutes with message *'Too many failed login attempts. Account locked for 15 minutes.'*.
+**WHEN** a user views edit history, **THE** system **SHALL** display entries from most recent to oldest with clear field changes.
 
-### 3.2. Todo Management Workflows
+**WHEN** a todo is permanently deleted, **THE** system **SHALL** delete all associated history entries.
 
-#### Scenario: Creating a New Todo Item
+### Soft Delete & Trash
 
-1. WHEN a user wants to create a todo, THE system SHALL present a form with title (required), description (optional), start date (optional), and due date (optional).
-2. IF title is empty, THEN THE system SHALL prevent creation and display *'Title is required to create a todo.'*.
-3. WHEN a user submits a title exceeding 100 characters, THEN THE system SHALL truncate it and display *'Todo title was shortened to 100 characters: [truncated title]'*.
-4. IF user sets a start date after due date, THEN THE system SHALL prevent submission and display *'Start date cannot be after due date.'*.
-5. AFTER creation, THE system SHALL set completion status to *incomplete* and display *'Todo created successfully!'* with immediate addition to user's main todo list.
+**WHEN** a user deletes a todo, **THE** system **SHALL** mark it as deleted (soft delete) and move to trash without losing edit history.
 
-#### Scenario: Managing Todo Status
+**WHEN** a user views trash, **THE** system **SHALL** display paginated list of deleted todos with restore option.
 
-1. WHEN a user marks a todo as complete, THE system SHALL update its status to *complete* and display *'Todo marked as complete.'*.
-2. WHEN a user marks a todo as incomplete, THE system SHALL update its status to *incomplete* and display *'Todo marked as incomplete.'*.
-3. IF a user attempts to mark a todo as complete that doesn't exist in their list, THEN THE system SHALL display *'Unable to find this todo. It may have been deleted.'*.
+**WHEN** a user restores a todo from trash, **THE** system **SHALL** move it to active todo list and update timestamps.
 
-#### Scenario: Editing an Existing Todo
+**WHEN** a user permanently deletes from trash, **THE** system **SHALL** delete from database including all history entries.
 
-1. WHEN a user edits a todo's title, description, start date, or due date, THE system SHALL create a new history entry documenting each change.
-2. IF a user attempts to use a title already existing for another incomplete todo, THEN THE system SHALL display *'A todo with this title already exists. Please choose another title.'*.
-3. AFTER the edit is saved, THE system SHALL display *'Todo updated successfully.'* with the updated details visible in the todo list.
+## Filtering & Sorting Requirements
 
-### 3.3. Managing Archived Items
+### Filtering
 
-#### Scenario: Deleting to Trash
+**WHEN** a user selects "Complete" filter, **THE** system **SHALL** return only todos with completed status.
 
-1. WHEN a user deletes a todo item, THE system SHALL convert it to a deleted state and move it to the user's trash.
-2. THE system SHALL display *'Todo moved to trash.'* with an undo option *'Undo' (5-second timeout) or Permanent Delete'.*.
-3. AFTER deletion, THE system SHALL no longer display the todo in the main todo list.
+**WHEN** a user selects "Incomplete" filter, **THE** system **SHALL** return only todos with incomplete status.
 
-#### Scenario: Restoring from Trash
+### Sorting
 
-1. WHEN a user selects *'Restore'* on a todo in trash, THE system SHALL move it back to the active todo list with all previous completion status and edit history intact.
-2. THE system SHALL display *'Todo restored successfully to your main list.'* with a 3-second auto-dismiss.
+**WHEN** a user sorts by creation date (newest first), **THE** system **SHALL** order todos from most recent to oldest.
 
-#### Scenario: Permanent Deletion from Trash
+**WHEN** a user sorts by start date, **THE** system **SHALL** place todos with start dates first, followed by todos without start dates.
 
-1. WHEN a user selects *'Permanently delete'*, THE system SHALL show a confirmation dialog with *'This action cannot be undone. All associated edit history will be permanently deleted.'*.
-2. IF the user confirms the action, THEN THE system SHALL destroy all traces of the todo item and its history.
-3. THE system SHALL display *'Todo permanently deleted. This cannot be recovered.'*.
+**WHEN** a user sorts by due date, **THE** system **SHALL** place todos with near-term due dates first, followed by todos without due dates.
 
-## 4. Exception Handling Requirements
+## Privacy Requirements
 
-### Common Error Situations
+**WHEN** any user accesses the todo list, **THE** system **SHALL** apply strict user isolation, filtering results to only the authenticated user's todos.
 
-#### Authentication Errors
+**WHEN** a user attempts to access another user's todos directly via URL, **THE** system **SHALL** return HTTP 403 Forbidden with message "Access denied: You can only view your own todos."
 
-- **Invalid Credentials**
+**WHEN** a user deletes their account, **THE** system **SHALL** ensure all associated data (todos, profiles, history) is fully removed from the database.
 
-  WHEN a user submits login credentials that don't match records, THE system SHALL display *'Invalid email or password. Please try again.'*.
-
-- **Account Lockdown**
-
-  WHEN a user attempts more than 5 login failures within 15 minutes, THE system SHALL display *'Too many failed login attempts. Account locked for 15 minutes.'*.
-
-#### Data Access Errors
-
-- **Todo Not Found**
-
-  WHEN a user tries to access or edit a todo that has been permanently deleted or belongs to another user, THE system SHALL display *'The requested todo could not be found. It may have been permanently deleted or belongs to another user.'*.
-
-- **Concurrent Edit Conflict**
-
-  WHEN two users attempt to edit the same todo simultaneously, THE system SHALL display *'This todo is currently being edited by another user. Please try again later.'*.
-
-### System Error Handling Workflow
+## Error Handling Implementation
 
 ```mermaid
-graph LR
-  A[User Action] --> B{Error Occurred?}
-  B -->|Yes| C[Standardized Error Message]
-  B -->|No| D[Success]
-  C --> E[Log Error with Context]
-  E --> F{Critical Error?}
-  F -->|Yes| G[Send Alert to Developers]
-  F -->|No| H[Record for Monitoring]
-  C --> I[Show User-Specific Recovery Tips]
-  I --> J[User Resolves Issue]
+graph TD
+    A[User Action] --> B{Valid Request?}
+    B -->|Yes| C[Process Request]
+    B -->|No| D[Validate Request]
+    D --> E{Valid Credentials?}
+    E -->|Yes| C
+    E -->|No| F[Return 401]
+    C --> G{Success?}
+    G -->|Yes| H[Return Response]
+    G -->|No| I[Return Error Message]
+    H --> J[User Success]
+    I --> K[User Error]
 ```
 
-### Error Code Specification
+## Compliance Checklist
 
-| Error Code | User Message | Actionable Message |
-|------------|--------------|-------------------|
-| AUTH_INVALID_CREDENTIALS | Invalid email or password | Try again or reset password |
-| TODO_NOT_FOUND | Todo could not be found | Check filters or restore from trash |
-| DUPLICATE_TITLE | Title conflict detected | Choose a different title |
-| HISTORY_UNAVAILABLE | Edit history unavailable | This entry may have been deleted |
-| DATA_INTEGRITY_ERROR | Data conflict during save | Try again or contact support |
-
-## 5. Business Rules & Constraints
-
-### 5.1. Validation Rules
-
-#### Todo Creation Validation
-
-1. WHEN a user creates a new todo item, THE system SHALL require that the title field is provided with at least 1 character.
-2. WHEN a todo title exceeds 100 characters, THE system SHALL automatically truncate it to exactly 100 characters and display a notification.
-3. WHEN a user sets a start date after the due date, THE system SHALL prevent creation and require valid date ordering.
-
-#### User State Validation
-
-1. WHILE the user attempts to manage todos, THE system SHALL continuously verify the user's authenticated status.
-2. IF the user is not authenticated, THEN THE system SHALL redirect to the login screen with *'You must be logged in to manage todos.'*.
-
-### 5.2. Workflow Constraints
-
-#### Todo Status Workflow
-
-The complete state transition lifecycle of a todo item is defined as follows:
-
-```mermaid
-graph LR
-  A[New Todo] -->|Created| B{"Completion Status?"}
-  B -->|Incomplete| C[Incomplete Todo]
-  B -->|Complete| D[Complete Todo]
-  C -->|Mark Complete| D
-  C -->|Mark Incomplete| C
-  D -->|Mark Incomplete| C
-  C -->|Delete| E[Deleted Todo]
-  D -->|Delete| E
-  E -->|Restore| C
-  E -->|Permanent Delete| F[Permanently Deleted]
-  F -->|Hard Delete| G[No Record Available]
-```
-
-#### Filtering and Sorting Rules
-
-1. WHEN a user applies the "only complete todos" filter, THE system SHALL display only todos with completion status *complete*.
-2. WHEN sorting by due date and a todo has no due date, THE system SHALL list that todo at the end of the sorted list.
-3. WHEN sorting by start date and a todo has no start date, THE system SHALL list that todo at the end of the sorted list.
-
-### 5.3. History and Edit Rules
-
-#### History Recording Requirements
-
-1. WHEN a user edits any field of a todo item, THE system SHALL create a history entry documenting each change with timestamp.
-2. WHEN a user permanently deletes a todo from trash, THE system SHALL create a history entry indicating the permanent deletion event and immediately remove all history entries associated with that todo.
-3. EVERY history entry SHALL include timestamp and changed fields.
-
-#### History Display Requirements
-
-1. THE system SHALL display the most recent history entries first, sorted newest to oldest.
-2. WHEN a user views edit history, THE system SHALL display all entries chronologically from most recent to oldest.
-
-### 5.4. Privacy and Security Rules
-
-1. THE system SHALL never display any personal information about other users when viewing todos.
-2. THE system SHALL enforce that all todos include a valid user identifier with no exceptions.
-3. WHEN a user deletes their account, THE system SHALL permanently delete all todos associated with that account including those in trash and their edit history.
-
-> *Business Note: This document defines all requirements from a business perspective. Implementation details and technical specifications will be handled in subsequent development phases.*
+- [ ] All requirements use EARS format
+- [ ] All Mermaid diagrams use double quotes
+- [ ] No database schema details included
+- [ ] Business requirements in natural language
+- [ ] Complete privacy enforcement specifications
+- [ ] All edge cases addressed (per 08-exception-handling.md)
+- [ ] Document length ≥ 2,000 characters

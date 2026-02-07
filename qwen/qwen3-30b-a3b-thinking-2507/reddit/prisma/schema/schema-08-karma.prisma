@@ -1,0 +1,38 @@
+/// Current karma score for each user, updated incrementally based on votes.
+/// This table tracks the real-time score reflecting the user's voting
+/// activity across the platform.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karma_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's {@link community_platform_members.id} with associated karma score.
+  community_platform_members_id String
+  
+  /// The user's current karma score, updated incrementally based on voting
+  /// activity.
+  karma_score Int
+  
+  /// Timestamp when the karma score record was created.
+  created_at DateTime
+  
+  /// Timestamp when the karma score record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the karma score record was marked for deletion (soft
+  /// delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  member community_platform_members @relation(fields: [community_platform_members_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_members_id, created_at], map: "community_platform_karma_scores_community_platform_mem_0bce6a1e")
+}

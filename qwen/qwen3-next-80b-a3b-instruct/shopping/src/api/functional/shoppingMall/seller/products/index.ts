@@ -6,37 +6,120 @@ import typia, { tags } from "typia";
 import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduct";
 
 export * as images from "./images/index";
+export * as variants from "./variants/index";
 
 /**
- * Update an existing product's information including name, description, category ID, and base price. This operation implements the product lifecycle management requirements specified in the system, creating a comprehensive snapshot of the product state before modification to ensure historical accuracy for audit, compliance, and dispute resolution purposes.
+ * Create a new product listing in the shoppingMall marketplace. This operation allows authenticated sellers to register a new product with required fields: name, description, and base_price. The product is associated with the seller's account and initialized with no variants or images, which must be added separately. Product creation triggers an immutable snapshot of the product state for audit trail purposes. The product name must be unique within the seller's catalog and contain 3-200 characters. The description must be 10-5,000 characters long and provide detailed information about the product's features, specifications, and usage instructions. The base_price must be a positive number with at most two decimal places. This operation is only allowed for sellers with 'approved' status. Once created, the product can be managed through edit, delete, and variant addition operations. Product creation is the foundational step for any seller to list merchandise on the platform.
  *
- * When a seller updates a product, the system captures the complete previous state including all product details and image sequences in an immutable product snapshot. This snapshot preserves the product's configuration as it existed at the moment of change, including the product name, description, category assignment, base price, and image order sequence. The snapshot mechanism ensures that all historical states of the product are preserved for future reference, even if the product is later modified again or deleted.
+ * Security considerations require the seller to be authenticated with a valid JWT token and have an approval status of 'approved'. Sellers with 'pending', 'rejected', or 'suspended' status cannot create products. The operation validates that the name and description meet length requirements and that the base_price is greater than zero. If validation fails, appropriate error messages are returned with validation codes.
  *
- * The operation enforces ownership validation, ensuring that only the seller who created the product is permitted to make updates. This prevents unauthorized modification of product details by other sellers or users. Additionally, any updates to the product's category or base price are logged in the snapshot with the timestamp and actor information to maintain complete audit trails. The product's variant information remains unaffected by changes to these top-level fields, maintaining data integrity across the product ecosystem.
+ * The product entity is linked to the seller via seller_id foreign key and is subject to immutable snapshot preservation for dispute resolution. Product snapshots capture the exact state of the product at time of creation, including all fields as they were submitted. This ensures the authenticity of product information for marketplace integrity.
  *
- * The snapshot system ensures complete traceability of product changes, supporting regulatory compliance, customer disputes, and business analytics. For example, if a customer received a product that differed from its specifications at time of purchase, the historical product snapshot can be used to verify compliance. Similarly, administrators can audit product modifications to ensure adherence to platform policies and identify patterns of abuse or error. The system maintains the integrity of the product record by preventing direct alteration of historical states while enabling current data to be updated as needed.
- *
- * This operation does not modify product variants, images, or inventory levels, which have separate dedicated endpoints. Changes to product variants require the /products/{productId}/variants endpoint, while image modifications use the /products/{productId}/images endpoint. This separation of concerns ensures consistent data integrity while allowing each domain to manage its specific lifecycle requirements.
+ * Related API operations include: PATCH /products to search/list products, GET /products/{id} to retrieve a specific product, PUT /products/{id} to update a product, and DELETE /products/{id} to delete a product. Product images and variants must be managed through separate endpoints.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the target product. Must be a UUID format string that corresponds to the shopping_mall_products table's primary key.
- * @param props.body Update request for product information with optional fields for product name, description, category, and base price.
- * @x-autobe-specification Update product fields (name, description, category, base price) only if user is the product owner.
- * Validate the product owner matches the authenticated seller ID.
- * Create a product snapshot capturing:
- * - Previous name, description, category ID, base price
- * - Current values after update
- * - Timestamp of change
- * - Actor (seller ID)
- * - Current image sequence with all image identifiers in order
- * - Variant count (not the variants themselves, as variants are separate entities)
- * - Do not modify any variant information
- * - If no fields provided in request, return 400 Bad Request with message 'No fields to update'
- * - If product not found, return 404 Not Found
- * - If seller is not owner, return 403 Forbidden with message 'Not authorized to update this product'
- * - Do not validate product name uniqueness (already handled during creation)
- * - Only update fields provided in request - do not modify fields omitted from the request
- * - Return 200 OK with updated product fields upon successful update
+ * @param props.body Request body containing product creation details including name, description, and base_price.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Create a new product record in schema shopping_mall_products with fields: name, description, base_price, created_at, updated_at, and seller_id (from authenticated JWT). Validate name length (3-200 chars), description length (10-5000 chars), and base_price > 0. Set default values: created_at = now(), updated_at = now(), deleted_at = null, approval_status = active. Return the complete product object with generated id. Create an immutable snapshot of the product state using the shopping_mall_snapshots mechanism. Ensure atomic transaction to prevent race conditions. Return HTTP 201 with created product object. If validation fails, return appropriate 400 error with validation codes. If seller not approved, return 403. If seller is deleted, return 404.
+ * @path /shoppingMall/seller/products
+ * @accessor api.functional.shoppingMall.seller.products.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Request body containing product creation details including name, description, and base_price.
+     */
+    body: IShoppingMallProduct.ICreate;
+  };
+  export type Body = IShoppingMallProduct.ICreate;
+  export type Response = IShoppingMallProduct;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/seller/products",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/seller/products";
+  export const random = (): IShoppingMallProduct =>
+    typia.random<IShoppingMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update the core attributes of a specific product listing.
+ *
+ * This endpoint allows a registered seller to modify the name, description, or base price of a product they own. All changes are subject to audit and immutable historical preservation; every update creates a permanent snapshot of the product's previous state, ensuring transactional integrity and dispute resolution capability.
+ *
+ * Upon update, the system validates that no order items exist for any variant of this product. This restriction ensures product changes cannot occur after purchases have been made, preserving the principle that product specifications at time of purchase must remain immutable. If any order items exist (regardless of status), the update is denied to maintain consistency with the snapshot principle.
+ *
+ * The operation requires the full product object in the request body with updated values. Partial updates are not permitted; all three fields (name, description, base_price) must be provided in every request. The system automatically sets the updated_at timestamp to the current time and logs the change in the shopping_mall_snapshots table with complete before/after records.
+ *
+ * This operation does not modify product variants, images, or any other child entities. To update variants or images, use the respective endpoints for shopping_mall_product_variants or shopping_mall_product_images. This endpoint handles only the core product metadata.
+ *
+ * Access is restricted to the seller who created the product. The system enforces ownership verification through the authenticated seller's token, which is matched against the product's seller_id field. Administrative users cannot use this endpoint—admin modifications of products must use the dedicated admin override interfaces.
+ *
+ * Any previous versions of this product are preserved in the shopping_mall_snapshots table and remain accessible via audit trails for compliance, dispute resolution, and historical reference.
+ *
+ * @param props.connection
+ * @param props.productId The unique identifier of the product to update. Must be a UUID that corresponds to an existing shopping_mall_product record owned by the authenticated seller.
+ * @param props.body Complete representation of the product with updated fields. Must include all three mutable fields: name, description, and base_price. Partial updates are not permitted.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Update product with new name, description, and base_price. Must validate seller owns the product. Before updating, create a snapshot in shopping_mall_snapshots with before/after state of entire product record, including name, description, base_price, created_at, updated_at, deleted_at. Validate that no order items exist for any variant of this product (join shopping_mall_product_variants and shopping_mall_order_items where product_id = productId and variant_id in (select id from shopping_mall_product_variants where product_id = productId) and is not deleted). If any order items exist, return 409 Conflict. Update product fields with new values and set updated_at to current timestamp. Return the complete updated product object in response. All updates trigger snapshot generation per 12-snapshot-principle.md.
  * @path /shoppingMall/seller/products/:productId
  * @accessor api.functional.shoppingMall.seller.products.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,12 +149,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the target product. Must be a UUID format string that corresponds to the shopping_mall_products table's primary key.
+     * The unique identifier of the product to update. Must be a UUID that corresponds to an existing shopping_mall_product record owned by the authenticated seller.
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Update request for product information with optional fields for product name, description, category, and base price.
+     * Complete representation of the product with updated fields. Must include all three mutable fields: name, description, and base_price. Partial updates are not permitted.
      */
     body: IShoppingMallProduct.IUpdate;
   };
@@ -122,17 +205,34 @@ export namespace update {
 }
 
 /**
- * Permanently remove a product from the shopping mall platform. This operation completely deletes the product record from the database and cascades deletion to all associated resources including product images and variants.
+ * Permanently removes a product from being visible to customers while preserving its historical data for audit and dispute resolution.
  *
- * This is a hard delete operation — records are permanently removed and cannot be recovered. This behavior is intentional as specified by the business requirements which indicate product deletion should be irreversible. After this operation, the product will no longer appear in search results, product listings, or any customer-facing interfaces.
+ * This operation logically deletes a product by setting its "deleted_at" timestamp, making it invisible in search results, category listings, and product detail pages. The product's name, description, category, and base price are preserved in the system's immutable snapshot archive for compliance and forensic purposes. This ensures customer orders referencing this product maintain accurate historical records, and administrators can access the product's complete state at any time for dispute resolution.
  *
- * Security considerations include strict authorization: only the original seller who created the product may perform this operation, unless the requester has administrative privileges. The system performs additional validation to ensure the product does not have any associated order items with status 'paid', 'shipped', or 'delivered' to prevent disruption of existing customer transactions. If such order items exist, the deletion will be blocked with a 400 error. This prevents the accidental deletion of products that are part of active or completed customer orders.
+ * The operation strictly validates that no order items associated with this product's variants exist with status "paid" or "shipped" before deletion proceeds. This prevents removal of products that have been purchased or shipped, preserving transactional integrity. If any such order items exist, the deletion is blocked and an appropriate error message is returned.
  *
- * This operation is intended for two primary use cases: when a seller removes an unsold product from their inventory, or when an administrator enforces content moderation policies by removing products that violate platform guidelines. The product's deletion history is preserved in audit logs for compliance and security review.
+ * All product images and product variants are also logically deleted, but their state at creation time remains accessible via their respective snapshots. Inventory history records related to variants of this product are preserved for financial and stock auditing. The seller's profile state at the time of original product creation remains attached to the product snapshot, ensuring seller accountability.
+ *
+ * When the product is deleted, the system automatically removes it from any customer wishlist and notifies recognized customers if there are active wishlists with this product. The product is no longer available for seller modifications or inventory updates after deletion.
+ *
+ * This operation is irreversible. Once a product is deleted, it cannot be restored. Users can no longer create new products with the same name via the API if the original product name is preserved in the snapshot archive.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the target product. This UUID refers to the product record in the shopping_mall_products table.
- * @x-autobe-specification Delete the product record from the shopping_mall_products table using the productId path parameter. Cascade delete all associated records in shopping_mall_product_images and shopping_mall_product_variants tables. Check that the product has no order items with status 'paid', 'shipped', or 'delivered'. If order items exist with these statuses, return 400 with error message. Verify that the requesting user is either the product's seller or has admin privileges. If not, return 403 Forbidden. Log the deletion in the audit trail. Return the deleted product record in the response body including its id, name, sellerId, and createdAt timestamp for audit purposes.
+ * @param props.productId Unique identifier of the product to delete, stored as a UUID in the shopping_mall_products table. This value is used for exact record lookup and must be a valid UUID format.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Locate the shopping_mall_products record with the provided UUID productId. Verify that no shopping_mall_order_items exist for any variant of this product with status "paid" or "shipped" by joining with shopping_mall_variants and shopping_mall_order_items tables.
+ * If any order items with status "paid" or "shipped" are found, return HTTP 409 Conflict error with message "Cannot delete product because variants have paid or shipped order items".
+ * If validation passes, update the shopping_mall_products record by setting deleted_at to the current ISO 8601 timestamp.
+ * Ensure the following systems are triggered:
+ * - Send notification to customers who have this product on their wishlist
+ * - Archive the current product state into the shopping_mall_snapshots table as a ProductSnapshot with version timestamp and actor information
+ * - Maintain all existing relationships with shopping_mall_product_images and shopping_mall_product_variants
+ * - Preserve all inventory history and variant records for audit purposes
+ * - Do not delete any data from shopping_mall_product_images, shopping_mall_product_variants, or shopping_mall_inventory_histories tables
+ * - Mark associated variants as logically deleted by setting their deleted_at field if not already set
+ * - Publish event for product deletion to analytics system
+ * Return HTTP 204 No Content upon successful delete.
  * @path /shoppingMall/seller/products/:productId
  * @accessor api.functional.shoppingMall.seller.products.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -140,7 +240,7 @@ export namespace update {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<erase.Response> {
+): Promise<void> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -161,11 +261,10 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the target product. This UUID refers to the product record in the shopping_mall_products table.
+     * Unique identifier of the product to delete, stored as a UUID in the shopping_mall_products table. This value is used for exact record lookup and must be a valid UUID format.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
   };
-  export type Response = IShoppingMallProduct;
 
   export const METADATA = {
     method: "DELETE",
@@ -179,12 +278,11 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
-  export const random = (): IShoppingMallProduct =>
-    typia.random<IShoppingMallProduct>();
+  export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): Response => {
+  ): void => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
@@ -193,97 +291,6 @@ export namespace erase {
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Create a new product listing in the shopping mall platform.
- *
- * This operation allows authenticated sellers to create new product listings by providing essential information: product name, description, category, and base price. The system validates that all required fields are provided and meet length requirements: product name must be 1-255 characters, description 1-10000 characters. The category must reference an existing valid category in the system, and the base price must be at least $0.01 USD.
- *
- * When a product is created, the system assigns it a unique identifier and initial status of 'draft'. The product becomes immediately available to the seller in their dashboard but remains hidden from customer search results and category listings until the seller adds at least one product variant. This design ensures that products are not publicly visible until they're ready for sale with specific SKUs. The seller's identity is automatically extracted from the JWT authentication token, ensuring that products are properly attributed to the correct seller account.
- *
- * This operation integrates with the Product table from the database schema, capturing the complete initial state of the product. The operation also triggers creation of a product snapshot for audit purposes, recording the initial state of the product at creation time. This snapshot will be used for historical reference if the product is later edited or deleted.
- *
- * Security: Only authenticated sellers can create products. Product name must be unique across the platform to prevent customer confusion. Rate limiting applies to prevent spam product creation. After creation, sellers can add product images and variants using separate operations. Related operations: PUT /products/{productId} to update product details, POST /products/{productId}/variants to create product variants, GET /products/{productId} to view product details, DELETE /products/{productId} to remove product if no orders exist.
- *
- * @param props.connection
- * @param props.body Creation data for a new product listing
- * @x-autobe-specification Query the shopping_mall_products table to create a new product record. Validate that: name is 1-255 characters, description is 1-10000 characters, basePrice is >= 0.01 USD, categoryId exists in shopping_mall_categories table. Extract sellerId from JWT token. Set initial status to 'draft'. Generate unique productId. Create initial product snapshot capturing the values provided. Return product object with productId, name, description, categoryId, basePrice, sellerId, createdAt, updatedAt, and isDeleted=false.
- * @path /shoppingMall/seller/products
- * @accessor api.functional.shoppingMall.seller.products.create
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function create(
-  connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
-  return true === connection.simulate
-    ? create.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...create.METADATA,
-          path: create.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace create {
-  export type Props = {
-    /**
-     * Creation data for a new product listing
-     */
-    body: IShoppingMallProduct.ICreate;
-  };
-  export type Body = IShoppingMallProduct.ICreate;
-  export type Response = IShoppingMallProduct;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/shoppingMall/seller/products",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/shoppingMall/seller/products";
-  export const random = (): IShoppingMallProduct =>
-    typia.random<IShoppingMallProduct>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

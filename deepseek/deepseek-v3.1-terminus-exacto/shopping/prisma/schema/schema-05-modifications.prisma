@@ -1,0 +1,575 @@
+/// Customer-initiated cancellation requests for order items with 'paid'
+/// status. Each request tracks the cancellation reason and links to the
+/// specific order item, requesting customer, and handling seller. Requests
+/// progress through a lifecycle tracked separately in
+/// cancellation_request_statuses, with immutable audit trails preserved
+/// through snapshots for financial integrity.
+///
+/// Cancellation requests can only be initiated for order items in 'paid'
+/// status before shipment. Each request contains the customer's reason for
+/// cancellation and references the specific order item being cancelled. The
+/// request lifecycle includes initial creation, seller response with
+/// approval/rejection decision, and final resolution processing.
+///
+/// This table serves as the central registry for all cancellation workflows,
+/// ensuring proper stock restoration and financial reconciliation when
+/// requests are approved. The request data is preserved through snapshots
+/// when modified, maintaining audit trail integrity for dispute resolution
+/// and compliance purposes.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who initiated this cancellation request. {@link
+  /// ecommerce_customers.id}
+  ecommerce_customer_id String
+  
+  /// Specific order item being cancelled. Must be in 'paid' status. {@link
+  /// ecommerce_order_items.id}
+  ecommerce_order_item_id String
+  
+  /// Seller who must respond to this cancellation request. {@link
+  /// ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Customer's stated reason for requesting cancellation of this order item.
+  reason String
+  
+  /// Timestamp when this cancellation request was initially submitted by the
+  /// customer.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation request was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this cancellation request was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  snapshots ecommerce_cancellation_request_snapshots[]
+  statusTransitions ecommerce_cancellation_request_statuses[]
+  responseRecord ecommerce_cancellation_response_records?
+  inventoryRestorations ecommerce_modification_inventory_restorations[]
+  
+  @@unique([ecommerce_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_cancellation_requests_ecommerce_customer_id__5038fa39")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_cancellation_requests_ecommerce_seller_id_cr_0f8a3f41")
+  @@index([created_at])
+}
+
+/// Customer-initiated refund requests for delivered order items within 7-day
+/// window with comprehensive workflow tracking.
+///
+/// This table stores refund requests submitted by customers for order items
+/// that have been delivered. Each request must be submitted within 7 days of
+/// delivery and includes a reason for the refund request. The requests are
+/// routed to the appropriate sellers for response and processing.
+///
+/// Refund requests follow a specific workflow: they can only be created for
+/// order items with 'delivered' status, and the request must be submitted
+/// within the 7-day refund window. The table maintains references to both
+/// the order item and the seller for proper routing and processing.
+///
+/// Related entities include: {@link ecommerce_order_items.id} for the
+/// specific item being refunded, {@link ecommerce_customers.id} for the
+/// requesting customer, {@link ecommerce_sellers.id} for the seller
+/// responsible, and status tracking through {@link
+/// ecommerce_refund_request_statuses.id}.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the specific order item being refunded. {@link
+  /// ecommerce_order_items.id}.
+  ecommerce_order_item_id String
+  
+  /// Reference to the customer who submitted the refund request. {@link
+  /// ecommerce_customers.id}.
+  ecommerce_customer_id String
+  
+  /// Reference to the seller who owns the product being refunded. {@link
+  /// ecommerce_sellers.id}.
+  ecommerce_seller_id String
+  
+  /// Customer-provided reason for the refund request explaining why the refund
+  /// is being requested.
+  reason String
+  
+  /// Timestamp when the refund request was initially submitted by the customer.
+  requested_at DateTime
+  
+  /// Timestamp when the 7-day refund window expires, calculated from the
+  /// delivery date.
+  refund_window_expires_at DateTime
+  
+  /// Timestamp when this refund request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this refund request record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this refund request record was soft-deleted for audit
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  modificationSnapshots ecommerce_refund_request_snapshots[]
+  statusHistories ecommerce_refund_request_statuses[]
+  refundResponses ecommerce_refund_response_records[]
+  inventoryRestorations ecommerce_modification_inventory_restorations[]
+  
+  @@unique([ecommerce_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, requested_at], map: "ecommerce_refund_requests_ecommerce_customer_id_reques_483c79d8")
+  @@index([ecommerce_seller_id, requested_at])
+  @@index([refund_window_expires_at])
+  @@index([requested_at])
+}
+
+/// Immutable snapshots of cancellation request state changes for audit and
+/// dispute resolution.
+///
+/// This table captures the complete state of a cancellation request at the
+/// moment of modification, preserving all relevant information including
+/// request details, status information, and modification context. Each
+/// snapshot represents a point-in-time record that cannot be altered or
+/// deleted, ensuring financial integrity and providing a reliable audit
+/// trail for dispute resolution.
+///
+/// The snapshot includes the cancellation request's core information such as
+/// the reason for cancellation, the order item being cancelled, and the
+/// current status at the time of snapshot creation. This allows
+/// administrators and relevant parties to reconstruct the complete history
+/// of any cancellation request for compliance and dispute resolution
+/// purposes.
+///
+/// Snapshots are created whenever a cancellation request is modified,
+/// including status changes, seller responses, or any other updates to the
+/// request. The immutable nature of these records ensures that the platform
+/// maintains a trustworthy record of all cancellation-related activities.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original cancellation request that this snapshot
+  /// captures. {@link ecommerce_cancellation_requests.id}.
+  ecommerce_cancellation_request_id String
+  
+  /// The customer's reason for requesting cancellation as recorded at the time
+  /// of snapshot creation.
+  reason String
+  
+  /// The status of the cancellation request at the time the snapshot was
+  /// created (pending, approved, rejected, auto-approved).
+  status String
+  
+  /// Timestamp when the snapshot was created, capturing the exact moment of
+  /// the state change.
+  created_at DateTime
+  
+  /// Timestamp when the snapshot record was last updated (typically matches
+  /// created_at for immutable snapshots).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_cancellation_request_snapshots_ecommerce_can_0051bc5a")
+}
+
+/// Immutable snapshots of refund request state changes for audit and dispute
+/// resolution.
+///
+/// This table preserves the complete state of refund requests whenever they
+/// are modified, including status changes, response additions, and
+/// administrative interventions. Each snapshot captures the timestamp,
+/// modifying actor, refund request ID, and complete before/after state data
+/// to maintain financial accountability and support dispute resolution.
+///
+/// Snapshots are automatically created whenever a refund request is updated
+/// and cannot be modified or deleted. Administrators and relevant parties
+/// can access these snapshots to view the complete modification history of
+/// any refund request.
+///
+/// References: Base refund request {@link ecommerce_refund_requests.id},
+/// modifying customer {@link ecommerce_customers.id}, modifying seller
+/// {@link ecommerce_sellers.id}, or modifying administrator {@link
+/// ecommerce_administrators.id}
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request being modified. {@link ecommerce_refund_requests.id}
+  ecommerce_refund_request_id String
+  
+  /// Customer who made the modification, if applicable. {@link
+  /// ecommerce_customers.id}
+  modifying_customer_id String?
+  
+  /// Seller who made the modification, if applicable. {@link
+  /// ecommerce_sellers.id}
+  modifying_seller_id String?
+  
+  /// Administrator who made the modification, if applicable. {@link
+  /// ecommerce_administrators.id}
+  modifying_administrator_id String?
+  
+  /// Timestamp when this snapshot was created. Cannot be modified after
+  /// creation.
+  created_at DateTime
+  
+  /// JSON representation of the refund request state before modification,
+  /// including all fields and relationships.
+  before_state String
+  
+  /// JSON representation of the refund request state after modification,
+  /// including all fields and relationships.
+  after_state String
+  
+  /// Human-readable description of what was changed in this modification.
+  change_description String
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
+  modifyingCustomer ecommerce_customers? @relation(fields: [modifying_customer_id], references: [id], onDelete: Cascade)
+  modifyingSeller ecommerce_sellers? @relation(fields: [modifying_seller_id], references: [id], onDelete: Cascade)
+  modifyingAdministrator ecommerce_administrators? @relation(fields: [modifying_administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([modifying_customer_id])
+  @@index([modifying_seller_id])
+  // spellchecker: ignore-next-line
+  @@index([modifying_administrator_id], map: "ecommerce_refund_request_snapshots_modifying_administr_58d3e89f")
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_refund_request_id, created_at], map: "ecommerce_refund_request_snapshots_ecommerce_refund_re_1efa4ca8")
+}
+
+/// Tracks status transitions for cancellation requests with timestamps and
+/// audit trail.
+///
+/// Each record represents a status change in the cancellation request
+/// lifecycle, providing a complete audit trail of all state transitions.
+/// This enables tracking when requests move from pending to approved,
+/// rejected, or auto-approved states, with precise timestamps and optional
+/// transition notes.
+///
+/// Status transitions follow the cancellation workflow: pending (initial
+/// state) → approved/rejected/auto-approved (final states). Each transition
+/// is immutable and provides audit capability for dispute resolution and
+/// process monitoring.
+///
+/// This table works in conjunction with {@link
+/// ecommerce_cancellation_requests} to provide comprehensive status history
+/// for each cancellation request.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cancellation_request_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the cancellation request being tracked. {@link
+  /// ecommerce_cancellation_requests.id}.
+  ecommerce_cancellation_request_id String
+  
+  /// The status value at this transition point. Valid values: pending,
+  /// approved, rejected, auto-approved.
+  status String
+  
+  /// Optional notes or context about this status transition, such as reason
+  /// for approval/rejection.
+  transition_notes String?
+  
+  /// Timestamp when this status transition occurred.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_cancellation_request_statuses_ecommerce_canc_7b838a06")
+  @@index([status, created_at])
+}
+
+/// Tracks status transitions for refund requests with timestamps and audit
+/// trail. Each row represents a specific status change event, preserving the
+/// complete lifecycle of refund request processing for dispute resolution
+/// and compliance.
+///
+/// Refund requests can transition through various statuses including
+/// pending, approved, rejected, and auto-approved. This table maintains an
+/// immutable record of each status change, including the timestamp and any
+/// associated metadata. The status history enables tracking of request
+/// processing timelines and provides evidence for dispute resolution when
+/// needed.
+///
+/// This table works in conjunction with {@link ecommerce_refund_requests} as
+/// the parent entity and {@link ecommerce_refund_request_snapshots} for
+/// comprehensive audit trail preservation.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_refund_request_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent refund request. {@link
+  /// ecommerce_refund_requests.id}
+  ecommerce_refund_request_id String
+  
+  /// Current status of the refund request at this transition point. Valid
+  /// values: pending, approved, rejected, auto-approved.
+  status String
+  
+  /// Timestamp when this status transition occurred.
+  created_at DateTime
+  
+  /// Optional reason or notes associated with this status transition,
+  /// particularly for rejections or approvals with specific conditions.
+  reason String?
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_refund_request_id, created_at], map: "ecommerce_refund_request_statuses_ecommerce_refund_req_f9f496c3")
+  @@index([status, created_at])
+}
+
+/// Records seller responses to cancellation requests including
+/// approval/rejection decisions, response reasons, and timestamps for audit
+/// trail and dispute resolution. This table preserves seller responses as
+/// part of the cancellation workflow, ensuring transparency and
+/// accountability in the modification process.
+///
+/// Each response is linked to a specific cancellation request and captures
+/// the seller's decision along with their reasoning. The response records
+/// are immutable once created and serve as part of the comprehensive audit
+/// trail required for financial integrity in the e-commerce platform.
+/// Responses are permanently tied to the specific seller who made the
+/// decision, maintaining full accountability throughout the process.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cancellation_response_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cancellation request being responded to. {@link
+  /// ecommerce_cancellation_requests.id}
+  ecommerce_cancellation_request_id String
+  
+  /// The seller who made the cancellation response decision. {@link
+  /// ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Seller's decision on the cancellation request - must be either 'approved'
+  /// or 'rejected' for workflow validation.
+  decision String
+  
+  /// Seller's explanation for their decision, providing context for approval
+  /// or rejection.
+  response_reason String
+  
+  /// Timestamp when the seller submitted their response. This timestamp is
+  /// immutable and serves as the official response time.
+  responded_at DateTime
+  
+  /// Record creation timestamp. This field remains constant as cancellation
+  /// response records are immutable once created.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_cancellation_request_id], map: "ecommerce_cancellation_response_records_ecommerce_canc_96ed5942")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, responded_at], map: "ecommerce_cancellation_response_records_ecommerce_sell_1a39f421")
+}
+
+/// Stores seller responses to refund requests including approval/rejection
+/// decisions, response reasons, and timestamps.
+///
+/// Each record represents a seller's formal response to a customer's refund
+/// request. The response includes the decision (approved or rejected), the
+/// seller's reasoning for the decision, and when the response was provided.
+/// This table enables proper workflow tracking for refund requests and
+/// maintains an audit trail of seller responses for dispute resolution.
+///
+/// Refund responses are linked to specific refund requests through the
+/// ecommerce_refund_requests table and are associated with the responding
+/// seller through the ecommerce_sellers table.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_refund_response_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the refund request being responded to. {@link
+  /// ecommerce_refund_requests.id}
+  ecommerce_refund_request_id String
+  
+  /// Reference to the seller providing the response. {@link
+  /// ecommerce_sellers.id}
+  ecommerce_seller_id String
+  
+  /// Seller's decision on the refund request - either 'approved' or 'rejected'.
+  decision String
+  
+  /// Seller's explanation for their decision on the refund request.
+  response_reason String
+  
+  /// Timestamp when the seller provided their response.
+  responded_at DateTime
+  
+  /// Timestamp when this response record was created.
+  created_at DateTime
+  
+  /// Timestamp when this response record was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_refund_request_id], map: "ecommerce_refund_response_records_ecommerce_refund_req_f098e240")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, responded_at], map: "ecommerce_refund_response_records_ecommerce_seller_id__4908a21f")
+  @@index([decision, responded_at])
+}
+
+/// Inventory restoration records created when cancellations or refunds are
+/// approved to maintain stock integrity.
+///
+/// This table tracks the restoration of stock quantities when order
+/// modifications are processed. When a cancellation or refund request is
+/// approved, the system creates restoration records to return the inventory
+/// to available stock. Each record captures the quantity restored, the
+/// reason for restoration, and links to the specific modification request
+/// that triggered it.
+///
+/// These records work in conjunction with the inventory tracking system to
+/// ensure accurate stock levels are maintained throughout the order
+/// lifecycle. The restoration process is essential for maintaining inventory
+/// integrity when orders are modified after payment or delivery.
+///
+/// @namespace Modifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_modification_inventory_restorations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the cancellation request that triggered this inventory
+  /// restoration. {@link ecommerce_cancellation_requests.id}.
+  ecommerce_cancellation_request_id String?
+  
+  /// Reference to the refund request that triggered this inventory
+  /// restoration. {@link ecommerce_refund_requests.id}.
+  ecommerce_refund_request_id String?
+  
+  /// Reference to the inventory record that was restored. {@link
+  /// ecommerce_inventory_records.id}.
+  ecommerce_inventory_record_id String
+  
+  /// The quantity of inventory that was restored to stock.
+  quantity_restored Int
+  
+  /// Business reason for the inventory restoration operation.
+  restoration_reason String
+  
+  /// Timestamp when the inventory restoration record was created.
+  created_at DateTime
+  
+  /// Timestamp when the inventory restoration record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the inventory restoration record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  cancellationRequest ecommerce_cancellation_requests? @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest ecommerce_refund_requests? @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
+  inventoryRecord ecommerce_inventory_records @relation(fields: [ecommerce_inventory_record_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_modification_inventory_restorations_ecommerc_d434b93b")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_refund_request_id, created_at], map: "ecommerce_modification_inventory_restorations_ecommerc_d437622c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_inventory_record_id, created_at], map: "ecommerce_modification_inventory_restorations_ecommerc_1a3a200d")
+}

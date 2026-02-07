@@ -1,237 +1,127 @@
-# Todo Application - Complete Documentation Structure
+# Multi-User Todo Application Documentation
 
 ## Project Overview
 
-The TodoApp is a secure multi-user todo management application designed for personal productivity. This document provides the complete table of contents and navigation structure for the backend development requirements specification.
+This documentation provides comprehensive business requirements for a multi-user Todo application that enables individual users to manage their personal task lists with privacy, history tracking, and robust management capabilities.
 
-### Core Application Scope
+### Documentation Purpose
+The purpose of this documentation is to define the complete business requirements for backend developers to understand what needs to be built, why it's being built, and how it should function from a user perspective. This document focuses exclusively on business requirements and user workflows.
 
-The Todo application provides comprehensive todo management capabilities with complete user privacy guarantees:
-- **Private todo management** for individual users with strict data isolation
-- **Complete authentication and user management** with secure session handling
-- **Advanced todo features** including comprehensive edit history tracking and trash management with restore capabilities
-- **Robust filtering and sorting capabilities** for flexible todo organization
-- **Comprehensive privacy and security enforcement** ensuring zero cross-user data visibility
+## Documentation Structure
 
-### Target User Experience
+The complete documentation is organized into the following logical sequence:
 
-Users interact with the application through a clean, intuitive interface that prioritizes:
-- Immediate access to todo management functions
-- Clear visual feedback for all operations
-- Efficient organization through filters and sort options
-- Complete audit trails for accountability
-- Data safety through reversible operations
+### 1. [Service Overview](./01-service-overview.md)
+High-level business context including service vision, target user base, competitive landscape, and success metrics.
 
-## Document Structure
+### 2. [User Actors and Authentication](./02-user-actors-authentication.md)
+User actor definitions, authentication requirements, account management, and security considerations.
 
-### 1. Service Overview & Business Context
-- **File**: 01-service-overview.md
-- **Purpose**: High-level business context, market positioning, and strategic vision
-- **Coverage**: 
-  - Business model analysis and revenue strategy
-  - Target market segments and opportunity sizing
-  - Core value proposition and competitive differentiation
-  - Success metrics and key performance indicators
-  - Technical architecture overview and scalability considerations
+### 3. [Todo Creation and Management](./03-todo-creation-management.md)
+Complete workflows for creating todos, required fields, validation rules, and basic viewing capabilities.
 
-### 2. User Authentication & Authorization
-- **File**: 02-user-actors-authentication.md
-- **Purpose**: Define user types, authentication flows, and permission structures
-- **Coverage**:
-  - User registration workflows with email verification
-  - Secure login and session management
-  - Password change and reset functionality
-  - Account deletion with complete data removal
-  - JWT token management and security protocols
-  - Permission matrix for all user actions
+### 4. [Todo Completion and Editing](./04-todo-completion-editing.md)
+Workflows for completing todos, editing capabilities, and comprehensive history tracking.
 
-### 3. Core Todo Management
-- **File**: 03-todo-management-requirements.md
-- **Purpose**: Core functionality for todo creation, viewing, and completion
-- **Coverage**:
-  - Todo data model with required and optional fields
-  - Validation rules for title, description, and dates
-  - Paginated todo listing with configurable page sizes
-  - Single todo view with complete detail display
-  - Completion status toggle functionality
-  - Performance standards for all todo operations
+### 5. [Deletion and Trash Management](./05-deletion-trash-management.md)
+Soft deletion processes, trash management, restoration workflows, and permanent deletion.
 
-### 4. Editing & History Tracking
-- **File**: 04-todo-editing-history.md
-- **Purpose**: Advanced editing capabilities with complete audit trail
-- **Coverage**:
-  - Field-by-field editing capabilities for todos
-  - Automatic history entry creation for all modifications
-  - History entry structure with timestamp and change details
-  - Multi-edit session handling and conflict detection
-  - History preservation through trash and restoration
-  - Performance expectations for history operations
+### 6. [Filtering and Sorting Capabilities](./06-filtering-sorting-capabilities.md)
+Filtering options, sorting capabilities, and display logic for todo lists.
 
-### 5. Trash Management & Data Recovery
-- **File**: 05-trash-management.md
-- **Purpose**: Soft delete functionality and data lifecycle management
-- **Coverage**:
-  - Soft delete implementation with deletion timestamps
-  - Trash viewing with paginated list display
-  - Todo restoration with complete data preservation
-  - Permanent deletion with irreversible data removal
-  - Data recovery scenarios and safety mechanisms
-  - Error handling for trash operations
+### 7. [Privacy and Data Isolation](./07-privacy-data-isolation.md)
+Privacy guarantees, data isolation requirements, and access control mechanisms.
 
-### 6. Organization & Navigation
-- **File**: 06-filtering-sorting-requirements.md
-- **Purpose**: Advanced todo organization and user interface navigation
-- **Coverage**:
-  - Completion status filtering (All/Complete/Incomplete)
-  - Multi-criteria sorting by creation, start, and due dates
-  - Null value handling strategies for flexible sorting
-  - Combined filtering and sorting interactions
-  - Pagination integration with organization features
-  - User interface controls and state management
+### 8. [Error Handling Scenarios](./08-error-handling-scenarios.md)
+Error scenarios, validation failures, permission denials, and recovery processes.
 
-### 7. User Profile Management
-- **File**: 07-user-profile-management.md
-- **Purpose**: User identity and personal information handling
-- **Coverage**:
-  - Profile data structure with display name requirements
-  - Profile editing capabilities with validation rules
-  - Privacy enforcement and access control safeguards
-  - Integration with authentication system lifecycle
-  - Business rules for profile data management
-  - Performance standards for profile operations
+### 9. [Performance Expectations](./09-performance-expectations.md)
+Response time expectations, scalability requirements, and user experience standards.
 
-### 8. Error Handling & Validation
-- **File**: 08-error-handling-scenarios.md
-- **Purpose**: Comprehensive error management and user feedback systems
-- **Coverage**:
-  - Input validation for email, password, and todo fields
-  - Authentication and authorization error scenarios
-  - Todo operation error handling and recovery processes
-  - System and data integrity error management
-  - User feedback standards and notification requirements
-  - Performance and timeout handling specifications
+### 10. [Business Rules and Validation](./10-business-rules-validation.md)
+Field validation rules, business logic constraints, and data integrity requirements.
 
-### 9. Performance & Scalability
-- **File**: 09-performance-expectations.md
-- **Purpose**: System performance standards and scalability requirements
-- **Coverage**:
-  - Response time expectations for all user workflows
-  - System scalability requirements for concurrent users
-  - Data loading performance with pagination standards
-  - Platform reliability and availability requirements
-  - Resource utilization and capacity planning guidelines
-  - Performance testing and monitoring specifications
+## User Actors Definition
 
-### 10. Business Rules & Constraints
-- **File**: 10-business-rules-constraints.md
-- **Purpose**: Core business logic and system behavior specifications
-- **Coverage**:
-  - Business logic rules for account and todo management
-  - Data validation constraints and input sanitization
-  - Privacy enforcement rules with complete data isolation
-  - Workflow constraints and state transition rules
-  - System behavior specifications and compliance requirements
+The system supports a single authenticated user actor:
 
-## Implementation Sequence Guide
+### Authenticated User
+- **Description**: Individual users who manage their personal todo lists
+- **Capabilities**: Full access to own todos, profile management, account operations
+- **Limitations**: Cannot access other users' data or system administration functions
 
-### Phase 1: Foundation (Documents 1-2)
-**Priority**: Critical path for application launch
-**Focus**: Establish core architecture and user management
-- **Week 1-2**: Implement service overview architecture
-- **Week 3-4**: Build authentication and user management systems
-- **Week 5**: Integration testing and security validation
+## Core System Requirements
 
-### Phase 2: Core Functionality (Documents 3-5)
-**Priority**: Essential user-facing functionality
-**Focus**: Basic todo management with advanced features
-- **Week 6-7**: Core todo creation, viewing, and completion
-- **Week 8-9**: Edit history tracking implementation
-- **Week 10**: Trash management and data recovery
+### Authentication and Account Management
+- User registration with email and password
+- Secure login and session management
+- Password change and account deletion capabilities
 
-### Phase 3: Enhanced Features (Documents 6-7)
-**Priority**: User experience optimization
-**Focus**: Organization capabilities and personalization
-- **Week 11-12**: Filtering, sorting, and navigation features
-- **Week 13**: User profile management and customization
+### Todo Management Features
+- Create todos with title, description, start date, and due date
+- View todo lists with pagination and detailed views
+- Mark todos as complete/incomplete
+- Edit todos with comprehensive history tracking
 
-### Phase 4: Quality & Performance (Documents 8-10)
-**Priority**: System reliability and robustness
-**Focus**: Error handling, performance, and business rules
-- **Week 14**: Comprehensive error handling implementation
-- **Week 15-16**: Performance optimization and scalability testing
-- **Week 17**: Business rule enforcement and final validation
+### Advanced Features
+- Soft deletion with trash management
+- Filtering by completion status
+- Sorting by multiple criteria
+- Edit history with detailed change tracking
 
-## Quick Navigation Reference
+## Business Logic Flow
 
-### For Authentication Development
-- **User registration flows**: Document 2 sections 2.1-2.3
-- **Login and session management**: Document 2 sections 3.1-3.2
-- **Password management**: Document 2 sections 4.1-4.4
-- **Account deletion**: Document 2 sections 5.1-5.3
+The application follows these core workflows:
 
-### For Todo Functionality
-- **Todo creation workflows**: Document 3 sections 3.1-3.3
-- **Todo viewing and listing**: Document 3 sections 4.1-4.3
-- **Completion status management**: Document 3 sections 5.1-5.2
-- **Editing history**: Document 4 complete specification
-- **Trash management**: Document 5 complete specification
+### User Registration and Authentication Flow
+```mermaid
+graph LR
+  A["User Registration"] --> B["Email Verification"]
+  B --> C["User Login"]
+  C --> D["Session Management"]
+  D --> E["Todo Operations"]
+```
 
-### For User Experience
-- **Filtering capabilities**: Document 6 sections 2.1-2.3
-- **Sorting functionality**: Document 6 sections 3.1-3.4
-- **Profile management**: Document 7 complete specification
-- **Error handling**: Document 8 complete specification
+### Todo Lifecycle Management
+```mermaid
+graph LR
+  A["Create Todo"] --> B["Edit/Update"]
+  B --> C["Complete/Incomplete"]
+  C --> D["Soft Delete"]
+  D --> E["Restore/Permanent Delete"]
+```
 
-### For System Quality
-- **Performance standards**: Document 9 complete specification
-- **Business rules**: Document 10 complete specification
-- **Scalability requirements**: Document 9 sections 2.1-2.3
+### Data Privacy and Isolation
+- Each user's data is completely isolated
+- No sharing or viewing capabilities between users
+- Private todo management with no public features
 
-## Developer Implementation Notes
+## Success Criteria
 
-### Data Privacy Enforcement
-All implementations must adhere to the strictest privacy standards:
-- Database queries must automatically filter by user ID
-- API endpoints must validate user ownership of requested resources
-- No cross-user data visibility under any circumstances
+### User Experience Success Metrics
+- Users can efficiently manage personal todo lists
+- Todo creation and editing feels responsive and intuitive
+- Privacy and data security are maintained
+- Edit history provides valuable audit trail
 
-### Performance Considerations
-System design must prioritize:
-- Sub-second response times for core operations
-- Efficient pagination for large todo collections
-- Optimized database queries with appropriate indexing
+### Business Success Metrics
+- High user retention through reliable service
+- Positive user feedback on privacy features
+- Low error rates and system downtime
+- Scalable architecture supporting growth
 
-### Error Handling Strategy
-Implement comprehensive error management:
-- Clear, actionable error messages for users
-- Detailed logging for debugging and monitoring
-- Graceful degradation during system issues
+## Key Business Requirements
 
-### Testing Requirements
-Ensure comprehensive test coverage:
-- Unit tests for all business logic
-- Integration tests for workflow scenarios
-- Performance tests under load conditions
-- Security tests for authentication and authorization
+### Privacy-First Design
+THE system SHALL ensure complete data isolation between users, with no capability for users to view or access other users' todos.
 
-## Document Maintenance
+### Comprehensive History Tracking
+WHEN a user edits any todo field, THE system SHALL record the complete change history including timestamp and specific field modifications.
 
-### Version Control
-All requirement documents are maintained under version control with:
-- Clear changelog tracking for each modification
-- Backward compatibility considerations for updates
-- Document relationships and dependencies mapping
+### Flexible Todo Management
+THE system SHALL support multiple filtering and sorting options to help users organize their todo lists effectively.
 
-### Cross-Reference Integrity
-Documents maintain consistent terminology and references throughout:
-- Unified field definitions across all specifications
-- Consistent error code naming conventions
-- Standardized performance measurement approaches
+### Secure Account Management
+THE system SHALL provide secure authentication and account management capabilities including password changes and account deletion.
 
-### Accessibility Compliance
-All specifications include accessibility considerations:
-- Keyboard navigation support requirements
-- Screen reader compatibility standards
-- Responsive design expectations for multiple devices
-
-> *Implementation Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team based on these specifications.*
+> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

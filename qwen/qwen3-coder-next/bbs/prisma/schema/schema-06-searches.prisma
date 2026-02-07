@@ -1,0 +1,181 @@
+/// Stores search queries for analytics and popular search tracking. Tracks
+/// all search queries performed by users and guests to analyze search
+/// patterns and popular search terms for improving search functionality and
+/// user experience.
+///
+/// @namespace Searches
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_queries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The search query text entered by the user.
+  search_query String
+  
+  /// JSON string containing additional search parameters (filters, search
+  /// type, etc.) for detailed analytics.
+  search_parameters String?
+  
+  /// Number of search results returned for this query, used for analytics on
+  /// search effectiveness.
+  results_count Int?
+  
+  /// Timestamp when the search query was recorded.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  searchClicks discussion_board_search_clicks[]
+  searchResults discussion_board_search_results[]
+  
+  @@index([created_at])
+}
+
+/// Tracks search result clicks for relevance ranking
+///
+/// @namespace Searches
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_clicks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the search query that generated this click
+  search_query_id String
+  
+  /// Reference to the search result that was clicked
+  search_result_id String
+  
+  /// Reference to the user who performed the click (nullable for guest users)
+  user_id String?
+  
+  /// Timestamp when the search result was clicked
+  clicked_at DateTime
+  
+  /// Position of the result in search results (for relevance ranking)
+  result_position Int
+  
+  /// Session identifier for tracking user behavior patterns
+  session_id String?
+  
+  /// IP address of the user who clicked (for analytics)
+  ip_address String?
+  
+  //----
+  // RELATIONS
+  //----
+  query discussion_board_search_queries @relation(fields: [search_query_id], references: [id], onDelete: Cascade)
+  result discussion_board_search_results @relation(fields: [search_result_id], references: [id], onDelete: Cascade)
+  user discussion_board_members? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([search_query_id, clicked_at])
+  @@index([user_id, clicked_at])
+  @@index([search_result_id])
+}
+
+/// Search result records for tracking search analytics and relevance scoring
+/// with user click tracking and result positioning.
+///
+/// @namespace Searches
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_results {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the search query that generated this result. {@link
+  /// discussion_board_search_queries.id}.
+  search_query_id String
+  
+  /// Reference to the article that was found in search results. {@link
+  /// discussion_board_articles.id}.
+  article_id String
+  
+  /// Reference to the user who clicked on this search result. {@link
+  /// discussion_board_members.id}.
+  member_id String?
+  
+  /// Position of this result in the search results list (1-based index).
+  result_position Int
+  
+  /// Relevance score calculated by search algorithm (0.0 to 1.0).
+  relevance_score Float
+  
+  /// Snippet of article content showing search term context.
+  content_snippet String?
+  
+  /// Timestamp when search result was generated.
+  created_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  searchQuery discussion_board_search_queries @relation(fields: [search_query_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  member discussion_board_members? @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  clicks discussion_board_search_clicks[]
+  
+  @@index([search_query_id])
+  @@index([article_id])
+  @@index([member_id])
+}
+
+/// Search index table for article titles and content enabling efficient全文
+/// search functionality. This table stores indexed text data with references
+/// to source articles, supporting fast search queries across the discussion
+/// board. The index includes both title and content text with trigram-based
+/// fuzzy search support for better result accuracy.
+///
+/// @namespace Searches
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_search_indices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source article being indexed. {@link
+  /// discussion_board_articles.id}.
+  article_id String
+  
+  /// Indexed title text for fast title search operations.
+  title String
+  
+  /// Indexed content text for full-text search operations.
+  content String
+  
+  /// Trigram representation of title for fuzzy text matching.
+  title_trgm String?
+  
+  /// Trigram representation of content for fuzzy text matching.
+  content_trgm String?
+  
+  /// Timestamp when this search index was created.
+  created_at DateTime
+  
+  /// Timestamp when this search index was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this search index was soft-deleted. Null means not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  @@index([article_id])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}

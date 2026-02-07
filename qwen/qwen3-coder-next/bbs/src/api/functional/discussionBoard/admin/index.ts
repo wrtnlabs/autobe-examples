@@ -1,0 +1,16 @@
+export * as admin from "./admin/index";
+export * as sections from "./sections/index";
+export * as articles from "./articles/index";
+export * as tags from "./tags/index";
+export * as comments from "./comments/index";
+export * as bans from "./bans/index";
+export * as requests from "./requests/index";
+export * as settings from "./settings/index";
+export * as logs from "./logs/index";
+export * as config_history from "./config_history/index";
+export * as recommendations from "./recommendations/index";
+export * as analytics from "./analytics/index";
+export * as moderation from "./moderation/index";
+export * as deleted from "./deleted/index";
+export * as users from "./users/index";
+export * as admins from "./admins/index";

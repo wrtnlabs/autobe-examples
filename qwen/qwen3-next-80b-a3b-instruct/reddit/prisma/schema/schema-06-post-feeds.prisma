@@ -1,0 +1,313 @@
+/// Materialized view caching the ordered set of posts from communities a
+/// user is subscribed to, sorted by hot, new, top, or controversial
+/// algorithms. Stores precomputed feed entries with post_id, sort_algorithm,
+/// sort_order, and last_updated timestamp for performance.
+///
+/// This view is automatically refreshed when posts are voted on, edited, or
+/// new posts are created in subscribed communities. It enables sub-1.5
+/// second Home Feed loads by eliminating the need for expensive JOINs and
+/// complex sorting calculations at query time. All data is denormalized and
+/// precomputed. This table is read-only from the user perspective and
+/// managed by backend triggers.
+///
+/// References: community_posts.id (via post_id)
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_mv_community_home_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each feed entry.
+  id String @id
+  
+  /// The ID of the post being displayed in the feed. References
+  /// community_posts.id.
+  post_id String
+  
+  /// The sorting algorithm used for this entry: 'hot', 'new', 'top', or
+  /// 'controversial'.
+  sort_algorithm String
+  
+  /// The precomputed position of this post in the ordered feed. Higher values
+  /// indicate higher ranking.
+  sort_order Int
+  
+  /// Timestamp when this entry was last computed or refreshed due to a change
+  /// in underlying data (e.g., new vote, edit, new post).
+  last_updated DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([post_id])
+  @@index([sort_algorithm, sort_order])
+  @@index([last_updated])
+}
+
+/// Materialized view caching the ordered set of active posts from all
+/// communities on the platform, sorted by hot, new, top, or controversial
+/// algorithms. Optimized for anonymous and guest access with precomputed
+/// scores and timestamps. This table is updated by background jobs when
+/// posts receive votes or are created/edited, and is never directly modified
+/// by users or API calls.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_mv_community_popular_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original post in community_posts. {@link
+  /// community_posts.id}.
+  community_post_id String
+  
+  /// The sorting algorithm used for this entry: 'hot', 'new', 'top', or
+  /// 'controversial'.
+  sort_algorithm String
+  
+  /// The computed sort score for ranking posts within this algorithm. Higher
+  /// values are displayed first.
+  sort_order Int
+  
+  /// The title of the post (denormalized for performance).
+  title String
+  
+  /// The display name of the post author (denormalized for performance).
+  author_username String
+  
+  /// The name of the community where the post was made (denormalized for
+  /// performance).
+  community_name String
+  
+  /// Total vote score (upvotes - downvotes) for the post.
+  vote_score Int
+  
+  /// Total number of comments on the post (denormalized from
+  /// community_post_comments_counts).
+  comment_count Int
+  
+  /// The type of the post: 'text', 'link', or 'image'.
+  post_type String
+  
+  /// First 200 characters of the post content (for text posts) or domain for
+  /// link posts, or null for images.
+  content_preview String?
+  
+  /// The original creation timestamp of the post.
+  created_at DateTime
+  
+  /// The timestamp when this materialized view entry was last recomputed. Used
+  /// for cache invalidation.
+  last_updated DateTime
+  
+  /// Whether the post is currently visible and active (not deleted or flagged).
+  is_active Boolean
+  
+  /// The extracted domain name from the post URL (for link posts only), null
+  /// for text/image posts.
+  domain_name String?
+  
+  /// The CDN URL for the 320x240 thumbnail image (for image posts only), null
+  /// for text/link posts.
+  thumbnail_url String?
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  @@index([community_post_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([sort_algorithm, sort_order], map: "community_mv_community_popular_feeds_sort_algorithm_so_ba40ca96")
+  // spellchecker: ignore-next-line
+  @@index([community_name, sort_algorithm, sort_order], map: "community_mv_community_popular_feeds_community_name_so_b2f28126")
+  // spellchecker: ignore-next-line
+  @@index([created_at, sort_algorithm, sort_order], map: "community_mv_community_popular_feeds_created_at_sort_a_9e73e948")
+  @@index([last_updated])
+  // spellchecker: ignore-next-line
+  @@index([is_active, sort_algorithm, sort_order], map: "community_mv_community_popular_feeds_is_active_sort_al_b0de727c")
+}
+
+/// Materialized view caching the ordered set of posts for each individual
+/// community, sorted by hot, new, top, or controversial algorithms. Indexed
+/// by community_id and sort_algorithm to enable fast lookup for
+/// community-specific pages.
+///
+/// This materialized view is precomputed and refreshed asynchronously. It
+/// contains no business data but holds only the positioning metadata
+/// necessary to serve feed requests in sub-1.5 seconds. Users never write to
+/// this table. It is populated and maintained by background jobs based on
+/// changes to community_posts and community_post_votes.
+///
+/// The view is never directly queried by the application's API; instead, the
+/// feed_cache_entries table serves the final JSON responses. This table
+/// enables efficient generation of those cache entries by providing a
+/// pre-sorted list of post IDs per community and algorithm.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_mv_community_feeds {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this feed is for. {@link community_communities.id}
+  community_id String
+  
+  /// The post being displayed in this feed position. {@link community_posts.id}
+  post_id String
+  
+  /// Algorithm used to sort this feed: 'hot', 'new', 'top', or
+  /// 'controversial'. Must be one of the four defined values. Required for
+  /// partitioning and query routing.
+  sort_algorithm String
+  
+  /// Position of this post in the feed for the given sort_algorithm. Lowest
+  /// number (0) is first. Required for ordered retrieval in feed pagination.
+  sort_order Int
+  
+  /// Timestamp when this feed entry was last recalculated. Used by background
+  /// jobs to determine when to invalidate the cache and regenerate this
+  /// materialized view.
+  last_updated DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@index([post_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, post_id, sort_algorithm], map: "community_mv_community_feeds_community_id_post_id_sort_e5d37bf3")
+  // spellchecker: ignore-next-line
+  @@index([community_id, sort_algorithm, sort_order], map: "community_mv_community_feeds_community_id_sort_algorit_4040de70")
+}
+
+/// Index table storing the relationship between post_id and its computed
+/// positions in all feed types (home, popular, community) and sorting
+/// algorithms. Enables atomic updates to feed positions when a post receives
+/// new votes or is edited, with last_updated timestamp for cache
+/// invalidation.
+///
+/// This is a subsidiary materialized view index table that maps every post
+/// to its position across multiple feed types and sorting algorithms.
+/// Changes to posts (votes, edits) trigger atomic updates to this index,
+/// which in turn invalidates cached feed results in
+/// community_mv_feed_cache_entries. The table exists solely for feed
+/// performance optimization - not for direct user interaction. It supports
+/// the performance requirement of sub-1.5s feed loads by eliminating complex
+/// joins at query time.
+///
+/// Referenced by: community_posts
+/// Used by: community_mv_feed_cache_entries
+///
+/// @namespace Post Feeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_mv_post_feed_indices {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community_post to which this index entry applies. {@link
+  /// community_posts.id}.
+  post_id String
+  
+  /// Type of feed this index entry belongs to. Must be one of: "home",
+  /// "popular", "community". Used to differentiate between user-specific feeds
+  /// and global feeds.
+  feed_type String
+  
+  /// Sorting algorithm applied to generate this index entry. Must be one of:
+  /// "hot", "new", "top", "controversial". Determines how the post's position
+  /// is calculated.
+  sort_algorithm String
+  
+  /// The computed position (rank) of this post within the specified feed and
+  /// sorting algorithm. Lower values indicate higher ranking (position 1 is
+  /// top of feed).
+  sort_order Int
+  
+  /// Timestamp when this index entry was last updated due to post vote, edit,
+  /// or deletion. Used for cache invalidation of related entries in
+  /// community_mv_feed_cache_entries.
+  last_updated DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  post community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([post_id, feed_type, sort_algorithm], map: "community_mv_post_feed_indices_post_id_feed_type_sort__df5188d9")
+  @@index([last_updated])
+  @@index([feed_type, sort_algorithm])
+  @@index([sort_order])
+  @@index([post_id, last_updated])
+}
+
+/// Cache entry table storing the actual JSON payload of feed page responses
+/// for popular and community feeds, keyed by feed_type, sort_algorithm,
+/// page_token, and month_partition. Improves response time by serving
+/// pre-rendered JSON instead of assembling data on-the-fly. This is a
+/// materialized view managed by the system, not directly modified by users.
+/// Updates occur through scheduled cache refreshes when underlying data
+/// changes. Used to meet performance expectations of sub-1.5s feed loads.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_mv_feed_cache_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of feed being cached: 'home' (user's subscribed communities),
+  /// 'popular' (platform-wide), or 'community' (specific community feed).
+  feed_type String
+  
+  /// Sorting algorithm used to generate this cache entry: 'hot', 'new', 'top',
+  /// or 'controversial'.
+  sort_algorithm String
+  
+  /// Unique identifier for the pagination cursor used to generate this page of
+  /// results. Allows caching of specific pages in an infinite scroll
+  /// interface.
+  page_token String
+  
+  /// Month-based partition key in YYYY-MM format used to organize cache
+  /// entries for efficient cleanup and archiving. Example: '2026-02'.
+  month_partition String
+  
+  /// Full JSON payload of the feed page response, serialized as a string.
+  /// Contains all post metadata, scores, and metadata needed for frontend
+  /// rendering. Limited to 50,000 characters to fit PostgreSQL text limits.
+  payload String
+  
+  /// Timestamp when this cache entry was last refreshed or updated. Used for
+  /// cache invalidation when underlying data changes.
+  last_updated DateTime
+  
+  /// Timestamp when this cache entry was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this cache entry was last modified.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([feed_type, sort_algorithm, page_token, month_partition], map: "community_mv_feed_cache_entries_feed_type_sort_algorit_1cc8871a")
+  @@index([feed_type, month_partition])
+  @@index([last_updated])
+  // spellchecker: ignore-next-line
+  @@index([month_partition, last_updated], map: "community_mv_feed_cache_entries_month_partition_last_u_c4bc74ad")
+}

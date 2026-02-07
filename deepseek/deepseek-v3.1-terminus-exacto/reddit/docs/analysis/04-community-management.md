@@ -1,391 +1,334 @@
 # Community Management Requirements Specification
 
-## Executive Summary
+## Introduction
 
-This document defines the complete business requirements for community management within the Reddit-like community platform. It covers community creation, discovery, subscription mechanics, and ownership structures that form the foundation of the platform's community-driven content organization.
+This document defines the complete community management system for the Reddit-like community platform. Communities serve as the foundational organizational units where users create content, interact, and build communities around shared interests.
 
-## Community Creation Rules
+## Community Creation Process
 
-### Community Creation Eligibility
+### Community Creation Requirements
 
-**WHEN** any authenticated user attempts to create a community, **THE** system **SHALL** allow creation if the community name is unique and available.
+**WHEN** a user wants to create a new community, **THE** system **SHALL** provide a community creation interface with required fields.
 
-**THE** system **SHALL** validate that community names contain only alphanumeric characters, hyphens, and underscores.
+**THE** community creation process **SHALL** require the following information:
+- Unique community name (required, must be unique across platform)
+- Community description text (required, minimum 10 characters)
+- Community icon image (optional, supported formats: JPG, PNG, WebP)
 
-**THE** system **SHALL** enforce a minimum length of 3 characters and maximum length of 21 characters for community names.
+**IF** a user attempts to create a community with a name that already exists, **THEN THE** system **SHALL** display an error message and require a unique name.
 
-**THE** system **SHALL** prevent creation of community names that conflict with reserved system terms.
-
-### Community Creation Process
-
-```mermaid
-graph LR
-  A["User Requests Community Creation"] --> B["Validate Community Name"]
-  B --> C{"Name Available?"}
-  C -->|"No"| D["Show Error: Name Taken"]
-  C -->|"Yes"| E["Create Community Record"]
-  E --> F["Set User as Owner"]
-  F --> G["Auto-Subscribe Creator"]
-  G --> H["Show Success Message"]
-```
-
-### Community Properties
-
-Each community **MUST** have the following properties:
-
-- **Unique Name**: Permanent identifier used in URLs (e.g., "programming", "gaming")
-- **Display Name**: Human-readable name that can include spaces and special characters
-- **Description**: Text description explaining the community's purpose (max 500 characters)
-- **Icon Image**: Optional community avatar image
-- **Creation Date**: Timestamp when community was created
-- **Owner**: User who created the community
-- **Subscriber Count**: Total number of subscribed users
-- **Public Visibility**: Boolean indicating if community appears in public listings
+**WHEN** a community is successfully created, **THE** creating user **SHALL** automatically become the community owner with full administrative privileges.
 
 ### Community Name Validation Rules
 
-**THE** system **SHALL** implement comprehensive name validation:
+**THE** community name **SHALL** adhere to the following validation rules:
+- Minimum length: 3 characters
+- Maximum length: 21 characters
+- Allowed characters: letters, numbers, underscores, hyphens
+- Must start with a letter
+- Must be unique across the entire platform
+- Cannot contain spaces or special characters
 
-- **Character Restrictions**: Only alphanumeric characters, hyphens, and underscores allowed
-- **Length Requirements**: Minimum 3 characters, maximum 21 characters
-- **Reserved Terms**: Prevent names matching system keywords (admin, moderator, support, etc.)
-- **Case Insensitivity**: Names are case-insensitive for uniqueness checking
-- **URL Safety**: Names must be URL-safe and not contain special characters
+### Community Description Requirements
 
-### Community Creation Error Handling
+**THE** community description **SHALL** have the following constraints:
+- Minimum length: 10 characters
+- Maximum length: 500 characters
+- Supports markdown formatting for rich text
+- Must provide meaningful context about the community's purpose
 
-**IF** community name validation fails, **THEN THE** system **SHALL** display specific error messages:
+## Community Browsing and Search Functionality
 
-- **Name Too Short**: "Community name must be at least 3 characters"
-- **Name Too Long**: "Community name cannot exceed 21 characters"
-- **Invalid Characters**: "Community name can only contain letters, numbers, hyphens, and underscores"
-- **Name Taken**: "This community name is already taken. Please choose another"
-- **Reserved Name**: "This name is reserved. Please choose a different name"
+### Community Discovery
 
-## Community Discovery and Search
-
-### Community Browsing
-
-**THE** system **SHALL** provide a paginated list of all public communities.
-
-**THE** browsing interface **SHALL** display communities sorted by subscriber count (highest first) by default.
-
-**THE** system **SHALL** support alternative sorting options: newest communities first, alphabetical order.
-
-### Community Search Functionality
-
-**WHEN** a user searches for communities, **THE** system **SHALL** perform case-insensitive matching on community names and descriptions.
-
-**THE** search results **SHALL** prioritize exact name matches followed by partial matches.
-
-**THE** search interface **SHALL** display matching communities with their subscriber counts and brief descriptions.
-
-### Search Algorithm Requirements
+**WHEN** users browse the platform, **THE** system **SHALL** provide multiple ways to discover communities:
 
 ```mermaid
 graph LR
-  A["User Enters Search Term"] --> B["Search Community Names"]
-  B --> C["Search Community Descriptions"]
-  C --> D["Combine Results"]
-  D --> E["Rank by Match Quality"]
-  E --> F["Apply Sorting Rules"]
-  F --> G["Paginate Results"]
-  G --> H["Display to User"]
+  A["User Accesses Community Discovery"] --> B{"Discovery Method"}
+  B -->|"Browse All"| C["Display Community List"]
+  B -->|"Search by Name"| D["Community Search Results"]
+  B -->|"Popular Communities"| E["Trending Communities"]
+  B -->|"Recommended"| F["Personalized Suggestions"]
+  
+  C --> G["Sort by: Subscribers, New, Alphabetical"]
+  D --> H["Real-time Search with Autocomplete"]
+  E --> I["Based on Growth Rate"]
+  F --> J["Based on User Interests"]
 ```
 
-### Search Result Ranking
+### Community List Display
 
-**THE** search algorithm **SHALL** rank results based on:
+**WHEN** viewing a community list, **THE** system **SHALL** display the following information for each community:
+- Community name
+- Community icon (if available)
+- Community description (truncated to 150 characters)
+- Subscriber count
+- Date created
+- Community owner username
 
-- **Exact Name Match**: Communities with names exactly matching search term
-- **Partial Name Match**: Communities with names containing search term
-- **Description Match**: Communities with descriptions containing search term
-- **Subscriber Count**: Higher subscriber communities ranked higher
-- **Activity Level**: More active communities ranked higher
+**THE** community list **SHALL** support the following sorting options:
+- **Subscriber count** (highest first)
+- **New communities** (most recently created first)
+- **Alphabetical order** (A-Z)
+- **Active communities** (based on recent post activity)
 
-### Search Performance Requirements
+### Community Search Requirements
 
-**THE** search functionality **SHALL** return results within 1 second for typical query volumes.
+**WHEN** users search for communities, **THE** system **SHALL** provide real-time search functionality with the following capabilities:
 
-**THE** system **SHALL** implement search indexing to maintain performance as community count grows.
+**THE** search system **SHALL**:
+- Support partial name matching
+- Provide search suggestions as users type
+- Search community names and descriptions
+- Display results with relevance scoring
+- Support pagination for large result sets
 
-## Subscription System Rules
+**WHEN** search returns multiple results, **THE** system **SHALL** prioritize:
+- Exact name matches first
+- Communities with higher subscriber counts
+- Active communities with recent content
+
+## Subscription Management System
 
 ### Subscription Requirements
 
-**WHEN** a user subscribes to a community, **THE** system **SHALL** add them to the subscriber list.
+**WHEN** a user wants to subscribe to a community, **THE** system **SHALL** provide a clear subscription mechanism.
 
-**WHEN** a user unsubscribes from a community, **THE** system **SHALL** remove them from the subscriber list.
+**THE** subscription process **SHALL**:
+- Allow any authenticated user to subscribe to any public community
+- Require subscription for posting in that community
+- Track subscription status per user per community
+- Update subscriber counts in real-time
 
-**THE** subscription status **SHALL** be required for post creation in that community.
+### Subscription Prerequisites for Posting
 
-### Subscription Process Flow
+**WHEN** a user attempts to create a post in a community, **THE** system **SHALL** verify subscription status.
+
+**IF** a user is not subscribed to the target community, **THEN THE** system **SHALL**:
+- Prevent post creation
+- Display a message explaining subscription requirement
+- Provide a one-click subscription option
+- Redirect to subscription flow if user chooses to subscribe
+
+### Subscription Management Interface
+
+**WHEN** users manage their subscriptions, **THE** system **SHALL** provide:
+- A comprehensive list of all subscribed communities
+- Ability to unsubscribe from any community with one click
+- Search functionality within subscribed communities
+- Sorting options (alphabetical, subscription date, activity level)
+
+**THE** subscription management interface **SHALL** display:
+- Community name and icon
+- Subscription date
+- Recent activity indicator
+- Quick unsubscribe option
+
+### Subscription Statistics
+
+**THE** system **SHALL** maintain and display subscription statistics:
+- Total number of communities a user is subscribed to
+- Subscription growth trends per community
+- Active vs. inactive community indicators
+- Recommendations based on subscription patterns
+
+## Community Statistics and Display Requirements
+
+### Community Profile Page
+
+**WHEN** users view a community profile, **THE** system **SHALL** display comprehensive community information:
 
 ```mermaid
-graph LR
-  A["User Views Community"] --> B{"Already Subscribed?"}
-  B -->|"No"| C["Show Subscribe Button"]
-  B -->|"Yes"| D["Show Unsubscribe Button"]
-  C --> E["User Clicks Subscribe"]
-  E --> F["Add to Subscriber List"]
-  F --> G["Update Subscriber Count"]
-  D --> H["User Clicks Unsubscribe"]
-  H --> I["Remove from Subscriber List"]
-  I --> J["Update Subscriber Count"]
+graph TD
+  A["Community Profile Header"] --> B["Basic Information Section"]
+  A --> C["Statistics Section"]
+  A --> D["Moderation Section"]
+  A --> E["Content Preview Section"]
+  
+  B --> F["Community Name & Icon"]
+  B --> G["Description & Rules"]
+  B --> H["Owner & Moderators"]
+  
+  C --> I["Subscriber Count"]
+  C --> J["Creation Date"]
+  C --> K["Recent Activity Metrics"]
+  
+  D --> L["Moderator Actions (if applicable)"]
+  D --> M["Reporting Tools"]
+  
+  E --> N["Recent Posts Preview"]
+  E --> O["Top Content"]
 ```
 
-### Subscription-Based Permissions
+### Community Statistics Requirements
 
-**WHERE** a user is subscribed to a community, **THE** user **SHALL** be permitted to create posts in that community.
+**THE** community statistics **SHALL** include:
+- Current subscriber count
+- Total number of posts
+- Total number of comments
+- Daily active users
+- Growth rate (subscribers per day)
+- Most active time periods
 
-**WHERE** a user is not subscribed to a community, **THE** user **SHALL** be prohibited from creating posts in that community.
+**WHEN** displaying statistics, **THE** system **SHALL**:
+- Update counts in real-time
+- Provide historical trends where available
+- Show comparative data (platform averages)
+- Highlight community growth milestones
 
-**THE** subscription requirement **SHALL** not apply to comment creation - users can comment on any post regardless of subscription status.
+### Community Content Display
 
-### Subscription Limits and Constraints
+**WHEN** browsing community content, **THE** system **SHALL** provide:
+- Community-specific post feed
+- Community rules and guidelines display
+- Moderator actions visibility
+- Community announcement section
+- Pinned posts highlighting
 
-**THE** system **SHALL** not impose limits on the number of communities a user can subscribe to.
+## Owner and Moderator Role Definitions
 
-**THE** subscription system **SHALL** efficiently manage users subscribing to thousands of communities.
+### Community Owner Privileges
 
-**WHEN** a user subscribes to a community, **THE** system **SHALL** immediately update their home feed content.
+**WHEN** a user owns a community, **THE** system **SHALL** grant the following privileges:
 
-## Community Ownership and Management
+**THE** community owner **SHALL** have authority to:
+- Add and remove moderators
+- Edit community information (name, description, rules)
+- Manage community settings and preferences
+- Perform all moderator actions
+- Transfer ownership to another user
+- Delete the community (with appropriate safeguards)
 
-### Owner Privileges
+### Moderator Management System
 
-**THE** community owner **SHALL** have full administrative control over their community.
+**WHEN** managing community moderators, **THE** system **SHALL** provide:
 
-**THE** owner **SHALL** be able to edit community description and icon.
+**THE** moderator management interface **SHALL** allow:
+- Adding new moderators by username
+- Removing existing moderators (owner only)
+- Viewing current moderator list with join dates
+- Setting moderator permissions granularly
+- Tracking moderator activity and performance
 
-**THE** owner **SHALL** be able to appoint moderators from among community subscribers.
+### Moderator Role Hierarchy
 
-**THE** owner **SHALL** be able to remove appointed moderators.
+**THE** moderator hierarchy **SHALL** follow these rules:
+- Community owner has highest authority
+- Owner can add/remove any moderator
+- Moderators can add other moderators
+- Moderators cannot remove other moderators
+- Moderators cannot remove the owner
 
-**THE** owner **SHALL** not be able to transfer ownership to another user.
+### Moderator Permission Matrix
 
-**THE** owner **SHALL** not be able to delete the community.
+| Action | Community Owner | Moderator | Regular User |
+|--------|----------------|-----------|--------------|
+| Edit community info | ✅ | ❌ | ❌ |
+| Add moderators | ✅ | ✅ | ❌ |
+| Remove moderators | ✅ | ❌ | ❌ |
+| Delete posts | ✅ | ✅ | ❌ (own only) |
+| Delete comments | ✅ | ✅ | ❌ (own only) |
+| Ban users | ✅ | ✅ | ❌ |
+| View reports | ✅ | ✅ | ❌ |
+| Manage community settings | ✅ | ❌ | ❌ |
 
-### Moderator Appointment Rules
+## Integration with Other Systems
 
-**WHEN** appointing moderators, **THE** owner **SHALL** select from current community subscribers.
+### Integration with User Authentication
 
-**THE** system **SHALL** prevent appointment of banned users as moderators.
+**WHEN** managing community interactions, **THE** system **SHALL** integrate with user authentication to:
+- Verify user subscription status before allowing posts
+- Enforce community-specific bans and restrictions
+- Track user activity within each community
+- Maintain moderation actions audit trail
 
-**THE** system **SHALL** maintain an audit trail of moderator appointments and removals.
+### Integration with Content Feeds
 
-### Moderator Invitation Process
+**THE** community system **SHALL** integrate with content feeds to provide:
+- Community-specific post feeds
+- Home feed filtering based on subscriptions
+- Popular feed inclusion of community content
+- Content sorting within community contexts
 
-**WHEN** inviting a user to become a moderator, **THE** system **SHALL**:
+### Integration with Moderation System
 
-- Send an invitation notification to the user
-- Allow the user to accept or decline the invitation
-- Set a 7-day expiration period for unanswered invitations
-- Notify the owner when the invitation is accepted or declined
+**WHEN** handling community moderation, **THE** system **SHALL** integrate with:
+- Reporting system for community-specific reports
+- Ban management for community-level restrictions
+- Content removal workflows
+- Moderator action logging
 
-### Community Settings Management
+## Business Rules and Validation
 
-**THE** community owner **SHALL** be able to configure:
+### Community Creation Limits
 
-- **Community Type**: Public (anyone can view) or Restricted (approved subscribers only)
-- **Posting Permissions**: Who can post (subscribers only or approved users)
-- **Content Restrictions**: Age restrictions, content guidelines
-- **Moderation Settings**: Auto-moderation rules, reporting thresholds
-
-## Community Statistics Visibility
-
-### Subscriber Count Display
-
-**THE** subscriber count **SHALL** be visible to all users regardless of authentication status.
-
-**THE** subscriber count **SHALL** update in real-time as users subscribe/unsubscribe.
-
-**THE** system **SHALL** display subscriber counts in abbreviated format for large numbers (e.g., "1.2k", "5.7m").
-
-### Community Activity Metrics
-
-**THE** system **SHALL** track and display recent post activity levels.
-
-**THE** community listings **SHALL** indicate activity status (e.g., "Very Active", "Moderately Active", "Low Activity").
-
-**THE** activity metrics **SHALL** be based on post frequency over the last 30 days.
-
-### Activity Level Classification
-
-**THE** system **SHALL** classify communities based on posting frequency:
-
-- **Very Active**: 10+ posts per day average
-- **Moderately Active**: 1-9 posts per day average
-- **Low Activity**: Less than 1 post per day average
-- **Inactive**: No posts in the last 30 days
-
-## Integration Requirements
-
-### User Profile Integration
-
-**WHEN** viewing a user's profile, **THE** system **SHALL** display a list of communities they moderate.
-
-**THE** profile **SHALL** show communities the user is subscribed to (if privacy settings allow).
-
-**THE** system **SHALL** highlight communities where the user holds moderator status.
-
-### Feed System Integration
-
-**THE** home feed **SHALL** include posts only from communities the user is subscribed to.
-
-**THE** community feed **SHALL** display posts from a specific community to all users.
-
-**THE** popular feed **SHALL** include posts from all public communities regardless of subscription status.
-
-### Moderation System Integration
-
-**THE** community management **SHALL** integrate with the moderation system for content oversight.
-
-**THE** moderator appointments **SHALL** trigger notification to the appointed user.
-
-**THE** community settings **SHALL** include moderation queue visibility options.
-
-## Business Rules and Constraints
+**THE** system **SHALL** enforce community creation limits:
+- Maximum 5 communities per user (initial limit)
+- Community creation rate limit: 1 per hour
+- Minimum account age for community creation: 7 days
+- Verification required for high-traffic community names
 
 ### Community Name Reservation
 
-**THE** system **SHALL** reserve common platform-related terms (e.g., "admin", "moderator", "support").
+**THE** system **SHALL** implement community name reservation rules:
+- Protected names cannot be used (admin, support, etc.)
+- Trademarked names require verification
+- Inactive communities may be reclaimed after 6 months
+- Name change cooldown period: 30 days
 
-**THE** system **SHALL** prevent creation of communities with offensive or inappropriate names.
+### Subscription Limits and Controls
 
-**THE** community name disputes **SHALL** be resolved through platform administrator intervention.
-
-### Subscription Limits
-
-**THE** system **SHALL** not impose limits on the number of communities a user can subscribe to.
-
-**THE** subscription counts **SHALL** be efficiently managed to support users subscribing to thousands of communities.
-
-### Community Inactivity
-
-**WHERE** a community has no posts for 6 consecutive months, **THE** system **SHALL** mark it as inactive.
-
-**THE** inactive communities **SHALL** remain accessible but may be deprioritized in search results.
-
-**THE** community owners **SHALL** receive notifications when their community approaches inactivity status.
-
-## Error Handling Scenarios
-
-### Community Creation Errors
-
-**IF** community name is already taken, **THEN THE** system **SHALL** suggest alternative available names.
-
-**IF** community name contains invalid characters, **THEN THE** system **SHALL** display specific character requirements.
-
-**IF** user exceeds rate limits for community creation, **THEN THE** system **SHALL** enforce cooling-off periods.
-
-### Subscription Errors
-
-**IF** subscription fails due to technical issues, **THEN THE** system **SHALL** retry the operation automatically.
-
-**IF** user attempts to subscribe to a banned community, **THEN THE** system **SHALL** display appropriate error message.
-
-**IF** subscription count update fails, **THEN THE** system **SHALL** maintain data consistency through transaction rollback.
-
-### Ownership Transfer Scenarios
-
-**IF** a community owner deletes their account, **THEN THE** system **SHALL** transfer ownership to the most active moderator.
-
-**IF** no moderators exist, **THEN THE** community **SHALL** enter read-only mode until admin intervention.
-
-**THE** ownership transfer **SHALL** notify all community subscribers of the change.
+**THE** system **SHALL** manage subscription limits:
+- Maximum subscriptions per user: 1,000
+- Subscription rate limit: 50 per hour
+- Inactive subscription cleanup after 1 year
+- Subscription preference persistence across devices
 
 ## Performance Requirements
 
 ### Community Discovery Performance
 
-**THE** community browsing interface **SHALL** load initial results within 2 seconds.
+**WHEN** users browse communities, **THE** system **SHALL** provide:
+- Community list loading within 2 seconds
+- Search results appearing within 1 second
+- Real-time subscriber count updates
+- Smooth pagination with no performance degradation
 
-**THE** search functionality **SHALL** return results within 1 second for typical query volumes.
+### Subscription Management Performance
 
-**THE** subscriber count updates **SHALL** occur in real-time without perceptible delay.
+**THE** subscription system **SHALL** handle:
+- Instant subscription/unsubscription actions
+- Real-time sync across all user devices
+- Efficient management of large subscription lists
+- Quick access to subscribed communities
 
-### Scalability Considerations
+## Error Handling and Recovery
 
-**THE** system **SHALL** support creation of up to 100,000 distinct communities.
+### Community Creation Errors
 
-**THE** subscription system **SHALL** handle users subscribing to up to 5,000 communities each.
+**IF** community creation fails, **THEN THE** system **SHALL** provide clear error messages for:
+- Duplicate community names
+- Invalid community name format
+- Description length violations
+- Image upload failures
+- Rate limit exceeded
 
-**THE** community search **SHALL** remain performant with full-text indexing of community names and descriptions.
+### Subscription Management Errors
 
-### Database Performance
-
-**THE** community data **SHALL** be optimized for:
-
-- Fast community lookup by name
-- Efficient subscriber count queries
-- Quick community listing with sorting
-- Real-time subscription status checks
-
-## Data Retention and Privacy
-
-### Community Data Persistence
-
-**THE** community records **SHALL** be permanently retained unless required by legal compliance.
-
-**THE** deleted user accounts **SHALL** not automatically delete communities they owned.
-
-**THE** community ownership **SHALL** transfer to system administrators if original owner account is deleted.
-
-### Subscription Privacy
-
-**THE** list of communities a user is subscribed to **SHALL** be private by default.
-
-**THE** users **SHALL** have option to make their subscription list publicly visible.
-
-**THE** system **SHALL** not expose subscription patterns for data mining without user consent.
-
-### Data Export and Portability
-
-**THE** system **SHALL** allow users to export their subscription list.
-
-**THE** community owners **SHALL** be able to export community member lists for administrative purposes.
-
-**THE** data export **SHALL** comply with data protection regulations.
+**WHEN** subscription actions fail, **THE** system **SHALL** handle:
+- Already subscribed notifications
+- Subscription limit exceeded
+- Community not found errors
+- Permission denied scenarios
 
 ## Success Metrics
 
-### Community Engagement Metrics
-
-**THE** system **SHALL** track:
-
-- Average number of communities per active user
-- Subscription-to-post conversion rate
-- Community discovery through search vs browsing
-- Moderator appointment frequency and distribution
-
-### Platform Growth Indicators
-
-**THE** system **SHALL** monitor:
-
-- Monthly new community creation rate
-- Subscriber growth per community cohort
-- Community activity retention rates
-- Search effectiveness metrics
-
-### Quality Metrics
-
-**THE** system **SHALL** measure:
-
-- Community health scores based on engagement and moderation
-- User satisfaction with community discovery and management
-- Moderator effectiveness and response times
-- Content quality within communities
-
-### Technical Performance Metrics
-
-**THE** system **SHALL** ensure:
-
-- Community creation success rate > 99%
-- Subscription processing time < 100ms
-- Search response time < 1 second
-- System uptime > 99.9%
-
-This document provides the complete business requirements for community management functionality. All technical implementation decisions including database design, API structure, and architectural choices are at the discretion of the development team.
+**THE** community management system **SHALL** be measured by:
+- Community creation success rate (>95%)
+- Average time to create community (<30 seconds)
+- Subscription conversion rate (>80%)
+- Community discovery satisfaction (>4/5 rating)
+- Moderator action response time (<1 hour for reports)
 
 > *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

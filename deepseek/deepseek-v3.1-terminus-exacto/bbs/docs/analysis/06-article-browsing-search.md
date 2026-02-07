@@ -1,246 +1,306 @@
-# Economic/Political Discussion Board - Complete Requirements Specification
+# Economic/Political Discussion Board - Comprehensive Requirements Specification
 
-## Executive Summary
+## Overview
 
-This document provides comprehensive business requirements for an Economic/Political Discussion Board platform. The system enables authenticated users to participate in structured discussions across organized sections, with robust content creation, moderation, and administrative capabilities.
+The Economic/Political Discussion Board is a specialized platform designed for meaningful discourse on economic and political topics. This specification defines the complete set of business requirements for building a robust, scalable discussion platform that facilitates user engagement, content creation, and community moderation.
 
-### Business Model
+## User Account Management
 
-**Why This Service Exists**
-The platform addresses the need for structured, moderated discussion spaces for economic and political topics where users can engage in meaningful discourse while maintaining content quality through administrative oversight.
+### User Registration Process
+WHEN a new user wants to join the platform, THE system SHALL provide a registration interface that collects:
+- Email address (required, must be unique and valid format)
+- Password (required, minimum 8 characters with complexity requirements)
+- Email verification requirement before full account activation
 
-**Revenue Strategy**
-Initial focus on user adoption and engagement metrics with potential future monetization through premium features, sponsored sections, or advertising partnerships.
+### User Authentication Workflow
+WHEN a registered user attempts to log in, THE system SHALL:
+- Validate email format and existence in the system
+- Verify password matches stored credentials
+- Create a secure session token (JWT) upon successful authentication
+- Redirect to user dashboard or previous page
 
-**Growth Plan**
-Target acquisition of academic, professional, and engaged citizen users interested in economic and political discourse through content quality and community moderation.
+### Password Management Requirements
+WHEN a user wants to change their password, THE system SHALL:
+- Require current password verification for security
+- Validate new password meets complexity requirements
+- Send email notification confirming password change
+- Invalidate all existing sessions for security
 
-**Success Metrics**
-- User registration and retention rates
-- Content creation frequency and engagement metrics
-- Section participation statistics
-- Administrative efficiency in content moderation
+### Account Deletion Process
+WHEN a user requests account deletion, THE system SHALL:
+- Require password confirmation for security verification
+- Display comprehensive deletion warning showing all content that will be removed
+- Permanently delete user account and all associated data
+- Remove all articles and comments created by the user
+- Send final confirmation email to the user
 
-## User Actors and Authentication Requirements
-
-### User Actor Definitions
-
-#### Regular User
-- Authenticated member who can create content, participate in discussions
-- Can submit administrator promotion requests
-- Subject to standard content moderation
-
-#### Administrator
-- Elevated privileges for content and user management
-- Can manage sections, moderate content, ban users
-- Requires supervision from super administrators
-
-#### Super Administrator
-- Highest authority level with ultimate system control
-- Can promote/demote administrators
-- Has complete system oversight capabilities
-
-### Authentication System Requirements
-
-**Core Authentication Functions**
-```mermaid
-graph LR
-  A["User Registration"] --> B["Email Verification"]
-  B --> C["Login Credentials"]
-  C --> D["Session Establishment"]
-  D --> E["Token Validation"]
-  E --> F["Access Granted"]
-  
-  G["Session Expiration"] --> H["Token Refresh"]
-  H --> I["Session Renewal"]
-  I --> E
-  
-  J["User Logout"] --> K["Session Termination"]
-  K --> L["Access Revoked"]
-```
-
-**EARS Requirements:**
-- WHEN a user attempts to register, THE system SHALL validate email format and password strength requirements
-- WHEN a user logs in with valid credentials, THE system SHALL create authenticated session with appropriate permissions
-- WHEN a user requests password change, THE system SHALL verify current password and update credentials
-- WHEN a user initiates account deletion, THE system SHALL permanently remove all user data including articles and comments
-- THE system SHALL maintain user sessions securely with configurable timeout periods
-- THE system SHALL prevent banned users from accessing authenticated features
-
-**Session Management**
-- THE user session SHALL expire after 30 minutes of inactivity
-- JWT tokens SHALL include user ID, role, and permissions array in payload
-- Refresh tokens SHALL have 7-day expiration for seamless session continuation
-
-## User Profile Management Requirements
+## User Profile System
 
 ### Profile Data Structure
-- Each user profile SHALL contain display name and biographical text
-- Profiles SHALL display user-created content statistics
-- Profile viewing SHALL be accessible to all authenticated users
+Each user profile SHALL contain the following information:
+- Display name (required, 2-50 characters, unique per user)
+- Bio text (optional, maximum 500 characters)
+- Account creation date
+- Last activity timestamp
 
-### Profile Management Functions
-- WHEN a user edits their profile, THE system SHALL validate display name length and content restrictions
-- THE system SHALL display comprehensive user activity including article and comment history
-- Profile updates SHALL be reflected immediately across all user content displays
+### Profile Editing Capabilities
+WHEN a user edits their profile, THE system SHALL allow modification of:
+- Display name (with uniqueness validation)
+- Bio text (with character limit enforcement)
+- Real-time validation showing available display names
+- Preview functionality before saving changes
 
-```mermaid
-graph LR
-  A["User Accesses Profile"] --> B{"Own Profile?"}
-  B -->|Yes| C["Edit Mode Available"]
-  B -->|No| D["View Only Mode"]
-  C --> E["Update Display Name/Bio"]
-  E --> F["Save Changes"]
-  F --> G["Profile Updated"]
-  D --> H["View Content History"]
-```
+### Profile Viewing Requirements
+WHEN viewing another user's profile, THE system SHALL display:
+- User's display name and bio
+- Complete list of articles authored by the user
+- Complete list of comments written by the user
+- User's join date and last activity
+- Public statistics (total articles, total comments)
 
-## Section Management Requirements
+### Profile Integration
+User profiles SHALL be integrated throughout the platform:
+- Clickable author names on articles and comments
+- Profile links in search results
+- Consistent profile display across all interfaces
 
-### Section Structure
-- Each section SHALL have unique name and descriptive text
-- Sections SHALL be organized categorically (Politics, Economy, Current Affairs)
-- Section creation and modification SHALL be restricted to administrators
+## Section Management System
 
-### Section Access Requirements
-- WHEN a user browses the platform, THE system SHALL display available sections
-- THE system SHALL allow users to view article listings within specific sections
-- Section reorganization SHALL require super administrator approval
+### Section Creation Process
+WHEN an administrator creates a new section, THE system SHALL collect:
+- Section name (required, unique, 3-50 characters)
+- Section description (required, 10-500 characters)
+- Visibility settings (public/private)
+- Moderation level requirements
 
-## Article Management Requirements
+### Section Editing Capabilities
+Administrators SHALL be able to modify existing sections by:
+- Updating section name and description
+- Changing visibility and moderation settings
+- Reorganizing section display order
+- Archiving or reactivating sections
 
-### Article Creation Process
-- WHEN a user creates an article, THE system SHALL require title, content text, and section selection
-- THE system SHALL support multiple file and image attachments per article
-- Users SHALL be able to add free-text tags to categorize content
-- Article editing SHALL be restricted to original authors and administrators
+### Section Browsing Interface
+WHEN users browse available sections, THE system SHALL provide:
+- Complete list of all active sections
+- Section descriptions and article counts
+- Visual indicators for new content
+- Search functionality within sections
+- Mobile-responsive section navigation
 
-### Content Requirements
-- Article titles SHALL have minimum 5-character and maximum 200-character limits
-- Article content SHALL support rich text formatting with security validation
-- File attachments SHALL have size restrictions and type validation
-- Tag input SHALL support multiple comma-separated values with character limits
+### Section Access Control
+THE system SHALL enforce section-specific access rules:
+- Public sections accessible to all users
+- Private sections requiring special permissions
+- Moderated sections with content approval workflows
+- Archived sections with read-only access
 
-```mermaid
-graph LR
-  A["Start Article Creation"] --> B["Select Section"]
-  B --> C["Enter Title & Content"]
-  C --> D["Add Attachments"]
-  D --> E["Apply Tags"]
-  E --> F{"Validation Pass?"}
-  F -->|Yes| G["Publish Article"]
-  F -->|No| H["Show Errors"]
-  H --> C
-  G --> I["Article Live"]
-```
+## Article Management System
 
-## Article Browsing and Search Requirements
+### Article Creation Workflow
+WHEN a user creates a new article, THE system SHALL:
+- Provide section selection from available options
+- Validate title length (5-200 characters)
+- Validate content length (minimum 50 characters)
+- Support rich text formatting capabilities
+- Allow attachment of multiple files and images
+- Enable tag assignment with autocomplete
 
-### Listing and Pagination
-- THE system SHALL display article lists with title, author, tags, comment count, and timestamp
-- Article lists SHALL NOT display full content in summary views
-- Pagination SHALL support configurable page sizes with navigation controls
+### Article Content Requirements
+Each article SHALL support:
+- Rich text editing with basic formatting (bold, italic, lists)
+- Image embedding with automatic optimization
+- File attachments with type validation
+- Tag system with popular tag suggestions
+- Draft saving and auto-recovery features
 
-### Sorting and Filtering
-- WHEN viewing article lists, THE system SHALL provide newest-first and oldest-first sorting options
-- THE system SHALL enable search functionality across article titles and content
-- Tag-based filtering SHALL allow users to narrow article listings
+### Article Editing Capabilities
+WHEN users edit their articles, THE system SHALL allow:
+- Modification of title, content, and tags
+- Addition or removal of attachments
+- Section reassignment when appropriate
+- Version history tracking for significant changes
+- Preview functionality before publishing changes
 
-### Search Functionality
-- THE system SHALL implement full-text search across article titles and content
-- Search results SHALL maintain pagination and sorting consistency
-- WHERE multiple tags are selected, THE system SHALL apply AND logic for filtering
+### Article Deletion Process
+WHEN a user deletes an article, THE system SHALL:
+- Require confirmation to prevent accidental deletion
+- Remove all associated comments and attachments
+- Update user statistics and section counts
+- Provide undo functionality for a limited time
+
+## Article Browsing and Search System
+
+### Article List Display Requirements
+WHEN displaying article lists, THE system SHALL show:
+- Article title as clickable link
+- Author display name with profile link
+- Assigned tags with filtering capabilities
+- Comment count indicating engagement level
+- Relative timestamp (e.g., "2 hours ago")
+- Section information for context
+
+### Pagination Implementation
+THE system SHALL implement robust pagination with:
+- Default page size of 20 articles
+- Configurable page size options (10, 20, 50)
+- Efficient database queries for large result sets
+- Loading indicators during page transitions
+- Maintained scroll position where practical
+
+### Sorting Functionality
+Users SHALL be able to sort articles by:
+- Newest first (default chronological order)
+- Oldest first (historical perspective)
+- Most comments (engagement-based sorting)
+- Recently active (comment activity-based)
+
+### Search Algorithm Specifications
+THE search system SHALL provide:
+- Full-text search across titles and content
+- Fuzzy matching for typo tolerance
+- Relevance ranking based on multiple factors
+- Phrase matching with quotation marks
+- Boolean operators for advanced searching
+
+### Tag Filtering System
+WHEN filtering by tags, THE system SHALL support:
+- Single tag selection for focused browsing
+- Multiple tag combination (AND logic)
+- Tag exclusion capabilities (NOT logic)
+- Popular tag suggestions with usage counts
+- Real-time filter application with instant results
 
 ## Comment System Requirements
 
-### Comment Structure
-- Comments SHALL be single-level only without nested reply functionality
-- Each comment SHALL display author, content, and creation timestamp
-- Comment editing SHALL be restricted to original authors and administrators
+### Comment Creation Process
+WHEN users write comments, THE system SHALL:
+- Provide intuitive comment entry interface
+- Support basic text formatting
+- Validate comment length (1-1000 characters)
+- Prevent duplicate comments within short timeframes
+- Offer draft saving for longer comments
 
-### Comment Management
-- WHEN a user views an article, THE system SHALL display all associated comments
-- Comments SHALL be sorted chronologically with oldest comments first
-- THE system SHALL prevent comment spam through rate limiting and content validation
+### Comment Display Requirements
+Comments SHALL be displayed with:
+- Author information and profile links
+- Timestamp in relative format
+- Clear visual hierarchy distinguishing comments from articles
+- Collapsible threads for long comment sections
+- Moderation indicators when appropriate
 
-```mermaid
-graph LR
-  A["User Views Article"] --> B["Display Comments"]
-  B --> C{"Authenticated?"}
-  C -->|Yes| D["Show Comment Input"]
-  C -->|No| E["Login Prompt"]
-  D --> F["Submit Comment"]
-  F --> G{"Validation Pass?"}
-  G -->|Yes| H["Add to Comment Thread"]
-  G -->|No| I["Show Errors"]
-  I --> D
-  H --> B
-```
+### Comment Management Capabilities
+Users SHALL be able to manage their comments by:
+- Editing comments within a reasonable time window
+- Deleting comments with confirmation
+- Viewing comment history and activity
+- Receiving notifications for replies (if implemented)
 
-## Administrator System Requirements
+### Comment Moderation Features
+THE system SHALL provide moderation tools including:
+- Report functionality for inappropriate comments
+- Administrative comment removal capabilities
+- User blocking at the comment level
+- Automated spam detection and filtering
 
-### Promotion Process
-- WHEN a user requests administrator status, THE system SHALL require justification text
-- Super administrators SHALL review pending requests with approve/reject capability
-- WHERE promotion is approved, THE system SHALL update user role and permissions
+## Administrator System
+
+### Administrator Promotion Process
+WHEN a user requests administrator status, THE system SHALL:
+- Require detailed reason submission (minimum 50 characters)
+- Route requests to super administrators for review
+- Provide request tracking and status updates
+- Send notification upon approval or rejection
 
 ### Administrator Hierarchy
-- THE system SHALL maintain two administrator levels: regular and super administrator
-- Super administrators SHALL have authority to promote/demote other administrators
-- Self-demotion prevention SHALL be enforced for super administrators
+THE system SHALL maintain two administrator grades:
+- Regular administrators with section management capabilities
+- Super administrators with full system control
+- Clear promotion/demotion workflows between grades
+- Self-demotion prevention for security
 
-### Administrative Capabilities
-- Administrators SHALL retain all regular user functionality plus moderation tools
-- Section management SHALL include create, edit, and delete operations
-- Content moderation SHALL allow article and comment removal across all users
-- User management SHALL include ban/unban functionality with reason tracking
+### Administrator Capabilities
+Administrators SHALL have access to:
+- Section creation, editing, and deletion
+- Article moderation and removal
+- Comment moderation and removal
+- User banning and unbanning
+- System statistics and analytics
+- Content approval workflows
 
-## Banning System Requirements
+### Administrator Interface Requirements
+THE administrator interface SHALL provide:
+- Dashboard with system overview
+- Pending request management
+- User management tools
+- Content moderation queue
+- Ban management interface
+- System configuration options
 
-### Banning Process
-- WHEN an administrator bans a user, THE system SHALL record detailed reason
-- Banned users SHALL be prevented from logging in and accessing authenticated features
-- Existing content from banned users SHALL remain visible with banned status indication
+## Banning and Moderation System
 
-### Ban Management
-- Administrators SHALL maintain viewable ban records with reasons and dates
-- Unbanning process SHALL restore user access while preserving ban history
-- Ban duration tracking SHALL support temporary and permanent ban scenarios
+### User Banning Process
+WHEN banning a user, THE system SHALL:
+- Require specific reason documentation
+- Set ban duration (temporary or permanent)
+- Notify the user of ban and reason
+- Preserve existing content visibility
+- Prevent login attempts during ban period
 
-## Business Rules and Constraints
+### Ban Management Interface
+Administrators SHALL be able to:
+- View complete ban history
+- Modify ban reasons and durations
+- Lift bans before expiration
+- Track ban effectiveness metrics
+- Export ban data for reporting
 
-### Content Validation Rules
-- Article titles SHALL be unique within each section to prevent duplication
-- User display names SHALL be unique across the platform
-- Content moderation SHALL follow predefined guidelines for appropriate discourse
+### Content Moderation Workflow
+THE system SHALL support content moderation through:
+- User reporting functionality
+- Automated content flagging
+- Administrative review queues
+- Appeal process for moderated content
+- Transparency in moderation decisions
 
-### Performance Requirements
-- Article listings SHALL load within 2 seconds for typical database sizes
-- Search functionality SHALL return results within 3 seconds for common queries
-- Comment display SHALL be instantaneous for articles with up to 100 comments
+## System Performance Requirements
+
+### Response Time Expectations
+THE system SHALL meet the following performance standards:
+- Page load times under 2 seconds for typical pages
+- Search results returned within 3 seconds
+- Comment submission processed within 1 second
+- Image upload and processing under 5 seconds
+
+### Scalability Requirements
+THE platform SHALL be designed to handle:
+- 10,000+ concurrent users during peak events
+- 100,000+ articles per section
+- 1,000,000+ comments across the platform
+- Efficient search across large content databases
 
 ### Security Requirements
-- User authentication SHALL enforce strong password policies
-- File uploads SHALL undergo malware scanning and type verification
-- Administrative actions SHALL be logged for audit purposes
+THE system SHALL implement comprehensive security measures:
+- Password hashing with industry-standard algorithms
+- Session management with secure token handling
+- Input validation and sanitization
+- Protection against common web vulnerabilities
+- Regular security audits and updates
 
-## Error Handling Requirements
+## Error Handling and User Experience
 
-### User-Facing Error Scenarios
-- WHEN authentication fails, THE system SHALL provide clear error messages without security details
-- WHERE content validation fails, THE system SHALL indicate specific field requirements
-- IF system errors occur, THE system SHALL maintain graceful degradation with user notifications
+### Graceful Error Handling
+WHEN errors occur, THE system SHALL provide:
+- User-friendly error messages
+- Clear recovery instructions
+- Technical details for administrators
+- Logging for debugging and improvement
 
-## Success Criteria
+### User Guidance Requirements
+THE platform SHALL offer comprehensive user guidance:
+- Contextual help throughout the interface
+- Tooltips for complex features
+- Tutorials for new users
+- FAQ section for common questions
 
-### Functional Validation
-- All user registration and authentication workflows SHALL function correctly
-- Content creation and management SHALL maintain data integrity and permissions
-- Administrative functions SHALL enforce proper role-based access control
-
-### User Experience Metrics
-- System responsiveness SHALL meet specified performance requirements
-- Content discovery through browsing and search SHALL be intuitive and efficient
-- Administrative tools SHALL provide comprehensive moderation capabilities
-
-This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.
+This comprehensive requirements specification provides the foundation for building a robust Economic/Political Discussion Board that meets user needs while maintaining security, performance, and scalability.

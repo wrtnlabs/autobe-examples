@@ -20,33 +20,21 @@ export async function getTodoAppUserTodosTodoId(props: {
     where: {
       id: props.todoId,
       todo_app_user_id: props.user.id,
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      completion_status: true,
-      created_at: true,
-      updated_at: true,
-      start_date: true,
-      due_date: true,
-      deleted_at: true,
+      deleted_at: null,
     },
   });
   if (!todo) {
     throw new HttpException("Todo not found", 404);
   }
   return {
-    id: todo.id,
+    id: todo.id as string & tags.Format<"uuid">,
     title: todo.title,
     description: todo.description === null ? undefined : todo.description,
-    completion_status: todo.completion_status,
+    start_date:
+      todo.start_date === null ? null : toISOStringSafe(todo.start_date),
+    due_date: todo.due_date === null ? null : toISOStringSafe(todo.due_date),
+    completed: todo.completed,
     created_at: toISOStringSafe(todo.created_at),
     updated_at: toISOStringSafe(todo.updated_at),
-    start_date:
-      todo.start_date === null ? undefined : toISOStringSafe(todo.start_date),
-    due_date:
-      todo.due_date === null ? undefined : toISOStringSafe(todo.due_date),
-    is_deleted: todo.deleted_at !== null,
   };
 }

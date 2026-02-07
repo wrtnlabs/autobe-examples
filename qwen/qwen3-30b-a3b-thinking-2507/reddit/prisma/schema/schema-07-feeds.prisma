@@ -1,0 +1,36 @@
+/// Temporary storage for cached feed responses to reduce database queries
+/// and meet 5-minute cache duration performance requirement. This cache
+/// stores precomputed feed content to minimize repeated database queries
+/// while maintaining 5-minute cache duration for performance optimization.
+///
+/// @namespace Feeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feed_caches {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of feed being cached (home, popular, community).
+  feed_type String
+  
+  /// Serialized feed content data stored as JSON string to enable client-side
+  /// rendering without database access.
+  feed_data String
+  
+  /// Timestamp when cache entry was created.
+  created_at DateTime
+  
+  /// Timestamp of last cache update.
+  updated_at DateTime
+  
+  /// Timestamp when cache entry was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([feed_type])
+  @@index([created_at])
+}

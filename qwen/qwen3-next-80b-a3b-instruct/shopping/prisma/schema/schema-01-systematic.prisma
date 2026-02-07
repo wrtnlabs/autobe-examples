@@ -1,203 +1,268 @@
-/// Defines sales channels (e.g., online store, mobile app) with branding,
-/// routing rules, and configuration settings.
-///
-/// Represents the different platforms through which the shopping mall
-/// platform operates, such as web and mobile applications. Each channel has
-/// its own configuration for branding, URL routing, and feature flags that
-/// determine user experience and available functionality.
-///
-/// This is a system-level infrastructure table that supports the entire
-/// commerce platform. It is not directly managed by customers or sellers,
-/// but rather by system administrators through administrative tools. Changes
-/// to channel configuration affect the behavior of the entire platform.
-///
-/// The branding logo and default route define the visual identity and entry
-/// point of each channel. Feature flags control conditional activation of
-/// platform features per channel, allowing targeted rollouts and A/B
-/// testing.
+/// Immutable history of all administrative actions including approvals,
+/// rejections, suspensions, and overrides with details of actor, action
+/// type, and affected entity. This table serves as the authoritative audit
+/// trail for platform governance, ensuring every administrative intervention
+/// is permanently recorded with full context for compliance and dispute
+/// resolution. All fields are non-nullable to guarantee audit integrity and
+/// prevent tampering.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_channels {
+model shopping_mall_admin_actions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the sales channel (e.g., "online_store",
-  /// "mobile_app"). Must be unique across all channels.
-  name String
+  /// Administrator who performed this action. {@link shopping_mall_admins.id}.
+  admin_id String
   
-  /// Detailed description of the channel's purpose and scope, explaining what
-  /// types of users and functionalities it supports.
-  description String
+  /// Type of administrative action performed. Must be one of: 'approve',
+  /// 'reject', 'suspend', 'ban', 'override'.
+  action_type String
   
-  /// URL to the logo image used to represent this channel in the user
-  /// interface. Optional, allows for custom branding per channel.
-  branding_logo_url String?
+  /// Type of entity this action affected. Must be one of: 'seller', 'product',
+  /// 'order', 'customer', 'category'.
+  affected_entity_type String
   
-  /// The canonical URL path prefix or routing identifier for this channel.
-  /// Used to direct user requests to the appropriate application instance or
-  /// service.
-  default_route String
+  /// ID of the entity affected by this action (e.g., seller_id, product_id,
+  /// order_id, customer_id). This references an entity in another table but
+  /// cannot be foreign-keyed due to polymorphic nature; enforced by
+  /// application layer.
+  affected_entity_id String
   
-  /// JSON string representation containing boolean flags that control feature
-  /// availability per channel. Examples: "{\"enable_wishlist\": true,
-  /// \"enable_mobile_payments\": false}". Allows targeted feature rollouts.
-  feature_flags String?
+  /// Reason provided by the administrator for this action. Must be >=10
+  /// characters and <=500 characters. Enforced in application layer.
+  reason String
   
-  /// Timestamp when this channel configuration was created in the system.
+  /// Timestamp when the administrative action was performed. Always set by
+  /// system.
   created_at DateTime
-  
-  /// Timestamp when this channel configuration was last modified.
-  updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([name])
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id, created_at])
+  @@index([action_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([affected_entity_type, affected_entity_id], map: "shopping_mall_admin_actions_affected_entity_type_affec_87e3c1f0")
 }
 
-/// Hierarchical sections within a shopping channel for organizing content
-/// and products with one-level nesting support.
+/// Immutable store of all snapshot records for products, variants, seller
+/// profiles, reviews, and requests with complete before/after state,
+/// timestamp, actor, and versioning. Every state change in the platform
+/// (product edit, seller profile update, review modification, cancellation
+/// request) creates a continuous, unchangeable history. Used for dispute
+/// resolution, regulatory compliance, and accuracy of historical records.
+/// Records are never deleted and cannot be modified. The snapshot_data field
+/// stores a JSON object containing all fields of the entity as they existed
+/// at that precise moment, making it possible to reconstruct a product's
+/// entire history with perfect fidelity. Designed per
+/// 12-snapshot-principle.md.
 ///
-/// Defines organizational units that structure the product catalog and
-/// content navigation within each sales channel. Sections can be parented to
-/// other sections to create a controlled hierarchy (parent > child) with
-/// exactly one level of nesting permitted.
-///
-/// Sections are managed exclusively by administrators through system
-/// configuration, not by end users. They provide the structural framework
-/// for product categorization and content organization within channels.
-///
-/// Each section has a unique name and optional description providing context
-/// for its purpose. The parent-child relationship allows organization of
-/// sections into logical groups without permitting deeper nesting that could
-/// complicate navigation.
-///
-/// Changes to sections are tracked via system audit trails, and soft
-/// deletion preserves historical configuration states while allowing for
-/// reorganization and cleanup.
+/// Linked to core actors (customers, sellers, admins). Specialized for
+/// system-level audit trail, not business-level transactions. Referenced by
+/// shopping_mall_admin_actions, shopping_mall_cancellation_requests,
+/// shopping_mall_refund_requests, shopping_mall_seller_profile_snapshots,
+/// shopping_mall_review_snapshots to maintain integrity without duplication.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_sections {
+model shopping_mall_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Parent section that this section belongs to, enabling one-level
-  /// hierarchical nesting. {@link shopping_mall_sections.id}.
-  parent_section_id String?
+  /// The actor (customer, seller, or admin) who initiated this snapshot.
+  /// {@link shopping_mall_customers.id} or {@link shopping_mall_sellers.id} or
+  /// {@link shopping_mall_admins.id}.
+  actor_id String
   
-  /// The unique name of the section used for identification and navigation.
-  /// Must be unique within its channel context.
-  name String
+  /// Reference to the target entity (product, variant, seller profile, review,
+  /// request) this snapshot captures. {@link shopping_mall_products.id} or
+  /// {@link shopping_mall_product_variants.id} or {@link
+  /// shopping_mall_seller_profiles.id} or {@link shopping_mall_reviews.id} or
+  /// {@link shopping_mall_cancellation_requests.id}, etc.
+  entity_id String
   
-  /// Optional detailed description explaining the purpose and content scope of
-  /// this section. Used for administrative reference and documentation.
-  description String?
+  /// The previous snapshot record for this same entity, if it exists, to form
+  /// a version chain. {@link shopping_mall_snapshots.id}
+  preceding_snapshot_id String?
   
-  /// Timestamp when this section was created in the system.
+  /// Type of entity captured (e.g., 'product', 'variant', 'seller_profile',
+  /// 'review', 'cancellation_request', 'refund_request').
+  entity_type String
+  
+  /// Sequential version number of this snapshot for the given entity. Starts
+  /// at 1 for first snapshot.
+  snapshot_version Int
+  
+  /// Nature of the change (e.g., 'created', 'edited', 'deleted', 'approved',
+  /// 'rejected', 'canceled', 'refunded').
+  action_type String
+  
+  /// JSONB field storing exact state (before and after) of the entity at time
+  /// of change. Includes all fields and relationships exactly as they were.
+  /// For edit: {before: {...}, after: {...}}. For delete: {before: {...},
+  /// after: {}}.
+  snapshot_data String
+  
+  /// Immutable timestamp when snapshot was created.
   created_at DateTime
   
-  /// Timestamp when this section was last modified.
+  /// Last time this snapshot record was updated (used for applying corrections
+  /// or re-SNAshot).
   updated_at DateTime
   
-  /// Soft delete timestamp. When non-null, indicates this section has been
-  /// logically deleted but preserved for audit history.
+  /// Optional timestamp for logical deletion (for system cleanup or GRPA
+  /// compliance). Null means active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  parent shopping_mall_sections? @relation("recursive", fields: [parent_section_id], references: [id], onDelete: Cascade)
+  actor shopping_mall_customers @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  entity shopping_mall_products @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  precedingSnapshot shopping_mall_snapshots? @relation("recursive", fields: [preceding_snapshot_id], references: [id], onDelete: Cascade)
   
-  children shopping_mall_sections[] @relation("recursive")
-  products shopping_mall_products[]
-  sales shopping_mall_sales[]
+  followingSnapshots shopping_mall_snapshots[] @relation("recursive")
   
-  @@unique([name])
-  @@index([parent_section_id, deleted_at])
+  @@index([preceding_snapshot_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([entity_id, entity_type, snapshot_version], map: "shopping_mall_snapshots_entity_id_entity_type_snapshot_93fdde3b")
+  @@unique([entity_id, action_type, created_at])
+  @@index([created_at])
+  @@index([actor_id, created_at])
+  @@index([entity_type, created_at])
+  @@index([entity_id, entity_type])
+  @@index([deleted_at])
 }
 
-/// Global system-wide configuration settings and feature flags that control
-/// platform behavior and functionality.
-///
-/// This table serves as the authoritative source for dynamic configuration
-/// parameters that govern the behavior of the entire shopping mall platform.
-/// Administrators use this to enable/disable features, configure business
-/// rules, adjust thresholds, and adjust system behavior without code
-/// deployments.
-///
-/// Each configuration entry has a unique key and a structured value stored
-/// in JSONB format to support complex nested settings. The category field
-/// organizes settings into logical groups (e.g., payment, shipping,
-/// reviews). The enabled flag allows temporary deactivation of a setting
-/// without deletion.
-///
-/// All changes to configuration records are captured via the platform's
-/// snapshot system — every update operation creates an immutable snapshot in
-/// the system's audit trail, preserving the previous value state for
-/// compliance and verification.
-///
-/// Deleting configuration entries is strongly discouraged; instead,
-/// administrators should disable them with enabled: false and deprecate the
-/// key name. This preserves audit integrity and prevents breaking changes in
-/// deployed systems.
-///
-/// Operators frequently query this table to determine active feature flags
-/// and system behaviors in real-time. It is critical for zero-downtime
-/// configuration updates during peak traffic.
+/// Global platform configuration settings that govern business rules across
+/// the entire shoppingMall ecosystem. This singleton table defines
+/// operational parameters including commission rates, subscription fees,
+/// approval timeouts, and content constraints. All values are applied
+/// system-wide and are accessible to all components. This table is managed
+/// exclusively by administrators through backend interfaces, not by end
+/// users.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_configurations {
+model shopping_mall_system_settings {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting. Must be globally unique
-  /// and follow snake_case naming convention (e.g., 'payment_gateway_enabled',
-  /// 'max_items_per_cart').
-  key String
+  /// Platform commission rate as a decimal percentage applied to each
+  /// transaction (7.5% = 0.075).
+  commission_rate Float
   
-  /// Structured configuration value stored as JSONB. Can contain nested
-  /// objects, arrays, and primitive types (string, number, boolean, null).
-  /// Used for flexible, dynamic configuration structures.
-  value String
+  /// Monthly fee for Premium Seller plan in USD (e.g., 49.00).
+  premium_subscription_fee Float
   
-  /// Logical category or namespace for this configuration. Used to group
-  /// related settings (e.g., 'payment', 'shipping', 'reviews', 'system').
-  category String
+  /// Number of hours after which a cancellation request is automatically
+  /// approved if the seller has not responded (48 hours).
+  cancellation_auto_approve_hours Int
   
-  /// Human-readable description explaining the purpose and effect of this
-  /// configuration setting. Used by administrators to understand impact.
-  description String
+  /// Number of hours after which a refund request is automatically approved if
+  /// the seller has not responded (72 hours).
+  refund_auto_approve_hours Int
   
-  /// Whether this configuration is active and being applied by the system. Set
-  /// to false to temporarily disable a setting without deletion.
-  enabled Boolean
+  /// Maximum number of products a single seller may have in their catalog
+  /// (1,000).
+  max_product_per_seller Int
   
-  /// Timestamp of creation for this configuration record. Records when the
-  /// configuration was first introduced into the system.
+  /// Maximum number of images allowed per product listing (15).
+  max_image_per_product Int
+  
+  /// Minimum number of characters allowed in customer review text (10).
+  min_review_length Int
+  
+  /// Maximum number of characters allowed in customer review text (500).
+  max_review_length Int
+  
+  /// Minimum number of characters required in cancellation request reason (10).
+  min_cancellation_reason_length Int
+  
+  /// Maximum number of characters allowed in cancellation request reason (500).
+  max_cancellation_reason_length Int
+  
+  /// Minimum number of characters required in refund request reason (10).
+  min_refund_reason_length Int
+  
+  /// Maximum number of characters allowed in refund request reason (500).
+  max_refund_reason_length Int
+  
+  /// Timestamp when this configuration was created.
   created_at DateTime
   
-  /// Timestamp of last modification for this configuration record. Updated on
-  /// every change to track when the setting was last adjusted.
+  /// Timestamp when this configuration was last updated.
   updated_at DateTime
   
   //----
   // RELATIONS
   //----
-  @@unique([key])
-  @@index([category])
-  @@index([enabled])
-  @@index([created_at])
   @@index([updated_at])
+}
+
+/// System-level logs capturing critical events such as snapshot generation
+/// failures, payment gateway errors, and platform maintenance activities.
+/// This table provides an immutable audit trail of infrastructure events to
+/// support incident response, technical troubleshooting, and compliance
+/// auditing. Every entry is generated by the system automatically; users do
+/// not interact with this table directly. This table is fundamental to
+/// system reliability and forensic analysis.
+///
+/// System logs should capture:
+/// - The high-level event category (e.g., "snapshot_failure",
+/// "payment_gateway_error")
+/// - The severity level to determine operational urgency
+/// - Detailed contextual metadata in JSON format (e.g. error stack trace,
+/// payload, session ID)
+/// - Precise timestamp of occurrence
+///
+/// These logs are append-only and permanently retained to satisfy regulatory
+/// and operational transparency requirements.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when the system event occurred. Immutable and automatically
+  /// captured by the system. Required for chronological ordering and audit
+  /// trail.
+  created_at DateTime
+  
+  /// Categorization of the system event (e.g., "snapshot_generation_failure",
+  /// "payment_gateway_timeout", "maintenance_mode_enabled"). Standardized
+  /// values ensure consistent filtering and reporting.
+  event_type String
+  
+  /// Operational severity level of the event: 'info', 'warning', 'error',
+  /// 'critical'. Used to prioritize incident response and alerting.
+  severity String
+  
+  /// Structured JSON object containing additional context about the event. May
+  /// include error stack traces, request IDs, payload snippets, server
+  /// identifiers, or diagnostic information. Optional, may be null if no
+  /// additional context is available.
+  metadata String?
+  
+  //----
+  // RELATIONS
+  //----
+  @@index([created_at])
 }

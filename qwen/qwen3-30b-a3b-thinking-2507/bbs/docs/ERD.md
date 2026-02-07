@@ -4,50 +4,55 @@
 
 - [Actors](#actors)
 - [Systematic](#systematic)
+- [Sections](#sections)
 - [Articles](#articles)
 - [Administration](#administration)
-- [Profile](#profile)
-- [Sections](#sections)
+- [Search](#search)
 
 ## Actors
 
 ```mermaid
 erDiagram
-"econ_politic_board_guests" {
-  String id PK
-  String device_id UK
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"econ_politic_board_members" {
+"economy_politics_board_users" {
   String id PK
   String email UK
   String password_hash
-  String display_name "nullable"
-  String bio "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_member_sessions" {
+"economy_politics_board_user_sessions" {
   String id PK
-  String member_id FK
-  String ip "nullable"
-  String href "nullable"
-  String referrer "nullable"
+  String user_id FK
+  String ip
+  String(80000) href
+  String(80000) referrer
   DateTime created_at
+  DateTime updated_at
   DateTime expired_at
 }
-"econ_politic_board_member_password_resets" {
+"economy_politics_board_user_password_resets" {
   String id PK
-  String econ_politic_board_member_id FK
+  String economy_politics_board_users_id FK
   String token UK
+  DateTime expires_at
+  Boolean is_used
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_user_email_verifications" {
+  String id PK
+  String users_id FK
+  String token UK
   DateTime expires_at
   DateTime used_at "nullable"
+  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"econ_politic_board_admins" {
+"economy_politics_board_admins" {
   String id PK
   String email UK
   String password_hash
@@ -55,305 +60,439 @@ erDiagram
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_admin_sessions" {
+"economy_politics_board_admin_sessions" {
   String id PK
-  String admin_id FK
+  String economy_politics_board_admin_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at
 }
-"econ_politic_board_admin_password_resets" {
+"economy_politics_board_admin_password_resets" {
   String id PK
   String admin_id FK
-  String reset_token UK
+  String token UK
   DateTime expires_at
+  DateTime used_at "nullable"
   DateTime created_at
+  DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_guest_sessions" {
+"economy_politics_board_admin_email_verifications" {
   String id PK
-  String guest_id FK
+  String admin_id FK
+  String token UK
+  DateTime expires_at
+  DateTime verified_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_super_admins" {
+  String id PK
+  String email UK
+  String password_hash
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_super_admin_sessions" {
+  String id PK
+  String economy_politics_board_super_admins_id FK
   String ip
   String href
   String referrer
   DateTime created_at
   DateTime expired_at
 }
-"econ_politic_board_member_email_verifications" {
+"economy_politics_board_super_admin_password_resets" {
   String id PK
-  String member_id FK
-  String email_verification_token UK
+  String super_admin_id FK
+  String token UK
   DateTime expires_at
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"econ_politic_board_member_sessions" }o--|| "econ_politic_board_members" : member
-"econ_politic_board_member_password_resets" }o--|| "econ_politic_board_members" : member
-"econ_politic_board_admin_sessions" }o--|| "econ_politic_board_admins" : admin
-"econ_politic_board_admin_password_resets" }o--|| "econ_politic_board_admins" : admin
-"econ_politic_board_guest_sessions" }o--|| "econ_politic_board_guests" : guest
-"econ_politic_board_member_email_verifications" }o--|| "econ_politic_board_members" : member
+"economy_politics_board_super_admin_email_verifications" {
+  String id PK
+  String super_admin_id FK
+  String token UK
+  DateTime expires_at
+  DateTime created_at
+  DateTime updated_at
+  DateTime verified_at "nullable"
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_user_sessions" }o--|| "economy_politics_board_users" : user
+"economy_politics_board_user_password_resets" }o--|| "economy_politics_board_users" : user
+"economy_politics_board_user_email_verifications" }o--|| "economy_politics_board_users" : user
+"economy_politics_board_admin_sessions" }o--|| "economy_politics_board_admins" : admin
+"economy_politics_board_admin_password_resets" }o--|| "economy_politics_board_admins" : admin
+"economy_politics_board_admin_email_verifications" }o--|| "economy_politics_board_admins" : admin
+"economy_politics_board_super_admin_sessions" }o--|| "economy_politics_board_super_admins" : superAdmin
+"economy_politics_board_super_admin_password_resets" }o--|| "economy_politics_board_super_admins" : superAdmin
+"economy_politics_board_super_admin_email_verifications" }o--|| "economy_politics_board_super_admins" : superAdmin
 ```
 
-### `econ_politic_board_guests`
+### `economy_politics_board_users`
 
-Temporary guest accounts for unauthenticated users identified by device
-fingerprint with no password requirements. Each guest account is tied to
-a device identifier and has a short-lived session for browsing without
-registration. Guests can browse sections and view articles but cannot
-create content or interact beyond anonymous viewing.
+Registered users with email/password credentials and authentication status.
 
-Properties as follows:
+Represents the primary identity record for standard community members.
+This table contains core user authentication data including email and
+password hash. Each user has a unique email address for login purposes.
 
-- `id`: Primary Key.
-- `device_id`
-  > Device fingerprint identifier used to track guest sessions. Must be
-  > unique per device for temporary account linkage.
-- `created_at`
-  > Account creation timestamp indicating when the guest session was
-  > initiated.
-- `updated_at`
-  > Last modification timestamp tracking session updates for device
-  > fingerprint management.
-- `deleted_at`
-  > Soft delete timestamp indicating when the guest account was expired or
-  > cleared.
-
-### `econ_politic_board_members`
-
-Regular authenticated user accounts with email/password credentials.
-Stores user profile information including display name and bio text.
-
-Used as the primary identity entity for users within the
-economic/political discussion board platform. Each account represents a
-distinct user type that can participate in the platform by creating
-articles, comments, and managing their profile.
-
-Accounts require email verification before becoming fully active.
-Passwords are stored as hashes for security, with password reset
-functionality available for recovery.
-
-The email field is mandatory and must be unique across all members. The
-display name field is optional, allowing users to choose whether to show
-a public identifier. The bio field is also optional and provides space
-for a short profile description.
+Key relationships:
+- Linked to user_sessions (many-to-one)
+- Linked to user_password_resets (many-to-one)
+- Linked to user_email_verifications (many-to-one)
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > User's email address used for authentication and communication. Must be
-  > unique across all members.
-- `password_hash`: Password hash used for authentication. Never store plain passwords.
-- `display_name`: User's display name visible to other users. Maximum 30 characters.
-- `bio`: User's bio text describing their profile. Maximum 500 characters.
-- `created_at`: Timestamp of when this member account was created.
-- `updated_at`: Timestamp of when this member account was last updated.
+  > Email address for user authentication. Must follow valid email format
+  > standard.
+- `password_hash`: Securely hashed password for authentication.
+- `created_at`: Account creation timestamp.
+- `updated_at`: Last account modification timestamp.
+- `deleted_at`: Account deletion timestamp (for soft delete).
+
+### `economy_politics_board_user_sessions`
+
+JWT session tokens with access/refresh support and expiration handling
+for regular user accounts. Tracks login sessions with security metadata
+including IP, user agent, and session duration for security auditing and
+session management.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`: User account's [economy_politics_board_users.id](#economy_politics_board_users).
+- `ip`: IP address from where session was initiated.
+- `href`: URL of request that initiated the session.
+- `referrer`: Referer URL of request that initiated the session.
+- `created_at`: Exact moment session was created.
+- `updated_at`: Last update timestamp for security purposes.
+- `expired_at`: When session automatically expires (24 hours from creation).
+
+### `economy_politics_board_user_password_resets`
+
+Password reset tokens for user authentication management with expiration
+and usage tracking.
+
+This table stores tokens for password reset requests with expiration
+dates and usage status. Tokens are unique per user session and
+automatically expire to ensure security. Managed strictly through
+user-related operations within the authentication workflow.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economy_politics_board_users_id`
+  > User's [economy_politics_board_users.id](#economy_politics_board_users) that requested the
+  > password reset.
+- `token`: Unique password reset token for authentication and verification.
+- `expires_at`: When the password reset token expires (must be a future timestamp).
+- `is_used`
+  > Whether the password reset token has already been used for a password
+  > change.
+- `created_at`: Record creation timestamp for audit purposes.
+- `updated_at`: Last update timestamp when the record changes.
+- `deleted_at`: When record was soft-deleted (for audit trail).
+
+### `economy_politics_board_user_email_verifications`
+
+Tracks email verification tokens for users, including status and
+expiration. Associated with a user record through the users_id foreign
+key. Ensures verification process integrity with timestamp tracking of
+each token's lifecycle.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `users_id`: The associated user's identifier. [economy_politics_board_users.id](#economy_politics_board_users)
+- `token`: Email verification token string.
+- `expires_at`: Expiration timestamp for the verification token.
+- `used_at`: Timestamp when the token was used for verification.
+- `status`: Current status of the verification: pending, verified, or expired.
+- `created_at`: Timestamp when the verification record was created.
+- `updated_at`: Timestamp of the last update to the verification record.
 - `deleted_at`
-  > Timestamp of when this member account was deleted. (Null means not
-  > deleted.)
+  > Timestamp when the record was marked as deleted (soft delete), or null if
+  > not deleted.
 
-### `econ_politic_board_member_sessions`
+### `economy_politics_board_admins`
 
-Member session tracking for authenticated users with JWT access tokens.
+Administrators with email/password credentials and elevated permissions.
 
-Stores session lifecycle information for authenticated members, including
-authentication context and connection details. Each session belongs to
-exactly one authenticated member and can have multiple concurrent active
-sessions.
+This table stores administrator identities that require authentication
+and have elevated permissions beyond regular users.
 
-Session tokens have limited validity (1 hour access, 30 days refresh) to
-meet security requirements. Session data includes connection metadata (IP
-address, URL references) for audit purposes.
-
-All sessions follow a strict lifecycle with non-null expiration times to
-prevent unlimited access tokens. Created and expired timestamps enable
-session history analysis and security monitoring.
+- **Email** is used for credential matching
+- **Password hash** stores securely hashed credentials
+- **Temporal fields** support auditing and soft deletion
+- **Unique email constraint** ensures valid sign-in identifiers
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `member_id`: Member who owns this session. [econ_politic_board_members.id](#econ_politic_board_members).
-- `ip`: IP address of the session connection.
-- `href`: Connection URL (e.g., /dashboard).
-- `referrer`: Referrer URL from which the user initiated the session.
-- `created_at`: Session creation timestamp.
-- `expired_at`: Session expiration timestamp (1 hour after creation).
+- `email`: Unique email address for admin account (must match standard email format).
+- `password_hash`: Password hash stored securely (using bcrypt algorithm).
+- `created_at`: Timestamp when admin account was created.
+- `updated_at`: Timestamp when admin account was last updated.
+- `deleted_at`: Timestamp when admin account was soft-deleted (null if not deleted).
 
-### `econ_politic_board_member_password_resets`
+### `economy_politics_board_admin_sessions`
 
-Password reset tokens used for securely resetting member passwords. These
-tokens are generated upon password reset request and expire after 1 hour
-to prevent abuse.
-
-Each token is unique and directly associated with a member during the
-password recovery process. Tokens are marked as used when successfully
-applied, providing clear audit trail of all password reset activities.
-The table enforces strict expiration timing to maintain security
-integrity.
-
-The token must be unique across the system, and tokens should be
-generated using cryptographically secure random value generation. All
-token-related operations are managed exclusively through the password
-reset workflow, not through direct user actions.
+JWT session tokens for administrators with enhanced security. Tracks
+active sessions for administrators with enhanced security requirements,
+including IP, headers, and referrer information for audit purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `econ_politic_board_member_id`
-  > Member who requested password reset. {@link
-  > econ_politic_board_members.id}.
-- `token`
-  > UUID-based token string for password reset verification. Must be unique
-  > across all entries for security.
-- `created_at`: Timestamp when the password reset token was generated.
-- `expires_at`
-  > Timestamp when the password reset token expires after 1 hour. Tokens
-  > always expire, never "unlimited".
-- `used_at`
-  > Timestamp when the token was successfully used to reset the password.
-  > Empty if token was never used.
-
-### `econ_politic_board_admins`
-
-Administrator accounts with email/password authentication for managing
-content and moderating user interactions.
-
-Stores administrative user credentials and basic profile information.
-Each admin must register with a valid email, and the system handles
-secure password storage using bcrypt hashing.
-
-Administrators can access all content management features and user
-moderation tools. Admin accounts persist until explicitly deleted by
-another administrator.
-
-The system maintains audit trails for account creation and modification
-using standard timestamps and soft delete support.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `email`
-  > Email address used for authentication and system communication. Must be
-  > unique across all administrators and valid per email format rules.
-- `password_hash`
-  > Securely hashed password for authentication, stored using bcrypt. Never
-  > store plain text passwords.
-- `created_at`: Timestamp of when the admin account was created.
-- `updated_at`: Timestamp of when the admin account was last updated.
-- `deleted_at`
-  > Timestamp of when the admin account was deleted. If null, the account is
-  > active.
-
-### `econ_politic_board_admin_sessions`
-
-Administrator session management with JWT tokens for secure access.
-
-Stores active session records for administrators with access (1-hour) and
-refresh (30-day) tokens. Each session is tied to a specific administrator
-and includes connection metadata for audit purposes.
-
-Session tokens expire after 1 hour for access tokens and 30 days for
-refresh tokens, ensuring secure access management. The session creation
-timestamp allows for session history analysis and audit trails.
-
-All sessions are recorded with IP address, connection URL, and referrer
-information to track access patterns and detect security anomalies.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `admin_id`: Administrator account's [econ_politic_board_admins.id](#econ_politic_board_admins)
-- `ip`: IP address of the user connecting from.
-- `href`: Connection URL used for the session.
-- `referrer`: Referrer URL of the client connection.
-- `created_at`: Session creation timestamp.
-- `expired_at`: Session expiration timestamp (1 hour for access, 30 days for refresh).
-
-### `econ_politic_board_admin_password_resets`
-
-Admin password reset tokens for secure password recovery workflows.
-Stores temporary reset tokens with 1-hour expiration associated with
-administrator accounts, facilitating secure password reset processes
-without storing passwords.
-
-Tokens are generated during password reset requests and expire after 1
-hour for security. Each token is tied to a specific administrator record,
-allowing verification of the request's owner without requiring password
-storage.
-
-When tokens expire, they're automatically removed from the system, and
-users must request a new reset link. Soft delete capability ensures token
-records can be purged after expiration without losing audit history.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `admin_id`: Associated administrator account's {@link econ_politic_board_admins.id.
-- `reset_token`
-  > Secure one-time token for password reset requests. Generated as random
-  > UUID with SHA-256 hashing for security.
-- `expires_at`: Token expiration datetime. Set to 1 hour from creation for security.
-- `created_at`: Token creation timestamp for audit purposes.
-- `deleted_at`: Soft delete timestamp for record retention policies.
-
-### `econ_politic_board_guest_sessions`
-
-Temporary guest sessions for unauthenticated browsing.
-
-Stores connection context for users who access the platform without
-logging in. Each session has a short 5-minute expiration period for
-security. Tracks connection metadata including IP address, URL, and
-referrer information for audit purposes. Sessions are tied to guest
-accounts (identified by device fingerprint, not email).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `guest_id`: Reference to guest account.
-- `ip`: IP address used for the session connection.
-- `href`: Connection URL used to initiate the session.
-- `referrer`: Referrer URL that led to this session.
+- `economy_politics_board_admin_id`
+  > Reference to the administrator who owns this session. {@link
+  > economy_politics_board_admins.id}
+- `ip`: IP address from which the session was initiated.
+- `href`: Current URL or request URI for the session.
+- `referrer`: URL that referred the user to this session.
 - `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expires (5 minutes from creation).
+- `expired_at`: Timestamp when the session expires (must be NOT NULL for security).
 
-### `econ_politic_board_member_email_verifications`
+### `economy_politics_board_admin_password_resets`
 
-Verification tokens for new member registration.
+Password reset tokens specifically for administrator accounts.
 
-Stores tokens sent to members during account creation to verify their
-email addresses. Each token is valid for exactly 1 hour and is tied to a
-specific member account for verification tracking.
+Contains unique tokens with expiration tracking, usage verification, and
+audit trail for secure password resets. Implements necessary security
+features including token generation with 128-bit entropy and time-bound
+validity.
 
-Tokens expire automatically and are not manually managed through the
-application. These tokens are created during the registration process and
-serve as the mechanism for confirming a member's email address.
-
-Unlike password resets, these tokens cannot be regenerated without
-creating a new account, ensuring email verification is a one-time process
-during initial sign-up.
+Reference: Admin authentication via {
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `member_id`
-  > Member this verification token belongs to. {@link
-  > econ_politic_board_members.id}
-- `email_verification_token`
-  > Unique token string sent to member's email for verification. Used to
-  > confirm email address during registration.
-- `expires_at`: Timestamp indicating when this token expires (1 hour from creation).
-- `created_at`: Timestamp indicating when this token was created (sent to member's email).
+- `admin_id`: Admin user account this reset token belongs to. {
+- `token`: Unique one-time token for password reset process
+- `expires_at`: Expiration timestamp for token validity (max 1 hour)
+- `used_at`: Timestamp when token was successfully used for reset
+- `created_at`: Record creation timestamp
+- `updated_at`: Record last update timestamp
+- `deleted_at`: Soft delete timestamp for audit trail
+
+### `economy_politics_board_admin_email_verifications`
+
+Email verification tokens for administrator accounts, enabling secure
+email address validation during registration or update processes. Each
+token is time-bound, single-use, and linked to the administrator's
+account for verification context.
+
+Properties as follows:
+
+- `id`: Primary key.
+- `admin_id`
+  > Reference to associated administrator account. {@link
+  > economy_politics_board_admins.id}
+- `token`: Unique verification token sent to administrator's email address.
+- `expires_at`: Timestamp when verification token expires (24 hours after creation).
+- `verified_at`: Timestamp when email address was successfully verified.
+- `created_at`: Timestamp when the verification token was created.
+- `updated_at`: Timestamp when the verification token record was last updated.
+- `deleted_at`: Timestamp when the verification token record was soft-deleted.
+
+### `economy_politics_board_super_admins`
+
+Super administrators with email/password credentials and all permissions.
+Represents the highest authority level with full platform access and
+management capabilities, distinct from standard administrators. This
+table stores core identity and authentication details for super
+administrators, while their sessions are handled separately through
+dedicated session tables to maintain proper relational structure and
+security practices.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > User's primary contact email address for authentication and
+  > notifications. Must be unique across all actor types and pass valid email
+  > format validation.
+- `password_hash`
+  > Securely hashed password used for authentication. Stored using
+  > industry-standard hashing algorithms with salting for security.
+- `created_at`: Timestamp when the super administrator account was created.
+- `updated_at`: Timestamp when the super administrator account details were last modified.
+- `deleted_at`
+  > Timestamp when the super administrator account was marked for deletion
+  > (soft delete). Null indicates active account.
+
+### `economy_politics_board_super_admin_sessions`
+
+JWT session tokens for super administrators with maximum security,
+including connection metadata and expiration tracking. All session data
+is append-only for security auditing.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economy_politics_board_super_admins_id`: Super administrator's [economy_politics_board_super_admins.id](#economy_politics_board_super_admins).
+- `ip`: User's IP address during login.
+- `href`: Request URL when session was created.
+- `referrer`: Origin URL from where request was made.
+- `created_at`: Timestamp when session was created.
+- `expired_at`: Timestamp when session expires, calculated based on security policies.
+
+### `economy_politics_board_super_admin_password_resets`
+
+Password reset tokens for super administrator accounts, storing token
+values, expiration, and associated admin references. Each token is
+uniquely associated with a super administrator account and expires after
+a set period.
+
+Key relationship: Belongs to super_admins actor table (one-to-many
+relationship: one super admin can have multiple password reset tokens).
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `super_admin_id`
+  > Reference to the super administrator's account. {@link
+  > economy_politics_board_super_admins.id}.
+- `token`
+  > Unique token used for password reset verification. Must be generated as a
+  > secure random string.
+- `expires_at`: Expiration timestamp of the password reset token. Must be in UTC format.
+- `created_at`: Timestamp when the password reset token was created.
+- `updated_at`: Timestamp of the last update to the token record.
+- `deleted_at`
+  > Timestamp when the token was invalidated (soft delete). Null indicates
+  > active token.
+
+### `economy_politics_board_super_admin_email_verifications`
+
+Tracks email verification tokens for super administrators. Each token is
+generated for a super administrator's email address during the
+registration process, allowing them to verify ownership before account
+activation.
+
+The email verification lifecycle:
+1. Token generated with expiration (default 24 hours)
+2. User receives verification email
+3. Token validated to activate account
+4. Verification token marked as verified
+
+All verification tokens are automatically expired after 24 hours to
+maintain security.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `super_admin_id`
+  > References the super_admin whose email is being verified. {@link
+  > economy_politics_board_super_admins.id}.
+- `token`: Secure random token used to verify the email address.
+- `expires_at`: Timestamp when the verification token expires (24 hours after creation).
+- `created_at`: Timestamp when the verification token was created.
+- `updated_at`: Timestamp when the verification token status was last updated.
+- `verified_at`
+  > Timestamp when the email address was successfully verified. NULL if not
+  > yet verified.
+- `deleted_at`: Timestamp when the verification record was soft-deleted.
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"econ_politic_board_system_configs" {
+"economy_politics_board_system_error_handling_rules" {
+  String id PK
+  String error_code UK
+  String handling_strategy
+  String message_template
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_system_performance_thresholds" {
+  String id PK
+  String performance_metric UK
+  Float threshold_value
+  String unit
+  String criticality
+  String description "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+```
+
+### `economy_politics_board_system_error_handling_rules`
+
+Stores system error codes, handling strategies, and message templates for
+error handling scenarios including system-wide error configuration.
+
+This table is used to define how different error types should be handled
+across the platform, with configurable message templates that support
+dynamic replacement of variables.
+
+Critical for consistent error communication and user experience during
+error states.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `error_code`: Unique error identifier that corresponds to specific error conditions.
+- `handling_strategy`: Strategy for handling this error type (e.g., 'retry', 'log', 'notify')
+- `message_template`
+  > Template string for error messages that will be dynamically rendered with
+  > context variables.
+- `created_at`: Timestamp when the error configuration was created.
+- `updated_at`: Timestamp when the error configuration was last updated.
+- `deleted_at`
+  > Timestamp when the error configuration was marked as deleted (soft
+  > delete).
+
+### `economy_politics_board_system_performance_thresholds`
+
+Defines measurable performance thresholds for critical system operations
+and user experience metrics. Includes response time requirements for
+search, content handling, and concurrent requests, with criticality
+levels indicating severity. All thresholds are system-defined and managed
+via configuration.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `performance_metric`
+  > Name of the performance metric (e.g., 'search_response_time',
+  > 'request_throughput'). This is the identifier for the threshold category.
+- `threshold_value`
+  > The threshold value against which performance is measured. For example, a
+  > response time threshold of 200ms is represented as 200.0.
+- `unit`
+  > Measurement unit for the threshold value (e.g., 'ms', 'sec',
+  > 'requests_per_second'). Must be a valid metric unit.
+- `criticality`
+  > Criticality level of the threshold (high, medium, low). Indicates the
+  > severity of the threshold breach.
+- `description`
+  > Additional details and context about this threshold, including use cases
+  > and business implications.
+- `created_at`: Timestamp of when the threshold was created.
+- `updated_at`: Timestamp of the last update to the threshold.
+- `deleted_at`: Timestamp of when the threshold was soft-deleted, if applicable.
+
+## Sections
+
+```mermaid
+erDiagram
+"economy_politics_board_sections" {
   String id PK
   String name UK
-  String value
   String description
   DateTime created_at
   DateTime updated_at
@@ -361,44 +500,30 @@ erDiagram
 }
 ```
 
-### `econ_politic_board_system_configs`
+### `economy_politics_board_sections`
 
-System-wide configuration settings and feature flags that control
-platform behavior, accessibility, and user experience across the entire
-application.
-
-Stores key-value pairs for configuration parameters, where the key
-represents the setting name (e.g., 'comment_min_length',
-'article_max_tags') and the value represents the current setting value.
-This table also includes human-readable descriptions for each
-configuration setting.
-
-These configuration settings can be modified through the platform's
-administrative interface to adjust platform behavior without requiring
-code changes. System configurations include settings related to content
-rules, user experience features, and platform capabilities.
+Stores section definitions including unique name, descriptive content,
+and creation metadata for article categorization. Sections are required
+to have unique names and descriptive content (minimum 20 characters).
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`
-  > Unique configuration key name (e.g., 'comment_min_length',
-  > 'article_max_tags'). Used to identify this configuration setting.
-- `value`
-  > Current value of the configuration setting (e.g., '10', '5'). Can be a
-  > number, string, or boolean represented as string.
+- `name`: Unique section identifier displayed to users.
 - `description`
-  > Human-readable description of what this configuration setting does and
-  > its purpose in the system.
-- `created_at`: Timestamp when this configuration setting was added to the system.
-- `updated_at`: Timestamp when this configuration setting was last modified.
-- `deleted_at`: Timestamp when this configuration setting was deleted (soft delete).
+  > Detailed description of the section's purpose and topic focus (minimum 20
+  > characters).
+- `created_at`: Timestamp when the section was created.
+- `updated_at`: Timestamp when the section was last updated.
+- `deleted_at`
+  > Timestamp when the section was soft-deleted (nullable for soft delete
+  > implementation).
 
 ## Articles
 
 ```mermaid
 erDiagram
-"econ_politic_board_articles" {
+"economy_politics_board_articles" {
   String id PK
   String section_id FK
   String author_id FK
@@ -408,302 +533,297 @@ erDiagram
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_article_attachments" {
+"economy_politics_board_article_attachments" {
   String id PK
-  String econ_politic_board_article_id FK
-  String file_name
+  String economy_politics_board_article_id FK
   String file_type
-  Int file_size
-  String storage_location
+  Int size
+  String(80000) download_url
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_article_tags" {
+"economy_politics_board_article_tags" {
   String id PK
-  String econ_politic_board_articles_id FK
+  String economy_politics_board_article_id FK
   String tag
-}
-"econ_politic_board_article_versions" {
-  String id PK
-  String article_id FK
-  String content
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"econ_politic_board_article_attachments" }o--|| "econ_politic_board_articles" : article
-"econ_politic_board_article_tags" }o--|| "econ_politic_board_articles" : article
-"econ_politic_board_article_versions" }o--|| "econ_politic_board_articles" : article
+"economy_politics_board_article_attachments" }o--|| "economy_politics_board_articles" : article
+"economy_politics_board_article_tags" }o--|| "economy_politics_board_articles" : article
 ```
 
-### `econ_politic_board_articles`
+### `economy_politics_board_articles`
 
-Core articles representing economic or political discussions written by
-users.
-
-Articles serve as the primary user-generated content for the platform,
-allowing members to share their perspectives on various topics. Each
-article is associated with a specific section (Politics, Economy, Current
-Affairs) and has a clear author relationship.
-
-The title field captures the main topic of the article with a minimum of
-5 characters for sufficient context and maximum of 100 characters to
-prevent overly verbose titles.
-The content field requires at least 50 characters to ensure substantive
-discussion content is provided rather than empty or minimal entries.
-The article structure follows an append-only pattern for historical
-tracking with no direct modifications to past content, instead creating
-new article versions for edits.
+Main article content including title, content, section reference, and
+author with creation timestamp. Articles are created by users, organized
+within sections, and support text content with minimum 50 character
+requirement. This table connects articles to their section and author
+through foreign keys. Note: article attachments are stored separately in
+economy_politics_board_article_attachments and tags in
+economy_politics_board_article_tags tables.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `section_id`: Section the article belongs to. [econ_politic_board_sections.id](#econ_politic_board_sections)
-- `author_id`: Author of the article. [econ_politic_board_members.id](#econ_politic_board_members)
-- `title`
-  > Main topic or headline of the article. Must be 5-100 characters for
-  > contextual relevance while remaining concise.
-- `content`
-  > Core discussion content of the article. Minimum 50 characters ensures
-  > substantial contribution rather than minimal content.
-- `created_at`: When the article was first created.
-- `updated_at`: When the article was last modified.
-- `deleted_at`
-  > When the article was marked for deletion (soft delete) with no immediate
-  > physical removal from storage.
+- `section_id`
+  > Section this article belongs to. {@link
+  > economy_politics_board_sections.id}
+- `author_id`
+  > Author of this article (user identity). {@link
+  > economy_politics_board_users.id}
+- `title`: Article title (minimum 5 characters).
+- `content`: Article content (minimum 50 characters).
+- `created_at`: Article creation timestamp.
+- `updated_at`: Article last update timestamp.
+- `deleted_at`: Article deletion timestamp (for soft delete).
 
-### `econ_politic_board_article_attachments`
+### `economy_politics_board_article_attachments`
 
-File attachments for articles, supporting document and image uploads with
-metadata.
+File attachments associated with articles, including file type, size, and
+download URL. Each attachment is linked to a single article and managed
+as part of article content.
 
-Stores all files attached to articles including images, PDFs, and other
-document formats. Each attachment is linked to a specific article, with
-metadata about the file name, size, type, and storage location. The
-attachment is only linked to a single article and cannot be shared across
-multiple articles.
-
-File types are limited to standard web formats (images: JPEG, PNG, GIF;
-documents: PDF, DOCX, XLSX) to ensure security and compatibility. Each
-article can have up to 10 attachments with a maximum total size of 50MB
-as specified in the business requirements.
-
-Attachments are stored with a timestamp for creation, update, and soft
-deletion for audit purposes while the original article content remains
-accessible.
+Attachments are stored as separate records to maintain article content
+integrity and support 1:N relationship between articles and their
+attachments.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `econ_politic_board_article_id`
-  > Article attachment belongs to article's {@link
-  > econ_politic_board_articles.id}.
-- `file_name`: Original file name of the attachment, including extension.
-- `file_type`: MIME type of the file (e.g., image/jpeg, application/pdf).
-- `file_size`
-  > File size in bytes, limited to a total of 50MB per article across all
-  > attachments.
-- `storage_location`: Where the file is stored (URL or path), typically a cloud storage path.
-- `created_at`: Timestamp when the attachment was created.
-- `updated_at`: Timestamp when the attachment was last modified.
-- `deleted_at`
-  > Timestamp when the attachment was soft-deleted, allowing audit while
-  > maintaining article integrity.
+- `economy_politics_board_article_id`: Parent article's [economy_politics_board_articles.id](#economy_politics_board_articles).
+- `file_type`: MIME type of the file attachment.
+- `size`: Size of the file in bytes.
+- `download_url`: Permanent URL for file download.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last modification timestamp.
+- `deleted_at`: Soft delete timestamp (null when not deleted).
 
-### `econ_politic_board_article_tags`
+### `economy_politics_board_article_tags`
 
-Tag values used for categorization and filtering of articles.
+User-added tags for article categorization with maximum 5 tags per
+article. Tags must be free text limited to 30 characters with no
+duplicates allowed per article.
 
-Each article can have up to five tags, with a maximum length of 20
-characters and no spaces. Tags provide an additional layer of content
-organization beyond the article's section.
+This table is managed exclusively through the article entity
+(economy_politics_board_articles) and requires no standalone API
+endpoints. Tags serve as secondary categorization for search and section
+filtering.
 
-Tag management is done through the article creation and editing
-workflows, not as standalone entities. The tag values are stored as
-strings with strict validation to ensure consistency across the platform.
+**Why subsidiary?**
+- Tags require article context for meaningful use
+- Users add/remove tags through article management flows
+- No independent management capabilities exist (unlike primary entities)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `econ_politic_board_articles_id`
-  > Article to which this tag is associated. {@link
-  > econ_politic_board_articles.id}
-- `tag`
-  > Tag value used for categorization of an article. Maximum length: 20
-  > characters. Tags must not contain spaces.
-
-### `econ_politic_board_article_versions`
-
-Stores historical versions of article content changes with full content
-snapshots for auditing and version rollback capabilities.
-
-Each version records the exact content state at the time of article
-editing, maintaining a complete history of changes without loss of data.
-Version history is automatically generated on every article edit,
-requiring no user intervention for version tracking.
-
-The table supports full content retrieval for any version, enabling
-features like 'View Previous Version' while preserving the ability to
-compare changes over time. Historical versions remain intact even if the
-original article is edited, deleted, or modified, ensuring a complete
-audit trail of all content modifications.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `article_id`: Reference to the parent article. [econ_politic_board_articles.id](#econ_politic_board_articles).
-- `content`
-  > Full article content at the time of version creation, including all text
-  > and formatted structure. Stores the complete content that was active
-  > during the article edit.
-- `created_at`
-  > Timestamp when this version was created (matches the point of article
-  > edit).
-- `updated_at`
-  > Timestamp when this version was last modified (for historical
-  > consistency, same as created_at but maintained for completeness).
-- `deleted_at`
-  > Timestamp when this version was soft-deleted (if applicable for audit
-  > purposes), null indicates active version.
+- `economy_politics_board_article_id`: Article this tag belongs to [economy_politics_board_articles.id](#economy_politics_board_articles).
+- `tag`: User-provided tag text limited to 30 characters for categorization.
+- `created_at`: Timestamp of tag creation.
+- `updated_at`: Timestamp of last tag update.
+- `deleted_at`: Timestamp of tag deletion (soft delete).
 
 ## Administration
 
 ```mermaid
 erDiagram
-"econ_politic_board_admin_requests" {
+"economy_politics_board_administrator_requests" {
+  String id PK
+  String users_id FK,UK
+  String status
+  String reason
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_user_bans" {
   String id PK
   String user_id FK
+  String admin_id FK
   String reason
-  String status
+  DateTime start_at
+  DateTime expire_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 ```
 
-### `econ_politic_board_admin_requests`
+### `economy_politics_board_administrator_requests`
 
-Tracks administrator role requests from users, allowing regular users to
-request administrator privileges with reasons and status tracking for
-super administrators to review.
-
-Each request includes the user's reason for requesting admin access
-(minimum 50 characters), the current status of the request
-(pending/approved/rejected), and timestamps for creation and updates.
-Super administrators review these requests to manage administrative roles
-across the platform.
-
-This table maintains a clear record of all admin access requests to
-ensure transparency and accountability in the role management process.
+Tracks user requests to become administrators with status, reason, and
+timestamps. Each user can submit only one active request (pending) at a
+time. Requires user context and approval status tracking for
+administrative workflows.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `user_id`: User who made the request. [econ_politic_board_members.id](#econ_politic_board_members).
-- `reason`
-  > Reason provided by the user for requesting administrator privileges. Must
-  > be at least 50 characters in length and meet specific content guidelines
-  > to ensure proper context for review.
-- `status`
-  > Current status of the administrator request. Valid values: 'pending',
-  > 'approved', 'rejected'. This field determines the action to be taken by
-  > super administrators for each request.
-- `created_at`: Timestamp when the administrator request was created.
-- `updated_at`: Timestamp when the administrator request was last updated.
-- `deleted_at`
-  > Timestamp when the request was soft-deleted. Used for audit trails while
-  > removing it from active views.
+- `users_id`: User who submitted the request. {@link economy_politics_board_users.id.
+- `status`: Current status of the request (pending, approved, rejected).
+- `reason`: Reason provided by the user requesting administrator privileges.
+- `created_at`: Timestamp when the request was submitted.
+- `updated_at`: Timestamp of the last modification to the request.
+- `deleted_at`: Timestamp when the request was marked as deleted.
 
-## Profile
+### `economy_politics_board_user_bans`
+
+Records user bans with details, reasons, duration and admin
+justification. Banned users cannot login to the platform. Each ban entry
+tracks the reason and optional expiration date.
+
+- Ban reasons require minimum 10 characters
+- Expiration dates may be indefinite (NULL)
+- Linked to both user and admin tables
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`: User being banned's [economy_politics_board_users.id](#economy_politics_board_users).
+- `admin_id`: Admin who imposed the ban's [economy_politics_board_admins.id](#economy_politics_board_admins).
+- `reason`: Reason for ban (min 10 characters).
+- `start_at`: Start date/time of ban.
+- `expire_at`: Expiration date/time of ban (optional for indefinite bans).
+- `created_at`: When the ban record was created.
+- `updated_at`: When the ban record was last updated.
+- `deleted_at`: When the ban was logically deleted (soft delete).
+
+## Search
 
 ```mermaid
 erDiagram
-"econ_politic_board_profiles" {
+"economy_politics_board_search_queries" {
   String id PK
-  String econ_politic_board_members_id FK
-  String display_name "nullable"
-  String bio "nullable"
+  String search_term
+  String request_parameters "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-```
-
-### `econ_politic_board_profiles`
-
-User profile storage for display names and bios with business constraints.
-
-Stores additional user information beyond the core identity provided in
-the authentication system. Profile data is optional for users to provide
-and can be updated at any time, but cannot be set to null permanently
-(must maintain minimal user visibility information). The display name
-field enforces a maximum length of 30 characters as specified in the
-business rules.
-
-The bio field provides a text-based description for user profiles with a
-maximum length of 500 characters for consistent content presentation
-across the platform. Both profile fields are optional but should be
-present for users who choose to establish a profile.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `econ_politic_board_members_id`: Reference to the core member identity
-- `display_name`
-  > Custom user display name visible to others. Maximum 30 characters as per
-  > business rules.
-- `bio`
-  > User profile bio text for additional self-description. Maximum 500
-  > characters as per business rules.
-- `created_at`: Date and time the profile was created, used for historical tracking.
-- `updated_at`: Date and time the profile was last updated, used for tracking changes.
-- `deleted_at`: Date and time the profile was marked as deleted (soft delete).
-
-## Sections
-
-```mermaid
-erDiagram
-"econ_politic_board_sections" {
+"economy_politics_board_search_results" {
   String id PK
-  String name UK
-  String description
+  String articles_id FK
+  String article_tags_id FK
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
+"economy_politics_board_search_filters" {
+  String id PK
+  String user_id FK
+  String filter_name
+  String description "nullable"
+  String config
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_search_query_histories" {
+  String id PK
+  String economy_politics_board_search_query_id FK
+  String search_terms
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"economy_politics_board_search_query_histories" }o--|| "economy_politics_board_search_queries" : searchQuery
 ```
 
-### `econ_politic_board_sections`
+### `economy_politics_board_search_queries`
 
-Section entities representing topics like Politics, Economy, Current
-Affairs with unique names and descriptions.
+Stores user search terms with timestamps and request parameters. This
+table captures the search terms entered by users and the parameters used
+for each search, enabling the system to track and analyze search
+patterns.
 
-Sections serve as organizational containers for articles, allowing users
-and administrators to categorize content into distinct topic areas. Each
-section is characterized by a unique name and descriptive summary,
-providing context for content within that category.
-
-Administrators manage sections through creation, editing, and viewing
-operations. Sections are referenced by articles to establish their
-categorization, forming one-to-many relationships where each article
-belongs to exactly one section.
-
-Section names must be unique across the entire platform and follow the
-system's uniqueness requirements. All sections support soft deletion for
-content management without permanent data loss.
+Each record represents a single search term and its associated request
+parameters. The table is used to support the search and filtering
+features of the platform, particularly for tracking search history and
+improving search relevance.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `name`
-  > Section name (e.g., Politics, Economy) with maximum 50 characters, must
-  > be unique.
-- `description`
-  > Section description up to 250 characters detailing the section's purpose
-  > and content scope.
-- `created_at`: Timestamp when the section was created.
-- `updated_at`: Timestamp when the section was last updated.
+- `search_term`: The actual search term entered by the user.
+- `request_parameters`
+  > Additional parameters from the search request, stored as JSON string for
+  > flexibility.
+- `created_at`: Timestamp when the search query was first recorded.
+- `updated_at`: Timestamp when the search query record was last updated.
+- `deleted_at`: Timestamp when the search query was soft-deleted (if applicable).
+
+### `economy_politics_board_search_results`
+
+Caches search results for performance, linked to articles and tags.
+Stores optimized query results for faster search operations while
+maintaining reference to source articles and associated tags.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `articles_id`: Belonged article's [economy_politics_board_articles.id](#economy_politics_board_articles).
+- `article_tags_id`: Belonged tag's [economy_politics_board_article_tags.id](#economy_politics_board_article_tags).
+- `created_at`: Record creation timestamp.
+- `updated_at`: Last update timestamp.
+- `deleted_at`: Soft delete timestamp if deleted.
+
+### `economy_politics_board_search_filters`
+
+Persistent user filter configurations for tag-based search. Stores
+user-specific preferences such as tag combinations, search parameters,
+and filter criteria.
+
+This table captures saved filter configurations that users can reuse
+across multiple searches. Each record is uniquely tied to a user's
+account and is intended for personalizing search results without
+requiring repeated configuration.
+
+The 'config' field stores filter settings as JSON string formatted data
+(e.g., {"tags":["economy","politics"],"recent":true}).
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `user_id`
+  > User who created this filter configuration {@link
+  > economy_politics_board_users.id}.
+- `filter_name`
+  > Descriptive name of the filter configuration (e.g., 'Recent Articles',
+  > 'Economy Focus').
+- `description`: Optional description of the filter's purpose or content.
+- `config`
+  > Serialized filter configuration data in JSON format defining tag
+  > preferences and search parameters.
+- `created_at`: Timestamp when the filter configuration was created.
+- `updated_at`: Timestamp when the filter configuration was last modified.
 - `deleted_at`
-  > Soft delete timestamp; section is considered deleted when this field has
-  > a value.
+  > Timestamp when the filter configuration was logically deleted (soft
+  > delete).
+
+### `economy_politics_board_search_query_histories`
+
+Tracks historical search queries performed by each user, enabling
+personalized search recommendations and analytics. This table captures
+full user search terms for historical analysis and recommendation
+generation while maintaining user-level ownership of search history
+entries.
+
+This subsidiary table depends directly on user activity and is managed
+through user interaction workflows. It contains no business attributes
+beyond search context, with no independent CRUD operations required.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `economy_politics_board_search_query_id`
+  > The search query that this history entry belongs to. {@link
+  > economy_politics_board_search_queries.id}.
+- `search_terms`
+  > The search terms entered by the user, used for recommendations and search
+  > history tracking.
+- `created_at`: Timestamp when the search entry was created.
+- `updated_at`: Timestamp when the search entry was last updated.
+- `deleted_at`: Timestamp when the search entry was soft-deleted, if applicable.

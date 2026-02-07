@@ -1,0 +1,54 @@
+/// Stores user display name and bio text for profile presentation in the
+/// economic_board platform. Contains fields for user-specific identity
+/// information that is separate from authentication credentials. Associated
+/// with user accounts via foreign key reference to the Authorization Agent's
+/// actor tables. This is a subsidiary table that is always managed through
+/// the citizen actor entity, as all user roles (administrator and
+/// superAdministrator) are promotions from the citizen role. The profile
+/// data belongs to the user's identity, not their role, and is referenced
+/// exclusively by economic_board_citizens.id.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the citizen identity account that owns this profile. Since
+  /// administrators and superAdministrators are promoted from citizens, all
+  /// profiles are linked to economic_board_citizens.id and never to direct
+  /// administrator or superAdministrator tables. This avoids multiple nullable
+  /// foreign keys and maintains 3NF normalization.
+  economic_board_citizen_id String
+  
+  /// The public display name for the user profile. Must be non-empty and
+  /// unique within the system. Used in article and comment attribution.
+  display_name String
+  
+  /// A short biographical description provided by the user. Limited to 500
+  /// characters for layout consistency.
+  bio String?
+  
+  /// Timestamp when this profile was first created. Required for all business
+  /// entities.
+  created_at DateTime
+  
+  /// Timestamp of the last profile update. Required for all business entities.
+  updated_at DateTime
+  
+  /// Timestamp when this profile was soft-deleted. Nullable to support
+  /// soft-delete functionality. If null, profile is active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  citizen economic_board_citizens @relation(fields: [economic_board_citizen_id], references: [id], onDelete: Cascade)
+  
+  @@unique([economic_board_citizen_id])
+  
+  @@unique([display_name])
+}
