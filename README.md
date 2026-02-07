@@ -301,7 +301,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
 🟢 Analyze | `actors`: 3, `documents`: 12 | 858.7K | 13m 25s | 100%
 🟢 Database | `namespaces`: 9, `models`: 112 | 14.68M | 59m 43s | 90%
-🟡 Interface |  | 15.42M | 0s | 71%
+🔴 Interface |  | 15.42M | 0s | 71%
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
 
@@ -318,6 +318,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
 🟢 Analyze | `actors`: 4, `documents`: 11 | 893.3K | 19m 56s | 100%
 🟢 Database | `namespaces`: 7, `models`: 99 | 14.61M | 34m 56s | 93%
-🟡 Interface |  | 3.33M | 0s | 83%
+🔴 Interface |  | 3.33M | 0s | 83%
 ⚪ Test |  |  |  | 
 ⚪ Realize |  |  |  | 
