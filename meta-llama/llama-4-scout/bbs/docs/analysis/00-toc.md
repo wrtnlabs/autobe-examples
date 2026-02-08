@@ -1,1 +1,0 @@
-The discussion board should allow users to create accounts, login, and post articles. The platform should support image and file attachments. Users should be able to create, edit, and delete their own articles and comments. The platform should have user authentication and authorization, and data encryption.

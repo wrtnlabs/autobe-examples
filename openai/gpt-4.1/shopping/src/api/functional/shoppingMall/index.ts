@@ -1,9 +1,0 @@
-export * as admin from "./admin/index";
-export * as mallCategories from "./mallCategories/index";
-export * as externalPaymentProviders from "./externalPaymentProviders/index";
-export * as customer from "./customer/index";
-export * as seller from "./seller/index";
-export * as products from "./products/index";
-export * as skus from "./skus/index";
-export * as reviews from "./reviews/index";
-export * as productRatings from "./productRatings/index";

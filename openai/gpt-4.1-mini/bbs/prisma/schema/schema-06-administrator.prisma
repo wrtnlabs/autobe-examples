@@ -1,0 +1,224 @@
+/// Requests submitted by users to become administrators including the reason
+/// for request and current approval status. Each request is linked to the
+/// registered user who submitted it and timestamps track its lifecycle.
+///
+/// @namespace Administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The registered user who submitted the administrator request, referenced
+  /// by {@link discussion_board_registered_users.id}.
+  registered_user_id String
+  
+  /// User-provided text explaining the reason for requesting administrator
+  /// privileges.
+  reason String
+  
+  /// Current status of the request, e.g., 'pending', 'approved', or 'rejected'.
+  status String
+  
+  /// Timestamp when the administrator request was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator request was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([registered_user_id])
+  @@index([status, created_at])
+}
+
+/// Administrator grades defining regular and super administrator roles. Each
+/// grade represents a distinct level of permissions and authority within the
+/// administration system.
+///
+/// @namespace Administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_grades {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the administrator grade, e.g., 'regular', 'super'.
+  name String
+  
+  /// Description explaining the permissions and responsibilities of this grade.
+  description String
+  
+  /// Integer level to define ordering and comparison of administrator grades.
+  level Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Timestamp of last update to the record.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the record; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrators discussion_board_administrators[]
+  gradeChanges discussion_board_administrator_grade_changes[]
+  oldGradePromotions discussion_board_administrator_promotions[] @relation("discussion_board_administrator_promotions_of_old_grade_id")
+  newGradePromotions discussion_board_administrator_promotions[] @relation("discussion_board_administrator_promotions_of_new_grade_id")
+  
+  @@unique([name])
+  @@index([level])
+}
+
+/// Records of administrator promotions and demotions between grades,
+/// capturing the administrator involved, old grade, new grade, and
+/// timestamps for audit and management purposes.
+///
+/// @namespace Administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who was promoted or demoted, references {@link
+  /// discussion_board_administrators.id}.
+  discussion_board_administrator_id String
+  
+  /// Previous grade of the administrator before promotion or demotion,
+  /// references {@link discussion_board_administrator_grades.id}.
+  old_grade_id String
+  
+  /// New grade of the administrator after promotion or demotion, references
+  /// {@link discussion_board_administrator_grades.id}.
+  new_grade_id String
+  
+  /// Timestamp when the promotion or demotion occurred.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp to indicate soft deletion of the record.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  oldGrade discussion_board_administrator_grades @relation("discussion_board_administrator_promotions_of_old_grade_id", fields: [old_grade_id], references: [id], onDelete: Cascade)
+  newGrade discussion_board_administrator_grades @relation("discussion_board_administrator_promotions_of_new_grade_id", fields: [new_grade_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_administrator_promotions_discussion_b_3163659b")
+  @@index([old_grade_id])
+  @@index([new_grade_id])
+}
+
+/// Ban records capturing banned user identities, ban reasons, and ban
+/// timestamps. Each record links to the banned registered user and the
+/// administrator who executed the ban, preserving audit trail and enabling
+/// moderation control.
+///
+/// @namespace Administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned registered user. {@link discussion_board_registered_users.id}.
+  registered_user_id String
+  
+  /// Administrator who performed the ban. {@link
+  /// discussion_board_administrators.id}.
+  administrator_id String?
+  
+  /// Reason for banning the user.
+  reason String
+  
+  /// Timestamp when the ban was applied.
+  banned_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  userUnbans discussion_board_user_unbans[]
+  
+  @@index([registered_user_id])
+  @@index([administrator_id])
+  @@index([banned_at])
+}
+
+/// Records of unbanning actions performed on banned users with timestamps
+/// and references to the banning record and the administrator who performed
+/// the unban. Enables audit and accountability for user unbanning events in
+/// the system.
+///
+/// @namespace Administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_unbans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ban record that this unban entry is lifting. {@link
+  /// discussion_board_user_bans.id}.
+  user_ban_id String
+  
+  /// The administrator who performed the unban action. {@link
+  /// discussion_board_administrators.id}.
+  administrator_id String
+  
+  /// Reason or note explaining why the user was unbanned.
+  reason String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Record deletion timestamp for soft delete, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userBan discussion_board_user_bans @relation(fields: [user_ban_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_ban_id, created_at])
+  @@index([administrator_id, created_at])
+}

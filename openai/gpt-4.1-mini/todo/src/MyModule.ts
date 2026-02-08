@@ -1,30 +1,28 @@
 import { Module } from "@nestjs/common";
 
-import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
-import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
-import { TodoappUserRolesController } from "./controllers/todoApp/user/roles/TodoappUserRolesController";
-import { TodoappUserUsersEmailVerificationsController } from "./controllers/todoApp/user/users/email/verifications/TodoappUserUsersEmailVerificationsController";
-import { TodoappUserUsersPasswordResetsController } from "./controllers/todoApp/user/users/password/resets/TodoappUserUsersPasswordResetsController";
-import { TodoappUserUsersRolesController } from "./controllers/todoApp/user/users/roles/TodoappUserUsersRolesController";
-import { TodoappUserUsersController } from "./controllers/todoApp/user/users/TodoappUserUsersController";
-import { TodoappUserUsersTodoitemsController } from "./controllers/todoApp/user/users/todoItems/TodoappUserUsersTodoitemsController";
-import { TodoappUserUsersTodoitemsAuditlogsController } from "./controllers/todoApp/user/users/todoItems/auditLogs/TodoappUserUsersTodoitemsAuditlogsController";
-import { TodoappUserUsersSessionsController } from "./controllers/todoApp/user/users/sessions/TodoappUserUsersSessionsController";
-import { TodoappUserAuthUsersLogoutController } from "./controllers/todoApp/user/auth/users/logout/TodoappUserAuthUsersLogoutController";
+import { MultiusertodoAuthUserController } from "./controllers/multiUserTodo/auth/user/MultiusertodoAuthUserController";
+import { MultiusertodoUserCompletionToggleController } from "./controllers/multiUserTodo/user/completion/toggle/MultiusertodoUserCompletionToggleController";
+import { MultiusertodoUserEmail_verificationsController } from "./controllers/multiUserTodo/user/email-verifications/MultiusertodoUserEmail_verificationsController";
+import { MultiusertodoUserPassword_resetsController } from "./controllers/multiUserTodo/user/password-resets/MultiusertodoUserPassword_resetsController";
+import { MultiusertodoUserProfileController } from "./controllers/multiUserTodo/user/profile/MultiusertodoUserProfileController";
+import { MultiusertodoUserSessionsController } from "./controllers/multiUserTodo/user/sessions/MultiusertodoUserSessionsController";
+import { MultiusertodoUserTodosController } from "./controllers/multiUserTodo/user/todos/MultiusertodoUserTodosController";
+import { MultiusertodoUserTodosEdithistoriesController } from "./controllers/multiUserTodo/user/todos/editHistories/MultiusertodoUserTodosEdithistoriesController";
+import { MultiusertodoUserTrashController } from "./controllers/multiUserTodo/user/trash/MultiusertodoUserTrashController";
+import { MultiusertodoUsersController } from "./controllers/multiUserTodo/users/MultiusertodoUsersController";
 
 @Module({
   controllers: [
-    TodoappAuthGuestController,
-    TodoappAuthUserController,
-    TodoappUserRolesController,
-    TodoappUserUsersEmailVerificationsController,
-    TodoappUserUsersPasswordResetsController,
-    TodoappUserUsersRolesController,
-    TodoappUserUsersController,
-    TodoappUserUsersTodoitemsController,
-    TodoappUserUsersTodoitemsAuditlogsController,
-    TodoappUserUsersSessionsController,
-    TodoappUserAuthUsersLogoutController,
+    MultiusertodoAuthUserController,
+    MultiusertodoUsersController,
+    MultiusertodoUserProfileController,
+    MultiusertodoUserSessionsController,
+    MultiusertodoUserPassword_resetsController,
+    MultiusertodoUserEmail_verificationsController,
+    MultiusertodoUserTodosController,
+    MultiusertodoUserTodosEdithistoriesController,
+    MultiusertodoUserTrashController,
+    MultiusertodoUserCompletionToggleController,
   ],
 })
 export class MyModule {}

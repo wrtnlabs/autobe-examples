@@ -1,0 +1,199 @@
+/// Stores all comments and nested replies within the platform, supporting
+/// unlimited depth through a self-referential parent_id field. Each comment
+/// is linked to its author user and the post where it belongs. This table
+/// supports editing, deletion (soft delete), and efficient querying via
+/// indexes on foreign keys and timestamps.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author user of the comment. References community_platform_users.id.
+  user_id String
+  
+  /// Post to which this comment belongs. References
+  /// community_platform_posts.id.
+  post_id String
+  
+  /// Parent comment for nested replies. Nullable for top-level comments.
+  /// References community_platform_comments.id.
+  parent_id String?
+  
+  /// The textual content of the comment.
+  content String
+  
+  /// Flag indicating whether the comment has been deleted (soft delete).
+  is_deleted Boolean
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  reportedContentReports community_platform_reported_contents[]
+  userVotes community_platform_comment_vote_of_users[]
+  commentReports community_platform_comment_reports[]
+  moderationLogs community_platform_moderation_logs[]
+  children community_platform_comments[] @relation("recursive")
+  commentVotes community_platform_comment_votes[]
+  commentSortOrders community_platform_comment_sort_orders[]
+  deletionRecords community_platform_deleted_contents[]
+  
+  @@index([user_id])
+  @@index([post_id])
+  @@index([parent_id])
+  @@index([created_at])
+}
+
+/// Stores vote records on comments, enabling users or moderators to upvote
+/// or downvote each comment once. The main table links individual votes to
+/// comments, separating voter types via subtype child tables for users and
+/// moderators.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that this vote is associated with. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// The type of vote, either upvote or downvote.
+  vote_type String
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  moderatorVotes community_platform_comment_vote_of_moderators[]
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+}
+
+/// Stores sorting metadata for comments in the community platform to support
+/// various comment sorting strategies such as best, new, and controversial.
+/// Each record links to a specific comment and stores the strategy type and
+/// its corresponding sort value to enable efficient sorting and filtering of
+/// comments based on user-selected criteria.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_sort_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment this sorting metadata applies to. Points to
+  /// community_platform_comments.id.
+  community_platform_comment_id String
+  
+  /// Sorting strategy type (e.g., best, new, controversial) applied to this
+  /// comment.
+  strategy String
+  
+  /// Numeric value representing the sorting score for this comment according
+  /// to the chosen strategy.
+  sort_value Float
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, strategy], map: "community_platform_comment_sort_orders_community_platf_c15feeb0")
+}
+
+/// Stores information about users banned in each community, preventing
+/// posting or commenting privileges while allowing read-only access. Tracks
+/// ban and unban timestamps with reasons to support community moderation
+/// workflows.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_banned_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated community's {@link community_platform_communities.id}.
+  community_id String
+  
+  /// The banned user's {@link community_platform_users.id}.
+  user_id String
+  
+  /// Timestamp when the user was banned from the community.
+  banned_at DateTime
+  
+  /// Timestamp when the user was unbanned, if applicable.
+  unbanned_at DateTime?
+  
+  /// Reason provided for banning the user.
+  ban_reason String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Record soft deletion timestamp if the ban record is soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([community_id, user_id], map: "community_platform_community_banned_users_community_id_f429d646")
+  @@index([banned_at])
+}

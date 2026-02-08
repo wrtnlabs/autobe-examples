@@ -1,2 +1,1 @@
-export * as auth from "./auth/index";
-export * as redditCommunity from "./redditCommunity/index";
+export * as communityPlatform from "./communityPlatform/index";

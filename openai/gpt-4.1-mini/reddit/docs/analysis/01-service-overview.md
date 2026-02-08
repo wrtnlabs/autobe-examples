@@ -1,115 +1,200 @@
-# Functional Requirements
+# Reddit-like Community Platform
 
-## 1. User Registration and Login
-- WHEN a guest submits a registration request with a unique email and a password that meets complexity requirements, THE system SHALL create a new user account linked to the email.
-- WHEN a registered user submits valid login credentials, THE system SHALL authenticate and establish a secure session.
-- IF login credentials are invalid, THEN THE system SHALL reject the login attempt and provide a clear error message.
-- WHEN a logged-in user logs out, THE system SHALL terminate their session immediately.
-- THE system SHALL enforce password complexity rules such as minimum length, use of uppercase letters, numbers, and special characters.
-- THE system SHALL enforce uniqueness of user emails and validate email format.
+## User Account
 
-## 2. Community Management
-- WHEN a registered user requests to create a community with a unique name and description, THE system SHALL create the community and assign the creator as the initial moderator.
-- THE system SHALL prevent creation of communities with duplicate names.
-- THE system SHALL allow community owners and moderators to edit the community description and settings.
-- THE system SHALL allow community moderators to manage posts and comments within their communities.
+Users shall be able to sign up with an email and password and select a unique username. When a user signs up, the system shall verify that the email is not already registered and that the username is unique across the platform.
 
-## 3. Posting Content
-- WHEN a registered user creates a post of type text, link, or image in a community they belong to or is public, THE system SHALL validate and save the post.
-- THE system SHALL verify that posts have valid content formats and enforce content length and file size limits.
-- THE system SHALL associate the post with the user and community metadata.
+WHEN a user provides a valid email and password and a unique username, THE system SHALL create a new user account.
 
-## 4. Voting System
-- WHEN a registered user casts an upvote or downvote on a post or comment, THE system SHALL record the vote, ensuring only one vote per user per item.
-- THE system SHALL allow users to change or remove their votes.
-- THE system SHALL update the aggregate score for posts and comments based on votes.
+Users shall be able to log in with their registered email and password.
 
-## 5. Commenting and Nested Replies
-- WHEN a registered user comments or replies to a comment, THE system SHALL associate it with the relevant post or comment and maintain nesting without arbitrary depth limits.
-- THE system SHALL enforce maximum comment length and sanitize input.
-- THE system SHALL allow comment editing by comment authors within defined time limits.
+WHEN a user submits a login request with valid credentials, THE system SHALL authenticate the user and establish a user session.
 
-## 6. User Karma System
-- THE system SHALL calculate user karma based on received votes on posts and comments.
-- Karma points SHALL be updated in real time.
-- THE system SHALL expose karma information in user profiles.
+Users shall be able to change their password.
 
-## 7. Post Sorting
-- THE system SHALL provide sorting options for posts by hot, new, top, and controversial.
-- WHEN a user selects a sorting option, THE system SHALL return posts ordered accordingly.
-- THE system SHALL paginate post lists with a default page size.
+WHEN a user requests a password change, THE system SHALL verify the user's identity and update the password accordingly.
 
-## 8. Community Subscription
-- WHEN a registered user subscribes or unsubscribes from a community, THE system SHALL update their subscription list promptly.
-- THE system SHALL use subscriptions to customize user feeds.
+Users shall be able to delete their account.
 
-## 9. User Profiles
-- THE system SHALL maintain profiles showing users’ posts, comments, karma, and subscription lists.
-- WHEN a user requests a profile, THE system SHALL return aggregated content and statistics.
+WHEN a user deletes their account, THE system SHALL also delete all posts and comments created by the user.
 
-## 10. Reporting System
-- WHEN a registered user reports inappropriate content, THE system SHALL record the report with all relevant details and notify community moderators.
-- THE system SHALL prevent duplicate reports from the same user on the same content.
-- THE system SHALL provide an interface for moderators and admins to review reports and take appropriate action.
+## User Profile
 
-## 11. Business Rules and Validation
-- Community names SHALL be unique and follow allowed format restrictions.
-- Posts and comments SHALL meet length, format, and content restrictions.
-- Users SHALL only vote once per post or comment.
-- Karma SHALL be calculated accurately based on votes with clear rules.
-- Reports SHALL trigger moderation workflows.
+Each user shall have a profile consisting of a display name, bio text, and avatar image.
 
-## 12. Error Handling and Recovery
-- IF input validation fails at any step, THEN THE system SHALL return clear, specific error messages.
-- IF a user attempts unauthorized actions, THE system SHALL deny access with appropriate explanations.
-- THE system SHALL handle session expiry gracefully and prompt users to reauthenticate.
+Users shall be able to edit their display name, bio, and avatar.
 
-## 13. Performance Expectations
-- THE system SHALL respond to login, posting, voting, commenting, and subscription actions within 2 seconds under typical load.
-- Pagination SHALL be applied consistently to content listings.
-- Vote and karma updates SHALL propagate within 2 seconds.
-- Moderation notifications SHALL deliver within 1 minute.
+WHEN a user accesses their profile edit form and submits changes, THE system SHALL update their profile information accordingly.
 
-## 14. System Behavior Mermaid Diagram
-```mermaid
-graph LR
-  subgraph "User Registration and Authentication"
-    A["Guest Registers"] --> B["Validate Registration Data"]
-    B --> C{"Is Data Valid?"}
-    C -->|"Yes"| D["Create User Account"]
-    C -->|"No"| E["Return Error Message"]
-    D --> F["User Logs In"]
-    F --> G["Establish Session"]
-    G --> H["User Logs Out"]
-    H --> I["Terminate Session"]
-  end
-  subgraph "Community Management"
-    J["User Creates Community"] --> K["Check Community Name Uniqueness"]
-    K --> L{"Is Name Unique?"}
-    L -->|"Yes"| M["Community Created"]
-    L -->|"No"| N["Return Error"]
-    M --> O["Assign Creator as Moderator"]
-  end
-  subgraph "Content Posting"
-    P["User Creates Post"] --> Q["Validate Post Content and Type"]
-    Q --> R{"Is Post Valid?"}
-    R -->|"Yes"| S["Save Post"]
-    R -->|"No"| T["Return Error"]
-  end
-  subgraph "Voting and Commenting"
-    U["User Votes on Post/Comment"] --> V["Record Vote"]
-    V --> W["Update Aggregate Scores and Karma"]
-    X["User Comments or Replies"] --> Y["Associate with Parent Post/Comment"]
-  end
-  subgraph "Subscriptions and Profiles"
-    Z["User Subscribes to Community"] --> AA["Update Subscription List"]
-    AB["User Views Profile"] --> AC["Fetch User Posts, Comments, Karma"]
-  end
-  subgraph "Reporting and Moderation"
-    AD["User Reports Content"] --> AE["Log Report and Notify Moderators"]
-    AE --> AF["Moderators Take Action"]
-  end
-  E -.-> B
-  N -.-> K
-  T -.-> Q
-```
+Users shall be able to view any other user's profile.
+
+WHEN a user views another user's profile page, THE system SHALL display that user's display name, bio, avatar image, total karma score, a list of all posts created by that user, and a list of all comments written by that user.
+
+## Karma
+
+Every user shall have a single karma score represented by an integer.
+
+WHEN any registered user upvotes a post or comment authored by another user, THE system SHALL increase the karma score of the author by 1.
+
+WHEN any registered user downvotes a post or comment authored by another user, THE system SHALL decrease the karma score of the author by 1.
+
+WHEN a user removes their vote from a post or comment, THE system SHALL adjust the karma score of the author accordingly.
+
+Karma scores SHALL be allowed to be negative.
+
+## Communities
+
+Any registered user shall be able to create a community.
+
+WHEN a user creates a community, THE system SHALL require a unique community name, description text, and an icon image to be provided.
+
+The user who creates the community SHALL become its owner.
+
+Users shall be able to browse all communities in a paginated list.
+
+Users shall be able to search for communities by name.
+
+Each community shall display the total subscriber count on its information page.
+
+## Subscribing
+
+Users shall be able to subscribe to any community.
+
+WHEN a user subscribes to a community, THE system SHALL add the user to the subscriber list of that community.
+
+Users shall be able to unsubscribe from any community.
+
+WHEN a user unsubscribes from a community, THE system SHALL remove the user from the subscriber list of that community.
+
+Users shall be able to view a list of all communities they are subscribed to.
+
+Subscribing to a community shall be required to create posts within that community.
+
+WHEN a user attempts to create a post in a community, THE system SHALL verify that the user is subscribed to that community.
+
+## Posts
+
+Users shall be able to create posts in communities to which they are subscribed.
+
+Posts SHALL have a required title.
+
+Posts SHALL be one of three types: text posts, link posts, or image posts.
+
+Text posts SHALL contain text content.
+
+Link posts SHALL contain a valid URL.
+
+Image posts SHALL contain an uploaded image.
+
+Users shall be able to edit their posts.
+
+WHEN a user edits a post that they have authored, THE system SHALL update the post content accordingly.
+
+Users shall be able to delete their posts.
+
+WHEN a user deletes a post that they have authored, THE system SHALL remove it from the system.
+
+When viewing a single post, the system SHALL display the post's title, full content, author username, community name, vote score, comment count, and the timestamp when it was posted.
+
+## Post Voting
+
+Users shall be able to upvote posts, which adds 1 to the post's vote score.
+
+Users shall be able to downvote posts, which subtracts 1 from the post's vote score.
+
+Each user SHALL have only one vote per post.
+
+Users shall be able to change their vote from upvote to downvote or vice versa.
+
+Users shall be able to remove their vote from a post entirely.
+
+The vote score of a post SHALL be the total number of upvotes minus total number of downvotes.
+
+## Post Feeds
+
+Three types of post feeds SHALL be available:
+
+- Home Feed: displays posts only from communities the user is subscribed to. Available only to logged-in users.
+- Popular Feed: displays posts from all communities, visible to all users including guests.
+- Community Feed: displays posts from one specific community, visible to all users.
+
+All feeds SHALL support sorting options: hot, new, top, and controversial.
+
+Sorting options SHALL behave as follows:
+
+- Hot: recent posts with many upvotes appear first.
+- New: most recent posts appear first.
+- Top: highest vote score posts appear first, with time filters such as today, this week, this month, this year, and all time.
+- Controversial: posts with many votes and scores close to zero appear first.
+
+All feeds SHALL be paginated.
+
+## Post List Display
+
+When showing any feed, each post SHALL display the title, author username, community name, vote score, comment count, and time since posted.
+
+For text posts, the first 200 characters of the content SHALL be shown.
+
+For image posts, a thumbnail SHALL be shown.
+
+For link posts, the domain name of the URL SHALL be shown.
+
+## Comments
+
+Users shall be able to write comments on any post.
+
+Comments SHALL support unlimited nested replies.
+
+Users shall be able to edit and delete their own comments.
+
+Each comment SHALL display the author username, content, vote score, time since posted, and any nested replies.
+
+## Comment Voting
+
+Comment voting SHALL follow the same rules as post voting.
+
+Users SHALL only have one vote per comment.
+
+Users SHALL be able to upvote, downvote, change their vote, or remove their vote on comments.
+
+## Comment Sorting
+
+Comments on a post SHALL be sortable by best, new, or controversial.
+
+- Best sorting orders comments by highest vote score first.
+- New sorting orders comments by most recent first.
+- Controversial sorting orders comments by many votes but scores near zero first.
+
+## Community Moderation
+
+The community creator SHALL be the owner with the highest authority.
+
+Owners SHALL have the permission to add and remove moderators.
+
+Moderators SHALL have the permission to add additional moderators.
+
+Moderators SHALL NOT have the permission to remove the owner.
+
+Moderators SHALL NOT have the permission to remove other moderators.
+
+Moderators SHALL be able to delete any post or comment within their community.
+
+Moderators SHALL be able to ban and unban users within their community.
+
+Moderators SHALL be able to view the list of banned users.
+
+Banned users SHALL NOT be able to create posts or comments in the community but SHALL be able to view content.
+
+## Reporting
+
+Users SHALL be able to report any post or comment.
+
+When reporting, users SHALL provide a reason text.
+
+Moderators SHALL be able to view all reports for their community.
+
+Each report SHALL display the reported content, who reported it, and the reason.
+
+Moderators SHALL have the ability to approve (delete content) or dismiss (keep content) each report.
+
+Dismissed reports SHALL be removed from the report list.

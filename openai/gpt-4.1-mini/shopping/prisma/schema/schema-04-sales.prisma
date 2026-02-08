@@ -1,0 +1,655 @@
+/// Main product sale listings containing details, pricing, and their
+/// relationship to sellers and product categories. Represents products
+/// available for sale by sellers in the e-commerce platform. Supports status
+/// for approval workflow and soft deletion for logical removal.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sales {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who owns this sale listing. {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// The category this sale belongs to. {@link
+  /// shopping_mall_product_categories.id}.
+  category_id String
+  
+  /// The product name for display and search.
+  name String
+  
+  /// Detailed product description.
+  description String
+  
+  /// Base price of the product.
+  base_price Float
+  
+  /// Status of the sale listing, e.g., pending approval, approved, rejected,
+  /// or inactive.
+  status String
+  
+  /// The creation timestamp of this sale listing.
+  created_at DateTime
+  
+  /// The last update timestamp of this sale listing.
+  updated_at DateTime
+  
+  /// Timestamp indicating logical deletion.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  category shopping_mall_product_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  snapshots shopping_mall_sale_snapshots[]
+  saleUnits shopping_mall_sale_units[]
+  images shopping_mall_sale_images[]
+  saleSpecifications shopping_mall_sale_specifications[]
+  saleReviews shopping_mall_sale_reviews[]
+  saleQuestions shopping_mall_sale_questions[]
+  favorites shopping_mall_sale_favorites[]
+  promotions shopping_mall_sale_promotions[]
+  viewStats shopping_mall_sale_view_stats[]
+  
+  @@index([seller_id])
+  @@index([category_id])
+}
+
+/// Immutable snapshots capturing historical states of sales listings for
+/// audit and dispute resolution. This table preserves all sale attributes
+/// exactly as they were at the moment of snapshot creation, including
+/// references to the original sale entity.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original sale's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Snapshot of the sale's title.
+  title String
+  
+  /// Snapshot of the sale's detailed description.
+  description String
+  
+  /// Snapshot of the category id {@link shopping_mall_categories.id}.
+  category_id String
+  
+  /// Snapshot of the base price of the sale.
+  base_price Float
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated.
+  updated_at DateTime
+  
+  /// Nullable timestamp for soft deletion; usually null as snapshots are
+  /// immutable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  saleUnitSnapshots shopping_mall_sale_unit_snapshots[]
+  
+  @@index([shopping_mall_sale_id])
+}
+
+/// Individual product variant units within each sale, capturing SKU codes,
+/// option values, and optional price overrides. Linked to the parent sale
+/// entity in shopping_mall_sales to represent variant listings of the
+/// product for sale.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_units {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent sale reference. Links this unit to its sale listing in
+  /// shopping_mall_sales. {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// SKU (Stock Keeping Unit) code uniquely identifying this variant within
+  /// the sale.
+  sku_code String
+  
+  /// Option values representing variant attributes serialized as a JSON string.
+  option_values String
+  
+  /// Optional price override for this variant, if different from the base sale
+  /// price.
+  price_override Float?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, if the record is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  saleUnitSnapshots shopping_mall_sale_unit_snapshots[]
+  
+  @@unique([shopping_mall_sale_id, sku_code])
+  @@index([created_at])
+}
+
+/// Immutable snapshots preserving states of sale units at each change event
+/// for audit and dispute resolution. Each record duplicates all relevant
+/// fields from the sale unit exactly at that snapshot event, with foreign
+/// keys to the sale unit and to the parent sale snapshot for full history
+/// capture.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_unit_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The linked sale unit which this snapshot represents. {@link
+  /// shopping_mall_sale_units.id}
+  shopping_mall_sale_unit_id String
+  
+  /// The parent sale snapshot that groups this sale unit snapshot. {@link
+  /// shopping_mall_sale_snapshots.id}
+  shopping_mall_sale_snapshot_id String
+  
+  /// SKU code at the moment of snapshot.
+  sku_code String
+  
+  /// Option values of the sale unit at snapshot time.
+  option_values String
+  
+  /// Optional price override at snapshot time.
+  price_override Float?
+  
+  /// Stock quantity at snapshot time.
+  stock_quantity Int
+  
+  /// Whether the sale unit was active at snapshot time.
+  is_active Boolean
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion, if any.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
+  saleSnapshot shopping_mall_sale_snapshots @relation(fields: [shopping_mall_sale_snapshot_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_unit_id], map: "shopping_mall_sale_unit_snapshots_shopping_mall_sale_u_0869b46a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_snapshot_id], map: "shopping_mall_sale_unit_snapshots_shopping_mall_sale_s_92bf5526")
+}
+
+/// Images associated with each sale in the shopping mall platform,
+/// supporting multiple images per sale and allowing ordering and alt text
+/// for accessibility. Each image is linked to a single sale listing.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning sale's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// URL of the sale image.
+  image_url String
+  
+  /// Order of the image within the sale's image list, starting from 1.
+  display_order Int
+  
+  /// Alternative text description for the image, used for accessibility and
+  /// SEO.
+  alt_text String?
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the record was soft-deleted; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sale_id, display_order], map: "shopping_mall_sale_images_shopping_mall_sale_id_displa_ca128c84")
+  @@index([shopping_mall_sale_id])
+}
+
+/// Technical specifications and detailed attributes for each sale. Provides
+/// extended product specification information linked to sales, enabling
+/// precise detail management for products listed on the shopping mall
+/// platform. References the main sale entity {@link shopping_mall_sales.id}
+/// for contextual association.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_specifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Related sale entity's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Key name for the technical specification attribute, e.g., 'Weight',
+  /// 'Material', 'Battery Life'.
+  specification_key String
+  
+  /// Value corresponding to the specification_key, describing the technical
+  /// detail.
+  specification_value String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  shoppingMallSale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sale_id, specification_key], map: "shopping_mall_sale_specifications_shopping_mall_sale_i_99955b98")
+  @@index([created_at, updated_at])
+}
+
+/// Customer reviews and ratings for sales (products), including star ratings
+/// and optional textual feedback. Each review is linked to a specific sale
+/// and customer for ownership and traceability. Supports soft deletion for
+/// review moderation and historical record keeping.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced sale entity's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Authoring customer {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Star rating given by the customer, integer between 1 and 5.
+  rating Int
+  
+  /// Optional textual content of the review.
+  body String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, shopping_mall_customer_id], map: "shopping_mall_sale_reviews_shopping_mall_sale_id_shopp_44a4b529")
+}
+
+/// Helpful votes on customer reviews indicating their usefulness.
+///
+/// Stores who voted on which review and when. Supports polymorphic ownership
+/// by actor type (customer or seller). Maintains soft delete status to
+/// preserve vote history.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_review_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target review's {@link shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Voter's {@link shopping_mall_customers.id} or {@link
+  /// shopping_mall_sellers.id} depending on actor_type.
+  voter_id String
+  
+  /// Actor type of the voter: either 'customer' or 'seller'.
+  actor_type String
+  
+  /// Timestamp of when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp of when the vote was last updated.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  voter shopping_mall_customers @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_review_id, actor_type, voter_id], map: "shopping_mall_sale_review_votes_shopping_mall_product__3e87e648")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id, actor_type], map: "shopping_mall_sale_review_votes_shopping_mall_product__43d429bd")
+  @@index([voter_id, actor_type])
+}
+
+/// Customer questions regarding sales, facilitating pre-purchase inquiries
+/// and interactions with sellers. Stores question content, references to
+/// sale and customer, and timestamps for lifecycle tracking.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_questions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced sale item's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Authoring customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Question title summarizing customer inquiry.
+  title String
+  
+  /// Detailed question content written by the customer.
+  body String
+  
+  /// Current status of the question (e.g., 'open', 'closed', 'answered',
+  /// 'pending'). Usually managed by system or seller responses.
+  status String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for deactivated questions.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  saleQuestionAnswer shopping_mall_sale_question_answers?
+  
+  @@index([shopping_mall_customer_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, shopping_mall_customer_id], map: "shopping_mall_sale_questions_shopping_mall_sale_id_sho_fc4cb496")
+}
+
+/// Customer wishlist favorites for sales, tracking user preferences. Links
+/// customers to sales items they have favorited, enabling wishlist
+/// functionality.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Favorited sale item {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Record soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  @@index([shopping_mall_sale_id])
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_sale_id], map: "shopping_mall_sale_favorites_shopping_mall_customer_id_d6f03a0f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_sale_favorites_shopping_mall_customer_id_bfe6edf6")
+}
+
+/// Promotions and discounts applied to sales for marketing and pricing
+/// strategies. This table records all active and historical promotions
+/// assigned to sales items, including discount details, validity periods,
+/// and promotional codes. Each promotion is linked to a specific sale in the
+/// {@link shopping_mall_sales} table. Maintaining these records enables
+/// flexible marketing strategies and accurate pricing calculations.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_promotions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated sale's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Optional promotional code for discount application.
+  promotion_code String?
+  
+  /// Type of promotion (e.g., percentage discount, fixed amount discount, free
+  /// shipping).
+  promotion_type String
+  
+  /// Detailed description of the promotion.
+  description String?
+  
+  /// Value of the discount, interpreted according to discount_type.
+  discount_value Float
+  
+  /// Specifies if discount_value is a percentage or a fixed amount.
+  discount_type String
+  
+  /// Start datetime for the promotion's validity period.
+  start_at DateTime
+  
+  /// End datetime for the promotion's validity period.
+  end_at DateTime
+  
+  /// Indicates whether the promotion is currently active.
+  active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  @@unique([promotion_code])
+  @@index([shopping_mall_sale_id, active])
+}
+
+/// Analytics capturing view statistics for sales to understand customer
+/// interest and behavior. This table stores aggregated counts of views and
+/// unique user views per sale entity, supporting business intelligence and
+/// marketing analysis.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced sale entity's {@link shopping_mall_sales.id}.
+  shopping_mall_sale_id String
+  
+  /// Total number of views recorded for the sale.
+  view_count Int
+  
+  /// Number of unique users who viewed the sale.
+  unique_view_count Int
+  
+  /// Timestamp when the sale was first viewed.
+  first_viewed_at DateTime
+  
+  /// Timestamp when the sale was last viewed.
+  last_viewed_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the record is soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_sale_id, last_viewed_at], map: "shopping_mall_sale_view_stats_shopping_mall_sale_id_la_f6cda8c7")
+}
+
+/// Seller answers to customer questions, supporting a mandatory one-to-one
+/// relationship with shopping_mall_sale_questions. Each answer has a title
+/// and body provided by the seller, linking uniquely to a question. Includes
+/// reference to the seller who answered and standard audit timestamps with
+/// soft delete support.
+///
+/// @namespace Sales
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sale_question_answers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced question's {@link shopping_mall_sale_questions.id} enforcing
+  /// one-to-one relation.
+  shopping_mall_sale_question_id String
+  
+  /// Belonging seller's {@link shopping_mall_sellers.id} who answered the
+  /// question.
+  seller_id String
+  
+  /// Answer title provided by the seller.
+  title String
+  
+  /// Detailed answer content from the seller.
+  body String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  saleQuestion shopping_mall_sale_questions @relation(fields: [shopping_mall_sale_question_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_sale_question_id], map: "shopping_mall_sale_question_answers_shopping_mall_sale_68b09832")
+  @@index([seller_id])
+}

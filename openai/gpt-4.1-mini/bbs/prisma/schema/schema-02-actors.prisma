@@ -1,24 +1,40 @@
-/// Unauthenticated guest users, representing visitors with read-only access
-/// to the discussion board.
+/// Temporary guest accounts identified by device and anonymous attributes.
 ///
-/// Guests cannot create accounts or sessions, and have minimal identifying
-/// information mainly for tracking or analytics.
+/// This table stores records representing unauthenticated guest users
+/// temporarily connected to the discussion board. Each guest is uniquely
+/// identified by device fingerprint and anonymous session attributes to
+/// enable limited tracking and user experience customization without full
+/// registration.
 ///
-/// This table allows the system to recognize guest interactions while
-/// maintaining privacy and simplicity.
+/// No authentication credentials are stored as guests do not log in.
+/// Temporal fields track creation, update, and soft deletion statuses.
+///
+/// Separate session table discussion_board_guest_sessions tracks login
+/// sessions separately.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_guest {
+model discussion_board_guests {
   //----
   // COLUMNS
   //----
-  /// Primary key.
+  /// Primary Key.
   id String @id
   
-  /// Guest user display nickname, optional and may be used for distinguishing
-  /// guests in anonymous interactions.
-  nickname String
+  /// A unique string fingerprint identifying the guest's device for session
+  /// continuity and tracking.
+  device_fingerprint String
+  
+  /// User-Agent string of the guest's browser or client for analytics and
+  /// display customization.
+  user_agent String
+  
+  /// IP address of the guest for security and limited geo-location features.
+  ip_address String
+  
+  /// Randomly generated anonymous identifier to uniquely represent the guest
+  /// user without PII.
+  anonymous_id String
   
   /// Record creation timestamp.
   created_at DateTime
@@ -26,127 +42,358 @@ model discussion_board_guest {
   /// Record last update timestamp.
   updated_at DateTime
   
-  /// Soft deletion timestamp; null means active.
-  deleted_at DateTime?
-}
-
-/// Registered members of the discussion board capable of creating articles
-/// and comments.
-///
-/// Members can log in with credentials and manage their content.
-///
-/// This table stores essential user information including authentication
-/// data and timestamps for auditing and soft deletion.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_member {
-  //----
-  // COLUMNS
-  //----
-  /// Primary key.
-  id String @id
-  
-  /// Email address for authentication and communication. Must be unique across
-  /// members.
-  email String
-  
-  /// Hashed password for secure authentication.
-  password_hash String
-  
-  /// Display name chosen by the member for identification.
-  nickname String
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft deletion timestamp; null means active.
+  /// Soft delete timestamp; null if not deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_member_sessions discussion_board_member_sessions[]
-  discussion_board_articles discussion_board_articles[]
-  discussion_board_comments discussion_board_comments[]
+  guestSessions discussion_board_guest_sessions[]
   
-  @@unique([email])
+  @@unique([device_fingerprint])
+  @@index([created_at])
+  @@index([ip_address])
 }
 
-/// Active session records for registered members, tracking login state and
-/// connection details.
-///
-/// Each session is linked to a member and stores IP address, URL, referrer,
-/// creation time, and expiry time.
-///
-/// This supports authentication session management and audit logging.
+/// Temporary session tokens supporting guest access with device recognition,
+/// tracking IP address, visited URL, referrer, and session expiration.
+/// Linked to guest entity for authentication context.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_member_sessions {
+model discussion_board_guest_sessions {
   //----
   // COLUMNS
   //----
-  /// Primary key.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the member who owns this session. {@link
-  /// discussion_board_member.id}.
-  discussion_board_member_id String
+  /// Reference to the guest account's discussion_board_guests.id.
+  discussion_board_guest_id String
   
-  /// IP address from which the session originated.
+  /// IP address from which the guest connected.
   ip String
   
-  /// Full URL of the connection request.
+  /// Full URL of the page visited by the guest.
   href String
   
-  /// HTTP referrer URL.
+  /// Referrer URL leading to the guest's session start.
+  referrer String
+  
+  /// Timestamp when the session record was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and is no longer valid.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  guest discussion_board_guests @relation(fields: [discussion_board_guest_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_guest_id, created_at], map: "discussion_board_guest_sessions_discussion_board_guest_b6816fda")
+}
+
+/// Registered user accounts with email/password credentials and profile
+/// data. This table stores authentication credentials (email, password
+/// hash), user profile details (display name, bio), and status flags. It is
+/// the main actor table for registered users in the discussion board system
+/// managing economic and political discussions. Includes unique email
+/// constraint for login, and soft delete for account removal.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_registered_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's unique email address used for login and communication.
+  email String
+  
+  /// Hash of the user's password for authentication.
+  password_hash String
+  
+  /// User's display name shown in profiles and articles.
+  display_name String
+  
+  /// Free-text user biography shown in profile.
+  bio String?
+  
+  /// Flag indicating if the user is banned from login and posting.
+  is_banned Boolean
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  sessions discussion_board_registered_user_sessions[]
+  passwordResets discussion_board_registered_user_password_resets[]
+  emailVerifications discussion_board_registered_user_email_verifications[]
+  auditLogs discussion_board_audit_logs[]
+  articles discussion_board_articles[]
+  comments discussion_board_comments[]
+  administratorRequests discussion_board_administrator_requests[]
+  userBans discussion_board_user_bans[]
+  
+  @@unique([email])
+  @@index([is_banned])
+}
+
+/// JWT session tokens managing registered user authentication sessions. Each
+/// record represents a login session with metadata for auditing and
+/// security. References the registered user {@link
+/// discussion_board_registered_users.id}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_registered_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged registered user {@link discussion_board_registered_users.id}.
+  registered_user_id String
+  
+  /// Client IP address for session auditing.
+  ip String
+  
+  /// Request URI that initiated the session.
+  href String
+  
+  /// HTTP referer header value for session origin.
   referrer String
   
   /// Session creation timestamp.
   created_at DateTime
   
-  /// Session expiry timestamp; null means session is active.
-  expired_at DateTime?
+  /// Session expiration timestamp.
+  expired_at DateTime
   
   //----
   // RELATIONS
   //----
-  discussionBoardMember discussion_board_member @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
+  @@index([registered_user_id, created_at], map: "discussion_board_registered_user_sessions_registered_u_89a80578")
 }
 
-/// System administrators with full permissions over the discussion board.
-///
-/// Admins can manage all content and users, with login credentials for
-/// authentication.
-///
-/// Timestamps and soft deletion fields help track administrative activity
-/// and account state.
+/// Password reset tokens with expiration for registered users, storing
+/// secure tokens linked to registered user accounts for password recovery.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admin {
+model discussion_board_registered_user_password_resets {
   //----
   // COLUMNS
   //----
-  /// Primary key.
+  /// Primary Key.
   id String @id
   
-  /// Email address for administrator login and communication. Must be unique
-  /// among admins.
+  /// Belonged registered user {@link discussion_board_registered_users.id}.
+  registered_user_id String
+  
+  /// Secure token string for password reset validation.
+  token String
+  
+  /// Expiration datetime for the reset token.
+  expired_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([registered_user_id, expired_at], map: "discussion_board_registered_user_password_resets_regis_753c978e")
+}
+
+/// Email verification tokens to manage user email confirmation process for
+/// registered users. Each record associates a unique token with a registered
+/// user along with expiration and timestamps.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_registered_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged registered user's {@link discussion_board_registered_users.id}.
+  registered_user_id String
+  
+  /// Unique email verification token string.
+  token String
+  
+  /// Datetime when this verification token expires.
+  expired_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Record soft deletion timestamp, nullable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([registered_user_id, created_at], map: "discussion_board_registered_user_email_verifications_r_cbfc82ec")
+}
+
+/// Administrator accounts with elevated privileges and role management. This
+/// table stores login credentials for administrators, including email and
+/// password hash, and links to their grade/role in the system.
+/// Administrators have full user capabilities plus administrative powers
+/// such as managing sections, deleting articles and comments, and banning
+/// users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator grade reference. {@link
+  /// discussion_board_administrator_grades.id}.
+  grade_id String
+  
+  /// Unique email address used for administrator login credentials.
   email String
   
-  /// Hashed password used for authentication.
+  /// Password hash for secure authentication.
   password_hash String
   
-  /// Display name for the administrator user.
-  nickname String
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  grade discussion_board_administrator_grades @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  
+  sessions discussion_board_administrator_sessions[]
+  passwordResets discussion_board_administrator_password_resets[]
+  sectionAdminLogs discussion_board_section_admin_logs[]
+  gradeChanges discussion_board_administrator_grade_changes[]
+  promotions discussion_board_administrator_promotions[]
+  issuedBans discussion_board_user_bans[]
+  userUnbans discussion_board_user_unbans[]
+  
+  @@index([grade_id])
+  
+  @@unique([email])
+}
+
+/// JWT session tokens managing administrator authentication sessions. Stores
+/// session metadata including IP address, URL initiated from, referrer,
+/// creation and expiration timestamps. Linked to owning administrator via
+/// foreign key administrator_id referencing discussion_board_administrators.
+/// Enables authentication lifecycle management and session auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning administrator's {@link discussion_board_administrators.id}.
+  administrator_id String
+  
+  /// IP address from which the session was created.
+  ip String
+  
+  /// The full URL of the page used to initiate the session.
+  href String
+  
+  /// Referrer URL indicating the previous page before session creation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires, marking session invalidity.
+  expired_at DateTime
+  
+  /// Timestamp marking soft deletion of the session; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "discussion_board_administrator_sessions_administrator__bcf48e62")
+}
+
+/// Password reset tokens for administrators to enable secure password
+/// recovery. This table links each token to an administrator account and
+/// records the token value, expiration timestamp, and auditing timestamps
+/// (creation, update, deletion).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator account this token belongs to. {@link
+  /// discussion_board_administrators.id}
+  administrator_id String
+  
+  /// Secure random token string for password reset validation.
+  token String
+  
+  /// Expiration timestamp after which the token is invalid and unusable.
+  expired_at DateTime
   
   /// Record creation timestamp.
   created_at DateTime
@@ -154,59 +401,159 @@ model discussion_board_admin {
   /// Record last update timestamp.
   updated_at DateTime
   
-  /// Soft deletion timestamp; null means active.
+  /// Soft deletion timestamp; null if not deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussion_board_admin_sessions discussion_board_admin_sessions[]
+  administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
-  @@unique([email])
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "discussion_board_administrator_password_resets_adminis_af83e678")
 }
 
-/// Active session records for administrators, enabling authentication and
-/// audit logging.
-///
-/// Sessions include IP address, connection URL, referrer, creation time, and
-/// optional expiration timestamp.
-///
-/// Linked to the administrator who owns the session, supporting secure
-/// session management.
+/// Super administrator accounts represent the highest-level privileged users
+/// in the system with full control over administrative roles and
+/// permissions. This table stores essential authentication data such as
+/// unique email and hashed passwords, profile display name and bio for
+/// identification, and supports soft deletion for account lifecycle
+/// management. It serves as the root actor entity for super administrators
+/// and relates to session and password reset tables.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model discussion_board_admin_sessions {
+model discussion_board_super_administrators {
   //----
   // COLUMNS
   //----
-  /// Primary key.
+  /// Primary Key.
   id String @id
   
-  /// Reference to the administrator owning this session. {@link
-  /// discussion_board_admin.id}.
-  discussion_board_admin_id String
+  /// Unique email address used for login and identification of the super
+  /// administrator.
+  email String
   
-  /// IP address of connection origin.
-  ip String
+  /// Hashed password value for authenticating the super administrator.
+  password_hash String
   
-  /// Connection URL.
-  href String
+  /// Display name for the super administrator profile, shown in the UI.
+  display_name String
   
-  /// Referrer URL.
-  referrer String
+  /// Optional biography or description text for the super administrator
+  /// profile.
+  bio String?
   
-  /// Session start timestamp.
+  /// Timestamp recording when the super administrator account was created.
   created_at DateTime
   
-  /// Session end timestamp; null if ongoing.
-  expired_at DateTime?
+  /// Timestamp recording when the super administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking when the super administrator account was soft deleted,
+  /// if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  discussionBoardAdmin discussion_board_admin @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  sessions discussion_board_super_administrator_sessions[]
+  passwordReset discussion_board_super_administrator_password_resets?
+  
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// JWT session tokens that manage authentication sessions for super
+/// administrators. Each session records connection context including IP
+/// address, referrer URL, and user agent (href). Sessions are time-limited
+/// with creation and expiration timestamps to ensure security and
+/// auditability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The associated super administrator's {@link
+  /// discussion_board_super_administrators.id}.
+  super_administrator_id String
+  
+  /// IP address from which the session originated.
+  ip String
+  
+  /// User agent or originating URL captured for session tracking.
+  href String
+  
+  /// Referrer URL from the client during session initiation.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session will expire, enforcing session lifecycle.
+  expired_at DateTime
+  
+  /// Timestamp for soft deletion of the session record, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator discussion_board_super_administrators @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
   
   // spellchecker: ignore-next-line
-  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
+  @@index([super_administrator_id, created_at], map: "discussion_board_super_administrator_sessions_super_ad_c936c830")
+}
+
+/// Password reset tokens for super administrators to secure sensitive
+/// accounts. Each token uniquely identifies a password reset request and
+/// includes expiration for security. References the owning super
+/// administrator account.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning super administrator's {@link
+  /// discussion_board_super_administrators.id}.
+  discussion_board_super_administrator_id String
+  
+  /// Unique token string used for password reset authentication.
+  token String
+  
+  /// Expiration time for the password reset token to maintain security.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token was last updated.
+  updated_at DateTime
+  
+  /// Soft delete flag indicating when the token was invalidated or removed.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  superAdministrator discussion_board_super_administrators @relation(fields: [discussion_board_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_super_administrator_id], map: "discussion_board_super_administrator_password_resets_d_e741a7ed")
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([expired_at], map: "discussion_board_super_administrator_password_resets_e_101156f0")
 }

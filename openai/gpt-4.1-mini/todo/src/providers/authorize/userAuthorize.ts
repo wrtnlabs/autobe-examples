@@ -10,19 +10,15 @@ export async function userAuthorize(request: { headers: { authorization?: string
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
+  const user = await MyGlobal.prisma.multi_user_todo_users.findFirst({
     where: {
-      id: payload.session_id,
-      expired_at: { gt: new Date() },
-      todoAppUser: {
-        id: payload.id,
-        deleted_at: null
-      }
+      id: payload.id,
+      deleted_at: null
     },
   });
 
-  if (session === null) {
-    throw new ForbiddenException("You're not enrolled or session invalid");
+  if (user === null) {
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

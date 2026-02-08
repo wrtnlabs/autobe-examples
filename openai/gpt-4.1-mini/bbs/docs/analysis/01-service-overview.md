@@ -1,130 +1,179 @@
-# Simple Economic/Political Discussion Board Requirements Analysis Report
+# Economic/Political Discussion Board
 
-## 1. Introduction
+## 1. User Account
 
-The service provides a simple and focused online discussion board platform dedicated to economic and political topics. It enables users to create articles enriched with images and files, engage in discussions via comments, and offers role-based access with guest browsing and authenticated member participation. The design emphasizes minimalism, usability, and maintainability, rejecting complexity in favor of straightforward functionality.
+### 1.1 Sign Up
+WHEN a visitor registers, THE system SHALL require a unique email and password.
+THE system SHALL validate email format and enforce password rules (minimum length 8, at least one digit, one uppercase letter).
+THE system SHALL store user credentials securely using salted hashing.
 
-## 2. Business Model
+### 1.2 Log In
+WHEN a registered user submits login credentials, THE system SHALL authenticate the email and password.
+ON successful authentication, THE system SHALL create a secure session or token for the user.
+ON failure, THE system SHALL provide an error message "Invalid email or password" within 2 seconds.
 
-### Why This Service Exists
+### 1.3 Password Change
+WHEN a logged-in user requests to change their password, THE system SHALL verify the old password.
+THE system SHALL require the new password to meet security criteria.
+ON success, THE system SHALL update the password securely.
 
-The service exists to provide an easy-to-use platform tailored for concise and quality-focused discussions on economics and politics. Unlike generic discussion boards, it supports multiple attachments, suitable for sharing documents or images that support user arguments, fostering grounded discourse.
+### 1.4 Account Deletion
+WHEN a logged-in user requests account deletion, THE system SHALL delete user profile, all user's articles, and comments permanently.
+THE system SHALL require user confirmation before deletion.
 
-### Target Audience
+## 2. User Profile
 
-Economists, political commentators, academics, students, and casual enthusiasts interested in discussing economic and political issues in a structured yet simple environment.
+### 2.1 Profile Attributes
+EACH user profile SHALL contain a display name and bio text.
 
-### Value Proposition
+### 2.2 Profile Editing
+WHEN a user accesses their profile editing page, THE system SHALL allow modifications of display name and bio.
 
-The platform enables seamless article creation with multiple attachments, encourages focused conversations, and caters to users seeking a clutter-free, purpose-built space. It balances simplicity with necessary features like attachments and role control.
+### 2.3 Viewing Profiles
+WHEN a user views another user's profile, THE system SHALL display that user's display name, bio, list of articles written by the user, and list of comments authored by the user.
 
-### Revenue and Growth Strategy
+## 3. Sections
 
-Initial deployment focuses on attracting a community without charge, with potential monetization via premium features or advertising after establishing a user base.
+### 3.1 Section Attributes
+EACH section SHALL have a unique name and description.
 
-## 3. Core Values
+### 3.2 Section Management
+ONLY administrators SHALL create, edit, or delete sections.
 
-### Simplicity
+### 3.3 Section Viewing
+USERS SHALL be able to view the full list of sections.
+WHEN viewing a section, users SHALL see all articles within that section.
 
-THE service SHALL prioritize essential features only, avoiding overly complicated workflows or unnecessary modules.
+## 4. Articles
 
-### Security and Moderation
+### 4.1 Article Creation
+WHEN a user creates an article, THE article SHALL have a title, content, and belong to one section.
+THE system SHALL validate that title and content are not empty.
 
-THE system SHALL enforce authentication for content posting and provide administrative tools for content moderation to maintain quality and compliance.
+### 4.2 Attachments
+USERS SHALL be able to attach multiple files and images to articles.
+THE system SHALL store and allow download of these attachments securely.
 
-### Accessibility
+### 4.3 Tags
+USERS SHALL be able to assign multiple free-text tags to an article.
 
-THE platform SHALL offer unrestricted read access to guests and encourage registration for content contribution.
+### 4.4 Edit and Deletion
+WHEN a user edits an article, THE system SHALL allow modifications to title, content, attachments, and tags.
+WHEN a user deletes an article, THE system SHALL remove it permanently from the system.
 
-## 4. Success Metrics
+## 5. Article List
 
-### Performance
+### 5.1 Pagination
+ARTICLE lists SHALL be paginated, with configurable page sizes.
 
-WHEN users browse or post content, THE system SHALL respond within 3 seconds to maintain user satisfaction.
+### 5.2 Display Metadata
+IN the article list, EACH article SHALL display title, author, tags, comment count, and time posted.
 
-### User Engagement
+### 5.3 Sorting
+USERS SHALL be able to sort articles by newest or oldest first.
 
-THE platform SHALL reach a target of 10 new articles posted weekly by active members within 6 months post-launch.
+## 6. Viewing an Article
 
-### Content Quality
+### 6.1 Article Content
+WHEN viewing an article, THE system SHALL display full title, author, content, attachments, tags, and time posted.
 
-THE system SHALL enable administrators to act on inappropriate content swiftly, removing flagged posts within 24 hours.
+### 6.2 Attachments
+USERS SHALL be able to download any attached files or images.
 
-## 5. User Actors
+## 7. Searching Articles
 
-| Actor  | Description | Permissions |
-|--------|-------------|-------------|
-| Guest  | Unauthenticated users | Read-only access to all public articles and comments; cannot post or upload files. |
-| Member | Registered users | Create, edit, delete their own articles and comments; upload multiple images and files per article; manage their profiles. |
-| Admin  | Administrators | Full control over content and user management; capable of moderation actions including removal of inappropriate material. |
+### 7.1 Search Parameters
+USERS SHALL be able to search articles by title or content keywords.
 
-## 6. Functional Overview
+### 7.2 Filtering
+USERS MAY filter search results using tags.
 
-### Articles
+### 7.3 Pagination
+SEARCH results SHALL be paginated.
 
-- Members SHALL be able to create articles with a title and content body.
-- Articles SHALL support uploading multiple attachments, including images and document files.
-- Attachments SHALL be limited to a maximum of 5 files per article, each not exceeding 10MB.
-- Allowed file types SHALL include JPEG, PNG, GIF for images and PDF, DOCX for document files.
-- Articles SHALL be categorized under economic or political topics.
-- Members SHALL be able to edit or delete their articles within a defined time window.
+## 8. Comments
 
-### Comments
+### 8.1 Commenting
+USERS SHALL be able to write comments on articles.
 
-- Members SHALL be able to post text-only comments on articles.
-- Comments SHALL be limited to 1000 characters.
-- Members SHALL be able to edit or delete their comments within 15 minutes of posting.
+### 8.2 Comment Display
+COMMENTS SHALL be displayed sorted oldest first.
 
-### Authentication and Permissions
+### 8.3 Editing and Deletion
+USERS SHALL be able to edit or delete their own comments.
 
-- Guests SHALL have read-only access.
-- Members MUST authenticate to create or edit content.
-- Admins SHALL have full permissions over content and user management.
+## 9. Administrator System
 
-### Security and Moderation
+### 9.1 Becoming Administrator
+ANY user MAY request administrator status by submitting a reason.
+SUPER administrators SHALL review pending requests.
+SUPER administrators SHALL approve or reject requests.
+WHEN approved, THE user becomes a regular administrator.
 
-- Admins SHALL have the ability to remove or flag inappropriate content.
-- Input validation SHALL be enforced for file uploads and content fields.
+### 9.2 Administrator Grades
+THERE SHALL be two grades: regular and super administrators.
+SUPER administrators SHALL be able to promote and demote other admins.
+SUPER administrators CANNOT demote themselves.
 
-## 7. Business Rules
+### 9.3 Administrator Capabilities
+ADMINISTRATORS SHALL be able to create, edit, delete sections.
+ADMINISTRATORS SHALL be able to delete any article or comment.
+ADMINISTRATORS SHALL be able to ban or unban users and view banned users list.
 
-- Article titles and content are mandatory.
-- Attachments SHALL conform to size and type constraints.
-- Editing time windows SHALL be explicitly enforced, disallowing modifications beyond limits.
-- Comments SHALL comply with length restrictions.
+## 10. Banning
 
-## 8. User Journey
+### 10.1 Ban Effects
+WHEN a user is banned, THAT user SHALL be prevented from logging in.
+EXISTING articles and comments by the banned user SHALL remain visible.
+
+### 10.2 Ban Reason
+BAN reason SHALL be recorded and available to administrators.
+
+---
 
 ```mermaid
-graph LR
-  A["Guest Browses Articles"] --> B{"Wants to Post?"}
-  B -->|"No"| C["Continue Browsing"]
-  B -->|"Yes"| D["User Registers/Logs In"]
-  D --> E["Creates Article with Attachments"]
-  E --> F["Article Published"]
-  F --> G["Other Members Comment"]
-  G --> A
+graph TD
+  UserAccount["User Account Management"] -->|"Create Account"| SignUp["Sign Up"]
+  UserAccount -->|"Log In"| LogIn["Log In"]
+  UserAccount -->|"Change Password"| PasswordChange["Change Password"]
+  UserAccount -->|"Delete Account"| AccountDelete["Delete Account"]
+
+  UserProfile["User Profile"] -->|"View Profile"| ProfileView["View Profile"]
+  UserProfile -->|"Edit Profile"| ProfileEdit["Edit Profile"]
+
+  Sections["Sections"] -->|"Manage Sections"| AdminSections["Admin Sections"]
+  Sections -->|"View Sections"| UserSections["User Sections"]
+  Sections -->|"Browse Articles"| ArticlesBrowse["Browse Articles"]
+
+  Articles["Articles"] -->|"Create Article"| ArticleCreate["Create Article"]
+  Articles -->|"Edit Article"| ArticleEdit["Edit Article"]
+  Articles -->|"Delete Article"| ArticleDelete["Delete Article"]
+
+  ArticleList["Article List"] -->|"View Article List"| ArticleListView["Article List View"]
+
+  ViewArticle["View Article"] -->|"View Content"| ArticleContent["Article Content"]
+  Comments["Comments"] -->|"Write Comment"| CommentWrite["Write Comment"]
+  Comments -->|"Edit Comment"| CommentEdit["Edit Comment"]
+  Comments -->|"Delete Comment"| CommentDelete["Delete Comment"]
+
+  AdminSystem["Administrator System"] -->|"Admin Request"| AdminRequest["Admin Request"]
+  AdminSystem -->|"Approve Requests"| ApproveRequest["Approve Requests"]
+
+  AdminSystem -->|"Promote Admin"| PromoteAdmin["Promote Admin"]
+  AdminSystem -->|"Demote Admin"| DemoteAdmin["Demote Admin"]
+
+  AdminSystem -->|"Manage Sections"| AdminManageSections["Manage Sections"]
+  AdminSystem -->|"Moderate Content"| AdminModerateContent["Moderate Content"]
+  AdminSystem -->|"Ban Users"| AdminBanUsers["Ban Users"]
+
+  Banning["Banning System"] -->|"Ban User"| BanUser["Ban User"]
+  Banning -->|"Unban User"| UnbanUser["Unban User"]
+  Banning -->|"Ban List"| BanListView["Ban List View"]
+
+  UserAccount -->|"User Banned"| BanUser
+
+  AdminSystem -->|"View Banned Users"| BanListView
+
+  Note["Note"] -->|"Delete Account Cascades"| ArticleDelete
+  Note -->|"Delete Account Cascades"| CommentDelete
 ```
-
-## 9. Error Handling and Feedback
-
-- IF file upload exceeds size or unsupported format, THEN system SHALL reject the file with a clear error message within 2 seconds.
-- IF unauthorized posting is attempted by a guest, THEN system SHALL deny the action with an explanatory message.
-- IF editing time windows expire, THEN editing options SHALL be disabled with proper user notification.
-
-## 10. Performance Expectations
-
-- THE system SHALL paginate article listings, displaying 20 articles per page.
-- Article and attachment loading SHALL complete within 2 seconds under normal operation.
-
-## 11. Appendices
-
-### Glossary
-
-- "Member": Registered user authorized to post content.
-- "Guest": Unauthenticated site visitor with read-only privileges.
-
-### References
-
-- Industry best practices for discussion boards.
-- File attachment standards.

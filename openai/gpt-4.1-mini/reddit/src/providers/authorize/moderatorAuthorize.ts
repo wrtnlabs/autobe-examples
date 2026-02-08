@@ -1,5 +1,4 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { ModeratorPayload } from "../../decorators/payload/ModeratorPayload";
@@ -11,11 +10,11 @@ export async function moderatorAuthorize(request: { headers: { authorization?: s
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const moderator = await MyGlobal.prisma.reddit_community_moderators.findFirst({
+  const moderator = await MyGlobal.prisma.community_platform_moderators.findFirst({
     where: {
       id: payload.id,
       deleted_at: null
-    },
+    }
   });
 
   if (moderator === null) {

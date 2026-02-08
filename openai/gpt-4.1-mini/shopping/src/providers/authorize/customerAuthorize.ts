@@ -10,28 +10,15 @@ export async function customerAuthorize(request: { headers: { authorization?: st
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Verify session existence and validity
-  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
+  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
-      id: payload.session_id,
-      shoppingMallCustomer: {
-        id: payload.id
-      },
-      expired_at: null
-    }
-  });
-
-  if (session === null) {
-    throw new ForbiddenException("Session not valid");
-  }
-
-  // Verify customer existence
-  const customer = await MyGlobal.prisma.shopping_mall_customers.findUnique({
-    where: { id: payload.id }
+      id: payload.id,
+      deleted_at: null,
+    },
   });
 
   if (customer === null) {
-    throw new ForbiddenException("Customer not found");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

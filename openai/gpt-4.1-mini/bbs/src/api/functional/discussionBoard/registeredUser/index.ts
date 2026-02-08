@@ -1,0 +1,9 @@
+export * as registeredUsers from "./registeredUsers/index";
+export * as profile from "./profile/index";
+export * as sessions from "./sessions/index";
+export * as passwordResets from "./passwordResets/index";
+export * as emailVerifications from "./emailVerifications/index";
+export * as articles from "./articles/index";
+export * as comments from "./comments/index";
+export * as search from "./search/index";
+export * as tags from "./tags/index";

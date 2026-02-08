@@ -1,131 +1,130 @@
-# TodoApp Requirements Specification Document
+# Multi-User Todo Application Requirements Specification
 
-## 1. Business Model
+## 1. User Account Management
 
-The TodoApp provides a simple, secure platform enabling individual users to manage personal todo lists with full privacy and data protection. Unlike collaborative or shared list services, each user's todo list is completely private and inaccessible to others.
+The system SHALL allow users to manage their accounts with the following features:
 
-### Purpose
-WHEN a user registers and uses the TodoApp, THE system SHALL provide a private task management service ensuring data confidentiality.
+- WHEN a new user signs up, THE system SHALL allow the user to register using a unique email address and a password.
+- WHEN a registered user attempts to log in, THE system SHALL authenticate the user using their email and password.
+- WHEN a logged-in user requests a password change, THE system SHALL allow the user to update their password after verifying the current password.
+- WHEN a logged-in user requests account deletion, THE system SHALL permanently delete the user account and all associated data including todos and their edit histories.
+- WHEN account deletion is performed, THE system SHALL remove all of the user's todos, including those in the trash, permanently from the database.
 
-### Revenue Strategy
-Initially, the service SHALL be free to attract users. Future monetization MAY include premium features such as collaborative lists and cloud backups.
+Authentication Requirements:
+- User sessions SHALL be managed securely using JWT tokens.
+- Passwords SHALL be stored securely using strong hashing algorithms.
+- Email addresses SHALL be unique across the system.
+- The system SHALL enforce password complexity rules, such as minimum length and character variety.
 
-### Growth Plan
-The service growth SHALL focus on minimal onboarding friction and maintaining trust through reliable, private service.
+## 2. User Profile Management
 
-### Success Metrics
-- Number of registered users
-- Monthly active users (MAU)
-- User retention after 30 days
-- System uptime and average response time
+- WHEN a user is registered, THE system SHALL create a user profile associated with the account.
+- EACH user profile SHALL contain a display name.
+- WHEN a logged-in user requests to edit their profile, THE system SHALL allow the user to update their display name.
+- Users SHALL NOT have access to other users' profiles or profile information.
+- The system SHALL enforce privacy so that all profile data is accessible only to the owning user.
 
-## 2. User Actors and Authentication
+## 3. Todo Management
 
-### Actors
-- Guest: Unauthenticated visitor able to register and log in.
-- User: Authenticated individual managing personal todo lists.
+### 3.1 Creating Todos
 
-### Authentication Flows
-- WHEN a guest submits registration with valid email and password, THE system SHALL create a user account securely.
-- WHEN a guest logs in with valid credentials, THE system SHALL issue a JWT access token valid for 15 minutes and a refresh token valid for 7 days.
-- WHEN a user logs out, THE system SHALL invalidate the refresh token to terminate the session.
-- WHEN a user requests password reset, THE system SHALL send a verification email and allow password change securely.
-- WHEN a user changes password, THE system SHALL revoke all active tokens.
+- WHEN a logged-in user creates a new todo, THE system SHALL allow specifying the following fields:
+  - Title (required)
+  - Description (optional, can be empty)
+  - Start date (optional, can be empty)
+  - Due date (optional, can be empty)
+- Newly created todos SHALL have their completion status set to incomplete by default.
 
-### Token Management
-- Access token SHALL include userId and role claims.
-- Tokens SHALL be securely stored client-side, recommended as httpOnly cookies.
-- Token expiration policies SHALL be 15 minutes for access tokens and 7 days for refresh tokens.
+### 3.2 Viewing Todos
 
-### Permission Matrix
-| Action                  | Guest | User |
-|-------------------------|-------|------|
-| Register                | Yes   | No   |
-| Login                   | Yes   | No   |
-| Logout                  | No    | Yes  |
-| Create todo             | No    | Yes  |
-| Read own todos          | No    | Yes  |
-| Update own todos        | No    | Yes  |
-| Delete own todos        | No    | Yes  |
-| Access others' todos    | No    | No   |
+- WHEN a logged-in user views their todo list, THE system SHALL return a paginated list of their own todos.
+- EACH todo in the list SHALL include the following information:
+  - Title
+  - Completion status
+  - Start date (if set)
+  - Due date (if set)
+  - Creation date
+- WHEN a logged-in user views a specific todo, THE system SHALL provide full details including the full description.
+- The system SHALL ensure that users can view only their own todos.
 
-## 3. Functional Requirements
+### 3.3 Completing Todos
 
-### Todo Item Management
-- WHEN a user creates a todo item with a title, THE system SHALL assign ownership to the user and store the item.
-- WHEN a user requests their todo list, THE system SHALL respond with only items owned by that user.
-- WHEN a user updates a todo item, THE system SHALL verify ownership before applying changes.
-- WHEN a user deletes a todo item, THE system SHALL verify ownership and remove the item.
-- Todo items SHALL have title (required, max 255 chars), optional description, optional due date in ISO 8601 format, and a completion status boolean.
+- WHEN a logged-in user toggles a todo completion status, THE system SHALL allow marking the todo as complete or incomplete.
+- The completion status SHALL be a simple binary toggle.
 
-### User Registration and Login
-- WHEN a guest registers, THE system SHALL validate email format and enforce password strength (min 8 chars, upper, lower, digit, special).
-- WHEN a user logs in, THE system SHALL verify credentials and respond within 2 seconds.
+### 3.4 Editing Todos
 
-### Data Privacy and Access Control
-- THE system SHALL enforce strict access control, denying user access to todos they do not own.
-- Unauthorized attempts SHALL return HTTP 403 Forbidden status.
+- WHEN a user edits a todo, THE system SHALL allow updates to the todo's title, description, start date, and due date.
+- EACH edit SHALL create an entry in the todo's edit history capturing the changes.
 
-## 4. Business Rules and Validation
+### 3.5 Edit History
 
-- Todo titles SHALL NOT exceed 255 characters.
-- Passwords SHALL be at least 8 characters and include uppercase, lowercase, numeric, and special characters.
-- Emails SHALL be unique across all user accounts.
-- Passwords SHALL be stored using salted hashing.
-- Update and delete operations SHALL be restricted to todo owners.
+- EACH todo SHALL maintain an edit history.
+- WHEN a todo is edited, THE system SHALL create a history entry recording:
+  - Timestamp of the edit
+  - Changed title if updated
+  - Changed description if updated
+  - Changed start date if updated
+  - Changed due date if updated
+- WHEN a logged-in user requests the edit history of a todo, THE system SHALL return the full history sorted from most recent to oldest.
 
-## 5. Error Handling and Recovery
+### 3.6 Deleting Todos
 
-- IF a registration email already exists, THE system SHALL return an error indicating duplication.
-- IF login credentials are invalid, THE system SHALL return HTTP 401 Unauthorized.
-- IF unauthorized access to todos is attempted, THE system SHALL return HTTP 403 Forbidden.
-- IF unexpected system errors occur, THE system SHALL return HTTP 500 Internal Server Error with a generic message.
-- Authentication failures SHALL be logged with timestamp and IP for monitoring.
+- WHEN a user deletes a todo, THE system SHALL perform a soft delete, marking the todo as deleted but not removing it from the database.
+- Deleted todos SHALL NOT appear in the user's normal todo list.
 
-## 6. Performance Requirements
+## 4. Trash Management
 
-- THE system SHALL respond to login within 2 seconds 99% of the time.
-- Todo list retrieval SHALL complete within 1 second under normal load.
-- THE system SHALL support at least 1,000 concurrent active users.
+- WHEN a user views their trash, THE system SHALL provide a paginated list of todos that have been soft deleted.
+- Users SHALL be able to restore a deleted todo from the trash, returning it to the normal todo list.
+- Users SHALL be able to permanently delete a todo from the trash.
+- WHEN a todo is permanently deleted from the trash, THE system SHALL also permanently delete all associated edit history entries.
 
-## 7. Security and Authorization
+## 5. Filtering and Sorting Todos
 
-- All sensitive data SHALL be transmitted encrypted via TLS.
-- All authenticated requests SHALL validate JWT tokens.
-- Refresh tokens SHALL be revoked upon logout or password change.
-- THE system SHALL implement rate limiting on login attempts to prevent brute force attacks.
+- Users SHALL be able to filter their todo list by completion status with the following options:
+  - All todos
+  - Only completed todos
+  - Only incomplete todos
+- Users SHALL be able to sort their todo list by:
+  - Creation date (ascending or descending)
+  - Start date (earliest first or latest first)
+  - Due date (earliest first or latest first)
+- Todos with no start date SHALL appear at the end when sorting by start date.
+- Todos with no due date SHALL appear at the end when sorting by due date.
 
-## 8. User Scenarios
+## 6. Security and Privacy
 
-### Registration
-WHEN a guest fills the registration form with a valid email and strong password, THE system SHALL create the user account and send a confirmation message.
-
-### Login
-WHEN a user submits valid credentials, THE system SHALL authenticate and provide JWT tokens for session management.
-
-### Add Todo
-WHEN a user submits a new todo with title and optional details, THE system SHALL save and display it in their todo list.
-
-### Update Todo
-WHEN a user modifies a todo's details or completion status, THE system SHALL apply changes only if the user owns the todo.
-
-### Unauthorized Access
-WHEN a user attempts to access or modify another user's todo, THE system SHALL respond with HTTP 403 Forbidden and deny the operation.
-
-## 9. Success Criteria and Constraints
-
-- The service SHALL guarantee that each user's data is isolated and private.
-- Authentication SHALL be secure and robust against common attack vectors.
-- THE system SHALL maintain reliable and consistent service availability.
-- Functional requirements SHALL be clearly testable with unambiguous acceptance criteria.
-- Development SHALL follow best practices for data privacy and security compliance.
-
-## 10. Appendix
-
-### Glossary
-- JWT: JSON Web Token, a compact token format used for secure authentication.
-- TLS: Transport Layer Security, protocol for encrypting data in transit.
+- EACH user's todos and profile information SHALL be private and accessible only to the owning user.
+- The system SHALL enforce authorization rules restricting access to resources based on the user.
+- User data SHALL be stored securely, and sensitive information such as passwords SHALL be encrypted or hashed.
+- THE system SHALL prevent any unauthorized access, viewing, or modification of other users' data.
+- All actions SHALL be audited and logged for security purposes.
 
 ---
 
-> Note: This document contains business requirements only. Implementation details, database schemas, and API specifications are developer responsibilities and are not included here.
+# Mermaid Diagram: Todo Application Workflow
+
+```mermaid
+flowchart TD
+  A["User Signup"] --> B["User Login"]
+  B --> C["Create Todo"]
+  C --> D["View Todos"]
+  D --> E["Toggle Complete Status"]
+  D --> F["Edit Todo"]
+  F --> G["Add Edit History Entry"]
+  D --> H["Delete Todo (Soft Delete)"]
+  H --> I["View Trash"]
+  I --> J["Restore Todo"]
+  I --> K["Permanently Delete Todo And History"]
+
+  subgraph Filters
+    L["Filter Todos"]
+    M["Sort Todos"]
+  end
+
+  D --> L
+  D --> M
+
+  style Filters fill:#f9f,stroke:#333,stroke-width:2px
+```

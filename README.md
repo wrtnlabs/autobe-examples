@@ -4,6 +4,7 @@
 
 AI Model | Success | Score | FCSR | Status 
 :--------|---------|------:|-----:|:------:
+[`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 1 | 98.99 | 83% | 🟡
 [`qwen/qwen3-coder-next`](#qwenqwen3-coder-next) | 0 | 98.17 | 44% | 🟡
 [`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 1 | 95.28 | 75% | 🟡
 [`qwen/qwen3-30b-a3b-thinking-2507`](#qwenqwen3-30b-a3b-thinking-2507) | 0 | 90.34 | 81% | 🟡
@@ -14,6 +15,83 @@ AI Model | Success | Score | FCSR | Status
   - 🟢: All projects completed successfully
   - 🟡: Some projects failed
   - ❌: All projects failed or not executed
+
+## `openai/gpt-4.1-mini`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./openai/gpt-4.1-mini/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`bbs`](./openai/gpt-4.1-mini/bbs/) | 98.64 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`reddit`](./openai/gpt-4.1-mini/reddit/) | 98.52 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./openai/gpt-4.1-mini/shopping/) | 98.82 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+
+### `openai/gpt-4.1-mini` - `todo`
+
+- Source Code: [`openai/gpt-4.1-mini/todo`](./openai/gpt-4.1-mini/todo/)
+- Score: 100
+- Elapsed Time: 54m 21s
+- Token Usage: 26.54M
+- Function Calling Success Rate: 75.54%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 1, `documents`: 12 | 502.6K | 2m 14s | 100%
+🟢 Database | `namespaces`: 2, `models`: 6 | 2.16M | 7m 9s | 34%
+🟢 Interface | `operations`: 23, `schemas`: 34 | 16.84M | 29m 11s | 64%
+🟢 Test | `functions`: 54 | 5.92M | 7m 15s | 100%
+🟢 Realize | `functions`: 25 | 1.11M | 8m 31s | 98%
+
+
+### `openai/gpt-4.1-mini` - `bbs`
+
+- Source Code: [`openai/gpt-4.1-mini/bbs`](./openai/gpt-4.1-mini/bbs/)
+- Score: 98.64
+- Elapsed Time: 2h 36m 58s
+- Token Usage: 187.02M
+- Function Calling Success Rate: 85.61%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 12 | 492.0K | 3m 8s | 100%
+🟢 Database | `namespaces`: 7, `models`: 36 | 9.66M | 17m 19s | 34%
+🟢 Interface | `operations`: 201, `schemas`: 182 | 100.17M | 1h 0m 46s | 77%
+🟢 Test | `functions`: 478 | 63.70M | 40m 44s | 98%
+🟡 Realize | `functions`: 220, `errors`: 5 | 12.99M | 34m 59s | 98%
+
+
+### `openai/gpt-4.1-mini` - `reddit`
+
+- Source Code: [`openai/gpt-4.1-mini/reddit`](./openai/gpt-4.1-mini/reddit/)
+- Score: 98.52
+- Elapsed Time: 2h 47m 20s
+- Token Usage: 222.53M
+- Function Calling Success Rate: 82.58%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 12 | 522.3K | 4m 17s | 100%
+🟢 Database | `namespaces`: 7, `models`: 43 | 14.48M | 22m 51s | 27%
+🟢 Interface | `operations`: 222, `schemas`: 197 | 120.34M | 1h 5m 21s | 74%
+🟢 Test | `functions`: 510 | 70.32M | 40m 16s | 98%
+🟡 Realize | `functions`: 243, `errors`: 6 | 16.87M | 34m 34s | 97%
+
+
+### `openai/gpt-4.1-mini` - `shopping`
+
+- Source Code: [`openai/gpt-4.1-mini/shopping`](./openai/gpt-4.1-mini/shopping/)
+- Score: 98.82
+- Elapsed Time: 3h 13m 15s
+- Token Usage: 379.39M
+- Function Calling Success Rate: 84.73%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 14 | 665.7K | 3m 18s | 100%
+🟢 Database | `namespaces`: 10, `models`: 66 | 26.46M | 23m 5s | 25%
+🟢 Interface | `operations`: 369, `schemas`: 336 | 200.17M | 1h 8m 26s | 79%
+🟢 Test | `functions`: 791 | 123.52M | 1h 0m 2s | 98%
+🟡 Realize | `functions`: 406, `errors`: 8 | 28.57M | 38m 22s | 96%
+
 
 ## `qwen/qwen3-coder-next`
 
@@ -259,9 +337,9 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 
 - Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/todo`](./deepseek/deepseek-v3.1-terminus-exacto/todo/)
 - Score: 98.13
-- Elapsed Time: 3h 40m 45s
-- Token Usage: 79.27M
-- Function Calling Success Rate: 83.78%
+- Elapsed Time: 6h 22m 43s
+- Token Usage: 151.42M
+- Function Calling Success Rate: 84.17%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -276,9 +354,9 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 
 - Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/bbs`](./deepseek/deepseek-v3.1-terminus-exacto/bbs/)
 - Score: 99.33
-- Elapsed Time: 13h 20m 54s
-- Token Usage: 617.41M
-- Function Calling Success Rate: 84.58%
+- Elapsed Time: 25h 15m 28s
+- Token Usage: 1182.52M
+- Function Calling Success Rate: 84.71%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -294,8 +372,8 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 - Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/reddit`](./deepseek/deepseek-v3.1-terminus-exacto/reddit/)
 - Score: 45
 - Elapsed Time: 1h 13m 9s
-- Token Usage: 30.96M
-- Function Calling Success Rate: 82.91%
+- Token Usage: 15.54M
+- Function Calling Success Rate: 91.37%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -311,8 +389,8 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 - Source Code: [`deepseek/deepseek-v3.1-terminus-exacto/shopping`](./deepseek/deepseek-v3.1-terminus-exacto/shopping/)
 - Score: 45
 - Elapsed Time: 54m 53s
-- Token Usage: 18.84M
-- Function Calling Success Rate: 92.56%
+- Token Usage: 15.51M
+- Function Calling Success Rate: 94.29%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:

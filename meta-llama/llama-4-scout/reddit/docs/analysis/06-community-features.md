@@ -1,1 +1,0 @@
-The document content includes detailed requirements for each section, such as user registration and login, community creation and management, post creation and engagement, commenting and replying, upvoting and downvoting, karma system, sorting and filtering, community subscription, user profiles, and reporting inappropriate content.

@@ -1,9 +1,0 @@
-export * as auth from "./auth/index";
-export * as products from "./products/index";
-export * as productReviews from "./productReviews/index";
-export * as carts from "./carts/index";
-export * as orders from "./orders/index";
-export * as paymentTransactions from "./paymentTransactions/index";
-export * as supportTickets from "./supportTickets/index";
-export * as articles from "./articles/index";
-export * as customers from "./customers/index";

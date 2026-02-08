@@ -1,5 +1,4 @@
 import { ForbiddenException } from "@nestjs/common";
-
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
@@ -11,7 +10,7 @@ export async function adminAuthorize(request: { headers: { authorization?: strin
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.reddit_community_admins.findFirst({
+  const admin = await MyGlobal.prisma.community_platform_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null

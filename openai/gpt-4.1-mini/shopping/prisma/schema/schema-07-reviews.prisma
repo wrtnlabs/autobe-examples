@@ -1,12 +1,9 @@
-/// Customer-submitted product reviews capturing star ratings and textual
-/// feedback.
-///
-/// Each review is linked to a specific product and authoring customer
-/// through their active session to ensure authenticity and auditability.
-/// Moderation status is tracked to control review publication.
-///
-/// Soft deletion is supported to enable content management and compliance
-/// without data loss.
+/// Stores customer reviews for products including ratings and textual
+/// feedback, linked to the corresponding order item and product variant to
+/// ensure purchase verification. Each review belongs to a customer and
+/// references the specific order item and product variant to verify purchase
+/// validity. Supports soft delete with deleted_at field. Rating is an
+/// integer from 1 to 5 stars; review text is optional.
 ///
 /// @namespace Reviews
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -17,105 +14,102 @@ model shopping_mall_product_reviews {
   /// Primary Key.
   id String @id
   
-  /// Reviewed product. {@link shopping_mall_products.id}.
-  shopping_mall_product_id String
-  
-  /// Review author customer. {@link shopping_mall_customers.id}.
+  /// Reviewed customer who wrote this review. References customer's {@link
+  /// shopping_mall_customers.id}.
   shopping_mall_customer_id String
   
-  /// Author customer session at review time. {@link
-  /// shopping_mall_customer_sessions.id}.
-  shopping_mall_customer_session_id String
+  /// Order item associated with this review to ensure purchase verification.
+  /// References {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
   
-  /// Star rating given by the customer, typically 1 to 5 stars.
+  /// Product variant reviewed, linked to {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Star rating given by the customer, from 1 to 5.
   rating Int
   
-  /// Short summary headline describing the review content.
-  title String
+  /// Optional textual content of the review.
+  body String?
   
-  /// Detailed textual review provided by the customer.
-  body String
-  
-  /// Current moderation status: pending, approved, rejected.
-  moderation_status String
-  
-  /// Review creation timestamp.
+  /// Timestamp when the review was created.
   created_at DateTime
   
-  /// Last modification timestamp of the review.
+  /// Timestamp when the review was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp, null if not deleted.
+  /// Timestamp when the review was soft deleted, if applicable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_review_moderations shopping_mall_review_moderations[]
+  reviewSnapshots shopping_mall_review_snapshots[]
+  saleReviewVotes shopping_mall_sale_review_votes[]
+  productReviewSnapshots shopping_mall_product_review_snapshots[]
   
-  @@index([shopping_mall_customer_id])
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_customer_session_id], map: "shopping_mall_product_reviews_shopping_mall_customer_s_929c1df8")
-  
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_customer_i_71cc7be0")
   // spellchecker: ignore-next-line
-  @@unique([shopping_mall_product_id, shopping_mall_customer_id], map: "shopping_mall_product_reviews_shopping_mall_product_id_6b3d4c97")
-  @@index([rating, moderation_status])
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_order_item_da680486")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_product_va_ce8c695a")
 }
 
-/// Moderation records for product reviews to enforce content guidelines and
-/// compliance.
-///
-/// Each entry references a specific review and records the moderator admin
-/// who performed the action, the action taken, and any relevant comments.
-///
-/// Soft deletion is supported to allow audit trails while maintaining
-/// historical data integrity.
+/// Immutable snapshots of product reviews capturing prior review states for
+/// audit and dispute resolution purposes. Each snapshot preserves the state
+/// of a customer's review at a specific point in time, including rating,
+/// textual content, and associations with order items and product variants.
 ///
 /// @namespace Reviews
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_review_moderations {
+model shopping_mall_product_review_snapshots {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The product review being moderated. {@link
-  /// shopping_mall_product_reviews.id}.
-  shopping_mall_product_review_id String
+  /// Referenced product review's {@link shopping_mall_product_reviews.id}.
+  product_review_id String
   
-  /// Admin who performed the moderation action. {@link
-  /// shopping_mall_admins.id}.
-  shopping_mall_admin_id String
+  /// Referenced order item associated with the review {@link
+  /// shopping_mall_order_items.id}.
+  order_item_id String
   
-  /// Moderation action taken, e.g., approved, rejected, flagged.
-  action String
+  /// Referenced product variant associated with the review {@link
+  /// shopping_mall_product_variants.id}.
+  product_variant_id String
   
-  /// Optional comment explaining the moderation decision.
-  comment String?
+  /// Star rating given by the customer (1 to 5).
+  rating Int
   
-  /// Timestamp when the moderation action was performed.
+  /// Optional textual review content provided by the customer.
+  body String?
+  
+  /// Timestamp when this snapshot was created.
   created_at DateTime
   
-  /// Timestamp of the last update on this moderation record.
+  /// Timestamp when this snapshot was last updated.
   updated_at DateTime
   
-  /// Soft deletion timestamp, null if not deleted.
+  /// Timestamp marking soft deletion (nullable).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  productReview shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
-  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  productReview shopping_mall_product_reviews @relation(fields: [product_review_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  @@index([order_item_id])
+  @@index([product_variant_id])
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_product_review_id], map: "shopping_mall_review_moderations_shopping_mall_product_af279a77")
-  @@index([shopping_mall_admin_id])
-  
-  @@index([action])
+  @@index([product_review_id, created_at], map: "shopping_mall_product_review_snapshots_product_review__56889806")
 }

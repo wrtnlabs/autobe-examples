@@ -1,0 +1,285 @@
+/// Notification templates defining reusable message content and parameters
+/// for notifications within the shopping mall platform. These templates
+/// allow consistent messaging formats for various notify operations across
+/// the system.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notification_templates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifying the notification template.
+  template_code String
+  
+  /// Human-readable name of the notification template.
+  template_name String
+  
+  /// Text content of the notification template with placeholders for
+  /// parameters.
+  content String
+  
+  /// JSON string defining parameters for the notification template.
+  parameters String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp if the record is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userNotifications shopping_mall_user_notifications[]
+  notificationDeliveries shopping_mall_notification_deliveries[]
+  logs shopping_mall_notification_logs[]
+  
+  @@unique([template_code])
+}
+
+/// User-specific notifications linked to notification templates and owners
+/// (customers, sellers, administrators). Tracks delivery and read status,
+/// timestamps, and supports soft deletion. Notifications contain title,
+/// body, URLs, and images for rich content.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_notifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated notification template {@link
+  /// shopping_mall_notification_templates.id}.
+  notification_template_id String
+  
+  /// Owner user ID, polymorphic (customer, seller, administrator).
+  owner_id String
+  
+  /// Type of the notification owner, e.g., 'customer', 'seller',
+  /// 'administrator'.
+  owner_type String
+  
+  /// Notification title.
+  title String
+  
+  /// Notification body text.
+  body String
+  
+  /// Optional URL for notification action.
+  url String?
+  
+  /// Optional image URL attached to notification.
+  image_url String?
+  
+  /// Flag indicating if the notification has been read by the owner.
+  is_read Boolean
+  
+  /// Timestamp when the notification was delivered.
+  delivered_at DateTime?
+  
+  /// Timestamp when the notification was read.
+  read_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notificationTemplate shopping_mall_notification_templates @relation(fields: [notification_template_id], references: [id], onDelete: Cascade)
+  owner shopping_mall_customers @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  notificationDeliveries shopping_mall_notification_deliveries[]
+  logs shopping_mall_notification_logs[]
+  
+  // spellchecker: ignore-next-line
+  @@unique([notification_template_id, owner_id, title, created_at], map: "shopping_mall_user_notifications_notification_template_8b2643a2")
+  // spellchecker: ignore-next-line
+  @@index([owner_id, owner_type, is_read], map: "shopping_mall_user_notifications_owner_id_owner_type_i_5f28622e")
+  @@index([created_at])
+}
+
+/// Delivery records capturing each notification delivery attempt, its
+/// status, channel used, and timestamps for auditing and retry mechanisms.
+/// Each delivery relates to a specific user notification and notification
+/// template to maintain context and traceability.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notification_deliveries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user notification this delivery belongs to. {@link
+  /// shopping_mall_user_notifications.id}
+  shopping_mall_user_notification_id String
+  
+  /// Reference to the notification template used for this delivery. {@link
+  /// shopping_mall_notification_templates.id}
+  shopping_mall_notification_template_id String
+  
+  /// Delivery channel used such as 'email', 'sms', or 'push'.
+  channel String
+  
+  /// Delivery status: delivered, failed, or pending.
+  status String
+  
+  /// Timestamp when the delivery attempt was made.
+  attempted_at DateTime
+  
+  /// Timestamp when the delivery was successfully completed, if applicable.
+  delivered_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last updated timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the record is marked as deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  userNotification shopping_mall_user_notifications @relation(fields: [shopping_mall_user_notification_id], references: [id], onDelete: Cascade)
+  notificationTemplate shopping_mall_notification_templates @relation(fields: [shopping_mall_notification_template_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_user_notification_id, attempted_at], map: "shopping_mall_notification_deliveries_shopping_mall_us_26e6955b")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_notification_template_id, attempted_at], map: "shopping_mall_notification_deliveries_shopping_mall_no_b946dc8a")
+}
+
+/// Logs of all notification-related activities including sending, reading,
+/// and system events for auditing and troubleshooting. This table records
+/// each notification event with associated metadata, linking to notification
+/// templates and user notifications where applicable to provide full
+/// traceability and audit support in the Notifications domain.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_notification_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced notification template's {@link
+  /// shopping_mall_notification_templates.id}.
+  notification_template_id String?
+  
+  /// Referenced user notification's {@link
+  /// shopping_mall_user_notifications.id}.
+  user_notification_id String?
+  
+  /// Type of notification event (e.g., 'sent', 'read', 'clicked', 'system').
+  event_type String
+  
+  /// JSON string metadata related to the event, allowing flexible storage of
+  /// additional details.
+  event_metadata String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  notificationTemplate shopping_mall_notification_templates? @relation(fields: [notification_template_id], references: [id], onDelete: Cascade)
+  userNotification shopping_mall_user_notifications? @relation(fields: [user_notification_id], references: [id], onDelete: Cascade)
+  
+  @@index([notification_template_id])
+  @@index([user_notification_id])
+  @@index([event_type, created_at])
+}
+
+/// User preferences for notification settings, allowing customization of
+/// notification channels and message types to tailor delivery. Supports
+/// polymorphic ownership referencing customers, sellers, or administrators
+/// as users. Preferences indicate whether specific notification types are
+/// enabled or disabled per channel.
+///
+/// @namespace Notifications
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_user_notification_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who owns these notification preferences. References {@link
+  /// shopping_mall_customers.id}.
+  customer_id String?
+  
+  /// The seller who owns these notification preferences. References {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String?
+  
+  /// The administrator who owns these notification preferences. References
+  /// {@link shopping_mall_administrators.id}.
+  administrator_id String?
+  
+  /// Name of the notification channel (e.g., email, sms, push).
+  channel_name String
+  
+  /// Type of notification (e.g., order_update, promotion, system_alert).
+  notification_type String
+  
+  /// Flag indicating if the notification type is enabled for this channel.
+  is_enabled Boolean
+  
+  /// Timestamp when this preference was created.
+  created_at DateTime
+  
+  /// Timestamp when this preference was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of this preference; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([customer_id, channel_name, notification_type], map: "shopping_mall_user_notification_preferences_customer_i_2408a795")
+  // spellchecker: ignore-next-line
+  @@unique([seller_id, channel_name, notification_type], map: "shopping_mall_user_notification_preferences_seller_id__50c782f3")
+  // spellchecker: ignore-next-line
+  @@unique([administrator_id, channel_name, notification_type], map: "shopping_mall_user_notification_preferences_administra_ffacebfb")
+  @@index([customer_id])
+  @@index([seller_id])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id], map: "shopping_mall_user_notification_preferences_administra_8ab200cc")
+}

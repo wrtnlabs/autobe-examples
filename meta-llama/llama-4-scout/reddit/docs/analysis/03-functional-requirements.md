@@ -1,1 +1,0 @@
-The content of the document includes detailed functional and non-functional requirements for the community platform. It covers user actors, community features, moderation tools, and API documentation. The document also highlights the need for secure authentication and authorization mechanisms.

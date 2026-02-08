@@ -1,89 +1,162 @@
-/// Records verifying tokens and verification status for user emails.
-///
-/// This table stores email verification tokens generated for users during
-/// registration or email change processes. It tracks the token string and
-/// its expiration time, as well as when the verification was completed. The
-/// table is associated with the authenticated user through a foreign key
-/// relationship with the users table.
-///
-/// Temporal fields include created_at for token creation and deleted_at for
-/// soft deletion support. The token field is unique to ensure no token
-/// duplication.
-///
-/// This model supports secure email verification workflows critical to user
-/// authentication and account integrity.
+/// Registered user accounts with email and password credentials, including
+/// profile display name. This table handles authentication information and
+/// user identity for the multi-user todo application. Supports soft deletion
+/// via deleted_at field, allowing account deletion. Acts as the root actor
+/// entity for user-related operations and relationships.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_email_verifications {
+model multi_user_todo_users {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the user this verification belongs to. {@link
-  /// todo_app_users.id}.
-  user_id String
+  /// Unique email address used for user authentication and communication.
+  email String
   
-  /// Unique verification token sent to the user email.
-  token String
+  /// Hashed password for secure user authentication.
+  password_hash String
   
-  /// Expiration datetime of the verification token.
-  token_expired_at DateTime
+  /// Display name for the user's profile.
+  display_name String
   
-  /// Datetime when the email verification was completed. Null if not verified
-  /// yet.
-  verified_at DateTime?
-  
-  /// Timestamp when the verification record was created.
+  /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp when the record was soft deleted.
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Nullable timestamp indicating when the account was soft deleted (null if
+  /// active).
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  sessions multi_user_todo_user_sessions[]
+  userPasswordResets multi_user_todo_user_password_resets[]
+  emailVerifications multi_user_todo_user_email_verifications[]
+  todos multi_user_todo_todos[]
   
-  @@unique([token])
-  @@index([user_id])
+  @@unique([email])
+  @@index([created_at])
 }
 
-/// Password reset requests made by users to regain access to their accounts.
-///
-/// This table stores the reset tokens, expiration times, and request
-/// timestamps associated with each password reset attempt. It references the
-/// user who initiated the reset request ensuring audit trails and secure
-/// management of password recovery flows.
-///
-/// Soft deletion is supported to allow historical record keeping while
-/// enabling administrative cleanup or invalidation of password reset
-/// requests.
+/// JWT session tokens for user authentication with access and refresh
+/// tokens. Tracks session metadata including IP address, client URL, and
+/// referrer. Supports auditing and session lifecycle management by linking
+/// sessions to registered users.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_password_resets {
+model multi_user_todo_user_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The user who requested the password reset. {@link todo_app_users.id}.
-  todo_app_user_id String
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
   
-  /// Unique token generated for the password reset process. Used to
-  /// authenticate the reset attempt.
+  /// IP address of the client initiating the session.
+  ip String
+  
+  /// URL of the client at the time of session start.
+  href String
+  
+  /// Referrer URL of the client, null if not available.
+  referrer String?
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  /// Timestamp when the session expires.
+  expired_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_sessions_multi_user_todo_user_id__0f30f121")
+}
+
+/// Password reset tokens to enable users to securely recover access to their
+/// accounts. Each token has an expiry date. Linked to a user account
+/// referenced by multi_user_todo_users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
+  
+  /// Secure token string used for password reset authentication.
   token String
   
-  /// Expiration date and time of the password reset token. After this, the
-  /// token becomes invalid.
+  /// Date and time when the password reset token expires.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset record was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the password reset record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id], map: "multi_user_todo_user_password_resets_multi_user_todo_u_49a28044")
+}
+
+/// Email verification tokens to confirm user email ownership after
+/// registration. Linked to registered users, stores token details,
+/// expiration, and verification timestamps. Supports soft deletion for audit
+/// and compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
+  
+  /// Unique email verification token for confirming user email.
+  token String
+  
+  /// Expiration datetime of the email verification token.
   expires_at DateTime
   
-  /// Timestamp when the password reset request was initiated.
-  requested_at DateTime
+  /// Timestamp when the email was verified. Null if not yet verified.
+  verified_at DateTime?
   
   /// Record creation timestamp.
   created_at DateTime
@@ -91,104 +164,15 @@ model todo_app_user_password_resets {
   /// Record last update timestamp.
   updated_at DateTime
   
-  /// Soft deletion timestamp to mark the password reset request as deleted
-  /// without removing data.
+  /// Soft delete timestamp, null if record is active.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  todoAppUser todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
   
   @@unique([token])
-  @@index([todo_app_user_id, requested_at])
-}
-
-/// Application roles defining permissions and access levels within the system.
-///
-/// Each role represents a set of permissions that can be assigned to users
-/// to control access to various application features and resources.
-///
-/// Roles are managed independently and support standard lifecycle operations
-/// including creation, update, and soft deletion.
-///
-/// This table serves as the foundation for role-based access control within
-/// the todoApp application.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_roles {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique name of the role used for identification and assignment.
-  name String
-  
-  /// Detailed explanation of the role's purpose and the permissions it grants.
-  description String
-  
-  /// Timestamp when the role was created.
-  created_at DateTime
-  
-  /// Timestamp when the role was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the role was soft deleted, if applicable.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  userRoles todo_app_user_roles[]
-  
-  @@unique([name])
-  @@index([created_at, updated_at])
-}
-
-/// Mapping table linking users to roles, supporting a many-to-many
-/// relationship between the two entities.
-///
-/// This table enables assigning multiple roles to a single user and allows
-/// each role to be assigned to multiple users independently.
-///
-/// Each record associates one user with one role, ensuring unique
-/// assignments via a composite unique constraint on user and role IDs.
-///
-/// As a subsidiary entity, this table is managed through its parent
-/// entities, mainly users and roles, and supports authorization and access
-/// control in the system.
-///
-/// @namespace Actors
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_roles {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the user. {@link todo_app_users.id}.
-  todo_app_user_id String
-  
-  /// Reference to the role assigned to the user. {@link todo_app_roles.id}.
-  todo_app_role_id String
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
-  role todo_app_roles @relation(fields: [todo_app_role_id], references: [id], onDelete: Cascade)
-  
-  @@index([todo_app_role_id])
-  
-  @@unique([todo_app_user_id, todo_app_role_id])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_email_verifications_multi_user_to_35f2802f")
 }

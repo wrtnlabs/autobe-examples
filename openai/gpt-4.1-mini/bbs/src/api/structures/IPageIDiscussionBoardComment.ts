@@ -1,5 +1,5 @@
-import { IPage } from "./IPage";
 import { IDiscussionBoardComment } from "./IDiscussionBoardComment";
+import { IPage } from "./IPage";
 
 export namespace IPageIDiscussionBoardComment {
   /**
@@ -8,10 +8,18 @@ export namespace IPageIDiscussionBoardComment {
    * Collection of records with pagination information.
    */
   export type ISummary = {
-    /** Page information. */
+    /**
+     * Page information.
+     *
+     * @x-autobe-specification Pagination information for the page.
+     */
     pagination: IPage.IPagination;
 
-    /** List of records. */
+    /**
+     * List of records.
+     *
+     * @x-autobe-specification List of records of type IDiscussionBoardComment.ISummary.
+     */
     data: IDiscussionBoardComment.ISummary[];
   };
 }

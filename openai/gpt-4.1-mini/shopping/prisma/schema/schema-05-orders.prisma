@@ -1,9 +1,6 @@
-/// Order entities representing customer purchase transactions.
-///
-/// Stores key business data such as customer, seller, payment, and order
-/// status with lifecycle timestamps.
-/// Each order references the customer placing it and the seller fulfilling it.
-/// Includes soft delete support to maintain audit trail integrity.
+/// Customer orders with aggregated details including total price, quantity,
+/// payment status, and overall order state. Links to customers placing
+/// orders and supports soft delete for historical record keeping.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -14,61 +11,50 @@ model shopping_mall_orders {
   /// Primary Key.
   id String @id
   
-  /// Customer who placed the order. {@link shopping_mall_customers.id}.
+  /// The customer who placed this order. {@link shopping_mall_customers.id}
   shopping_mall_customer_id String
   
-  /// Seller responsible for fulfillment. {@link shopping_mall_sellers.id}.
-  shopping_mall_seller_id String
-  
-  /// Unique order reference number for business tracking.
+  /// Unique order number for public reference and tracking.
   order_number String
   
-  /// Current status of the order indicating lifecycle phase.
+  /// Total amount payable for the order.
+  total_price Float
+  
+  /// Total quantity of all items in the order.
+  total_quantity Int
+  
+  /// Overall status of the order: paid, shipped, delivered, cancelled,
+  /// refunded, partially_completed.
   order_status String
   
-  /// Status of the payment associated with the order.
-  payment_status String
-  
-  /// Total monetary amount of the order including taxes and shipping.
-  total_amount Float
-  
-  /// Serialized shipping address at the time of order placement.
-  shipping_address String
-  
-  /// Order creation timestamp.
+  /// Timestamp when the order was created.
   created_at DateTime
   
-  /// Last update timestamp for the order.
+  /// Timestamp when the order was last updated.
   updated_at DateTime
   
-  /// Optional soft delete timestamp to mark order as deleted.
+  /// Soft delete timestamp allowing for historical record keeping.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
-  shopping_mall_order_items shopping_mall_order_items[]
-  shopping_mall_payments shopping_mall_payments?
-  shopping_mall_shipments shopping_mall_shipments?
-  shopping_mall_order_cancellations shopping_mall_order_cancellations?
-  shopping_mall_refund_requests shopping_mall_refund_requests?
-  
-  @@index([shopping_mall_customer_id])
+  orderItemSnapshots shopping_mall_order_item_snapshots[]
+  orderItems shopping_mall_order_items[]
+  orderSnapshots shopping_mall_order_snapshots[]
+  reviews shopping_mall_reviews[]
   
   @@unique([order_number])
-  // spellchecker: ignore-next-line
-  @@index([order_status, payment_status, shopping_mall_customer_id], map: "shopping_mall_orders_order_status_payment_status_shopp_3351366e")
-  @@index([shopping_mall_seller_id])
+  @@index([shopping_mall_customer_id, created_at])
 }
 
-/// Order items representing purchased product variants (SKUs) within an order.
-///
-/// Each item links to the product variant and the parent order.
-/// Captures quantity and pricing information used for fulfillment and
-/// invoicing.
+/// Individual order items representing product variants within a customer
+/// order, including status tracking, quantity, and linkage to related
+/// entities. Each item is uniquely identified and associated with one order
+/// and one product variant, supporting lifecycle management and operational
+/// workflows.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,21 +65,28 @@ model shopping_mall_order_items {
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent order. {@link shopping_mall_orders.id}.
+  /// The parent order containing this item. {@link shopping_mall_orders.id}
   shopping_mall_order_id String
   
-  /// Purchased product variant (SKU). {@link
-  /// shopping_mall_product_variants.id}.
+  /// The product variant purchased in this order item. {@link
+  /// shopping_mall_product_variants.id}
   shopping_mall_product_variant_id String
   
-  /// Quantity of the product variant purchased.
+  /// Quantity of the product variant ordered for this item.
   quantity Int
   
-  /// Price per unit for this SKU at purchase time.
-  unit_price Float
+  /// Current status of the order item: paid, shipped, delivered, cancelled,
+  /// refunded.
+  status String
   
-  /// Total price for this line item (quantity multiplied by unit price).
-  total_price Float
+  /// Timestamp when the order item record was created.
+  created_at DateTime
+  
+  /// Timestamp when the order item record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp marking soft deletion of the order item, if applicable.
+  deleted_at DateTime?
   
   //----
   // RELATIONS
@@ -101,171 +94,127 @@ model shopping_mall_order_items {
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
-  @@index([shopping_mall_product_variant_id])
+  snapshots shopping_mall_order_item_snapshots[]
+  shipmentItems shopping_mall_shipment_items[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  reviews shopping_mall_reviews[]
+  shipmentOrderItems shopping_mall_shipment_order_items[]
+  productReviews shopping_mall_product_reviews[]
+  productReviewSnapshots shopping_mall_product_review_snapshots[]
   
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d24d15be")
+  @@unique([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d221d815")
+  @@index([shopping_mall_order_id, status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, status], map: "shopping_mall_order_items_shopping_mall_product_varian_d3b1babb")
 }
 
-/// Payment records associated with orders.
-///
-/// Tracks payment method, status, amounts, and timestamps.
-/// Payments are linked uniquely to orders ensuring one-to-one relationship.
+/// Mapping of which order items are included in shipments. Each record
+/// associates a specific order item with a shipment to accurately track
+/// shipment contents and enable delivery tracking.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_payments {
+model shopping_mall_shipment_items {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Order associated with this payment. {@link shopping_mall_orders.id}.
-  shopping_mall_order_id String
+  /// Referenced shipment's {@link shopping_mall_shipments.id} this item
+  /// belongs to.
+  shipment_id String
   
-  /// Method of payment used by the customer (e.g., credit card, PayPal).
-  payment_method String
-  
-  /// Status of the payment transaction.
-  payment_status String
-  
-  /// Amount paid in this transaction.
-  payment_amount Float
-  
-  /// External payment gateway transaction identifier.
-  transaction_id String
-  
-  /// Timestamp of when the payment was processed.
-  payment_date DateTime
+  /// Referenced order item {@link shopping_mall_order_items.id} included in
+  /// this shipment.
+  order_item_id String
   
   /// Record creation timestamp.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last record update timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp.
+  /// Soft deletion timestamp, nullable.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   
-  @@unique([shopping_mall_order_id])
+  @@index([order_item_id])
   
-  @@unique([transaction_id])
-  @@index([payment_status])
+  @@unique([shipment_id, order_item_id])
 }
 
-/// Shipment records tracking the shipping process of orders.
-///
-/// Stores shipping carrier, tracking codes, delivery status, and timestamps.
-/// Each shipment relates to a single order for lifecycle tracking.
+/// Customer requests to cancel specific order items with seller approval
+/// status and processing workflow. Records customer, order item, reason,
+/// seller approval status, optional reason, timestamps for request creation
+/// and processing, facilitating management of cancellation requests
+/// independently by customers and sellers.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_shipments {
+model shopping_mall_cancellation_requests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Order being shipped. {@link shopping_mall_orders.id}.
-  shopping_mall_order_id String
+  /// Requesting customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Name of the shipping carrier handling delivery.
-  shipping_carrier String
+  /// Order item requested for cancellation {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
   
-  /// Carrier tracking number for shipment.
-  tracking_number String
+  /// Textual reason the customer provides for requesting cancellation.
+  reason String
   
-  /// Current status of the shipment.
-  shipment_status String
+  /// Seller's approval status for the cancellation request (e.g., 'pending',
+  /// 'approved', 'rejected').
+  seller_approval_status String
   
-  /// Timestamp when the shipment was dispatched.
-  shipped_at DateTime?
+  /// Optional text explaining the seller's rejection or approval reason.
+  seller_approval_reason String?
   
-  /// Timestamp when the shipment was delivered.
-  delivered_at DateTime?
-  
-  /// Record creation timestamp.
-  created_at DateTime
-  
-  /// Record last update timestamp.
-  updated_at DateTime
-  
-  /// Soft delete timestamp.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
-  
-  @@unique([shopping_mall_order_id])
-  
-  @@unique([tracking_number])
-  @@index([shipment_status])
-}
-
-/// Order cancellation requests submitted by customers.
-///
-/// Tracks request status and reasons with timestamps.
-/// Referenced orders are those that customers want to cancel before
-/// fulfillment.
-///
-/// @namespace Orders
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_order_cancellations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Order for which cancellation is requested. {@link
-  /// shopping_mall_orders.id}.
-  shopping_mall_order_id String
-  
-  /// Customer-provided reason for cancellation.
-  cancellation_reason String
-  
-  /// Status of the cancellation request.
-  cancellation_status String
-  
-  /// Timestamp when cancellation was requested.
+  /// Timestamp when the cancellation request was made.
   requested_at DateTime
   
-  /// Timestamp when cancellation was processed.
+  /// Timestamp of when the seller processed the request (approved/rejected).
   processed_at DateTime?
   
-  /// Record creation timestamp.
+  /// Creation timestamp for the cancellation request record.
   created_at DateTime
   
-  /// Record last update timestamp.
+  /// Last update timestamp for the cancellation request record.
   updated_at DateTime
   
-  /// Soft delete timestamp.
+  /// Soft deletion timestamp; null if not deleted.
   deleted_at DateTime?
   
   //----
   // RELATIONS
   //----
-  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   
-  @@unique([shopping_mall_order_id])
+  snapshots shopping_mall_cancellation_request_snapshots[]
   
-  @@index([cancellation_status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, requested_at], map: "shopping_mall_cancellation_requests_shopping_mall_cust_0a7fe2d2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, seller_approval_status], map: "shopping_mall_cancellation_requests_shopping_mall_orde_00552095")
 }
 
-/// Refund requests made by customers for orders post-payment.
-///
-/// Tracks refund amount, reason, status, and related timestamps.
-/// Linked to orders that have completed payment but may require refund
-/// processing.
+/// Customer refund requests for delivered order items including seller
+/// approval status, reasons, and timestamps for request and response. Tracks
+/// refund workflow status and supports soft deletion.
 ///
 /// @namespace Orders
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -276,23 +225,29 @@ model shopping_mall_refund_requests {
   /// Primary Key.
   id String @id
   
-  /// Order associated with the refund request. {@link shopping_mall_orders.id}.
-  shopping_mall_order_id String
+  /// Referenced order item {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
   
-  /// Amount requested for refund.
-  refund_amount Float
+  /// Requesting customer {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
   
-  /// Reason provided for requesting refund.
-  refund_reason String
+  /// Seller receiving the refund request {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
   
-  /// Current status of the refund request.
-  refund_status String
+  /// Reason provided by the customer for the refund request.
+  request_reason String
   
-  /// Timestamp when refund was requested.
+  /// Status of the refund request (e.g., pending, approved, rejected).
+  status String
+  
+  /// Reason provided by the seller in response to the refund request.
+  seller_response_reason String?
+  
+  /// Timestamp when the refund was requested by the customer.
   requested_at DateTime
   
-  /// Timestamp when refund was processed.
-  processed_at DateTime?
+  /// Timestamp when the seller responded to the refund request.
+  responded_at DateTime?
   
   /// Record creation timestamp.
   created_at DateTime
@@ -300,7 +255,69 @@ model shopping_mall_refund_requests {
   /// Record last update timestamp.
   updated_at DateTime
   
-  /// Soft delete timestamp.
+  /// Record soft deletion timestamp; null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  refundRequestSnapshots shopping_mall_refund_request_snapshots[]
+  
+  @@index([shopping_mall_order_item_id])
+  
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, requested_at], map: "shopping_mall_refund_requests_shopping_mall_customer_i_3ac0a313")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, status], map: "shopping_mall_refund_requests_shopping_mall_seller_id__904df65f")
+}
+
+/// Immutable snapshots of customer orders capturing the complete state of
+/// each order at a specific point in time for audit, dispute resolution, and
+/// historical reference. This includes denormalized data of the original
+/// order, customer details, order items, and status.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced original order's shopping_mall_orders.id.
+  shopping_mall_order_id String
+  
+  /// Timestamp when the snapshot was created.
+  snapshot_at DateTime
+  
+  /// Current status of the order in this snapshot (e.g., paid, shipped,
+  /// delivered).
+  status String
+  
+  /// Total price of the order at snapshot time.
+  total_price Float
+  
+  /// Denormalized customer name at snapshot time.
+  customer_name String
+  
+  /// Denormalized customer email at snapshot time.
+  customer_email String
+  
+  /// Denormalized shipping address in text form at snapshot time.
+  shipping_address String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null if not deleted.
   deleted_at DateTime?
   
   //----
@@ -308,7 +325,56 @@ model shopping_mall_refund_requests {
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
-  @@unique([shopping_mall_order_id])
+  @@index([shopping_mall_order_id])
+}
+
+/// Customer product reviews linked to orders with star ratings and textual
+/// content. Reviews are tied to customers, orders, and specific order items
+/// to ensure verified purchases. Supports rating from 1 to 5 stars, optional
+/// review text, and soft deletion. Maintains historical integrity through
+/// snapshots in a separate component.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
   
-  @@index([refund_status])
+  /// Reviewing customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Associated order {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Specific order item reviewed {@link shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Star rating given by the customer, between 1 and 5.
+  rating Int
+  
+  /// Optional textual content of the review.
+  body String?
+  
+  /// Review creation timestamp.
+  created_at DateTime
+  
+  /// Last review update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for review removals.
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  @@index([customer_id, created_at])
+  @@index([order_id])
+  @@index([order_item_id])
 }

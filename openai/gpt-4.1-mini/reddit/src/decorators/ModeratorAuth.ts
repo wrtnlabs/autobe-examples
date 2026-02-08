@@ -1,7 +1,6 @@
 import { SwaggerCustomizer } from "@nestia/core";
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
-
 import { moderatorAuthorize } from "../providers/authorize/moderatorAuthorize";
 
 export const ModeratorAuth =
@@ -13,9 +12,7 @@ export const ModeratorAuth =
   ): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
-      props.route.security.push({
-        bearer: [],
-      });
+      props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   };

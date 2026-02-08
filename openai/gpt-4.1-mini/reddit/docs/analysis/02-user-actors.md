@@ -1,110 +1,124 @@
-# User Actors and Authentication Requirements for redditCommunity
+# Reddit-like Community Platform
 
-This document defines the business requirements for user actors, authentication flow, and permission management in the redditCommunity platform. It provides backend developers with clear, testable, and domain-specific rules for implementing identity and access control.
+## User Account
 
----
+- WHEN a user signs up with email and password, THE system SHALL validate that the email is unique and that the password meets strength requirements before creating the account.
+- WHEN a user signs up, THE system SHALL require a unique username that cannot be changed later.
+- WHEN a user logs in with email and password, THE system SHALL authenticate the credentials and create a secure session.
+- WHEN a user requests a password change, THE system SHALL verify the current password and validate the new password for strength before updating.
+- WHEN a user deletes their account, THE system SHALL delete all their posts, comments, and related data permanently and terminate their sessions.
 
-## Authentication Flow Requirements
+## User Profile
 
-### Core Authentication Functions
+- EACH user SHALL have a profile containing: display name, bio text, and avatar image.
+- WHEN a user edits their profile, THE system SHALL allow updating the display name, bio, and avatar image.
+- ANY user SHALL be able to view another user's profile publicly.
+- A user's profile page SHALL display the user's display name, bio, avatar, total karma score, all posts by the user, and all comments written by the user.
 
-- WHEN a guest submits a registration request, THE system SHALL create a new registered user account after validating email uniqueness and password strength.
-- WHEN a registered user submits login credentials, THE system SHALL validate the credentials and create a secure user session upon success.
-- WHEN a user logs out, THE system SHALL invalidate the user session.
-- THE system SHALL maintain session persistence securely, allowing users to remain logged in across requests.
-- WHEN a registered user requests password reset, THE system SHALL send a password reset link to the verified email.
-- WHEN a registered user follows the password reset procedure, THE system SHALL allow setting a new password following validation.
-- WHEN a registered user requests to change their password while authenticated, THE system SHALL validate the old password before updating.
-- THE system SHALL support email verification flows to confirm user email ownership after registration.
-- WHEN an unauthorized access attempt occurs, THE system SHALL deny access and return appropriate error responses.
+## Karma
 
-### Authentication Security and Restrictions
+- EACH user SHALL have a single karma score that can be positive or negative.
+- WHEN someone upvotes a user's post or comment, THE system SHALL increment that user's karma score by 1.
+- WHEN someone downvotes a user's post or comment, THE system SHALL decrement that user's karma score by 1.
+- WHEN a vote is removed from a post or comment, THE system SHALL adjust the user's karma score by reversing the appropriate increment or decrement.
 
-- THE system SHALL enforce password complexity rules (min 8 characters, at least one uppercase letter, one number).
-- THE system SHALL throttle login attempts to prevent brute force attacks.
-- THE system SHALL expire user sessions after a configurable inactivity timeout (default 30 days).
+## Communities
 
----
+- ANY authenticated user SHALL be able to create a community with a unique name, description text, and an icon image.
+- THE user who creates a community SHALL become its owner with highest permissions.
+- ALL communities SHALL allow public browsing in a list with subscriber counts displayed.
+- USERS SHALL be able to search communities by their unique name.
 
-## User Actor Definitions
+## Subscribing
 
-### Actors Overview
+- USERS SHALL be able to subscribe and unsubscribe from any community.
+- USERS SHALL be able to view a list of all communities to which they are subscribed.
+- USERS MUST be subscribed to a community to be allowed to create posts within it.
 
-| Actor           | Description                                                                                         |
-|-----------------|-------------------------------------------------------------------------------------------------| 
-| guest           | Unauthenticated users who can browse public communities and posts with read-only access.          |
-| registeredUser  | Authenticated users who can create communities, post content, comment, vote, subscribe, report.  |
-| moderator       | Users with moderation privileges on specific communities to manage posts, comments, reports.     |
-| admin           | System administrators with full system-wide access including user and content management.         |
+## Posts
 
-### Actor Permissions
+- USERS SHALL be able to create posts in communities they are subscribed to.
+- EACH post SHALL have a required title and be exactly one of the following types:
+  - Text post with text content
+  - Link post with a URL
+  - Image post with an uploaded image
+- USERS SHALL be able to edit and delete their own posts.
+- WHEN viewing a single post, USERS SHALL see: title, full content, author username, community name, vote score, comment count, and timestamp.
 
-#### guest
-- CAN browse public communities and posts.
-- CANNOT create communities, posts, comments, vote, subscribe, or report.
+## Post Voting
 
-#### registeredUser
-- CAN create new communities.
-- CAN create posts with text, link, or images inside communities.
-- CAN comment on posts, supporting nested replies.
-- CAN upvote or downvote posts and comments.
-- CAN subscribe or unsubscribe from communities.
-- CAN view own and other users' profiles.
-- CAN report inappropriate content.
+- USERS SHALL be able to upvote or downvote any post, but only once per post.
+- USERS SHALL be able to change their vote from upvote to downvote or vice versa.
+- USERS SHALL be able to remove their vote entirely.
+- THE vote score SHALL be calculated as total upvotes minus total downvotes.
 
-#### moderator
-- CAN perform all registeredUser actions within communities they moderate.
-- CAN manage posts and comments: edit, delete, or moderate.
-- CAN review and act on reports of inappropriate content within their communities.
+## Post Feeds
 
-#### admin
-- CAN perform all actions of moderators and registeredUsers across all communities.
-- CAN manage user accounts and roles.
-- CAN perform system-wide administrative tasks including content moderation.
+- Home Feed SHALL show posts only from communities the user is subscribed to.
+- Home Feed SHALL be accessible only to authenticated users.
+- Popular Feed SHALL show posts from all communities platform-wide for all users, including guests.
+- Community Feed SHALL show posts from a specified community to all users.
+- ALL feeds SHALL offer sorting options: Hot, New, Top (with time filters: today, week, month, year, all time), and Controversial.
+- ALL feeds SHALL be paginated.
 
-### JWT Payload Considerations
+## Post List Display
 
-- THE JWT SHALL include userId, role (guest, registeredUser, moderator, admin), and permissions array.
-- THE system SHALL validate tokens to authorize actions based on roles.
+- EACH post in any feed SHALL display title, author username, community name, vote score, comment count, and time since posting.
+- Text posts SHALL show first 200 characters of content.
+- Image posts SHALL show a thumbnail of the image.
+- Link posts SHALL show the domain name of the URL.
 
----
+## Comments
 
-## Permission Matrix
+- USERS SHALL be able to write comments on any post.
+- COMMENTS SHALL support nested replies with unlimited depth.
+- USERS SHALL be able to edit and delete their own comments.
+- EACH comment SHALL display author username, content, vote score, time since posting, and nested replies.
 
-| Action                        | guest | registeredUser | moderator | admin |
-|-------------------------------|-------|----------------|-----------|-------|
-| Browse public communities       | ✅    | ✅             | ✅        | ✅    |
-| Register account               | ❌    | ✅             | ✅        | ✅    |
-| Login/logout                  | ❌    | ✅             | ✅        | ✅    |
-| Create community               | ❌    | ✅             | ✅        | ✅    |
-| Create posts                  | ❌    | ✅             | ✅        | ✅    |
-| Comment on posts              | ❌    | ✅             | ✅        | ✅    |
-| Upvote/downvote posts/comments | ❌    | ✅             | ✅        | ✅    |
-| Subscribe communities         | ❌    | ✅             | ✅        | ✅    |
-| View user profiles           | ❌    | ✅             | ✅        | ✅    |
-| Report inappropriate content  | ❌    | ✅             | ✅        | ✅    |
-| Moderate posts/comments       | ❌    | ❌             | ✅        | ✅    |
-| Manage reports                | ❌    | ❌             | ✅        | ✅    |
-| Manage user accounts          | ❌    | ❌             | ❌        | ✅    |
-| Admin system settings         | ❌    | ❌             | ❌        | ✅    |
+## Comment Voting
 
----
+- Voting rules on comments SHALL be same as posts: one vote per user, changeable and removable.
 
-## Token Management
+## Comment Sorting
 
-- THE system SHALL use JWT (JSON Web Tokens) for access tokens.
-- THE access token SHALL have an expiration time configurable between 15 and 30 minutes.
-- THE refresh token SHALL have an expiration time configurable between 7 and 30 days.
-- THE system SHALL securely store refresh tokens and support token revocation.
-- THE JWT payload SHALL include the user's unique identifier (userId), assigned role, and permissions array.
-- WHEN an access token expires, THE system SHALL verify the refresh token and issue a new access token without requiring user login.
-- THE system SHALL ensure all token exchanges occur over secure HTTPS connections.
-- THE system SHALL invalidate tokens upon user logout or account deactivation.
+- COMMENTS SHALL be sortable by Best (highest score), New (most recent), and Controversial (many votes but score near zero).
 
----
+## Community Moderation
 
-# Summary
+### Moderator Roles
 
-This document provides the full business requirements for user actors, authentication process, permission assignments, and token management for the redditCommunity platform. Backend developers should implement these rules precisely to ensure secure, role-based access control and a reliable authentication experience.
+- THE community owner SHALL have highest moderation authority.
+- THE owner SHALL be able to add and remove moderators.
+- MODERATORS SHALL be able to add other moderators but cannot remove the owner or other moderators.
+- MODERATORS SHALL not remove each other; only the owner can.
 
-All technical implementation details regarding database design, API endpoints, and infrastructure are delegated to the development team. This document focuses solely on WHAT the system must do to meet the defined business needs and user interactions.
+### Moderator Actions
+
+- MODERATORS SHALL be able to delete any post or comment within their community.
+- MODERATORS SHALL be able to ban and unban users within their community.
+- BANNED users SHALL be prevented from posting or commenting but can still view content.
+- MODERATORS SHALL be able to view lists of banned users.
+
+## Reporting
+
+- USERS SHALL be able to report any post or comment with a required reason.
+- MODERATORS SHALL be able to view all reports for their community.
+- EACH report SHALL show the reported content, reporting user, and reason.
+- MODERATORS SHALL be able to approve reports, resulting in deletion of the content.
+- MODERATORS SHALL be able to dismiss reports, keeping the content and removing the report from the list.
+
+```mermaid
+graph LR
+  A["User Registration"] --> B["Validate Email Uniqueness"]
+  B --> C["Validate Password Strength"]
+  C --> D["Create User Account"]
+  D --> E["Send Confirmation Email"]
+  F["User Login"] --> G["Validate Credentials"]
+  G --> H{"Credentials Valid?"}
+  H -->|"Yes"| I["Create JWT Session Token"]
+  H -->|"No"| J["Return Authentication Error"]
+  K["User Password Change Request"] --> L["Verify Current Password"]
+  L --> M["Validate New Password"]
+  M --> N["Update Password"]
+  O["User Account Deletion Request"] --> P["Delete All User Data"]
+```
