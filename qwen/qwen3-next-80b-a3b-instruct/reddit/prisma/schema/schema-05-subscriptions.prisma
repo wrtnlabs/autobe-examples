@@ -1,0 +1,43 @@
+/// Records of which users are subscribed to which communities. A record
+/// exists if and only if the user is subscribed and has not unsubscribed.
+/// Used to enforce access control: users can only create posts in
+/// communities they are subscribed to. Subscribers are calculated by
+/// counting records per community.
+///
+/// @namespace Subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member user who subscribed. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// References the community the user subscribed to. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Timestamp when the subscription was created.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated (currently same as
+  /// created_at).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_community_id], map: "reddit_community_user_communities_reddit_community_mem_f071268c")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id], map: "reddit_community_user_communities_reddit_community_mem_821d5ca8")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_user_communities_reddit_community_com_2325b0ce")
+}

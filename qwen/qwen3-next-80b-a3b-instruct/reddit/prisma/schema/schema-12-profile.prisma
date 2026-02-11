@@ -1,0 +1,41 @@
+/// Stores user identity and profile display data: display_name, bio,
+/// avatar_url, and aggregated karma score. This table is the canonical
+/// profile representation for all actor types (member, community_owner,
+/// community_moderator, platform_admin). Each actor record in the Actors
+/// component has a 1:1 relationship with this profile. The karma score is
+/// calculated by summing all upvotes and downvotes from comments and posts,
+/// stored here for efficient feed and profile rendering. Soft-deleted on
+/// user account deletion.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User-selected public display name. Must be unique per user and non-empty.
+  display_name String
+  
+  /// Optional user-provided self-description text. May be empty or null.
+  bio String?
+  
+  /// URL to user's avatar image. May be null if not set.
+  avatar_url String?
+  
+  /// Total karma score calculated as total upvotes minus downvotes across all
+  /// user's posts and comments. Can be negative.
+  karma Int
+  
+  /// When the profile was created. Standard timestamps for audit.
+  created_at DateTime
+  
+  /// Last time profile was modified (e.g., display_name or bio updated).
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft-deleted (on user account deletion).
+  /// Null if active.
+  deleted_at DateTime?
+}

@@ -12,16 +12,8 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using correct model name 'community_guests' from loaded schema
-  const guest = await MyGlobal.prisma.community_guests.findFirst({
-    where: {
-      id: payload.id,
-    },
-  });
-
-  if (guest === null) {
-    throw new ForbiddenException("You're not enrolled");
-  }
+  // Guest users are identified by session token, not linked to a user record
+  // No database query needed - guest sessions are validated at JWT level
 
   return payload;
 }

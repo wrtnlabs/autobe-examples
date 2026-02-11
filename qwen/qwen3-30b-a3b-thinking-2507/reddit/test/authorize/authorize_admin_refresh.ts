@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
+import type { ICommunityAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_admin_refresh(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformAdmin.IRefresh;
+    body: ICommunityAdmin.IRefresh;
   },
-): Promise<ICommunityPlatformAdmin.IAuthorized> {
-  return await api.functional.communityPlatform.auth.admin.refresh(connection, {
+): Promise<ICommunityAdmin.IAuthorized> {
+  return await api.functional.community.auth.admin.refresh(connection, {
     body: props.body,
   });
 }

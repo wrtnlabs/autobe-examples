@@ -1,1 +1,1 @@
-export * as communityPlatform from "./communityPlatform/index";
+export * as community from "./community/index";

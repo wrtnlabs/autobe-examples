@@ -1,0 +1,66 @@
+/// Main post content entity supporting text, link, and image post types.
+/// Stores title, content, and type-specific fields (url for link posts,
+/// image_url for image posts). Includes vote_score and comment_count
+/// denormalized fields for performance optimization. Supports soft deletion
+/// via deleted_at for moderation workflows.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author user's {@link reddit_platform_members.id}.
+  author_id String
+  
+  /// Parent community's {@link reddit_platform_communities.id}.
+  community_id String
+  
+  /// Post title (required).
+  title String
+  
+  /// Post type: TEXT, LINK, or IMAGE.
+  type String
+  
+  /// Text content for text posts (nullable for link/image posts).
+  content String?
+  
+  /// URL for link posts (nullable for text/image posts).
+  url String?
+  
+  /// Image URL for image posts (nullable for text/link posts).
+  image_url String?
+  
+  /// Calculated vote score (upvotes - downvotes).
+  vote_score Int
+  
+  /// Number of comments on this post.
+  comment_count Int
+  
+  /// Post creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (null = active).
+  deleted_at DateTime?
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  comments reddit_platform_comments[]
+  postVotes reddit_platform_post_votes[]
+  feedResults reddit_platform_feed_results[]
+  hotScoreCache reddit_platform_hot_score_caches?
+  
+  @@index([community_id])
+  @@index([author_id])
+  @@index([created_at])
+}

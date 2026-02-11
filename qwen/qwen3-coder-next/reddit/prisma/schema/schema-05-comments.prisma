@@ -1,0 +1,91 @@
+/// Main comment entity supporting threaded conversations with vote tracking
+/// and temporal data.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of this comment. {@link reddit_platform_members.id}.
+  author_id String
+  
+  /// Parent comment if this is a reply. {@link reddit_platform_comments.id}.
+  parent_comment_id String?
+  
+  /// Post this comment belongs to. {@link reddit_platform_posts.id}.
+  post_id String
+  
+  /// Content of the comment.
+  content String
+  
+  /// Current vote score (upvotes minus downvotes).
+  vote_score Int
+  
+  /// Timestamp when this comment was created.
+  created_at DateTime
+  
+  /// Timestamp when this comment was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  author reddit_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent reddit_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  replies reddit_platform_comments[] @relation("recursive")
+  votes reddit_platform_comment_votes[]
+  
+  @@index([author_id, created_at])
+  @@index([post_id, created_at])
+  @@index([parent_comment_id])
+  // spellchecker: ignore-next-line
+  @@index([post_id, parent_comment_id, created_at], map: "reddit_platform_comments_post_id_parent_comment_id_cre_56840250")
+}
+
+/// User votes on comments with upvote/downvote tracking. Each user can cast
+/// exactly one vote per comment, which can be an upvote, downvote, or none
+/// (vote revocation). Vote type is stored directly to enable quick score
+/// calculations without aggregating votes.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_platform_members.id}.
+  member_id String
+  
+  /// Comment that was voted on. {@link reddit_platform_comments.id}.
+  comment_id String
+  
+  /// Vote type cast by the user - upvote, downvote, or none (vote revocation).
+  /// This directly stores the vote type to enable quick score calculations
+  /// without aggregating votes.
+  vote_type String
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated (e.g., when vote was changed).
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  member reddit_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  @@unique([member_id, comment_id])
+  @@index([member_id, created_at])
+  @@index([comment_id, created_at])
+}

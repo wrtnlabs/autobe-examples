@@ -1,9 +1,0 @@
-export * as communities from "./communities/index";
-export * as posts from "./posts/index";
-export * as votes from "./votes/index";
-export * as comments from "./comments/index";
-export * as karma from "./karma/index";
-export * as subscriptions from "./subscriptions/index";
-export * as dashboard from "./dashboard/index";
-export * as feed from "./feed/index";
-export * as reports from "./reports/index";

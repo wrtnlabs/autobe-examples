@@ -1,198 +1,94 @@
 import { Module } from "@nestjs/common";
 
-import { CommunityAdminAnalyticsController } from "./controllers/community/admin/analytics/CommunityAdminAnalyticsController";
-import { CommunityAdminAnalyticsCommunitiesController } from "./controllers/community/admin/analytics/communities/CommunityAdminAnalyticsCommunitiesController";
-import { CommunityAdminAnalyticsUsageController } from "./controllers/community/admin/analytics/usage/CommunityAdminAnalyticsUsageController";
-import { CommunityAdminApi_keysController } from "./controllers/community/admin/api-keys/CommunityAdminApi_keysController";
-import { CommunityAdminAudit_logsController } from "./controllers/community/admin/audit-logs/CommunityAdminAudit_logsController";
-import { CommunityAdminAuditSystem_configsController } from "./controllers/community/admin/audit/system-configs/CommunityAdminAuditSystem_configsController";
-import { CommunityAdminBansController } from "./controllers/community/admin/bans/CommunityAdminBansController";
-import { CommunityAdminCommentsController } from "./controllers/community/admin/comments/CommunityAdminCommentsController";
-import { CommunityAdminCommentsReportsController } from "./controllers/community/admin/comments/reports/CommunityAdminCommentsReportsController";
-import { CommunityAdminCommentsVote_summaryController } from "./controllers/community/admin/comments/vote-summary/CommunityAdminCommentsVote_summaryController";
-import { CommunityAdminCommunitiesController } from "./controllers/community/admin/communities/CommunityAdminCommunitiesController";
-import { CommunityAdminCommunitiesBanned_usersController } from "./controllers/community/admin/communities/banned-users/CommunityAdminCommunitiesBanned_usersController";
-import { CommunityAdminCommunitiesMetricsController } from "./controllers/community/admin/communities/metrics/CommunityAdminCommunitiesMetricsController";
-import { CommunityAdminCrypto_keysController } from "./controllers/community/admin/crypto-keys/CommunityAdminCrypto_keysController";
-import { CommunityAdminDashboardHealthController } from "./controllers/community/admin/dashboard/health/CommunityAdminDashboardHealthController";
-import { CommunityAdminFeedCacheController } from "./controllers/community/admin/feed/cache/CommunityAdminFeedCacheController";
-import { CommunityAdminFeedCommunityController } from "./controllers/community/admin/feed/community/CommunityAdminFeedCommunityController";
-import { CommunityAdminKarmaController } from "./controllers/community/admin/karma/CommunityAdminKarmaController";
-import { CommunityAdminKarmaHistoryController } from "./controllers/community/admin/karma/history/CommunityAdminKarmaHistoryController";
-import { CommunityAdminMaintenance_configsController } from "./controllers/community/admin/maintenance-configs/CommunityAdminMaintenance_configsController";
-import { CommunityAdminMaintenanceStatusController } from "./controllers/community/admin/maintenance/status/CommunityAdminMaintenanceStatusController";
-import { CommunityAdminMembersActivityController } from "./controllers/community/admin/members/activity/CommunityAdminMembersActivityController";
-import { CommunityAdminMigration_historiesController } from "./controllers/community/admin/migration-histories/CommunityAdminMigration_historiesController";
-import { CommunityAdminPlatform_metadataController } from "./controllers/community/admin/platform-metadata/CommunityAdminPlatform_metadataController";
-import { CommunityAdminPostsControversialController } from "./controllers/community/admin/posts/controversial/CommunityAdminPostsControversialController";
-import { CommunityAdminPostsHotController } from "./controllers/community/admin/posts/hot/CommunityAdminPostsHotController";
-import { CommunityAdminPosts_newController } from "./controllers/community/admin/posts/new/CommunityAdminPosts_newController";
-import { CommunityAdminPostsStatusController } from "./controllers/community/admin/posts/status/CommunityAdminPostsStatusController";
-import { CommunityAdminPostsTopController } from "./controllers/community/admin/posts/top/CommunityAdminPostsTopController";
-import { CommunityAdminReportsController } from "./controllers/community/admin/reports/CommunityAdminReportsController";
-import { CommunityAdminService_statusesController } from "./controllers/community/admin/service-statuses/CommunityAdminService_statusesController";
-import { CommunityAdminServiceOverviewController } from "./controllers/community/admin/service/overview/CommunityAdminServiceOverviewController";
-import { CommunityAdminSystem_configsController } from "./controllers/community/admin/system-configs/CommunityAdminSystem_configsController";
-import { CommunityAdminSystem_messagesController } from "./controllers/community/admin/system-messages/CommunityAdminSystem_messagesController";
-import { CommunityAdminUsage_metricsController } from "./controllers/community/admin/usage-metrics/CommunityAdminUsage_metricsController";
-import { CommunityAdminUsersKarmaController } from "./controllers/community/admin/users/karma/CommunityAdminUsersKarmaController";
-import { CommunityAdminUsersKarmaHistoryController } from "./controllers/community/admin/users/karma/history/CommunityAdminUsersKarmaHistoryController";
-import { CommunityAdminsController } from "./controllers/community/admins/CommunityAdminsController";
-import { CommunityAuthAdminController } from "./controllers/community/auth/admin/CommunityAuthAdminController";
-import { CommunityAuthGuestController } from "./controllers/community/auth/guest/CommunityAuthGuestController";
-import { CommunityAuthMemberController } from "./controllers/community/auth/member/CommunityAuthMemberController";
-import { CommunityAuthModeratorController } from "./controllers/community/auth/moderator/CommunityAuthModeratorController";
-import { CommunityCommentsSortsController } from "./controllers/community/comments/sorts/CommunityCommentsSortsController";
-import { CommunityCommentsThreadsController } from "./controllers/community/comments/threads/CommunityCommentsThreadsController";
-import { CommunityCommentsVote_summariesController } from "./controllers/community/comments/vote-summaries/CommunityCommentsVote_summariesController";
-import { CommunityCommunitiesController } from "./controllers/community/communities/CommunityCommunitiesController";
-import { CommunityCommunity_feedsController } from "./controllers/community/community-feeds/CommunityCommunity_feedsController";
-import { CommunityFeed_cache_entriesController } from "./controllers/community/feed-cache-entries/CommunityFeed_cache_entriesController";
-import { CommunityFeedPopularController } from "./controllers/community/feed/popular/CommunityFeedPopularController";
-import { CommunityGuestCommunitiesSubscriber_countController } from "./controllers/community/guest/communities/subscriber-count/CommunityGuestCommunitiesSubscriber_countController";
-import { CommunityGuestProfileController } from "./controllers/community/guest/profile/CommunityGuestProfileController";
-import { CommunityGuestReportsController } from "./controllers/community/guest/reports/CommunityGuestReportsController";
-import { CommunityGuestsController } from "./controllers/community/guests/CommunityGuestsController";
-import { CommunityMemberCommentsController } from "./controllers/community/member/comments/CommunityMemberCommentsController";
-import { CommunityMemberCommentsVote_summaryController } from "./controllers/community/member/comments/vote-summary/CommunityMemberCommentsVote_summaryController";
-import { CommunityMemberCommunitiesController } from "./controllers/community/member/communities/CommunityMemberCommunitiesController";
-import { CommunityMemberDashboardController } from "./controllers/community/member/dashboard/CommunityMemberDashboardController";
-import { CommunityMemberFeedCommunityController } from "./controllers/community/member/feed/community/CommunityMemberFeedCommunityController";
-import { CommunityMemberFeedHomeController } from "./controllers/community/member/feed/home/CommunityMemberFeedHomeController";
-import { CommunityMemberKarmaController } from "./controllers/community/member/karma/CommunityMemberKarmaController";
-import { CommunityMemberKarmaHistoryController } from "./controllers/community/member/karma/history/CommunityMemberKarmaHistoryController";
-import { CommunityMemberPostsController } from "./controllers/community/member/posts/CommunityMemberPostsController";
-import { CommunityMemberPostsControversialController } from "./controllers/community/member/posts/controversial/CommunityMemberPostsControversialController";
-import { CommunityMemberPostsHotController } from "./controllers/community/member/posts/hot/CommunityMemberPostsHotController";
-import { CommunityMemberPosts_newController } from "./controllers/community/member/posts/new/CommunityMemberPosts_newController";
-import { CommunityMemberPostsTopController } from "./controllers/community/member/posts/top/CommunityMemberPostsTopController";
-import { CommunityMemberReportsController } from "./controllers/community/member/reports/CommunityMemberReportsController";
-import { CommunityMemberSubscriptionsController } from "./controllers/community/member/subscriptions/CommunityMemberSubscriptionsController";
-import { CommunityMemberVotesController } from "./controllers/community/member/votes/CommunityMemberVotesController";
-import { CommunityMembersController } from "./controllers/community/members/CommunityMembersController";
-import { CommunityModeratorAnalyticsCommunitiesController } from "./controllers/community/moderator/analytics/communities/CommunityModeratorAnalyticsCommunitiesController";
-import { CommunityModeratorAudit_logsController } from "./controllers/community/moderator/audit-logs/CommunityModeratorAudit_logsController";
-import { CommunityModeratorBansController } from "./controllers/community/moderator/bans/CommunityModeratorBansController";
-import { CommunityModeratorCommentsController } from "./controllers/community/moderator/comments/CommunityModeratorCommentsController";
-import { CommunityModeratorCommentsReportsController } from "./controllers/community/moderator/comments/reports/CommunityModeratorCommentsReportsController";
-import { CommunityModeratorCommentsVote_summaryController } from "./controllers/community/moderator/comments/vote-summary/CommunityModeratorCommentsVote_summaryController";
-import { CommunityModeratorCommunitiesController } from "./controllers/community/moderator/communities/CommunityModeratorCommunitiesController";
-import { CommunityModeratorCommunitiesBanned_usersController } from "./controllers/community/moderator/communities/banned-users/CommunityModeratorCommunitiesBanned_usersController";
-import { CommunityModeratorKarmaController } from "./controllers/community/moderator/karma/CommunityModeratorKarmaController";
-import { CommunityModeratorKarmaHistoryController } from "./controllers/community/moderator/karma/history/CommunityModeratorKarmaHistoryController";
-import { CommunityModeratorPostsStatusController } from "./controllers/community/moderator/posts/status/CommunityModeratorPostsStatusController";
-import { CommunityModeratorReportsController } from "./controllers/community/moderator/reports/CommunityModeratorReportsController";
-import { CommunityModeratorsController } from "./controllers/community/moderators/CommunityModeratorsController";
-import { CommunityPopular_feedsController } from "./controllers/community/popular-feeds/CommunityPopular_feedsController";
-import { CommunityPost_feed_indicesController } from "./controllers/community/post-feed-indices/CommunityPost_feed_indicesController";
-import { CommunityPost_feedsController } from "./controllers/community/post-feeds/CommunityPost_feedsController";
-import { CommunityPostsController } from "./controllers/community/posts/CommunityPostsController";
-import { CommunityPostsComment_countController } from "./controllers/community/posts/comment-count/CommunityPostsComment_countController";
-import { CommunityPostsEditsController } from "./controllers/community/posts/edits/CommunityPostsEditsController";
-import { CommunityPostsFeed_entriesController } from "./controllers/community/posts/feed-entries/CommunityPostsFeed_entriesController";
-import { CommunityPostsImageController } from "./controllers/community/posts/image/CommunityPostsImageController";
-import { CommunityPostsLinkController } from "./controllers/community/posts/link/CommunityPostsLinkController";
-import { CommunityPostsStatusController } from "./controllers/community/posts/status/CommunityPostsStatusController";
-import { CommunityPostsTextController } from "./controllers/community/posts/text/CommunityPostsTextController";
-import { CommunityPostsView_statsController } from "./controllers/community/posts/view-stats/CommunityPostsView_statsController";
+import { RedditcommunityAudit_log_detailsController } from "./controllers/redditCommunity/audit-log-details/RedditcommunityAudit_log_detailsController";
+import { RedditcommunityAudit_logsController } from "./controllers/redditCommunity/audit-logs/RedditcommunityAudit_logsController";
+import { RedditcommunityAudit_logsDetailsController } from "./controllers/redditCommunity/audit-logs/details/RedditcommunityAudit_logsDetailsController";
+import { RedditcommunityAuthCommunitymoderatorController } from "./controllers/redditCommunity/auth/communityModerator/RedditcommunityAuthCommunitymoderatorController";
+import { RedditcommunityAuthCommunityownerController } from "./controllers/redditCommunity/auth/communityOwner/RedditcommunityAuthCommunityownerController";
+import { RedditcommunityAuthGuestController } from "./controllers/redditCommunity/auth/guest/RedditcommunityAuthGuestController";
+import { RedditcommunityAuthMemberController } from "./controllers/redditCommunity/auth/member/RedditcommunityAuthMemberController";
+import { RedditcommunityAuthPlatformadminController } from "./controllers/redditCommunity/auth/platformadmin/RedditcommunityAuthPlatformadminController";
+import { RedditcommunityCommunitiesController } from "./controllers/redditCommunity/communities/RedditcommunityCommunitiesController";
+import { RedditcommunityCommunitymoderatorAnalyticsPostsController } from "./controllers/redditCommunity/communityModerator/analytics/posts/RedditcommunityCommunitymoderatorAnalyticsPostsController";
+import { RedditcommunityCommunitymoderatorBansController } from "./controllers/redditCommunity/communityModerator/bans/RedditcommunityCommunitymoderatorBansController";
+import { RedditcommunityCommunitymoderatorCommunitiesController } from "./controllers/redditCommunity/communityModerator/communities/RedditcommunityCommunitymoderatorCommunitiesController";
+import { RedditcommunityCommunitymoderatorCommunitiesBansController } from "./controllers/redditCommunity/communityModerator/communities/bans/RedditcommunityCommunitymoderatorCommunitiesBansController";
+import { RedditcommunityCommunitymoderatorCommunitiesReportsController } from "./controllers/redditCommunity/communityModerator/communities/reports/RedditcommunityCommunitymoderatorCommunitiesReportsController";
+import { RedditcommunityCommunitymoderatorModeration_actionsController } from "./controllers/redditCommunity/communityModerator/moderation-actions/RedditcommunityCommunitymoderatorModeration_actionsController";
+import { RedditcommunityCommunitymoderatorPostsController } from "./controllers/redditCommunity/communityModerator/posts/RedditcommunityCommunitymoderatorPostsController";
+import { RedditcommunityCommunitymoderatorReportsController } from "./controllers/redditCommunity/communityModerator/reports/RedditcommunityCommunitymoderatorReportsController";
+import { RedditcommunityCommunityownerAnalyticsPostsController } from "./controllers/redditCommunity/communityOwner/analytics/posts/RedditcommunityCommunityownerAnalyticsPostsController";
+import { RedditcommunityCommunityownerBansController } from "./controllers/redditCommunity/communityOwner/bans/RedditcommunityCommunityownerBansController";
+import { RedditcommunityCommunityownerCommunitiesController } from "./controllers/redditCommunity/communityOwner/communities/RedditcommunityCommunityownerCommunitiesController";
+import { RedditcommunityCommunityownerCommunitiesBansController } from "./controllers/redditCommunity/communityOwner/communities/bans/RedditcommunityCommunityownerCommunitiesBansController";
+import { RedditcommunityCommunityownerModeration_actionsController } from "./controllers/redditCommunity/communityOwner/moderation-actions/RedditcommunityCommunityownerModeration_actionsController";
+import { RedditcommunityCommunityownerPostsController } from "./controllers/redditCommunity/communityOwner/posts/RedditcommunityCommunityownerPostsController";
+import { RedditcommunityCommunityownerReportsController } from "./controllers/redditCommunity/communityOwner/reports/RedditcommunityCommunityownerReportsController";
+import { RedditcommunityFeedsController } from "./controllers/redditCommunity/feeds/RedditcommunityFeedsController";
+import { RedditcommunityGuestCommunitiesController } from "./controllers/redditCommunity/guest/communities/RedditcommunityGuestCommunitiesController";
+import { RedditcommunityMaterialized_view_schedulesController } from "./controllers/redditCommunity/materialized-view-schedules/RedditcommunityMaterialized_view_schedulesController";
+import { RedditcommunityMemberCommunitiesController } from "./controllers/redditCommunity/member/communities/RedditcommunityMemberCommunitiesController";
+import { RedditcommunityMemberHomeController } from "./controllers/redditCommunity/member/home/RedditcommunityMemberHomeController";
+import { RedditcommunityMemberPostsController } from "./controllers/redditCommunity/member/posts/RedditcommunityMemberPostsController";
+import { RedditcommunityMemberProfileController } from "./controllers/redditCommunity/member/profile/RedditcommunityMemberProfileController";
+import { RedditcommunityPlatformadminAnalyticsPostsController } from "./controllers/redditCommunity/platformAdmin/analytics/posts/RedditcommunityPlatformadminAnalyticsPostsController";
+import { RedditcommunityPlatformadminBansController } from "./controllers/redditCommunity/platformAdmin/bans/RedditcommunityPlatformadminBansController";
+import { RedditcommunityPlatformadminCommunitiesController } from "./controllers/redditCommunity/platformAdmin/communities/RedditcommunityPlatformadminCommunitiesController";
+import { RedditcommunityPlatformadminCommunitiesBansController } from "./controllers/redditCommunity/platformAdmin/communities/bans/RedditcommunityPlatformadminCommunitiesBansController";
+import { RedditcommunityPlatformadminCommunitiesReportsController } from "./controllers/redditCommunity/platformAdmin/communities/reports/RedditcommunityPlatformadminCommunitiesReportsController";
+import { RedditcommunityPlatformadminModeration_actionsController } from "./controllers/redditCommunity/platformAdmin/moderation-actions/RedditcommunityPlatformadminModeration_actionsController";
+import { RedditcommunityPlatformadminPostsController } from "./controllers/redditCommunity/platformAdmin/posts/RedditcommunityPlatformadminPostsController";
+import { RedditcommunityPlatformadminReportsController } from "./controllers/redditCommunity/platformAdmin/reports/RedditcommunityPlatformadminReportsController";
+import { RedditcommunityPopularController } from "./controllers/redditCommunity/popular/RedditcommunityPopularController";
+import { RedditcommunityPostsController } from "./controllers/redditCommunity/posts/RedditcommunityPostsController";
+import { RedditcommunitySystem_health_logsController } from "./controllers/redditCommunity/system-health-logs/RedditcommunitySystem_health_logsController";
+import { RedditcommunitySystem_notificationsController } from "./controllers/redditCommunity/system-notifications/RedditcommunitySystem_notificationsController";
 
 @Module({
   controllers: [
-    CommunityAuthGuestController,
-    CommunityAuthMemberController,
-    CommunityAuthModeratorController,
-    CommunityAuthAdminController,
-    CommunityGuestsController,
-    CommunityGuestProfileController,
-    CommunityMembersController,
-    CommunityModeratorsController,
-    CommunityAdminsController,
-    CommunityAdminSystem_configsController,
-    CommunityAdminPlatform_metadataController,
-    CommunityAdminApi_keysController,
-    CommunityAdminMigration_historiesController,
-    CommunityAdminService_statusesController,
-    CommunityAdminMaintenance_configsController,
-    CommunityAdminSystem_messagesController,
-    CommunityAdminUsage_metricsController,
-    CommunityAdminCrypto_keysController,
-    CommunityCommunitiesController,
-    CommunityMemberCommunitiesController,
-    CommunityModeratorCommunitiesController,
-    CommunityAdminCommunitiesController,
-    CommunityModeratorCommunitiesBanned_usersController,
-    CommunityAdminCommunitiesBanned_usersController,
-    CommunityMemberPostsController,
-    CommunityPostsController,
-    CommunityPostsTextController,
-    CommunityPostsLinkController,
-    CommunityPostsImageController,
-    CommunityPostsEditsController,
-    CommunityPostsComment_countController,
-    CommunityPostsView_statsController,
-    CommunityPostsFeed_entriesController,
-    CommunityPostsStatusController,
-    CommunityModeratorPostsStatusController,
-    CommunityAdminPostsStatusController,
-    CommunityMemberVotesController,
-    CommunityFeed_cache_entriesController,
-    CommunityPost_feed_indicesController,
-    CommunityCommunity_feedsController,
-    CommunityPopular_feedsController,
-    CommunityPost_feedsController,
-    CommunityMemberCommentsController,
-    CommunityModeratorCommentsController,
-    CommunityAdminCommentsController,
-    CommunityCommentsVote_summariesController,
-    CommunityModeratorReportsController,
-    CommunityAdminReportsController,
-    CommunityModeratorBansController,
-    CommunityAdminBansController,
-    CommunityModeratorAudit_logsController,
-    CommunityAdminAudit_logsController,
-    CommunityMemberKarmaController,
-    CommunityModeratorKarmaController,
-    CommunityAdminKarmaController,
-    CommunityMemberKarmaHistoryController,
-    CommunityModeratorKarmaHistoryController,
-    CommunityAdminKarmaHistoryController,
-    CommunityMemberSubscriptionsController,
-    CommunityMemberDashboardController,
-    CommunityAdminAnalyticsController,
-    CommunityAdminMembersActivityController,
-    CommunityAdminCommunitiesMetricsController,
-    CommunityAdminDashboardHealthController,
-    CommunityAdminAnalyticsUsageController,
-    CommunityAdminAuditSystem_configsController,
-    CommunityAdminMaintenanceStatusController,
-    CommunityAdminServiceOverviewController,
-    CommunityAdminAnalyticsCommunitiesController,
-    CommunityModeratorAnalyticsCommunitiesController,
-    CommunityMemberPostsHotController,
-    CommunityAdminPostsHotController,
-    CommunityMemberPosts_newController,
-    CommunityAdminPosts_newController,
-    CommunityMemberPostsTopController,
-    CommunityAdminPostsTopController,
-    CommunityMemberPostsControversialController,
-    CommunityAdminPostsControversialController,
-    CommunityMemberFeedHomeController,
-    CommunityFeedPopularController,
-    CommunityMemberFeedCommunityController,
-    CommunityAdminFeedCommunityController,
-    CommunityAdminFeedCacheController,
-    CommunityCommentsSortsController,
-    CommunityModeratorCommentsReportsController,
-    CommunityAdminCommentsReportsController,
-    CommunityCommentsThreadsController,
-    CommunityMemberCommentsVote_summaryController,
-    CommunityModeratorCommentsVote_summaryController,
-    CommunityAdminCommentsVote_summaryController,
-    CommunityGuestReportsController,
-    CommunityMemberReportsController,
-    CommunityAdminUsersKarmaController,
-    CommunityAdminUsersKarmaHistoryController,
-    CommunityGuestCommunitiesSubscriber_countController,
+    RedditcommunityAuthGuestController,
+    RedditcommunityAuthMemberController,
+    RedditcommunityAuthCommunityownerController,
+    RedditcommunityAuthCommunitymoderatorController,
+    RedditcommunityAuthPlatformadminController,
+    RedditcommunityMemberProfileController,
+    RedditcommunityCommunitiesController,
+    RedditcommunityCommunityownerCommunitiesController,
+    RedditcommunityMemberCommunitiesController,
+    RedditcommunityPostsController,
+    RedditcommunityMemberPostsController,
+    RedditcommunityCommunityownerPostsController,
+    RedditcommunityCommunitymoderatorPostsController,
+    RedditcommunityPlatformadminPostsController,
+    RedditcommunityCommunityownerBansController,
+    RedditcommunityCommunitymoderatorBansController,
+    RedditcommunityPlatformadminBansController,
+    RedditcommunityCommunityownerCommunitiesBansController,
+    RedditcommunityCommunitymoderatorCommunitiesBansController,
+    RedditcommunityPlatformadminCommunitiesBansController,
+    RedditcommunityCommunitymoderatorModeration_actionsController,
+    RedditcommunityCommunityownerModeration_actionsController,
+    RedditcommunityPlatformadminModeration_actionsController,
+    RedditcommunityCommunitymoderatorReportsController,
+    RedditcommunityCommunityownerReportsController,
+    RedditcommunityPlatformadminReportsController,
+    RedditcommunityMemberHomeController,
+    RedditcommunityPopularController,
+    RedditcommunityFeedsController,
+    RedditcommunityAudit_logsController,
+    RedditcommunityAudit_logsDetailsController,
+    RedditcommunityAudit_log_detailsController,
+    RedditcommunitySystem_notificationsController,
+    RedditcommunitySystem_health_logsController,
+    RedditcommunityMaterialized_view_schedulesController,
+    RedditcommunityGuestCommunitiesController,
+    RedditcommunityCommunitymoderatorCommunitiesController,
+    RedditcommunityPlatformadminCommunitiesController,
+    RedditcommunityCommunityownerAnalyticsPostsController,
+    RedditcommunityCommunitymoderatorAnalyticsPostsController,
+    RedditcommunityPlatformadminAnalyticsPostsController,
+    RedditcommunityCommunitymoderatorCommunitiesReportsController,
+    RedditcommunityPlatformadminCommunitiesReportsController,
   ],
 })
 export class MyModule {}

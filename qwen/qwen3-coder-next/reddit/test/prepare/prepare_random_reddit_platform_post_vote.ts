@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_post_vote(
-  input?: DeepPartial<IRedditPlatformPostVote.ICreate> | undefined,
+  input?: DeepPartial<IRedditPlatformPostVote.ICreate>,
 ): IRedditPlatformPostVote.ICreate {
-  input;
-  return {};
+  return {
+    vote_type:
+      input?.vote_type ??
+      RandomGenerator.pick(["UPVOTE", "DOWNVOTE", "NONE"] as const),
+  };
 }

@@ -6,8 +6,13 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_comment_vote(
-  input?: DeepPartial<IRedditPlatformCommentVote.ICreate> | undefined,
+  input?: DeepPartial<IRedditPlatformCommentVote.ICreate>,
 ): IRedditPlatformCommentVote.ICreate {
-  input;
-  return {};
+  return {
+    comment_id:
+      input?.comment_id ?? typia.random<string & tags.Format<"uuid">>(),
+    vote_type:
+      input?.vote_type ??
+      RandomGenerator.pick(["upvote", "downvote", "none"] as const),
+  };
 }

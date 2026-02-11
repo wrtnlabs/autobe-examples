@@ -6,55 +6,67 @@ import typia from "typia";
 import { IRedditPlatformAdmin } from "../../../../structures/IRedditPlatformAdmin";
 
 /**
- * Admin registration endpoint for creating new platform administrator accounts.
+ * Admin registration endpoint that creates a new system administrator account with platform-wide oversight privileges.
  *
- * This endpoint allows the creation of new admin accounts with full system access. The registration process requires email address, password, and username. The system validates email format, password strength, and username uniqueness before creating the account. Upon successful registration, the admin receives authentication tokens and an initial karma score of zero.
+ * ## Purpose and Overview
  *
- * ## Authentication Flow
+ * This endpoint handles the initial registration of new administrators for the Reddit-like community platform. It follows a secure multi-step workflow that includes:
  *
- * 1. Admin submits registration form with email, password, and username
- * 2. System validates email format and domain restrictions
- * 3. System checks password strength requirements
- * 4. System verifies username uniqueness
- * 5. System creates admin account with hashed password
- * 6. System generates initial authentication tokens
- * 7. System sets initial karma score to zero
- * 8. System sends verification email to admin email address
+ * - Input validation for email format and uniqueness
+ * - Password hashing using bcrypt with appropriate cost factor
+ * - Creation of the admin record in the database
+ * - Generation and storage of email verification token
+ * - Sending verification email to the admin's provided email address
  *
- * ## Database Integration
- *
- * This operation creates a new record in the `reddit_platform_admins` table with:
- * - Email address (unique constraint enforced)
- * - Password hash (hashed using bcrypt or similar secure algorithm)
- * - Username (unique constraint enforced)
- * - Display name (optional, can be empty string)
- * - Bio (optional)
- * - Avatar URL (optional)
- * - Karma score initialized to zero
- * - Email verified flag set to false (pending verification)
- * - Timestamps for creation and update
+ * The registration process ensures that only legitimate users with valid email addresses can become administrators, maintaining platform security and integrity.
  *
  * ## Security Considerations
  *
- * - Password must be hashed before storage using strong cryptographic algorithm
- * - Email address must be validated for proper format
- * - Username must be unique across all admin accounts
- * - Session tokens must be generated securely
- * - All sensitive operations must be logged for audit purposes
+ * - Password must meet minimum complexity requirements (minimum 8 characters as specified in requirements)
+ * - Password is hashed using bcrypt before storage
+ * - Email address must be unique and validated through email verification flow
+ * - IP address and referrer information may be logged for security auditing
+ * - Rate limiting should be applied to prevent registration abuse
+ *
+ * ## Database Integration
+ *
+ * The registration process creates records in multiple tables:
+ *
+ * - `reddit_platform_admins`: Creates the main admin account with email, hashed password, username, and display_name
+ * - `reddit_platform_admin_email_verifications`: Creates email verification token record with expiration timestamp
+ *
+ * ## Implementation Details
+ *
+ * 1. Validate input data: email format, password length, username uniqueness
+ * 2. Check for existing admin with same email or username
+ * 3. Hash password using bcrypt with cost factor of 10-12
+ * 4. Create admin record in reddit_platform_admins table
+ * 5. Generate secure random verification token
+ * 6. Store hashed token in reddit_platform_admin_email_verifications with expiration
+ * 7. Send verification email with token link
+ * 8. Return admin details without sensitive information
+ *
+ * ## Error Handling
+ *
+ * Common error scenarios:
+ *
+ * - 400: Invalid email format or password too short
+ * - 409: Email or username already exists
+ * - 500: Email delivery failure (admin record still created)
  *
  * ## Related Operations
  *
- * - `POST /auth/admin/login`: Login operation for existing admins
- * - `GET /auth/admin/verify-email`: Email verification operation
- * - `POST /auth/admin/refresh`: Token refresh operation
+ * - `/auth/admin/login`: Used after email verification to authenticate
+ * - `/auth/admin/password/refresh`: Password reset workflow
+ * - Email verification endpoint (not specified but implied)
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Registration information for new admin account
+ * @param props.body Admin registration request body containing email, password, and username for creating a new administrator account.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement admin registration by creating new record in reddit_platform_admins table with hashed password, email, username, and initial karma score of zero. Generate JWT access and refresh tokens. Set email_verified to false initially.
+ * @x-autobe-specification Register a new admin account with email verification workflow. Validates email format and uniqueness, hashes password with bcrypt, creates admin record, and generates email verification token sent to admin email. Returns IRedditPlatformAdmin entity without sensitive fields.
  * @path /redditPlatform/auth/admin/join
  * @accessor api.functional.redditPlatform.auth.admin.join
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -88,7 +100,7 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Registration information for new admin account
+     * Admin registration request body containing email, password, and username for creating a new administrator account.
      */
     body: IRedditPlatformAdmin.IJoin;
   };
@@ -137,55 +149,88 @@ export namespace join {
 }
 
 /**
- * Admin authentication endpoint for logging in to platform administrator accounts.
+ * Admin login endpoint that validates administrator credentials and establishes a secure authenticated session using JWT tokens.
  *
- * This endpoint validates admin credentials and generates authentication tokens for successful login attempts. Admins must provide their email address and password to authenticate. The system validates credentials against the stored password hash and generates new session tokens upon successful authentication.
+ * ## Purpose and Overview
  *
- * ## Authentication Flow
+ * This endpoint provides authentication for system administrators, validating email and password credentials to establish a secure session. It implements a comprehensive security workflow that includes:
  *
- * 1. Admin submits login credentials (email and password)
- * 2. System validates email format and checks if admin exists
- * 3. System verifies password against stored hash
- * 4. System generates new access and refresh tokens
- * 5. System updates last login timestamp
- * 6. System returns authentication tokens to client
+ * - Credential validation against stored password hash
+ * - Account status verification (active, verified, not deleted)
+ * - Generation of both access and refresh JWT tokens
+ * - Session recording with connection context for security auditing
+ * - Rate limiting to prevent brute force attacks
  *
- * ## Database Integration
- *
- * This operation queries the `reddit_platform_admins` table to:
- * - Find admin record by email address
- * - Verify password hash matches provided password
- * - Update last login timestamp
- * - Generate new session tokens
+ * The authentication system uses JWT (JSON Web Tokens) with separate access tokens for API requests and refresh tokens for obtaining new access tokens without re-authentication.
  *
  * ## Security Considerations
  *
- * - Password comparison must use constant-time algorithm to prevent timing attacks
- * - Implement rate limiting to prevent brute force attacks
- * - Log failed login attempts for security monitoring
- * - Invalidate existing sessions on successful password change
- * - Require re-authentication for sensitive operations
+ * - Password verification using bcrypt comparison
+ * - Session tokens stored in database for revocation capability
+ * - IP address and referrer tracking for security auditing
+ * - Rate limiting to prevent credential stuffing attacks
+ * - Token expiration management with configurable lifetimes
+ * - Support for token revocation through session management
+ *
+ * ## Token Management
+ *
+ * The system generates two types of JWT tokens:
+ *
+ * - **Access Token**: Short-lived token (typically 15-60 minutes) used for API authentication
+ * - **Refresh Token**: Long-lived token (typically 7-30 days) used to obtain new access tokens
+ *
+ * Both tokens are stored in the `reddit_platform_admin_sessions` table with their expiration times and can be revoked if necessary.
+ *
+ * ## Database Integration
+ *
+ * The login process interacts with:
+ *
+ * - `reddit_platform_admins`: Validates credentials and retrieves admin details
+ * - `reddit_platform_admin_sessions`: Creates session record with tokens, IP, and referrer
+ * - `reddit_platform_admin_email_verifications`: Verifies email is verified (if required)
+ *
+ * ## Session Tracking
+ *
+ * Each successful login creates a session record that tracks:
+ *
+ * - Access and refresh token values (hashed or stored securely)
+ * - Client IP address for security auditing
+ * - HTTP referrer for origin tracking
+ * - Full URL href for navigation context
+ * - Expiration timestamps for both tokens
+ * - Last used timestamp for activity monitoring
+ *
+ * ## Implementation Details
+ *
+ * 1. Retrieve admin record by email address
+ * 2. Verify account is not deleted and email is verified
+ * 3. Compare provided password with stored hash
+ * 4. Generate access token with short expiration (e.g., 30 minutes)
+ * 5. Generate refresh token with long expiration (e.g., 30 days)
+ * 6. Create session record with connection context
+ * 7. Return tokens and admin details in IAuthorized response
  *
  * ## Error Handling
  *
- * - Invalid email: Return 401 Unauthorized
- * - Invalid password: Return 401 Unauthorized
- * - Admin not found: Return 404 Not Found
- * - Admin deleted: Return 404 Not Found
+ * Common error scenarios:
+ *
+ * - 401: Invalid email or password
+ * - 403: Email not verified or account deactivated
+ * - 429: Too many login attempts (rate limited)
  *
  * ## Related Operations
  *
- * - `POST /auth/admin/join`: Registration operation for new admins
- * - `POST /auth/admin/refresh`: Token refresh operation
- * - `POST /auth/admin/logout`: Session termination operation
+ * - `/auth/admin/refresh`: Obtain new access token using refresh token
+ * - `/auth/admin/logout`: Invalidate current session (client-side token discarding)
+ * - `/auth/admin/join`: Initial registration workflow
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Login credentials for admin authentication
+ * @param props.body Admin login request body containing email and password for credential validation.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement admin authentication by querying reddit_platform_admins table by email, verifying password hash, generating JWT tokens, and updating last login timestamp. Return access token, refresh token, and admin profile.
+ * @x-autobe-specification Authenticate admin credentials and establish JWT session. Validates email/password, checks account status, generates access and refresh tokens, stores session record with connection context, and returns IRedditPlatformAdmin.IAuthorized with tokens.
  * @path /redditPlatform/auth/admin/login
  * @accessor api.functional.redditPlatform.auth.admin.login
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -219,7 +264,7 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Login credentials for admin authentication
+     * Admin login request body containing email and password for credential validation.
      */
     body: IRedditPlatformAdmin.ILogin;
   };
@@ -268,55 +313,98 @@ export namespace login {
 }
 
 /**
- * Token refresh endpoint for renewing expired authentication tokens for admin accounts.
+ * Token refresh endpoint that allows administrators to obtain a new access token using a valid refresh token, maintaining authenticated sessions without requiring re-login.
  *
- * This endpoint allows admins to refresh their authentication tokens using a valid refresh token. When the access token expires, admins can submit their refresh token to obtain new access and refresh tokens without re-authenticating with their credentials.
+ * ## Purpose and Overview
  *
- * ## Token Refresh Flow
+ * This endpoint implements token refresh functionality for the JWT authentication system. It provides a secure way to extend authenticated sessions by issuing new access tokens while maintaining long-term session management through refresh tokens.
  *
- * 1. Admin submits refresh token (and optionally access token)
- * 2. System validates refresh token signature and expiration
- * 3. System verifies refresh token matches stored session
- * 4. System generates new access and refresh tokens
- * 5. System invalidates old refresh token
- * 6. System returns new authentication tokens
+ * Key features of the refresh workflow:
  *
- * ## Database Integration
+ * - Validation of refresh token authenticity and expiration
+ * - Session status verification and activity tracking
+ * - Automatic generation of new access token
+ * - Session activity timestamp update
+ * - Token rotation support for enhanced security
  *
- * This operation interacts with the `reddit_platform_admin_sessions` table to:
- * - Validate refresh token exists and is not expired
- * - Verify refresh token belongs to the correct admin
- * - Generate new session tokens
- * - Invalidate old refresh token
- * - Update session timestamps
+ * The refresh mechanism allows users to remain authenticated for extended periods while maintaining security through token expiration and revocation capabilities.
  *
  * ## Security Considerations
  *
- * - Refresh tokens must have longer expiration than access tokens
- * - Implement token rotation for security
- * - Log token refresh operations for audit purposes
- * - Invalidate all sessions on password change
- * - Support revocation of all tokens for security incidents
+ * - Refresh tokens must be valid and not expired
+ * - Session must not be revoked (is_revoked = false)
+ * - Token refresh updates session last_used_at for activity tracking
+ * - Optional token rotation can invalidate old refresh token and issue new one
+ * - IP address matching can be enforced for session hijacking prevention
+ *
+ * ## Token Expiration Management
+ *
+ * The system uses a two-tier token approach:
+ *
+ * - **Access Token**: Short-lived (15-60 minutes) for API authentication
+ * - **Refresh Token**: Long-lived (7-30 days) for token renewal
+ *
+ * When an access token expires, the client uses this endpoint with the refresh token to obtain a new access token without requiring the user to re-authenticate.
+ *
+ * ## Database Integration
+ *
+ * The refresh operation interacts with:
+ *
+ * - `reddit_platform_admin_sessions`: Validates refresh token and updates activity timestamp
+ * - `reddit_platform_admins`: Retrieves admin details for response
+ *
+ * The session record is updated with the `last_used_at` timestamp to track session activity.
+ *
+ * ## Implementation Details
+ *
+ * 1. Validate refresh token signature and expiration
+ * 2. Retrieve session record by refresh token
+ * 3. Verify session is not revoked and admin is not deleted
+ * 4. Generate new access token with fresh expiration
+ * 5. Optionally issue new refresh token (token rotation)
+ * 6. Update session's last_used_at timestamp
+ * 7. Return new tokens in IAuthorized response
+ *
+ * ## Token Rotation (Optional)
+ *
+ * For enhanced security, the system can implement token rotation where each refresh operation:
+ *
+ * - Invalidates the old refresh token
+ * - Generates a new refresh token
+ * - Updates the session record with the new refresh token
+ *
+ * This prevents refresh token reuse and limits the window of compromise if a token is stolen.
  *
  * ## Error Handling
  *
- * - Invalid refresh token: Return 401 Unauthorized
- * - Expired refresh token: Return 401 Unauthorized
- * - Token mismatch: Return 403 Forbidden
+ * Common error scenarios:
+ *
+ * - 401: Invalid or expired refresh token
+ * - 403: Session revoked or admin account deactivated
+ * - 404: Session not found
  *
  * ## Related Operations
  *
- * - `POST /auth/admin/login`: Login operation to obtain initial tokens
- * - `POST /auth/admin/join`: Registration operation
- * - `POST /auth/admin/logout`: Session termination operation
+ * - `/auth/admin/login`: Initial authentication that creates refresh tokens
+ * - `/auth/admin/logout`: Client-side token discarding (no server action needed)
+ * - Token validation endpoint (not specified but implied)
+ *
+ * ## Client Implementation
+ *
+ * Clients should:
+ *
+ * 1. Store refresh token securely (httpOnly cookie or secure storage)
+ * 2. Automatically call this endpoint when access token expires
+ * 3. Handle 401 responses by redirecting to login
+ * 4. Update stored tokens when rotation is implemented
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Refresh token for admin authentication session
+ * @param props.body Token refresh request body containing the refresh token for obtaining a new access token.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement token refresh by validating refresh token in reddit_platform_admin_sessions table, generating new JWT tokens, invalidating old refresh token, and returning new access and refresh tokens.
+ * @x-autobe-specification Renew admin access token using valid refresh token. Validates refresh token, checks session status, generates new access token, updates session's last_used_at timestamp, and returns IRedditPlatformAdmin.IAuthorized with new tokens.
  * @path /redditPlatform/auth/admin/refresh
  * @accessor api.functional.redditPlatform.auth.admin.refresh
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -350,7 +438,7 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token for admin authentication session
+     * Token refresh request body containing the refresh token for obtaining a new access token.
      */
     body: IRedditPlatformAdmin.IRefresh;
   };

@@ -10,18 +10,21 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformCommunityCollector {
   export async function collect(props: {
     body: IRedditPlatformCommunity.ICreate;
-    redditPlatformUsers: IEntity;
+    redditPlatformMembers: IEntity;
+    redditPlatformMemberSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      name: "",
-      description: null,
-      icon_url: null,
+      name: props.body.name,
+      description: props.body.description ?? null,
+      icon_url: props.body.icon_url ?? null,
       subscriber_count: 0,
       created_at: new Date(),
       updated_at: new Date(),
-      owner: { connect: { id: props.redditPlatformUsers.id } },
+      deleted_at: null,
+      owner: { connect: { id: props.redditPlatformMembers.id } },
+      parentCommunity: undefined,
     } satisfies Prisma.reddit_platform_communitiesCreateInput;
   }
 }

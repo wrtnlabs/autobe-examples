@@ -10,22 +10,21 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformCommentCollector {
   export async function collect(props: {
     body: IRedditPlatformComment.ICreate;
+    redditPlatformMembers: IEntity;
     redditPlatformPosts: IEntity;
-    redditPlatformUsers: IEntity;
-    redditPlatformUserSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      content: "",
+      content: props.body.content,
       vote_score: 0,
-      comment_count: 0,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      author: { connect: { id: props.redditPlatformUsers.id } },
+      author: { connect: { id: props.redditPlatformMembers.id } },
       post: { connect: { id: props.redditPlatformPosts.id } },
-      parentComment: undefined,
+      parent: props.body.parent_comment_id
+        ? { connect: { id: props.body.parent_comment_id } }
+        : undefined,
     } satisfies Prisma.reddit_platform_commentsCreateInput;
   }
 }

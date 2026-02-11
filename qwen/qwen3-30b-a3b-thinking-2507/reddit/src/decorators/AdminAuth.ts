@@ -3,6 +3,13 @@ import { ExecutionContext, createParamDecorator  from "@nestjs/common";
 import { Singleton  from "tstl";
 import { adminAuthorize  from "../providers/authorize/adminAuthorize";
 
+const singleton = new Singleton(() =>
+  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return adminAuthorize(request);
+  })(),
+);
+
 export const AdminAuth =
   (): ParameterDecorator =>
   (
@@ -16,10 +23,3 @@ export const AdminAuth =
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
   ;
-
-const singleton = new Singleton(() =>
-  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return adminAuthorize(request);
-  })(),
-);

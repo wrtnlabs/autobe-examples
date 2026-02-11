@@ -1,0 +1,40 @@
+/// Stores user votes on posts with upvote/downvote tracking and timestamp
+/// information. Each user can vote once per post, with vote types including
+/// upvote, downvote, or no vote (neutral). This table captures the voting
+/// behavior for posts in the Reddit-like community platform.
+///
+/// @namespace Voting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link reddit_platform_members.id}.
+  user_id String
+  
+  /// Post that was voted on. {@link reddit_platform_posts.id}.
+  post_id String
+  
+  /// Type of vote cast by the user. Values: UPVOTE (positive vote), DOWNVOTE
+  /// (negative vote), NONE (neutral/no vote).
+  vote_type String
+  
+  /// Timestamp when the vote was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // RELATIONS
+  //----
+  user reddit_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  @@unique([user_id, post_id])
+  @@index([post_id])
+  @@index([user_id])
+}

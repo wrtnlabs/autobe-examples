@@ -12,7 +12,7 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.community_platform_admins.findFirst({
+  const admin = await MyGlobal.prisma.community_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -20,7 +20,7 @@ export async function adminAuthorize(request: {
   });
 
   if (admin === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("You're not an active admin");
   }
 
   return payload;

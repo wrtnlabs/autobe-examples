@@ -10,23 +10,21 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformReportCollector {
   export async function collect(props: {
     body: IRedditPlatformReport.ICreate;
-    redditPlatformUsers: IEntity;
-    redditPlatformReports: IEntity;
-    resolver?: IEntity;
+    redditPlatformMembers: IEntity;
+    redditPlatformMemberSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      target_type: props.redditPlatformReports.target_type,
-      target_id: props.redditPlatformReports.target_id,
-      reason: props.redditPlatformReports.reason,
-      status: props.redditPlatformReports.status,
-      created_at: new Date(),
-      updated_at: new Date(),
-      reporter: { connect: { id: props.redditPlatformUsers.id } },
-      resolver: props.resolver
-        ? { connect: { id: props.resolver.id } }
-        : undefined,
-      reddit_platform_moderation_logs: undefined,
+      id,
+      reported_type: props.body.reported_type,
+      reported_id: props.body.reported_id,
+      reason: props.body.reason,
+      status: "PENDING",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      resolved_at: null,
+      reporter: { connect: { id: props.redditPlatformMembers.id } },
+      resolvedBy: undefined,
     } satisfies Prisma.reddit_platform_reportsCreateInput;
   }
 }

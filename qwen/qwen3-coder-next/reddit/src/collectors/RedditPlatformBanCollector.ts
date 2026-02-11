@@ -10,18 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformBanCollector {
   export async function collect(props: {
     body: IRedditPlatformBan.ICreate;
-    redditPlatformCommunities: IEntity;
-    user: IEntity;
-    bannedBy: IEntity;
+    session: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
+      reason: props.body.reason,
       created_at: new Date(),
-      expires_at: null,
+      expired_at: props.body.expired_at ?? null,
       deleted_at: null,
-      community: { connect: { id: props.redditPlatformCommunities.id } },
-      user: { connect: { id: props.user.id } },
-      bannedBy: { connect: { id: props.bannedBy.id } },
+      community: { connect: { id: props.body.community_id } },
+      user: { connect: { id: props.body.user_id } },
+      bannedBy: { connect: { id: props.session.id } },
     } satisfies Prisma.reddit_platform_bansCreateInput;
   }
 }

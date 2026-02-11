@@ -10,17 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformCommentVoteCollector {
   export async function collect(props: {
     body: IRedditPlatformCommentVote.ICreate;
-    redditPlatformComments: IEntity; // from path parameter commentId
-    redditPlatformUsers: IEntity; // from authorized actor
-    redditPlatformUserSessions: IEntity; // from authorized session
+    member: IEntity;
+    comment: IEntity;
   }) {
     return {
       id: v4(),
-      vote_type: "upvote", // Default value since DTO is empty
+      vote_type: props.body.vote_type,
       created_at: new Date(),
       updated_at: new Date(),
-      user: { connect: { id: props.redditPlatformUsers.id } },
-      comment: { connect: { id: props.redditPlatformComments.id } },
+      member: { connect: { id: props.member.id } },
+      comment: { connect: { id: props.comment.id } },
     } satisfies Prisma.reddit_platform_comment_votesCreateInput;
   }
 }

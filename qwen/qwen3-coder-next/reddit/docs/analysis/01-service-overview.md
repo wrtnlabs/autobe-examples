@@ -1,857 +1,660 @@
-# Reddit-like Community Platform - Comprehensive Requirements Specification
+# Reddit-Style Community Platform
 
-## Table of Contents
+## 1. Service Overview
 
-1. [Service Overview](#service-overview)
-2. [Business Requirements](#business-requirements)
-3. [Functional Requirements](#functional-requirements)
-4. [User Actors & Authentication](#user-actors--authentication)
-5. [User Journeys](#user-journeys)
-6. [Post Management](#post-management)
-7. [Comment System](#comment-system)
-8. [Voting System](#voting-system)
-9. [Community Management](#community-management)
-10. [Moderation System](#moderation-system)
-11. [Feed & Content Display](#feed--content-display)
-12. [Data Modeling](#data-modeling)
-13. [Success Metrics & Performance](#success-metrics--performance)
+### 1.1 Executive Summary
 
----
+The Reddit-Style Community Platform is a modern social media application designed to foster vibrant online communities where users can share content, engage in discussions, and build networks around shared interests. This platform combines the proven success of community-driven content platforms with enhanced moderation capabilities, improved user experience, and robust technical infrastructure.
 
-## Service Overview
+The platform enables users to create and join communities based on specific topics, share content through posts, participate in threaded discussions, and build reputation through a karma-based scoring system. Users can customize their experience through multiple feed types with various sorting algorithms, ensuring content relevance and engagement.
 
-### Vision & Mission
+### 1.2 Vision and Strategic Goals
 
-**Vision Statement:** To create the world's most engaging and diverse community platform where users can discover, share, and discuss topics they're passionate about, while fostering meaningful connections and knowledge exchange.
+The platform's vision is to become the premier destination for community-driven content discovery and discussion, empowering users to build and participate in communities that matter to them while fostering constructive dialogue and positive engagement.
 
-**Mission Statement:** To empower communities by providing an intuitive, scalable, and fair platform where users can contribute valuable content, engage in thoughtful discussions, and build reputation through active participation.
+**Short-term Goals (0-12 months)**:
+- Launch fully functional platform with all core features
+- Establish user base of 100,000 active monthly users
+- Create 5,000+ active communities across diverse topics
+- Achieve 4.5+ user satisfaction rating
+- Build reputation for fair moderation and community health
 
-### Core Values
+**Medium-term Goals (12-24 months)**:
+- Scale to 1 million active monthly users
+- Develop premium features for power users and communities
+- Establish partnerships with content creators and organizations
+- Implement advanced analytics and community management tools
+- Achieve 99.9% uptime and sub-second response times
 
-- **Open Participation**: Enable anyone to join and contribute to discussions
-- **Content Quality**: Reward valuable contributions through community-driven voting
-- **Community Autonomy**: Empower communities to moderate their own spaces
-- **Transparency**: Maintain clear rules and fair moderation practices
-- **User Empowerment**: Give users control over their experience and content
+**Long-term Goals (24-36 months)**:
+- Become a top-10 social platform in target markets
+- Develop AI-powered community health tools
+- Expand to mobile-first experiences
+- Implement comprehensive monetization options
+- Establish self-sustaining community governance models
 
-### Target Audience
+### 1.3 Target Audience
 
-#### Primary Users
+The platform serves four primary user segments:
 
-| User Type | Description | Key Needs |
-|-----------|-------------|-----------|
-| Community Members | Regular users participating in discussions | Easy content creation, transparent voting, reputation building |
-| Community Creators | Users establishing new communities | Administrative controls, moderation tools, culture shaping |
-| Active Contributors | Highly engaged content creators | Advanced moderation, recognition, community influence |
+**Community Enthusiasts**: Users who actively seek out and participate in communities based on their interests. They value diverse content, meaningful discussions, and opportunities to connect with like-minded individuals.
 
-#### Secondary Audiences
+**Content Creators**: Users who regularly share posts, comments, and other content. They value tools for content creation, audience engagement, and reputation building through the karma system.
 
-- **Guests and Non-Members**: Users who browse content without creating accounts
-- **Platform Administrators**: System-wide administrators responsible for overall platform health
+**Community Creators**: Users who establish and manage their own communities. They seek powerful moderation tools, community analytics, and customization options to maintain their community's unique culture.
 
----
+**Casual Users**: Users who consume content without actively creating or managing communities. They value ease of use, content discovery, and quality content experiences.
 
-## Business Requirements
+## 2. Core Functional Requirements
 
-### User Account Management
+### 2.1 User Account Management
 
-#### Registration Workflow
+#### 2.1.1 User Registration
 
-WHEN a visitor creates an account, THE system SHALL require email, password, and unique username. THE system SHALL validate email format, password strength, and username uniqueness. IF registration data is valid, THE system SHALL create a new user account with karma score of zero.
+**WHEN** a user wants to create an account,
+**THE** system SHALL require email address, password, and unique username,
+**AND** the system SHALL validate email format, password strength, and username uniqueness,
+**AND** the system SHALL create a new user record with initial karma score of 0.
 
-WHEN registration completes successfully, THE system SHALL send a verification email to the provided address. WHERE email verification is enabled, THE system SHALL restrict posting capabilities until verification is complete.
+**WHEN** registration validation fails,
+**THE** system SHALL provide specific error messages for each validation failure,
+**AND** the system SHALL NOT create a user record until all validations pass.
 
-#### Authentication Workflow
+**WHEN** registration succeeds,
+**THE** system SHALL send a verification email to the user,
+**AND** the system SHALL log the user in automatically after successful registration,
+**AND** the system SHALL create a default user profile with empty bio and avatar.
 
-WHEN a user submits login credentials, THE system SHALL verify email and password match an existing account. IF authentication succeeds, THE system SHALL generate an authentication token and maintain an active session. IF authentication fails, THE system SHALL return appropriate error indicating invalid credentials.
+#### 2.1.2 User Login
 
-#### Account Management
+**WHEN** a user submits login credentials,
+**THE** system SHALL verify the email and password against stored credentials,
+**AND** the system SHALL validate the user account is not disabled or banned,
+**AND** the system SHALL generate JWT access and refresh tokens upon successful authentication.
 
-WHEN a user requests a password change, THE system SHALL verify their current password before allowing changes. WHEN a user deletes their account, THE system SHALL permanently remove all account data including posts and comments.
+**WHEN** login credentials are invalid,
+**THE** system SHALL provide generic "invalid credentials" error message,
+**AND** the system SHALL NOT distinguish between invalid email and invalid password,
+**AND** the system SHALL implement rate limiting after multiple failed attempts.
 
-### Karma System
+**WHEN** login succeeds,
+**THE** system SHALL set secure HTTP-only cookies for token storage,
+**AND** the system SHALL record login timestamp and IP address for security.
 
-**EARS Requirements:**
+#### 2.1.3 Password Management
 
-- **WHEN** a user receives an upvote, **THE** system **SHALL** increase their karma score by one point.
-- **WHEN** a user receives a downvote, **THE** system **SHALL** decrease their karma score by one point.
-- **WHEN** a user's vote is removed, **THE** system **SHALL** adjust karma accordingly (restore to previous state).
-- **WHEN** karma is calculated, **THE** system **SHALL** consider all valid votes on user's content.
+**WHEN** a user wants to change their password,
+**THE** system SHALL require the current password for verification,
+**AND** the system SHALL require a new password meeting strength requirements,
+**AND** the system SHALL re-authenticate the user with the new password after successful change.
 
-**Business Rules:**
+**WHEN** a user forgets their password,
+**THE** system SHALL allow password reset through email verification,
+**AND** the system SHALL send a time-limited password reset link,
+**AND** the system SHALL invalidate previous tokens when password is successfully changed.
 
-- Karma can be negative - negative scores are valid and meaningful
-- Each piece of content (post/comment) contributes independently to karma
-- Vote recalculation should happen immediately when votes change
-- Historical vote changes should be tracked for accurate karma calculation
-- Karma should be stored as a single integer per user for performance
+#### 2.1.4 Account Deletion
 
-### Community Management
+**WHEN** a user requests account deletion,
+**THE** system SHALL require password verification for security,
+**AND** the system SHALL permanently delete all user data including posts, comments, and profile information,
+**AND** the system SHALL cascade delete all user-generated content and associations.
 
-#### Community Creation Workflow
+**WHEN** account deletion completes,
+**THE** system SHALL terminate all active sessions,
+**AND** the system SHALL remove all user data from active systems within 30 days,
+**AND** the system SHALL provide deletion confirmation to the user.
 
-WHEN a user creates a community, THE system SHALL require a unique name, description text, and icon image. WHEN community creation succeeds, THE system SHALL set the creator as community owner. WHEN a community is listed, THE system SHALL show subscriber count for each community.
+### 2.2 User Profile Management
 
-#### Community Search
+#### 2.2.1 Profile Information
 
-WHEN a user searches for communities, THE system SHALL return communities matching the search query. WHERE no communities match search, THE system SHALL indicate no results were found.
+**WHEN** a user creates their profile,
+**THE** system SHALL allow setting display name (up to 50 characters), bio text (up to 500 characters), and avatar image,
+**AND** the system SHALL generate a unique profile URL based on username,
+**AND** the system SHALL store profile information separately from core account data.
 
-### Post Management
+**WHEN** a user views their own profile,
+**THE** system SHALL display editable versions of all profile fields,
+**AND** the system SHALL show editing options for display name, bio, and avatar,
+**AND** the system SHALL provide profile preview functionality.
 
-#### Post Creation Requirements
+#### 2.2.2 Profile Display
 
-WHEN a user creates a post, THE system SHALL require selection of a subscribed community. WHEN creating a text post, THE system SHALL accept and store text content. WHEN creating a link post, THE system SHALL accept and validate URL format. WHEN creating an image post, THE system SHALL accept image upload and store image metadata.
+**WHEN** a user views another user's profile,
+**THE** system SHALL display the display name, bio, and avatar,
+**AND** the system SHALL show total karma score, post count, and comment count,
+**AND** the system SHALL provide links to view all posts and comments by that user.
 
-#### Post Editing and Deletion
+**WHEN** viewing a user's content list,
+**THE** system SHALL paginate results when content exceeds page size,
+**AND** the system SHALL filter out deleted or banned content,
+**AND** the system SHALL display content with post title, community, score, and timestamp.
 
-WHEN a user edits their own post, THE system SHALL allow modification of title, content, and metadata. WHEN a user deletes their own post, THE system SHALL permanently remove the post and all associated comments.
+### 2.3 Karma System
 
-### Comment Management
+#### 2.3.1 Karma Calculation
 
-#### Comment Creation Workflow
+**WHEN** a user receives a vote on their content,
+**THE** system SHALL adjust karma score by +1 for upvotes or -1 for downvotes,
+**AND** the system SHALL immediately update the karma score in the user's profile,
+**AND** the system SHALL log vote changes for audit trail.
 
-WHEN a user creates a comment, THE system SHALL require association with a post. WHEN a user replies to a comment, THE system SHALL establish parent-child relationship. WHEN comment creation succeeds, THE system SHALL store the comment with initial score of zero.
+**WHEN** a user's vote is removed or changed,
+**THE** system SHALL reverse the karma adjustment for the original vote,
+**AND** the system SHALL apply the new karma adjustment for the changed vote,
+**AND** the system SHALL calculate net karma change when votes change direction.
 
-#### Comment Editing and Deletion
+**WHEN** karma calculation completes,
+**THE** system SHALL ensure karma score can be negative,
+**AND** the system SHALL update all cached karma values across the system.
 
-WHEN a user edits their own comment, THE system SHALL allow modification of content. WHEN a user deletes their own comment, THE system SHALL permanently remove the comment and all child comments.
+#### 2.3.2 Karma Display
 
-### Voting System
+**WHEN** karma scores are displayed,
+**THE** system SHALL show formatted numbers (e.g., "1.2k" for 1200, "1.5M" for 1500000),
+**AND** the system SHALL show exact number for karma values under 1000,
+**AND** the system SHALL include +/- indicators for positive and negative karma.
 
-#### Voting Operations
+### 2.4 Community Management
 
-WHEN a user upvotes a post, THE system SHALL increase its score by one point. WHEN a user downvotes a post, THE system SHALL decrease its score by one point. WHEN a user removes their vote, THE system SHALL adjust the score accordingly.
+#### 2.4.1 Community Creation
 
-#### Vote Storage Requirements
+**WHEN** a user wants to create a community,
+**THE** system SHALL require a unique community name (alphanumeric, underscores, hyphens only),
+**AND** the system SHALL require a community description text,
+**AND** the system SHALL allow uploading a community icon image.
 
-WHEN a vote is recorded, THE system SHALL store the user's vote type (upvote/downvote/none) for that content. WHEN votes are retrieved for display, THE system SHALL calculate the total score correctly.
+**WHEN** community creation is submitted,
+**THE** system SHALL validate community name uniqueness and format,
+**AND** the system SHALL set the creating user as community owner,
+**AND** the system SHALL create the community record with subscriber count of 0.
 
----
+**WHEN** community creation fails validation,
+**THE** system SHALL provide specific error messages for each validation failure,
+**AND** the system SHALL NOT create the community until validations pass.
 
-## Functional Requirements
+#### 2.4.2 Community Browse and Search
 
-### Authentication & Authorization
+**WHEN** users browse communities,
+**THE** system SHALL display a paginated list of all communities,
+**AND** the system SHALL show community name, description, icon, and subscriber count,
+**AND** the system SHALL sort communities by subscriber count by default.
 
-#### User Authentication Flow
+**WHEN** users search for communities,
+**THE** system SHALL provide search functionality by community name,
+**AND** the system SHALL support partial name matching and fuzzy search,
+**AND** the system SHALL display search results in a dedicated search view.
 
-1. Users can register with email and password
-2. Users can log in with email and password to access their account
-3. Users can log out to terminate their session
-4. System automatically maintains authenticated sessions
-5. Users can verify their email address after registration
-6. Users can reset their password if forgotten
-7. Users can change their password from their account settings
-8. System revokes all active sessions when password is changed
-9. Users can sign out from all devices simultaneously
+#### 2.4.3 Community Details
 
-#### Session Management
+**WHEN** a user views a community page,
+**THE** system SHALL display community information including name, description, and icon,
+**AND** the system SHALL show subscriber count, creation date, and owner information,
+**AND** the system SHALL provide navigation to community posts, rules, and settings.
 
-WHILE a user is authenticated, THE system SHALL preserve their session state. WHEN a session expires, THE system SHALL require re-authentication.
+### 2.5 Subscription Management
 
-#### Role-Based Access Control
+#### 2.5.1 Subscribe and Unsubscribe
 
-THE system SHALL distinguish between regular users, moderators, and administrators. WHEN a user attempts an action, THE system SHALL check their permission level before execution.
+**WHEN** a user subscribes to a community,
+**THE** system SHALL create a subscription record linking user and community,
+**AND** the system SHALL increment the community's subscriber count,
+**AND** the system SHALL add the community to the user's subscribed communities list.
 
-### User Management
+**WHEN** a user unsubscribes from a community,
+**THE** system SHALL remove the subscription record,
+**AND** the system SHALL decrement the community's subscriber count,
+**AND** the system SHALL remove the community from the user's subscribed communities list.
 
-#### Account Creation Workflow
+**WHEN** subscription state changes,
+**THE** system SHALL update subscription status in real-time UI indicators,
+**AND** the system SHALL refresh all feed caches for the affected user.
 
-WHEN a new user registers, THE system SHALL require email, password, and unique username. WHEN all registration requirements are met, THE system SHALL create a new user account with initial karma score of 0.
+#### 2.5.2 Subscribed Communities List
 
-#### Account Deletion Workflow
+**WHEN** a user views their subscribed communities,
+**THE** system SHALL display all communities they are subscribed to,
+**AND** the system SHALL show subscriber counts and community icons,
+**AND** the system SHALL provide option to unsubscribe directly from the list.
 
-WHEN a user deletes their account, THE system SHALL remove all their posts, comments, votes, and profile information. WHEN account deletion completes, THE system SHALL terminate all active sessions for that user.
+#### 2.5.3 Subscription Requirements
 
-### Community Operations
+**WHEN** a user attempts to create a post in a community,
+**THE** system SHALL verify they are subscribed to that community,
+**AND** the system SHALL prevent post creation if not subscribed,
+**AND** the system SHALL prompt user to subscribe before proceeding.
 
-#### Community Creation Requirements
+### 2.6 Post Management
 
-WHEN a user creates a community, THE system SHALL require unique name, description text, and icon image. WHEN community creation succeeds, THE system SHALL set the creator as community owner.
+#### 2.6.1 Post Creation
 
-#### Community Discovery
+**WHEN** a user creates a post,
+**THE** system SHALL require a title (up to 300 characters),
+**AND** the system SHALL require selection of one post type (text, link, or image),
+**AND** the system SHALL validate user is subscribed to the target community.
 
-WHEN browsing communities, THE system SHALL display community name, description, subscriber count, and icon. WHEN searching communities by name, THE system SHALL return matching results with fuzzy matching support.
+**WHEN** creating a text post,
+**THE** system SHALL require or allow text content (optional but recommended),
+**AND** the system SHALL validate content length if provided,
+**AND** the system SHALL render markdown or plain text content as specified.
 
-### Post Operations
+**WHEN** creating a link post,
+**THE** system SHALL require a valid URL format,
+**AND** the system SHALL validate URL is accessible and secure,
+**AND** the system SHALL extract domain name for display purposes.
 
-#### Post Creation Workflow
+**WHEN** creating an image post,
+**THE** system SHALL require image upload within size and format limits,
+**AND** the system SHALL generate thumbnail and optimized versions,
+**AND** the system SHALL store image metadata including dimensions and file size.
 
-WHEN a user creates a post, THE system SHALL require title and community subscription verification. WHEN creating a post, THE system SHALL require selecting one of three types: text, link, or image.
+**WHEN** post creation fails validation,
+**THE** system SHALL provide specific error messages for each validation failure,
+**AND** the system SHALL NOT create the post until all validations pass.
 
-#### Post Editing Workflow
+#### 2.6.2 Post Editing
 
-WHEN a post author edits their own post, THE system SHALL allow updates to title and content type-specific fields. WHEN a user tries to edit another user's post, THE system SHALL return 403 Forbidden.
+**WHEN** a user wants to edit their own post,
+**THE** system SHALL allow editing of title, content, and media,
+**AND** the system SHALL maintain post history with edit timestamps,
+**AND** the system SHALL notify followers of the post if significant changes are made.
 
-### Comment Operations
+**WHEN** post editing completes,
+**THE** system SHALL update the last edited timestamp,
+**AND** the system SHALL preserve original creation timestamp,
+**AND** the system SHALL maintain edit history for moderation review.
 
-#### Comment Creation Workflow
+#### 2.6.3 Post Deletion
 
-WHEN a user creates a comment, THE system SHALL require the comment text content (max 5000 characters). WHEN a user replies to a comment, THE system SHALL allow replying to any existing comment without depth limit.
+**WHEN** a user deletes their own post,
+**THE** system SHALL permanently remove the post and all associated data,
+**AND** the system SHALL cascade delete all comments on that post,
+**AND** the system SHALL remove all votes and update karma scores accordingly.
 
-#### Comment Editing Workflow
+**WHEN** post deletion completes,
+**THE** system SHALL update community post counts,
+**AND** the system SHALL remove post from all feeds,
+**AND** the system SHALL invalidate any cached post data.
 
-WHEN a comment author edits their own comment, THE system SHALL allow updates to the comment text. WHEN a user tries to edit another user's comment, THE system SHALL return 403 Forbidden.
+#### 2.6.4 Post Display
 
-### Voting Operations
+**WHEN** a user views a single post,
+**THE** system SHALL display title, author, community, vote score, comment count,
+**AND** the system SHALL display full content based on post type (text, link preview, or image),
+**AND** the system SHALL show timestamp with relative time (e.g., "3 hours ago").
 
-#### Vote Submission Requirements
+**WHEN** displaying post information,
+**THE** system SHALL show community information and navigation options,
+**AND** the system SHALL show author profile link and karma score,
+**AND** the system SHALL show voting controls for logged-in users.
 
-WHEN a user upvotes a post, THE system SHALL add 1 to the post's vote score and increment the author's karma. WHEN a user downvotes a post, THE system SHALL subtract 1 from the post's vote score and decrement the author's karma.
+### 2.7 Post Voting System
 
-#### Vote Changes
+#### 2.7.1 Vote Submission
 
-WHEN a user changes their vote from upvote to downvote, THE system SHALL adjust scores accordingly (net -2 for post, net -1 for author karma). WHEN a user changes their vote from downvote to upvote, THE system SHALL adjust scores accordingly (net +2 for post, net +1 for author karma).
+**WHEN** a user upvotes a post,
+**THE** system SHALL increment post score by +1,
+**AND** the system SHALL increment author's karma by +1,
+**AND** the system SHALL record vote type as "upvote" linked to user and post.
 
-### Feed Operations
+**WHEN** a user downvotes a post,
+**THE** system SHALL decrement post score by -1,
+**AND** the system SHALL decrement author's karma by -1,
+**AND** the system SHALL record vote type as "downvote" linked to user and post.
 
-#### Feed Types Requirements
+**WHEN** a user changes their vote from upvote to downvote (or vice versa),
+**THE** system SHALL reverse the previous vote's effect on score and karma,
+**AND** the system SHALL apply the new vote's effect on score and karma,
+**AND** the system SHALL update vote type in the vote record.
 
-WHEN an authenticated user accesses the home feed, THE system SHALL show posts only from communities they are subscribed to. WHEN any user accesses the popular feed, THE system SHALL show posts from all communities across the platform.
+**WHEN** a user removes their vote entirely,
+**THE** system SHALL reverse the vote's effect on score and karma,
+**AND** the system SHALL delete the vote record,
+**AND** the system SHALL set vote status to "removed" for audit trail.
 
-#### Sorting Algorithm Requirements
+#### 2.7.2 Vote Restrictions
 
-WHEN posts are sorted by hot, THE system SHALL prioritize recent posts with many upvotes. WHEN posts are sorted by new, THE system SHALL show most recently created posts first. WHEN posts are sorted by top, THE system SHALL show highest vote score first.
+**WHEN** a user attempts to vote on a post,
+**THE** system SHALL verify the user is logged in,
+**AND** the system SHALL prevent voting on their own post,
+**AND** the system SHALL prevent multiple votes from the same user.
 
----
+**WHEN** vote validation fails,
+**THE** system SHALL provide appropriate error messages,
+**AND** the system SHALL NOT create or modify the vote record.
 
-## User Actors & Authentication
+### 2.8 Content Feeds
 
-### User Authentication Flow
+#### 2.8.1 Home Feed
 
-#### Registration Process
+**WHEN** a logged-in user accesses their home feed,
+**THE** system SHALL retrieve posts only from communities the user is subscribed to,
+**AND** the system SHALL apply default sorting algorithm (hot),
+**AND** the system SHALL paginate results based on feed size.
 
-WHEN a visitor accesses the registration page, THE system SHALL present a registration form requiring email address, password, and username. THE system SHALL validate that the email address is in valid format, password meets minimum security requirements (minimum 8 characters), and username is unique and follows platform naming rules.
+**WHEN** feed generation completes,
+**THE** system SHALL cache results for performance optimization,
+**AND** the system SHALL refresh cache when user subscribes/unsubscribes from communities.
 
-#### Login Process
+#### 2.8.2 Popular Feed
 
-WHEN a user submits login credentials, THE system SHALL verify the email address exists and the password matches the stored hash using secure comparison functions. WHEN login credentials are valid, THE system SHALL generate access and refresh JWT tokens.
+**WHEN** any user (logged-in or not) accesses the popular feed,
+**THE** system SHALL retrieve posts from all communities across the platform,
+**AND** the system SHALL apply sorting algorithm based on user selection,
+**AND** the system SHALL respect content visibility and post status.
 
-### Actor Hierarchy
+**WHEN** feed is accessed by non-authenticated users,
+**THE** system SHALL provide limited feed functionality,
+**AND** the system SHALL prompt for login if user interacts with content.
 
-| Actor | Description | Permissions |
-|-------|-------------|-------------|
-| User | Authenticated member | Read, write, vote, comment, subscribe, report, edit own content |
-| Moderator | Community-appointed | All user permissions plus moderation tools for assigned communities |
-| Admin | Platform administrator | All permissions including system-wide oversight and management |
+#### 2.8.3 Community Feed
 
-### Permission Matrix
+**WHEN** a user accesses a community feed,
+**THE** system SHALL retrieve all posts from that specific community,
+**AND** the system SHALL apply sorting algorithm based on user selection,
+**AND** the system SHALL show community information alongside posts.
 
-| Action | User | Moderator | Admin |
-|--------|------|-----------|-------|
-| Create post | ✅ | ✅ | ✅ |
-| Edit own post | ✅ | ❌ | ❌ |
-| Delete own post | ✅ | ❌ | ❌ |
-| Edit any post | ❌ | ✅ (own community) | ✅ (all) |
-| Delete any post | ❌ | ✅ (own community) | ✅ (all) |
-| Vote on posts | ✅ | ✅ | ✅ |
-| Ban users | ❌ | ✅ (own community) | ✅ (all) |
-| Suspend accounts | ❌ | ❌ | ✅ |
+#### 2.8.4 Sorting Algorithms
 
-### Token Management
+**WHEN** sorting by "Hot":
+**THE** system SHALL prioritize recent posts with high upvote ratios,
+**AND** the system SHALL use time-decay algorithm for age relevance,
+**AND** the system SHALL balance post age with engagement metrics.
 
-**Access Token:**
-- Expiration: 30 minutes from issue time
-- Format: JWT with HMAC-SHA256 signature
-- Payload: userId, username, email, karmaScore, createdAt, permissions[], actorType
+**WHEN** sorting by "New":
+**THE** system SHALL show most recently created posts first,
+**AND** the system SHALL use creation timestamp as primary sorting factor,
+**AND** the system SHALL maintain chronological order regardless of engagement.
 
-**Refresh Token:**
-- Expiration: 30 days from issue time
-- Format: Cryptographically secure random string
-- Storage: Stored in database with associated userId and expiration timestamp
-- Rotation: Each refresh token use generates a new refresh token
+**WHEN** sorting by "Top":
+**THE** system SHALL order posts by vote score with optional time filter,
+**AND** the system SHALL support filters: today, this week, this month, this year, all time,
+**AND** the system SHALL use score sum for tie-breaking when scores are equal.
 
----
+**WHEN** sorting by "Controversial":
+**THE** system SHALL prioritize posts with many votes but score close to zero,
+**AND** the system SHALL use vote count variance as primary factor,
+**AND** the system SHALL identify divisive content that receives mixed reactions.
 
-## User Journeys
+#### 2.8.5 Pagination and Performance
 
-### New User Registration Journey
+**WHEN** feeds are paginated,
+**THE** system SHALL support cursor-based or offset-based pagination,
+**AND** the system SHALL limit page size to prevent performance degradation,
+**AND** the system SHALL provide "load more" or infinite scroll functionality.
 
-**Step-by-Step Process:**
+**WHEN** feed performance optimization is required,
+**THE** system SHALL implement database query optimization,
+**AND** the system SHALL use caching for frequently accessed feeds,
+**AND** the system SHALL implement rate limiting for feed requests.
 
-1. User navigates to the registration page and fills in their credentials (email, password, username)
-2. System validates the email format, password strength, and username uniqueness
-3. System creates a new user account and sends a verification email
-4. User receives the verification email and clicks the verification link
-5. System marks the user's account as verified and prompts them to log in
-6. User logs in with their email and password
-7. System authenticates the user and establishes a session
+### 2.9 Post List Display
 
-### Creating a Text Post Journey
+#### 2.9.1 Feed Item Display
 
-**Step-by-Step Process:**
+**WHEN** displaying posts in any feed list,
+**THE** system SHALL show title, author username, community name,
+**AND** the system SHALL show vote score and comment count,
+**AND** the system SHALL show time since posted using relative time format.
 
-1. User navigates to the post creation interface
-2. User selects "Create Text Post"
-3. User enters a title for the post (required field)
-4. User enters the text content for the post
-5. User selects the community where the post will be published
-6. User submits the post
-7. System validates that the user is subscribed to the selected community
-8. System validates that the title and content meet length requirements
-9. System creates the post and associates it with the user and community
-10. System displays the newly created post to the user
+**WHEN** displaying text posts in feed,
+**THE** system SHALL show first 200 characters of content,
+**AND** the system SHALL truncate at word boundaries for readability,
+**AND** the system SHALL indicate continuation with ellipsis.
 
-### Voting on a Post Journey
+**WHEN** displaying image posts in feed,
+**THE** system SHALL show thumbnail image with aspect ratio preservation,
+**AND** the system SHALL show image dimensions if available,
+**AND** the system SHALL provide image loading optimization.
 
-**Step-by-Step Process:**
+**WHEN** displaying link posts in feed,
+**THE** system SHALL show domain name of the URL,
+**AND** the system SHALL extract and display main domain from URL,
+**AND** the system SHALL show link preview if available.
 
-1. User views a post in any feed
-2. User clicks the upvote arrow (adds 1 to score)
-3. System validates the user has not voted on this post before
-4. System records the upvote and updates the post's vote score
-5. User's vote is saved and immediately reflected in the UI
-6. If user clicks the upvote arrow again to remove vote, THE system SHALL remove the vote and adjust the score accordingly.
+#### 2.9.2 List Layout
 
----
+**WHEN** post lists are rendered,
+**THE** system SHALL use card-based layout for individual posts,
+**AND** the system SHALL maintain consistent spacing and styling,
+**AND** the system SHALL support responsive design for mobile devices.
 
-## Post Management
+### 2.10 Comment System
 
-### Post Types and Creation
+#### 2.10.1 Comment Creation
 
-#### Three Post Types
+**WHEN** a user creates a comment,
+**THE** system SHALL require comment content (up to 10,000 characters),
+**AND** the system SHALL validate content length and appropriateness,
+**AND** the system SHALL associate comment with parent post.
 
-| Post Type | Required Fields | Description |
-|-----------|----------------|-------------|
-| Text Post | Title, Text Content | Plain text content for discussions |
-| Link Post | Title, URL | External resource with domain name display |
-| Image Post | Title, Image Upload | Uploaded images with thumbnail display |
+**WHEN** a user replies to a comment,
+**THE** system SHALL allow creating nested comment responses,
+**AND** the system SHALL maintain parent-child relationships,
+**AND** the system SHALL support unlimited comment depth.
 
-#### Content Validation Rules
+**WHEN** comment creation completes,
+**THE** system SHALL increment post's comment count,
+**AND** the system SHALL record comment timestamp and user information,
+**AND** the system SHALL update all relevant cache entries.
 
-- **Text Posts**: Content must be 1-100,000 characters
-- **Link Posts**: URL must be valid format, domain extracted for display
-- **Image Posts**: Accepted formats (JPG, PNG, GIF, WebP), max 20MB, thumbnail generated
+#### 2.10.2 Comment Editing and Deletion
 
-### Post Editing and Deletion
+**WHEN** a user edits their own comment,
+**THE** system SHALL allow modification of comment content,
+**AND** the system SHALL maintain edit history with timestamps,
+**AND** the system SHALL preserve original creation timestamp.
 
-#### Post Editing Workflow
+**WHEN** a user deletes their own comment,
+**THE** system SHALL permanently remove the comment,
+**AND** the system SHALL cascade delete all reply comments,
+**AND** the system SHALL decrement post's comment count.
 
-WHEN a post author edits their own post, THE system SHALL allow updates to title and content type-specific fields. WHEN post editing succeeds, THE system SHALL return updated post information with edited timestamp.
+#### 2.10.3 Comment Voting
 
-#### Post Deletion Workflow
+**WHEN** a user votes on a comment,
+**THE** system SHALL apply same rules as post voting,
+**AND** the system SHALL adjust comment score and author karma,
+**AND** the system SHALL allow vote changes and removal.
 
-WHEN a post author deletes their own post, THE system SHALL remove the post and all associated data. WHEN a post is deleted, THE system SHALL also delete all comments on that post.
+#### 2.10.4 Comment Sorting
 
-### Post Display Requirements
+**WHEN** sorting comments by "Best":
+**THE** system SHALL prioritize comments with highest vote scores,
+**AND** the system SHALL consider comment age and engagement metrics,
+**AND** the system SHALL display top comments first.
 
-#### Individual Post View
+**WHEN** sorting comments by "New":
+**THE** system SHALL show most recently created comments first,
+**AND** the system SHALL maintain chronological order,
+**AND** the system SHALL preserve thread structure.
 
-WHEN a user views a single post, THE system SHALL display the title, full content, author username, community name, vote score, comment count, and posting timestamp.
+**WHEN** sorting comments by "Controversial":
+**THE** system SHALL show comments with many votes but low scores,
+**AND** the system SHALL identify divisive discussion content,
+**AND** the system SHALL balance controversial and high-scoring comments.
 
-#### Post List Display
+### 2.11 Community Moderation
 
-WHEN viewing any feed, THE system SHALL display each post with its title, author username, community name, vote score, comment count, and time since posting.
+#### 2.11.1 Moderator Roles and Hierarchy
 
----
+**WHEN** a community is created,
+**THE** system SHALL assign the creating user as community owner,
+**AND** the system SHALL grant owner all moderation permissions,
+**AND** the system SHALL allow owner to add moderators.
 
-## Comment System
+**WHEN** adding moderators,
+**THE** system SHALL allow owner to grant moderator status to users,
+**AND** the system SHALL allow moderators to add other moderators,
+**AND** the system SHALL prevent moderators from removing owners.
 
-### Comment Structure and Thread Management
+**WHEN** removing moderators,
+**THE** system SHALL allow owners to remove moderator status,
+**AND** the system SHALL prevent moderators from removing each other,
+**AND** the system SHALL require owner-level permissions for moderator removal.
 
-#### Comment Entity Structure
+#### 2.11.2 Moderator Permissions
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| id | UUID | Yes | Unique identifier |
-| author_id | UUID | Yes | Author user ID |
-| post_id | UUID | Yes | Parent post ID |
-| parent_comment_id | UUID | No | Parent comment ID for replies |
-| content | TEXT | Yes | Comment text content |
-| vote_score | INTEGER | Yes | Upvotes minus downvotes |
-| created_at | TIMESTAMP | Yes | Creation timestamp |
-| edited_at | TIMESTAMP | No | Last edit timestamp |
-| deleted | BOOLEAN | Yes | Deletion status |
+**WHEN** a moderator wants to delete content,
+**THE** system SHALL allow deletion of any post in their community,
+**AND** the system SHALL allow deletion of any comment in their community,
+**AND** the system SHALL record moderator action for audit trail.
 
-#### Thread Navigation Requirements
+**WHEN** a moderator wants to ban users,
+**THE** system SHALL allow banning users from their community,
+**AND** the system SHALL prevent banned users from creating posts or comments,
+**AND** the system SHALL allow banned users to view content in the community.
 
-WHEN viewing a comment thread, THE system SHALL retrieve all comments for a post, organized by their parent-child relationships. WHERE a comment has been deleted, THE system SHALL display "[Comment deleted]" instead of the content.
+**WHEN** a moderator wants to unban users,
+**THE** system SHALL restore banned user's posting privileges,
+**AND** the system SHALL remove ban record from community,
+**AND** the system SHALL update all related cache entries.
 
-### Comment Editing and Deletion
+#### 2.11.3 Banned User Management
 
-#### Comment Editing Permissions
+**WHEN** viewing banned users list,
+**THE** system SHALL display all banned users for the community,
+**AND** the system SHALL show ban date, reason, and ban duration,
+**AND** the system SHALL provide unban functionality.
 
-WHEN a user attempts to edit their own comment, THE system SHALL validate that the user is the original author of the comment. WHERE a user attempts to edit a comment they do not own, THE system SHALL deny the edit and return a 403 Forbidden error.
+**WHEN** a banned user attempts to post,
+**THE** system SHALL verify user ban status before allowing content creation,
+**AND** the system SHALL prevent post/comment creation for banned users,
+**AND** the system SHALL provide appropriate error message.
 
-#### Comment Deletion Permissions
+### 2.12 Reporting System
 
-WHEN a user deletes their own comment, THE system SHALL mark the comment as deleted with a deletion timestamp. WHERE a moderator deletes a comment, THE system SHALL record the moderator's user ID as the deleter.
+#### 2.12.1 Report Creation
 
-### Comment Display and Organization
+**WHEN** a user reports content,
+**THE** system SHALL require selection of report type (post or comment),
+**AND** the system SHALL require a reason text (up to 1000 characters),
+**AND** the system SHALL validate user is not reporting their own content.
 
-#### Comment Display Format
+**WHEN** report is submitted,
+**THE** system SHALL create report record with content details,
+**AND** the system SHALL associate report with community for routing,
+**AND** the system SHALL notify relevant moderators of new report.
 
-WHEN displaying a comment list, THE system SHALL show each comment with the following information:
-- Comment ID, Author username and profile link
-- Comment content (or "[Comment deleted]" if deleted)
-- Vote score, Creation timestamp (relative time format)
-- Last edit timestamp (if edited), Action buttons
+#### 2.12.2 Report Review Process
 
-#### Comment Sorting Options
+**WHEN** a moderator views reports for their community,
+**THE** system SHALL display all pending reports with content preview,
+**AND** the system SHALL show reporter information and reason text,
+**AND** the system SHALL show report timestamp and content details.
 
-WHEN a user selects "Best" sorting, THE system SHALL sort comments by vote score descending. WHEN a user selects "New" sorting, THE system SHALL sort comments by creation timestamp descending.
+**WHEN** a moderator reviews a report,
+**THE** system SHALL allow approving report (deleting content),
+**AND** the system SHALL allow dismissing report (keeping content),
+**AND** the system SHALL record moderator decision with timestamp.
 
----
+**WHEN** a report is resolved,
+**THE** system SHALL remove resolved reports from active list,
+**AND** the system SHALL notify reporter of resolution outcome,
+**AND** the system SHALL update content status as appropriate.
 
-## Voting System
+#### 2.12.3 Report History and Analytics
 
-### Core Voting Concepts
+**WHEN** viewing report history,
+**THE** system SHALL display historical reports with resolution status,
+**AND** the system SHALL allow filtering by date, user, or content type,
+**AND** the system SHALL provide export functionality for analysis.
 
-**Vote Types:**
-- **Upvote**: Approval, adds +1 to score
-- **Downvote**: Disapproval, subtracts -1 from score
+## 3. Non-Functional Requirements
 
-**User-Content Relationship:**
-- Each user can vote once per post
-- Each user can vote once per comment
-- Users cannot vote on their own content
+### 3.1 Performance Requirements
 
-### Vote Operations
+**THE** system SHALL support 10,000 concurrent users,
+**AND** the system SHALL handle 100,000 daily active users,
+**AND** the system SHALL respond to feed requests within 500ms for 95% of requests.
 
-#### Post Voting
+**THE** system SHALL support 1000 posts per second during peak times,
+**AND** the system SHALL support 5000 comments per second during peak times,
+**AND** the system SHALL maintain database query efficiency with proper indexing.
 
-WHEN a user upvotes a post, THE system SHALL record the upvote and increase the post's vote score by +1. WHEN a user downvotes a post, THE system SHALL record the downvote and decrease the post's vote score by -1.
+### 3.2 Security Requirements
 
-#### Comment Voting
+**THE** system SHALL implement HTTPS for all communications,
+**AND** the system SHALL hash passwords using bcrypt with appropriate cost factor,
+**AND** the system SHALL implement CSRF protection for all state-changing operations.
 
-WHEN a user upvotes a comment, THE system SHALL record the upvote and increase the comment's vote score by +1. WHEN a user downvotes a comment, THE system SHALL record the downvote and decrease the comment's vote score by -1.
+**THE** system SHALL enforce role-based access control for all endpoints,
+**AND** the system SHALL validate all user inputs for SQL injection and XSS prevention,
+**AND** the system SHALL implement rate limiting for API endpoints.
 
-### Karma Calculation Logic
+### 3.3 Availability Requirements
 
-**Business Rules:**
-- WHEN a user receives an upvote on their post or comment, karma increases by +1
-- WHEN a user receives a downvote on their post or comment, karma decreases by -1
-- Karma scores CAN be negative
+**THE** system SHALL achieve 99.9% uptime for core features,
+**AND** the system SHALL have automated backup and recovery procedures,
+**AND** the system SHALL implement failover mechanisms for critical services.
 
-**Karma Display:**
-WHEN displaying a user's profile, THE system SHALL show their total karma score.
+### 3.4 Compliance Requirements
 
----
+**THE** system SHALL comply with GDPR for European users,
+**AND** the system SHALL provide data portability and deletion features,
+**AND** the system SHALL maintain privacy policy and terms of service documentation.
 
-## Community Management
+## 4. Technical Architecture Overview
 
-### Community Creation Workflow
+### 4.1 Technology Stack
 
-#### Basic Requirements
+**BACKEND FRAMEWORK**: NestJS for robust, enterprise-grade TypeScript backend development
 
-WHEN a user creates a community, THE system SHALL require:
-- **Unique name** (3-21 characters, alphanumeric and underscore)
-- **Description** (optional, 0-500 characters)
-- **Icon** (optional, 2MB max, JPEG/PNG/GIF)
+**DATABASE**: Prisma ORM with PostgreSQL for reliable relational data storage
 
-#### Creation Completion
+**AUTHENTICATION**: JWT-based authentication with refresh tokens and secure cookie storage
 
-WHEN all validations pass, THE system SHALL:
-1. Create the community with the provided information
-2. Assign the creating user as the community owner
-3. Create an initial subscription record
-4. Generate unique community identifier
+**CACHING**: Redis for high-performance caching of feeds, votes, and user data
 
-### Subscription System
+**MESSAGE QUEUE**: BullMQ for asynchronous processing of background tasks
 
-#### Subscription Action
+**INFRASTRUCTURE**: Docker containerization with Kubernetes orchestration
 
-WHEN a user subscribes to a community, THE system SHALL:
-1. Verify user authentication
-2. Check if already subscribed
-3. Create subscription record with timestamp
-4. Increment community subscriber count
+### 4.2 Core System Components
 
-#### Unsubscription Action
+**USER MANAGEMENT**: Secure authentication, profile management, and karma calculation
 
-WHEN a user unsubscribes from a community, THE system SHALL:
-1. Verify user authentication
-2. Check if currently subscribed
-3. Remove subscription record
-4. Decrement community subscriber count
+**COMMUNITY MANAGEMENT**: Community creation, subscription, and moderation tools
 
-### Community Discovery and Search
+**CONTENT MANAGEMENT**: Post and comment creation, editing, and deletion
 
-#### Community List View
+**VOTING SYSTEM**: Consistent vote handling across posts and comments with karma integration
 
-WHEN any user requests community list, THE system SHALL provide:
-- Paginated list of communities
-- Community name, description, subscriber count
-- Community icon URL, subscription status for current user
+**FEED GENERATION**: Multiple feed types with sorting algorithms and caching
 
-#### Community Search Functionality
+**MODERATION TOOLS**: Comprehensive community management and content moderation
 
-WHEN a user searches for communities, THE system SHALL:
-1. Accept search query (minimum 2 characters)
-2. Search community names and descriptions
-3. Support partial matching
-4. Return up to 20 results per page
-5. Include relevance scoring
+**REPORTING SYSTEM**: User reporting with moderator review workflows
 
----
+### 4.3 Scalability Strategy
 
-## Moderation System
+**DATABASE SCALING**: Read replicas, connection pooling, and strategic indexing
 
-### Moderator Roles
+**CACHING STRATEGY**: Multi-layer caching with distributed Redis cluster
 
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| Community Owner | Community creator | Full management, moderator appointment, ownership transfer |
-| Community Moderator | Appointed by owner | Content deletion, user banning, report review |
-| Platform Admin | System-wide | All permissions, cross-community oversight |
+**API DESIGN**: RESTful endpoints with versioning and rate limiting
 
-### Moderator Permissions Matrix
+**LOAD MANAGEMENT**: Auto-scaling groups and load balancing for traffic distribution
 
-| Action | Owner | Moderator | Admin |
-|--------|-------|-----------|-------|
-| Add/Remove Moderators | ✅ | ❌ | ❌ |
-| Remove Owner | ❌ | ❌ | ❌ |
-| Transfer Ownership | ✅ | ❌ | ✅ |
-| Delete Community | ✅ | ❌ | ✅ |
-| Delete Posts | ✅ | ✅ | ✅ |
-| Delete Comments | ✅ | ✅ | ✅ |
-| Ban Users | ✅ | ✅ | ✅ |
+## 5. Business Model
 
-### Ban System
+### 5.1 Revenue Streams
 
-#### User Banning
+**PREMIUM SUBSCRIPTION**: Ad-free experience, advanced analytics, and community tools
 
-WHEN a moderator bans a user, THE system SHALL:
-1. Record ban details (moderator, timestamp, reason)
-2. Prevent banned user from creating content
-3. Allow banned user to view content
-4. Log ban for audit purposes
+**COMMUNITY MONETIZATION**: Optional community subscriptions and revenue sharing
 
-#### Ban Appeal Process
+**ADVERTISING PLATFORM**: Non-intrusive, interest-based advertising system
 
-WHEN a banned user appeals, THE system SHALL:
-1. Accept appeal submission with reasoning
-2. Notify moderators of appeal
-3. Allow moderators to review and potentially lift ban
+**MARKETPLACE INTEGRATION**: Commission on community transactions and services
 
----
+### 5.2 Success Metrics
 
-## Feed & Content Display
+**USER ACQUISITION**: 100,000 MAU at 6 months, 1 million at 18 months
 
-### Feed Types
+**ENGAGEMENT**: Posts per user, comments per post, time on platform
 
-#### Home Feed
+**PLATFORM HEALTH**: Report resolution time, ban appeal rate, user satisfaction
 
-- **Available to**: Authenticated users only
-- **Content**: Posts only from subscribed communities
-- **Purpose**: Personalized content based on user interests
-
-#### Popular Feed
-
-- **Available to**: Everyone (including non-authenticated)
-- **Content**: Posts from all communities across platform
-- **Purpose**: Platform-wide content showcase
-
-#### Community Feed
-
-- **Available to**: Everyone (including non-authenticated)
-- **Content**: Posts only from specific community
-- **Purpose**: Community browsing and discovery
-
-### Sorting Algorithms
-
-#### Hot Sort
-
-- **Algorithm**: Balances recency and engagement
-- **Weighting**: Recent posts with high upvotes ranked higher
-- **Time Decay**: Older posts gradually lose visibility
-
-#### New Sort
-
-- **Algorithm**: Chronological by creation timestamp
-- **Weighting**: Ignore vote scores entirely
-- **Ordering**: Most recent posts first
-
-#### Top Sort
-
-- **Algorithm**: Sort by vote score descending
-- **Time Filters**: Today, This Week, This Month, This Year, All Time
-- **Weighting**: Highest score posts ranked higher
-
-#### Controversial Sort
-
-- **Algorithm**: Posts with high votes but score close to zero
-- **Weighting**: Total votes × (1 - |score| / (total votes + 1))
-- **Purpose**: Highlight divisive content
-
-### Content Display Rules
-
-#### Feed List Display
-
-For EVERY post in feed lists, THE system SHALL display:
-1. **Title**, **Author Username**, **Community Name**
-2. **Vote Score**, **Comment Count**, **Time Since Posted**
-3. **Content Preview**: Text posts show first 200 characters
-4. **Domain Name**: Link posts show domain (e.g., "youtube.com")
-5. **Thumbnail**: Image posts show image thumbnail
-
-#### Post Detail View
-
-WHEN viewing a single post's complete details, THE system SHALL display:
-- Full Content, Author Information, Community Context
-- Vote Score with upvote/downvote indicators, Comment Count
-- Time Information, Moderation Flags, Content Type Indicator
-
----
-
-## Data Modeling
-
-### User Entities
-
-#### User Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| email | VARCHAR(255) | Email address (unique) |
-| username | VARCHAR(30) | Display username (unique) |
-| password_hash | VARCHAR(255) | Secure password hash |
-| karma_score | INTEGER | User's karma score |
-| created_at | TIMESTAMP | Account creation timestamp |
-| email_verified | BOOLEAN | Email verification status |
-
-#### Profile Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| user_id | UUID | Foreign key to user |
-| display_name | VARCHAR(50) | User's display name |
-| bio | TEXT | User's biography (max 1000 chars) |
-| avatar_url | VARCHAR(500) | Avatar image URL |
-| created_at | TIMESTAMP | Profile creation timestamp |
-
-### Community Entities
-
-#### Community Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| name | VARCHAR(21) | Community name (unique) |
-| description | TEXT | Community description |
-| icon_url | VARCHAR(500) | Community icon URL |
-| owner_id | UUID | Owner user ID |
-| created_at | TIMESTAMP | Community creation timestamp |
-| private | BOOLEAN | Privacy setting |
-| subscriber_count | INTEGER | Total subscribers |
-
-#### Subscription Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| user_id | UUID | Subscriber user ID |
-| community_id | UUID | Community ID |
-| created_at | TIMESTAMP | Subscription timestamp |
-
-### Content Entities
-
-#### Post Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| author_id | UUID | Author user ID |
-| community_id | UUID | Community ID |
-| title | VARCHAR(300) | Post title |
-| post_type | ENUM('text', 'link', 'image') | Post type |
-| content_text | TEXT | Text content (for text posts) |
-| content_url | VARCHAR(500) | URL (for link posts) |
-| content_image_url | VARCHAR(500) | Image URL (for image posts) |
-| vote_score | INTEGER | Vote score |
-| comment_count | INTEGER | Comment count |
-| created_at | TIMESTAMP | Creation timestamp |
-| deleted | BOOLEAN | Deletion status |
-
-#### Comment Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| author_id | UUID | Author user ID |
-| post_id | UUID | Parent post ID |
-| parent_comment_id | UUID | Parent comment ID |
-| content | TEXT | Comment content |
-| vote_score | INTEGER | Vote score |
-| created_at | TIMESTAMP | Creation timestamp |
-| edited_at | TIMESTAMP | Last edit timestamp |
-| deleted | BOOLEAN | Deletion status |
-
-### Relationship Entities
-
-#### Vote Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| user_id | UUID | Voting user ID |
-| post_id | UUID | Post ID |
-| comment_id | UUID | Comment ID |
-| vote_type | ENUM('upvote', 'downvote') | Vote type |
-| created_at | TIMESTAMP | Vote timestamp |
-
-#### Report Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| reporter_id | UUID | Reporting user ID |
-| post_id | UUID | Post ID |
-| comment_id | UUID | Comment ID |
-| reason | TEXT | Report reason |
-| created_at | TIMESTAMP | Report timestamp |
-| status | ENUM('pending', 'approved', 'dismissed') | Report status |
-
-### Audit Entities
-
-#### Audit Log Table
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | UUID | Unique identifier |
-| user_id | UUID | Acting user ID |
-| action | VARCHAR(100) | Action type |
-| target_type | VARCHAR(50) | Target entity type |
-| target_id | UUID | Target entity ID |
-| details | JSONB | Additional details |
-| created_at | TIMESTAMP | Action timestamp |
-
----
-
-## Success Metrics & Performance
-
-### Technical Performance Metrics
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Platform Uptime | 99.9% | Core functionality availability |
-| Page Load Time | <2 seconds | For feeds with <1,000 posts |
-| API Response Time | <1 second | For individual post loads |
-| Comment Thread Loading | <2 seconds | For threads with <1,000 comments |
-| System Scalability | 10,000 concurrent users | Initial deployment target |
-| Content Volume | 100,000+ daily posts | System capacity |
-
-### Content Quality Metrics
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Content Upvote Rate | >5:1 | Average upvotes per post |
-| Comment-to-Post Ratio | >0.5:1 | Average comments per post |
-| Spam Detection Rate | >95% | Accuracy in detecting spam |
-| Report Resolution Time | <24 hours | Moderator response time |
-
-### User Engagement Metrics
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Registration Completion Rate | >70% | Users who complete registration |
-| First Post Creation Rate | >40% | Users who post within 24 hours |
-| Average Session Duration | >15 minutes | User engagement time |
-| User Retention (30-day) | >60% | Users active after 30 days |
-
-### Business Performance Metrics
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Daily Active Users (Year 1) | 10,000 | Target DAU |
-| Monthly Active Users (Year 1) | 100,000 | Target MAU |
-| Premium Conversion Rate | >5% | Users upgrading to premium |
-| Platform Profitability | Year 3 | Target profitability date |
-
-### Quality Assurance Metrics
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| Security Incidents | 0 per quarter | Critical security issues |
-| Data Loss Events | 0 per year | Data integrity |
-| API Error Rate | <0.1% | System reliability |
-| Backup Success Rate | >99.9% | Data protection |
-
-### Scalability Requirements
-
-| Scenario | Target | Description |
-|----------|--------|-------------|
-| User Base | 1M+ users | Platform growth |
-| Communities | 10K+ communities | Ecosystem growth |
-| Posts/Day | 100K+ | Content volume |
-| Comments/Day | 1M+ | Engagement level |
-| Concurrent Users | 100K+ | Peak load |
-
-### Performance Optimization
-
-**Caching Strategy:**
-- Hot feed results: 1-5 minutes cache
-- Popular feed results: 10-15 minutes cache
-- Community information: 1 hour cache
-- User profiles: 30 minutes cache
-
-**Database Optimization:**
-- Index on post creation timestamp for sorting
-- Index on community subscription for home feed
-- Materialized views for karma calculations
-- Read replicas for high-traffic read operations
-
----
-
-## Implementation Roadmap
-
-### Phase 1: Foundation (Months 0-3)
-
-- Core authentication and user management
-- Basic post and comment system
-- Simple community creation
-- Basic voting and karma system
-- Initial moderation framework
-
-### Phase 2: Core Features (Months 3-6)
-
-- Advanced feed algorithms
-- Comprehensive search functionality
-- Community subscription system
-- Enhanced user profile capabilities
-- Full moderation toolset
-
-### Phase 3: Platform Maturity (Months 6-12)
-
-- Premium feature implementation
-- Advanced analytics dashboard
-- Mobile application development
-- API platform launch
-- Enterprise community options
-
-### Phase 4: Expansion (Months 12+)
-
-- Internationalization support
-- Advanced community monetization
-- Mobile app enhancements
-- Partnership integrations
-- Enterprise platform deployment
-
----
-
-## Appendix
-
-### Glossary
-
-- **Karma**: User reputation score based on content votes
-- **Feed**: Personalized or public stream of content
-- **Community**: Topic-specific space for user discussions
-- **Moderation**: Content oversight and rule enforcement
-- **Voting**: User approval/disapproval of content
-
-### References
-
-- [NestJS Documentation](https://docs.nestjs.com/)
-- [Prisma Documentation](https://www.prisma.io/docs/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-
-### Change History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2024-12-01 | Team | Initial requirements specification |
-| 1.1 | 2024-12-15 | Team | Updated scalability targets |
-| 1.2 | 2024-12-20 | Team | Added performance metrics |
-
----
-
-> *This comprehensive requirements specification provides the foundation for building a complete Reddit-like community platform using TypeScript, NestJS, and Prisma. All requirements have been specified in natural language with EARS format where applicable, focusing on what the system should do rather than how it should be implemented.
+**BUSINESS METRICS**: Revenue growth, LTV:CAC ratio, conversion rates

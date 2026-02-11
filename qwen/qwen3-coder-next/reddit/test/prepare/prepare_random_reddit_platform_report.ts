@@ -6,8 +6,14 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_report(
-  input?: DeepPartial<IRedditPlatformReport.ICreate> | undefined,
+  input?: DeepPartial<IRedditPlatformReport.ICreate>,
 ): IRedditPlatformReport.ICreate {
-  input;
-  return {};
+  return {
+    reported_type:
+      input?.reported_type ??
+      RandomGenerator.pick(["POST", "COMMENT"] as const),
+    reported_id:
+      input?.reported_id ?? typia.random<string & tags.Format<"uuid">>(),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

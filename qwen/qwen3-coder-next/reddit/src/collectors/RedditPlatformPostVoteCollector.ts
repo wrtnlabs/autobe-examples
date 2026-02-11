@@ -10,17 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditPlatformPostVoteCollector {
   export async function collect(props: {
     body: IRedditPlatformPostVote.ICreate;
-    user: IEntity;
-    post: IEntity;
+    redditPlatformMembers: IEntity;
+    redditPlatformPostVotes: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      vote_type: "up",
+      vote_type: props.body.vote_type,
       created_at: new Date(),
       updated_at: new Date(),
-      user: { connect: { id: props.user.id } },
-      post: { connect: { id: props.post.id } },
+      user: { connect: { id: props.redditPlatformMembers.id } },
+      post: { connect: { id: props.redditPlatformPostVotes.id } },
     } satisfies Prisma.reddit_platform_post_votesCreateInput;
   }
 }

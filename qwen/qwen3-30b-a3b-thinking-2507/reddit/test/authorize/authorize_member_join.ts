@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformMember.IJoin;
+    body: ICommunityMember.IJoin;
   },
-): Promise<ICommunityPlatformMember.IAuthorized> {
-  return await api.functional.communityPlatform.auth.member.join(connection, {
+): Promise<ICommunityMember.IAuthorized> {
+  return await api.functional.community.auth.member.join(connection, {
     body: props.body,
   });
 }

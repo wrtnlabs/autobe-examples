@@ -1,4 +1,4 @@
-import { tags } from "typia";
+import { tags  from "typia";
 
 export interface MemberPayload {
   id: string & tags.Format<"uuid">;
