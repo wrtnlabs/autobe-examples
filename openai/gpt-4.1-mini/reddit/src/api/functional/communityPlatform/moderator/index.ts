@@ -1,0 +1,13 @@
+export * as communities from "./communities/index";
+export * as posts from "./posts/index";
+export * as postVotes from "./postVotes/index";
+export * as commentVotes from "./commentVotes/index";
+export * as commentReports from "./commentReports/index";
+export * as moderationLogs from "./moderationLogs/index";
+export * as banned_users from "./banned_users/index";
+export * as deleted_contents from "./deleted_contents/index";
+export * as reports_decisions from "./reports_decisions/index";
+export * as reports from "./reports/index";
+export * as reportedContents from "./reportedContents/index";
+export * as moderation_logs from "./moderation_logs/index";
+export * as comments from "./comments/index";

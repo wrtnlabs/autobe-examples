@@ -1,0 +1,143 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityModerator";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import type { IRedditCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReport";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_community_moderator_join } from "../../../authorize/authorize_community_moderator_join";
+import { authorize_community_moderator_login } from "../../../authorize/authorize_community_moderator_login";
+import { authorize_community_moderator_refresh } from "../../../authorize/authorize_community_moderator_refresh";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { generate_random_reddit_community_member_posts_create } from "../../../generate/generate_random_reddit_community_member_posts_create";
+import { generate_random_reddit_community_member_reports_create } from "../../../generate/generate_random_reddit_community_member_reports_create";
+import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
+import { prepare_random_reddit_community_post } from "../../../prepare/prepare_random_reddit_community_post";
+import { prepare_random_reddit_community_report } from "../../../prepare/prepare_random_reddit_community_report";
+
+export async function test_api_report_approval_on_comment(
+  connection: api.IConnection,
+): Promise<void> {
+  // 1. Authenticate community moderator
+  const moderatorConnection: api.IConnection = { host: connection.host };
+  const moderator = await authorize_community_moderator_join(
+    moderatorConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: "SecurePass123!",
+        username: RandomGenerator.name(1),
+      } satisfies IRedditCommunityCommunityModerator.IJoin,
+    },
+  );
+  await authorize_community_moderator_login(moderatorConnection, {
+    body: {
+      email: (moderator.email ?? "") satisfies string as string,
+      password: "SecurePass123!",
+    } satisfies IRedditCommunityCommunityModerator.ILogin,
+  });
+  // 2. Create member account
+  const memberConnection: api.IConnection = { host: connection.host };
+  const member = await authorize_member_join(memberConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "MemberPass123!",
+      username: RandomGenerator.name(1),
+    } satisfies IRedditCommunityMember.IJoin,
+  });
+  await authorize_member_login(memberConnection, {
+    body: {
+      email: (member.email ?? "") satisfies string as string,
+      password: "MemberPass123!",
+    } satisfies IRedditCommunityMember.ILogin,
+  });
+  // 3. Member creates a post
+  const post = await generate_random_reddit_community_member_posts_create(
+    memberConnection,
+    {
+      body: {
+        title: RandomGenerator.paragraph({ sentences: 2 }),
+        community_id: moderator.community.id,
+        content: RandomGenerator.content({ paragraphs: 2 }),
+      } satisfies IRedditCommunityPost.ICreate,
+    },
+  );
+  typia.assert(post);
+  // 4. Member creates a comment on the post
+  const comment =
+    await generate_random_reddit_community_member_posts_comments_create(
+      memberConnection,
+      {
+        params: {
+          postId: post.id,
+        },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 2 }),
+        } satisfies IRedditCommunityComment.ICreate,
+      },
+    );
+  typia.assert(comment);
+  // 5. Member submits a report on the comment
+  const report = await generate_random_reddit_community_member_reports_create(
+    memberConnection,
+    {
+      body: {
+        reason: RandomGenerator.paragraph({ sentences: 1 }),
+        commentId: comment.id,
+      } satisfies IRedditCommunityReport.ICreate,
+    },
+  );
+  typia.assert(report);
+  TestValidator.equals("report status is pending", report.status, "pending");
+  TestValidator.equals(
+    "report target is comment",
+    report.target.id,
+    comment.id,
+  );
+  // 6. Moderator approves the report
+  const approvedReport =
+    await api.functional.redditCommunity.communityModerator.reports.approve(
+      moderatorConnection,
+      {
+        reportId: report.id,
+      },
+    );
+  typia.assert(approvedReport);
+  // 7. Validate report approval
+  TestValidator.equals(
+    "report status is approved",
+    approvedReport.status,
+    "approved",
+  );
+  TestValidator.notEquals(
+    "resolved_by_user_id is set",
+    approvedReport.resolved_by_user,
+    null,
+  );
+  TestValidator.equals(
+    "resolved_by_user_id matches moderator",
+    approvedReport.resolved_by_user?.id,
+    moderator.id,
+  );
+  TestValidator.equals(
+    "comment id in report matches",
+    approvedReport.target.id,
+    comment.id,
+  );
+  TestValidator.equals(
+    "report reporter matches",
+    approvedReport.reporter.id,
+    member.id,
+  );
+}

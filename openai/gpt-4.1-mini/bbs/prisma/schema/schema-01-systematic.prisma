@@ -1,0 +1,245 @@
+/// Global application settings and configuration parameters for system-wide
+/// features. Each setting is represented by a unique key and associated
+/// value, optionally accompanied by a detailed description. This table
+/// enables dynamic configuration management of the discussion board platform
+/// without code changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration setting.
+  key String
+  
+  /// Value associated with the configuration key.
+  value String
+  
+  /// Optional detailed description of the setting.
+  description String?
+  
+  /// Timestamp when the setting was created.
+  created_at DateTime
+  
+  /// Timestamp when the setting was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the setting was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+  @@index([created_at])
+}
+
+/// Audit log entries recording all system-level events for security and
+/// operational tracing. Each record represents an event with timestamp,
+/// type, actor reference (if applicable), and descriptive details for audit
+/// and forensic analysis.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referencing the actor who triggered the event, nullable since not all
+  /// events have an associated actor. Referenced registered user's {@link
+  /// discussion_board_registered_users.id}.
+  actor_id String?
+  
+  /// Type of the event logged, e.g., 'login', 'article_creation', 'ban_action'.
+  event_type String
+  
+  /// Detailed description or message associated with the event for auditing
+  /// purposes.
+  event_description String
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  actor discussion_board_registered_users? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([actor_id, created_at])
+}
+
+/// This table stores metadata for system scheduled tasks including task
+/// name, schedule pattern, last run timestamp, operational status, and
+/// timestamps for audit and soft deletion. It enables tracking and
+/// management of automated system jobs within the discussion board platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_scheduled_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique name identifying the scheduled task.
+  task_name String
+  
+  /// Cron-style schedule pattern specifying when the task should run.
+  schedule_pattern String
+  
+  /// Timestamp of the last execution time of the scheduled task.
+  last_run_at DateTime?
+  
+  /// Current operational status of the task. E.g., active, inactive, paused.
+  status String
+  
+  /// Timestamp when the scheduled task metadata was created.
+  created_at DateTime
+  
+  /// Timestamp when the scheduled task metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([task_name])
+  @@index([status])
+  @@index([last_run_at])
+}
+
+/// System-wide feature flags to enable or disable functionalities
+/// dynamically, controlling application features at runtime. This table
+/// holds the unique code, descriptive name, detailed description, enabled
+/// status, and timestamps for creation, updates, and optional soft deletion.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for the feature flag used in the system.
+  code String
+  
+  /// Human-readable name of the feature flag for display purposes.
+  name String
+  
+  /// Detailed explanation of what the feature flag controls.
+  description String
+  
+  /// Flag indicating whether the feature is currently enabled or disabled.
+  enabled Boolean
+  
+  /// Timestamp when this feature flag record was created.
+  created_at DateTime
+  
+  /// Timestamp when this feature flag record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this feature flag was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([enabled])
+}
+
+/// Contains error and notification message templates used throughout the
+/// system for consistent messaging and localization support.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_messages {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique code identifier for the message template.
+  code String
+  
+  /// The error or notification message content.
+  message_text String
+  
+  /// Category or type of the message, e.g., error, warning, info.
+  message_type String
+  
+  /// Timestamp when the message template was created.
+  created_at DateTime
+  
+  /// Timestamp when the message template was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the message template was soft-deleted; null if active.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([message_type])
+}
+
+/// Log of system health checks and monitoring events for operational
+/// insight. Captures periodic health status with details for reliability and
+/// alerting.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_health_checks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Status of the health check. Examples include 'OK', 'WARNING', or 'ERROR'.
+  status String
+  
+  /// Timestamp when the health check occurred.
+  checked_at DateTime
+  
+  /// Optional detailed information or error messages from the health check.
+  details String?
+  
+  /// Timestamp when the record was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([checked_at, status])
+}

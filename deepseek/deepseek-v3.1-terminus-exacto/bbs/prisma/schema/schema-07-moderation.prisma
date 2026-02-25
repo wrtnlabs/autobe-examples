@@ -1,0 +1,1073 @@
+/// Main table for ban records storing core ban information and audit trail.
+/// This table contains the essential ban details while deferring
+/// actor-specific information to subtype tables for proper normalization.
+///
+/// Ban records represent the primary entity for user banning actions,
+/// tracking basic information like ban reason, duration, status, and
+/// timestamps. The polymorphic ownership of ban records (can be issued by
+/// either regular admins or super admins) is handled through separate
+/// subtype tables that reference this main record.
+///
+/// This design ensures 3NF compliance by separating the core ban information
+/// from the actor-specific context, allowing clean relational integrity and
+/// proper audit trail maintenance. Ban records are permanent and immutable
+/// to maintain accountability.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Detailed explanation of why the user was banned. This text is visible to
+  /// administrators when reviewing ban records.
+  ban_reason String
+  
+  /// Duration of the ban in days. If null or 0, indicates a permanent ban.
+  /// Temporary bans have a specific duration while permanent bans have no
+  /// expiration.
+  ban_duration_days Int?
+  
+  /// Current status of the ban. Values: 'active' - ban is currently enforced,
+  /// 'expired' - ban duration has ended, 'revoked' - ban was manually revoked
+  /// by administrator.
+  ban_status String
+  
+  /// Timestamp when the ban expires. For permanent bans, this field is null.
+  /// For temporary bans, this indicates when the ban automatically ends.
+  expires_at DateTime?
+  
+  /// Timestamp when the ban was manually revoked by an administrator. Null if
+  /// the ban has not been revoked.
+  revoked_at DateTime?
+  
+  /// Reason provided by the administrator when revoking the ban. Null if the
+  /// ban has not been revoked.
+  revoked_reason String?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  banAppeals discussion_board_ban_appeals[]
+  banRecordOfAdmin discussion_board_ban_record_of_admins?
+  superAdminBanRecord discussion_board_ban_record_of_super_admins?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ban_status, expires_at])
+  @@index([expires_at])
+}
+
+/// Comprehensive audit trail of all moderation activities performed by
+/// administrators and super administrators. This table records every
+/// moderation action including content deletions, user bans, section
+/// management, and other administrative actions for compliance and
+/// accountability purposes.
+///
+/// Each record captures the complete context of a moderation action
+/// including who performed it, what action was taken, when it occurred, and
+/// any relevant details about the target entity. The logs support detailed
+/// audit reporting, compliance verification, and administrator
+/// accountability tracking.
+///
+/// This table integrates with the broader moderation system through foreign
+/// key relationships to administrator tables and specific target entities.
+/// It supports filtering by action type, administrator, timeframe, and
+/// target entity for efficient querying and reporting.
+///
+/// **Modification Notes**: The schema has been corrected to properly mark
+/// this as a primary stance table with specific foreign key relationships
+/// for common moderation targets, ensuring proper normalization and API
+/// generation.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the moderation action. {@link
+  /// discussion_board_admins.id}
+  admin_id String?
+  
+  /// Super administrator who performed the moderation action. {@link
+  /// discussion_board_super_admins.id}
+  super_admin_id String?
+  
+  /// Target article for moderation actions involving articles. {@link
+  /// discussion_board_articles.id}
+  target_article_id String?
+  
+  /// Target comment for moderation actions involving comments. {@link
+  /// discussion_board_comments.id}
+  target_comment_id String?
+  
+  /// Target user for moderation actions involving users. {@link
+  /// discussion_board_users.id}
+  target_user_id String?
+  
+  /// Target section for moderation actions involving sections. {@link
+  /// discussion_board_sections.id}
+  target_section_id String?
+  
+  /// Type of moderation action performed (e.g., 'delete_article', 'ban_user',
+  /// 'create_section', 'edit_section', 'delete_section').
+  action_type String
+  
+  /// Detailed description of the moderation action performed, including any
+  /// specific reasons or context.
+  action_description String
+  
+  /// IP address from which the moderation action was performed for security
+  /// auditing.
+  ip_address String
+  
+  /// User agent string of the browser/client used to perform the moderation
+  /// action.
+  user_agent String?
+  
+  /// Timestamp when the moderation action was performed.
+  performed_at DateTime
+  
+  /// Timestamp when a scheduled moderation action is intended to be performed.
+  scheduled_at DateTime?
+  
+  /// Timestamp when a scheduled moderation action was actually completed.
+  completed_at DateTime?
+  
+  /// Current status of the moderation action ('pending', 'completed',
+  /// 'failed', 'cancelled').
+  status String
+  
+  /// Error message if the moderation action failed to complete successfully.
+  error_message String?
+  
+  /// Timestamp when the moderation log record was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderation log record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderation log record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
+  targetArticle discussion_board_articles? @relation(fields: [target_article_id], references: [id], onDelete: Cascade)
+  targetComment discussion_board_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  targetUser discussion_board_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetSection discussion_board_sections? @relation(fields: [target_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([admin_id, performed_at])
+  // spellchecker: ignore-next-line
+  @@index([super_admin_id, performed_at], map: "discussion_board_moderation_logs_super_admin_id_perfor_fb236c30")
+  @@index([action_type, performed_at])
+  // spellchecker: ignore-next-line
+  @@index([target_article_id, performed_at], map: "discussion_board_moderation_logs_target_article_id_per_e9d95ce8")
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id, performed_at], map: "discussion_board_moderation_logs_target_comment_id_per_b05dcd8f")
+  // spellchecker: ignore-next-line
+  @@index([target_user_id, performed_at], map: "discussion_board_moderation_logs_target_user_id_perfor_8020c1dd")
+  // spellchecker: ignore-next-line
+  @@index([target_section_id, performed_at], map: "discussion_board_moderation_logs_target_section_id_per_e125b4c9")
+  @@index([status, performed_at])
+  @@index([performed_at])
+}
+
+/// Central queue for content moderation workflow tracking. This table
+/// manages the moderation lifecycle for flagged content items, providing a
+/// structured workflow from flag submission through administrator review to
+/// final resolution. Each queue entry represents a discrete moderation task
+/// that requires administrator attention.
+///
+/// The queue integrates with the broader moderation ecosystem through
+/// relationships to content flags, administrator assignments, and moderation
+/// logs. It supports both user-reported content and system-detected
+/// violations, with priority-based queuing and assignment tracking.
+///
+/// This subsidiary entity works in conjunction with {@link
+/// discussion_board_content_flags} for flag reporting, {@link
+/// discussion_board_moderation_logs} for audit trails, and {@link
+/// discussion_board_moderated_content_histories} for historical tracking of
+/// moderation actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_moderation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original content flag that triggered this moderation
+  /// queue entry. {@link discussion_board_content_flags.id}
+  content_flag_id String
+  
+  /// Administrator currently assigned to review this queue entry. {@link
+  /// discussion_board_admins.id}
+  assigned_admin_id String?
+  
+  /// Administrator who escalated this queue entry to higher priority or
+  /// different assignment. {@link discussion_board_admins.id}
+  escalated_by_admin_id String?
+  
+  /// Current status of the moderation workflow. Valid values: 'pending',
+  /// 'under_review', 'escalated', 'resolved', 'dismissed'.
+  moderation_status String
+  
+  /// Priority level for moderation review. Valid values: 'low', 'medium',
+  /// 'high', 'critical'. Used for queue ordering and assignment
+  /// prioritization.
+  priority_level String
+  
+  /// Reason provided when escalating this queue entry to higher priority or
+  /// different administrator. Used for workflow tracking and audit purposes.
+  escalation_reason String?
+  
+  /// Number of times this queue entry has been assigned to different
+  /// administrators. Used to track workflow complexity and potential
+  /// assignment rotations.
+  assignment_history_count Int
+  
+  /// Indicates whether this queue entry was generated automatically by the
+  /// system rather than through user reporting.
+  auto_flagged Boolean
+  
+  /// Timestamp when the moderation queue entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderation status or assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the queue entry was last assigned to an administrator.
+  assigned_at DateTime?
+  
+  /// Timestamp when the moderation workflow was completed with a resolution.
+  resolved_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  contentFlag discussion_board_content_flags @relation(fields: [content_flag_id], references: [id], onDelete: Cascade)
+  assignedAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queues_of_assigned_admin_id", fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  escalatedByAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queues_of_escalate_b0a092a7", fields: [escalated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  assignmentHistories discussion_board_content_moderation_queue_assignments[]
+  escalations discussion_board_content_moderation_queue_escalations[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([content_flag_id])
+  // spellchecker: ignore-next-line
+  @@index([moderation_status, priority_level, created_at], map: "discussion_board_content_moderation_queues_moderation__1ebeaff8")
+  // spellchecker: ignore-next-line
+  @@index([assigned_admin_id, moderation_status], map: "discussion_board_content_moderation_queues_assigned_ad_337bb8b6")
+  // spellchecker: ignore-next-line
+  @@index([escalated_by_admin_id, created_at], map: "discussion_board_content_moderation_queues_escalated_b_89821a6f")
+}
+
+/// Historical record of content moderation actions performed by administrators.
+///
+/// This table tracks all moderation activities on articles and comments,
+/// providing a comprehensive audit trail for compliance and accountability
+/// purposes. Each record represents a single moderation event, capturing
+/// what content was moderated, who performed the action, what action was
+/// taken, and the reason for moderation.
+///
+/// The history supports transparency in moderation practices and allows for
+/// review of moderator decisions. Records are append-only and cannot be
+/// modified once created, ensuring the integrity of the moderation audit
+/// trail.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderated_content_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the moderated article. {@link discussion_board_articles.id}
+  moderated_article_id String?
+  
+  /// Reference to the moderated comment. {@link discussion_board_comments.id}
+  moderated_comment_id String?
+  
+  /// Reference to the administrator who performed the moderation. {@link
+  /// discussion_board_admins.id}
+  moderator_admin_id String?
+  
+  /// Reference to the super administrator who performed the moderation. {@link
+  /// discussion_board_super_admins.id}
+  moderator_super_admin_id String?
+  
+  /// Type of content being moderated (article or comment).
+  content_type String
+  
+  /// The specific moderation action performed (delete, edit, hide, etc.).
+  moderation_action String
+  
+  /// Reason provided by the moderator for the action.
+  moderation_reason String
+  
+  /// Snapshot of the original content before moderation.
+  original_content String?
+  
+  /// Content after moderation (if edited rather than deleted).
+  moderated_content String?
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderatedArticle discussion_board_articles? @relation(fields: [moderated_article_id], references: [id], onDelete: Cascade)
+  moderatedComment discussion_board_comments? @relation(fields: [moderated_comment_id], references: [id], onDelete: Cascade)
+  moderatorAdmin discussion_board_admins? @relation(fields: [moderator_admin_id], references: [id], onDelete: Cascade)
+  moderatorSuperAdmin discussion_board_super_admins? @relation(fields: [moderator_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([content_type, created_at], map: "discussion_board_moderated_content_histories_content_t_aca5ba97")
+  // spellchecker: ignore-next-line
+  @@index([moderator_admin_id, created_at], map: "discussion_board_moderated_content_histories_moderator_8644058d")
+  // spellchecker: ignore-next-line
+  @@index([moderator_super_admin_id, created_at], map: "discussion_board_moderated_content_histories_moderator_1817379b")
+  // spellchecker: ignore-next-line
+  @@index([moderated_article_id, created_at], map: "discussion_board_moderated_content_histories_moderated_eb553484")
+  // spellchecker: ignore-next-line
+  @@index([moderated_comment_id, created_at], map: "discussion_board_moderated_content_histories_moderated_fd81bd90")
+}
+
+/// Records administrator grade changes including promotions from regular to
+/// super administrator and demotions from super to regular administrator.
+///
+/// This table tracks the complete history of administrator grade
+/// transitions, providing an audit trail for all promotion and demotion
+/// actions. Each record captures the administrator whose grade is being
+/// changed, the administrator performing the change, the previous grade, the
+/// new grade, and the reason for the change. This supports the administrator
+/// hierarchy system where super administrators can manage administrator
+/// grades while preventing self-demotion.
+///
+/// Grade changes are permanent transitions that affect administrator
+/// privileges and capabilities within the system. The table ensures
+/// accountability and transparency in administrator management operations.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_grade_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator whose grade is being changed. {@link
+  /// discussion_board_admins.id}
+  administrator_id String
+  
+  /// Administrator who performed the grade change. {@link
+  /// discussion_board_admins.id}
+  changed_by_administrator_id String
+  
+  /// Previous administrator grade before the change.
+  old_grade String
+  
+  /// New administrator grade after the change.
+  new_grade String
+  
+  /// Reason for the grade change as provided by the administrator performing
+  /// the change.
+  reason String
+  
+  /// Timestamp when the grade change was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator discussion_board_admins @relation("discussion_board_administrator_grade_changes_of_admini_fb0d55d5", fields: [administrator_id], references: [id], onDelete: Cascade)
+  changedByAdministrator discussion_board_admins @relation("discussion_board_administrator_grade_changes_of_change_fdba0107", fields: [changed_by_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "discussion_board_administrator_grade_changes_administr_7cb8e29c")
+  // spellchecker: ignore-next-line
+  @@index([changed_by_administrator_id, created_at], map: "discussion_board_administrator_grade_changes_changed_b_cc83ec8f")
+}
+
+/// Standardized categories of ban reasons that administrators can select
+/// when banning users.
+///
+/// This table provides a consistent classification system for ban reasons,
+/// ensuring that administrators use standardized categories when banning
+/// users. Each category includes a name, description, and configuration
+/// options for proper moderation workflow management.
+///
+/// Categories are used by {@link discussion_board_ban_records} to classify
+/// ban reasons consistently across the platform. Administrators can select
+/// from predefined categories when issuing bans, which helps maintain
+/// consistency in moderation practices and enables better reporting and
+/// analytics.
+///
+/// The table supports soft deletion for archiving deprecated categories
+/// while preserving historical ban record associations.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_reason_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Display name of the ban reason category used for administrator selection.
+  name String
+  
+  /// Detailed explanation of when this ban reason category should be used.
+  description String
+  
+  /// Whether this category is currently available for selection by
+  /// administrators.
+  is_active Boolean
+  
+  /// Display order for category listing in administrator interfaces.
+  sort_order Int
+  
+  /// Timestamp when this ban reason category was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban reason category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this ban reason category was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([is_active, sort_order])
+  @@index([created_at])
+}
+
+/// Records user appeals against ban decisions with appeal reasons, review
+/// status, and decision tracking.
+///
+/// This table tracks the complete workflow of ban appeals from submission to
+/// final decision. Each appeal is linked to a specific ban record and
+/// includes the user's appeal reason, current review status, and the
+/// administrator's decision when reviewed. The appeal process allows users
+/// to contest ban decisions and provides administrators with a structured
+/// workflow for reviewing appeals.
+///
+/// Appeals progress through statuses: 'pending' (awaiting review),
+/// 'under_review' (currently being evaluated), 'approved' (ban overturned),
+/// or 'rejected' (ban upheld). The decision_reason field captures the
+/// administrator's justification for their decision.
+///
+/// This table supports transparency in moderation actions and ensures users
+/// have recourse for contested ban decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_appeals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The ban record being appealed. {@link discussion_board_ban_records.id}
+  discussion_board_ban_record_id String
+  
+  /// The user who is appealing the ban. {@link discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// The administrator who reviewed the appeal. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String?
+  
+  /// The user's reason for appealing the ban decision.
+  appeal_reason String
+  
+  /// Current status of the appeal workflow: pending, under_review, approved,
+  /// or rejected.
+  status String
+  
+  /// The administrator's reason for the appeal decision.
+  decision_reason String?
+  
+  /// Timestamp when the user submitted the appeal.
+  appealed_at DateTime
+  
+  /// Timestamp when the administrator reviewed the appeal.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the appeal record was created.
+  created_at DateTime
+  
+  /// Timestamp when the appeal record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the appeal record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_ban_record_id, status], map: "discussion_board_ban_appeals_discussion_board_ban_reco_f9021106")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, appealed_at], map: "discussion_board_ban_appeals_discussion_board_user_id__f0dc6d54")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, reviewed_at], map: "discussion_board_ban_appeals_discussion_board_admin_id_ec155d84")
+  @@index([status, appealed_at])
+}
+
+/// Configuration table storing predefined ban duration options that
+/// administrators can select when banning users.
+///
+/// This table provides standardized ban duration choices including temporary
+/// bans (e.g., 1 day, 7 days, 30 days) and permanent bans. Each duration
+/// option includes a descriptive name, duration value in hours, and whether
+/// it represents a permanent ban. Administrators reference these predefined
+/// options when issuing bans to ensure consistency across the moderation
+/// system.
+///
+/// The ban durations support the {@link discussion_board_ban_records} table
+/// by providing standardized duration choices that administrators can
+/// select. This ensures consistent ban enforcement and simplifies the
+/// banning process for moderators.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_durations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Descriptive name of the ban duration option (e.g., '1 Day Ban',
+  /// 'Permanent Ban').
+  name String
+  
+  /// Detailed explanation of what this ban duration means and when it should
+  /// be used.
+  description String
+  
+  /// Duration of the ban in hours. For permanent bans, this should be set to 0
+  /// or a very large value.
+  duration_hours Int
+  
+  /// Indicates whether this ban duration represents a permanent ban (true) or
+  /// temporary ban (false).
+  is_permanent Boolean
+  
+  /// Timestamp when this ban duration option was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban duration option was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this ban duration option was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([is_permanent])
+  @@index([duration_hours])
+}
+
+/// User-reported content flags for inappropriate articles or comments
+/// requiring moderator review.
+///
+/// This table tracks user-submitted content flags that require moderator
+/// attention. Each flag represents a user's report of inappropriate content,
+/// including the reason for reporting, the specific content being flagged
+/// (either an article or a comment), and the current status of the
+/// moderation workflow.
+///
+/// Flags can reference either articles ({@link
+/// discussion_board_articles.id}) or comments ({@link
+/// discussion_board_comments.id}) depending on the type of content being
+/// reported. The flagging user is tracked through {@link
+/// discussion_board_users.id} reference, and administrators can review and
+/// resolve flags through the moderation system.
+///
+/// The status field tracks the flag's progression through the moderation
+/// workflow: pending review, under investigation, resolved, or dismissed.
+/// This system enables community-driven content moderation while maintaining
+/// administrator oversight.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who reported the content flag. {@link discussion_board_users.id}.
+  reporter_user_id String
+  
+  /// Article being flagged for moderation. {@link
+  /// discussion_board_articles.id}.
+  flagged_article_id String?
+  
+  /// Comment being flagged for moderation. {@link
+  /// discussion_board_comments.id}.
+  flagged_comment_id String?
+  
+  /// Administrator reviewing the content flag. {@link
+  /// discussion_board_admins.id}.
+  reviewing_admin_id String?
+  
+  /// Detailed reason provided by the user for flagging the content.
+  flag_reason String
+  
+  /// Current status of the content flag in the moderation workflow.
+  status String
+  
+  /// Explanation provided by administrator for flag resolution.
+  resolution_reason String?
+  
+  /// Timestamp when the content flag was initially reported.
+  created_at DateTime
+  
+  /// Timestamp when the content flag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the content flag was soft deleted.
+  deleted_at DateTime?
+  
+  /// Timestamp when the content flag was resolved by an administrator.
+  resolved_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter discussion_board_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
+  flaggedArticle discussion_board_articles? @relation(fields: [flagged_article_id], references: [id], onDelete: Cascade)
+  flaggedComment discussion_board_comments? @relation(fields: [flagged_comment_id], references: [id], onDelete: Cascade)
+  reviewingAdmin discussion_board_admins? @relation(fields: [reviewing_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  moderationQueue discussion_board_content_moderation_queues?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewing_admin_id])
+  @@index([reporter_user_id, created_at])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([flagged_article_id, created_at], map: "discussion_board_content_flags_flagged_article_id_crea_62f5ce77")
+  // spellchecker: ignore-next-line
+  @@index([flagged_comment_id, created_at], map: "discussion_board_content_flags_flagged_comment_id_crea_dd6654d6")
+}
+
+/// Standardized types of moderation actions that administrators can perform
+/// on the platform.
+///
+/// This reference table provides consistent categorization for all
+/// moderation activities, ensuring uniform tracking and reporting across the
+/// system. Each action type includes a unique code, descriptive name, and
+/// optional category classification for organizing similar actions.
+///
+/// Used by {@link discussion_board_moderation_logs} to categorize moderation
+/// activities and by {@link discussion_board_content_moderation_queues} to
+/// specify required action types for flagged content.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_moderation_action_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier code for the moderation action type. Used for
+  /// programmatic reference and API integration.
+  code String
+  
+  /// Human-readable name of the moderation action type for display purposes.
+  name String
+  
+  /// Detailed description explaining when and how this moderation action
+  /// should be used.
+  description String
+  
+  /// Optional category classification for grouping similar moderation actions
+  /// (e.g., 'content', 'user', 'system').
+  category String?
+  
+  /// Indicates the severity level of this action type for reporting and
+  /// analytics purposes.
+  severity_level String?
+  
+  /// Whether this action type requires administrators to provide a reason when
+  /// performing the action.
+  requires_reason Boolean
+  
+  /// Indicates whether this action type is currently available for use by
+  /// administrators.
+  is_active Boolean
+  
+  /// Timestamp when this moderation action type was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this moderation action type was last updated.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([category, is_active])
+  @@index([severity_level])
+}
+
+/// Subtype table linking ban records to regular administrators who issued
+/// the bans. This table implements the polymorphic ownership pattern for ban
+/// attribution, ensuring each ban record can be traced back to the specific
+/// administrator who performed the banning action.
+///
+/// Each record represents the attribution of a ban action to a regular
+/// administrator. The table maintains referential integrity between ban
+/// records and administrator entities while supporting the audit trail
+/// requirements for moderation actions. This design allows for proper
+/// tracking of which administrator performed each banning action, supporting
+/// accountability and compliance requirements.
+///
+/// This table works in conjunction with {@link
+/// discussion_board_ban_record_of_super_admins} to provide complete coverage
+/// of all administrator types that can issue bans, following the polymorphic
+/// ownership pattern established in the moderation system.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_record_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the ban record being attributed. {@link
+  /// discussion_board_ban_records.id}.
+  discussion_board_ban_record_id String
+  
+  /// Reference to the regular administrator who issued the ban. {@link
+  /// discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Timestamp when this ban attribution record was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban attribution record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this ban attribution record was soft deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_ban_record_id], map: "discussion_board_ban_record_of_admins_discussion_board_9da79d71")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_ban_record_of_admins_discussion_board_d9fa2797")
+}
+
+/// Subtype table linking ban records to super administrators who issued the
+/// bans.
+///
+/// This table implements the polymorphic ownership pattern for ban records
+/// issued by super administrators. Each ban record can be associated with
+/// exactly one super administrator who performed the banning action,
+/// establishing clear accountability and audit trails for moderation
+/// actions.
+///
+/// Super administrators have the authority to ban users from the platform,
+/// and this table maintains the relationship between the ban record and the
+/// specific super administrator who executed the action. This supports the
+/// requirement that when a user is banned, the system records the ban reason
+/// and the administrator who issued the ban.
+///
+/// The table ensures referential integrity between ban records and super
+/// administrator accounts, supporting the moderation workflow where super
+/// administrators can view their own banning actions and the system can
+/// track moderation activity by administrator grade.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_record_of_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated ban record. {@link discussion_board_ban_records.id}
+  discussion_board_ban_record_id String
+  
+  /// Super administrator who issued the ban. {@link
+  /// discussion_board_super_admins.id}
+  discussion_board_super_admin_id String
+  
+  /// Timestamp when this ban record association was created.
+  created_at DateTime
+  
+  /// Timestamp when this ban record association was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_ban_record_id], map: "discussion_board_ban_record_of_super_admins_discussion_c9319451")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_ban_record_of_super_admins_discussion_333d3742")
+}
+
+/// Historical tracking of administrator assignments to moderation queue
+/// entries for workflow audit and performance analysis.
+///
+/// This table records which administrators were assigned to specific content
+/// moderation queue entries, capturing the assignment lifecycle from initial
+/// assignment to completion. It supports audit trails for moderation
+/// workflow compliance and enables performance analysis of administrator
+/// moderation efficiency.
+///
+/// Each assignment record links a specific content moderation queue entry
+/// with the administrator responsible for reviewing it, along with essential
+/// temporal tracking. The table focuses on the core assignment relationship
+/// while avoiding duplication of workflow state information that should be
+/// maintained in the parent moderation queue table.
+///
+/// {@link discussion_board_content_moderation_queues} represents the content
+/// items awaiting moderation review, while this table tracks the human
+/// resource assignment aspect of the moderation workflow.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_moderation_queue_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the content moderation queue entry being assigned. {@link
+  /// discussion_board_content_moderation_queues.id}
+  discussion_board_content_moderation_queue_id String
+  
+  /// Reference to the administrator assigned to this moderation task. {@link
+  /// discussion_board_admins.id}
+  assigned_admin_id String
+  
+  /// Timestamp when the administrator was assigned to this moderation queue
+  /// entry.
+  assigned_at DateTime
+  
+  /// Timestamp when the administrator completed the moderation task. Null if
+  /// still pending.
+  completed_at DateTime?
+  
+  /// Timestamp when this assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this assignment record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  contentModerationQueue discussion_board_content_moderation_queues @relation(fields: [discussion_board_content_moderation_queue_id], references: [id], onDelete: Cascade)
+  assignedAdmin discussion_board_admins @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_content_moderation_queue_id, assigned_at], map: "discussion_board_content_moderation_queue_assignments__38e435ee")
+  // spellchecker: ignore-next-line
+  @@index([assigned_admin_id, assigned_at], map: "discussion_board_content_moderation_queue_assignments__0a9bd08b")
+}
+
+/// Records priority escalations and assignment changes within the moderation
+/// workflow for comprehensive audit trails.
+///
+/// This table tracks workflow escalations that occur during content
+/// moderation processes. It captures priority level changes, assignment
+/// transfers between administrators, and workflow state transitions. Each
+/// escalation event includes details about the reason for escalation, the
+/// administrator who initiated it, and the administrator who receives the
+/// escalated assignment.
+///
+/// The escalation system supports various escalation types including
+/// priority increases for urgent content, reassignments to different
+/// administrator expertise levels, and workflow state transitions for
+/// complex moderation cases. This audit trail ensures transparency in
+/// moderation workflows and provides accountability for escalation
+/// decisions.
+///
+/// Related entities: {@link discussion_board_content_moderation_queues},
+/// {@link discussion_board_admins}, {@link discussion_board_super_admins},
+/// {@link discussion_board_users}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_moderation_queue_escalations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation queue entry being escalated. {@link
+  /// discussion_board_content_moderation_queues.id}
+  discussion_board_content_moderation_queue_id String
+  
+  /// Administrator who initiated the escalation. {@link
+  /// discussion_board_admins.id}
+  escalated_by_admin_id String?
+  
+  /// Super administrator who initiated the escalation. {@link
+  /// discussion_board_super_admins.id}
+  escalated_by_super_admin_id String?
+  
+  /// Administrator assigned to handle the escalated queue entry. {@link
+  /// discussion_board_admins.id}
+  assigned_to_admin_id String?
+  
+  /// Super administrator assigned to handle the escalated queue entry. {@link
+  /// discussion_board_super_admins.id}
+  assigned_to_super_admin_id String?
+  
+  /// Type of escalation performed (priority_increase, reassignment,
+  /// workflow_transition, etc.).
+  escalation_type String
+  
+  /// Priority level before escalation occurred.
+  previous_priority String
+  
+  /// Priority level after escalation.
+  new_priority String
+  
+  /// Detailed reason explaining why the escalation was necessary.
+  escalation_reason String
+  
+  /// Workflow state of the moderation queue entry before escalation.
+  workflow_state_before String
+  
+  /// Workflow state of the moderation queue entry after escalation.
+  workflow_state_after String
+  
+  /// Exact timestamp when the escalation occurred.
+  escalation_timestamp DateTime
+  
+  /// Timestamp when this escalation record was created.
+  created_at DateTime
+  
+  /// Timestamp when this escalation record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderationQueue discussion_board_content_moderation_queues @relation(fields: [discussion_board_content_moderation_queue_id], references: [id], onDelete: Cascade)
+  escalatedByAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queue_escalations__d7ae31e7", fields: [escalated_by_admin_id], references: [id], onDelete: Cascade)
+  escalatedBySuperAdmin discussion_board_super_admins? @relation("discussion_board_content_moderation_queue_escalations__5309fe28", fields: [escalated_by_super_admin_id], references: [id], onDelete: Cascade)
+  assignedToAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queue_escalations__be5209ae", fields: [assigned_to_admin_id], references: [id], onDelete: Cascade)
+  assignedToSuperAdmin discussion_board_super_admins? @relation("discussion_board_content_moderation_queue_escalations__6cd5d4e6", fields: [assigned_to_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_content_moderation_queue_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__ff5097f3")
+  // spellchecker: ignore-next-line
+  @@index([escalated_by_admin_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__3f0b1ab7")
+  // spellchecker: ignore-next-line
+  @@index([escalated_by_super_admin_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__77613da3")
+  // spellchecker: ignore-next-line
+  @@index([assigned_to_admin_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__cbdb5624")
+  // spellchecker: ignore-next-line
+  @@index([assigned_to_super_admin_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__a81de239")
+  // spellchecker: ignore-next-line
+  @@index([escalation_type, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__dffccba3")
+}

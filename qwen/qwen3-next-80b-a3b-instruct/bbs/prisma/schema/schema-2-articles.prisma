@@ -1,0 +1,657 @@
+/// Main article entries with title, content, author, and section reference.
+/// Articles represent user-submitted content within a section. Articles can
+/// be edited by the original author within the edit window (2 hours) and
+/// deleted by authors or administrators. Deleted articles retain their
+/// record with is_deleted=true for audit purposes. Comments and attachments
+/// are linked via foreign keys but stored separately to maintain
+/// normalization.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section this article belongs to. {@link
+  /// economic_board_sections.id}
+  section_id String
+  
+  /// Reference to the citizen who created this article. {@link
+  /// economic_board_citizens.id}
+  author_id String
+  
+  /// Title of the article. Must be between 5 and 200 characters, trimmed of
+  /// whitespace.
+  title String
+  
+  /// Full content of the article. Must be at least 10 characters, up to 50,000
+  /// characters.
+  content String
+  
+  /// Timestamp of when the article was created. Always set to server time
+  /// (Asia/Seoul).
+  created_at DateTime
+  
+  /// Timestamp of when the article was last edited. Updated on every content
+  /// modification.
+  updated_at DateTime
+  
+  /// Soft delete flag. If true, article is hidden from public views but
+  /// preserved in database for audit purposes.
+  is_deleted Boolean
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section economic_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  author economic_board_citizens @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  comments economic_board_comments[]
+  articleTags economic_board_article_tags[]
+  attachments economic_board_article_attachments[]
+  snapshots economic_board_article_snapshots[]
+  views economic_board_article_views[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([section_id, created_at])
+  @@index([author_id, created_at])
+}
+
+/// Content sections where articles are categorized and managed by
+/// administrators. Each section defines a top-level category for organizing
+/// articles (e.g., Politics, Economy). Administrators create, edit, and
+/// delete sections independently. Sections have unique names to prevent
+/// ambiguity. Soft deletion is implemented via deleted_at to preserve
+/// history for associated articles without cascading deletion.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the section (e.g., 'Economy', 'Politics'). Must be unique
+  /// across all active sections. Case-insensitive comparison enforced by
+  /// unique index.
+  name String
+  
+  /// Brief description explaining the section's purpose and scope. Used in UI
+  /// to guide users on content expectations.
+  description String
+  
+  /// Timestamp when the section was created. Immutable.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated. Updated automatically on any
+  /// edit.
+  updated_at DateTime
+  
+  /// Timestamp when the section was logically deleted. NULL indicates active
+  /// section. Non-NULL indicates deleted status. Used for soft deletion and
+  /// audit.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articles economic_board_articles[]
+  snapshots economic_board_section_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@unique([deleted_at, name])
+  @@index([created_at])
+}
+
+/// User comments attached to articles, linked by article_id and author_id.
+/// Each comment is an independent entity that can be searched, filtered,
+/// edited, and deleted by its author or moderated by administrators.
+/// Comments are not owned by articles but are associated with them via
+/// foreign key, enabling cross-article comment queries and moderation
+/// workflows. Always references citizen from Systematic component. Track
+/// creation and update times for audit. Allow soft deletion for compliance
+/// and moderation workflows. Support full-text search on content for user
+/// search functionality. Never store JSON, arrays, or derived values. Follow
+/// 3NF with no transitive dependencies.
+///
+/// For API operations:
+/// - POST /comments creates a new comment
+/// - GET /comments?article_id=...&limit=20&sort=newest lists comments by
+/// article
+/// - PATCH /comments/{id} edits comment (within 60-minute window)
+/// - DELETE /comments/{id} deletes comment (deleted_at timestamp)
+/// - GET /search/comments?q=... searches comment content using GIN index
+///
+/// Relationships:
+/// - Comment is owned by citizen only; administrators can delete but are not
+/// owners as per permission matrix.
+/// - Comments do not form a hierarchy; replies are out of scope for this
+/// version.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The article this comment is associated with. {@link
+  /// economic_board_articles.id}
+  article_id String
+  
+  /// The citizen who authored this comment. {@link economic_board_citizens.id}
+  author_id String
+  
+  /// Plain text content of the comment, up to 1000 characters. Required and
+  /// trimmed of whitespace.
+  content String
+  
+  /// Timestamp when comment was created. Always recorded in Asia/Seoul
+  /// timezone.
+  created_at DateTime
+  
+  /// Timestamp when comment was last edited. Updated on every edit. Used for
+  /// edit window validation (1-hour).
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted. If null, comment is active. Used
+  /// for moderation and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  author economic_board_citizens @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id, created_at])
+  @@index([author_id])
+  @@index([created_at])
+}
+
+/// Junction table that associates articles with their tags in a many-to-many
+/// relationship. Each row represents one tag applied to one article,
+/// enabling efficient filtering and preventing tag duplication. Tag strings
+/// are stored as-is to support free-form user input while maintaining
+/// referential integrity through composite unique index. Used for search
+/// filtering and content categorization.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the article being tagged. {@link economic_board_articles.id}.
+  /// Required for normalization.
+  economic_board_article_id String
+  
+  /// The actual tag string provided by the user. Free-form text, trimmed of
+  /// whitespace on input. Maximum 50 characters as per requirements.
+  /// Case-insensitive uniqueness enforced via unique index.
+  tag String
+  
+  /// Timestamp when this tag was first applied to the article.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_board_articles @relation(fields: [economic_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([economic_board_article_id, tag])
+  // spellchecker: ignore-next-line
+  @@index([economic_board_article_id, created_at], map: "economic_board_article_tags_economic_board_article_id__7d46dd7a")
+}
+
+/// Metadata for files and images attached to articles, including URL, type,
+/// and size. This is a subsidiary entity—managed exclusively through
+/// articles and not directly by users. Each file or image upload creates a
+/// separate record. Retained for audit purposes even after article deletion.
+///
+/// Business context: This table holds critical metadata for media
+/// attachments (files and images) uploaded by users. The system tracks:
+/// exact file URL (for CDN access), original filename, MIME type (e.g.,
+/// image/jpeg), file size in bytes, and upload timestamp. Used by the
+/// frontend to display previews and enable downloads. Must be immutable
+/// after upload.
+///
+/// Relationships:
+/// - Belongs to one article (one-to-many) via article_id
+/// - Used in article views to render attachments
+/// - Audited via economic_board_administrator_audit_logs when manually deleted
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article this attachment belongs to. {@link
+  /// economic_board_articles.id}.
+  article_id String
+  
+  /// CDN-accessible URL where the file or image is stored.
+  file_url String
+  
+  /// Original filename as uploaded by the user. Preserved exactly for download.
+  file_name String
+  
+  /// MIME type of the file (e.g., image/png, application/pdf). Determined by
+  /// file headers, not extension.
+  file_type String
+  
+  /// Size of the file in bytes. Used for bandwidth estimation and quota
+  /// tracking.
+  file_size Int
+  
+  /// Timestamp when the file was uploaded. Set server-side on insert.
+  created_at DateTime
+  
+  /// Timestamp last modified. Always equals created_at unless explicitly
+  /// edited (rare). Set on insert and update.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotAttachments economic_board_article_snapshot_attachments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id])
+}
+
+/// Point-in-time snapshots of article state for audit and historical
+/// retrieval. Captures the exact state of an article at the moment it was
+/// saved, preserving changes for compliance and version tracking. The
+/// original economic_board_articles record may be edited or deleted, but
+/// snapshots remain immutable. Used to display historical versions of
+/// articles and audit editing activity. Reference original article via
+/// article_id. This table only tracks the snapshot creation context - tags
+/// and attachments are stored in separate subsidiary tables:
+/// economic_board_article_snapshot_tags and
+/// economic_board_article_snapshot_attachments.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original article being snapshotted. {@link
+  /// economic_board_articles.id}.
+  article_id String
+  
+  /// Timestamp when this snapshot was created (not the original article
+  /// creation time).
+  created_at DateTime
+  
+  /// Reason for snapshot creation: "initial", "edit", "deletion",
+  /// "admin_delete".
+  snapshot_reason String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleSnapshotTags economic_board_article_snapshot_tags[]
+  attachments economic_board_article_snapshot_attachments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id, created_at])
+  @@index([snapshot_reason, created_at])
+}
+
+/// Point-in-time snapshots of section name and description to audit how
+/// sections evolved over time. Each snapshot records the exact state of a
+/// section at the moment it was modified. References the original section
+/// via section_id. Used to reconstruct historical versions of sections,
+/// track changes, and ensure accountability in administrative edits.
+/// Snapshots are append-only and never modified after creation.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original section record. {@link
+  /// economic_board_sections.id}
+  economic_board_section_id String
+  
+  /// The administrator who triggered this snapshot via edit. {@link
+  /// economic_board_administrators.id}
+  economic_board_administrator_id String?
+  
+  /// The name of the section at the time of this snapshot.
+  section_name String
+  
+  /// The description of the section at the time of this snapshot.
+  section_description String
+  
+  /// Timestamp when this snapshot was created. Always matches the edit
+  /// timestamp of the source section.
+  created_at DateTime
+  
+  /// Timestamp for consistency with other models. Always equals created_at
+  /// since snapshots are immutable.
+  updated_at DateTime
+  
+  /// Always NULL; snapshots are never soft-deleted as they represent
+  /// historical audit data.
+  deleted_at DateTime?
+  
+  /// Reason for the snapshot creation (e.g. 'section edited', 'section
+  /// deleted').
+  snapshot_reason String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section economic_board_sections @relation(fields: [economic_board_section_id], references: [id], onDelete: Cascade)
+  administrator economic_board_administrators? @relation(fields: [economic_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([economic_board_administrator_id], map: "economic_board_section_snapshots_economic_board_admini_8c466936")
+  // spellchecker: ignore-next-line
+  @@index([economic_board_section_id, created_at], map: "economic_board_section_snapshots_economic_board_sectio_37af09f3")
+}
+
+/// Tracks views of articles by users for analytics and popularity ranking.
+/// Each record represents a unique view by a user during a session. Data is
+/// used to compute popular articles, trending content, and user engagement
+/// metrics. Note: user_id references either economic_board_citizens or
+/// economic_board_administrators via polymorphic relationship using
+/// user_type and user_id. Views are timestamped to enable time-series
+/// analysis and hourly/daily popularity tracking.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_views {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the article being viewed. {@link economic_board_articles.id}
+  article_id String
+  
+  /// References the viewing user (either citizen or administrator). {@link
+  /// economic_board_citizens.id} or {@link economic_board_administrators.id}
+  user_id String
+  
+  /// Type of user: 'citizen' or 'administrator'. Required to disambiguate
+  /// polymorphic reference when user_id is used across multiple tables.
+  user_type String
+  
+  /// Timestamp of when the view occurred. Used for time-series analytics,
+  /// trend analysis, and calculating view counts over time periods.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  user economic_board_citizens @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([article_id, user_id, created_at])
+  @@index([article_id])
+  @@index([created_at])
+  @@index([user_id])
+}
+
+/// Master catalog of unique tags used across articles. Each tag is stored
+/// once, and article_tags table references this table via tag_id. This
+/// ensures 3NF compliance, avoids string duplication, and enables consistent
+/// tagging and filtering.
+///
+/// Tags are managed independently by the system: they are auto-created when
+/// first used, and preserved even if no article references them. Used in
+/// search, filtering, and analytics. Never deleted unless manually purged by
+/// admin.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The normalized tag string, stored in lowercase. Must be unique across the
+  /// system. Max 50 characters. Trims whitespace on insertion. Example:
+  /// 'economics'.
+  tag String
+  
+  /// Timestamp when the tag was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp of the last update. Updates when the tag string is edited
+  /// (though edits are rare).
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleSnapshotTags economic_board_article_snapshot_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([tag])
+}
+
+/// Master catalog of attachment MIME type categorizations (e.g., image/jpeg
+/// → image) for standardized handling across the system. This lookup table
+/// normalizes MIME types into categorical groups to avoid redundancy in
+/// article_attachments. When a file is uploaded, its MIME type is stored as
+/// a string here and referenced in article_attachments, ensuring consistent
+/// handling of file types (image, document, video, etc.) without duplicating
+/// full MIME type strings in every attachment record.
+///
+/// Used in article_attachments to categorize attachments for UI rendering
+/// and filtering. For example, when displaying 'image' category, the system
+/// queries this table for all mime_types mapped to 'image', then finds all
+/// article_attachments matching those mime_types.
+///
+/// Must be seeded with common MIME types from the file type allowlist:
+/// text/plain, application/pdf, image/jpeg, image/png, image/gif,
+/// image/webp, video/mp4, audio/mp3, application/zip,
+/// application/octet-stream, etc.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_attachment_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The complete MIME type string (e.g., 'image/jpeg', 'application/pdf').
+  /// Must be unique and match exactly the Content-Type header from upload.
+  /// This is the primary key (not ID) to ensure referential integrity and
+  /// avoid duplication.
+  mime_type String
+  
+  /// The standardized category group for this MIME type. Values are: 'image',
+  /// 'document', 'video', 'audio', 'archive', or 'other'. Maps broad
+  /// categories for UI filtering and display logic.
+  category String
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([mime_type])
+}
+
+/// Snapshot of tag associations for a specific article version. Stores which
+/// tags were applied to the article at the exact moment the article snapshot
+/// was created. Each record links a snapshot to one tag. This table is
+/// necessary for 1NF compliance as tags are a repeating group that cannot be
+/// stored as comma-separated strings.
+///
+/// This table is a subsidiary entity, only accessed via parent article
+/// snapshots. It is never created, updated, or deleted independently by
+/// users. It supports audit trails and historical tag analysis for article
+/// revisions.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_snapshot_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article snapshot this tag association belongs to. {@link
+  /// economic_board_article_snapshots.id}.
+  economic_board_article_snapshot_id String
+  
+  /// Reference to the tag being applied. {@link economic_board_tags.id}.
+  economic_board_tag_id String
+  
+  /// When this tag association was recorded in the snapshot.
+  created_at DateTime
+  
+  /// When this tag association was last updated (typically same as created_at,
+  /// for consistency).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  articleSnapshot economic_board_article_snapshots @relation(fields: [economic_board_article_snapshot_id], references: [id], onDelete: Cascade)
+  tag economic_board_tags @relation(fields: [economic_board_tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([economic_board_tag_id])
+  // spellchecker: ignore-next-line
+  @@unique([economic_board_article_snapshot_id, economic_board_tag_id], map: "economic_board_article_snapshot_tags_economic_board_ar_52ac10b4")
+}
+
+/// Junction table for attaching files and images to article snapshots. Each
+/// record links one article snapshot (economic_board_article_snapshots.id)
+/// to one attachment (economic_board_article_attachments.id). This table is
+/// required for 1NF compliance as attachments are a repeating group that
+/// cannot be stored as arrays or JSON. Preserves the exact state of
+/// attachments at the time the article snapshot was created. This table is
+/// not accessed directly by users but is used internally for historical
+/// versioning and audit purposes. Linked to @\link
+/// economic_board_article_snapshots and @\link
+/// economic_board_article_attachments.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_board_article_snapshot_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article snapshot this attachment belongs to. A snapshot
+  /// may have multiple attachments. @\link
+  /// economic_board_article_snapshots.id.
+  article_snapshot_id String
+  
+  /// Reference to the actual file attachment. This links to a single
+  /// attachment record in economic_board_article_attachments. @\link
+  /// economic_board_article_attachments.id.
+  article_attachment_id String
+  
+  /// Timestamp when this snapshot-attachment link was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot-attachment link was last updated. Always
+  /// equal to created_at since this table is append-only.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot economic_board_article_snapshots @relation(fields: [article_snapshot_id], references: [id], onDelete: Cascade)
+  attachment economic_board_article_attachments @relation(fields: [article_attachment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([article_snapshot_id], map: "economic_board_article_snapshot_attachments_article_sn_c487c0af")
+  // spellchecker: ignore-next-line
+  @@index([article_attachment_id], map: "economic_board_article_snapshot_attachments_article_at_841f9d79")
+}

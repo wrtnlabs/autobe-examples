@@ -1,0 +1,99 @@
+/// User reports on posts or comments capturing the report origin, target,
+/// and status.
+///
+/// This primary table stores reports submitted by users regarding posts or
+/// comments, including the reporter identity, the reported content
+/// reference, the reason for reporting linked to predefined report reasons,
+/// and the current status of the report process.
+///
+/// Related entities include community_platform_reported_contents for content
+/// reference and community_platform_report_reasons for reasons.
+///
+/// Supports moderation workflows for content review and action.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user. {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Report reason. {@link community_platform_report_reasons.id}.
+  community_platform_report_reason_id String
+  
+  /// Description detail provided by the reporting user.
+  description String
+  
+  /// Status of the report in moderation workflow.
+  status String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  reportReason community_platform_report_reasons @relation(fields: [community_platform_report_reason_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportedContents community_platform_reported_contents[]
+  decisions community_platform_reports_decisions[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_report_reason_id], map: "community_platform_reports_community_platform_report_r_1165d6c9")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_reports_community_platform_user_id__94d81571")
+}
+
+/// Textual reasons and details provided by users for reporting content.
+/// Linked to user reports to capture the rationale behind content reporting,
+/// enabling moderators to review and act upon reported issues.
+///
+/// @namespace Reporting
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_reasons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The textual reason provided by the user explaining why the content was
+  /// reported.
+  reason_text String
+  
+  /// Timestamp when the reason was created.
+  created_at DateTime
+  
+  /// Timestamp when the reason was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the reason was deleted, for soft delete.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  commentReports community_platform_comment_reports[]
+  reports community_platform_reports[]
+}

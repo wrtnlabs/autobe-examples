@@ -1,0 +1,856 @@
+/// Registered user accounts with email/password credentials and profile
+/// information.
+///
+/// This table stores the core identity information for regular users of the
+/// discussion board platform. Each record represents an individual user
+/// account with authentication credentials and profile data. Users can
+/// create articles, write comments, and participate in discussions across
+/// various sections.
+///
+/// The table serves as the root identity record for the user actor type and
+/// is referenced by session management, password reset workflows, and
+/// content creation entities. User profiles display the user's display name,
+/// biography, and activity history including articles and comments they have
+/// authored.
+///
+/// {@link discussion_board_user_sessions} tracks user login sessions.
+/// {@link discussion_board_user_password_resets} handles password recovery.
+/// {@link discussion_board_user_email_verifications} manages email
+/// confirmation.
+/// {@link discussion_board_articles} stores articles authored by users.
+/// {@link discussion_board_comments} stores comments written by users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's email address used for authentication and communication. Must be
+  /// unique across all user accounts.
+  email String
+  
+  /// Securely hashed password for user authentication. Stored using
+  /// industry-standard hashing algorithms.
+  password_hash String
+  
+  /// Public display name shown on user profiles and alongside user-generated
+  /// content.
+  display_name String
+  
+  /// Optional biography text describing the user's background, interests, or
+  /// expertise.
+  bio String?
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft-deleted, allowing for account
+  /// recovery.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions discussion_board_user_sessions[]
+  passwordResets discussion_board_user_password_resets[]
+  emailVerifications discussion_board_user_email_verifications[]
+  auditLogs discussion_board_audit_logs[] @relation("discussion_board_audit_logs_of_actor_id")
+  auditActions discussion_board_audit_logs[] @relation("discussion_board_audit_logs_of_target_user_id")
+  systemActivities discussion_board_system_activities[]
+  apiRateLimits discussion_board_api_rate_limits[]
+  securityEvents discussion_board_security_events[]
+  sectionPreferences discussion_board_section_preferences[]
+  articles discussion_board_articles[]
+  articleFavorites discussion_board_article_favorites[]
+  comments discussion_board_comments[]
+  commentSnapshots discussion_board_comment_snapshots[]
+  commentReports discussion_board_comment_reports[]
+  commentVotes discussion_board_comment_votes[]
+  commentMentions discussion_board_comment_mentions[]
+  commentFlags discussion_board_comment_flags[]
+  commentRateLimits discussion_board_comment_rate_limits[]
+  commentEditHistories discussion_board_comment_edit_history_of_users[]
+  administratorPromotionRequests discussion_board_administrator_promotion_requests[]
+  administratorAssignment discussion_board_administrators?
+  bans discussion_board_user_bans[]
+  moderationLogs discussion_board_moderation_logs[]
+  banAppeals discussion_board_ban_appeals[]
+  contentFlags discussion_board_content_flags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens for user authentication with access and refresh token
+/// support.
+///
+/// This table stores active user sessions with JWT tokens for secure
+/// authentication. Each session tracks connection context including IP
+/// address, user agent, and referrer information for security auditing.
+/// Sessions maintain both access tokens for API calls and refresh tokens for
+/// token renewal.
+///
+/// The session lifecycle is managed through creation and expiration
+/// timestamps, allowing for secure session invalidation and automatic
+/// cleanup of expired sessions. This table supports the authentication
+/// system's requirement to maintain secure session state while users are
+/// logged in.
+///
+/// Sessions are child entities of {@link discussion_board_users} and support
+/// the platform's authentication security requirements.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for token renewal.
+  refresh_token String
+  
+  /// IP address of the connection for security auditing.
+  ip String
+  
+  /// Browser or client user agent string.
+  user_agent String
+  
+  /// HTTP referrer header for connection context.
+  referrer String?
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires.
+  expired_at DateTime
+  
+  /// Timestamp of last session activity.
+  last_accessed_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleViewStatEvents discussion_board_article_view_stat_events[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([access_token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_sessions_discussion_board_user_i_2eaa2baa")
+  @@index([expired_at])
+}
+
+/// Password reset tokens for user account recovery with expiration tracking.
+///
+/// This table stores temporary tokens that allow users to reset their
+/// passwords when they forget their credentials. Each token is associated
+/// with a specific user account and has a limited validity period for
+/// security purposes.
+///
+/// The system generates a unique token when a user requests a password reset
+/// and sends it via email. When the user clicks the reset link, the system
+/// validates the token against this table before allowing password changes.
+///
+/// Security considerations include automatic token expiration and one-time
+/// usage to prevent unauthorized access. {@link discussion_board_users.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account requesting password reset. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Unique reset token generated for password recovery. This token is sent to
+  /// the user's email and must be used within the expiration period.
+  token String
+  
+  /// Timestamp when the reset token expires and becomes invalid. After this
+  /// time, the token cannot be used for password recovery.
+  expired_at DateTime
+  
+  /// Timestamp when the reset token was successfully used to change the
+  /// password. Null indicates the token is still available for use.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the password reset record was soft deleted for security
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_password_resets_discussion_board_64b31903")
+  @@index([expired_at])
+  @@index([used_at])
+}
+
+/// Email verification tokens for user registration confirmation.
+///
+/// This table stores verification tokens that are sent to users during the
+/// registration process to confirm their email addresses. Each token is
+/// unique and has a limited validity period to ensure security. Once a user
+/// successfully verifies their email using the token, the verification
+/// record is marked as completed and the user account becomes fully
+/// activated.
+///
+/// Tokens are generated when users register and are sent via email. Users
+/// must click the verification link containing the token within the
+/// expiration period to complete their registration. This process prevents
+/// fake registrations and ensures email address validity.
+///
+/// {@link discussion_board_users.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user account requiring email verification. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Unique verification token sent to the user's email address for
+  /// confirmation.
+  token String
+  
+  /// Timestamp when the verification token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the user successfully verified their email address using
+  /// this token.
+  verified_at DateTime?
+  
+  /// Timestamp when the verification token was created.
+  created_at DateTime
+  
+  /// Timestamp when the verification record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_email_verifications_discussion_b_963a8f72")
+  @@index([expires_at])
+}
+
+/// Administrator accounts with email/password credentials and administrative
+/// privileges. This table serves as the canonical identity record for
+/// administrators in the system, providing authentication capabilities and
+/// basic profile information. Administrators have elevated privileges for
+/// content moderation, section management, and user banning. {@link
+/// discussion_board_admin_sessions} tracks login sessions, {@link
+/// discussion_board_admin_password_resets} handles password recovery, and
+/// {@link discussion_board_admin_email_verifications} manages email
+/// verification workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's email address used for authentication and communication.
+  /// Must be unique across all administrator accounts.
+  email String
+  
+  /// Hashed password for administrator authentication using secure hashing
+  /// algorithms.
+  password_hash String
+  
+  /// Public display name shown to other users when this administrator performs
+  /// actions or creates content.
+  display_name String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted, allowing for
+  /// account recovery if needed.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions discussion_board_admin_sessions[]
+  passwordResets discussion_board_admin_password_resets[]
+  emailVerifications discussion_board_admin_email_verifications[]
+  auditActions discussion_board_audit_logs[]
+  promotionApprovals discussion_board_administrator_promotion_approvals[]
+  contentModerationLogs discussion_board_content_moderation_logs[]
+  systemActivities discussion_board_system_activities[]
+  backupRecords discussion_board_backup_records[]
+  maintenanceSchedules discussion_board_maintenance_schedules[] @relation("discussion_board_maintenance_schedules_of_scheduled_by_admin_id")
+  performedMaintenances discussion_board_maintenance_schedules[] @relation("discussion_board_maintenance_schedules_of_performed_by_admin_id")
+  apiRateLimits discussion_board_api_rate_limits[]
+  securityEvents discussion_board_security_events[]
+  createdSections discussion_board_sections[] @relation("discussion_board_sections_of_created_by_admin_id")
+  modifiedSections discussion_board_sections[] @relation("discussion_board_sections_of_last_modified_by_admin_id")
+  sectionAssignments discussion_board_section_administrators[]
+  commentModerations discussion_board_comment_moderations[]
+  reviewedCommentFlags discussion_board_comment_flags[]
+  commentEditHistories discussion_board_comment_edit_history_of_admins[]
+  administratorAssignments discussion_board_administrators[]
+  issuedBans discussion_board_user_bans[]
+  moderationLogs discussion_board_moderation_logs[]
+  assignedModerationQueues discussion_board_content_moderation_queues[] @relation("discussion_board_content_moderation_queues_of_assigned_admin_id")
+  escalatedModerationQueues discussion_board_content_moderation_queues[] @relation("discussion_board_content_moderation_queues_of_escalate_b0a092a7")
+  moderationHistories discussion_board_moderated_content_histories[]
+  gradeChanges discussion_board_administrator_grade_changes[] @relation("discussion_board_administrator_grade_changes_of_admini_fb0d55d5")
+  performedGradeChanges discussion_board_administrator_grade_changes[] @relation("discussion_board_administrator_grade_changes_of_change_fdba0107")
+  reviewedBanAppeals discussion_board_ban_appeals[]
+  reviewedContentFlags discussion_board_content_flags[]
+  issuedBanRecords discussion_board_ban_record_of_admins[]
+  contentModerationQueueAssignments discussion_board_content_moderation_queue_assignments[]
+  moderationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__d7ae31e7")
+  assignedModerationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__be5209ae")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Tracks administrator login sessions with JWT token management and
+/// connection metadata. Each session represents an authenticated
+/// administrator session with access and refresh token support. Sessions are
+/// managed through authentication flows and provide audit trail for
+/// administrator access.
+///
+/// This table stores JWT session tokens for administrator authentication,
+/// including access tokens for API authorization and refresh tokens for
+/// session renewal. Each session records connection context such as IP
+/// address, user agent, and referrer information for security auditing.
+/// Sessions have expiration tracking to enforce security policies and
+/// prevent indefinite access.
+///
+/// The relationship with {@link discussion_board_admins} establishes the
+/// administrator ownership of sessions, allowing multiple concurrent
+/// sessions per administrator while maintaining individual session
+/// management. This supports features like session revocation, multi-device
+/// access, and security monitoring for administrator accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated administrator's {@link discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// JWT access token used for API authorization and authentication.
+  access_token String
+  
+  /// JWT refresh token used for session renewal when access token expires.
+  refresh_token String
+  
+  /// IP address of the client connection for security auditing and geographic
+  /// tracking.
+  ip String
+  
+  /// User agent string identifying the client browser or application making
+  /// the request.
+  user_agent String
+  
+  /// HTTP referrer header indicating the source page that initiated the
+  /// session creation.
+  referrer String?
+  
+  /// Timestamp when the session was created and authentication occurred.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and requires re-authentication.
+  expired_at DateTime
+  
+  /// Timestamp of the most recent API request using this session for activity
+  /// tracking.
+  last_accessed_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([access_token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_sessions_discussion_board_admin_56d4dfa1")
+  @@index([expired_at])
+}
+
+/// Password reset tokens for administrator account recovery with expiration
+/// tracking.
+///
+/// This table stores temporary tokens generated when administrators request
+/// password resets. Each token has a limited validity period and can only be
+/// used once. The system generates a unique token per reset request and
+/// associates it with the specific administrator account requiring password
+/// recovery.
+///
+/// When an administrator initiates a password reset, the system creates a
+/// record here with an expiration timestamp. Once the administrator uses the
+/// token to reset their password or the token expires, the record becomes
+/// invalid for security purposes.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator account requiring password reset. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// Unique password reset token generated for the administrator.
+  token String
+  
+  /// Timestamp when the password reset token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was successfully used to change
+  /// the password.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_password_resets_discussion_boar_ba216150")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for administrator registration confirmation.
+///
+/// Stores verification tokens sent to administrator email addresses during
+/// registration or email change processes. Each token has an expiration
+/// period and is associated with a specific administrator account. Once
+/// verified, the token is marked as used to prevent reuse.
+///
+/// This table supports the administrator authentication workflow by ensuring
+/// email addresses are valid and belong to the registering administrator.
+/// Tokens are generated during registration and verified when administrators
+/// click the verification link in their email.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator account requiring email verification. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// Unique verification token sent to the administrator's email address.
+  token String
+  
+  /// Email address being verified. This ensures the token is used for the
+  /// correct email.
+  email String
+  
+  /// Timestamp when the verification token expires and becomes invalid.
+  expired_at DateTime
+  
+  /// Timestamp when the email verification was successfully completed.
+  verified_at DateTime?
+  
+  /// Timestamp when the verification token was created.
+  created_at DateTime
+  
+  /// Timestamp when the verification record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_email_verifications_discussion__207fcdbb")
+  @@index([expired_at])
+}
+
+/// Super administrator accounts with elevated privileges and system-wide
+/// control.
+///
+/// Represents the highest privilege level in the system with capabilities to
+/// promote/demote other administrators, manage system-wide settings, and
+/// perform all administrative functions. Super administrators have complete
+/// control over the platform and can manage regular administrators.
+///
+/// This table stores authentication credentials and privilege information
+/// for super administrators. Each super administrator has a unique email
+/// address and password hash for secure login. The table maintains audit
+/// trails through standard temporal fields.
+///
+/// Super administrators can perform all actions available to regular
+/// administrators plus additional system-wide management capabilities. They
+/// are responsible for maintaining the administrator hierarchy and ensuring
+/// platform security.
+///
+/// {@link discussion_board_super_admin_sessions.id} tracks login sessions,
+/// {@link discussion_board_super_admin_password_resets.id} handles password
+/// recovery, and {@link discussion_board_super_admin_email_verifications.id}
+/// manages email verification workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for super administrator authentication and
+  /// communication.
+  email String
+  
+  /// Securely hashed password for authentication. Uses industry-standard
+  /// hashing algorithms.
+  password_hash String
+  
+  /// Privilege level indicator for super administrator capabilities. Used for
+  /// fine-grained permission control.
+  privilege_level String
+  
+  /// Timestamp when the super administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the super administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the super administrator account was soft-deleted. Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions discussion_board_super_admin_sessions[]
+  passwordResets discussion_board_super_admin_password_resets[]
+  emailVerification discussion_board_super_admin_email_verifications?
+  auditActions discussion_board_audit_logs[]
+  systemActivities discussion_board_system_activities[]
+  apiRateLimits discussion_board_api_rate_limits[]
+  securityEvents discussion_board_security_events[]
+  sectionAssignments discussion_board_section_administrators[]
+  commentEditHistories discussion_board_comment_edit_history_of_super_admins[]
+  administratorAssignments discussion_board_administrators[]
+  moderationLogs discussion_board_moderation_logs[]
+  moderationHistories discussion_board_moderated_content_histories[]
+  issuedBanRecords discussion_board_ban_record_of_super_admins[]
+  moderationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__5309fe28")
+  assignedModerationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__6cd5d4e6")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([privilege_level, created_at])
+}
+
+/// JWT session tokens for super administrator authentication with access and
+/// refresh token support.
+///
+/// This table stores authentication sessions for super administrators,
+/// tracking their login activity, connection context, and token management.
+/// Each session belongs to exactly one super administrator and contains the
+/// necessary authentication tokens along with audit information for security
+/// monitoring.
+///
+/// The session records enable secure authentication flow management, token
+/// expiration tracking, and connection auditing for compliance purposes.
+/// Sessions are managed through the authentication system rather than direct
+/// user CRUD operations.
+///
+/// {@link discussion_board_super_admins.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged super administrator's {@link discussion_board_super_admins.id}.
+  discussion_board_super_admin_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for token renewal.
+  refresh_token String
+  
+  /// IP address of the connection where the session was created.
+  ip String
+  
+  /// Full URL of the page where the session was created.
+  href String
+  
+  /// Referrer URL that directed to the session creation page.
+  referrer String
+  
+  /// Timestamp when the session tokens expire and require renewal.
+  expired_at DateTime
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([access_token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_super_admin_sessions_discussion_board_e169161e")
+  @@index([expired_at])
+}
+
+/// Password reset tokens for super administrator account recovery with
+/// expiration tracking.
+///
+/// This table stores temporary tokens that allow super administrators to
+/// reset their passwords securely. Each token is associated with a specific
+/// super administrator account and has a limited validity period to prevent
+/// unauthorized access. The system generates these tokens when a super
+/// administrator requests a password reset and invalidates them after use or
+/// expiration.
+///
+/// Tokens are single-use only and automatically expire after a configured
+/// time period. The table tracks when tokens are used to prevent replay
+/// attacks and ensures that each reset request can only be completed once.
+/// This security mechanism protects super administrator accounts while
+/// maintaining accessibility for legitimate password recovery scenarios.
+///
+/// {@link discussion_board_super_admins.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super administrator account requesting password reset. {@link
+  /// discussion_board_super_admins.id}
+  discussion_board_super_admin_id String
+  
+  /// Unique reset token used for password recovery verification. This token is
+  /// sent to the super administrator's email and must match exactly for the
+  /// reset process to proceed.
+  token String
+  
+  /// Timestamp when this reset token expires and becomes invalid. After this
+  /// time, the token cannot be used for password recovery and a new request
+  /// must be made.
+  expired_at DateTime
+  
+  /// Timestamp when this reset token was successfully used to reset the
+  /// password. Null indicates the token has not been used yet.
+  used_at DateTime?
+  
+  /// Timestamp when this password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when this password reset token record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_super_admin_password_resets_discussio_3a6d7280")
+  @@index([expired_at])
+}
+
+/// Email verification tokens for super administrator registration confirmation.
+///
+/// Stores secure verification tokens used during super administrator
+/// registration process to validate email ownership. Each token is tied to a
+/// specific super administrator account and includes expiration tracking for
+/// security. Verification status is tracked to prevent multiple verification
+/// attempts.
+///
+/// Relationships:
+/// - Belongs to one {@link discussion_board_super_admins.super admin account}
+/// - Verification token is used once and then expired
+///
+/// Security Considerations:
+/// - Tokens are hashed before storage
+/// - Expiration prevents indefinite verification windows
+/// - One token per pending verification to prevent token reuse
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_super_admin_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target super administrator's {@link discussion_board_super_admins.id}
+  /// awaiting email verification.
+  discussion_board_super_admin_id String
+  
+  /// Hashed verification token sent to super administrator's email address.
+  /// Generated using secure cryptographic hash function to prevent token
+  /// exposure in database logs or backups.
+  token_hash String
+  
+  /// Timestamp when this validation token expires and can no longer be used
+  /// for verification. Typically set to 24 hours after creation for security.
+  expired_at DateTime
+  
+  /// Timestamp when email verification was successfully completed using this
+  /// token. Null indicates pending verification.
+  verified_at DateTime?
+  
+  /// Timestamp when this verification token was created as part of
+  /// registration process.
+  created_at DateTime
+  
+  /// Timestamp when this verification record was last updated, typically when
+  /// verification is completed.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_super_admin_id], map: "discussion_board_super_admin_email_verifications_discu_8d695432")
+  @@index([token_hash])
+  @@index([expired_at])
+  // spellchecker: ignore-next-line
+  @@index([verified_at], map: "discussion_board_super_admin_email_verifications_verif_30763333")
+}

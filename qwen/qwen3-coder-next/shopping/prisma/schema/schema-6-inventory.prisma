@@ -1,0 +1,120 @@
+/// Complete history of all stock quantity changes for each product variant.
+/// This table records every inventory adjustment, order deduction, restock,
+/// and refund operation as individual records, providing a complete audit
+/// trail for stock movement analysis and reconciliation.
+///
+/// Key business requirements:
+/// - Records ALL stock quantity changes (positive for restock, negative for
+/// orders/deductions)
+/// - Preserves complete history permanently for audit purposes
+/// - Enables current stock calculation by summing all records for a variant
+/// - Links to specific order IDs when applicable for traceability
+/// - Uses reason codes to categorize different types of stock movements
+///
+/// Related entities: {@link shopping_mall_product_variants} (stock changes
+/// for specific variants)
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant this inventory change applies to. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Order item that caused this change (for order-related
+  /// deductions/restorations). {@link shopping_mall_order_items.id}. Nullable
+  /// for manual adjustments.
+  shopping_mall_order_item_id String?
+  
+  /// Seller who performed this inventory operation (for manual adjustments).
+  /// {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String?
+  
+  /// Change in stock quantity. Positive values indicate stock additions
+  /// (restocks, returns), negative values indicate stock removals (orders,
+  /// adjustments, losses).
+  quantity_change Int
+  
+  /// Reason code categorizing this inventory change. Valid values: 'order'
+  /// (customer purchase), 'order_cancellation' (cancelled order restoration),
+  /// 'refund' (refunded item restoration), 'restock' (supplier shipment),
+  /// 'adjustment' (manual inventory adjustment), 'loss' (damage/loss).
+  reason String
+  
+  /// Timestamp when this inventory record was created.
+  created_at DateTime
+  
+  /// Optional JSON metadata for additional context about this inventory change
+  /// (e.g., shipment tracking, batch number, adjustment notes).
+  metadata String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items? @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_histories_shopping_mall_produc_065e82e8")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_inventory_histories_shopping_mall_order__ee71ffa6")
+  @@index([shopping_mall_seller_id])
+  @@index([reason, created_at])
+}
+
+/// Current stock quantity for each product variant, calculated as sum of all
+/// inventory history records. This table provides real-time stock
+/// availability for order processing and inventory management. Stock
+/// quantities are computed by summing all quantity_change values from
+/// shopping_mall_inventory_histories for each product variant.
+///
+/// This is a subsidiary table because stock quantities are not independently
+/// managed by users but are computed from inventory history records. Users
+/// interact with inventory through stock adjustments (which create history
+/// records) rather than directly editing stock quantities.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_variant_stocks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant this stock record tracks.
+  product_variant_id String
+  
+  /// Current stock quantity calculated as sum of all inventory history
+  /// records. Non-negative integer representing available units for sale.
+  current_quantity Int
+  
+  /// When this stock record was created (when first inventory transaction
+  /// occurred).
+  created_at DateTime
+  
+  /// When this stock record was last updated (last inventory transaction).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([product_variant_id])
+}

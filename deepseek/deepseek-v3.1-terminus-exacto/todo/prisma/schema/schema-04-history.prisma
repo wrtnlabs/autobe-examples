@@ -1,0 +1,358 @@
+/// Main history table that records each edit operation performed on todos
+/// with timestamp and user context. This table serves as the primary audit
+/// trail for todo modifications, capturing when changes were made and by
+/// whom. Each entry represents a distinct edit event that may involve
+/// changes to title, description, start date, or due date fields. The
+/// history entries are immutable once created and provide comprehensive
+/// tracking for compliance and user transparency.
+///
+/// This table works in conjunction with child tables that track individual
+/// field changes, ensuring proper normalization and granular audit
+/// capabilities. Users can view complete edit histories for each todo,
+/// including who made changes and when specific fields were modified.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo being edited. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Reference to the user who performed the edit. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Timestamp when the history entry was created. Records when the edit
+  /// operation occurred.
+  created_at DateTime
+  
+  /// Timestamp when the history entry was last updated. Typically matches
+  /// created_at since history entries are immutable.
+  updated_at DateTime
+  
+  /// Timestamp when the history entry was soft deleted. Used for audit trail
+  /// preservation while supporting cleanup operations.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  fieldChanges todo_app_todo_history_changes[]
+  snapshotEvents todo_app_todo_history_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Field-level change tracking that records specific field modifications
+/// within each history entry.
+///
+/// This table captures individual field changes that occur during todo
+/// edits, providing granular audit trail capabilities. Each record
+/// represents a single field modification within a broader edit operation
+/// recorded in {@link todo_app_todo_histories}. The table supports tracking
+/// changes to title, description, start date, and due date fields with both
+/// previous and new values stored for complete change history.
+///
+/// The design ensures comprehensive audit capabilities while maintaining
+/// data integrity through proper foreign key relationships and indexing
+/// strategies.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_history_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent history entry reference. {@link todo_app_todo_histories.id}
+  todo_app_todo_history_id String
+  
+  /// Name of the field that was modified (title, description, start_date,
+  /// due_date).
+  field_name String
+  
+  /// Value of the field before the edit operation.
+  previous_value String?
+  
+  /// Value of the field after the edit operation.
+  new_value String?
+  
+  /// Timestamp when this field change was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  history todo_app_todo_histories @relation(fields: [todo_app_todo_history_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_history_id, field_name], map: "todo_app_todo_history_changes_todo_app_todo_history_id_3112d2d1")
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_history_id, created_at], map: "todo_app_todo_history_changes_todo_app_todo_history_id_67072ea5")
+}
+
+/// Tracks the creation of history snapshots for audit trail purposes. This
+/// table records when snapshots are generated from todo history entries,
+/// serving as metadata for the snapshot creation process rather than storing
+/// the actual snapshot data.
+///
+/// Each entry represents a snapshot generation event, linking back to the
+/// specific history entry that triggered the snapshot creation. This table
+/// works in conjunction with {@link todo_app_todo_histories} to track
+/// snapshot operations and with the actual snapshot storage tables for
+/// complete audit trail functionality.
+///
+/// The primary purpose is to maintain an audit trail of when snapshots were
+/// created, allowing the system to track snapshot generation patterns and
+/// manage snapshot lifecycle operations.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_history_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the history entry that triggered this snapshot creation.
+  /// {@link todo_app_todo_histories.id}
+  todo_app_todo_history_id String
+  
+  /// Timestamp when this snapshot event was recorded, representing when the
+  /// snapshot generation occurred.
+  snapshot_created_at DateTime
+  
+  /// Timestamp when this snapshot event record was created in the database.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  history todo_app_todo_histories @relation(fields: [todo_app_todo_history_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotItems todo_app_todo_history_snapshot_items[]
+  metadatum todo_app_todo_history_snapshot_metadata?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_history_id])
+  @@index([snapshot_created_at])
+}
+
+/// System metadata table for history tracking configuration and cleanup
+/// management.
+///
+/// This table stores configuration settings, cleanup policies, retention
+/// periods, and operational metadata for the history tracking system. It
+/// supports the main history tables by providing system-level configuration
+/// and management capabilities.
+///
+/// The metadata includes settings for automatic cleanup operations,
+/// retention policies for historical data, and configuration parameters that
+/// control how the history system operates. This ensures consistent behavior
+/// across the history tracking functionality and provides audit trails for
+/// system operations.
+///
+/// {@link todo_app_todo_histories} and other history tables reference these
+/// configuration settings to determine retention periods and cleanup
+/// behavior.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_history_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique key identifier for the configuration setting.
+  config_key String
+  
+  /// Value of the configuration setting.
+  config_value String
+  
+  /// Description of what this configuration setting controls.
+  config_description String
+  
+  /// Whether this configuration setting is currently active.
+  is_active Boolean
+  
+  /// Number of days to retain history data before automatic cleanup.
+  retention_days Int?
+  
+  /// Frequency of automatic cleanup operations (daily, weekly, monthly).
+  cleanup_frequency String?
+  
+  /// Maximum number of history entries to retain per todo item.
+  max_history_entries Int?
+  
+  /// Timestamp when this configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([config_key])
+  @@index([is_active, created_at])
+}
+
+/// Stores denormalized point-in-time snapshots of todo states for
+/// comprehensive audit trail purposes.
+///
+/// This table captures the complete state of todos at specific edit moments,
+/// including all fields (title, description, start date, due date,
+/// completion status) in a denormalized format optimized for audit trail
+/// queries. Each snapshot item represents the state of a todo at a specific
+/// point in time, allowing for complete historical reconstruction and audit
+/// trail functionality.
+///
+/// The denormalized structure ensures that audit trail queries can retrieve
+/// complete todo states without requiring complex joins across multiple
+/// tables, making historical analysis and recovery operations more
+/// efficient. {@link todo_app_todo_history_snapshots} provides the parent
+/// snapshot context for each set of snapshot items.
+///
+/// This table is essential for supporting edit history viewing, undo
+/// operations, and compliance requirements where complete historical state
+/// information is necessary.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_history_snapshot_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent snapshot that this item belongs to. {@link
+  /// todo_app_todo_history_snapshots.id}
+  todo_app_todo_history_snapshot_id String
+  
+  /// The todo that this snapshot item represents. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// The title of the todo at the time of the snapshot.
+  title String
+  
+  /// The description of the todo at the time of the snapshot. Can be empty if
+  /// no description was set.
+  description String?
+  
+  /// The start date of the todo at the time of the snapshot. Null if no start
+  /// date was set.
+  start_date DateTime?
+  
+  /// The due date of the todo at the time of the snapshot. Null if no due date
+  /// was set.
+  due_date DateTime?
+  
+  /// Whether the todo was completed at the time of the snapshot.
+  is_completed Boolean
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot todo_app_todo_history_snapshots @relation(fields: [todo_app_todo_history_snapshot_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_history_snapshot_id, todo_app_todo_id], map: "todo_app_todo_history_snapshot_items_todo_app_todo_his_0dee6d81")
+}
+
+/// Metadata table for tracking snapshot generation details and audit trail
+/// information.
+///
+/// This table stores metadata specifically related to todo history snapshot
+/// operations, including generation timing, system context, and audit trail
+/// information. It provides supplemental data for the snapshot generation
+/// process that doesn't belong in the main snapshot table.
+///
+/// Each metadata record is associated with a specific snapshot generation
+/// event and contains technical details about the generation process that
+/// support audit requirements and system monitoring. This metadata supports
+/// compliance requirements and provides visibility into snapshot operations
+/// without duplicating parent table attributes.
+///
+/// {@link todo_app_todo_history_snapshots} records reference this metadata
+/// for comprehensive audit trail support.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_history_snapshot_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated snapshot record. {@link
+  /// todo_app_todo_history_snapshots.id}
+  todo_app_todo_history_snapshot_id String
+  
+  /// Duration of the snapshot generation process in milliseconds.
+  generation_duration_ms Int?
+  
+  /// Size of the generated snapshot data in bytes.
+  snapshot_size_bytes Int?
+  
+  /// System context information at the time of snapshot generation.
+  system_context String?
+  
+  /// Hash of the audit trail data for integrity verification.
+  audit_trail_hash String?
+  
+  /// Version identifier for the metadata schema format.
+  metadata_version String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot todo_app_todo_history_snapshots @relation(fields: [todo_app_todo_history_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_todo_history_snapshot_id], map: "todo_app_todo_history_snapshot_metadata_todo_app_todo__a10c2f41")
+  @@index([metadata_version])
+}

@@ -1,0 +1,121 @@
+/// File attachments for articles storing PDF, document, spreadsheet,
+/// presentation, and archive files.
+///
+/// Each file attachment records the original filename as uploaded by the
+/// user, the server-side storage path, file size in bytes for quota
+/// enforcement (10MB individual limit, 50MB total per article), and MIME
+/// type for validation. Supports common document formats including PDF, Word
+/// documents (DOC/DOCX), Excel spreadsheets (XLS/XLSX), PowerPoint
+/// presentations (PPT/PPTX), and archive files (ZIP, RAR, 7Z).
+///
+/// Files are cascade deleted when their parent article is deleted. Maximum
+/// 10 files per article enforced at application layer.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article this file is attached to. Files are cascade deleted when
+  /// article is deleted. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename as uploaded by the user. Preserved for display and
+  /// download purposes. Maximum 255 characters.
+  original_filename String
+  
+  /// Server-side storage path where the file is physically stored. Used for
+  /// file retrieval and deletion operations.
+  storage_path String
+  
+  /// File size in bytes. Used for enforcing the 10MB individual file limit and
+  /// 50MB total limit per article.
+  file_size Int
+  
+  /// MIME type of the file (e.g., application/pdf,
+  /// application/vnd.openxmlformats-officedocument.wordprocessingml.document).
+  /// Used for content-type headers during download and file type validation.
+  mime_type String
+  
+  /// Timestamp when the file was uploaded. Used for chronological ordering of
+  /// attachments.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
+}
+
+/// Image attachments for discussion board articles. Stores JPEG, PNG, GIF,
+/// WebP, and BMP images with original filename for display, storage path,
+/// file size in bytes, MIME type, and pixel dimensions. Limited to 20 images
+/// per article with 5MB individual file limit and 8000x8000 maximum
+/// dimensions. Cascade deleted when parent article is removed. Managed
+/// through article creation and editing operations.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article this image belongs to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Original filename as uploaded by the user, preserved for display
+  /// purposes. Used when users download the image to provide the original
+  /// filename.
+  original_filename String
+  
+  /// Unique storage path where the image file is physically stored.
+  /// System-generated path to prevent filename conflicts and security issues.
+  storage_path String
+  
+  /// Size of the image file in bytes. Maximum allowed is 5MB (5,242,880
+  /// bytes). Used for validation and storage quota tracking.
+  file_size Int
+  
+  /// MIME type of the image. Supported values: image/jpeg, image/png,
+  /// image/gif, image/webp, image/bmp. Used for content-type headers when
+  /// serving images.
+  mime_type String
+  
+  /// Image width in pixels. Maximum allowed is 8000 pixels. Validated during
+  /// upload to ensure image integrity and dimension compliance.
+  width Int
+  
+  /// Image height in pixels. Maximum allowed is 8000 pixels. Validated during
+  /// upload to ensure image integrity and dimension compliance.
+  height Int
+  
+  /// Timestamp when the image was uploaded and attached to the article.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_images_discussion_board_artic_fca3ed55")
+}

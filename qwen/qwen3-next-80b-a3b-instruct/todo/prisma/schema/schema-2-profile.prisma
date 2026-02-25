@@ -1,0 +1,32 @@
+/// Stores the user's display name and profile audit timestamps. Owned
+/// exclusively by the authenticated user and never exposed to others. Only
+/// accessible under user's own session. Display name is a user-presentable
+/// identifier that can be edited at any time but remains private and
+/// non-shareable.
+///
+/// @namespace Profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's public-facing display name. Must be unique within user's own scope
+  /// (enforced by unique index). No other user can view, search, or reference
+  /// this field.
+  display_name String
+  
+  /// Timestamp when profile was created. Records the moment the user account
+  /// was activated.
+  created_at DateTime
+  
+  /// Timestamp when display_name was last modified. Always updated on edit.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([display_name])
+}

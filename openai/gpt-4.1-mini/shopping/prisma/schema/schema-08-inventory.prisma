@@ -1,0 +1,45 @@
+/// Inventory history records capturing stock quantity changes, timestamped
+/// and associated with a specific product variant to enable accurate stock
+/// tracking in the e-commerce platform.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Change in stock quantity. Positive means stock added; negative means
+  /// stock removed.
+  quantity_delta Int
+  
+  /// Text reason explaining the cause of quantity change such as 'restock',
+  /// 'order', or 'refund'.
+  reason String
+  
+  /// Datetime when the inventory change was logged.
+  created_at DateTime
+  
+  /// Datetime of last update to this record, usually same as created_at.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp; null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_histories_shopping_mall_produc_065e82e8")
+}

@@ -1,0 +1,115 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { ICommunityComment } from "../../../../../api/structures/ICommunityComment";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { postCommunityMemberCommentsCommentIdReplies } from "../../../../../providers/postCommunityMemberCommentsCommentIdReplies";
+
+@Controller("/community/member/comments/:commentId/replies")
+export class CommunityMemberCommentsRepliesController {
+  /**
+   * Create a reply to an existing comment, enabling nested threaded discussions with unlimited depth.
+   *
+   * This operation allows authenticated members to respond to any comment within the community platform. The reply is automatically linked to the same post as the parent comment, maintaining thread integrity. The system supports unlimited nesting depth, enabling complex threaded discussions.
+   *
+   * **Authentication and Authorization:**
+   * - User must be authenticated as a member
+   * - User must not be banned from the community where the parent comment's post resides
+   * - The parent comment must exist and not be deleted
+   *
+   * **Validation Rules:**
+   * - Comment content must contain at least 1 non-whitespace character
+   * - Comment content must not exceed 10,000 characters
+   * - Leading and trailing whitespace is stripped from content
+   * - Internal whitespace and line breaks are preserved
+   *
+   * **Database Operations:**
+   * 1. Verify parent comment exists and is not deleted (is_deleted = false)
+   * 2. Retrieve parent comment's post and community information
+   * 3. Verify user is not banned from that community
+   * 4. Create new comment record with parent_id set to the specified commentId
+   * 5. Initialize vote_score, upvote_count, and downvote_count to 0
+   * 6. Set created_at and updated_at to current timestamp
+   * 7. Increment the parent post's comment_count by 1
+   *
+   * **Related Operations:**
+   * - GET /posts/{postId}/comments - Retrieve all comments on a post including nested replies
+   * - POST /posts/{postId}/comments - Create a top-level comment on a post
+   * - PUT /comments/{commentId} - Edit an existing comment
+   * - DELETE /comments/{commentId} - Delete a comment (soft delete)
+   *
+   * @param connection
+   * @param commentId Unique identifier of the parent comment to reply to. The reply will be nested under this comment in the thread hierarchy.
+   * @param body Reply content and metadata. Contains the text content of the reply, which will be stored as a child of the specified parent comment.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation workflow for creating a nested comment reply:
+   *
+   * 1. **Authentication Check**: Extract member ID from JWT token in request headers. Return 401 if not authenticated.
+   *
+   * 2. **Parent Comment Validation**:
+   *    - Query community_comments table where id = commentId
+   *    - Return 404 with error COMMENT_NOT_FOUND if comment doesn't exist
+   *    - Return 400 with error COMMENT_DELETED if is_deleted = true
+   *    - Retrieve community_post_id from parent comment
+   *
+   * 3. **Post and Community Retrieval**:
+   *    - Query community_posts table to get post details including community_id
+   *    - Query community_communities to get community information
+   *
+   * 4. **Ban Check**:
+   *    - Query community_bans table for records where community_id matches and community_member_id = current user's ID
+   *    - Return 403 with error USER_BANNED_FROM_COMMUNITY if banned
+   *
+   * 5. **Content Validation**:
+   *    - Strip leading/trailing whitespace from content
+   *    - Check content is not empty (after stripping) → Return 400 with COMMENT_EMPTY_CONTENT
+   *    - Check content length <= 10,000 characters → Return 400 with COMMENT_TOO_LONG
+   *
+   * 6. **Comment Creation**:
+   *    - INSERT into community_comments:
+   *      - id: generate UUID
+   *      - community_post_id: from parent comment
+   *      - community_member_id: current user's ID
+   *      - parent_id: commentId (the parent comment)
+   *      - content: validated and stripped content
+   *      - vote_score: 0
+   *      - upvote_count: 0
+   *      - downvote_count: 0
+   *      - is_deleted: false
+   *      - created_at: current timestamp
+   *      - updated_at: current timestamp
+   *      - edited_at: null
+   *      - deleted_at: null
+   *
+   * 7. **Update Post Comment Count**:
+   *    - UPDATE community_posts SET comment_count = comment_count + 1 WHERE id = parent comment's community_post_id
+   *
+   * 8. **Response Construction**:
+   *    - Query the newly created comment with author details (join with community_members)
+   *    - Return ICommunityComment object with all fields populated
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async createReply(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityComment.ICreate,
+  ): Promise<ICommunityComment> {
+    try {
+      return await postCommunityMemberCommentsCommentIdReplies({
+        member,
+        commentId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

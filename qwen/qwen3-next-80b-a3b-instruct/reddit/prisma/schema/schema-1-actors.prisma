@@ -1,0 +1,1060 @@
+/// Temporary guest accounts identified by device and session token. Guests
+/// can browse content and initiate interactions but cannot create persistent
+/// accounts or authenticate. Each guest is uniquely identified by session
+/// token or device fingerprint, with data purged after inactivity.
+///
+/// Guests are an actor type because they represent a distinct user identity
+/// category with their own session management, even though they lack
+/// credentials. This separates them from authenticated members and allows
+/// independent tracking of pre-registration engagement.
+///
+/// Does NOT reference any other actor, post, or comment table, as guests are
+/// stateless and ephemeral. All guest sessions are managed via the separate
+/// reddit_community_guest_sessions table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when this guest account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete flag. Nullable; null means active guest. Set to timestamp
+  /// when guest is purged due to inactivity or system cleanup.
+  deleted_at DateTime?
+  
+  /// Unique identifier for the device or browser session used by the guest.
+  /// Used to recognize returning guests.
+  device_id String
+  
+  /// Session token issued to this guest for authentication during their
+  /// session. Must be unique and expire after inactivity.
+  session_token String
+  
+  /// IP address from which this guest accessed the service. Used for abuse
+  /// detection and geographical analytics.
+  ip_address String
+  
+  /// HTTP User-Agent string from the guest's device/browser. Used for client
+  /// type detection and compatibility tracking.
+  user_agent String
+  
+  /// Timestamp of the user's last interaction with the platform. Used to
+  /// determine when to purge inactive guest sessions.
+  last_activity_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions reddit_community_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([session_token])
+  @@unique([device_id])
+  @@index([created_at])
+  @@index([last_activity_at])
+  @@index([deleted_at])
+  @@index([ip_address])
+}
+
+/// Temporary session tokens for guest access without authentication. Tracks
+/// connection metadata for unauthenticated users who interact with the
+/// system without a registered account. Sessions are ephemeral and
+/// automatically expire after a fixed duration. Append-only audit trail of
+/// anonymous access events.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated guest account. {@link
+  /// reddit_community_guests.id}.
+  guest_id String
+  
+  /// IP address used for this session.
+  ip String
+  
+  /// Current URL path accessed during this session.
+  href String
+  
+  /// Referrer URL that brought the guest to the system. May be null if direct
+  /// access or unknown.
+  referrer String?
+  
+  /// Timestamp when this session was initiated.
+  created_at DateTime
+  
+  /// Timestamp when this session will expire. Enforced by system cleanup.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest reddit_community_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([guest_id, created_at])
+}
+
+/// Registered member accounts with email/password credentials for
+/// authentication. This table serves as the canonical identity record for
+/// standard users who can create posts, comments, vote, and manage their
+/// profile. Member accounts have distinct authentication flow from guests
+/// and admins, and are referenced as authors of all user-generated content.
+/// Their karma_score is computed as the sum of upvotes minus downvotes
+/// across all their posts and comments.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for login and communication.
+  email String
+  
+  /// Encrypted password hash for authentication.
+  password_hash String
+  
+  /// User-chosen display identifier, unique across platform. Must be
+  /// alphanumeric plus underscore, 3-30 characters.
+  username String
+  
+  /// Human-readable name displayed publicly. Can be any UTF-8 string up to 100
+  /// characters.
+  display_name String
+  
+  /// Optional self-description by user. Max 500 characters.
+  bio String?
+  
+  /// URL to user's avatar image, stored externally.
+  avatar_url String?
+  
+  /// Total karma score calculated as sum of upvotes minus downvotes across all
+  /// user's posts and comments. Default value is 0.
+  karma_score Int
+  
+  /// Timestamp when user registered.
+  created_at DateTime
+  
+  /// Timestamp of last profile update.
+  updated_at DateTime
+  
+  /// Soft delete flag. When true, user account is deactivated but preserved
+  /// for audit purposes.
+  is_deleted Boolean
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_member_sessions[]
+  passwordResets reddit_community_member_password_resets[]
+  emailVerifications reddit_community_member_email_verifications[]
+  ownedCommunity reddit_community_communities?
+  moderatedCommunities reddit_community_moderators[]
+  bans reddit_community_bans[]
+  subscriptions reddit_community_subscriptions[]
+  posts reddit_community_posts[]
+  postVotes reddit_community_post_votes[]
+  comments reddit_community_comments[]
+  commentVotes reddit_community_comment_votes[]
+  reports reddit_community_reports[] @relation("reddit_community_reports_of_reporter_id")
+  resolvedReports reddit_community_reports[] @relation("reddit_community_reports_of_resolved_by_user_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([is_deleted, created_at])
+  @@index([karma_score])
+  @@index([email, is_deleted])
+  @@index([username, is_deleted])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// support. This table serves as an append-only audit trail of member login
+/// events. Each record represents one session instance established during
+/// login, tracked by IP address and HTTP context for security analysis.
+/// Sessions expire automatically and cannot be modified once created.
+/// Foreign key references the reddit_community_members.actor entity.
+///
+/// Key design principle: This is NOT a user profile or credential store. It
+/// is a historical record of login activity owned by the member actor type.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authenticated member's identity record. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// IP address from which the session was established. Used for security
+  /// monitoring and anomaly detection.
+  ip String
+  
+  /// Full URL path accessed during login. Provides context for the session
+  /// initiation point.
+  href String
+  
+  /// Original page that redirected the user to the login. Used for marketing
+  /// and security analysis.
+  referrer String
+  
+  /// Timestamp when this session was created and the JWT was issued.
+  created_at DateTime
+  
+  /// Timestamp when this session token expires and becomes invalid. Mandatory
+  /// for security enforcement.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_sessions_reddit_community_memb_ebf18d50")
+}
+
+/// Password reset tokens with expiration for member account recovery. Each
+/// token is generated and emailed to the user upon request. The 'used' flag
+/// indicates whether the token has been consumed to reset a password. When a
+/// token is used, it should be considered invalid even if not expired. This
+/// table is managed exclusively by the authentication system, not direct
+/// user operations.
+///
+/// Relates to: {@link reddit_community_members.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the affected member account in reddit_community_members.
+  /// {@link reddit_community_members.id}
+  member_id String
+  
+  /// Randomly generated unique token string for secure password reset access.
+  /// Must be sufficiently long (e.g., 64 characters) to resist brute force.
+  token String
+  
+  /// ISO 8601 timestamp indicating when this reset token expires and becomes
+  /// invalid. Automatically generated upon creation with a 24-hour expiration
+  /// window.
+  expires_at DateTime
+  
+  /// ISO 8601 timestamp when this reset request was generated and sent to the
+  /// user.
+  created_at DateTime
+  
+  /// Indicates whether this password reset token has already been consumed.
+  /// Once set to true, the token is permanently invalidated regardless of
+  /// expiration time. Default is false.
+  used Boolean
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([member_id, expires_at], map: "reddit_community_member_password_resets_member_id_expi_16caa89e")
+}
+
+/// Email verification tokens issued to members for registration confirmation
+/// and email address changes. Each token is valid for a limited time and can
+/// only be used once. Tied to a member account via foreign key. When used,
+/// the member's email address is confirmed and the token is invalidated.
+/// Supports both initial registration and email change workflows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account that requested this email verification.
+  /// {@link reddit_community_members.id}
+  member_id String
+  
+  /// Unique cryptographic token used to verify the email address. Expires
+  /// after set duration.
+  token String
+  
+  /// Datetime when the verification token expires. After this time, the token
+  /// becomes invalid.
+  expires_at DateTime
+  
+  /// Indicates whether the token has been used to verify the email address.
+  /// Defaults to false.
+  is_used Boolean
+  
+  /// Timestamp when the verification token was issued.
+  created_at DateTime
+  
+  /// Timestamp when the token was last updated (e.g., when marked as used).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([member_id, expires_at], map: "reddit_community_member_email_verifications_member_id__32bc2209")
+}
+
+/// Community owner accounts with elevated privileges, using the same
+/// email/password authentication as members. This table serves as the
+/// authoritative identity record for users who create and manage
+/// communities. Each owner has full control over their community's members,
+/// moderators, and content. This table is referenced by
+/// 'reddit_community_communities' as the owner foreign key.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_owners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication.
+  email String
+  
+  /// BCrypt-hashed password for secure authentication.
+  password_hash String
+  
+  /// Unique display username for profile and mentions; alphanumeric +
+  /// underscore only; 3-30 characters.
+  username String
+  
+  /// User's display name; any UTF-8 string up to 100 characters.
+  display_name String
+  
+  /// Optional short biography (max 500 characters).
+  bio String?
+  
+  /// URL to user's avatar image; externally hosted.
+  avatar_url String?
+  
+  /// Total karma score calculated as sum of all upvotes minus downvotes across
+  /// all posts and comments.
+  karma_score Int
+  
+  /// Soft delete flag to mark inactive accounts without deleting data.
+  /// Prevents reuse of email or username.
+  is_deleted Boolean
+  
+  /// Timestamp of account creation (ISO 8601 UTC).
+  created_at DateTime
+  
+  /// Timestamp of last update (ISO 8601 UTC).
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_community_owner_sessions[]
+  passwordResets reddit_community_community_owner_password_resets[]
+  emailVerification reddit_community_community_owner_email_verifications?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([is_deleted])
+  @@index([karma_score])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// JWT session tokens for community owner authentication with access and
+/// refresh support. Append-only audit trail of login events tracked with
+/// connection metadata. Managed solely through authentication flows, not
+/// direct user CRUD. Each session belongs to exactly one community owner.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_owner_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community owner this session belongs to. {@link
+  /// reddit_community_community_owners.id}.
+  reddit_community_community_owner_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// Full URL path the user accessed to initiate this session.
+  href String
+  
+  /// HTTP referrer URL that led the user to this session initiation.
+  referrer String?
+  
+  /// Timestamp when this session was created. Always set to current time.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Must be set at creation and is never
+  /// updated.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  communityOwner reddit_community_community_owners @relation(fields: [reddit_community_community_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_owner_id, created_at], map: "reddit_community_community_owner_sessions_reddit_commu_79ddbe66")
+}
+
+/// Password reset tokens with expiration for community owner account
+/// recovery. Each token is valid for a limited time and becomes unusable
+/// after use. Used exclusively by the reddit_community_community_owners
+/// actor type for secure, revocable password reset flows.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_owner_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the community owner account requesting the password reset.
+  /// {@link reddit_community_community_owners.id}.
+  reddit_community_community_owner_id String
+  
+  /// Unique, randomly generated reset token string. Must be stored securely
+  /// and never loggable.
+  token String
+  
+  /// Absolute UTC timestamp when the reset token expires. Resets become
+  /// invalid after this time.
+  expires_at DateTime
+  
+  /// Boolean flag indicating if the token has been used to reset the password.
+  /// Once true, the token is invalid and should be archived or purged.
+  used Boolean
+  
+  /// ISO 8601 datetime when the password reset token was issued.
+  created_at DateTime
+  
+  /// ISO 8601 datetime of the last update to this record (e.g., when used is
+  /// set to true).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  communityOwner reddit_community_community_owners @relation(fields: [reddit_community_community_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_owner_id], map: "reddit_community_community_owner_password_resets_reddi_cde92ffa")
+  @@unique([token])
+}
+
+/// Email verification tokens issued to community owners during registration
+/// or email change requests. Each token is single-use and expires after 24
+/// hours. Used to confirm email ownership before enabling full access. This
+/// table is subsidiary to reddit_community_community_owners and has a 1:1
+/// relationship with it.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_owner_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community owner this verification token belongs to. {@link
+  /// reddit_community_community_owners.id}.
+  reddit_community_community_owner_id String
+  
+  /// Unique cryptographic token sent to the user's email. Must be URL-safe and
+  /// unguessable.
+  token String
+  
+  /// When this token expires (24 hours after creation). The token becomes
+  /// invalid after this time.
+  expires_at DateTime
+  
+  /// Timestamp when the verification token was issued.
+  created_at DateTime
+  
+  /// Timestamp when the token was last updated (e.g., if regenerated).
+  updated_at DateTime
+  
+  /// Whether this token has been used to verify the email address. Once set to
+  /// true, the token is invalidated.
+  is_used Boolean
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  communityOwner reddit_community_community_owners @relation(fields: [reddit_community_community_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_community_owner_id], map: "reddit_community_community_owner_email_verifications_r_7f0ad650")
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_owner_id], map: "reddit_community_community_owner_email_verifications_r_afed86f3")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "reddit_community_community_owner_email_verifications_c_09a5d5e6")
+  // spellchecker: ignore-next-line
+  @@index([expires_at], map: "reddit_community_community_owner_email_verifications_e_b7ceddcb")
+}
+
+/// Community moderator accounts granted moderation rights, using
+/// email/password authentication like members. Each moderator is associated
+/// with exactly one community they moderate, and their permission is tied to
+/// that community. They cannot moderate other communities without being
+/// explicitly granted permission on those communities. This table holds
+/// authentication credentials and moderation metadata for the actor type.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this moderator is assigned to. {@link
+  /// reddit_community_communities.id}.
+  community_id String
+  
+  /// Unique email address for authentication. Must be verified.
+  email String
+  
+  /// BCrypt-hashed password. Never stored in plaintext.
+  password_hash String
+  
+  /// Unique username for display. Must be alphanumeric + underscore, 3-30
+  /// characters.
+  username String
+  
+  /// Human-readable name shown in UI. Can be any UTF-8 string up to 100
+  /// characters.
+  display_name String
+  
+  /// Optional short biography. Max 500 characters.
+  bio String?
+  
+  /// URL to user avatar image. Must be a valid URI.
+  avatar_url String?
+  
+  /// Total karma score accumulated across all posts and comments. Calculated
+  /// as sum of upvotes minus downvotes.
+  karma_score Int
+  
+  /// Timestamp when the moderator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete flag. When true, moderator is deactivated and cannot
+  /// authenticate or moderate.
+  is_deleted Boolean
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_community_moderator_sessions[]
+  passwordReset reddit_community_community_moderator_password_resets?
+  moderatorEmailVerifications reddit_community_community_moderator_email_verifications[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_id])
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([is_deleted])
+}
+
+/// JWT session tokens for community moderator authentication with access and
+/// refresh support. This table tracks individual login sessions and
+/// connection context for auditing. Each entry represents a single
+/// authentication event associated with an active community moderator. The
+/// table is append-only and managed through the authentication system, not
+/// direct user interaction. Foreign key references
+/// reddit_community_community_moderators.id. When a moderator logs out, the
+/// session expires but remains in the table for audit history. The
+/// expired_at field enforces automatic session termination for security.
+///
+/// Referenced by: User authentication system.
+/// References: {@link reddit_community_community_moderators.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community moderator account whose session this is. {@link
+  /// reddit_community_community_moderators.id}.
+  community_moderator_id String
+  
+  /// The IP address from which the session was initiated. Used for security
+  /// auditing and geolocation-based access control.
+  ip String
+  
+  /// The full URL of the page or endpoint where the user authenticated. Tracks
+  /// entry point for session initiation.
+  href String
+  
+  /// The referrer URL that led the user to the authentication page. Used for
+  /// traffic source analysis and detecting phishing attempts.
+  referrer String
+  
+  /// The exact ISO 8601 timestamp when this session was created. Always
+  /// recorded in UTC. Used for audit trails and session duration calculations.
+  created_at DateTime
+  
+  /// The exact ISO 8601 timestamp when this session expires. For security,
+  /// sessions are automatically invalidated after this time. This field is
+  /// never null to enforce strict session lifetime policy. Used for automatic
+  /// cleanup and session renewal enforcement.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  communityModerator reddit_community_community_moderators @relation(fields: [community_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_moderator_id, created_at], map: "reddit_community_community_moderator_sessions_communit_e410436a")
+}
+
+/// Password reset tokens for community moderators. Each token is single-use
+/// and expires after a set duration. Tied to a community_moderator actor and
+/// managed via authentication flows.
+///
+/// This table follows the session pattern: it tracks recovery attempts,
+/// never directly modified, and is purged after expiration or use. Only one
+/// active reset token per moderator is allowed via unique constraint on
+/// community_moderator_id.
+///
+/// Related Entities: {@link reddit_community_community_moderators}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community moderator's authentication record. {@link
+  /// reddit_community_community_moderators.id}
+  community_moderator_id String
+  
+  /// Unique, cryptographically secure reset token. Must be single-use and
+  /// generated with high entropy.
+  token String
+  
+  /// Absolute timestamp when this password reset token expires. Tokens become
+  /// invalid after this time.
+  expires_at DateTime
+  
+  /// Timestamp when this reset request was generated. Used for audit and
+  /// cleanup.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  communityModerator reddit_community_community_moderators @relation(fields: [community_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_moderator_id], map: "reddit_community_community_moderator_password_resets_c_2a5901d9")
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([community_moderator_id, expires_at], map: "reddit_community_community_moderator_password_resets_c_886dbdfd")
+}
+
+/// Email verification tokens for community moderator registration
+/// confirmation and email changes. Each token is issued once per email
+/// change request and becomes invalid after use or expiration. Used to
+/// securely verify email ownership without requiring password
+/// authentication. Tied 1:many to community moderators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_moderator_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the community moderator account this verification token
+  /// belongs to. {@link reddit_community_community_moderators.id}.
+  reddit_community_community_moderator_id String
+  
+  /// Unique, random, cryptographically secure verification token. Used in
+  /// email links. Expires after use or timeout.
+  token String
+  
+  /// Timestamp when this verification token expires. After this time, token is
+  /// invalid and must be renewed.
+  expires_at DateTime
+  
+  /// Indicates whether this token has been used to confirm an email change.
+  /// Once true, the token is no longer valid.
+  used Boolean
+  
+  /// Timestamp when the verification token was created. Always populated.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated. Typically when used=true is
+  /// set.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator reddit_community_community_moderators @relation(fields: [reddit_community_community_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([token], map: "reddit_community_community_moderator_email_verificatio_ba1b75b2")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_moderator_id, expires_at], map: "reddit_community_community_moderator_email_verificatio_453cd023")
+  // spellchecker: ignore-next-line
+  @@index([used, expires_at], map: "reddit_community_community_moderator_email_verificatio_704b0eb0")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "reddit_community_community_moderator_email_verificatio_a559ca41")
+  // spellchecker: ignore-next-line
+  @@index([updated_at], map: "reddit_community_community_moderator_email_verificatio_a9a5a954")
+}
+
+/// System-level administrator accounts with global authority to manage all
+/// communities, users, and content. These actors have elevated permissions
+/// to override local moderation decisions, handle platform-wide violations,
+/// and manage system settings. Unlike community owners or moderators,
+/// platform admins are not associated with any single community. Each
+/// platform admin is a distinct identity with its own authentication flow,
+/// credential storage, and session management. This table is the canonical
+/// identity record for platform administrators and must be referenced as the
+/// root actor for all global permission checks. Does not correspond to any
+/// other actor type.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication and communication. Must be
+  /// verified during registration.
+  email String
+  
+  /// Cryptographically hashed password for authentication.
+  password_hash String
+  
+  /// Unique public username for display in UI and notifications. Alphanumeric
+  /// and underscore only, 3-30 characters.
+  username String
+  
+  /// Optional display name shown to users. Can be any UTF-8 string up to 100
+  /// characters.
+  display_name String?
+  
+  /// Optional biography or description of the admin. Limited to 500 characters.
+  bio String?
+  
+  /// URL to the admin's avatar image. Must be a valid HTTP/HTTPS URI.
+  avatar_url String?
+  
+  /// Total karma score calculated as sum of all upvotes minus downvotes
+  /// received on all posts and comments made by this admin. Updated via
+  /// triggers on vote changes.
+  karma_score Int
+  
+  /// Timestamp when the platform admin account was created. Always set to the
+  /// creation time.
+  created_at DateTime
+  
+  /// Timestamp when the platform admin account was last updated (e.g., profile
+  /// change). Updated automatically on any field change.
+  updated_at DateTime
+  
+  /// Flag indicating whether the platform admin account has been logically
+  /// deleted (soft delete). When true, account is hidden from most UIs and API
+  /// responses but retained for audit. Default is false.
+  is_deleted Boolean
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_platform_admin_sessions[]
+  passwordResets reddit_community_platform_admin_password_resets[]
+  emailVerification reddit_community_platform_admin_email_verifications?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([is_deleted])
+}
+
+/// JWT session tokens for platform admin authentication with access and
+/// refresh support. Stores connection context for audit and security
+/// tracking. Each session is bound to exactly one platform_admin account and
+/// expires after a fixed duration for security. Never stores sensitive
+/// credentials or tokens - only metadata about the login event.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform admin account this session belongs to. {@link
+  /// reddit_community_platform_admins.id}.
+  platform_admin_id String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// The URI of the resource that initiated the session, e.g.,
+  /// 'https://example.com/login'.
+  href String
+  
+  /// The previous page URI from which the user navigated to initiate the
+  /// session.
+  referrer String?
+  
+  /// Timestamp when the session was created. Used for session lifecycle
+  /// tracking.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. Mandatory for session security;
+  /// sessions are invalid after this time.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  platformAdmin reddit_community_platform_admins @relation(fields: [platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([platform_admin_id, created_at], map: "reddit_community_platform_admin_sessions_platform_admi_2d65b5a1")
+}
+
+/// Password reset tokens with expiration for platform admin account
+/// recovery. Each reset token is tied to a single platform admin and expires
+/// after a fixed duration. Used to securely authorize password changes
+/// without requiring email delivery. Tokens are one-time use and invalidated
+/// upon reset or expiration.
+///
+/// @link reddit_community_platform_admins.id
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The platform admin who requested this password reset. {@link
+  /// reddit_community_platform_admins.id}.
+  reddit_community_platform_admin_id String
+  
+  /// Unique, cryptographically secure reset token. Must be invalidated after
+  /// use.
+  token String
+  
+  /// Timestamp when this reset token expires and becomes unusable.
+  expires_at DateTime
+  
+  /// Timestamp when this reset request was generated.
+  created_at DateTime
+  
+  /// Timestamp when this reset token was last modified (e.g., consumed or
+  /// renewed).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  platformAdmin reddit_community_platform_admins @relation(fields: [reddit_community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_platform_admin_id], map: "reddit_community_platform_admin_password_resets_reddit_4d56e9b4")
+  @@unique([token])
+}
+
+/// Email verification tokens for platform admin registration confirmation
+/// and email changes. Each token is unique, single-use, and expires within
+/// 24 hours. Only one active verification per platform admin is allowed.
+/// This table supports both initial registration and email change workflows.
+/// Refers to platform_admins table for identity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_platform_admin_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Platform admin who owns this verification token. {@link
+  /// reddit_community_platform_admins.id}.
+  reddit_community_platform_admin_id String
+  
+  /// Unique, cryptographically random verification token sent to user's email.
+  token String
+  
+  /// Timestamp when this verification token expires. All tokens expire 24
+  /// hours after creation.
+  expires_at DateTime
+  
+  /// Timestamp when this verification record was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last modified.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. Indicates when this verification was revoked or
+  /// completed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin reddit_community_platform_admins @relation(fields: [reddit_community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_platform_admin_id], map: "reddit_community_platform_admin_email_verifications_re_19629b47")
+  // spellchecker: ignore-next-line
+  @@index([expires_at], map: "reddit_community_platform_admin_email_verifications_ex_b56326e3")
+}

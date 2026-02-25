@@ -1,0 +1,544 @@
+/// Main sections table storing core section information for organizing
+/// discussion board content.
+///
+/// Sections serve as the primary organizational structure for the discussion
+/// board, categorizing articles by topics such as Politics, Economy, and
+/// Current Affairs. Each section contains a name, description, and metadata
+/// about its creation and management.
+///
+/// Sections are created and managed exclusively by administrators. Regular
+/// users can browse sections and post articles within them, but cannot
+/// create or modify section definitions. The table maintains audit trails
+/// through snapshot relationships and tracks section statistics separately.
+///
+/// {@link discussion_board_section_snapshots} provides version history for
+/// section changes.
+/// {@link discussion_board_section_statistics} tracks usage metrics and
+/// engagement data.
+/// {@link discussion_board_section_administrators} manages administrator
+/// permissions for each section.
+/// {@link discussion_board_admins} and {@link discussion_board_super_admins}
+/// are the administrator entities that create and manage sections.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who created this section. References either regular admin
+  /// or super admin. {@link discussion_board_admins.id} or {@link
+  /// discussion_board_super_admins.id}.
+  created_by_admin_id String
+  
+  /// Administrator who last modified this section. References either regular
+  /// admin or super admin. {@link discussion_board_admins.id} or {@link
+  /// discussion_board_super_admins.id}.
+  last_modified_by_admin_id String?
+  
+  /// Unique name of the section used for display and URL generation.
+  name String
+  
+  /// Detailed description explaining the section's purpose and content scope.
+  description String
+  
+  /// Current status of the section: 'active', 'inactive', or 'archived'.
+  status String
+  
+  /// Numerical order for displaying sections in the user interface.
+  display_order Int
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft-deleted (archived).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  createdByAdmin discussion_board_admins @relation("discussion_board_sections_of_created_by_admin_id", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  lastModifiedByAdmin discussion_board_admins? @relation("discussion_board_sections_of_last_modified_by_admin_id", fields: [last_modified_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  auditActions discussion_board_audit_logs[]
+  snapshots discussion_board_section_snapshots[]
+  statistic discussion_board_section_statistics?
+  administratorAssignments discussion_board_section_administrators[]
+  preferences discussion_board_section_preferences[]
+  archive discussion_board_section_archives?
+  files discussion_board_section_files[]
+  images discussion_board_section_images[]
+  articles discussion_board_articles[]
+  moderationLogs discussion_board_moderation_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([status, display_order])
+  @@index([created_by_admin_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([last_modified_by_admin_id, updated_at], map: "discussion_board_sections_last_modified_by_admin_id_up_0336caf0")
+}
+
+/// Point-in-time snapshots of section data for audit trail and version history.
+///
+/// This table captures the complete state of a section at specific moments
+/// in time, typically when modifications are made by administrators. Each
+/// snapshot preserves the section's name, description, and configuration
+/// settings as they existed at the time of capture, enabling historical
+/// tracking of changes and supporting audit requirements.
+///
+/// The snapshots are created automatically when section data is modified and
+/// serve as an immutable record of section evolution. This supports
+/// compliance requirements, facilitates rollback capabilities, and provides
+/// administrators with visibility into section modification history.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original section being snapshotted. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Section name as it existed at the time of snapshot.
+  name String
+  
+  /// Section description as it existed at the time of snapshot.
+  description String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated (typically matches
+  /// created_at for snapshots).
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_39571b0c")
+}
+
+/// Usage statistics and analytics for discussion board sections tracking
+/// view counts, content activity, and engagement metrics.
+///
+/// This table provides comprehensive analytics for each section including
+/// view counts, article creation rates, comment activity, and engagement
+/// metrics. The statistics are updated automatically as users interact with
+/// content in each section.
+///
+/// Key relationships include linkage to {@link discussion_board_sections.id}
+/// for section reference and integration with article and comment counting
+/// systems.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_statistics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section these statistics belong to. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Total number of views for all articles within this section.
+  view_count Int
+  
+  /// Total number of articles published in this section.
+  article_count Int
+  
+  /// Total number of comments made on articles in this section.
+  comment_count Int
+  
+  /// Timestamp of the most recent activity (article creation, comment, or
+  /// view) in this section.
+  last_activity_at DateTime
+  
+  /// Timestamp when these statistics were first recorded.
+  created_at DateTime
+  
+  /// Timestamp when these statistics were last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_id], map: "discussion_board_section_statistics_discussion_board_s_fa4ca89f")
+  @@index([last_activity_at])
+}
+
+/// Mapping table linking administrators to sections they manage with
+/// permission levels and assignment tracking.
+///
+/// This table establishes the many-to-many relationship between
+/// administrators and sections, enabling flexible permission management
+/// across the discussion board. Each record represents a specific
+/// administrator's assignment to manage a particular section with defined
+/// permission levels.
+///
+/// The table supports both regular administrators and super administrators,
+/// with permission levels determining the scope of management capabilities
+/// within each section. This design allows for granular control over section
+/// management while maintaining audit trails for assignment changes.
+///
+/// References: {@link discussion_board_admins.id}, {@link
+/// discussion_board_super_admins.id}, {@link discussion_board_sections.id}
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the regular administrator assigned to this section. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String?
+  
+  /// Reference to the super administrator assigned to this section. {@link
+  /// discussion_board_super_admins.id}
+  discussion_board_super_admin_id String?
+  
+  /// Reference to the section being managed. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Permission level assigned to the administrator for this section.
+  /// Determines what actions they can perform within the section.
+  permission_level String
+  
+  /// Date when the administrator was assigned to manage this section.
+  assignment_date DateTime
+  
+  /// Timestamp when this assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this assignment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this assignment was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_admin_id, discussion_board_section_id], map: "discussion_board_section_administrators_discussion_boa_728d3f9a")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_super_admin_id, discussion_board_section_id], map: "discussion_board_section_administrators_discussion_boa_e3773ce3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, permission_level], map: "discussion_board_section_administrators_discussion_boa_4bb66fef")
+  // spellchecker: ignore-next-line
+  @@index([permission_level, assignment_date], map: "discussion_board_section_administrators_permission_lev_91b53ce8")
+  @@index([created_at])
+}
+
+/// Stores user-specific preferences for section display order,
+/// notifications, and customization settings.
+///
+/// Each record represents a user's personalized configuration for how they
+/// want sections to be displayed and what notifications they wish to
+/// receive. This includes display order preferences, notification toggles
+/// for new articles, and custom section visibility settings.
+///
+/// Users can customize their section browsing experience through these
+/// preferences, allowing for personalized content organization. The
+/// preferences are stored per user per section, enabling granular control
+/// over the user interface.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section being configured. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Reference to the user who owns these preferences. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// User-defined display order for this section relative to other sections.
+  display_order Int
+  
+  /// Whether the user wants to receive notifications for new articles in this
+  /// section.
+  notify_new_articles Boolean
+  
+  /// Whether the user wants to receive notifications for new comments in this
+  /// section.
+  notify_new_comments Boolean
+  
+  /// Whether the user has hidden this section from their view.
+  is_hidden Boolean
+  
+  /// Timestamp when the preference record was created.
+  created_at DateTime
+  
+  /// Timestamp when the preference record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_user_id, discussion_board_section_id], map: "discussion_board_section_preferences_discussion_board__0b3713b4")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, display_order], map: "discussion_board_section_preferences_discussion_board__707945ca")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, notify_new_articles], map: "discussion_board_section_preferences_discussion_board__76b44e43")
+}
+
+/// Archived sections preserving historical data while preventing new content
+/// creation.
+///
+/// This table stores sections that have been archived by administrators.
+/// Archived sections retain all their historical data including articles and
+/// comments, but prevent new content creation. The archival process
+/// preserves the section's state at the time of archival while maintaining
+/// referential integrity with existing content.
+///
+/// When a section is archived, administrators can specify a reason for
+/// archival. Archived sections remain accessible for viewing historical
+/// content but cannot be modified or receive new contributions. This allows
+/// for preserving valuable discussion history while managing active sections
+/// effectively.
+///
+/// Archived sections maintain their relationship to {@link
+/// discussion_board_sections.id} and can be referenced by existing articles
+/// and comments that belong to the section.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_archives {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original section being archived. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Timestamp when the section was archived by an administrator.
+  archived_at DateTime
+  
+  /// Reference to the administrator who performed the archival action. {@link
+  /// discussion_board_admins.id}
+  archived_by String
+  
+  /// Explanation for why the section was archived, providing context for the
+  /// administrative decision.
+  reason String
+  
+  /// Timestamp when the archive record was created.
+  created_at DateTime
+  
+  /// Timestamp when the archive record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_id], map: "discussion_board_section_archives_discussion_board_sec_c978e527")
+  @@index([archived_at])
+  @@index([archived_by])
+}
+
+/// Supporting files and documents attached to sections for reference or
+/// guidelines.
+///
+/// This table stores files that administrators can attach to sections to
+/// provide additional resources, guidelines, or reference materials. Each
+/// file is associated with exactly one section and includes metadata such as
+/// filename, file type, and file size for proper management and display.
+///
+/// Files in this table are managed through section operations and are not
+/// independently created or managed by users. They serve as supplementary
+/// materials that enhance the section's content and utility for users
+/// browsing the discussion board.
+///
+/// {@link discussion_board_sections.id}
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated section's {@link discussion_board_sections.id}.
+  discussion_board_section_id String
+  
+  /// Original name of the uploaded file as provided by the user.
+  filename String
+  
+  /// MIME type or file extension indicating the file format.
+  file_type String
+  
+  /// Size of the file in bytes for storage and display purposes.
+  file_size Int
+  
+  /// Server-side storage path where the actual file is stored.
+  file_path String
+  
+  /// Optional description of the file's purpose or content.
+  description String?
+  
+  /// Timestamp when the file was uploaded to the system.
+  created_at DateTime
+  
+  /// Timestamp when the file metadata was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the file was soft-deleted, allowing for recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_section_files_discussion_board_sectio_71fe0a43")
+  @@index([file_type])
+}
+
+/// Stores visual content associated with sections including banners, icons,
+/// and promotional images. Each image is linked to a specific section and
+/// contains metadata about the image file such as filename, mime type,
+/// dimensions, and storage information. This table supports the visual
+/// presentation requirements for section browsing and management.
+///
+/// The images stored here are used for section branding and visual
+/// identification. Administrators can upload different types of images for
+/// different purposes (banners for section headers, icons for navigation,
+/// promotional images for featured sections). The table maintains
+/// referential integrity with the parent section and provides image-specific
+/// metadata while avoiding duplication of parent section attributes.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The section that this image belongs to. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Original filename of the uploaded image file.
+  filename String
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
+  mime_type String
+  
+  /// Size of the image file in bytes.
+  file_size Int
+  
+  /// Width of the image in pixels.
+  width Int
+  
+  /// Height of the image in pixels.
+  height Int
+  
+  /// Type of section image (banner, icon, promotional, thumbnail).
+  image_type String
+  
+  /// File system path or storage location identifier for the image.
+  storage_path String
+  
+  /// Alternative text description for accessibility.
+  alt_text String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_id, image_type], map: "discussion_board_section_images_discussion_board_secti_b552eb1b")
+  @@index([image_type])
+  @@index([file_size])
+}

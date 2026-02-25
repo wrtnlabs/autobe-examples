@@ -1,0 +1,107 @@
+/// Tracks all moderation actions performed by moderators, including
+/// deletions of content, community bans, and resolution of user reports.
+/// Each log entry records the action performed, the moderator responsible,
+/// the related report (if any), and the outcome of the moderation action.
+/// Provides an audit trail for all governance activities within the
+/// community.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The specific report that the moderation action was applied to. {@link
+  /// reddit_reports.id}.
+  reddit_reports_id String
+  
+  /// The moderator user profile who performed the action. {@link
+  /// reddit_profiles.id}.
+  reddit_profiles_id String
+  
+  /// Type of moderation action performed (e.g., 'delete_post', 'ban_user',
+  /// 'approve_report').
+  action_type String
+  
+  /// Detailed reason for the moderation action, as provided by the moderator.
+  reason String?
+  
+  /// Outcome of the moderation action (e.g., 'approved', 'dismissed',
+  /// 'deleted').
+  result String
+  
+  /// Additional details about the moderation action, such as specific content
+  /// IDs or resolution steps.
+  details String?
+  
+  /// Timestamp when the moderation log entry was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the moderation log entry.
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was marked as deleted (for soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_reports @relation(fields: [reddit_reports_id], references: [id], onDelete: Cascade)
+  moderator reddit_profiles @relation(fields: [reddit_profiles_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_reports_id])
+  @@index([reddit_profiles_id])
+}
+
+/// Records of users banned from specific communities with reason and
+/// timestamp for moderation audit trails. Tracks community bans including
+/// ban reason, timestamp, and user-community relationships for moderation
+/// workflows.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community the user was banned from. {@link reddit_communities.id}.
+  community_id String
+  
+  /// User who was banned. {@link reddit_profiles.id}.
+  user_id String
+  
+  /// Reason for the ban. Maximum 500 characters.
+  reason String
+  
+  /// Timestamp when the ban was applied.
+  created_at DateTime
+  
+  /// Last modification timestamp of the ban record.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was removed (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user reddit_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@unique([community_id, user_id])
+}

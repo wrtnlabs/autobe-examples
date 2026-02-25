@@ -1,0 +1,406 @@
+/// Immutable snapshots recording seller profile changes over time for audit
+/// and dispute resolution. Each record preserves the seller's shop name,
+/// shop description, and logo image URL at the time of snapshot, associated
+/// with the seller via foreign key shopping_mall_seller_id.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Seller's shop name at the time of snapshot.
+  shop_name String
+  
+  /// Seller's shop description at the time of snapshot.
+  shop_description String
+  
+  /// URL of the seller's logo image at the time of snapshot. Nullable if no
+  /// logo.
+  logo_image_url String?
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_profile_snapshots_shopping_mall_s_46fc8e8f")
+}
+
+/// Immutable snapshots preserving order item state including product,
+/// variant, and seller data at the time of purchase to ensure accurate
+/// historical records for audits, disputes, and legal compliance. Each
+/// snapshot records the full state of the order item including product name,
+/// SKU, pricing, quantity, status, and associated seller profile details.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced order item. {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Referenced order. {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Product name at the time of purchase.
+  product_name String
+  
+  /// SKU code of the product variant at purchase time.
+  variant_sku String
+  
+  /// Serialized option values of the variant at purchase time.
+  variant_option_values String
+  
+  /// Price per unit of the product variant at purchase time.
+  unit_price Float
+  
+  /// Quantity purchased in the order item.
+  quantity Int
+  
+  /// Status of the order item at the time of snapshot (e.g., paid, shipped,
+  /// delivered).
+  item_status String
+  
+  /// Name of the seller's shop at the time of purchase.
+  seller_shop_name String
+  
+  /// URI of the seller's logo image at the time of purchase; nullable if no
+  /// logo.
+  seller_logo_uri String?
+  
+  /// Snapshot creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp of the snapshot.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for snapshot record; nullable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id], map: "shopping_mall_order_item_snapshots_shopping_mall_order_30b7547a")
+  @@index([shopping_mall_order_id])
+}
+
+/// Immutable snapshots capturing customer reviews including rating and
+/// content changes for audit and dispute resolution. Each record stores the
+/// state of a customer review at a specific point in time, preserving
+/// historical changes immutably.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced customer product review's {@link
+  /// shopping_mall_product_reviews.id}.
+  shopping_mall_product_review_id String
+  
+  /// Customer rating value from 1 to 5 stars.
+  rating Int
+  
+  /// Review textual content; nullable if customer only rated without text.
+  body String?
+  
+  /// Timestamp when the snapshot was created.
+  snapshot_created_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Record soft delete timestamp for logical deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_review_id, snapshot_created_at], map: "shopping_mall_review_snapshots_shopping_mall_product_r_c3f1c7d7")
+}
+
+/// System-wide configuration settings for platform behavior and parameters.
+/// Stores key-value configuration options for the e-commerce platform,
+/// including metadata for description and data type. Supports soft deletion
+/// for safe configuration changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique key identifier for the system setting.
+  key String
+  
+  /// Value of the setting stored as a string.
+  value String
+  
+  /// Human-readable description of the setting's purpose and usage.
+  description String?
+  
+  /// Data type of the setting value (e.g., string, int, boolean, json).
+  data_type String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+  @@index([created_at])
+}
+
+/// Versioning records tracking changes and update history of critical system
+/// entities. This table maintains an immutable audit log of entity versions,
+/// including fields changed, version sequence, and timestamp information. It
+/// supports rollback and historical inspection of system data changes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the entity being versioned, e.g., 'shopping_mall_sellers'.
+  entity_name String
+  
+  /// The UUID of the entity instance being versioned.
+  entity_id String
+  
+  /// Sequential version number for this entity's changes.
+  version_number Int
+  
+  /// JSON string listing fields changed in this version.
+  changed_fields String
+  
+  /// Optional textual description of the change.
+  change_description String?
+  
+  /// Identifier of the actor who made the change, e.g., user email or admin ID.
+  changed_by String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([entity_name, entity_id, version_number], map: "shopping_mall_system_versions_entity_name_entity_id_ve_09d50e48")
+  @@index([entity_name, entity_id])
+  @@index([created_at])
+}
+
+/// Audit log records capturing system events, user actions, and system
+/// changes for security and compliance purposes. Each entry stores details
+/// about the event type, actor information, IP address, user agent, metadata
+/// as JSON string, and timestamps for creation and updates.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of the event being logged (e.g., 'login', 'order_created',
+  /// 'product_updated').
+  event_type String
+  
+  /// Detailed description of the event or action performed.
+  description String
+  
+  /// Type of actor who performed the event (e.g., 'customer', 'seller',
+  /// 'administrator').
+  actor_type String?
+  
+  /// UUID of the actor who performed the event, if applicable.
+  actor_id String?
+  
+  /// IP address from which the event originated.
+  ip String?
+  
+  /// User agent string of the client application initiating the event.
+  user_agent String?
+  
+  /// JSON string storing additional event metadata for auditing.
+  metadata String?
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+  @@index([actor_id])
+}
+
+/// Immutable snapshots preserving cancellation request data including reason
+/// and status changes for auditing and dispute resolution purposes. Records
+/// before-and-after states of cancellation requests on order items. Ensures
+/// data immutability and historical traceability. Linked to
+/// shopping_mall_cancellation_requests and capturing related timestamps and
+/// status values.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged cancellation request's {@link
+  /// shopping_mall_cancellation_requests.id}.
+  cancellation_request_id String
+  
+  /// Textual reason provided for the cancellation request at the snapshot time.
+  reason String
+  
+  /// Status of the cancellation request at the snapshot time, e.g., pending,
+  /// approved, rejected.
+  status String
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if the snapshot is logically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_cancellat_e6cacb72")
+}
+
+/// Immutable snapshots preserving refund request data including reason,
+/// status, and comments. These records enable audit tracking and dispute
+/// resolution by capturing historical states of refund requests without
+/// alteration.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged refund request's {@link shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String
+  
+  /// Current status of the refund request at snapshot time. E.g., 'pending',
+  /// 'approved', 'rejected'.
+  status String
+  
+  /// Detailed reason provided by customer or seller for the refund request.
+  reason String
+  
+  /// Optional comments or additional notes related to the refund request
+  /// snapshot.
+  comment String?
+  
+  /// Timestamp when the snapshot record was created.
+  created_at DateTime
+  
+  /// Timestamp when the snapshot record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_017fb2af")
+}

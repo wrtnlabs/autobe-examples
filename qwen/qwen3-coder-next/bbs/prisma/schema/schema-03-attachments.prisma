@@ -1,0 +1,83 @@
+/// Stores metadata for document files attached to articles including
+/// original filename, stored path, MIME type, and size.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged article's {@link discussion_board_articles.id}.
+  article_id String
+  
+  /// Original filename when uploaded.
+  original_filename String
+  
+  /// Stored file path or URL in object storage.
+  file_path String
+  
+  /// MIME type of the file (e.g., application/pdf, text/plain).
+  mime_type String
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id])
+}
+
+/// Image metadata storage for articles, tracking original filename, stored
+/// path, and MIME type for each attached image.
+///
+/// @namespace Attachments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article that contains this image. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Original filename when uploaded by the user.
+  original_filename String
+  
+  /// Stored file path or URL in the file storage system.
+  stored_path String
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// File size in bytes for storage tracking and quota management.
+  file_size Int
+  
+  /// Date and time when the image was uploaded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id], map: "discussion_board_article_images_discussion_board_artic_fca3ed55")
+  @@unique([stored_path])
+}

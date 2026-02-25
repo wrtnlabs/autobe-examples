@@ -1,0 +1,140 @@
+/// Customer-initiated refund requests for delivered order items with 7-day
+/// window. Records status, reason, timestamps, and responder. Immutable
+/// status flow: pending → approved/rejected. Preserves request context for
+/// audit and reconciliation.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item for which the refund is requested. {@link
+  /// shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// The customer who initiated the refund request. {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// The seller or admin who responded to the refund request. {@link
+  /// shopping_mall_sellers.id} or {@link shopping_mall_admins.id}. Nullable
+  /// until resolved.
+  responder_id String?
+  
+  /// The reason provided by the customer for requesting the refund. Minimum 10
+  /// characters, maximum 500 characters.
+  reason String
+  
+  /// Current status of the refund request. Values: 'pending', 'approved',
+  /// 'rejected'. Follows approval workflow.
+  status String
+  
+  /// Optional reason provided by the responder. Required if status is
+  /// 'rejected'.
+  response_reason String?
+  
+  /// Timestamp when the refund request received a response. Nullable until
+  /// resolved.
+  responded_at DateTime?
+  
+  /// The creation timestamp of the refund request.
+  created_at DateTime
+  
+  /// The last update timestamp of the refund request.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  responder shopping_mall_sellers? @relation(fields: [responder_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([responder_id])
+  @@index([order_item_id, status])
+  @@index([customer_id, status])
+  @@index([responded_at])
+  @@index([created_at])
+}
+
+/// Immutable snapshots of refund requests at time of creation or resolution.
+/// Preserves state for audit, reconciliation, and compliance. Each row
+/// represents a versioned state of a refund request when it was created or
+/// changed (approved/rejected). This table has no direct user interaction —
+/// it is written only by system logic when a refund request is created or
+/// updated.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent refund request entity. {@link
+  /// shopping_mall_refund_requests.id}.
+  refund_request_id String
+  
+  /// Incremental version number for this snapshot. Starts at 1 for initial
+  /// creation and increments on each status change. Used to order historical
+  /// states chronologically.
+  version Int
+  
+  /// The customer's reason for request as provided at time of snapshot
+  /// creation or update.
+  reason String
+  
+  /// The status of the refund request at the time this snapshot was taken.
+  /// Must be one of: pending, approved, rejected.
+  status String
+  
+  /// The ID of the actor (seller or admin) who responded to the request. Must
+  /// be null if status is 'pending'.
+  responder_id String?
+  
+  /// The seller's or admin's reason for approving or rejecting the request.
+  /// Must be null if status is 'pending'.
+  response_reason String?
+  
+  /// Timestamp indicating when this snapshot was created or updated. Must be
+  /// the exact moment the state changed (creation, approval, or rejection).
+  changed_at DateTime
+  
+  /// Actor type responsible for the change that triggered this snapshot. Must
+  /// be one of: 'customer' (for creation), 'seller', or 'admin'.
+  changed_by String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([refund_request_id, version], map: "shopping_mall_refund_request_snapshots_refund_request__941b7457")
+  // spellchecker: ignore-next-line
+  @@index([refund_request_id, changed_at], map: "shopping_mall_refund_request_snapshots_refund_request__7a3dbf9c")
+  @@index([changed_at])
+  @@index([status])
+  @@index([responder_id])
+  @@index([changed_by])
+}

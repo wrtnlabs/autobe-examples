@@ -1,0 +1,117 @@
+/// Master table for unique tag values used in article categorization and
+/// discovery.
+///
+/// Tags provide flexible, user-defined categorization beyond the
+/// section-based structure. Each tag is a free-form text value normalized to
+/// lowercase, supporting alphanumeric characters, hyphens, and underscores
+/// only. Tags persist independently of articles and are reused across the
+/// platform.
+///
+/// Tags are associated with articles through the {@link
+/// discussion_board_article_tags} junction table, enabling many-to-many
+/// relationships. Each article can have up to 15 tags. Tags support
+/// case-insensitive comparison and automatic duplicate removal through the
+/// normalization process.
+///
+/// The unique constraint on the value field ensures tag uniqueness across
+/// the platform. Tags can be used for article filtering (single or multiple
+/// tags with OR logic) and discovery through the tag-based browsing
+/// interface.
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Normalized tag value in lowercase. Must be 1-50 characters containing
+  /// only alphanumeric characters, hyphens (-), and underscores (_). Tags are
+  /// case-insensitive for comparison purposes (e.g., "Politics" and "politics"
+  /// are treated as the same tag). Leading and trailing whitespace is trimmed
+  /// during normalization. Duplicate tags are automatically removed.
+  value String
+  
+  /// Timestamp when the tag was first created. Automatically set upon tag
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp when the tag record was last updated. Initially matches
+  /// created_at on creation.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleTags discussion_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([value])
+}
+
+/// Junction table implementing the many-to-many relationship between
+/// articles and tags.
+///
+/// This table enables flexible article categorization beyond section-based
+/// organization. Users can associate up to 15 tags per article during
+/// creation or editing. The table supports tag-based article discovery and
+/// filtering workflows.
+///
+/// **Cascade Behavior**: When an article is deleted, all its tag
+/// associations are automatically removed. Tags themselves persist
+/// independently and can be reused across other articles, supporting tag
+/// normalization and platform-wide consistency.
+///
+/// **Business Rules**:
+/// - Maximum 15 tags per article (enforced at application layer)
+/// - Tag values are case-insensitive and normalized to lowercase in {@link
+/// discussion_board_tags.value}
+/// - Duplicate tag associations for the same article are prevented by unique
+/// constraint
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the tagged article. Uses cascade deletion to automatically
+  /// remove tag associations when the parent article is deleted, maintaining
+  /// referential integrity without orphaned records.
+  ///
+  /// Target article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Reference to the associated tag. Preserves the tag record when
+  /// article-tag associations are deleted, allowing tag reuse across the
+  /// platform and maintaining the master tag registry.
+  ///
+  /// Target tag's {@link discussion_board_tags.id}.
+  discussion_board_tag_id String
+  
+  /// Timestamp when the tag was associated with the article. Used for auditing
+  /// tag assignments and supporting chronological queries if needed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_tag_id])
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
+}

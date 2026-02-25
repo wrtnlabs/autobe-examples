@@ -1,0 +1,868 @@
+/// Core comment entity storing user comments on articles. Contains comment
+/// content, author information, article association, and management
+/// metadata. Users can create, edit, and delete their comments
+/// independently.
+///
+/// Comments are single-level only (no nested replies) as specified in
+/// requirements. Each comment belongs to exactly one article and one author.
+/// The system tracks creation and modification timestamps for audit
+/// purposes.
+///
+/// This table serves as the foundation for comment functionality including
+/// display, editing, deletion, and moderation. {@link
+/// discussion_board_users.id} for author association and {@link
+/// discussion_board_articles.id} for article linkage.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the comment. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Article that this comment belongs to. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// The comment text content written by the user.
+  content String
+  
+  /// Timestamp when the comment was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  auditActions discussion_board_audit_logs[]
+  snapshots discussion_board_comment_snapshots[]
+  moderations discussion_board_comment_moderations[]
+  reports discussion_board_comment_reports[]
+  votes discussion_board_comment_votes[]
+  attachments discussion_board_comment_attachments[]
+  mentions discussion_board_comment_mentions[]
+  flags discussion_board_comment_flags[]
+  editHistories discussion_board_comment_edit_histories[]
+  moderationLogs discussion_board_moderation_logs[]
+  moderationHistories discussion_board_moderated_content_histories[]
+  contentFlags discussion_board_content_flags[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comments_discussion_board_user_id_cre_20211f29")
+}
+
+/// Audit trail for comment edits and version history.
+///
+/// This table captures point-in-time snapshots of comment content whenever
+/// edits are made. Each snapshot preserves the complete comment content and
+/// metadata as it existed at a specific moment, enabling version control and
+/// audit trail functionality. The table supports the 24-hour editing window
+/// requirement by maintaining historical versions that can be compared or
+/// restored.
+///
+/// Snapshots are automatically created when users edit their comments,
+/// capturing the full text content along with metadata about who made the
+/// edit and when. This provides administrators with a complete history of
+/// comment modifications for moderation purposes and allows users to see how
+/// comments have evolved over time.
+///
+/// Each snapshot references the original {@link
+/// discussion_board_comments.id} and the user who performed the edit through
+/// {@link discussion_board_users.id}. This denormalized snapshot includes
+/// all comment fields to capture the complete state at each version.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// User who created this snapshot. {@link discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Sequential version number for this comment snapshot.
+  version_number Int
+  
+  /// Reason for creating this snapshot, such as 'edit' or 'moderation'.
+  snapshot_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// The complete comment content as it existed at the time of the snapshot.
+  comment_content String
+  
+  /// Original comment creation timestamp captured at snapshot time.
+  comment_created_at DateTime
+  
+  /// Comment updated timestamp captured at snapshot time.
+  comment_updated_at DateTime
+  
+  /// Comment deletion timestamp if applicable at snapshot time.
+  comment_deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, version_number], map: "discussion_board_comment_snapshots_discussion_board_co_0cd7422d")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_co_67d99e69")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_us_de905acf")
+}
+
+/// Tracks administrator moderation actions performed on comments for audit
+/// and compliance purposes.
+///
+/// This table records all moderation activities that administrators perform
+/// on comments, including editing comment content, deleting comments, and
+/// other moderation actions. Each record represents a single moderation
+/// event with details about the action taken, the administrator who
+/// performed it, and the reason for the moderation.
+///
+/// The table serves as an audit trail for compliance requirements and
+/// provides transparency into moderation activities. Administrators can
+/// review moderation history to ensure consistent application of community
+/// guidelines.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_moderations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment being moderated. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Reference to the administrator who performed the moderation action.
+  /// {@link discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// Type of moderation action performed (edit, delete, approve, reject, etc.).
+  action_type String
+  
+  /// Reason for the moderation action, explaining why the action was taken.
+  reason String
+  
+  /// Current status of the moderation action (pending, completed, reversed,
+  /// etc.).
+  status String
+  
+  /// Timestamp when the moderation action was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_moderations_discussion_board__0dc791fd")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_comment_moderations_discussion_board__292168c8")
+  @@index([action_type, created_at])
+  @@index([status, created_at])
+}
+
+/// Tracks user reports of inappropriate comments for community moderation.
+///
+/// When users encounter comments that violate community guidelines, they can
+/// submit reports that are reviewed by administrators. Each report captures
+/// the reporter's identity, the specific comment being reported, the reason
+/// for reporting, and the current moderation status.
+///
+/// Reports follow a workflow from pending review to resolution, with
+/// timestamps tracking when reports were submitted and when they were acted
+/// upon by moderators. This system enables community-driven content
+/// moderation while maintaining accountability through proper audit trails.
+///
+/// Related entities: {@link discussion_board_users} (reporter), {@link
+/// discussion_board_comments} (reported content)
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the report. {@link discussion_board_users.id}
+  reporter_user_id String
+  
+  /// Comment that was reported for moderation. {@link
+  /// discussion_board_comments.id}
+  reported_comment_id String
+  
+  /// User-provided reason explaining why the comment was reported.
+  reason String
+  
+  /// Current status of the report in the moderation workflow (pending,
+  /// under_review, resolved).
+  status String
+  
+  /// Administrator's notes about how the report was resolved.
+  resolution_details String?
+  
+  /// Timestamp when the report was resolved by an administrator.
+  resolved_at DateTime?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter discussion_board_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
+  reportedComment discussion_board_comments @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reporter_user_id, reported_comment_id], map: "discussion_board_comment_reports_reporter_user_id_repo_75a26d1e")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reported_comment_id, created_at], map: "discussion_board_comment_reports_reported_comment_id_c_660d4460")
+}
+
+/// Tracks user votes on comments for quality assessment and community feedback.
+///
+/// Each vote represents a user's assessment of comment quality, supporting
+/// features like upvoting/downvoting and comment ranking. The system ensures
+/// users can only vote once per comment through unique constraints.
+///
+/// This table supports community-driven content quality assessment by
+/// allowing users to express approval or disapproval of comments. Votes
+/// contribute to comment ranking algorithms and help surface high-quality
+/// content. {@link discussion_board_comments.id} represents the comment
+/// being voted on, while {@link discussion_board_users.id} identifies the
+/// voting user.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who cast the vote. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Comment being voted on. {@link discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Type of vote cast by the user. Valid values are 'upvote' for positive
+  /// assessment and 'downvote' for negative assessment.
+  vote_type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_user_id, discussion_board_comment_id], map: "discussion_board_comment_votes_discussion_board_user_i_327610bc")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_votes_discussion_board_commen_78194036")
+  @@index([vote_type, created_at])
+}
+
+/// Junction table linking comments to their file attachments. This table
+/// establishes a many-to-many relationship between comments and files,
+/// allowing multiple files to be attached to multiple comments while
+/// maintaining referential integrity.
+///
+/// Each record represents a specific file attachment associated with a
+/// particular comment. The relationship ensures that files can be properly
+/// tracked and managed within the comment system, supporting features like
+/// file downloads and attachment management.
+///
+/// This table works in conjunction with {@link discussion_board_comments}
+/// for comment references and {@link discussion_board_article_files} for
+/// file references, providing the necessary linkage for comment attachment
+/// functionality.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment that this file is attached to. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Reference to the file attachment. {@link
+  /// discussion_board_article_files.id}
+  discussion_board_article_file_id String
+  
+  /// Timestamp when this attachment was linked to the comment.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  file discussion_board_article_files @relation(fields: [discussion_board_article_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, discussion_board_article_file_id], map: "discussion_board_comment_attachments_discussion_board__6f1c9c2d")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_attachments_discussion_board__afb72a94")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_file_id], map: "discussion_board_comment_attachments_discussion_board__e4953fc6")
+}
+
+/// Tracks user mentions within comment content for notification and
+/// reference purposes.
+///
+/// When users mention other users in comments using @mentions, this table
+/// records those references. Each mention includes the comment where it
+/// appears, the mentioned user, and the position within the comment text
+/// where the mention occurs. This enables features like notification systems
+/// that alert mentioned users and provides reference data for user activity
+/// tracking.
+///
+/// The table maintains a many-to-many relationship between comments and
+/// users, allowing multiple mentions per comment and multiple comments
+/// mentioning the same user. Position tracking supports features like
+/// highlighting mentions within comment text or determining context around
+/// the mention.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_mentions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment containing the user mention. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// User who is mentioned in the comment. {@link discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Starting character position of the mention within the comment text.
+  position_start Int
+  
+  /// Ending character position of the mention within the comment text.
+  position_end Int
+  
+  /// Timestamp when the mention was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  mentionedUser discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, discussion_board_user_id], map: "discussion_board_comment_mentions_discussion_board_com_e33ea88e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comment_mentions_discussion_board_use_c111a3d3")
+}
+
+/// User-reported content flags for inappropriate or problematic comments
+/// requiring moderator review.
+///
+/// This table tracks user-submitted flags on comments that violate community
+/// guidelines or require administrator attention. Each flag represents a
+/// user's concern about specific comment content and includes the reason for
+/// flagging. Flags can be in various states (pending, reviewed, resolved)
+/// and help administrators identify problematic content efficiently.
+///
+/// Flags are created by users who identify inappropriate content and are
+/// reviewed by administrators for appropriate action. The system maintains a
+/// complete audit trail of flag creation, review, and resolution to ensure
+/// transparency and accountability in content moderation.
+///
+/// Related entities: {@link discussion_board_users} (flag creator), {@link
+/// discussion_board_comments} (flagged content), {@link
+/// discussion_board_admins} (reviewer).
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who created the flag. {@link discussion_board_users.id}
+  user_id String
+  
+  /// Comment being flagged for review. {@link discussion_board_comments.id}
+  comment_id String
+  
+  /// Administrator who reviewed the flag. {@link discussion_board_admins.id}
+  reviewer_id String?
+  
+  /// Detailed explanation of why the comment was flagged by the user.
+  flag_reason String
+  
+  /// Category of flag violation (spam, harassment, inappropriate, etc.).
+  flag_type String
+  
+  /// Current status of the flag (pending, under_review, resolved, dismissed).
+  status String
+  
+  /// Administrator's notes on how the flag was resolved.
+  resolution_notes String?
+  
+  /// Timestamp when the flag was created by the user.
+  created_at DateTime
+  
+  /// Timestamp when the flag was reviewed by an administrator.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the flag was resolved.
+  resolved_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_admins? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  @@index([comment_id, created_at])
+  @@index([user_id, created_at])
+  @@index([status, created_at])
+  @@index([flag_type, created_at])
+}
+
+/// Tracks the complete edit history of comments with timestamps and content
+/// versions.
+///
+/// This table maintains an audit trail of all changes made to comments,
+/// capturing both the original content and edited versions. Each edit record
+/// includes the timestamp, editor information, and the specific changes
+/// made. This supports compliance requirements and provides transparency for
+/// comment modification tracking.
+///
+/// The edit history is managed through the parent {@link
+/// discussion_board_comments} entity and serves as a comprehensive record of
+/// content evolution. Administrators can review edit history for moderation
+/// purposes, and users can see the progression of their own comment edits.
+///
+/// Key relationships:
+/// - References {@link discussion_board_comments} as the parent comment
+/// - Editor attribution through specialized subtype tables
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment being edited. {@link
+  /// discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Sequential number indicating the order of edits for this comment. First
+  /// edit is 1, second is 2, etc.
+  edit_sequence Int
+  
+  /// The content of the comment before this edit was applied.
+  original_content String
+  
+  /// The content of the comment after this edit was applied.
+  edited_content String
+  
+  /// Optional reason provided by the editor for making this change.
+  edit_reason String?
+  
+  /// Timestamp when this edit was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userEditAttribution discussion_board_comment_edit_history_of_users?
+  adminEditMapping discussion_board_comment_edit_history_of_admins?
+  superAdminEditAttribution discussion_board_comment_edit_history_of_super_admins?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, edit_sequence], map: "discussion_board_comment_edit_histories_discussion_boa_036b8ee8")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_edit_histories_discussion_boa_e8408aef")
+  @@index([created_at])
+}
+
+/// Stores pagination settings and comment count tracking for efficient
+/// loading of comments on articles.
+///
+/// This table maintains pagination configurations and comment counts for
+/// each article to optimize comment loading performance. It tracks the total
+/// comment count, pagination settings, and last update timestamp to ensure
+/// efficient comment retrieval without recalculating counts on every
+/// request.
+///
+/// The table supports the requirement for paginated comment display on
+/// articles, particularly when articles have more than 50 comments. By
+/// maintaining pre-calculated counts and pagination metadata, the system can
+/// quickly determine page boundaries and comment ranges for display.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_pagination_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Number of comments to display per page for pagination.
+  comments_per_page Int
+  
+  /// Current total number of comments on the article.
+  total_comment_count Int
+  
+  /// Timestamp when the comment count was last updated.
+  last_comment_count_update DateTime
+  
+  /// Timestamp when the pagination settings were created.
+  created_at DateTime
+  
+  /// Timestamp when the pagination settings were last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_comment_pagination_settings_discussio_3fd45f5a")
+  // spellchecker: ignore-next-line
+  @@index([last_comment_count_update], map: "discussion_board_comment_pagination_settings_last_comm_cc7a4644")
+}
+
+/// Tracks comment submission rates for spam prevention and rate limiting.
+///
+/// This table stores submission timestamps for each user to enforce rate
+/// limiting rules. The system uses this data to prevent spam and abusive
+/// behavior by limiting users to 10 comments per minute as specified in the
+/// requirements.
+///
+/// Each record represents a single comment submission attempt. The system
+/// queries this table to determine if a user has exceeded the rate limit
+/// within the specified time window.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who submitted the comment. {@link
+  /// discussion_board_users.id}
+  discussion_board_user_id String
+  
+  /// Timestamp when the comment submission was attempted.
+  submitted_at DateTime
+  
+  /// Timestamp when this rate limit record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, submitted_at], map: "discussion_board_comment_rate_limits_discussion_board__1ed62245")
+  @@index([submitted_at])
+}
+
+/// Maps comment edit history records to regular user editors, maintaining
+/// referential integrity for user-attributed edits.
+///
+/// This table establishes the relationship between comment edit history
+/// records and the regular users who performed the edits. It ensures proper
+/// ownership tracking and maintains referential integrity for
+/// user-attributed comment modifications. Each record represents a specific
+/// edit action performed by a regular user on a comment.
+///
+/// The table supports the polymorphic ownership pattern for comment edit
+/// history, allowing different actor types (users, admins, super admins) to
+/// have their own subtype tables while maintaining a unified edit history
+/// system. This design ensures that edit attribution is properly tracked and
+/// cannot be accidentally assigned to multiple actor types.
+///
+/// {@link discussion_board_comment_edit_histories.id} provides the edit
+/// history context, while {@link discussion_board_users.id} identifies the
+/// regular user who performed the edit. The unique constraint ensures that
+/// each edit history record can only be attributed to one user editor.
+///
+/// This table is essential for tracking user contributions to comment
+/// content and supporting the 24-hour editing window requirement specified
+/// in the system requirements.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_edit_history_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment edit history record being attributed to a user
+  /// editor. {@link discussion_board_comment_edit_histories.id}.
+  discussion_board_comment_edit_history_id String
+  
+  /// Reference to the regular user who performed the comment edit. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Timestamp when the edit attribution record was created.
+  created_at DateTime
+  
+  /// Timestamp when the edit attribution record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  editHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_users_discuss_0ae592e4")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_comment_edit_history_of_users_discuss_29bef03e")
+}
+
+/// Maps comment edit history records to admin editors, maintaining
+/// referential integrity for admin-attributed edits.
+///
+/// This table establishes the relationship between comment edit history
+/// records and the administrators who performed those edits. It ensures
+/// proper polymorphic ownership pattern where edit history can be attributed
+/// to different types of editors (users, admins, super admins) while
+/// maintaining database integrity.
+///
+/// The table serves as a junction between the comment edit history system
+/// and the administrator authorization system, allowing administrators to
+/// have their edit actions properly recorded and tracked. This supports
+/// audit trails and accountability for content modifications performed by
+/// administrators.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_edit_history_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment edit history record being attributed to an admin
+  /// editor. {@link discussion_board_comment_edit_histories.id}
+  discussion_board_comment_edit_history_id String
+  
+  /// Reference to the administrator who performed the edit. {@link
+  /// discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// Timestamp when this edit attribution record was created.
+  created_at DateTime
+  
+  /// Timestamp when this edit attribution record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentEditHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_admins_discus_616fb30d")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_comment_edit_history_of_admins_discus_59852b2a")
+}
+
+/// Maps comment edit history records to super admin editors, maintaining
+/// referential integrity for super admin-attributed edits.
+///
+/// This subtype table implements the polymorphic ownership pattern for
+/// comment editing by super administrators. Each record establishes a 1:1
+/// relationship between a comment edit history entry and the super
+/// administrator who performed the edit, ensuring proper attribution and
+/// audit trail integrity.
+///
+/// When a super administrator edits a comment, this table links the
+/// resulting edit history record to the specific super admin, allowing the
+/// system to track which administrator made each modification. This supports
+/// accountability and compliance requirements for content moderation
+/// workflows.
+///
+/// This table works alongside similar subtype tables for regular users and
+/// regular administrators, providing a complete polymorphic ownership
+/// solution for comment editing attribution across all actor types.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_edit_history_of_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the comment edit history record being attributed to a super
+  /// admin editor. {@link discussion_board_comment_edit_histories.id}
+  discussion_board_comment_edit_history_id String
+  
+  /// Reference to the super administrator who performed the comment edit.
+  /// {@link discussion_board_super_admins.id}
+  discussion_board_super_admin_id String
+  
+  /// Timestamp when this attribution mapping was created.
+  created_at DateTime
+  
+  /// Timestamp when this attribution mapping was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentEditHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_super_admins__116789cf")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_comment_edit_history_of_super_admins__076ebed2")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "discussion_board_comment_edit_history_of_super_admins__f57a8404")
+}

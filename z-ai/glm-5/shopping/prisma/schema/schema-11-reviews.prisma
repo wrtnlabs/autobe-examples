@@ -1,0 +1,137 @@
+/// Customer reviews and ratings for purchased products, containing rating
+/// (1-5 stars), optional text content, and references to customer, product,
+/// and order for purchase verification.
+///
+/// Supports soft delete to preserve reviews when customers delete accounts,
+/// displaying as 'deleted user' while maintaining review content for product
+/// rating calculations. Enforces one review per product per order constraint
+/// to prevent duplicate reviews.
+///
+/// Reviews can only be written for delivered order items. When customers
+/// edit their reviews, snapshots are created separately in {@link
+/// shopping_mall_review_snapshots} for audit trails and dispute resolution.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who wrote this review. Referenced as 'deleted user' when
+  /// customer account is deleted. References {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Product being reviewed. Used for product-level rating calculation and
+  /// filtering. References {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Order through which the product was purchased. Used for purchase
+  /// verification and enforcing one-review-per-product-per-order constraint.
+  /// References {@link shopping_mall_orders.id}.
+  order_id String
+  
+  /// Rating value from 1 to 5 stars. Required for all reviews. Used to
+  /// calculate product average rating.
+  rating Int
+  
+  /// Optional text content of the review. Supports full-text search via GIN
+  /// index. Maximum 2000 characters.
+  content String?
+  
+  /// Timestamp when the review was created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last updated. Used for snapshot creation
+  /// triggers.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, review is hidden from display but
+  /// preserved for rating calculations and audit. Used when customer deletes
+  /// account - review displays as 'deleted user'.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_review_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_id])
+  @@unique([customer_id, product_id, order_id])
+  @@index([product_id, created_at])
+  @@index([customer_id, created_at])
+}
+
+/// Immutable snapshot records of review edits preserving previous and new
+/// rating values and text content. Created automatically when customers
+/// modify their reviews to maintain complete edit history for dispute
+/// resolution and audit purposes.
+///
+/// Each snapshot captures the state transition from previous to new values,
+/// recording when the change occurred and what values changed. Snapshots are
+/// never deleted even if the parent review is soft-deleted, ensuring
+/// permanent audit trails for the snapshot principle.
+///
+/// Supports the platform's financial accountability model where customer
+/// feedback disputes may require historical evidence of what was originally
+/// written versus current state.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review that was edited. References {@link shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// The rating value (1-5 stars) before this edit was made. Captures the
+  /// previous state for audit comparison.
+  previous_rating Int
+  
+  /// The rating value (1-5 stars) after this edit was made. Captures the new
+  /// state for audit comparison.
+  new_rating Int
+  
+  /// The text content before this edit was made. Null if the review had no
+  /// text content originally.
+  previous_content String?
+  
+  /// The text content after this edit was made. Null if the customer removed
+  /// all text content.
+  new_content String?
+  
+  /// Timestamp when this snapshot was created, coinciding with when the review
+  /// edit was submitted.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
+}

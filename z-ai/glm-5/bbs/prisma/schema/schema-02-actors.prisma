@@ -1,0 +1,401 @@
+/// User accounts with email/password authentication, permission levels
+/// (MEMBER, ADMINISTRATOR, SUPER_ADMINISTRATOR), ban status, and profile
+/// information (display name, bio).
+///
+/// Each user has a unique email address for authentication, a password hash
+/// for security, and a permission level that determines their access rights
+/// within the platform. The permission_level field stores one of three
+/// values: MEMBER (regular user), ADMINISTRATOR (can moderate content,
+/// manage sections, ban users), or SUPER_ADMINISTRATOR (can also manage
+/// admin hierarchy and approve admin requests).
+///
+/// The profile fields (display_name and bio) provide identity information
+/// visible to other users. The is_banned flag indicates whether the user is
+/// currently prohibited from logging in, though their existing content
+/// remains visible.
+///
+/// Users reference a citizen sequence ID for human-readable sequential
+/// identification. Related entities include sessions ({@link
+/// discussion_board_user_sessions}), password resets ({@link
+/// discussion_board_user_password_resets}), admin requests ({@link
+/// discussion_board_user_admin_requests}), and audit logs ({@link
+/// discussion_board_user_audit_logs}).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sequential ID reference from the citizen sequence for human-readable user
+  /// identification. {@link discussion_board_user_citizens.id}
+  citizen_id String
+  
+  /// Administrator who banned this user, if applicable. Null when user is not
+  /// banned or was banned by a super admin who was later demoted. {@link
+  /// discussion_board_users.id}
+  banned_by String?
+  
+  /// Unique email address used for authentication. Must be a valid email
+  /// format and unique across all users.
+  email String
+  
+  /// Secure hash of the user's password. Never store plain text passwords.
+  /// Uses bcrypt or similar secure hashing algorithm.
+  password_hash String
+  
+  /// User's display name shown on their profile and alongside their content.
+  /// Visible to other users.
+  display_name String
+  
+  /// Optional biographical text for the user's profile. Can be null for users
+  /// who haven't filled it in.
+  bio String?
+  
+  /// User's permission level determining their access rights. One of: MEMBER,
+  /// ADMINISTRATOR, or SUPER_ADMINISTRATOR.
+  permission_level String
+  
+  /// Flag indicating whether the user is currently banned from the platform.
+  /// Banned users cannot log in but their content remains visible.
+  is_banned Boolean
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated (profile changes,
+  /// permission changes, etc.).
+  updated_at DateTime
+  
+  /// Timestamp when the user account was soft-deleted. Null for active
+  /// accounts. When a user deletes their account, their articles and comments
+  /// are cascade deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  citizen discussion_board_user_citizens @relation(fields: [citizen_id], references: [id], onDelete: Cascade)
+  banner discussion_board_users? @relation("recursive", fields: [banned_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  bannedUsers discussion_board_users[] @relation("recursive")
+  sessions discussion_board_user_sessions[]
+  passwordResets discussion_board_user_password_resets[]
+  userAdminRequests discussion_board_user_admin_requests[] @relation("discussion_board_user_admin_requests_of_discussion_boa_a5d084bb")
+  reviewedUserAdminRequests discussion_board_user_admin_requests[] @relation("discussion_board_user_admin_requests_of_reviewer_id")
+  auditLogs discussion_board_user_audit_logs[] @relation("discussion_board_user_audit_logs_of_discussion_board_user_id")
+  performedAuditLogs discussion_board_user_audit_logs[] @relation("discussion_board_user_audit_logs_of_actor_user_id")
+  createdSections discussion_board_sections[] @relation("discussion_board_sections_of_creator_id")
+  modifiedSections discussion_board_sections[] @relation("discussion_board_sections_of_modifier_id")
+  articles discussion_board_articles[]
+  comments discussion_board_comments[]
+  adminRequests discussion_board_admin_requests[] @relation("discussion_board_admin_requests_of_requester_id")
+  reviewedAdminRequests discussion_board_admin_requests[] @relation("discussion_board_admin_requests_of_reviewer_id")
+  hierarchyActionsPerformeds discussion_board_admin_hierarchy_actions[] @relation("discussion_board_admin_hierarchy_actions_of_actor_id")
+  hierarchyActionsReceiveds discussion_board_admin_hierarchy_actions[] @relation("discussion_board_admin_hierarchy_actions_of_target_id")
+  adminActionLogs discussion_board_admin_action_logs[] @relation("discussion_board_admin_action_logs_of_administrator_id")
+  originalAuthorActionLogs discussion_board_admin_action_logs[] @relation("discussion_board_admin_action_logs_of_original_author_id")
+  bans discussion_board_bans[] @relation("discussion_board_bans_of_discussion_board_user_id")
+  performedBans discussion_board_bans[] @relation("discussion_board_bans_of_discussion_board_administrator_id")
+  performedUnbans discussion_board_unbans[]
+  banHistoryAsTargets discussion_board_ban_histories[] @relation("discussion_board_ban_histories_of_discussion_board_user_id")
+  banHistoryAsActors discussion_board_ban_histories[] @relation("discussion_board_ban_histories_of_actor_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([banned_by])
+  @@unique([email])
+  @@unique([citizen_id])
+  @@index([is_banned, created_at])
+  @@index([permission_level, created_at])
+  @@index([created_at])
+}
+
+/// JWT authentication sessions for users, tracking access tokens, refresh
+/// tokens, and connection metadata across multiple devices.
+///
+/// Each session represents a single authenticated device/browser instance.
+/// The refresh token uniquely identifies the session and enables token
+/// rotation. Access tokens are short-lived (15-30 minutes) while refresh
+/// tokens have longer expiration periods (7-30 days).
+///
+/// Sessions support multi-device authentication, allowing users to be logged
+/// in on multiple devices simultaneously. Connection metadata (IP, href,
+/// referrer) provides security auditing and fraud detection capabilities.
+///
+/// Relationship: Each session belongs to exactly one {@link
+/// discussion_board_users}. Sessions are cascade-deleted when the parent
+/// user is deleted.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who owns this session. References {@link
+  /// discussion_board_users.id}. A user can have multiple active sessions
+  /// across different devices.
+  discussion_board_user_id String
+  
+  /// JWT access token for API authentication. Short-lived token (typically
+  /// 15-30 minutes) used to authenticate API requests. Can be regenerated
+  /// using the refresh token.
+  access_token String
+  
+  /// JWT refresh token for session persistence. Long-lived token (typically
+  /// 7-30 days) used to obtain new access tokens. This uniquely identifies the
+  /// session.
+  refresh_token String
+  
+  /// IP address from which the session was initiated. Used for security
+  /// auditing, geographic analysis, and fraud detection.
+  ip String
+  
+  /// URL of the page where the login was initiated. Captures the entry point
+  /// for the authentication request, useful for tracking user flows.
+  href String
+  
+  /// Referrer URL that led the user to the login page. Useful for tracking
+  /// traffic sources and user navigation paths.
+  referrer String?
+  
+  /// User agent string from the client browser. Identifies the browser,
+  /// operating system, and device type for session management.
+  user_agent String?
+  
+  /// Timestamp when the session was created (login time). Records the initial
+  /// authentication moment.
+  created_at DateTime
+  
+  /// Timestamp when the refresh token expires. Marks the end of the session's
+  /// validity period. Sessions can be terminated earlier through logout or
+  /// revocation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_sessions_discussion_board_user_i_2eaa2baa")
+}
+
+/// Password reset tokens for email-based password recovery. Stores secure
+/// tokens with expiration timestamps that allow users to reset their
+/// passwords. Each token is single-use and should be deleted after
+/// successful password reset. Tokens expire after a defined period
+/// (typically 15-60 minutes) for security. A user may have multiple reset
+/// requests over time, but typically only one active token at a time.
+/// References the {@link discussion_board_users} table for user association.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who requested the password reset. References {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Secure password reset token (hashed using cryptographic algorithm). This
+  /// token is sent to the user's email and must be presented to complete the
+  /// password reset. Should be generated using a cryptographically secure
+  /// random generator.
+  token String
+  
+  /// Timestamp when the password reset request was created. Used for audit
+  /// logging and determining token age.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token expires. After this time, the
+  /// token is invalid and a new reset request must be made. Non-null by
+  /// default for security - all tokens must have a defined expiration period
+  /// (typically 15-60 minutes).
+  expires_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_password_resets_discussion_board_64b31903")
+}
+
+/// Administrator request records submitted by users seeking administrative
+/// privileges. Each request captures the user's reason for requesting admin
+/// status and tracks the approval workflow from submission through review by
+/// super administrators.
+///
+/// Requests progress through three states: pending (awaiting review),
+/// approved (user granted admin status), and rejected (request declined).
+/// Super administrators review pending requests and record their decision
+/// with optional notes. Users may submit new requests after rejection.
+///
+/// Business rules enforced:
+/// - Only one pending request per user at any time
+/// - Users with existing admin status cannot submit requests
+/// - Banned users cannot submit requests
+/// - Request reason must be substantive (minimum 50 characters)
+///
+/// Related entities: {@link discussion_board_users} for requester identity,
+/// {@link discussion_board_users} for reviewer attribution.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_admin_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who submitted this administrator request. References {@link
+  /// discussion_board_users.id}. A user may have multiple requests over time
+  /// (e.g., after rejection), but only one pending request at any given time.
+  discussion_board_user_id String
+  
+  /// The super administrator who reviewed and decided on this request.
+  /// References {@link discussion_board_users.id}. Null while request is in
+  /// pending status. Populated when request is approved or rejected.
+  reviewer_id String?
+  
+  /// The user's explanation of why they should become an administrator. Must
+  /// be substantive and detailed, with a minimum of 50 characters to ensure
+  /// meaningful reasoning is provided. Used by super administrators during
+  /// review to assess the request.
+  reason String
+  
+  /// Current state of the administrator request. Values: 'pending' (awaiting
+  /// review by super administrator), 'approved' (user granted administrator
+  /// privileges), 'rejected' (request declined). Only pending requests appear
+  /// in super administrators' review queue.
+  status String
+  
+  /// Optional notes provided by the reviewing super administrator when
+  /// approving or rejecting the request. May contain feedback, conditions, or
+  /// explanation of the decision. Null if no notes were provided or request is
+  /// still pending.
+  review_notes String?
+  
+  /// Timestamp when the administrator request was submitted by the user. Used
+  /// for chronological ordering of requests and calculating time elapsed in
+  /// pending status.
+  created_at DateTime
+  
+  /// Timestamp when the request was last modified. Updated when status changes
+  /// from pending to approved or rejected, or when review notes are added.
+  updated_at DateTime
+  
+  /// Timestamp when the request was reviewed by a super administrator. Set
+  /// when status transitions from pending to approved or rejected. Null while
+  /// request is pending.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the request was soft-deleted. Admin requests are typically
+  /// retained for audit purposes but may be soft-deleted for moderation or
+  /// cleanup purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  requester discussion_board_users @relation("discussion_board_user_admin_requests_of_discussion_boa_a5d084bb", fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_users? @relation("discussion_board_user_admin_requests_of_reviewer_id", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id], map: "discussion_board_user_admin_requests_discussion_board__cd7bef9e")
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reviewer_id, reviewed_at], map: "discussion_board_user_admin_requests_reviewer_id_revie_5881b970")
+}
+
+/// Immutable audit trail of user-related administrative actions including
+/// bans, unbans, permission level changes (promotions/demotions), and other
+/// authorization events. Provides comprehensive logging for compliance and
+/// security auditing.
+///
+/// Each audit entry captures the target user, the type of action performed,
+/// the administrator who performed it (if applicable), the reason for the
+/// action, and the timestamp. Used for security monitoring, compliance
+/// reporting, and accountability tracking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who was the target of this audit action. References {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// The administrator who performed this action. Nullable for
+  /// system-initiated actions. References {@link discussion_board_users.id}.
+  actor_user_id String?
+  
+  /// Type of audit action performed. Values: 'password_change' (user changed
+  /// their own password), 'account_deleted' (user deleted their account),
+  /// 'permission_granted' (user promoted to admin/super admin),
+  /// 'permission_revoked' (user demoted from admin), 'banned' (user was
+  /// banned), 'unbanned' (user was unbanned).
+  action String
+  
+  /// Human-readable reason or description for the action. Required for
+  /// administrative actions (bans, unbans, permission changes), optional for
+  /// user-initiated actions.
+  reason String?
+  
+  /// Timestamp when the audit action occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation("discussion_board_user_audit_logs_of_discussion_board_user_id", fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  actor discussion_board_users? @relation("discussion_board_user_audit_logs_of_actor_user_id", fields: [actor_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_user_audit_logs_discussion_board_user_8a74a312")
+  @@index([actor_user_id, created_at])
+  @@index([action, created_at])
+}

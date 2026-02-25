@@ -1,0 +1,19 @@
+import { IDiscussionBoardAdministratorGradeChange } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorGradeChange";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+export function prepare_random_discussion_board_administrator_grade_change(
+  input?: DeepPartial<IDiscussionBoardAdministratorGradeChange.ICreate>,
+): IDiscussionBoardAdministratorGradeChange.ICreate {
+  return {
+    discussion_board_administrator_id:
+      input?.discussion_board_administrator_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+    discussion_board_administrator_grade_id:
+      input?.discussion_board_administrator_grade_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+  };
+}

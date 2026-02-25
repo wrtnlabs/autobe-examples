@@ -1,0 +1,327 @@
+/// Main todo entity storing core information about user tasks.
+///
+/// This table represents the central Todo entity that users create, manage,
+/// and track. Todos are owned by individual users and contain basic
+/// identification information while delegating optional fields like
+/// descriptions and dates to specialized child tables for better
+/// normalization.
+///
+/// The {@link todo_app_todo_completions} child table tracks completion
+/// status, {@link todo_app_todo_description_fields} handles optional
+/// descriptions, and date fields are managed by {@link
+/// todo_app_todo_start_date_fields} and {@link
+/// todo_app_todo_due_date_fields} respectively. Edit history is maintained
+/// through the {@link todo_app_todo_histories} table in the History
+/// component, while soft deletion is handled through the Trash component
+/// tables.
+///
+/// Todos support comprehensive lifecycle management including creation,
+/// editing, completion tracking, and deletion with recovery capabilities.
+/// Each operation is audited through the integrated history tracking system.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this todo. References the creator/user's {@link
+  /// todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Title or name of the todo task. Required field that provides the primary
+  /// identifier for the task.
+  title String
+  
+  /// Timestamp when the todo was initially created. Used for chronological
+  /// ordering and audit trail.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified. Used for tracking recent
+  /// activity and synchronization.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft-deleted. Null indicates active todo,
+  /// non-null indicates moved to trash.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  completions todo_app_todo_completions[]
+  descriptionField todo_app_todo_description_fields?
+  startDateField todo_app_todo_start_date_fields?
+  dueDateField todo_app_todo_due_date_fields?
+  histories todo_app_todo_histories[]
+  historySnapshotItems todo_app_todo_history_snapshot_items[]
+  trashItems todo_app_trash_items[]
+  permanentDeletions todo_app_permanent_deletions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_user_id, title])
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_user_id, updated_at])
+  @@index([deleted_at])
+}
+
+/// Tracks completion status changes for todos with timestamps for audit
+/// trail and edit history integration.
+///
+/// Each record represents a specific completion state change event, allowing
+/// the system to track when todos were marked as complete or incomplete.
+/// This supports comprehensive edit history functionality and provides an
+/// audit trail for completion status modifications.
+///
+/// Records reference the parent {@link todo_app_todos.id} and capture the
+/// exact timestamp of status changes to enable chronological analysis of
+/// todo lifecycle events.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_completions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo being tracked for completion status changes.
+  /// {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Boolean flag indicating whether the todo was marked as completed (true)
+  /// or incomplete (false) in this status change event.
+  completed Boolean
+  
+  /// Timestamp when this completion status change was recorded for audit trail
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when this completion record was soft deleted, supporting undo
+  /// functionality for completion tracking deletions.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  completionStatuses todo_app_todo_completion_statuses[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}
+
+/// Tracks individual completion status change events for todos with
+/// timestamps and audit trail.
+///
+/// Each record represents a distinct status change event for a todo,
+/// providing comprehensive auditing and tracking of completion state
+/// transitions. This table enables detailed analysis of todo completion
+/// patterns and supports recovery operations by maintaining a complete
+/// history of completion status changes.
+///
+/// Records the timestamp of each status change event. {@link
+/// todo_app_todo_completions.id} tracks which completion record this status
+/// change belongs to.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_completion_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent completion record's {@link
+  /// todo_app_todo_completions.id} for audit trail association.
+  todo_app_todo_completion_id String
+  
+  /// Timestamp when this completion status change occurred.
+  changed_at DateTime
+  
+  /// Timestamp when this status change record was created.
+  created_at DateTime
+  
+  /// Timestamp when this status change record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this status change record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  completion todo_app_todo_completions @relation(fields: [todo_app_todo_completion_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_completion_id, changed_at], map: "todo_app_todo_completion_statuses_todo_app_todo_comple_24b573ca")
+}
+
+/// Stores optional description text for todos, allowing the main todo table
+/// to avoid nullable description fields.
+///
+/// This table implements a common pattern for handling optional fields by
+/// separating them into a dedicated table with a 1:1 relationship to the
+/// parent entity. When a todo has a description, this table contains the
+/// text; when no description is provided, no record exists in this table.
+///
+/// The description field supports rich text content and is indexed for
+/// search capabilities. This design maintains data integrity while providing
+/// flexibility for optional content storage.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_description_fields {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// The optional description text for the todo. Supports rich content and can
+  /// be left empty if no description is provided.
+  description String?
+  
+  /// Timestamp when the description field was created.
+  created_at DateTime
+  
+  /// Timestamp when the description field was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([created_at])
+}
+
+/// Stores optional start dates for todos with validation and formatting
+/// support.
+///
+/// This table provides a normalized approach to handling optional start
+/// dates by separating them from the main todo table. Each record represents
+/// a start date associated with a specific todo, allowing for proper
+/// validation and formatting while maintaining referential integrity.
+///
+/// The start date field supports date validation to ensure logical
+/// consistency with other todo dates, particularly with due dates. This
+/// separation allows for efficient querying of todos with specific date
+/// ranges while keeping the main todo table focused on core attributes.
+///
+/// Records in this table are managed through their parent {@link
+/// todo_app_todos} entity and inherit the lifecycle management of the
+/// associated todo.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_start_date_fields {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo entity. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// The optional start date for the todo. Can be null if no start date is
+  /// specified.
+  start_date DateTime?
+  
+  /// Timestamp when this start date record was created.
+  created_at DateTime
+  
+  /// Timestamp when this start date record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([start_date])
+}
+
+/// Stores optional due dates for todos with cross-validation capabilities
+/// against start dates. This table maintains the due date information
+/// separately from the main todo entity to handle optional fields properly.
+///
+/// Each due date entry is associated with exactly one todo and supports the
+/// business requirement of optional deadline tracking. The due date is used
+/// for sorting, filtering, and deadline management functionality. When both
+/// start date and due date are provided, the system validates that the due
+/// date is not before the start date.
+///
+/// This table works in conjunction with {@link
+/// todo_app_todo_start_date_fields} to provide comprehensive date management
+/// for todo scheduling and deadline tracking. All temporal tracking is
+/// maintained through the parent {@link todo_app_todos} entity.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_due_date_fields {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent todo. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Optional due date for the todo. Used for deadline tracking and
+  /// scheduling. Supports cross-validation with start date when both are
+  /// provided.
+  due_date DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([due_date])
+}

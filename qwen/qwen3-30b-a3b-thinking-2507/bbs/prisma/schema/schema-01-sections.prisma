@@ -1,0 +1,50 @@
+/// Section definitions for organizing articles into economic and political
+/// topics, with unique name and descriptive metadata for user navigation.
+///
+/// Sections provide topic categorization for articles, enabling users to
+/// browse content by economic and political subtopics. Each section has a
+/// unique name (2-50 characters) and descriptive overview, allowing admins
+/// to manage topic structure without affecting existing content.
+///
+/// Section management allows creation, editing, and deletion of topics with
+/// proper content reassignment protocols (articles remain visible when
+/// sections are deleted).
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique section name for topic identification. Matches requirement 6.1
+  /// (2-50 characters).
+  name String
+  
+  /// Section topic description for user context. Matches 6.1 requirement
+  /// (5-250 characters).
+  description String?
+  
+  /// Timestamp when section was created. Standard required field.
+  created_at DateTime
+  
+  /// Timestamp when section was last modified. Standard required field.
+  updated_at DateTime
+  
+  /// Timestamp when section was soft-deleted. Standard optional field for
+  /// audit.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articles economic_political_discussion_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+}

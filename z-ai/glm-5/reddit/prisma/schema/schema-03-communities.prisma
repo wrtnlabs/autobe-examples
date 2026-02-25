@@ -1,0 +1,507 @@
+/// Core community entities representing user-created groups for organizing
+/// content and discussions.
+///
+/// Communities are the primary organizational unit of the platform where
+/// members gather around shared interests. Each community has a unique name
+/// (3-21 alphanumeric+underscore characters), description (10-500
+/// characters), and optional icon image. The community owner is the member
+/// who created it and has permanent moderation authority.
+///
+/// Key relationships:
+/// - Owner: {@link community_members} who created the community
+/// - Subscriptions: Members subscribe via {@link community_subscriptions}
+/// - Moderators: Managed through {@link community_moderators}
+/// - Content: Posts, comments, and votes exist in separate components
+///
+/// Communities support soft deletion to preserve referential integrity for
+/// historical content and audit trails.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created and owns this community. Owner has permanent
+  /// moderation authority and cannot be removed as moderator. References
+  /// {@link community_members.id}.
+  owner_id String
+  
+  /// Unique community name used in URLs and display. Must be 3-21 characters,
+  /// alphanumeric and underscores only. Case-insensitive uniqueness enforced.
+  name String
+  
+  /// Community description shown on community page and search results. Must be
+  /// 10-500 characters.
+  description String
+  
+  /// URL of the community icon image. Optional; displays default icon if not
+  /// provided. Recommended 256x256 pixels, max 2MB for JPEG/PNG/GIF formats.
+  icon_url String?
+  
+  /// Cached count of members subscribed to this community. Updated when
+  /// subscriptions are added or removed. Used for display and sorting in
+  /// discovery features.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created. Set automatically on creation.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated (name, description, or icon
+  /// changes).
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted. Null if active. Soft
+  /// deletion preserves referential integrity for existing content and audit
+  /// trails.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner community_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subscriptions community_subscriptions[]
+  moderators community_moderators[]
+  bans community_bans[]
+  moderationLogs community_moderation_logs[]
+  posts community_posts[]
+  postSnapshots community_post_snapshots[]
+  reports community_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([owner_id, created_at])
+}
+
+/// Junction table tracking member subscriptions to communities, enabling
+/// home feed generation and posting privilege validation. Each record
+/// represents a single subscription relationship between a member and a
+/// community.
+///
+/// Members subscribe to communities to receive posts in their home feed and
+/// gain posting privileges within that community. The subscription is a
+/// prerequisite for content creation - members must be subscribed to a
+/// community before they can create posts or comments.
+///
+/// Home feed queries use this table to filter posts from subscribed
+/// communities. The unique constraint on member-community pair prevents
+/// duplicate subscriptions, ensuring each member has exactly one
+/// subscription record per community.
+///
+/// Related entities:
+/// - {@link community_members} - The subscribing member
+/// - {@link community_communities} - The community being subscribed to
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the subscribing member. Each member can subscribe to
+  /// multiple communities. {@link community_members.id}
+  community_member_id String
+  
+  /// Reference to the community being subscribed to. Each community can have
+  /// multiple subscribers. {@link community_communities.id}
+  community_community_id String
+  
+  /// Timestamp when the subscription was created. Records the moment a member
+  /// joined a community.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_members @relation(fields: [community_member_id], references: [id], onDelete: Cascade)
+  community community_communities @relation(fields: [community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_member_id, community_community_id], map: "community_subscriptions_community_member_id_community__07955f80")
+  @@index([community_community_id, created_at])
+}
+
+/// Moderator assignments for communities, tracking both community owners
+/// (is_owner=true, permanent role) and appointed moderators
+/// (is_owner=false).
+///
+/// Each community has exactly one owner (the creator) who holds permanent
+/// moderation authority with exclusive ability to remove other moderators.
+/// Additional moderators can be appointed by the owner or existing
+/// moderators to help manage community content and user behavior.
+///
+/// Moderators can delete posts and comments, ban and unban users, and
+/// appoint new moderators within their assigned community. Moderation
+/// authority is strictly community-scoped and does not transfer between
+/// communities.
+///
+/// Key constraints enforced at application level:
+/// - Exactly one owner per community
+/// - Moderators must be subscribers before appointment
+/// - Only the owner can remove moderators; moderators cannot remove other
+/// moderators
+/// - Owner cannot be banned or removed from moderator position
+///
+/// Related entities: {@link community_communities} (the moderated
+/// community), {@link community_members} (the moderator user), {@link
+/// community_bans} (ban records managed by moderators), {@link
+/// community_moderation_logs} (audit trail for moderator lifecycle events).
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this moderator record belongs to. Each moderator operates
+  /// within a single community scope. {@link community_communities.id}.
+  community_id String
+  
+  /// The member serving as a moderator. A member can moderate multiple
+  /// communities independently. {@link community_members.id}.
+  member_id String
+  
+  /// The member who appointed this moderator (owner or existing moderator).
+  /// Null for community owners who are designated automatically upon community
+  /// creation. {@link community_members.id}.
+  appointed_by String?
+  
+  /// Whether this moderator is the community owner. Owners have permanent
+  /// status that cannot be removed by any moderator, and have exclusive
+  /// authority to remove other moderators. Exactly one owner exists per
+  /// community.
+  is_owner Boolean
+  
+  /// Timestamp when this moderator record was created. For owners, this
+  /// matches the community creation time. For appointed moderators, this
+  /// records the appointment time.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this moderator record.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_members @relation("community_moderators_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  appointer community_members? @relation("community_moderators_of_appointed_by", fields: [appointed_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  @@index([appointed_by])
+  @@unique([community_id, member_id])
+  @@index([community_id, is_owner])
+}
+
+/// Community-scoped user ban records that prevent banned members from
+/// creating posts or comments while retaining view and subscribe privileges.
+///
+/// Each ban is scoped to a specific community, establishing a unique
+/// constraint on the community-member pair to ensure a member can only be
+/// banned once per community. The ban records which moderator performed the
+/// action and includes an optional reason for transparency and
+/// accountability.
+///
+/// Bans can be permanent (null expired_at) or temporary (with specific
+/// expiration datetime). Moderators use this table to enforce community
+/// rules and maintain healthy discussion environments.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where the ban is applied. References {@link
+  /// community_communities.id}.
+  community_id String
+  
+  /// The member who is banned from the community. References {@link
+  /// community_members.id}.
+  member_id String
+  
+  /// The moderator who issued the ban. References {@link community_members.id}
+  /// to preserve historical accuracy even if moderator status changes.
+  banned_by String
+  
+  /// Optional reason for the ban, providing context for the banned member and
+  /// other moderators.
+  reason String?
+  
+  /// Expiration timestamp for temporary bans. Null indicates a permanent ban
+  /// with no automatic expiration.
+  expired_at DateTime?
+  
+  /// Timestamp when the ban was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last modified, such as expiration date
+  /// adjustments.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_members @relation("community_bans_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  bannedBy community_members @relation("community_bans_of_banned_by", fields: [banned_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([banned_by])
+  @@unique([community_id, member_id])
+  @@index([community_id, created_at])
+  @@index([member_id, created_at])
+}
+
+/// Immutable audit trail for all moderation actions within communities,
+/// providing accountability and transparency for governance decisions.
+///
+/// This table records every moderation action including moderator
+/// appointments and removals, user bans and unbans, and content deletions.
+/// Each log entry captures the actor (moderator who performed the action),
+/// the action type, an optional reason, and timestamps. Records are retained
+/// for a minimum of 90 days for compliance and dispute resolution purposes.
+///
+/// Target references are stored in subtype tables to maintain proper
+/// normalization:
+/// - {@link community_moderation_log_member_targets} - For MODERATOR_ADDED,
+/// MODERATOR_REMOVED, USER_BANNED, USER_UNBANNED actions
+/// - {@link community_moderation_log_post_targets} - For POST_DELETED actions
+/// - {@link community_moderation_log_comment_targets} - For COMMENT_DELETED
+/// actions
+///
+/// Related entities:
+/// - {@link community_communities} - Community where action occurred
+/// - {@link community_members} - Actor (moderator) who performed the action
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where the moderation action occurred. {@link
+  /// community_communities.id}.
+  community_id String
+  
+  /// The moderator who performed this moderation action. {@link
+  /// community_members.id}.
+  actor_id String
+  
+  /// Type of moderation action performed. Valid values: MODERATOR_ADDED,
+  /// MODERATOR_REMOVED, USER_BANNED, USER_UNBANNED, POST_DELETED,
+  /// COMMENT_DELETED. Determines which subtype target table contains the
+  /// reference.
+  action_type String
+  
+  /// Optional reason or explanation for the moderation action. Typically
+  /// provided for user bans and content deletions for internal tracking and
+  /// potential dispute resolution.
+  reason String?
+  
+  /// Timestamp when the moderation action was recorded. Used for chronological
+  /// ordering and retention policy enforcement (90+ days retention).
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  actor community_members @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberTarget community_moderation_log_member_targets?
+  postTarget community_moderation_log_post_targets?
+  commentTarget community_moderation_log_comment_targets?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, created_at])
+  @@index([actor_id, created_at])
+  @@index([action_type])
+}
+
+/// Target member references for moderation actions that involve members:
+/// MODERATOR_ADDED, MODERATOR_REMOVED, USER_BANNED, and USER_UNBANNED.
+///
+/// This table implements a 1:1 relationship with parent moderation log
+/// entries, storing the specific member who was affected by the moderation
+/// action. Each log entry can have at most one member target, enforced by
+/// the unique constraint on community_moderation_log_id. This design allows
+/// efficient querying of member-related moderation history while maintaining
+/// clear separation from post and comment target references.
+///
+/// References {@link community_moderation_logs} for the parent audit record
+/// and {@link community_members} for the affected member.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_moderation_log_member_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent moderation log entry. References {@link
+  /// community_moderation_logs.id}. The unique constraint ensures each log
+  /// entry has at most one member target.
+  community_moderation_log_id String
+  
+  /// The member who was affected by the moderation action (added as moderator,
+  /// removed as moderator, banned, or unbanned). References {@link
+  /// community_members.id}.
+  community_member_id String
+  
+  /// Timestamp when this member target record was created. Synchronized with
+  /// the parent moderation log entry.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderationLog community_moderation_logs @relation(fields: [community_moderation_log_id], references: [id], onDelete: Cascade)
+  member community_members @relation(fields: [community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_moderation_log_id], map: "community_moderation_log_member_targets_community_mode_dbcbfd55")
+  // spellchecker: ignore-next-line
+  @@index([community_member_id, created_at], map: "community_moderation_log_member_targets_community_memb_37cf6b49")
+}
+
+/// Target post references for POST_DELETED moderation actions.
+///
+/// This subsidiary table implements the 1:1 relationship pattern between
+/// moderation log entries and post references. When a moderator performs the
+/// POST_DELETED action, this table preserves the reference to the deleted
+/// post for audit trail and historical purposes.
+///
+/// The unique constraint on community_moderation_log_id ensures each log
+/// entry can have at most one post target, maintaining referential integrity
+/// in the moderation audit system.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_moderation_log_post_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderation log entry that this post target belongs to. Each
+  /// POST_DELETED log entry has exactly one post target reference. {@link
+  /// community_moderation_logs.id}
+  community_moderation_log_id String
+  
+  /// The post that was deleted by the moderation action. References the
+  /// original post for audit trail and potential content recovery purposes.
+  /// {@link community_posts.id}
+  community_post_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  log community_moderation_logs @relation(fields: [community_moderation_log_id], references: [id], onDelete: Cascade)
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_moderation_log_id], map: "community_moderation_log_post_targets_community_modera_df3ac3ba")
+}
+
+/// Junction table storing comment references for COMMENT_DELETED moderation
+/// actions.
+///
+/// This subsidiary entity establishes a 1:1 relationship with parent
+/// moderation log entries, capturing which comment was affected when
+/// moderators delete comments. Part of the moderation audit trail
+/// infrastructure, enabling retrieval of deleted comment details for
+/// accountability and dispute resolution.
+///
+/// The unique constraint on community_moderation_log_id ensures each log
+/// entry can reference at most one comment target, enforcing the
+/// one-action-one-target pattern for comment deletion records.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_moderation_log_comment_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent moderation log entry for this comment target. Each log entry can
+  /// have at most one comment target via the unique constraint. {@link
+  /// community_moderation_logs.id}
+  community_moderation_log_id String
+  
+  /// The comment that was deleted in this moderation action. References the
+  /// original comment record for audit trail purposes. {@link
+  /// community_comments.id}
+  community_comment_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderationLog community_moderation_logs @relation(fields: [community_moderation_log_id], references: [id], onDelete: Cascade)
+  comment community_comments @relation(fields: [community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_moderation_log_id], map: "community_moderation_log_comment_targets_community_mod_3e37c40f")
+  // spellchecker: ignore-next-line
+  @@index([community_comment_id], map: "community_moderation_log_comment_targets_community_com_862a3f3e")
+}

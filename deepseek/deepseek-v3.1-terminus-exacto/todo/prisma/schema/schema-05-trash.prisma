@@ -1,0 +1,379 @@
+/// Tracks soft-deleted todos and their trash metadata including deletion
+/// timestamp and restoration status. Each entry represents a todo that has
+/// been moved to trash but can potentially be restored. This table maintains
+/// the connection between the deleted todo and its original owner while
+/// tracking the deletion event.
+///
+/// When a user deletes a todo, a record is created here to track the
+/// deletion. If the todo is restored, the restoration status is updated. If
+/// permanently deleted, the record remains for audit purposes but the todo
+/// reference is cleared.
+///
+/// This table supports the trash management workflow by providing the
+/// necessary metadata for restoration operations and trash cleanup
+/// processes.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_trash_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who owns this trash item. {@link todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Soft-deleted todo reference. {@link todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Timestamp when the todo was moved to trash.
+  deleted_at DateTime
+  
+  /// Timestamp when the todo was restored from trash. Null if still in trash.
+  restored_at DateTime?
+  
+  /// Timestamp when the todo was permanently deleted from trash. Null if not
+  /// permanently deleted.
+  permanently_deleted_at DateTime?
+  
+  /// Timestamp when this trash item record was created.
+  created_at DateTime
+  
+  /// Timestamp when this trash item record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  restoration todo_app_trash_restorations?
+  cleanupLogs todo_app_trash_cleanup_logs[]
+  metadatum todo_app_trash_item_metadata?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([todo_app_user_id, deleted_at])
+  @@index([restored_at])
+  @@index([permanently_deleted_at])
+}
+
+/// Records restoration events when users restore deleted todos from trash
+/// back to active status.
+///
+/// Each restoration event captures when a user restores a previously deleted
+/// todo back to active status, creating an audit trail for accidental
+/// deletion recovery operations. The table maintains references to both the
+/// user who performed the restoration and the specific trash item that was
+/// restored.
+///
+/// This table supports the application's safety features by providing
+/// complete visibility into restoration operations, enabling users to track
+/// their recovery actions and providing data isolation guarantees that
+/// ensure users can only access restoration events for their own todos.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_trash_restorations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the trash item being restored. {@link
+  /// todo_app_trash_items.id}
+  todo_app_trash_item_id String
+  
+  /// Reference to the user who performed the restoration. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Timestamp when the restoration event was created and recorded.
+  created_at DateTime
+  
+  /// Timestamp when the restoration record was last updated (typically matches
+  /// created_at for restoration events).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_trash_item_id])
+  @@index([todo_app_user_id, created_at])
+  @@index([todo_app_trash_item_id])
+}
+
+/// Tracks permanent deletion operations for audit purposes and compliance
+/// requirements.
+///
+/// This table serves as an audit trail for when users permanently delete
+/// todos from the trash system. Each record captures who deleted what todo
+/// and when, providing comprehensive audit capabilities for compliance and
+/// user accountability.
+///
+/// Records in this table are append-only and represent the final step in the
+/// todo lifecycle when items are removed from the trash. The table
+/// references {@link todo_app_users.id} for user accountability and {@link
+/// todo_app_todos.id} for tracking which todo was permanently deleted.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_permanent_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who performed the permanent deletion. {@link
+  /// todo_app_users.id}
+  todo_app_user_id String
+  
+  /// Reference to the todo that was permanently deleted. {@link
+  /// todo_app_todos.id}
+  todo_app_todo_id String
+  
+  /// Timestamp when the permanent deletion occurred.
+  deleted_at DateTime
+  
+  /// Optional reason for permanent deletion, if provided by the user.
+  reason String?
+  
+  /// Record creation timestamp for audit trail.
+  created_at DateTime
+  
+  /// Record update timestamp for audit trail.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_user_id, deleted_at])
+  @@index([todo_app_todo_id])
+}
+
+/// Logs automated trash cleanup operations and system-initiated permanent
+/// deletions for audit and monitoring purposes.
+///
+/// This table records all system-generated cleanup activities that
+/// permanently remove expired items from the trash. Each entry tracks
+/// operation details including processed item counts, success/failure
+/// status, cleanup criteria, and performance metrics. These logs provide
+/// audit trails for compliance requirements and system monitoring.
+///
+/// Relationship context: References {@link todo_app_trash_items} to track
+/// which items were processed in each cleanup operation. Connected to system
+/// metadata through cleanup criteria references.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_trash_cleanup_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the specific trash item processed in this cleanup operation.
+  /// {@link todo_app_trash_items.id}
+  todo_app_trash_item_id String
+  
+  /// Type of cleanup operation performed (e.g., 'automatic_cleanup',
+  /// 'manual_cleanup', 'expired_item_removal').
+  operation_type String
+  
+  /// Number of trash items processed in this cleanup operation.
+  items_processed Int
+  
+  /// Number of items permanently deleted during this cleanup.
+  items_deleted Int
+  
+  /// Criteria used to select items for cleanup (e.g., 'older_than_30_days').
+  cleanup_criteria String
+  
+  /// Status of the cleanup operation (e.g., 'completed', 'failed',
+  /// 'partial_success').
+  operation_status String
+  
+  /// Error details if the cleanup operation failed.
+  error_message String?
+  
+  /// Timestamp when the cleanup operation began.
+  started_at DateTime
+  
+  /// Timestamp when the cleanup operation finished.
+  completed_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([todo_app_trash_item_id, started_at], map: "todo_app_trash_cleanup_logs_todo_app_trash_item_id_sta_8691b79c")
+  @@index([operation_type, started_at])
+  @@index([operation_status, completed_at])
+  @@index([started_at])
+}
+
+/// Stores user preferences for trash retention periods and cleanup
+/// automation settings.
+///
+/// Each user can configure personal preferences for how their deleted todos
+/// are managed in the trash system. This includes automatic cleanup
+/// timeframes, notification preferences, and retention policies that
+/// determine when items are permanently deleted from the trash.
+///
+/// The settings support flexible trash management while ensuring user
+/// control over data retention and cleanup automation. All settings default
+/// to system-wide values but can be customized per user to accommodate
+/// different workflow preferences.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_trash_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated user's {@link todo_app_users.id} who owns these trash settings.
+  todo_app_user_id String
+  
+  /// Number of days to keep items in trash before automatic cleanup. Default
+  /// system value is 30 days.
+  retention_period_days Int
+  
+  /// Whether automatic cleanup of expired trash items is enabled for this user.
+  auto_cleanup_enabled Boolean
+  
+  /// Whether to send notifications before items are automatically cleaned up
+  /// from trash.
+  notify_before_cleanup Boolean
+  
+  /// Number of days before cleanup to send notification. Only relevant if
+  /// notify_before_cleanup is true.
+  notify_days_before Int
+  
+  /// Whether to require confirmation before permanently deleting items from
+  /// trash.
+  permanent_deletion_confirmation Boolean
+  
+  /// Timestamp when these trash settings were created.
+  created_at DateTime
+  
+  /// Timestamp when these trash settings were last updated.
+  updated_at DateTime
+  
+  /// Timestamp when these trash settings were soft deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_user_id])
+  // spellchecker: ignore-next-line
+  @@index([auto_cleanup_enabled, retention_period_days], map: "todo_app_trash_settings_auto_cleanup_enabled_retention_1ea9f6bf")
+  @@index([created_at])
+}
+
+/// Tracks supplemental metadata for trash items to support automated cleanup
+/// processes and retention management.
+///
+/// This table stores additional information needed for the trash management
+/// system beyond basic deletion tracking. It enables features like automated
+/// cleanup eligibility determination, retention period enforcement, and
+/// cleanup status tracking. The metadata supports compliance requirements
+/// and user configurable retention preferences.
+///
+/// Each record represents the cleanup and retention configuration for a
+/// single trash item from {@link todo_app_trash_items}. The table maintains
+/// critical timing information for automated cleanup decisions and provides
+/// status tracking for retention policy enforcement.
+///
+/// @namespace Trash
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_trash_item_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the trash item being tracked. {@link todo_app_trash_items.id}
+  todo_app_trash_item_id String
+  
+  /// Indicates if this trash item is eligible for automated cleanup based on
+  /// retention policies.
+  cleanup_eligible Boolean
+  
+  /// Calculated timestamp when retention period expires and automated cleanup
+  /// can occur.
+  retention_expires_at DateTime
+  
+  /// Timestamp when automated cleanup is scheduled to process this trash item.
+  cleanup_scheduled_at DateTime?
+  
+  /// Flag indicating if user explicitly requested cleanup bypassing retention
+  /// period.
+  manual_cleanup_requested Boolean
+  
+  /// Timestamp when automated cleanup was successfully processed.
+  cleanup_processed_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_trash_item_id])
+  // spellchecker: ignore-next-line
+  @@index([cleanup_eligible, retention_expires_at], map: "todo_app_trash_item_metadata_cleanup_eligible_retentio_1c3d7bf5")
+  @@index([retention_expires_at])
+}

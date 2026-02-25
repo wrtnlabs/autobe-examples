@@ -1,0 +1,1118 @@
+/// System-wide configuration settings and parameters for platform operation.
+///
+/// This table stores all configurable parameters that control the behavior
+/// and features of the discussion board platform. Administrators can modify
+/// these settings to customize platform functionality, enable/disable
+/// features, and adjust operational parameters without requiring code
+/// changes.
+///
+/// Each configuration entry represents a specific system parameter that
+/// influences platform behavior, such as rate limits, content policies,
+/// display settings, or feature toggles. The configuration system provides a
+/// centralized way to manage platform settings across all system components.
+///
+/// Configurations are organized by functional areas and can be modified by
+/// authorized administrators through the system administration interface.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the configuration parameter. Used to reference the
+  /// configuration in code and administration interfaces.
+  config_key String
+  
+  /// The actual value of the configuration parameter stored as a string for
+  /// flexibility.
+  config_value String
+  
+  /// The data type of the configuration value (e.g., 'string', 'integer',
+  /// 'boolean', 'json').
+  data_type String
+  
+  /// Human-readable description explaining the purpose and usage of this
+  /// configuration parameter.
+  description String
+  
+  /// Functional category grouping related configurations (e.g.,
+  /// 'authentication', 'content', 'performance', 'security').
+  category String
+  
+  /// Indicates whether this configuration contains sensitive information that
+  /// should be masked in logs and UI displays.
+  is_sensitive Boolean
+  
+  /// Timestamp when this configuration was initially created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration was soft-deleted, allowing for
+  /// configuration lifecycle management.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  performanceMetrics discussion_board_performance_metrics[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([config_key])
+  @@index([category, created_at])
+  @@index([is_sensitive])
+}
+
+/// Comprehensive audit trail for all administrative actions and system
+/// events across the discussion board platform.
+///
+/// This table captures detailed information about every significant action
+/// performed by users, administrators, and the system itself. Each record
+/// includes the actor who performed the action, the type of action, the
+/// target entity affected, timestamp information, and additional metadata
+/// specific to the action type.
+///
+/// The audit trail serves multiple purposes including compliance monitoring,
+/// security investigation, system debugging, and user accountability. All
+/// records are append-only and cannot be modified once created to ensure the
+/// integrity of the audit trail.
+///
+/// Key relationships:
+/// - References actor tables ({@link discussion_board_users}, {@link
+/// discussion_board_admins}, {@link discussion_board_super_admins}) for
+/// actor identification
+/// - Captures actions across all system components including articles,
+/// comments, sections, and user management
+/// - Supports detailed investigation through comprehensive metadata storage
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// ID of the user, administrator, or super administrator who performed the
+  /// action. References the appropriate actor table based on actor_type.
+  actor_id String?
+  
+  /// ID of the user affected by the action, if applicable. References {@link
+  /// discussion_board_users.id}.
+  target_user_id String?
+  
+  /// ID of the administrator affected by the action, if applicable. References
+  /// {@link discussion_board_admins.id}.
+  target_admin_id String?
+  
+  /// ID of the super administrator affected by the action, if applicable.
+  /// References {@link discussion_board_super_admins.id}.
+  target_super_admin_id String?
+  
+  /// ID of the article affected by the action, if applicable. References
+  /// {@link discussion_board_articles.id}.
+  target_article_id String?
+  
+  /// ID of the comment affected by the action, if applicable. References
+  /// {@link discussion_board_comments.id}.
+  target_comment_id String?
+  
+  /// ID of the section affected by the action, if applicable. References
+  /// {@link discussion_board_sections.id}.
+  target_section_id String?
+  
+  /// Type of actor who performed the action. Valid values: 'user', 'admin',
+  /// 'super_admin', 'system'.
+  actor_type String
+  
+  /// Category of the action performed. Examples: 'user_login',
+  /// 'article_create', 'comment_delete', 'user_ban', 'admin_promotion'.
+  action_type String
+  
+  /// More specific classification of the action within the main category.
+  action_subtype String?
+  
+  /// Human-readable description of the action performed, including context and
+  /// details.
+  description String
+  
+  /// IP address from which the action was performed, for security tracking.
+  ip_address String?
+  
+  /// User agent string of the client that performed the action.
+  user_agent String?
+  
+  /// JSON-formatted additional metadata specific to the action type, stored as
+  /// string for flexibility.
+  metadata String?
+  
+  /// Whether the action was successful or resulted in an error.
+  success Boolean
+  
+  /// Error message if the action failed, providing details about the failure.
+  error_message String?
+  
+  /// Timestamp when the audit record was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit record was last updated (typically matches
+  /// created_at for audit integrity).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  actor discussion_board_users? @relation("discussion_board_audit_logs_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
+  targetUser discussion_board_users? @relation("discussion_board_audit_logs_of_target_user_id", fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetAdmin discussion_board_admins? @relation(fields: [target_admin_id], references: [id], onDelete: Cascade)
+  targetSuperAdmin discussion_board_super_admins? @relation(fields: [target_super_admin_id], references: [id], onDelete: Cascade)
+  targetArticle discussion_board_articles? @relation(fields: [target_article_id], references: [id], onDelete: Cascade)
+  targetComment discussion_board_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  targetSection discussion_board_sections? @relation(fields: [target_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([target_admin_id])
+  @@index([target_super_admin_id])
+  @@index([target_section_id])
+  @@index([actor_type, created_at])
+  @@index([action_type, created_at])
+  @@index([actor_id, created_at])
+  @@index([target_user_id, created_at])
+  @@index([target_article_id, created_at])
+  @@index([target_comment_id, created_at])
+  @@index([success, created_at])
+}
+
+/// Stores approval records for administrator promotion requests with
+/// reviewer information and decision details.
+///
+/// Each record represents a single approval or rejection decision made by an
+/// administrator on a promotion request. This table maintains a complete
+/// audit trail of all promotion decisions, including who made the decision,
+/// when it was made, and the rationale behind it.
+///
+/// The table supports the administrator promotion workflow by tracking the
+/// entire lifecycle of promotion requests from submission to final decision.
+/// It ensures accountability and transparency in the promotion process by
+/// recording all decision-making activities.
+///
+/// This table works in conjunction with {@link
+/// discussion_board_administrator_promotion_requests} which stores the
+/// original promotion requests, and references {@link
+/// discussion_board_admins} for the reviewing administrator information. It
+/// also maintains a relationship to the parent {@link
+/// discussion_board_administrators} table to track which administrator
+/// record is affected by the promotion decision.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_promotion_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the promotion request being reviewed. {@link
+  /// discussion_board_administrator_promotion_requests.id}
+  promotion_request_id String
+  
+  /// Administrator who reviewed and made the decision. {@link
+  /// discussion_board_admins.id}
+  reviewer_admin_id String
+  
+  /// Reference to the parent administrator record affected by this promotion
+  /// decision. {@link discussion_board_administrators.id}
+  discussion_board_administrator_id String
+  
+  /// Whether the promotion request was approved (true) or rejected (false).
+  approved Boolean
+  
+  /// Explanation or rationale provided by the reviewer for their decision.
+  decision_reason String
+  
+  /// Timestamp when the promotion request was reviewed and decision was made.
+  reviewed_at DateTime
+  
+  /// Timestamp when the approval record was created.
+  created_at DateTime
+  
+  /// Timestamp when the approval record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the approval record was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest discussion_board_administrator_promotion_requests @relation(fields: [promotion_request_id], references: [id], onDelete: Cascade)
+  reviewerAdmin discussion_board_admins @relation(fields: [reviewer_admin_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([promotion_request_id], map: "discussion_board_administrator_promotion_approvals_pro_def9026c")
+  // spellchecker: ignore-next-line
+  @@index([reviewer_admin_id, reviewed_at], map: "discussion_board_administrator_promotion_approvals_rev_ce18e3c1")
+  // spellchecker: ignore-next-line
+  @@index([approved, reviewed_at], map: "discussion_board_administrator_promotion_approvals_app_d5ca4fc9")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, reviewed_at], map: "discussion_board_administrator_promotion_approvals_dis_2228d68e")
+}
+
+/// Comprehensive audit trail of content moderation actions performed by
+/// administrators.
+///
+/// This table logs all moderation activities including article deletions,
+/// comment deletions, and other content management actions. Each record
+/// captures the moderator, action type, target content, timestamp, and
+/// reason for the moderation action.
+///
+/// The logs serve as an audit trail for compliance and accountability
+/// purposes, allowing administrators to review moderation history and track
+/// patterns of content management activities. Records are immutable once
+/// created to maintain the integrity of the audit trail.
+///
+/// Relationships include links to {@link discussion_board_admins} for
+/// moderator identification and references to moderated content through
+/// content-specific foreign keys.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_content_moderation_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the moderation action. {@link
+  /// discussion_board_admins.id}
+  admin_id String
+  
+  /// Type of moderation action performed (e.g., 'article_delete',
+  /// 'comment_delete', 'content_hide').
+  action_type String
+  
+  /// Type of content being moderated (e.g., 'article', 'comment',
+  /// 'user_profile').
+  target_content_type String
+  
+  /// Unique identifier of the moderated content item.
+  target_content_id String
+  
+  /// Explanation or justification for the moderation action.
+  reason String?
+  
+  /// Timestamp when the moderation action was logged.
+  created_at DateTime
+  
+  /// Timestamp when the moderation log record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([admin_id, created_at], map: "discussion_board_content_moderation_logs_admin_id_crea_9f571f3d")
+  // spellchecker: ignore-next-line
+  @@index([target_content_type, target_content_id], map: "discussion_board_content_moderation_logs_target_conten_eb9d912f")
+  @@index([created_at])
+}
+
+/// Comprehensive system activity tracking table that records all platform
+/// interactions including user logins, content creation, article browsing,
+/// and administrative actions. This table serves as the central audit trail
+/// for platform usage patterns and security monitoring.
+///
+/// Each record represents a discrete system activity performed by an actor
+/// (user, admin, or super admin) and includes detailed metadata about the
+/// action type, target entity, and contextual information. The table
+/// supports usage analytics, security auditing, and platform performance
+/// monitoring.
+///
+/// Activities are categorized by type (login, logout, article_create,
+/// comment_create, etc.) and reference the specific actor who performed the
+/// action. The table maintains a complete chronological record of all
+/// platform interactions for compliance and analytical purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_system_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the user who performed the activity, if applicable. {@link
+  /// discussion_board_users.id}
+  user_id String?
+  
+  /// Reference to the administrator who performed the activity, if applicable.
+  /// {@link discussion_board_admins.id}
+  admin_id String?
+  
+  /// Reference to the super administrator who performed the activity, if
+  /// applicable. {@link discussion_board_super_admins.id}
+  super_admin_id String?
+  
+  /// Type of system activity performed (e.g., login, logout, article_create,
+  /// comment_create, section_browse, search_performed).
+  activity_type String
+  
+  /// Type of entity targeted by the activity (e.g., user, article, comment,
+  /// section, system).
+  target_entity_type String?
+  
+  /// ID of the specific entity targeted by the activity, if applicable.
+  target_entity_id String?
+  
+  /// IP address from which the activity was performed for security tracking.
+  ip_address String?
+  
+  /// User agent string of the client that performed the activity.
+  user_agent String?
+  
+  /// HTTP referrer header indicating the source of the activity request.
+  referrer String?
+  
+  /// Additional details or metadata about the activity in JSON format.
+  activity_details String?
+  
+  /// Whether the activity was completed successfully or resulted in an error.
+  success_status Boolean
+  
+  /// Error message if the activity failed, providing diagnostic information.
+  error_message String?
+  
+  /// Timestamp when the activity was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the activity record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([activity_type, created_at])
+  @@index([user_id, created_at])
+  @@index([admin_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([super_admin_id, created_at], map: "discussion_board_system_activities_super_admin_id_crea_29789ac6")
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id], map: "discussion_board_system_activities_target_entity_type__6c85ef40")
+  @@index([ip_address, created_at])
+}
+
+/// System performance metrics and monitoring data for tracking platform
+/// health and optimization.
+///
+/// This table stores various performance indicators collected from the
+/// discussion board platform, including response times, resource
+/// utilization, error rates, and system load metrics. The data supports
+/// capacity planning, performance optimization, and proactive monitoring of
+/// platform health.
+///
+/// Metrics are typically collected automatically by monitoring systems and
+/// provide insights into system behavior under different load conditions.
+/// Administrators can use this data to identify performance bottlenecks,
+/// plan infrastructure upgrades, and ensure service level agreement
+/// compliance.
+///
+/// Each metric record represents a point-in-time measurement of a specific
+/// performance indicator, allowing for trend analysis and historical
+/// comparison of system performance over time.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_performance_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Optional reference to the system configuration that was active when this
+  /// metric was collected. {@link discussion_board_system_configurations.id}
+  discussion_board_system_configuration_id String?
+  
+  /// Type of performance metric being recorded (e.g., response_time,
+  /// cpu_usage, memory_usage, error_rate, request_count).
+  metric_type String
+  
+  /// Numerical value of the performance metric measurement.
+  metric_value Float
+  
+  /// Unit of measurement for the metric value (e.g., milliseconds, percentage,
+  /// count, bytes).
+  metric_unit String
+  
+  /// Component or service that generated this metric (e.g., api_gateway,
+  /// database, cache, frontend).
+  source_component String
+  
+  /// Exact timestamp when this metric was collected from the system.
+  collection_timestamp DateTime
+  
+  /// Time period this metric represents (e.g., instantaneous, 1_minute,
+  /// 5_minutes, 1_hour).
+  time_range String
+  
+  /// Additional context or metadata about the metric collection in JSON format.
+  metadata String?
+  
+  /// Timestamp when this metric record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this metric record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  systemConfiguration discussion_board_system_configurations? @relation(fields: [discussion_board_system_configuration_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_system_configuration_id], map: "discussion_board_performance_metrics_discussion_board__a8738511")
+  // spellchecker: ignore-next-line
+  @@index([metric_type, collection_timestamp], map: "discussion_board_performance_metrics_metric_type_colle_4d0cf7f6")
+  // spellchecker: ignore-next-line
+  @@index([source_component, collection_timestamp], map: "discussion_board_performance_metrics_source_component__9532632a")
+  @@index([collection_timestamp])
+}
+
+/// Comprehensive system error logging and debugging information storage.
+///
+/// This table captures all system errors that occur within the discussion
+/// board platform, providing detailed information for debugging, monitoring,
+/// and performance analysis. Each error record includes the error type,
+/// stack trace, request context, and severity level to help developers
+/// identify and resolve issues quickly.
+///
+/// The error logs support the system's performance monitoring requirements
+/// by tracking error frequency and patterns, and they provide security
+/// auditing capabilities by recording unexpected system behavior. Errors are
+/// categorized by severity to prioritize debugging efforts and maintain
+/// system stability.
+///
+/// This table integrates with the broader Systematic component
+/// infrastructure, providing essential debugging information that
+/// complements the performance metrics and audit logs maintained in other
+/// Systematic tables.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_error_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Classification of the error type (e.g., database_error,
+  /// authentication_error, validation_error, system_error).
+  error_type String
+  
+  /// Detailed error message describing what went wrong.
+  error_message String
+  
+  /// Full stack trace for debugging purposes, if available.
+  stack_trace String?
+  
+  /// Error severity level (critical, error, warning, info).
+  severity String
+  
+  /// HTTP request path that triggered the error, if applicable.
+  request_path String?
+  
+  /// HTTP request method (GET, POST, PUT, DELETE) that triggered the error.
+  request_method String?
+  
+  /// User agent string from the request that caused the error.
+  user_agent String?
+  
+  /// IP address of the client that triggered the error.
+  ip_address String?
+  
+  /// Deployment environment where the error occurred (development, staging,
+  /// production).
+  environment String
+  
+  /// System component or module where the error originated.
+  component String?
+  
+  /// Timestamp when the error occurred.
+  occurred_at DateTime
+  
+  /// Timestamp when this error record was created.
+  created_at DateTime
+  
+  /// Timestamp when this error record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this error record was soft deleted for cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([severity, occurred_at])
+  @@index([error_type, occurred_at])
+  @@index([environment, occurred_at])
+  @@index([component, occurred_at])
+}
+
+/// Records of system backup operations and data protection activities.
+///
+/// This table tracks all backup operations performed on the discussion board
+/// platform, including automated and manual backups. Each record captures
+/// the backup type, status, file location, size, and administrator who
+/// initiated the operation. The table serves as an audit trail for data
+/// protection compliance and disaster recovery planning.
+///
+/// Backup records are created by system administrators or automated backup
+/// processes and provide visibility into data protection activities. Records
+/// include both successful and failed backup attempts for comprehensive
+/// monitoring.
+///
+/// Related entities: {@link discussion_board_admins.id} for
+/// administrator-initiated backups, {@link
+/// discussion_board_system_configurations.id} for backup configuration
+/// references.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_backup_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who initiated the backup operation. {@link
+  /// discussion_board_admins.id}.
+  initiated_by_admin_id String?
+  
+  /// Type of backup operation performed (e.g., 'full', 'incremental',
+  /// 'database_only', 'files_only').
+  backup_type String
+  
+  /// Current status of the backup operation (e.g., 'in_progress', 'completed',
+  /// 'failed', 'cancelled').
+  status String
+  
+  /// File system path or storage location where the backup is stored.
+  file_path String?
+  
+  /// Size of the backup file in bytes, populated after successful completion.
+  size_bytes Int?
+  
+  /// Timestamp when the backup operation began.
+  started_at DateTime
+  
+  /// Timestamp when the backup operation completed successfully or failed.
+  completed_at DateTime?
+  
+  /// Error description if the backup operation failed.
+  error_message String?
+  
+  /// Timestamp when the backup record was created.
+  created_at DateTime
+  
+  /// Timestamp when the backup record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the backup record was soft deleted for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  initiatedByAdmin discussion_board_admins? @relation(fields: [initiated_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status, started_at])
+  @@index([backup_type, started_at])
+  // spellchecker: ignore-next-line
+  @@index([initiated_by_admin_id, started_at], map: "discussion_board_backup_records_initiated_by_admin_id__d09919e1")
+}
+
+/// System maintenance schedules and history tracking.
+///
+/// Stores planned maintenance windows, execution history, and status
+/// tracking for system maintenance activities. Includes maintenance type
+/// categorization, scheduled timing, responsible administrators, and
+/// completion status.
+///
+/// Maintenance schedules are created by administrators to plan system
+/// downtime, updates, and infrastructure improvements. Each schedule
+/// includes detailed timing information, expected duration, and status
+/// tracking for monitoring maintenance progress.
+///
+/// Related entities: {@link discussion_board_admins} for maintenance
+/// responsibility assignment, {@link discussion_board_audit_logs} for
+/// maintenance activity auditing.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_maintenance_schedules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who scheduled this maintenance. {@link
+  /// discussion_board_admins.id}
+  scheduled_by_admin_id String
+  
+  /// Administrator who performed the maintenance. {@link
+  /// discussion_board_admins.id}
+  performed_by_admin_id String?
+  
+  /// Type of maintenance being performed (e.g., system update, database
+  /// backup, security patch).
+  maintenance_type String
+  
+  /// Detailed description of the maintenance activity and its purpose.
+  description String
+  
+  /// Planned start time for the maintenance window.
+  scheduled_start_time DateTime
+  
+  /// Planned end time for the maintenance window.
+  scheduled_end_time DateTime
+  
+  /// Actual start time when maintenance began.
+  actual_start_time DateTime?
+  
+  /// Actual end time when maintenance completed.
+  actual_end_time DateTime?
+  
+  /// Current status of maintenance (scheduled, in-progress, completed,
+  /// cancelled).
+  status String
+  
+  /// Estimated duration of maintenance in minutes.
+  estimated_duration_minutes Int
+  
+  /// Actual duration of maintenance in minutes.
+  actual_duration_minutes Int?
+  
+  /// Level of impact on users (low, medium, high, critical).
+  impact_level String
+  
+  /// Additional notes or observations about the maintenance.
+  notes String?
+  
+  /// Timestamp when the maintenance schedule was created.
+  created_at DateTime
+  
+  /// Timestamp when the maintenance schedule was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the maintenance schedule was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  scheduledByAdmin discussion_board_admins @relation("discussion_board_maintenance_schedules_of_scheduled_by_admin_id", fields: [scheduled_by_admin_id], references: [id], onDelete: Cascade)
+  performedByAdmin discussion_board_admins? @relation("discussion_board_maintenance_schedules_of_performed_by_admin_id", fields: [performed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([performed_by_admin_id], map: "discussion_board_maintenance_schedules_performed_by_ad_8fb8f67a")
+  // spellchecker: ignore-next-line
+  @@index([scheduled_start_time, status], map: "discussion_board_maintenance_schedules_scheduled_start_5fcd0317")
+  // spellchecker: ignore-next-line
+  @@index([status, scheduled_start_time], map: "discussion_board_maintenance_schedules_status_schedule_22680cae")
+  // spellchecker: ignore-next-line
+  @@index([scheduled_by_admin_id, created_at], map: "discussion_board_maintenance_schedules_scheduled_by_ad_04a1b2b1")
+}
+
+/// API rate limiting configurations and enforcement records for platform
+/// security.
+///
+/// This table stores rate limiting configurations that control API usage
+/// across the discussion board platform. It tracks enforcement actions when
+/// rate limits are exceeded and maintains audit trails for security
+/// monitoring and compliance.
+///
+/// Each record represents a specific rate limiting policy that can be
+/// applied to different API endpoints, user types, or system functions. The
+/// table captures both the configuration parameters and actual enforcement
+/// events when limits are triggered.
+///
+/// Rate limiting is essential for preventing API abuse, ensuring fair
+/// resource allocation, and maintaining system stability under high load
+/// conditions. {@link discussion_board_system_configurations} may reference
+/// these rate limits for system-wide configuration management.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_api_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who triggered the rate limit enforcement. {@link
+  /// discussion_board_users.id}.
+  discussion_board_user_id String?
+  
+  /// Administrator who triggered the rate limit enforcement. {@link
+  /// discussion_board_admins.id}.
+  discussion_board_admin_id String?
+  
+  /// Super administrator who triggered the rate limit enforcement. {@link
+  /// discussion_board_super_admins.id}.
+  discussion_board_super_admin_id String?
+  
+  /// API endpoint path that the rate limit applies to (e.g., '/api/articles',
+  /// '/api/comments').
+  endpoint_path String
+  
+  /// HTTP method that the rate limit applies to (GET, POST, PUT, DELETE, etc.).
+  http_method String
+  
+  /// Type of rate limiting (e.g., 'ip_based', 'user_based', 'global', 'burst').
+  rate_limit_type String
+  
+  /// Maximum number of requests allowed per time interval.
+  requests_per_interval Int
+  
+  /// Time interval in seconds for the rate limit window.
+  interval_seconds Int
+  
+  /// Maximum burst requests allowed above the normal rate limit.
+  burst_limit Int?
+  
+  /// Action taken when rate limit is exceeded (e.g., 'block', 'throttle',
+  /// 'warning').
+  enforcement_action String
+  
+  /// Timestamp when the rate limit was last enforced.
+  enforced_at DateTime?
+  
+  /// Number of times this rate limit has been enforced.
+  enforcement_count Int
+  
+  /// Whether this rate limit configuration is currently active.
+  is_active Boolean
+  
+  /// Human-readable description of the rate limit policy.
+  description String?
+  
+  /// Timestamp when the rate limit configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when the rate limit configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the rate limit configuration was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_user_id])
+  @@index([discussion_board_admin_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id], map: "discussion_board_api_rate_limits_discussion_board_supe_626ba1cc")
+  // spellchecker: ignore-next-line
+  @@unique([endpoint_path, http_method, rate_limit_type], map: "discussion_board_api_rate_limits_endpoint_path_http_me_f58d41cc")
+  @@index([endpoint_path, http_method])
+  @@index([rate_limit_type])
+  @@index([enforced_at])
+  @@index([is_active])
+}
+
+/// Security-related events and threat detection logs for comprehensive
+/// security monitoring and incident response.
+///
+/// This table serves as the central repository for all security-related
+/// activities within the discussion board platform. It captures security
+/// events such as failed login attempts, suspicious activities, threat
+/// detections, and security policy violations. Each event includes detailed
+/// metadata for forensic analysis and compliance reporting.
+///
+/// The table supports security monitoring by providing a complete audit
+/// trail of security incidents, enabling administrators to detect patterns,
+/// investigate breaches, and maintain compliance with security standards.
+/// Events are categorized by type and severity to facilitate efficient
+/// filtering and alerting.
+///
+/// Security events are linked to specific actors when applicable, allowing
+/// correlation between user actions and security incidents. The system uses
+/// this data for threat detection, anomaly detection, and security incident
+/// response workflows.
+///
+/// {@link discussion_board_users.id}, {@link discussion_board_admins.id},
+/// {@link discussion_board_super_admins.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_security_events {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who triggered the security event, if applicable. {@link
+  /// discussion_board_users.id}
+  user_id String?
+  
+  /// Administrator who triggered the security event, if applicable. {@link
+  /// discussion_board_admins.id}
+  admin_id String?
+  
+  /// Super administrator who triggered the security event, if applicable.
+  /// {@link discussion_board_super_admins.id}
+  super_admin_id String?
+  
+  /// Type of security event (e.g., failed_login, suspicious_activity,
+  /// threat_detected, policy_violation).
+  event_type String
+  
+  /// Severity level of the security event (low, medium, high, critical).
+  severity String
+  
+  /// Detailed description of the security event including context and impact
+  /// assessment.
+  description String
+  
+  /// IP address from which the security event originated.
+  source_ip String
+  
+  /// User agent string of the client that triggered the security event.
+  user_agent String
+  
+  /// Additional event-specific data in JSON format for detailed forensic
+  /// analysis.
+  event_data String?
+  
+  /// Whether the security event has been resolved by administrators.
+  resolved Boolean
+  
+  /// Timestamp when the security event was marked as resolved.
+  resolved_at DateTime?
+  
+  /// Name of the administrator who resolved the security event.
+  resolved_by String?
+  
+  /// Timestamp when the security event was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the security event was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([event_type, created_at])
+  @@index([severity, created_at])
+  @@index([user_id, created_at])
+  @@index([admin_id, created_at])
+  @@index([super_admin_id, created_at])
+  @@index([resolved, created_at])
+}
+
+/// Data retention policies and compliance tracking for the discussion board
+/// platform.
+///
+/// This table stores system-wide data retention policies that define how
+/// long different types of data should be retained before automatic deletion
+/// or archival. Each policy specifies retention periods, data types covered,
+/// and compliance requirements for regulatory adherence.
+///
+/// Policies are managed by system administrators and enforced automatically
+/// by the platform. The table tracks policy status, enforcement history, and
+/// compliance verification timestamps to ensure regulatory requirements are
+/// met.
+///
+/// This table supports the data privacy considerations mentioned in the
+/// system performance and security requirements.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_data_retention_policies {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the retention policy, used for system
+  /// reference and reporting.
+  policy_name String
+  
+  /// Detailed description of the policy purpose, scope, and compliance
+  /// requirements.
+  description String
+  
+  /// Number of days data should be retained before automatic deletion or
+  /// archival.
+  retention_period_days Int
+  
+  /// Action to take when retention period expires (delete, archive, anonymize).
+  retention_action String
+  
+  /// Regulatory standard or compliance framework this policy supports (e.g.,
+  /// GDPR, CCPA).
+  compliance_standard String?
+  
+  /// Indicates whether this policy is currently active and being enforced.
+  is_active Boolean
+  
+  /// Timestamp when this policy was last enforced by the system.
+  last_enforced_at DateTime?
+  
+  /// Scheduled timestamp for the next policy enforcement cycle.
+  next_enforcement_due DateTime?
+  
+  /// Timestamp when the policy was created.
+  created_at DateTime
+  
+  /// Timestamp when the policy was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the policy was soft-deleted, allowing for policy lifecycle
+  /// management.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  dataTypeMappings discussion_board_data_retention_policy_data_types[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([policy_name])
+  // spellchecker: ignore-next-line
+  @@index([is_active, next_enforcement_due], map: "discussion_board_data_retention_policies_is_active_nex_59746838")
+  // spellchecker: ignore-next-line
+  @@index([compliance_standard, is_active], map: "discussion_board_data_retention_policies_compliance_st_84ec2f6f")
+  // spellchecker: ignore-next-line
+  @@index([retention_action, is_active], map: "discussion_board_data_retention_policies_retention_act_7780df47")
+}
+
+/// Junction table linking data retention policies to specific data types
+/// they govern.
+///
+/// This table resolves the 1NF violation by properly separating the
+/// many-to-many relationship between retention policies and data types. Each
+/// record represents a specific data type that is subject to a particular
+/// retention policy, allowing for flexible policy application across
+/// different data categories.
+///
+/// The table maintains referential integrity between {@link
+/// discussion_board_data_retention_policies} and the various data types
+/// defined in the system, ensuring that retention rules are properly
+/// enforced for each category of stored information.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_data_retention_policy_data_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the specific retention policy being applied. {@link
+  /// discussion_board_data_retention_policies.id}
+  discussion_board_data_retention_policy_id String
+  
+  /// The specific data type category that this retention policy applies to.
+  /// Examples include 'user_profiles', 'article_content', 'comment_data',
+  /// 'audit_logs', etc.
+  data_type String
+  
+  /// Timestamp when this policy-data type mapping was created.
+  created_at DateTime
+  
+  /// Timestamp when this policy-data type mapping was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this policy-data type mapping was soft deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  retentionPolicy discussion_board_data_retention_policies @relation(fields: [discussion_board_data_retention_policy_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_data_retention_policy_id, data_type], map: "discussion_board_data_retention_policy_data_types_disc_bf1d52fb")
+  // spellchecker: ignore-next-line
+  @@index([data_type, created_at], map: "discussion_board_data_retention_policy_data_types_data_79f7491e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_data_retention_policy_id, created_at], map: "discussion_board_data_retention_policy_data_types_disc_bcf0f64e")
+}

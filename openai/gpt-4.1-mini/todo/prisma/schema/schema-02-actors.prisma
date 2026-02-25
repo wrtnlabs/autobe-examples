@@ -1,0 +1,194 @@
+/// Registered user accounts with email and password credentials, including
+/// profile display name. This table handles authentication information and
+/// user identity for the multi-user todo application. Supports soft deletion
+/// via deleted_at field, allowing account deletion. Acts as the root actor
+/// entity for user-related operations and relationships.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for user authentication and communication.
+  email String
+  
+  /// Hashed password for secure user authentication.
+  password_hash String
+  
+  /// Display name for the user's profile.
+  display_name String
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when the user account was last updated.
+  updated_at DateTime
+  
+  /// Nullable timestamp indicating when the account was soft deleted (null if
+  /// active).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions multi_user_todo_user_sessions[]
+  userPasswordResets multi_user_todo_user_password_resets[]
+  emailVerifications multi_user_todo_user_email_verifications[]
+  todos multi_user_todo_todos[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens for user authentication with access and refresh
+/// tokens. Tracks session metadata including IP address, client URL, and
+/// referrer. Supports auditing and session lifecycle management by linking
+/// sessions to registered users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
+  
+  /// IP address of the client initiating the session.
+  ip String
+  
+  /// URL of the client at the time of session start.
+  href String
+  
+  /// Referrer URL of the client, null if not available.
+  referrer String?
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  /// Timestamp when the session expires.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_sessions_multi_user_todo_user_id__0f30f121")
+}
+
+/// Password reset tokens to enable users to securely recover access to their
+/// accounts. Each token has an expiry date. Linked to a user account
+/// referenced by multi_user_todo_users.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
+  
+  /// Secure token string used for password reset authentication.
+  token String
+  
+  /// Date and time when the password reset token expires.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset record was created.
+  created_at DateTime
+  
+  /// Timestamp when the password reset record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the password reset record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id], map: "multi_user_todo_user_password_resets_multi_user_todo_u_49a28044")
+}
+
+/// Email verification tokens to confirm user email ownership after
+/// registration. Linked to registered users, stores token details,
+/// expiration, and verification timestamps. Supports soft deletion for audit
+/// and compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link multi_user_todo_users.id}.
+  multi_user_todo_user_id String
+  
+  /// Unique email verification token for confirming user email.
+  token String
+  
+  /// Expiration datetime of the email verification token.
+  expires_at DateTime
+  
+  /// Timestamp when the email was verified. Null if not yet verified.
+  verified_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_email_verifications_multi_user_to_35f2802f")
+}

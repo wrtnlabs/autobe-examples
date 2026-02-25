@@ -1,0 +1,741 @@
+/// Main actor table for registered customer accounts with email/password
+/// authentication credentials. This table serves as the canonical identity
+/// record for customers, enabling authentication, session management, and
+/// ownership of orders, reviews, and wishlists. Customers are distinct
+/// actors with login capability and their own session lifecycle. Profile
+/// fields like display_name and phone_number are optional and not part of
+/// authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and authentication.
+  email String
+  
+  /// Hashed password for authentication.
+  password_hash String
+  
+  /// Optional display name shown to other users. May be null if not set.
+  display_name String?
+  
+  /// Optional phone number for contact purposes. May be null if not provided
+  /// during registration.
+  phone_number String?
+  
+  /// Timestamp when the customer account was registered.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the customer account. Updated when any
+  /// profile field is modified.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was logically deleted. If null,
+  /// account is active. Preserves order history and review data after deletion
+  /// per 02-user-actors.md.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_customer_sessions[]
+  passwordResets shopping_mall_customer_password_resets[]
+  emailVerifications shopping_mall_customer_email_verifications[]
+  carts shopping_mall_carts[]
+  cartItems shopping_mall_cart_items[]
+  customerOrders shopping_mall_orders[] @relation("shopping_mall_orders_of_customer_id")
+  shippingAddressOrders shopping_mall_orders[] @relation("shopping_mall_orders_of_shipping_address_id")
+  reviews shopping_mall_reviews[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for customer authentication with access and refresh
+/// tokens. This table logs each login event, stores the client's connection
+/// context (IP, referrer), and tracks session expiration for security.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who initiated this session. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Client's IP address at login time.
+  ip String
+  
+  /// URL of the page where login occurred.
+  href String
+  
+  /// Referrer header from the client's browser.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. Always set to 30 minutes after
+  /// created_at for access token, 30 days after for refresh token. Never null
+  /// for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+}
+
+/// Password reset tokens with expiration for customer account recovery. Each
+/// token is single-use and expires after 2 hours. This table exists to
+/// support the authentication flow for customer actors, allowing secure
+/// account recovery via email link.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's account requesting password reset. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Randomly generated cryptographic token for password reset link. Must be
+  /// unique and single-use.
+  token String
+  
+  /// Date and time when this reset token will expire (always 2 hours after
+  /// creation).
+  expires_at DateTime
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated (not reset token itself).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if active, set when reset is used or expired.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, token], map: "shopping_mall_customer_password_resets_shopping_mall_c_a7f19076")
+  @@index([expires_at])
+}
+
+/// Email verification token for customer registration confirmation. Each
+/// token is a single-use, time-limited string issued when a customer
+/// registers, requiring verification before account activation. Tied to a
+/// customer account and expires after short duration. This is a session-type
+/// table capturing ephemeral authentication state.
+///
+/// Referenced by: shopping_mall_customers (via customer_id).
+/// Linked to: customer account lifecycle.
+///
+/// Automatically deleted upon successful verification or expiration. No
+/// audit or versioning required as per business rule.
+///
+/// Note: Not a snapshot or primary entity - purely a transient verification
+/// mechanism for actor authentication flow.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to customer account. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Unique verification token. Generated as cryptographically random string.
+  token String
+  
+  /// When this token expires. Must be enforced by the application to
+  /// invalidate after short duration (typically 1 hour).
+  expires_at DateTime
+  
+  /// When the verification request was issued. Automatically generated by
+  /// system.
+  created_at DateTime
+  
+  /// Timestamp of last update to this record. Used for internal system
+  /// consistency.
+  updated_at DateTime
+  
+  /// Timestamp when this verification was successfully completed. Null until
+  /// verified.
+  verified_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id], map: "shopping_mall_customer_email_verifications_shopping_ma_8d78106c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, expires_at], map: "shopping_mall_customer_email_verifications_shopping_ma_9f9c69c6")
+  @@index([expires_at])
+}
+
+/// Main table for registered seller accounts with email/password
+/// authentication credentials. This is an actor entity that represents a
+/// business entity capable of listing products, managing inventory,
+/// fulfilling orders, and interacting with customer inquiries. Sellers
+/// require distinct authentication flow and identity separate from
+/// customers. All profile metadata (shop name, description, logo) are
+/// preserved immutably via snapshots in
+/// shopping_mall_seller_profile_snapshots; this table contains only
+/// authentication and identity lifecycle data. Never contains editable
+/// profile fields - those are managed by snapshot system to ensure
+/// transactional integrity.
+///
+/// This table is never referenced by any child table with a foreign key
+/// pointing to it. Instead, child tables like shopping_mall_seller_sessions,
+/// shopping_mall_seller_password_resets, and
+/// shopping_mall_seller_email_verifications reference this table using
+/// foreign keys in the direction child→parent.
+///
+/// Seller status (pending, approved, rejected) is managed as a plain field
+/// to reflect onboarding state, not as a separate table because it
+/// represents the lifecycle state of the actor identity rather than a
+/// business entity relationship. Suspension (suspended_at) is a temporal
+/// flag for account management.
+///
+/// All fields are non-nullable except deleted_at and suspended_at, following
+/// soft-delete pattern. The email must be unique to ensure singular identity
+/// per account. Password_hash stores bcrypt hash, not plaintext.
+///
+/// All timestamps are stored as UTC with timezone and use ISO 8601 format at
+/// application layer.
+///
+/// See also: shopping_mall_seller_profile_snapshots (for immutable profile
+/// changes), shopping_mall_seller_sessions (for authentication sessions),
+/// shopping_mall_seller_password_resets (for recovery workflows).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication. Must be
+  /// valid email format.
+  email String
+  
+  /// BCrypt hash of the seller's password. Never stored as plaintext. Used for
+  /// authentication during login.
+  password_hash String
+  
+  /// Whether the seller account is active and permitted to perform actions.
+  /// Defaults to true. Set to false only on deletion or suspension.
+  is_active Boolean
+  
+  /// Onboarding status of the seller: 'pending' (registration submitted),
+  /// 'approved' (verified and active), or 'rejected' (denied by admin).
+  /// Immutable after initial set.
+  status String
+  
+  /// Reason provided by admin when seller registration is rejected. Preserved
+  /// in audit trail but not displayed to seller after approval.
+  rejection_reason String?
+  
+  /// Timestamp when seller account was created. Immutable and set at
+  /// registration.
+  created_at DateTime
+  
+  /// Timestamp when seller registration was approved by admin. Null until
+  /// approved.
+  approved_at DateTime?
+  
+  /// Soft delete timestamp. If null, account is active. If set, account is
+  /// logically deleted and login disabled. Account data preserved for
+  /// historical audit.
+  deleted_at DateTime?
+  
+  /// Timestamp when seller account was suspended by admin. Null if not
+  /// suspended. Suspended sellers cannot list new products or process orders.
+  suspended_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_seller_sessions[]
+  passwordResets shopping_mall_seller_password_resets[]
+  emailVerifications shopping_mall_seller_email_verifications[]
+  products shopping_mall_products[]
+  cartItems shopping_mall_cart_items[]
+  orderItems shopping_mall_order_items[]
+  snapshots shopping_mall_order_item_snapshots[]
+  shipments shopping_mall_shipments[]
+  refundResponses shopping_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for seller authentication with access and refresh tokens.
+///
+/// This table tracks active login sessions for sellers. Each session is tied
+/// to a single seller and includes connection metadata for security
+/// auditing.
+///
+/// Session records are append-only and automatically expired after 30
+/// minutes for access tokens or 30 days for refresh tokens. They are never
+/// updated—only created and deleted.
+///
+/// Reference: @\link shopping_mall_sellers.id
+///
+/// Not used for direct user operations—managed only by authentication service.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller's account this session belongs to. {@link
+  /// shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Client's IP address used to establish this session.
+  ip String
+  
+  /// Complete URL path the user was visiting when initiating this session.
+  href String
+  
+  /// Original URL the user came from before entering the platform.
+  referrer String?
+  
+  /// Timestamp when this session was created (ISO 8601 UTC).
+  created_at DateTime
+  
+  /// Timestamp when this session expires (ISO 8601 UTC). Always set to 30
+  /// minutes or 30 days after creation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_sessions_shopping_mall_seller_id__0b9ab7e6")
+}
+
+/// Temporary password reset tokens for seller account recovery. Each token
+/// is unique, time-limited, and single-use. Expires 1 hour after creation.
+/// Associated with a specific seller account via foreign key. Tokens are
+/// invalidated after use or expiration and not soft-deleted.
+///
+/// This table is a session entity that supports the authentication flow
+/// described in 02-user-actors.md: when a seller requests password reset, a
+/// unique token is issued and stored here. The seller clicks the reset link
+/// containing the token, which validates the session and allows password
+/// change. After use, the token is removed from the system.
+///
+/// This table is a child of shopping_mall_sellers (actor). Seller accounts
+/// can have zero or more password reset requests over time. Each request is
+/// an ephemeral session. It is NOT a user profile, product, order, or review
+/// - it is purely an authentication event.
+///
+/// Relates to: {@link shopping_mall_sellers.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller account that requested this password reset. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Unique, cryptographically random reset token. Expires after 1 hour.
+  token String
+  
+  /// Absolute timestamp when this token expires. Mandatory, not null. Must be
+  /// exactly 1 hour after created_at.
+  expires_at DateTime
+  
+  /// Timestamp when this reset request was issued. Mandatory, not null.
+  created_at DateTime
+  
+  /// Timestamp when this token was successfully consumed to reset password.
+  /// Null until used.
+  used_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@unique([seller_id, token])
+  @@index([seller_id, expires_at])
+  @@index([expires_at])
+  @@index([used_at])
+  @@index([created_at])
+}
+
+/// Email verification tokens for seller registration confirmation. Used to
+/// validate seller email address during account registration. Once used, the
+/// token becomes invalid. Tokens expire after 24 hours for security. This
+/// table is append-only and never modified, ensuring immutability and
+/// auditability of email verification events.
+///
+/// Each record is tied to exactly one seller account via seller_id. When a
+/// seller registers, a record is created. When the seller clicks the
+/// verification link, the used flag is set to true. Expired or used tokens
+/// are eventually purged by system jobs. No data is deleted — only
+/// soft-deleted via deleted_at for compliance.
+///
+/// Never used for password reset or other purposes. Exclusive to email
+/// verification for seller sign-up.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller account that requested this email verification.
+  /// {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique cryptographic token generated for email verification link. Never
+  /// reused.
+  token String
+  
+  /// Timestamp when this verification token expires. Must be 24 hours after
+  /// creation. Enforced by application logic and system cleanup jobs.
+  expires_at DateTime
+  
+  /// Indicates if the verification token has been successfully used to confirm
+  /// the seller's email address. Once true, this token is invalid for future
+  /// use.
+  used Boolean
+  
+  /// Timestamp when this verification request was initiated.
+  created_at DateTime
+  
+  /// Timestamp when the token was marked as used. Zeroed initially, then set
+  /// to current time when used.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp. Used for compliance and audit trail retention.
+  /// Records are never physically deleted, only marked as deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id, used], map: "shopping_mall_seller_email_verifications_shopping_mall_cc1fa068")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, expires_at], map: "shopping_mall_seller_email_verifications_shopping_mall_43141bec")
+  @@index([expires_at])
+  @@index([used, expires_at])
+}
+
+/// Main table for system administrators with email/password authentication
+/// credentials. Represents a distinct actor type with elevated permissions.
+/// Administrators control seller approvals, category management, order
+/// oversight, and user management. Each admin has a unique email and
+/// password_hash. Admin accounts may be suspended but not deleted.
+/// Soft-deletion via deleted_at is supported. Session management, password
+/// resets, and email verifications are handled by separate actor-specific
+/// tables (shopping_mall_admin_sessions,
+/// shopping_mall_admin_password_resets,
+/// shopping_mall_admin_email_verifications).
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and communication. Must be verified
+  /// during registration.
+  email String
+  
+  /// Hashed password for authentication. Never stored in plaintext. Generated
+  /// using secure hashing algorithm (bcrypt).
+  password_hash String
+  
+  /// Indicates if the admin account is active and able to log in. Default is
+  /// true.
+  is_active Boolean
+  
+  /// Administrative status of the account: 'active', 'suspended', or
+  /// 'deleted'. Used to control system access independently of is_active flag.
+  status String
+  
+  /// Timestamp when the admin account was created. Required and immutable.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last modified. Updated on any
+  /// profile change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the account is logically deleted but
+  /// preserved for audit. Null means active.
+  deleted_at DateTime?
+  
+  /// Timestamp when the admin account was suspended. Null means not suspended.
+  /// Used to track suspension history and duration.
+  suspended_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_admin_sessions[]
+  passwordResets shopping_mall_admin_password_resets[]
+  emailVerification shopping_mall_admin_email_verifications?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh tokens. Tracks active login sessions for admin actors, storing
+/// connection metadata such as IP address, browser referrer, and session
+/// endpoints. This table is append-only and never modified after creation.
+/// Each session is tied to exactly one admin via admin_id, enforcing 1:N
+/// relationship. Sessions expire automatically and are invalidated upon
+/// logout or timeout.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the admin actor who initiated this session. {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admin_id String
+  
+  /// IPv4 or IPv6 address of the client device at login time.
+  ip String
+  
+  /// Full URL of the page where the admin logged in, including query
+  /// parameters.
+  href String
+  
+  /// Referrer URL from which the admin navigated to the login page. May be
+  /// empty if directly accessed.
+  referrer String?
+  
+  /// Timestamp when the session was created. Always in UTC.
+  created_at DateTime
+  
+  /// Timestamp when the session will expire. Set at login based on token
+  /// longevity. Never nullable - enforced for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_sessions_shopping_mall_admin_id_cr_39834090")
+  @@index([expired_at])
+}
+
+/// Password reset tokens issued to administrators for account recovery. Each
+/// token is one-time use, has a fixed expiration, and tracks the IP and user
+/// agent of the reset request. Immutable audit trail that ensures security
+/// and compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin who requested the password reset. {@link shopping_mall_admins.id}.
+  admin_id String
+  
+  /// Unique cryptographic token generated for password reset. Must be stored
+  /// securely and used only once.
+  token String
+  
+  /// Timestamp when the reset token expires. After this time, the token is
+  /// invalid and cannot be used.
+  expires_at DateTime
+  
+  /// Timestamp when the token was used to reset the password. Null until first
+  /// use.
+  used_at DateTime?
+  
+  /// IP address from which the password reset request was initiated.
+  ip String
+  
+  /// User agent string of the client device that initiated the password reset
+  /// request.
+  user_agent String
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated (e.g., when token was used).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([admin_id])
+  @@index([expires_at])
+}
+
+/// Email verification tokens for administrator registration confirmation.
+/// Used to verify email ownership during admin account registration. Each
+/// token is valid for a limited time and can only be used once. This table
+/// is part of the authentication infrastructure for admin actors and follows
+/// the same pattern as customer and seller email verification systems.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator account this verification token belongs to. {@link
+  /// shopping_mall_admins.id}.
+  admin_id String
+  
+  /// The administrator's email address being verified. This is stored here for
+  /// audit purposes, though the primary identity is in shopping_mall_admins.
+  email String
+  
+  /// Expiration timestamp for this verification token. After this time, the
+  /// token is invalid and must be re-requested.
+  expires_at DateTime
+  
+  /// Timestamp when this verification token was created and sent.
+  created_at DateTime
+  
+  /// Timestamp when this email was successfully verified. Null until
+  /// verification occurs.
+  verified_at DateTime?
+  
+  /// Unique verification token generated for this email verification request.
+  token String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@unique([admin_id])
+  @@unique([email])
+  @@index([admin_id, expires_at])
+  @@index([expires_at])
+}

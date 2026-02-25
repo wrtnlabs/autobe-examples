@@ -1,0 +1,231 @@
+/// User submissions to become administrators with reason, status
+/// (pending/approved/rejected), and review workflow tracking.
+///
+/// This table implements the administrator request system where
+/// authenticated users submit requests to become administrators. Super
+/// administrators review pending requests and approve or reject them with
+/// optional notes. The system enforces the rule that a user may have only
+/// one pending request at any time through a unique constraint on
+/// (requester_id, status) for pending status.
+///
+/// All request records are retained for audit purposes regardless of
+/// outcome. Request history is preserved to support merit-based evaluation
+/// and transparency in the governance process. When a request is approved,
+/// the requester's permission level is updated to ADMINISTRATOR in the
+/// {@link discussion_board_users} table.
+///
+/// Key relationships:
+/// - {@link discussion_board_users} (requester): The user who submitted the
+/// admin request
+/// - {@link discussion_board_users} (reviewer): The super administrator who
+/// reviewed the request
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who submitted this administrator request. References {@link
+  /// discussion_board_users.id}.
+  requester_id String
+  
+  /// The super administrator who reviewed this request. Null if the request is
+  /// still pending. References {@link discussion_board_users.id}.
+  reviewer_id String?
+  
+  /// User's explanation of why they should become an administrator. Must be at
+  /// least 50 characters to ensure meaningful justification.
+  reason String
+  
+  /// Current state of the administrator request. Valid values: 'pending'
+  /// (awaiting review), 'approved' (user granted admin status), 'rejected'
+  /// (request denied). Users may submit new requests after rejection.
+  status String
+  
+  /// Optional notes from the super administrator who reviewed this request.
+  /// May contain explanation for approval or rejection decision. Null if
+  /// request is pending.
+  review_notes String?
+  
+  /// Timestamp when the administrator request was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the administrator request was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the request was reviewed by a super administrator. Null if
+  /// the request is still pending.
+  reviewed_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  requester discussion_board_users @relation("discussion_board_admin_requests_of_requester_id", fields: [requester_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_users? @relation("discussion_board_admin_requests_of_reviewer_id", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  @@unique([requester_id, status])
+  @@index([status, created_at])
+  @@index([requester_id, created_at])
+}
+
+/// Immutable audit trail records of administrator hierarchy changes within
+/// the platform.
+///
+/// Captures promotion and demotion actions between regular administrator and
+/// super administrator roles. Each record tracks the acting administrator
+/// (who performed the action), the target administrator (who was affected),
+/// the action type, and an optional reason.
+///
+/// This table supports the governance requirements where:
+/// - Super administrators can promote regular administrators to super
+/// administrator status
+/// - Super administrators can demote other super administrators to regular
+/// administrator status
+/// - Self-demotion prevention is enforced at the application layer
+///
+/// Records are append-only for compliance and audit purposes. Historical
+/// data is never modified or deleted.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_hierarchy_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed the hierarchy action (promoter or
+  /// demoter). References {@link discussion_board_users.id}.
+  actor_id String
+  
+  /// The administrator who was affected by the hierarchy action (promoted or
+  /// demoted). References {@link discussion_board_users.id}.
+  target_id String
+  
+  /// The type of hierarchy action performed. Valid values are 'PROMOTION'
+  /// (regular admin to super admin) or 'DEMOTION' (super admin to regular
+  /// admin).
+  action_type String
+  
+  /// Optional explanation for the hierarchy action. May contain justification
+  /// for the promotion or demotion decision.
+  reason String?
+  
+  /// Timestamp when the hierarchy action was performed. Records are immutable
+  /// after creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  actor discussion_board_users @relation("discussion_board_admin_hierarchy_actions_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
+  target discussion_board_users @relation("discussion_board_admin_hierarchy_actions_of_target_id", fields: [target_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([actor_id, created_at], map: "discussion_board_admin_hierarchy_actions_actor_id_crea_45604e5b")
+  // spellchecker: ignore-next-line
+  @@index([target_id, created_at], map: "discussion_board_admin_hierarchy_actions_target_id_cre_2fd21eac")
+  @@index([action_type])
+}
+
+/// Comprehensive audit trail of all administrative actions including content
+/// moderation (article/comment deletion), section management
+/// (create/edit/delete), user banning/unbanning, admin hierarchy changes,
+/// and admin request reviews. This table serves as the single source of
+/// truth for all administrative accountability, supporting filtering by date
+/// range, administrator, and action type for compliance and audit purposes.
+/// Logs are immutable and cannot be modified or deleted, including by super
+/// administrators.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_action_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed this action. References {@link
+  /// discussion_board_users.id}.
+  administrator_id String
+  
+  /// Reference to the user who created the original content that was acted
+  /// upon. Applicable for ARTICLE_DELETE and COMMENT_DELETE actions. Null for
+  /// actions that don't involve user-created content (SECTION_*, BAN_USER,
+  /// UNBAN_USER, PROMOTE_ADMIN, DEMOTE_ADMIN, APPROVE_REQUEST,
+  /// REJECT_REQUEST). References {@link discussion_board_users.id}.
+  original_author_id String?
+  
+  /// The type of administrative action performed. Values: ARTICLE_DELETE
+  /// (moderation), COMMENT_DELETE (moderation), SECTION_CREATE, SECTION_EDIT,
+  /// SECTION_DELETE (section management), BAN_USER, UNBAN_USER (user
+  /// management), PROMOTE_ADMIN, DEMOTE_ADMIN (hierarchy management),
+  /// APPROVE_REQUEST, REJECT_REQUEST (admin request workflow).
+  action_type String
+  
+  /// The type of entity that was acted upon. Values: ARTICLE, COMMENT,
+  /// SECTION, USER, ADMIN_REQUEST. Used with target_id to identify the
+  /// affected entity.
+  target_type String
+  
+  /// UUID of the entity that was acted upon. References the primary key of the
+  /// target table determined by target_type (discussion_board_articles,
+  /// discussion_board_comments, discussion_board_sections,
+  /// discussion_board_users, or discussion_board_admin_requests). Polymorphic
+  /// reference validated at application level.
+  target_id String
+  
+  /// Human-readable title or truncated preview of the affected content. For
+  /// articles: article title. For comments: first 100 characters. For
+  /// sections: section name. For users: display name. For admin requests:
+  /// requester display name.
+  target_title String
+  
+  /// Optional reason or notes provided by the administrator for this action.
+  /// Required for ban actions (10-1000 characters), optional for other action
+  /// types. Used for ban reasons, deletion justifications, and review notes.
+  reason String?
+  
+  /// IP address of the administrator at the time of action. Captured for
+  /// security audit and accountability purposes.
+  ip String
+  
+  /// User agent string of the administrator's browser/client at the time of
+  /// action. Captured for device identification and security auditing.
+  user_agent String?
+  
+  /// Timestamp when the administrative action was performed. Automatically set
+  /// upon creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator discussion_board_users @relation("discussion_board_admin_action_logs_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
+  originalAuthor discussion_board_users? @relation("discussion_board_admin_action_logs_of_original_author_id", fields: [original_author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([original_author_id])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "discussion_board_admin_action_logs_administrator_id_cr_c29243e7")
+  @@index([target_type, target_id])
+}

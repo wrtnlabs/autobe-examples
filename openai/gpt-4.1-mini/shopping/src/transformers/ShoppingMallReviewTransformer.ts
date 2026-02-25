@@ -1,0 +1,54 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
+import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
+import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
+
+export namespace ShoppingMallReviewTransformer {
+  export type Payload = Prisma.shopping_mall_reviewsGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        rating: true,
+        body: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.shopping_mall_reviewsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IShoppingMallReview> {
+    return {
+      id: input.id,
+      rating: input.rating,
+      body: input.body ?? undefined,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
+      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
+        input.orderItem,
+      ),
+    };
+  }
+}

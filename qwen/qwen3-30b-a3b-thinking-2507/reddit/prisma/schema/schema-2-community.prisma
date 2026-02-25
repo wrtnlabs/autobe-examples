@@ -1,0 +1,104 @@
+/// Community records including name, description, icon URL, and owner
+/// relationship. Each community has a unique name and owner. This table
+/// stores metadata for community profiles and is used for search
+/// capabilities with partial string matching supported.
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The owner of the community (reference to reddit_members.id).
+  reddit_member_id String
+  
+  /// Name of the community (unique identifier, max 50 characters for search
+  /// and uniqueness).
+  name String
+  
+  /// Description of the community (max 500 characters).
+  description String?
+  
+  /// URL of the community icon image stored in cloud storage.
+  icon_url String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to community metadata.
+  updated_at DateTime
+  
+  /// Timestamp when the community was marked for deletion (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subscriptions reddit_community_subscriptions[]
+  posts reddit_posts[]
+  bans reddit_community_bans[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_member_id])
+  @@unique([name])
+}
+
+/// Tracks user subscriptions to communities for managing access and
+/// subscriber counts. Each record represents a member's subscription to a
+/// specific community, enabling access control to community content and
+/// tracking subscription metrics.
+///
+/// Required for:
+/// - Restricting user activity to subscribed communities
+/// - Calculating community subscriber counts
+/// - Enabling subscription management workflows
+///
+/// @namespace Community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated community's {@link reddit_communities.id}.
+  community_id String
+  
+  /// Subscribed member's {@link reddit_members.id}.
+  member_id String
+  
+  /// Subscription creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member reddit_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  @@index([community_id, member_id])
+}

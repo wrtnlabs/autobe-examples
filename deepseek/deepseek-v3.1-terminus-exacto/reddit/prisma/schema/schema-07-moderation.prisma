@@ -1,0 +1,433 @@
+/// Tracks user bans within specific communities with duration, reason, and
+/// ban status information.
+///
+/// Each record represents a ban imposed on a user within a particular
+/// community. Bans prevent users from creating posts or comments in the
+/// banned community while allowing them to still view content. Moderators
+/// can manage bans through the moderation system, including setting
+/// durations, providing reasons, and revoking bans when appropriate.
+///
+/// Bans are community-specific, meaning a user banned from one community can
+/// still participate in other communities unless banned there as well. The
+/// system tracks ban status to automatically handle expiration and provide
+/// audit trails for moderation actions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where the ban applies. {@link community_platform_communities.id}
+  community_id String
+  
+  /// User who is banned from the community. {@link community_platform_users.id}
+  user_id String
+  
+  /// Moderator who imposed the ban. {@link community_platform_moderators.id}
+  moderator_id String
+  
+  /// Reason provided by the moderator for imposing the ban.
+  reason String
+  
+  /// Current status of the ban: active, expired, or revoked.
+  status String
+  
+  /// Timestamp when the ban was imposed.
+  banned_at DateTime
+  
+  /// Timestamp when the ban expires. Null indicates permanent ban.
+  expires_at DateTime?
+  
+  /// Timestamp when the ban was revoked by a moderator. Null if not revoked.
+  revoked_at DateTime?
+  
+  /// Reason provided when the ban was revoked.
+  revoke_reason String?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  moderationAuditLogs community_platform_moderation_audit_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_id, user_id])
+  @@index([user_id, status])
+  @@index([community_id, status])
+  @@index([expires_at])
+  @@index([moderator_id])
+}
+
+/// Tracks moderator role assignments within communities, recording
+/// assignment metadata and relationships.
+///
+/// This table maintains the many-to-many relationship between users and
+/// communities where users are granted moderator privileges. Each assignment
+/// includes the assignment timestamp, the user who made the assignment, and
+/// references to the community and user being assigned.
+///
+/// Moderator assignments support the community governance model where
+/// community owners can delegate moderation responsibilities to trusted
+/// community members. The system tracks assignment history for audit
+/// purposes and supports role activation/deactivation workflows.
+///
+/// {@link community_platform_communities.id} represents the community where
+/// moderation privileges are granted. {@link community_platform_users.id}
+/// identifies the user being assigned as moderator. {@link
+/// community_platform_users.id} references the user who made the assignment.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where moderator privileges are assigned. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// The user being assigned as moderator. {@link community_platform_users.id}
+  assigned_user_id String
+  
+  /// The user who made this moderator assignment. {@link
+  /// community_platform_users.id}
+  assigned_by_user_id String
+  
+  /// Timestamp when the moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator assignment was soft deleted.
+  deleted_at DateTime?
+  
+  /// Optional notes about the moderator assignment for administrative purposes.
+  notes String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  assignedUser community_platform_users @relation("community_platform_moderator_assignments_of_assigned_user_id", fields: [assigned_user_id], references: [id], onDelete: Cascade)
+  assignedBy community_platform_users @relation("community_platform_moderator_assignments_of_assigned_by_user_id", fields: [assigned_by_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  assignmentPrivileges community_platform_moderator_assignment_privileges[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_id, assigned_user_id], map: "community_platform_moderator_assignments_community_id__e0de9386")
+  // spellchecker: ignore-next-line
+  @@index([assigned_user_id, created_at], map: "community_platform_moderator_assignments_assigned_user_42f5381b")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_moderator_assignments_community_id__bdfb22f8")
+  // spellchecker: ignore-next-line
+  @@index([assigned_by_user_id, created_at], map: "community_platform_moderator_assignments_assigned_by_u_37100dab")
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of all moderation activities for accountability
+/// and review purposes.
+///
+/// This table records every moderation action performed across the platform,
+/// including content deletions, user bans, moderator assignments, and
+/// reporting actions. Each entry captures the moderator responsible, the
+/// target entity (post, comment, user, or community), the action type, and
+/// detailed context including IP address and user agent for security
+/// auditing.
+///
+/// The audit trail supports compliance requirements, moderator performance
+/// evaluation, and investigation of moderation disputes. All entries are
+/// append-only and cannot be modified once created to maintain audit
+/// integrity.
+///
+/// Related entities: {@link community_platform_moderators}, {@link
+/// community_platform_users}, {@link community_platform_communities}, {@link
+/// community_platform_posts}, {@link community_platform_comments}, {@link
+/// community_platform_community_bans}
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// community_platform_moderators.id}
+  moderator_id String
+  
+  /// User who was the target of the moderation action (if applicable). {@link
+  /// community_platform_users.id}
+  target_user_id String?
+  
+  /// Community where the moderation action occurred. {@link
+  /// community_platform_communities.id}
+  target_community_id String?
+  
+  /// Post that was moderated (if applicable). {@link
+  /// community_platform_posts.id}
+  target_post_id String?
+  
+  /// Comment that was moderated (if applicable). {@link
+  /// community_platform_comments.id}
+  target_comment_id String?
+  
+  /// Community ban record associated with this audit entry (if applicable).
+  /// {@link community_platform_community_bans.id}
+  community_ban_id String?
+  
+  /// Type of moderation action performed (e.g., 'post_delete',
+  /// 'comment_delete', 'user_ban', 'moderator_assign', 'report_approve',
+  /// 'report_dismiss').
+  action_type String
+  
+  /// Detailed description of the moderation action including context and
+  /// reasoning.
+  action_details String
+  
+  /// IP address from which the moderation action was performed for security
+  /// auditing.
+  ip_address String
+  
+  /// User agent string of the browser/client used for the moderation action.
+  user_agent String?
+  
+  /// Timestamp when the moderation action was recorded in the audit trail.
+  created_at DateTime
+  
+  /// Timestamp when the audit entry was last updated (typically matches
+  /// created_at for audit integrity).
+  updated_at DateTime
+  
+  /// Timestamp when the audit entry was soft deleted (for compliance
+  /// retention).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  targetUser community_platform_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetCommunity community_platform_communities? @relation(fields: [target_community_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  communityBan community_platform_community_bans? @relation(fields: [community_ban_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  resultingActionLogs community_platform_moderation_action_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([target_user_id])
+  @@index([target_post_id])
+  @@index([target_comment_id])
+  @@index([community_ban_id])
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_platform_moderation_audit_logs_moderator_id__9bcd58c6")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_platform_moderation_audit_logs_action_type_c_b678487a")
+  // spellchecker: ignore-next-line
+  @@index([target_community_id, created_at], map: "community_platform_moderation_audit_logs_target_commun_dda5a541")
+}
+
+/// Records community-level moderation activities including user bans,
+/// moderator assignments, post/comment deletions, and governance actions.
+/// Provides comprehensive audit trail for accountability and review
+/// purposes.
+///
+/// This table serves as the central log for all moderation actions performed
+/// across the platform. Each entry captures the specific action taken, the
+/// moderator who performed it, the target entity (user, post, comment), and
+/// the community context. The audit trail supports transparency, dispute
+/// resolution, and moderation effectiveness analysis.
+///
+/// Actions include user bans/unbans, moderator assignments/removals,
+/// post/comment deletions, report resolutions, and other community
+/// governance activities. Each record provides complete context for the
+/// action including timestamps, action descriptions, and references to all
+/// related entities.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_action_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link
+  /// community_platform_moderators.id}
+  moderator_id String
+  
+  /// Community where the action was performed. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// Target user affected by the action (for bans, warnings, etc.). {@link
+  /// community_platform_users.id}
+  target_user_id String?
+  
+  /// Target post affected by the action (for deletions, etc.). {@link
+  /// community_platform_posts.id}
+  target_post_id String?
+  
+  /// Target comment affected by the action (for deletions, etc.). {@link
+  /// community_platform_comments.id}
+  target_comment_id String?
+  
+  /// Report that triggered this moderation action. {@link
+  /// community_platform_moderation_audit_logs.id}
+  report_id String?
+  
+  /// Type of moderation action performed (ban_user, unban_user,
+  /// assign_moderator, remove_moderator, delete_post, delete_comment,
+  /// approve_report, dismiss_report, etc.).
+  action_type String
+  
+  /// Detailed description of the action performed, including reasoning and
+  /// context provided by the moderator.
+  action_description String
+  
+  /// Additional details about the action such as ban duration, warning level,
+  /// or specific moderation notes.
+  action_details String?
+  
+  /// Timestamp when the moderation action was performed.
+  created_at DateTime
+  
+  /// Timestamp when the moderation action record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderation action record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  targetUser community_platform_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  targetPost community_platform_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment community_platform_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  report community_platform_moderation_audit_logs? @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([target_user_id])
+  @@index([target_post_id])
+  // spellchecker: ignore-next-line
+  @@index([target_comment_id], map: "community_platform_moderation_action_logs_target_comme_e0a9e041")
+  @@index([report_id])
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_platform_moderation_action_logs_moderator_id_de0b7f85")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_moderation_action_logs_community_id_aac6866e")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "community_platform_moderation_action_logs_action_type__7f3e3586")
+}
+
+/// Stores individual privilege assignments for moderator roles, enabling
+/// granular permission management within communities.
+///
+/// Each record represents a specific privilege granted to a moderator within
+/// their assigned community. This supports fine-grained control over
+/// moderator capabilities, allowing community owners to customize moderator
+/// permissions based on trust levels and responsibilities.
+///
+/// The table maintains the relationship between {@link
+/// community_platform_moderator_assignments} and specific privilege types,
+/// ensuring that moderator permissions are tracked and auditable. Privileges
+/// can be granted or revoked independently, supporting flexible community
+/// governance models.
+///
+/// This granular approach prevents privilege escalation and ensures that
+/// moderators only have the permissions explicitly assigned to them,
+/// enhancing community security and accountability.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderator_assignment_privileges {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The moderator assignment this privilege belongs to. {@link
+  /// community_platform_moderator_assignments.id}
+  community_platform_moderator_assignment_id String
+  
+  /// Type of privilege being assigned, such as 'delete_posts', 'ban_users',
+  /// 'manage_moderators', etc.
+  privilege_type String
+  
+  /// Timestamp when this privilege was granted to the moderator.
+  granted_at DateTime
+  
+  /// Timestamp when this privilege was revoked, if applicable. Null indicates
+  /// the privilege is currently active.
+  revoked_at DateTime?
+  
+  /// Timestamp when this privilege assignment record was soft-deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderatorAssignment community_platform_moderator_assignments @relation(fields: [community_platform_moderator_assignment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderator_assignment_id, privilege_type], map: "community_platform_moderator_assignment_privileges_com_e0b98b14")
+  // spellchecker: ignore-next-line
+  @@index([privilege_type], map: "community_platform_moderator_assignment_privileges_pri_34e02c07")
+  // spellchecker: ignore-next-line
+  @@index([granted_at], map: "community_platform_moderator_assignment_privileges_gra_420864c2")
+  // spellchecker: ignore-next-line
+  @@index([revoked_at], map: "community_platform_moderator_assignment_privileges_rev_5e55fbb7")
+}
