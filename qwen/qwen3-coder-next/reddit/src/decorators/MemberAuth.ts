@@ -22,4 +22,4 @@ const singleton = new Singleton(() =>
     const request = ctx.switchToHttp().getRequest();
     return memberAuthorize(request);
   })(),
-);
+)

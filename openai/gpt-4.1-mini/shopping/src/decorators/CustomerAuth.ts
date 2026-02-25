@@ -5,11 +5,7 @@ import { customerAuthorize } from "../providers/authorize/customerAuthorize";
 
 export const CustomerAuth =
   (): ParameterDecorator =>
-  (
-    target: object,
-    propertyKey: string | symbol | undefined,
-    parameterIndex: number,
-  ): void => {
+  (target: object, propertyKey: string | symbol | undefined, parameterIndex: number): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
       props.route.security.push({ bearer: [] });

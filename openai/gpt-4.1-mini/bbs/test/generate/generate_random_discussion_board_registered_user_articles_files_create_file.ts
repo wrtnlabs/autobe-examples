@@ -9,6 +9,13 @@ import typia, { tags } from "typia";
 
 import { prepare_random_discussion_board_article_file } from "../prepare/prepare_random_discussion_board_article_file";
 
+/**
+ * Generates a random discussion board article file attached to the article by ID.
+ *
+ * @param connection - API connection
+ * @param props - Properties including optional body partial and required path params including articleId
+ * @returns Created IDiscussionBoardArticleFile resource
+ */
 export async function generate_random_discussion_board_registered_user_articles_files_create_file(
   connection: api.IConnection,
   props: {

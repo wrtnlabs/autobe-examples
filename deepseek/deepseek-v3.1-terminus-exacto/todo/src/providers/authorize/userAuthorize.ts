@@ -12,11 +12,10 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using id field since user is standalone
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null, // Soft-delete check
+      deleted_at: null,
     },
   });
 

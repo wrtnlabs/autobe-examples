@@ -8,48 +8,41 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardSectionFileTransformer } from "../transformers/DiscussionBoardSectionFileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardSuperAdminSectionsSectionIdFilesFileId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   sectionId: string & tags.Format<"uuid">;
   fileId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSectionFile.IUpdate;
 }): Promise<IDiscussionBoardSectionFile> {
-  // Verify section exists
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
-    where: { id: props.sectionId },
+  // First verify the section exists
+  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+    where: { id: props.sectionId, deleted_at: null },
   });
-  if (!section) throw new HttpException("Section not found", 404);
-  // Verify file exists and belongs to section
-  const file = await MyGlobal.prisma.discussion_board_section_files.findUnique({
-    where: { id: props.fileId },
-  });
-  if (!file) throw new HttpException("File not found", 404);
-  if (file.discussion_board_section_id !== props.sectionId) {
-    throw new HttpException(
-      "File does not belong to the specified section",
-      400,
-    );
-  }
-  // Prepare update data with proper typing
-  const updateData: Prisma.discussion_board_section_filesUpdateInput = {
-    updated_at: toISOStringSafe(new Date()),
-  };
-  if (props.body.filename !== undefined)
-    updateData.filename = props.body.filename;
-  if (props.body.file_type !== undefined)
-    updateData.file_type = props.body.file_type;
-  if (props.body.description !== undefined)
-    updateData.description = props.body.description;
-  // Update file metadata
+  // Verify file exists and belongs to specified section
+  const existingFile =
+    await MyGlobal.prisma.discussion_board_section_files.findUniqueOrThrow({
+      where: {
+        id: props.fileId,
+        discussion_board_section_id: props.sectionId,
+        deleted_at: null,
+      },
+    });
+  // Update the file description
   const updatedFile =
     await MyGlobal.prisma.discussion_board_section_files.update({
       where: { id: props.fileId },
-      data: updateData,
+      data: {
+        description:
+          props.body.description !== undefined
+            ? props.body.description
+            : existingFile.description,
+        updated_at: new Date(),
+      },
       ...DiscussionBoardSectionFileTransformer.select(),
     });
   return await DiscussionBoardSectionFileTransformer.transform(updatedFile);

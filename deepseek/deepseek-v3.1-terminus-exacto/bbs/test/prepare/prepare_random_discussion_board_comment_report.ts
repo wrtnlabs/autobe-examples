@@ -11,10 +11,12 @@ export function prepare_random_discussion_board_comment_report(
   return {
     reason:
       input?.reason ??
-      RandomGenerator.paragraph({
-        sentences: typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<5>
-        >(),
+      RandomGenerator.content({
+        paragraphs: 1,
+        sentenceMin: 1,
+        sentenceMax: 3,
+        wordMin: 5,
+        wordMax: 15,
       }),
   };
 }

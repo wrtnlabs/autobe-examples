@@ -12,15 +12,14 @@ export async function guestAuthorize(request: {
     throw new UnauthorizedException("Invalid token type");
   }
 
-  const guest = await MyGlobal.prisma.reddit_platform_guests.findFirst({
+  const guest = await MyGlobal.prisma.reddit_clone_guests.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 
   if (guest === null) {
-    throw new ForbiddenException("Guest account not found or deleted");
+    throw new ForbiddenException("You're not enrolled as a guest");
   }
 
   return payload;

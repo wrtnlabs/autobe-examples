@@ -1,75 +1,43 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IPageIShoppingMallSnapshot } from "../../../../api/structures/IPageIShoppingMallSnapshot";
-import { IShoppingMallSnapshot } from "../../../../api/structures/IShoppingMallSnapshot";
+import { IPageIShoppingMallProductSnapshot } from "../../../../api/structures/IPageIShoppingMallProductSnapshot";
+import { IShoppingMallProductSnapshot } from "../../../../api/structures/IShoppingMallProductSnapshot";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getShoppingMallAdminSnapshotsSnapshotId } from "../../../../providers/getShoppingMallAdminSnapshotsSnapshotId";
 import { patchShoppingMallAdminSnapshots } from "../../../../providers/patchShoppingMallAdminSnapshots";
 
 @Controller("/shoppingMall/admin/snapshots")
 export class ShoppingmallAdminSnapshotsController {
   /**
-   * Retrieve the complete, immutable historical snapshot of any system entity (product, variant, seller profile, review, etc.) as it existed at a specific point in time.
+   * Retrieve a paginated list of historical snapshots from multiple immutable entity types on the shoppingMall platform.
    *
-   * This endpoint provides forensic-level audit trail access for dispute resolution, compliance reporting, and platform integrity verification. Every change to the system — whether product edits, seller profile updates, review modifications, or cancellation/refund requests — creates a permanently preserved snapshot that captures the entity's complete state before and after the modification.
+   * This unified endpoint allows administrators and authorized users to query historical changes across all snapshot-enabled entities: products, product variants, order items, reviews, cancellation requests, and refund requests. Unlike traditional audit trails that separate entity types, this endpoint provides a consolidated view of all system modifications in chronological order.
    *
-   * When you request a snapshot by its unique ID, you receive the unaltered, raw JSON representation of the entity's state exactly as it was captured at the time of the event. This includes all field values, relationships, and metadata. For edits, the snapshot_data contains both "before" and "after" states. For deletions, it captures the final state before removal. This provides an irrefutable record of what was visible to users, what prices were listed, and what seller profiles looked like when transactions occurred.
+   * Each returned snapshot represents an immutable record of the entity's state at the moment of change, including the exact values of every field and identity of the actor who made the change. The snapshots preserve the business context of every modification—including product name changes, variant price adjustments, review edits, and request approvals—ensuring complete traceability for dispute resolution and compliance.
    *
-   * This access is critical for:
-   * - Resolving customer disputes about product specifications or pricing
-   * - Verifying seller identity during order fulfillment
-   * - Auditing administrative actions
-   * - Meeting regulatory compliance requirements (GDPR, PCI-DSS)
-   * - Recovering data from accidental modifications
+   * The operation supports granular filtering by entity type, actor role (customer, seller, admin), and date range. Results are paginated using cursor-based navigation to handle large datasets efficiently. The response includes a minimal summary of each snapshot for list rendering and references the complete snapshot data which can be retrieved for detailed inspection.
    *
-   * All snapshot data is stored in write-once immutable storage and cannot be modified or deleted, even by administrators. This ensures the integrity of the platform's historical record.
+   * This endpoint is critical for platform compliance, enabling administrators to reconstruct any business event with forensic accuracy. The underlying snapshot tables are immutable and preserved indefinitely, ensuring that no historical record can be altered, deleted, or obscured.
    *
-   * This operation retrieves the full snapshot object directly from the shopping_mall_snapshots table. No other API endpoint provides access to this level of historical detail. Any modification attempts to the snapshot data will be blocked by the system.
+   * Related operations: GET /products/{id}/snapshots, GET /sellers/{id}/snapshots, GET /customers/{id}/reviews/{review_id}/snapshots, but this endpoint provides a cross-entity view that these individual endpoints cannot deliver.
    *
    * @param connection
-   * @param snapshotId Unique identifier for the snapshot record to retrieve. This UUID corresponds to the id field in the shopping_mall_snapshots table.
+   * @param body Search criteria for filtering snapshot histories across entities.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_snapshots table by snapshotId. Return the entire snapshot_data JSON object exactly as stored in the database. No filtering, transformation, or aggregation. Return 404 if snapshotId does not exist. Ensure read-only access with no side effects. The snapshot_data field contains a fully serializable JSON object representing the exact state of the entity at time of capture, including all fields and relationships.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":snapshotId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("snapshotId")
-    snapshotId: string,
-  ): Promise<IShoppingMallSnapshot> {
-    try {
-      return await getShoppingMallAdminSnapshotsSnapshotId({
-        admin,
-        snapshotId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a paginated, filtered list of immutable snapshot records from the audit trail.
+   * @x-autobe-specification Query snapshot tables (shopping_mall_product_snapshots, shopping_mall_product_variant_snapshots, shopping_mall_order_item_snapshots, shopping_mall_review_snapshots, shopping_mall_cancellation_request_snapshots, shopping_mall_refund_request_snapshots) with pagination and filtering.
    *
-   * This operation supports comprehensive search and filtering capabilities across the system's historical data, enabling administrators and compliance officers to reconstruct the state of products, variants, seller profiles, reviews, and requests at any point in time. This is essential for dispute resolution, regulatory audits, and forensic investigations.
+   * Apply filters: entity_type (product | variant | order_item | review | cancellation_request | refund_request), changed_by (customer | seller | admin), from_date, to_date, and status.
    *
-   * Users can filter snapshots by entity type (product, variant, seller_profile, review, cancellation_request, refund_request), actor (customer, seller, or admin), action type (created, edited, deleted, approved, rejected), and time period. The response includes only essential summary information for performance optimization when displaying large lists.
+   * Combine results from all six snapshot tables into a unified paginated response.
    *
-   * Snapshots are never modified or deleted in this system, so this read-only operation presents an immutable historical record. For complete fidelity, the full snapshot state can be retrieved using IShoppingMallSnapshot.id via a separate GET operation.
+   * Use database UNION operations to merge the snapshots with consistent shape: snapshot_id, type, changed_at, changed_by, version, and snapshot_data (JSON field containing full snapshot as defined in schema).
    *
-   * This endpoint is critical for maintaining the platform's commitment to immutable records and forensic-level audit trails outlined in 12-snapshot-principle.md.
+   * Apply pagination with cursor-based approach for large datasets. Ensure no duplicate snapshots across different tables.
    *
-   * @param connection
-   * @param body Search criteria and pagination parameters for filtering snapshot records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the shopping_mall_snapshots table with pagination, filtering, and sorting. Apply filters for entity_type, actor_id, action_type, and created_at ranges. Sort by created_at descending. Return cursor-based pagination with page size of 50 and max 1000 items per request. Include counts and total pages. Join with actor tables to enrich actor_type and actor_id with names where needed. Use materialized views for performance on large datasets. Ensure all results are immutable and transactionally consistent.
+   * Return summary of snapshot with minimal fields for list display and full snapshot for detail view.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -77,8 +45,8 @@ export class ShoppingmallAdminSnapshotsController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IShoppingMallSnapshot.IRequest,
-  ): Promise<IPageIShoppingMallSnapshot.ISummary> {
+    body: IShoppingMallProductSnapshot.IRequest,
+  ): Promise<IPageIShoppingMallProductSnapshot.ISummary> {
     try {
       return await patchShoppingMallAdminSnapshots({
         admin,

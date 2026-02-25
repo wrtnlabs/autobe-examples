@@ -4,36 +4,33 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardAuditLog } from "../../../../api/structures/IDiscussionBoardAuditLog";
 import { IPageIDiscussionBoardAuditLog } from "../../../../api/structures/IPageIDiscussionBoardAuditLog";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
-import { getDiscussionBoardSuperAdminAuditLogsLogId } from "../../../../providers/getDiscussionBoardSuperAdminAuditLogsLogId";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
+import { getDiscussionBoardSuperAdminAuditLogsAuditLogId } from "../../../../providers/getDiscussionBoardSuperAdminAuditLogsAuditLogId";
 import { patchDiscussionBoardSuperAdminAuditLogs } from "../../../../providers/patchDiscussionBoardSuperAdminAuditLogs";
-import { patchDiscussionBoardSuperAdminAuditLogsAnalytics } from "../../../../providers/patchDiscussionBoardSuperAdminAuditLogsAnalytics";
 
 @Controller("/discussionBoard/superAdmin/audit-logs")
 export class DiscussionboardSuperadminAudit_logsController {
   /**
-   * Search and retrieve audit trail records with advanced filtering capabilities.
+   * Retrieve a filtered and paginated list of audit log records for comprehensive system monitoring and compliance review.
    *
-   * This operation provides comprehensive access to the discussion board's audit trail system, allowing administrators to monitor and investigate system activities. The audit trail captures detailed information about all significant actions performed by users, administrators, and the system itself, including login events, content modifications, administrative actions, and system operations.
+   * This operation provides advanced search capabilities across the entire audit trail, allowing administrators to investigate system activities, track user actions, monitor administrative operations, and review security events. Filters include action types, actor types, target entities, time ranges, success status, and free-text search of log descriptions.
    *
-   * Administrators can filter audit records by actor type (user, admin, super_admin, system), action type categories, date ranges, success status, and specific target entities. The search supports pagination for efficient browsing of large audit datasets and includes metadata about the search results for comprehensive audit analysis.
+   * The audit trail captures all significant system events including user logins, content creation and modification, administrative actions, security events, and system operations. Each record includes detailed metadata about the action performed, the actor responsible, the target affected, timestamps, and outcome information.
    *
-   * The response includes essential audit log information optimized for list displays, showing key details such as actor identification, action description, timestamp, and success status. This operation is essential for compliance monitoring, security investigation, system debugging, and maintaining user accountability across the platform.
-   *
-   * Security considerations: This operation requires administrator privileges as audit logs contain sensitive system activity information. Access is restricted to authorized administrators who need audit trail visibility for platform management and security monitoring purposes.
+   * Access to this endpoint is restricted to administrators due to the sensitive nature of audit data. Response includes pagination controls for efficiently browsing large result sets while maintaining system performance.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for audit log filtering
+   * @param body Audit log search criteria including filters, pagination, and sorting parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_audit_logs table with comprehensive filtering capabilities. Apply filters based on actor_type, action_type, date ranges (created_at), success status, and target entity IDs. Support pagination with configurable page sizes and cursor-based navigation for large result sets. Join with actor tables (users, admins, super_admins) to resolve actor names when available. Return audit log summaries with essential fields for efficient list display and audit trail analysis.
+   * @x-autobe-specification Query the discussion_board_audit_logs table with comprehensive filtering capabilities. Apply filters based on action_type, actor_type, target entity IDs (user, admin, super_admin, article, comment, section), timestamp ranges (created_at, updated_at), success status, and text search on description field. Join with related tables if specific entity details are requested. Implement cursor-based pagination for efficient large result set handling. Ensure proper authorization - this endpoint should only be accessible to administrators. Validate all filter parameters and handle edge cases where no filters are provided (return all logs with pagination).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardAuditLog.IRequest,
   ): Promise<IPageIDiscussionBoardAuditLog.ISummary> {
@@ -49,86 +46,41 @@ export class DiscussionboardSuperadminAudit_logsController {
   }
 
   /**
-   * Retrieve a specific audit log record from the comprehensive audit trail system.
+   * Retrieve detailed information about a specific audit log record.
    *
-   * This operation provides detailed information about a single administrative or system action recorded in the audit trail. Each audit log contains the actor who performed the action, the type of action, the target entity affected, timestamp information, IP address, user agent, success status, and additional metadata specific to the action type.
+   * This operation provides access to comprehensive audit trail information for administrative review and investigation purposes. Each audit log record captures detailed information about significant actions performed within the discussion board platform, including user activities, administrative actions, and system events.
    *
-   * The audit trail serves critical purposes including compliance monitoring, security investigation, system debugging, and user accountability. Records are append-only and cannot be modified once created to ensure the integrity of the audit trail. This operation is primarily intended for administrative review and investigation purposes.
+   * The response includes complete audit log details such as actor identification, action type and subtype, target entity information, timestamps, IP address, user agent, success status, and any associated error messages. The metadata field contains JSON-formatted additional information specific to the action type.
    *
-   * Supported actor types include 'user', 'admin', 'super_admin', and 'system'. Action categories cover all significant system activities including user logins, article operations, comment management, user banning, and administrator promotions.
+   * This operation is essential for compliance monitoring, security investigation, system debugging, and maintaining user accountability across the platform. Audit logs serve as an immutable record of all significant platform activities.
+   *
+   * Access to audit logs is restricted to authorized administrators and super administrators due to the sensitive nature of the information contained within these records.
    *
    * @param connection
-   * @param logId Unique identifier of the audit log record to retrieve
+   * @param auditLogId Unique identifier of the audit log record to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_audit_logs table by the provided logId (UUID format). Return the complete audit log record including all fields: actor information, target entities, action details, timestamps, and metadata. Ensure the operation validates that the logId exists and returns appropriate 404 error if not found.
+   * @x-autobe-specification Retrieve a specific audit log record by its UUID identifier.
+   *
+   * Query the discussion_board_audit_logs table using the provided auditLogId parameter.
+   * Return the complete audit log record with all fields including actor information, action details, target entities, timestamps, and metadata.
+   *
+   * Authorization: This operation should be restricted to administrators and super administrators only, as audit logs contain sensitive system information.
+   *
+   * Error handling: Return appropriate error responses if the audit log ID is invalid or the record does not exist.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":logId")
+  @TypedRoute.Get(":auditLogId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("logId")
-    logId: string & tags.Format<"uuid">,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("auditLogId")
+    auditLogId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardAuditLog> {
     try {
-      return await getDiscussionBoardSuperAdminAuditLogsLogId({
+      return await getDiscussionBoardSuperAdminAuditLogsAuditLogId({
         superAdmin,
-        logId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve aggregated analytics and statistical data from the audit trail system.
-   *
-   * This operation provides comprehensive analytics capabilities for monitoring platform activity patterns, security events, and administrative actions. The analytics endpoint supports filtering by various criteria including actor types, action categories, time periods, and success status to generate meaningful statistical insights.
-   *
-   * Users can analyze trends in user behavior, administrator actions, and system events over specified time ranges. The analytics data helps identify patterns, monitor security compliance, and optimize platform performance through detailed activity analysis.
-   *
-   * Supported filtering options include actor type categorization (user, admin, super_admin, system), action type classification, date range selection, and success status filtering. The response provides aggregated counts, percentages, and trend indicators for comprehensive analytics reporting.
-   *
-   * This operation is essential for platform administrators and security teams to monitor system health, track user engagement patterns, and ensure compliance with security protocols through detailed audit trail analysis.
-   *
-   * @param connection
-   * @param body Analytics filtering criteria and aggregation parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_audit_logs table with aggregation and filtering capabilities.
-   *
-   * Implement statistical analysis including:
-   * - Count of activities by actor_type, action_type, and time periods
-   * - Success/failure rates by action category
-   * - Trend analysis over specified date ranges
-   * - Filtering by actor_type, action_type, target_entity_type, and success status
-   * - Date range filtering with start and end timestamps
-   * - Pagination support for large analytics result sets
-   *
-   * Aggregate data by:
-   * - Hourly, daily, weekly, or monthly time buckets
-   * - Actor types (user, admin, super_admin, system)
-   * - Action categories (login, article_create, comment_delete, etc.)
-   * - Success/failure status
-   *
-   * Return aggregated statistics with counts, percentages, and trend indicators.
-   * Apply proper indexing on actor_type, action_type, created_at for performance.
-   * Handle empty result sets gracefully with appropriate default values.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch("analytics")
-  public async analytics(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedBody()
-    body: IDiscussionBoardAuditLog.IRequest,
-  ): Promise<IPageIDiscussionBoardAuditLog.ISummary> {
-    try {
-      return await patchDiscussionBoardSuperAdminAuditLogsAnalytics({
-        superAdmin,
-        body,
+        auditLogId,
       });
     } catch (error) {
       console.log(error);

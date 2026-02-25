@@ -1,5 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallAdminSessions } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminSessions";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -15,30 +16,26 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthCustomerRefresh(props: {
   body: IShoppingMallCustomer.IRefresh;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // 1. Extract refresh token from request body (though IRefresh is empty in current schema)
-  // The token should come from the request context, but following the current schema structure
-  // Removed refreshToken extraction as IRefresh has no refreshToken property
-  // Token would come from request headers in real implementation
-  const refreshToken = "";
-  // 2. Verify refresh token is valid and not expired
+  // Verify refresh token
   let decoded: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "customer";
-    created_at: string & tags.Format<"date-time">;
   };
   try {
-    decoded = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 3. Validate token type
+  // Validate type
   if (decoded.type !== "customer") {
-    throw new HttpException("Invalid token type", 401);
+    throw new HttpException("Invalid token type", 403);
   }
-  // 4. Query shopping_mall_customer_sessions table for active session
+  // Validate session
   const session =
     await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
       where: {
@@ -46,37 +43,97 @@ export async function postShoppingMallAuthCustomerRefresh(props: {
         shopping_mall_customer_id: decoded.id,
       },
     });
-  // 5. Validate session hasn't been invalidated or expired
-  if (!session || new Date(session.expired_at) <= new Date()) {
+  if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 6. Generate new access token with 30-minute expiration
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const newAccess = jwt.sign(
+  // Validate customer account
+  const customer =
+    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+      where: { id: decoded.id },
+    });
+  if (customer.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  // Calculate expiration times
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const createdAt = toISOStringSafe(new Date());
+  // Generate new tokens
+  const access = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
+      type: "customer" as const,
+      id: customer.id,
+      session_id: session.id,
+      created_at: createdAt,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30m", issuer: "autobe" },
+    { expiresIn: "1h", issuer: "autobe" },
   );
-  // 7. Update session record with new token metadata
+  const refresh = jwt.sign(
+    {
+      type: "customer" as const,
+      id: customer.id,
+      session_id: session.id,
+      tokenType: "refresh" as const,
+      created_at: createdAt,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // Update session
   await MyGlobal.prisma.shopping_mall_customer_sessions.update({
-    where: { id: decoded.session_id },
+    where: { id: session.id },
     data: {
-      expired_at: toISOStringSafe(refreshExpires),
+      access_token: access,
+      refresh_token: refresh,
+      expired_at: refreshExpires,
     },
   });
-  // 8. Return 200 OK response with new access token
+  // Build response - fix null values for required fields
   return {
+    id: customer.id,
+    email: customer.email,
+    display_name: customer.display_name,
+    phone_number: customer.phone_number,
+    email_verified: customer.email_verified,
+    created_at: toISOStringSafe(customer.created_at),
+    updated_at: customer.updated_at
+      ? toISOStringSafe(customer.updated_at)
+      : toISOStringSafe(new Date()),
+    deleted_at: customer.deleted_at
+      ? toISOStringSafe(customer.deleted_at)
+      : null,
+    customer: {
+      id: customer.id,
+      email: customer.email,
+      display_name: customer.display_name,
+      phone_number: customer.phone_number,
+      email_verified: customer.email_verified,
+      created_at: toISOStringSafe(customer.created_at),
+      updated_at: customer.updated_at
+        ? toISOStringSafe(customer.updated_at)
+        : toISOStringSafe(new Date()),
+    },
+    tokens: {
+      access_token: access,
+      refresh_token: refresh,
+      access_token_expires_at: accessExpires,
+      refresh_token_expires_at: refreshExpires,
+      ip: session.ip,
+      user_agent: session.user_agent,
+      href: null,
+      referrer: session.referrer,
+      created_at: toISOStringSafe(session.created_at),
+      updated_at: toISOStringSafe(session.created_at), // Use created_at as fallback since updated_at may not exist
+      deleted_at: null,
+    },
     token: {
-      access: newAccess,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      access: access,
+      refresh: refresh,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

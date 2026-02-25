@@ -12,10 +12,8 @@ export namespace DiscussionBoardContentFlagCollector {
     body: IDiscussionBoardContentFlag.ICreate;
     discussionBoardUsers: IEntity;
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       flag_reason: props.body.flag_reason,
       status: "pending",
       resolution_reason: null,
@@ -23,7 +21,6 @@ export namespace DiscussionBoardContentFlagCollector {
       updated_at: new Date(),
       deleted_at: null,
       resolved_at: null,
-      // BelongsTo relations
       reporter: { connect: { id: props.discussionBoardUsers.id } },
       flaggedArticle: props.body.flagged_article_id
         ? { connect: { id: props.body.flagged_article_id } }
@@ -32,7 +29,6 @@ export namespace DiscussionBoardContentFlagCollector {
         ? { connect: { id: props.body.flagged_comment_id } }
         : undefined,
       reviewingAdmin: undefined,
-      // REMOVED: discussion_board_content_moderation_queues property as it doesn't exist in schema
     } satisfies Prisma.discussion_board_content_flagsCreateInput;
   }
 }

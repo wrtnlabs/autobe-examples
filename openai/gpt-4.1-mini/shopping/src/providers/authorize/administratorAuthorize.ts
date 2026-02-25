@@ -10,14 +10,14 @@ export async function administratorAuthorize(request: { headers: { authorization
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const administrator = await MyGlobal.prisma.shopping_mall_administrators.findFirst({
+  const admin = await MyGlobal.prisma.shopping_mall_administrators.findFirst({
     where: {
       id: payload.id,
       deleted_at: null
-    }
+    },
   });
 
-  if (administrator === null) {
+  if (admin === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

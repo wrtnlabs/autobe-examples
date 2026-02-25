@@ -10,22 +10,19 @@ export function prepare_random_discussion_board_article_draft(
 ): IDiscussionBoardArticleDraft.ICreate {
   return {
     draft_title:
-      input?.draft_title ??
-      RandomGenerator.paragraph({
-        sentences: typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<3> & tags.Maximum<5>
-        >(),
-      }),
+      input?.draft_title ?? RandomGenerator.paragraph({ sentences: 3 }),
     draft_content:
-      input?.draft_content ??
-      RandomGenerator.content({
-        paragraphs: typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<4>
-        >(),
-      }),
-    recovery_data:
-      input?.recovery_data !== undefined
-        ? input.recovery_data
-        : typia.random<string & tags.Format<"uuid">>(),
+      input?.draft_content ?? RandomGenerator.content({ paragraphs: 2 }),
+    draft_status:
+      input?.draft_status ??
+      RandomGenerator.pick(["draft", "auto-save", "pending-review"] as const),
+    recovery_data: input?.recovery_data
+      ? Object.fromEntries(
+          Object.entries(input.recovery_data).map(([key, value]) => [
+            key,
+            value ?? RandomGenerator.alphabets(8),
+          ]),
+        )
+      : { example: RandomGenerator.alphabets(8) },
   };
 }

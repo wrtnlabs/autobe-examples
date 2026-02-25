@@ -54,11 +54,16 @@ model discussion_board_articles {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   auditActions discussion_board_audit_logs[]
   snapshots discussion_board_article_snapshots[]
   files discussion_board_article_files[]
@@ -74,6 +79,9 @@ model discussion_board_articles {
   moderationHistories discussion_board_moderated_content_histories[]
   contentFlags discussion_board_content_flags[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_section_id, created_at], map: "discussion_board_articles_discussion_board_section_id__cb7d94c3")
   // spellchecker: ignore-next-line
@@ -131,10 +139,14 @@ model discussion_board_article_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_article_snapshots_discussion_board_ar_12be945f")
   // spellchecker: ignore-next-line
@@ -205,12 +217,20 @@ model discussion_board_article_files {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   commentAttachments discussion_board_comment_attachments[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_article_files_discussion_board_articl_29eaf080")
   @@index([file_type, created_at])
@@ -259,12 +279,20 @@ model discussion_board_article_images {
   caption String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   imageFiles discussion_board_article_image_files[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, display_order], map: "discussion_board_article_images_discussion_board_artic_ed181826")
   @@index([status])
@@ -314,10 +342,14 @@ model discussion_board_article_tags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_id, tag_name], map: "discussion_board_article_tags_discussion_board_article_2ef58600")
   // spellchecker: ignore-next-line
@@ -376,10 +408,14 @@ model discussion_board_article_view_stats {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_id], map: "discussion_board_article_view_stats_discussion_board_a_1e299b02")
   @@index([total_view_count])
@@ -422,11 +458,15 @@ model discussion_board_article_favorites {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_user_id, discussion_board_article_id], map: "discussion_board_article_favorites_discussion_board_us_265af336")
   // spellchecker: ignore-next-line
@@ -495,13 +535,16 @@ model discussion_board_article_drafts {
   draft_deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles? @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id], map: "discussion_board_article_drafts_discussion_board_artic_3a527a40")
-  
   @@index([draft_status, last_saved_at])
 }
 
@@ -553,10 +596,14 @@ model discussion_board_article_image_files {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   articleImage discussion_board_article_images @relation(fields: [discussion_board_article_image_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_image_id], map: "discussion_board_article_image_files_discussion_board__6b68a00d")
   @@index([filename])
@@ -600,11 +647,15 @@ model discussion_board_article_view_stat_events {
   view_duration_seconds Int?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   userSession discussion_board_user_sessions? @relation(fields: [discussion_board_user_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_article_view_stat_events_discussion_b_80a40b86")
   // spellchecker: ignore-next-line

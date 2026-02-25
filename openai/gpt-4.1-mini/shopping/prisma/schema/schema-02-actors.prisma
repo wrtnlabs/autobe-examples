@@ -35,7 +35,8 @@ model shopping_mall_customers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions shopping_mall_customer_sessions[]
   passwordResets shopping_mall_customer_password_resets[]
@@ -53,6 +54,9 @@ model shopping_mall_customers {
   notificationPreferences shopping_mall_user_notification_preferences[]
   bannedUser shopping_mall_banned_users?
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
 }
@@ -90,10 +94,14 @@ model shopping_mall_customer_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
 }
@@ -131,10 +139,14 @@ model shopping_mall_customer_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([shopping_customer_id, created_at], map: "shopping_mall_customer_password_resets_shopping_custom_76a3bee3")
@@ -180,10 +192,14 @@ model shopping_mall_customer_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_email_verifications_shopping_ma_44a754be")
@@ -244,7 +260,8 @@ model shopping_mall_sellers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions shopping_mall_seller_sessions[]
   emailVerifications shopping_mall_seller_email_verifications[]
@@ -260,6 +277,9 @@ model shopping_mall_sellers {
   bannedUser shopping_mall_banned_users?
   sellerSuspensions shopping_mall_seller_suspensions[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([approval_status])
 }
@@ -296,10 +316,14 @@ model shopping_mall_seller_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([seller_id, created_at])
 }
 
@@ -338,10 +362,14 @@ model shopping_mall_seller_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([seller_id, created_at], map: "shopping_mall_seller_email_verifications_seller_id_cre_7c069276")
@@ -388,18 +416,25 @@ model shopping_mall_administrators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administratorGrade shopping_mall_administrator_grades @relation(fields: [administrator_grade_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   sessions shopping_mall_administrator_sessions[]
   passwordResets shopping_mall_administrator_password_resets[]
   auditLogs shopping_mall_administrator_audit_logs[]
   notificationPreferences shopping_mall_user_notification_preferences[]
   administrativeAuditLogs shopping_mall_administrative_audit_logs[]
   
+  //----
+  // INDEXES
+  //----
   @@index([administrator_grade_id])
-  
   @@unique([email])
   @@index([created_at])
 }
@@ -438,10 +473,14 @@ model shopping_mall_administrator_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "shopping_mall_administrator_sessions_administrator_id__168720aa")
 }
@@ -478,10 +517,14 @@ model shopping_mall_administrator_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([administrator_id], map: "shopping_mall_administrator_password_resets_administra_8fdf97d2")
@@ -531,10 +574,14 @@ model shopping_mall_administrator_audit_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "shopping_mall_administrator_audit_logs_administrator_i_d854cd80")
 }
@@ -572,10 +619,14 @@ model shopping_mall_seller_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   @@index([seller_id, created_at])
 }

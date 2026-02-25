@@ -15,99 +15,90 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postMultiUserTodoAuthUserRefresh(props: {
   body: IMultiUserTodoUser.IRefresh;
 }): Promise<IMultiUserTodoUser.IAuthorized> {
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "user";
+  let decoded: unknown;
+  try {
+    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    });
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  if (typeof decoded !== "object" || decoded === null) {
+    throw new HttpException("Invalid token payload", 401);
+  }
+  if (
+    typeof (decoded as Record<string, unknown>).type !== "string" ||
+    typeof (decoded as Record<string, unknown>).id !== "string" ||
+    typeof (decoded as Record<string, unknown>).session_id !== "string"
+  ) {
+    throw new HttpException("Invalid token payload", 401);
+  }
+  const tokenType = (decoded as Record<string, string>).type;
+  if (tokenType !== "user") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  const userId = (decoded as Record<string, string>).id;
+  const sessionId = (decoded as Record<string, string>).session_id;
+  // Validate session
+  const session = await MyGlobal.prisma.multi_user_todo_user_sessions.findFirst(
+    {
+      where: { id: sessionId, multi_user_todo_user_id: userId },
+    },
+  );
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  // Validate user
+  const user = await MyGlobal.prisma.multi_user_todo_users.findUniqueOrThrow({
+    where: { id: userId },
+  });
+  if (user.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  const nowMs = Date.now();
+  // Functional helper to format timestamp to ISO string as string & tags.Format<'date-time'>
+  const toIsoString = (
+    timestamp: number,
+  ): string & tags.Format<"date-time"> => {
+    return toISOStringSafe(new Date(timestamp)) as string &
+      tags.Format<"date-time">;
   };
-  let refreshToken: string;
-  // Extract refresh token from body which is empty type - so this must be passed as header or elsewhere - but no other input is given.
-  // Thus, we throw because we cannot get refresh token from props.body according to the type structure.
-  throw new HttpException("Refresh token not provided in request body", 400);
-  // The following code would be the implementation if refresh token was accessible:
-  /*
-    try {
-      decoded = jwt.verify(
-        refreshToken,
-        MyGlobal.env.JWT_SECRET_KEY,
-        { issuer: "autobe" }
-      ) as { id: string; session_id: string; type: "user" };
-    } catch {
-      throw new HttpException("Invalid or expired refresh token", 401);
-    }
-
-    if (decoded.type !== "user") {
-      throw new HttpException("Invalid token type", 403);
-    }
-
-    const session = await MyGlobal.prisma.multi_user_todo_user_sessions.findFirst({
-      where: {
-        id: decoded.session_id,
-        multi_user_todo_user_id: decoded.id
-      },
-    });
-
-    if (!session) {
-      throw new HttpException("Session expired or revoked", 401);
-    }
-
-    const user = await MyGlobal.prisma.multi_user_todo_users.findUnique({
-      where: { id: decoded.id },
-    });
-
-    if (!user) {
-      throw new HttpException("User not found", 404);
-    }
-
-    if (user.deleted_at !== null) {
-      throw new HttpException("Account has been deleted", 403);
-    }
-
-    const now = new Date();
-    const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-    const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const accessExpiresISO = toISOStringSafe(accessExpires);
-    const refreshExpiresISO = toISOStringSafe(refreshExpires);
-    const nowISO = toISOStringSafe(now);
-
-    const accessToken = jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: nowISO,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" }
-    );
-
-    const refreshTokenNew = jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: nowISO,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" }
-    );
-
-    await MyGlobal.prisma.multi_user_todo_user_sessions.update({
-      where: { id: decoded.session_id },
-      data: {
-        expired_at: refreshExpiresISO,
-      },
-    });
-
-    return {
-      token: {
-        access: accessToken,
-        refresh: refreshTokenNew,
-        expired_at: accessExpiresISO,
-        refreshable_until: refreshExpiresISO,
-      },
-    };
-    */
+  const accessExpires = toIsoString(nowMs + 60 * 60 * 1000);
+  const refreshExpires = toIsoString(nowMs + 7 * 24 * 60 * 60 * 1000);
+  const createdAt = toIsoString(nowMs);
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: userId,
+      session_id: sessionId,
+      created_at: createdAt,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: userId,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: createdAt,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  await MyGlobal.prisma.multi_user_todo_user_sessions.update({
+    where: { id: sessionId },
+    data: { expired_at: refreshExpires },
+  });
+  return {
+    id: user.id,
+    displayName: user.display_name,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
+  };
 }

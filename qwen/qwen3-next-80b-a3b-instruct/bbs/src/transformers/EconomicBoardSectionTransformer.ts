@@ -19,7 +19,8 @@ export namespace EconomicBoardSectionTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        status: true,
+        articles: true,
+        snapshots: true,
       },
     } satisfies Prisma.economic_board_sectionsFindManyArgs;
   }
@@ -30,10 +31,9 @@ export namespace EconomicBoardSectionTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      status: input.status,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

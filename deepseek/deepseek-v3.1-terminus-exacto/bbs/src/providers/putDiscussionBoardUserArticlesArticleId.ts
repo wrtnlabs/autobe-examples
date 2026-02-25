@@ -20,56 +20,62 @@ export async function putDiscussionBoardUserArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticle.IUpdate;
 }): Promise<IDiscussionBoardArticle> {
-  // Validate article exists and belongs to user
-  const existingArticle =
-    await MyGlobal.prisma.discussion_board_articles.findFirst({
-      where: {
-        id: props.articleId,
-        discussion_board_user_id: props.user.id,
-        deleted_at: null,
-      },
+  // 1. Verify article exists and is not deleted
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId, deleted_at: null },
     });
-  if (!existingArticle) {
-    throw new HttpException(
-      "Article not found or you don't have permission to update it",
-      404,
-    );
-  }
-  // Validate section exists and is active if section_id is provided
-  if (props.body.discussion_board_section_id) {
-    const section = await MyGlobal.prisma.discussion_board_sections.findFirst({
-      where: {
-        id: props.body.discussion_board_section_id,
-        status: "active",
-        deleted_at: null,
-      },
-    });
-    if (!section) {
-      throw new HttpException("Target section not found or is not active", 400);
+  // 2. Authorization check - user must be author or admin
+  if (article.discussion_board_user_id !== props.user.id) {
+    const adminRecord =
+      await MyGlobal.prisma.discussion_board_administrators.findUnique({
+        where: { id: props.user.id, deleted_at: null },
+      });
+    if (!adminRecord) {
+      throw new HttpException("You can only update your own articles", 403);
     }
   }
-  // Prepare update data
-  const updateData: Prisma.discussion_board_articlesUpdateInput = {
-    updated_at: toISOStringSafe(new Date()),
-  };
+  // 3. Field validation for provided fields
   if (props.body.title !== undefined) {
-    updateData.title = props.body.title;
+    if (props.body.title.length < 5 || props.body.title.length > 200) {
+      throw new HttpException(
+        "Title must be between 5 and 200 characters",
+        400,
+      );
+    }
   }
   if (props.body.content !== undefined) {
-    updateData.content = props.body.content;
+    if (props.body.content.length < 50) {
+      throw new HttpException("Content must be at least 50 characters", 400);
+    }
   }
-  if (props.body.discussion_board_section_id !== undefined) {
-    updateData.section = {
-      connect: { id: props.body.discussion_board_section_id },
-    };
+  if (props.body.status !== undefined) {
+    const validStatuses = ["draft", "published", "archived"];
+    if (!validStatuses.includes(props.body.status)) {
+      throw new HttpException(
+        "Status must be one of: draft, published, archived",
+        400,
+      );
+    }
   }
-  // Update the article
-  const updatedArticle = await MyGlobal.prisma.discussion_board_articles.update(
-    {
+  // 4. Prepare update data
+  const updateData: Prisma.discussion_board_articlesUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.title !== undefined) updateData.title = props.body.title;
+  if (props.body.content !== undefined) updateData.content = props.body.content;
+  if (props.body.status !== undefined) updateData.status = props.body.status;
+  // 5. Perform update
+  await MyGlobal.prisma.discussion_board_articles.update({
+    where: { id: props.articleId },
+    data: updateData,
+  });
+  // 6. Fetch updated article with transformer
+  const updatedArticle =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
-      data: updateData,
       ...DiscussionBoardArticleTransformer.select(),
-    },
-  );
-  return await DiscussionBoardArticleTransformer.transform(updatedArticle);
+    });
+  // 7. Return transformed article
+  return DiscussionBoardArticleTransformer.transform(updatedArticle);
 }

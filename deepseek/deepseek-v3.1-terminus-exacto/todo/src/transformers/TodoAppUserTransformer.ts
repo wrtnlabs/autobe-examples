@@ -15,7 +15,6 @@ export namespace TodoAppUserTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         display_name: true,
         created_at: true,
         updated_at: true,
@@ -28,8 +27,9 @@ export namespace TodoAppUserTransformer {
       id: input.id,
       email: input.email,
       display_name: input.display_name,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

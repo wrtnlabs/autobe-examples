@@ -16,49 +16,54 @@ export async function deleteShoppingMallSellerProductsProductIdImagesImageId(pro
   productId: string;
   imageId: string;
 }): Promise<void> {
-  // Validate that the image exists and belongs to the specified product
-  const image = await MyGlobal.prisma.shopping_mall_product_images.findFirst({
-    where: {
-      id: props.imageId as string & tags.Format<"uuid">,
-      shopping_mall_product_id: props.productId as string & tags.Format<"uuid">,
-      product: {
-        shopping_mall_seller_id: props.seller.id,
-        deleted_at: null,
-      },
-    },
+  // Check seller ownership or admin privileges
+  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
+    where: { id: props.productId },
+  });
+  if (!product) {
+    throw new HttpException("Product not found", 404);
+  }
+  // Verify seller ownership (seller can only delete images from their own products)
+  if (product.shopping_mall_seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden: You do not own this product", 403);
+  }
+  // Load the image to be deleted
+  const image = await MyGlobal.prisma.shopping_mall_product_images.findUnique({
+    where: { id: props.imageId },
   });
   if (!image) {
-    throw new HttpException(
-      "Image not found or does not belong to this product",
-      404,
-    );
+    throw new HttpException("Image not found", 404);
   }
-  // Check if this is the only image for the product
-  const otherImages =
-    await MyGlobal.prisma.shopping_mall_product_images.findMany({
-      where: {
-        shopping_mall_product_id: props.productId as string &
-          tags.Format<"uuid">,
-        id: { not: image.id },
-      },
+  // Verify image belongs to the product
+  if (image.shopping_mall_product_id !== props.productId) {
+    throw new HttpException("Image does not belong to this product", 400);
+  }
+  // Count total images for this product
+  const imageCount = await MyGlobal.prisma.shopping_mall_product_images.count({
+    where: { shopping_mall_product_id: props.productId },
+  });
+  // Ensure at least one image remains
+  if (imageCount <= 1) {
+    throw new HttpException("Cannot delete the last image", 400);
+  }
+  // Start transaction for consistency
+  const deletedImage =
+    await MyGlobal.prisma.shopping_mall_product_images.delete({
+      where: { id: props.imageId },
     });
-  if (otherImages.length === 0) {
-    throw new HttpException("Product must have at least one image", 400);
+  // Reorder remaining images sequentially starting from 0
+  const remainingImages =
+    await MyGlobal.prisma.shopping_mall_product_images.findMany({
+      where: { shopping_mall_product_id: props.productId },
+      orderBy: { sort_order: "asc" },
+    });
+  // Update sort_order for remaining images to be sequential
+  for (let i = 0; i < remainingImages.length; i++) {
+    if (remainingImages[i].sort_order !== i) {
+      await MyGlobal.prisma.shopping_mall_product_images.update({
+        where: { id: remainingImages[i].id },
+        data: { sort_order: i },
+      });
+    }
   }
-  // Get the display order of the image being deleted
-  const deletedOrder = image.display_order;
-  // Delete the image record
-  await MyGlobal.prisma.shopping_mall_product_images.delete({
-    where: { id: image.id },
-  });
-  // Reorder remaining images to fill the gap
-  await MyGlobal.prisma.shopping_mall_product_images.updateMany({
-    where: {
-      shopping_mall_product_id: props.productId as string & tags.Format<"uuid">,
-      display_order: { gt: deletedOrder },
-    },
-    data: {
-      display_order: { decrement: 1 },
-    },
-  });
 }

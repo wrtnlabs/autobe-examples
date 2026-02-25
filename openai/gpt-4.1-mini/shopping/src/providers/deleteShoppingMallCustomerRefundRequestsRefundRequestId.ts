@@ -15,18 +15,30 @@ export async function deleteShoppingMallCustomerRefundRequestsRefundRequestId(pr
   customer: CustomerPayload;
   refundRequestId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const refundRequest =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUnique({
+  try {
+    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
       where: { id: props.refundRequestId },
     });
-  if (refundRequest === null || refundRequest.deleted_at !== null) {
-    throw new HttpException("Refund request not found", 404);
+    await MyGlobal.prisma.shopping_mall_refund_requests.delete({
+      where: { id: props.refundRequestId },
+    });
+    await MyGlobal.prisma.shopping_mall_administrative_audit_logs.create({
+      data: {
+        id: v4(),
+        administrator: { connect: { id: props.customer.id } },
+        action_code: "delete_refund_request",
+        target_refund_request_id: props.refundRequestId,
+        created_at: new Date().toISOString() satisfies string &
+          tags.Format<"date-time"> as string & tags.Format<"date-time">,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      throw new HttpException("Refund request not found", 404);
+    }
+    throw error;
   }
-  if (refundRequest.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Refund request not found", 404);
-  }
-  await MyGlobal.prisma.shopping_mall_refund_requests.update({
-    where: { id: props.refundRequestId },
-    data: { deleted_at: toISOStringSafe(new Date()) },
-  });
 }

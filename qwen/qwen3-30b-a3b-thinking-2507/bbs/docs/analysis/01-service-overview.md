@@ -1,280 +1,112 @@
-# Economic/Political Discussion Board Requirements Specification
+# Economic/Political Discussion Board - Requirements Specification
 
-## User Account
+## Section 1: Service Overview
 
-### Registration Flow
+### Purpose & Vision
+The Economic/Political Discussion Board (EPDB) establishes a dedicated platform for meaningful discourse on critical economic and political topics. The platform's purpose is to empower users with tools for sharing insights, engaging in constructive debates, and accessing high-quality content through organized sections and advanced search capabilities. This addresses a significant gap in the current digital landscape where broader forums lack specialized structure for these topics.
 
-WHEN a guest user attempts to create an account, THE system SHALL:
+### Scope & Boundaries
+#### In-Scope Features
+- **User Account Management**: Users can sign up, log in, change passwords, delete accounts (with associated content deletion)
+- **User Profiles**: Display name, bio text, profile viewing, article/comment listings
+- **Section Management**: Creation/editing/deletion by administrators only (with section name and description)
+- **Article Management**: Creation with title, content, section, attachments, tags; editing/deletion by authors
+- **Article List**: Paginated, customizable sorting (newest/oldest), minimal display per article
+- **Article Viewing**: Full content, attachments, comments, download capabilities
+- **Search & Filtering**: Title/content search with pagination, tag-based filtering
+- **Comment System**: Single-level comments, editing/deletion by authors, oldest-first sorting
+- **Admin System**: Role management (regular/super admin), content moderation, user management, banning
+- **Banning System**: Record ban reasons, maintain visibility of banned users' content
 
-1. Present a registration form requiring email and password inputs
-2. Validate email format using standard rules (contains '@' and valid domain)
-3. Create user account with status 'pending' upon valid submission
-4. Send verification email with confirmation link within 5 seconds
-5. Display success message upon email submission
+#### Out-of-Scope Features
+- Frontend UI/UX design
+- Email notification systems
+- Payment gateways (beyond basic subscription logic)
+- External API integrations
+- Complex analytics dashboards
 
-### Email Verification
+### Value Proposition
 
-WHEN a user clicks the verification link, THE system SHALL:
+#### For Users
+EPDB provides a specialized space for economic and political discussions with rich media support (attachable files/images). Users benefit from organized sections (Politics, Economy), advanced search with tag filtering, and the ability to document insights with attachments—all without clutter from unrelated content.
 
-1. Update account status to 'verified'
-2. Generate JWT authentication token
-3. Redirect user to login page with success message
+#### For Administrators
+Administrators receive a comprehensive governance toolkit including section management, content moderation, user management with documented ban reasons, and role management. This enables effective community governance while maintaining transparency.
 
-### Authentication Requirements
+#### For Business
+Revenue model combines premium subscriptions (60%), sponsored sections (30%), and targeted advertising (10%). This strategy supports sustainable growth with measurable success metrics:
+- 20,000 active users within 6 months
+- 15% premium conversion rate
+- $50k revenue by month 6
+- 90% positive user survey rating
 
-WHEN a user attempts to log in, THE system SHALL:
+## Section 2: User Requirements
 
-1. Validate credentials against database within 1 second
-2. Return user-friendly error for invalid credentials: "Invalid email or password"
-3. Generate JWT token with 15-minute expiration
-4. Store tokens using HTTP-only cookies for security
-5. Automatically log out after 15 minutes of inactivity
+### User Registration and Authentication
+**WHEN** a new user visits the platform **AND** submits a valid email and password **THEN** THE system SHALL create a new user account **AND** respond with confirmation message. **WHEN** a registered user attempts to log in with valid credentials **THEN** THE system SHALL validate credentials **AND** establish a session with a JWT token valid for 24 hours. **WHEN** an existing user requests password change **THEN** THE system SHALL verify current password before updating to new password.
 
-### Password Management
+### User Profile Management
+**WHEN** a user visits their profile page **THEN** THE system SHALL display their display name, bio, list of authored articles, and list of written comments. **WHEN** a user submits update to display name or bio **THEN** THE system SHALL save changes and update all relevant displays within 5 seconds. **WHEN** a user views another user's profile **THEN** THE system SHALL display visible profile information but hide account deletion functionality.
 
-WHEN a user requests password change, THE system SHALL:
+### User Account Deletion
+**WHEN** a user requests account deletion **THEN** THE system SHALL confirm the request through a second authentication step **AND** delete the account along with all associated articles and comments within 24 hours. **WHEN** a user account is deleted **THEN** THE system SHALL invalidate associated authentication tokens immediately.
 
-1. Verify current password validity
-2. Allow new password creation with minimum 8 characters
-3. Confirm new password meets complexity requirements
-4. Update password hash immediately after confirmation
+## Section 3: Article Management Requirements
 
-### Account Deletion
+### Article Creation Requirements
+**WHEN** a user creates an article **THEN** THE system SHALL require title, content, and mandatory section selection. **WHEN** a user attaches files to an article **THEN** THE system SHALL allow multiple files (images and PDFs) with maximum 100MB total per article. **WHEN** a user adds tags to an article **THEN** THE system SHALL store up to 5 free-text tags per article, separated by commas.
 
-WHEN a user requests account deletion, THE system SHALL:
+### Article Modification Requirements
+**WHEN** an author edits their article **THEN** THE system SHALL allow modification of title, content, attachments, and tags. **WHEN** an author deletes their article **THEN** THE system SHALL remove the article from all lists and views while maintaining visibility of associated comments (which will show author as "deleted user").
 
-1. Confirm deletion request through email verification
-2. Permanently remove all related articles and comments
-3. Notify user upon successful deletion
-4. Ensure deleted user data cannot be recovered
+### Article View Requirements
+**WHEN** a user views an article **THEN** THE system SHALL display title, author, full content, attachments, tags, and timestamp (in Seoul time zone). **WHEN** a user clicks on an attached file **THEN** THE system SHALL initiate file download without requiring additional authentication steps.
 
-## User Profile
+## Section 4: Admin System Requirements
 
-### Profile Structure
+### Administrator Role Management
+**WHEN** a regular user submits an administrator request **THEN** THE system SHALL store the request with reason text. **WHEN** a super administrator reviews a pending request **THEN** THE system SHALL allow approval or rejection. **WHEN** an administrator is approved **THEN** THE system SHALL upgrade their role to regular administrator status.
 
-WHEN a user creates profile for first time, THE system SHALL:
+### Administrator Permissions
+**WHEN** a regular administrator accesses the admin dashboard **THEN** THE system SHALL grant full permissions including article and comment management. **WHEN** a super administrator moderates user requests **THEN** THE system SHALL allow promotion/demotion of regular administrators to super administrators. **WHEN** a super administrator demotes another super administrator **THEN** THE system SHALL prevent self-demotion and maintain one super administrator at all times.
 
-1. Request display name (50 characters max, no special characters)
-2. Request bio text (500 characters max)
-3. Store profile with user ID
+### User Banning Requirements
+**WHEN** an administrator bans a user **THEN** THE system SHALL record the reason text in permanent audit logs. **WHEN** a user is banned **THEN** THE system SHALL prevent logins while maintaining visibility of their existing content. **WHEN** an administrator unban a user **THEN** THE system SHALL restore account access without altering previously published content.
 
-### Profile Management
+## Section 5: Content and Search Requirements
 
-WHEN a user edits profile, THE system SHALL:
+### Article Search Requirements
+**WHEN** a user performs a search by title or content **THEN** THE system SHALL return paginated results (15 items per page). **WHEN** a user filters results by tags **THEN** THE system SHALL display only articles matching all specified tags. **WHEN** a user sorts results by 'newest first' **THEN** THE system SHALL order results with most recent articles first.
 
-1. Allow modification of display name and bio
-2. Validate length constraints before saving
-3. Preserve existing profile data during edits
+### Comment System Requirements
+**WHEN** a user writes a comment on an article **THEN** THE system SHALL save the comment with author, content, and timestamp. **WHEN** a user views article comments **THEN** THE system SHALL display all comments sorted oldest-first. **WHEN** a user edits their own comment **THEN** THE system SHALL update the comment with current timestamp.
 
-### Profile Viewing
+## Section 6: Business Rules
 
-WHEN a user views another user's profile, THE system SHALL:
-
-1. Display display name and bio
-2. Show list of articles ordered by date (newest first)
-3. Show list of comments ordered by date (newest first)
-
-## Sections
-
-### Section Management
-
-WHEN an administrator creates a new section, THE system SHALL:
-
-1. Require section name (50 characters max, no special characters)
-2. Require section description (200 characters max)
-3. Store section with unique identifier
-
-### Section Browsing
-
-WHEN a user browses sections, THE system SHALL:
-
-1. Display all available sections with name and description
-2. Order sections alphabetically
-3. Allow users to browse articles within specific sections
-
-## Articles
-
-### Article Creation
-
-WHEN a user creates an article, THE system SHALL:
-
-1. Require title (minimum 5 characters, maximum 100)
-2. Require content (minimum 100 characters)
-3. Require section selection from available options
-4. Allow multiple attachments (PDF, DOC, XLS, PNG, JPG)
-5. Enforce 25MB total attachment size limit
-
-### Article Management
-
-WHEN a user edits their article, THE system SHALL:
-
-1. Allow modification of title, content, attachments, and tags
-2. Preserve existing attachments during edits
-3. Allow adding new tags while maintaining existing ones
-
-### Article Deletion
-
-WHEN a user deletes their article, THE system SHALL:
-
-1. Permanently remove article and all associated attachments
-2. Delete all comments on the article
-3. Update article list to reflect deletion
-
-## Article List
-
-### Pagination and Sorting
-
-WHEN a user views article list in a section, THE system SHALL:
-
-1. Display articles with pagination (default 10 per page)
-2. Show title, author, tags, comment count, and time posted
-3. Allow sorting by:
-   a. Newest first (default)
-   b. Oldest first
-
-### Search and Filtering
-
-WHEN a user searches articles by title or content, THE system SHALL:
-
-1. Return articles matching search terms (case-insensitive)
-2. Display search results with pagination
-3. Allow filtering by tags with multiple selection
-
-## Viewing an Article
-
-### Article Display
-
-WHEN a user views single article, THE system SHALL:
-
-1. Display full title, author, and time posted
-2. Show complete article content
-3. Display all attached files with download options
-4. Show all tags applied to the article
-5. Allow users to view author's profile from article page
-
-## Comments
+### Article Requirements
+All articles SHALL have at least 50 words in content. File attachments SHALL be limited to 100MB total per article. Tags SHALL be limited to 5 per article with a maximum of 20 characters each. Section selection SHALL require at least one valid existing section.
 
 ### Comment Requirements
+All comments SHALL have at least 10 words. Comments SHALL not exceed 500 characters. Single-level reply structure SHALL be maintained with no nested conversation threads.
 
-WHEN a user submits a comment, THE system SHALL:
+### User Account Requirements
+Email addresses SHALL contain a valid domain and structure. Passwords SHALL meet minimum complexity (8 characters, 1 uppercase, 1 lowercase, 1 number). User display names SHALL not exceed 30 characters.
 
-1. Require comment content (minimum 1 character, maximum 500)
-2. Store comment with user ID, article ID, and timestamp
-3. Sort comments by chronological order (oldest first)
-4. Display author name and comment date
+### System Constraints
+All timestamps SHALL be recorded in Asia/Seoul time zone. Session token expiration SHALL be 24 hours for security. Data retention for deleted accounts SHALL be 30 days before permanent removal.
 
-### Comment Management
-
-WHEN a comment author edits their comment, THE system SHALL:
-
-1. Allow modification of comment content
-2. Update timestamp of last modification
-3. Preserve all comment metadata
-
-WHEN a comment author deletes their comment, THE system SHALL:
-
-1. Remove comment immediately
-2. Update comment count for associated article
-3. Ensure no trace of deleted comment remains
-
-## Administrator System
-
-### Administrator Activation
-
-WHEN a user submits administrator request, THE system SHALL:
-
-1. Require reason text for request
-2. Store request in pending list
-3. Notify super administrators of new request
-
-### Super Administrator Privileges
-
-SUPER administrators SHALL have all capabilities of regular administrators plus:
-
-1. Ability to approve/reject administrator requests
-2. Ability to promote regular administrators to super administrator
-3. Ability to demote other super administrators to regular administrators
-
-### Administrator Operations
-
-WHEN an administrator performs actions, THE system SHALL:
-
-1. Allow creation, editing, and deletion of sections
-2. Permit deletion of any article or comment
-3. Enable ban/unban of users with documented reasons
-4. Provide access to all user activity logs
-
-## Banning System
-
-### User Banning
-
-WHEN an administrator bans a user, THE system SHALL:
-
-1. Record ban reason (text field)
-2. Preserve all user content (articles, comments) visible but non-editable
-3. Prevent user from logging in
-4. Display ban reason to super administrators in user report
-
-### Ban Management
-
-WHEN a user is banned, THE system SHALL:
-
-1. Update user status to 'banned'
-2. Store ban timestamp and reason
-3. Provide option to unban with documented reason
-4. List all banned users in administrator interface
-
-## Business Context Integration
-
-The discussion platform creates a structured environment for economic and political discourse. The system ensures:
-
-1. **Verified Identity**: Email verification for all accounts establishes baseline credibility
-2. **Categorized Discussions**: Sections reduce polarization by organizing topics by theme
-3. **Quality Control**: Article requirements ensure substantive content (minimum 100 characters)
-4. **Community Health**: Comment moderation and banning system maintains respectful discourse
-5. **Scalable Architecture**: Modular design supports future expansion to additional topics and regions
-
-## Mermaid Diagram Specifications
+## Visual Representation
 
 ```mermaid
 graph TD
-    A[User Registration] --> B[Email Verification]
-    B --> C[Login Successful]
-    C --> D[Article Creation]
-    D --> E[Section Selection]
-    E --> F[Content Submission]
-    F --> G[Attachment Upload]
-    G --> H[Article Published]
-    H --> I[Article Listing]
-    I --> J[Comment Management]
-    J --> K[User Profile]
-    K --> L[Account Settings]
+    A[User Login] -->|Valid Credentials| B[Session Established]
+    B --> C{User Action}
+    C -->|View Profile| D[Profile Display]
+    C -->|Create Article| E[Article Creation]
+    C -->|Search Content| F[Search Execution]
+    E -->|Attachments| G[File Management]
+    F -->|Tag Filter| H[Filtered Results]
+    H -->|Page Selection| I[Results Pagination]
+    D -->|Edit Profile| J[Profile Update]
+    J -->|Save Changes| K[Profile Updated]
 ```
-
-```mermaid
-graph LR
-    A[User] --> B[Articles]
-    B --> C[Comments]
-    C --> D[Section]
-    D --> E[Admins]
-    E --> F[Banning]
-    F --> G[Banned Users]
-    G --> H[Reports]
-```
-
-## Performance Requirements
-
-- Article creation: < 2 seconds for 95% of cases
-- Article list pagination: < 1 second handling up to 10,000 articles
-- Search results: < 1.5 seconds for 95% of queries
-- Concurrent access: Maintain performance with 1,000+ active users
-
-## Error Validation
-
-| Error Scenario | System Response |
-|----------------|-----------------|
-| Invalid credentials | "Invalid email or password" |
-| Password mismatch | "New passwords do not match" |
-| Missing verification | "Please verify your email first" |
-| Duplicate email | "Email is already registered" |
-| Attachment size > 25MB | "Attachment size limit is 25MB" |

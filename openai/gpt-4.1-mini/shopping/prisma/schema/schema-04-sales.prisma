@@ -42,11 +42,16 @@ model shopping_mall_sales {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   category shopping_mall_product_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots shopping_mall_sale_snapshots[]
   saleUnits shopping_mall_sale_units[]
   images shopping_mall_sale_images[]
@@ -57,6 +62,9 @@ model shopping_mall_sales {
   promotions shopping_mall_sale_promotions[]
   viewStats shopping_mall_sale_view_stats[]
   
+  //----
+  // INDEXES
+  //----
   @@index([seller_id])
   @@index([category_id])
 }
@@ -101,12 +109,20 @@ model shopping_mall_sale_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   saleUnitSnapshots shopping_mall_sale_unit_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_sale_id])
 }
 
@@ -149,12 +165,20 @@ model shopping_mall_sale_units {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   saleUnitSnapshots shopping_mall_sale_unit_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([shopping_mall_sale_id, sku_code])
   @@index([created_at])
 }
@@ -207,11 +231,15 @@ model shopping_mall_sale_unit_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   saleUnit shopping_mall_sale_units @relation(fields: [shopping_mall_sale_unit_id], references: [id], onDelete: Cascade)
   saleSnapshot shopping_mall_sale_snapshots @relation(fields: [shopping_mall_sale_snapshot_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_sale_unit_id], map: "shopping_mall_sale_unit_snapshots_shopping_mall_sale_u_0869b46a")
   // spellchecker: ignore-next-line
@@ -254,10 +282,14 @@ model shopping_mall_sale_images {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_sale_id, display_order], map: "shopping_mall_sale_images_shopping_mall_sale_id_displa_ca128c84")
   @@index([shopping_mall_sale_id])
@@ -299,10 +331,14 @@ model shopping_mall_sale_specifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shoppingMallSale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_sale_id, specification_key], map: "shopping_mall_sale_specifications_shopping_mall_sale_i_99955b98")
   @@index([created_at, updated_at])
@@ -344,13 +380,16 @@ model shopping_mall_sale_reviews {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_customer_id])
-  
   // spellchecker: ignore-next-line
   @@index([shopping_mall_sale_id, shopping_mall_customer_id], map: "shopping_mall_sale_reviews_shopping_mall_sale_id_shopp_44a4b529")
 }
@@ -390,11 +429,15 @@ model shopping_mall_sale_review_votes {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
   voter shopping_mall_customers @relation(fields: [voter_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_product_review_id, actor_type, voter_id], map: "shopping_mall_sale_review_votes_shopping_mall_product__3e87e648")
   // spellchecker: ignore-next-line
@@ -441,15 +484,22 @@ model shopping_mall_sale_questions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   saleQuestionAnswer shopping_mall_sale_question_answers?
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_customer_id])
-  
   // spellchecker: ignore-next-line
   @@index([shopping_mall_sale_id, shopping_mall_customer_id], map: "shopping_mall_sale_questions_shopping_mall_sale_id_sho_fc4cb496")
 }
@@ -483,13 +533,16 @@ model shopping_mall_sale_favorites {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_sale_id])
-  
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_customer_id, shopping_mall_sale_id], map: "shopping_mall_sale_favorites_shopping_mall_customer_id_d6f03a0f")
   // spellchecker: ignore-next-line
@@ -550,10 +603,14 @@ model shopping_mall_sale_promotions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([promotion_code])
   @@index([shopping_mall_sale_id, active])
 }
@@ -597,10 +654,14 @@ model shopping_mall_sale_view_stats {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sale shopping_mall_sales @relation(fields: [shopping_mall_sale_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_sale_id, last_viewed_at], map: "shopping_mall_sale_view_stats_shopping_mall_sale_id_la_f6cda8c7")
 }
@@ -644,11 +705,15 @@ model shopping_mall_sale_question_answers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   saleQuestion shopping_mall_sale_questions @relation(fields: [shopping_mall_sale_question_id], references: [id], onDelete: Cascade)
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_sale_question_id], map: "shopping_mall_sale_question_answers_shopping_mall_sale_68b09832")
   @@index([seller_id])

@@ -19,7 +19,11 @@ export namespace DiscussionBoardSectionSnapshotTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        discussion_board_section_id: true,
+        section: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_sectionsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_section_snapshotsFindManyArgs;
   }
@@ -32,8 +36,8 @@ export namespace DiscussionBoardSectionSnapshotTransformer {
       description: input.description,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      discussion_board_section_id: input.discussion_board_section_id,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
+      discussion_board_section_id: input.section.id,
     };
   }
 }

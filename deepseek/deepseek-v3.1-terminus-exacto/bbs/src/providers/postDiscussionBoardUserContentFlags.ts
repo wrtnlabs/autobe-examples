@@ -23,83 +23,50 @@ export async function postDiscussionBoardUserContentFlags(props: {
   user: UserPayload;
   body: IDiscussionBoardContentFlag.ICreate;
 }): Promise<IDiscussionBoardContentFlag> {
-  // Validate that only one of flagged_article_id or flagged_comment_id is provided
-  if (props.body.flagged_article_id && props.body.flagged_comment_id) {
+  // Validate exactly one reference is provided
+  if (
+    (props.body.flagged_article_id === undefined &&
+      props.body.flagged_comment_id === undefined) ||
+    (props.body.flagged_article_id !== undefined &&
+      props.body.flagged_comment_id !== undefined)
+  ) {
     throw new HttpException(
-      "Cannot flag both article and comment simultaneously",
+      "Either flagged_article_id or flagged_comment_id must be provided, but not both",
       400,
     );
   }
-  if (!props.body.flagged_article_id && !props.body.flagged_comment_id) {
-    throw new HttpException(
-      "Must specify either article or comment to flag",
-      400,
-    );
-  }
-  // Validate flag reason length
-  const trimmedReason = props.body.flag_reason.trim();
-  if (trimmedReason.length === 0) {
-    throw new HttpException("Flag reason cannot be empty", 400);
-  }
-  if (trimmedReason.length > 1000) {
-    throw new HttpException(
-      "Flag reason exceeds maximum length of 1000 characters",
-      400,
-    );
-  }
-  // Verify the flagged content exists and is not deleted
-  if (props.body.flagged_article_id) {
-    const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-      where: {
-        id: props.body.flagged_article_id,
-        deleted_at: null,
-      },
-    });
-    if (!article) {
-      throw new HttpException(
-        "Flagged article not found or has been deleted",
-        404,
-      );
-    }
-    // Optional: Check if user is flagging their own content
-    if (article.discussion_board_user_id === props.user.id) {
-      throw new HttpException("Cannot flag your own content", 400);
-    }
-  }
-  if (props.body.flagged_comment_id) {
-    const comment = await MyGlobal.prisma.discussion_board_comments.findFirst({
-      where: {
-        id: props.body.flagged_comment_id,
-        deleted_at: null,
-      },
-    });
-    if (!comment) {
-      throw new HttpException(
-        "Flagged comment not found or has been deleted",
-        404,
-      );
-    }
-    // Optional: Check if user is flagging their own content
-    if (comment.discussion_board_user_id === props.user.id) {
-      throw new HttpException("Cannot flag your own content", 400);
-    }
-  }
-  // Verify the reporter user exists
-  const reporter = await MyGlobal.prisma.discussion_board_users.findFirst({
-    where: {
-      id: props.user.id,
-      deleted_at: null,
-    },
+  // Verify user exists and is active
+  const user = await MyGlobal.prisma.discussion_board_users.findFirst({
+    where: { id: props.user.id, deleted_at: null },
   });
-  if (!reporter) {
-    throw new HttpException("Reporter user not found", 404);
+  if (user === null) {
+    throw new HttpException("User not found", 404);
   }
-  const created = await MyGlobal.prisma.discussion_board_content_flags.create({
+  // Verify referenced content exists
+  if (props.body.flagged_article_id !== undefined) {
+    const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
+      where: { id: props.body.flagged_article_id!, deleted_at: null },
+    });
+    if (article === null) {
+      throw new HttpException("Article not found", 404);
+    }
+  }
+  if (props.body.flagged_comment_id !== undefined) {
+    const comment = await MyGlobal.prisma.discussion_board_comments.findFirst({
+      where: { id: props.body.flagged_comment_id!, deleted_at: null },
+    });
+    if (comment === null) {
+      throw new HttpException("Comment not found", 404);
+    }
+  }
+  // Create the content flag using Collector
+  const flag = await MyGlobal.prisma.discussion_board_content_flags.create({
     data: await DiscussionBoardContentFlagCollector.collect({
       body: props.body,
       discussionBoardUsers: { id: props.user.id },
     }),
     ...DiscussionBoardContentFlagTransformer.select(),
   });
-  return await DiscussionBoardContentFlagTransformer.transform(created);
+  // Transform and return the result
+  return await DiscussionBoardContentFlagTransformer.transform(flag);
 }

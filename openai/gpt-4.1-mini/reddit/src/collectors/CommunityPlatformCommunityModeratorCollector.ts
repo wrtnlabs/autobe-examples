@@ -10,20 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace CommunityPlatformCommunityModeratorCollector {
   export async function collect(props: {
     body: ICommunityPlatformCommunityModerator.ICreate;
-    role: string;
-    community: IEntity;
-    communityModerator: IEntity;
+    communityPlatformCommunities: IEntity;
   }) {
-    const id = v4();
-    const now = new Date();
+    const id: string = v4();
     return {
       id,
-      role: props.role,
-      created_at: now,
-      updated_at: now,
+      role: props.body.role,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      community: { connect: { id: props.community.id } },
-      communityModerator: { connect: { id: props.communityModerator.id } },
+      community: { connect: { id: props.communityPlatformCommunities.id } },
+      communityModerator: { connect: { id: props.body.communityModeratorId } },
     } satisfies Prisma.community_platform_community_moderatorsCreateInput;
   }
 }

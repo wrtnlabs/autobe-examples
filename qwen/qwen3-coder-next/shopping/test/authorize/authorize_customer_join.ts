@@ -1,6 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IShoppingMallAdminSessions } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminSessions";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,11 +12,10 @@ import typia, { tags } from "typia";
 export async function authorize_customer_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IShoppingMallCustomer.IJoin>;
+    body: IShoppingMallCustomer.IJoin;
   },
 ): Promise<IShoppingMallCustomer.IAuthorized> {
-  const joinInput = props.body ?? {};
   return await api.functional.shoppingMall.auth.customer.join(connection, {
-    body: joinInput as IShoppingMallCustomer.IJoin,
+    body: props.body,
   });
 }

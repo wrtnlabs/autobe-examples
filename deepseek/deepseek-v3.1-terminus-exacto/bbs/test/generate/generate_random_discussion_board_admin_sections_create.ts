@@ -14,7 +14,7 @@ export async function generate_random_discussion_board_admin_sections_create(
   connection: api.IConnection,
   props: {
     body?: DeepPartial<IDiscussionBoardSection.ICreate>;
-  },
+  } = {},
 ): Promise<IDiscussionBoardSection> {
   const prepared: IDiscussionBoardSection.ICreate =
     prepare_random_discussion_board_section(props.body);

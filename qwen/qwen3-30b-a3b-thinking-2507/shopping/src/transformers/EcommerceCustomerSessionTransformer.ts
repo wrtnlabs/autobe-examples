@@ -20,7 +20,9 @@ export namespace EcommerceCustomerSessionTransformer {
         href: true,
         referrer: true,
         created_at: true,
+        updated_at: true,
         expired_at: true,
+        deleted_at: true,
         customer: EcommerceCustomerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_customer_sessionsFindManyArgs;
@@ -33,8 +35,10 @@ export namespace EcommerceCustomerSessionTransformer {
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
-      created_at: input.created_at.toISOString(),
-      expired_at: input.expired_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      expired_at: toISOStringSafe(input.expired_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       customer: await EcommerceCustomerAtSummaryTransformer.transform(
         input.customer,
       ),

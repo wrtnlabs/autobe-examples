@@ -6,8 +6,14 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_shipment_order_item(
-  input?: DeepPartial<IShoppingMallShipmentOrderItem.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallShipmentOrderItem.ICreate>,
 ): IShoppingMallShipmentOrderItem.ICreate {
-  input;
-  return {};
+  return {
+    shopping_mall_shipment_id:
+      input?.shopping_mall_shipment_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+    shopping_mall_order_item_id:
+      input?.shopping_mall_order_item_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+  };
 }

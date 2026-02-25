@@ -1,4 +1,3 @@
-import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,28 +8,57 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { DiscussionBoardBanRecordTransformer } from "../transformers/DiscussionBoardBanRecordTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardAdminBansBanId(props: {
   admin: AdminPayload;
   banId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardBanRecord> {
-  // First verify the ban record exists
-  const existingBan =
-    await MyGlobal.prisma.discussion_board_ban_records.findUnique({
+}): Promise<void> {
+  // Verify ban record exists
+  const ban =
+    await MyGlobal.prisma.discussion_board_user_bans.findUniqueOrThrow({
       where: { id: props.banId },
-      ...DiscussionBoardBanRecordTransformer.select(),
     });
-  if (!existingBan) {
-    throw new HttpException("Ban record not found", 404);
+  // Check if ban can be deleted
+  if (ban.ban_status !== "active") {
+    if (ban.ban_status === "revoked") {
+      throw new HttpException("Ban has already been revoked", 400);
+    } else if (ban.ban_status === "expired") {
+      throw new HttpException("Ban has already expired", 400);
+    } else if (ban.ban_status === "appealed") {
+      throw new HttpException("Cannot delete ban with pending appeal", 400);
+    } else {
+      throw new HttpException("Cannot delete inactive ban record", 400);
+    }
+  }
+  // For temporary bans, check if already expired by comparing ISO strings
+  if (
+    ban.ban_ends_at &&
+    toISOStringSafe(ban.ban_ends_at) < toISOStringSafe(new Date())
+  ) {
+    throw new HttpException(
+      "Ban has already expired and cannot be deleted",
+      400,
+    );
   }
   // Delete the ban record
-  const deletedBan = await MyGlobal.prisma.discussion_board_ban_records.delete({
+  await MyGlobal.prisma.discussion_board_user_bans.delete({
     where: { id: props.banId },
-    ...DiscussionBoardBanRecordTransformer.select(),
   });
-  // Return the deleted record using transformer
-  return await DiscussionBoardBanRecordTransformer.transform(deletedBan);
+  // Record audit trail using correct field names from schema
+  await MyGlobal.prisma.discussion_board_audit_logs.create({
+    data: {
+      id: v4(),
+      actor_id: props.admin.id,
+      actor_type: "admin",
+      target_user_id: ban.banned_user_id,
+      action_type: "user_ban_deleted",
+      action_subtype: "admin_action",
+      description: `Ban record ${props.banId} deleted by administrator`,
+      success: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
 }

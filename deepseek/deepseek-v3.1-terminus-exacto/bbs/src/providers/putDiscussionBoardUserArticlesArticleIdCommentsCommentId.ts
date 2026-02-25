@@ -22,33 +22,36 @@ export async function putDiscussionBoardUserArticlesArticleIdCommentsCommentId(p
   commentId: string & tags.Format<"uuid">;
   body: IDiscussionBoardComment.IUpdate;
 }): Promise<IDiscussionBoardComment> {
-  // Check if comment exists and user has permissions
-  const existingComment =
-    await MyGlobal.prisma.discussion_board_comments.findFirst({
+  // 1. Verify comment exists and belongs to specified article
+  const comment =
+    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
       where: {
         id: props.commentId,
         discussion_board_article_id: props.articleId,
-        discussion_board_user_id: props.user.id,
-        deleted_at: null,
+      },
+      select: {
+        id: true,
+        discussion_board_user_id: true,
       },
     });
-  if (!existingComment) {
-    throw new HttpException("Comment not found or access denied", 404);
+  // 2. Authorization check - user must be the comment author
+  if (comment.discussion_board_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Validate update content
-  if (props.body.content === undefined) {
-    throw new HttpException("Comment content is required for update", 400);
-  }
-  // Update comment with proper timestamp
-  const updatedComment = await MyGlobal.prisma.discussion_board_comments.update(
-    {
-      where: { id: props.commentId },
-      data: {
-        content: props.body.content,
-        updated_at: toISOStringSafe(new Date()),
-      },
-      ...DiscussionBoardCommentTransformer.select(),
+  // 3. Update the comment with new content
+  await MyGlobal.prisma.discussion_board_comments.update({
+    where: { id: props.commentId },
+    data: {
+      content: props.body.content,
+      updated_at: new Date(),
     },
-  );
-  return await DiscussionBoardCommentTransformer.transform(updatedComment);
+  });
+  // 4. Fetch updated comment with transformer selection
+  const updatedComment =
+    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
+      where: { id: props.commentId },
+      ...DiscussionBoardCommentTransformer.select(),
+    });
+  // 5. Transform and return
+  return DiscussionBoardCommentTransformer.transform(updatedComment);
 }

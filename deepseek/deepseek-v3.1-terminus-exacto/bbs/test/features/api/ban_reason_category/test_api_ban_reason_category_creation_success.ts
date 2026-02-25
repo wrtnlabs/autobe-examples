@@ -1,6 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardBanReasonCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanReasonCategory";
+import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -18,53 +20,69 @@ import { prepare_random_discussion_board_ban_reason_category } from "../../../pr
 export async function test_api_ban_reason_category_creation_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Authenticate as super administrator
+  // Create super administrator connection
   const superAdminConnection: api.IConnection = { host: connection.host };
   await authorize_super_admin_join(superAdminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
-      privilege_level: "super_admin",
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IDiscussionBoardSuperAdmin.IJoin,
   });
-  // Create ban reason category with valid data
-  const createBody = {
-    name: RandomGenerator.paragraph({ sentences: 2 }),
-    description: RandomGenerator.paragraph({ sentences: 4 }),
+  // Prepare ban reason category creation data
+  const createData = {
+    name: `Category ${RandomGenerator.alphaNumeric(8)}`,
+    description: RandomGenerator.paragraph({ sentences: 2 }),
     is_active: true,
-    sort_order: typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+    sort_order: typia.random<
+      number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<1000>
+    >(),
   } satisfies IDiscussionBoardBanReasonCategory.ICreate;
-  const category =
+  // Create ban reason category
+  const createdCategory =
     await api.functional.discussionBoard.superAdmin.ban_reason_categories.create(
       superAdminConnection,
-      { body: createBody },
+      { body: createData },
     );
-  typia.assert(category);
-  // Validate response structure
-  TestValidator.equals(
-    "category name matches input",
-    category.name,
-    createBody.name,
+  typia.assert(createdCategory);
+  // Validate response contains all expected fields
+  TestValidator.predicate(
+    "category has valid ID",
+    /^[0-9a-f-]{36}$/i.test(createdCategory.id),
   );
   TestValidator.equals(
-    "category description matches input",
-    category.description,
-    createBody.description,
+    "name matches input",
+    createdCategory.name,
+    createData.name,
   );
   TestValidator.equals(
-    "category is_active matches input",
-    category.is_active,
-    createBody.is_active,
+    "description matches input",
+    createdCategory.description,
+    createData.description,
   );
   TestValidator.equals(
-    "category sort_order matches input",
-    category.sort_order,
-    createBody.sort_order,
+    "is_active matches input",
+    createdCategory.is_active,
+    createData.is_active,
   );
-  // Validate soft deletion tracking
   TestValidator.equals(
-    "category deleted_at is null for active category",
-    category.deleted_at,
-    null,
+    "sort_order matches input",
+    createdCategory.sort_order,
+    createData.sort_order,
   );
+  TestValidator.predicate(
+    "created_at is valid timestamp",
+    !isNaN(Date.parse(createdCategory.created_at)),
+  );
+  TestValidator.predicate(
+    "updated_at is valid timestamp",
+    !isNaN(Date.parse(createdCategory.updated_at)),
+  );
+  // Verify timestamps are reasonable (created_at should be within last minute)
+  const createdAt = new Date(createdCategory.created_at);
+  const currentTime = new Date();
+  const timeDiff = currentTime.getTime() - createdAt.getTime();
+  TestValidator.predicate("created_at is recent", timeDiff < 60000); // Within 1 minute
 }

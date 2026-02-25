@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_administrator_grade(
-  input?: DeepPartial<IShoppingMallAdministratorGrade.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallAdministratorGrade.ICreate>,
 ): IShoppingMallAdministratorGrade.ICreate {
-  input;
-  return {};
+  return {
+    name: input?.name ?? RandomGenerator.name(),
+    grade: input?.grade ?? typia.random<number & tags.Type<"int32">>(),
+    superAdministrator:
+      input?.superAdministrator ?? RandomGenerator.pick([true, false] as const),
+  };
 }

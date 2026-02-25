@@ -26,10 +26,14 @@ model community_platform_guests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions community_platform_guest_sessions[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([device_fingerprint])
   @@index([created_at])
 }
@@ -75,10 +79,14 @@ model community_platform_guest_sessions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   guest community_platform_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([guest_id, created_at])
 }
 
@@ -131,7 +139,8 @@ model community_platform_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions community_platform_user_sessions[]
   passwordResets community_platform_user_password_resets[]
@@ -152,6 +161,9 @@ model community_platform_users {
   deletedContents community_platform_deleted_contents[]
   reports community_platform_reports[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@unique([username])
   @@index([created_at])
@@ -195,10 +207,14 @@ model community_platform_user_sessions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([user_id, created_at])
 }
 
@@ -237,10 +253,14 @@ model community_platform_user_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([community_platform_user_id, used], map: "community_platform_user_password_resets_community_plat_88265257")
@@ -283,10 +303,14 @@ model community_platform_user_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   @@index([user_id])
 }
@@ -337,7 +361,8 @@ model community_platform_moderators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions community_platform_moderator_sessions[]
   passwordResets community_platform_moderator_password_resets[]
@@ -350,6 +375,9 @@ model community_platform_moderators {
   reportDecisions community_platform_reports_decisions[]
   deletedContents community_platform_deleted_contents[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@unique([username])
   @@index([created_at])
@@ -387,10 +415,14 @@ model community_platform_moderator_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_sessions_community_platfo_a04f067a")
 }
@@ -432,10 +464,14 @@ model community_platform_moderator_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id], map: "community_platform_moderator_password_resets_community_aa501355")
@@ -483,10 +519,14 @@ model community_platform_moderator_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id, created_at], map: "community_platform_moderator_email_verifications_commu_97ad29d3")
@@ -530,12 +570,16 @@ model community_platform_admins {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions community_platform_admin_sessions[]
   passwordResets community_platform_admin_password_resets[]
   emailVerifications community_platform_admin_email_verifications[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
 }
 
@@ -572,10 +616,14 @@ model community_platform_admin_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin community_platform_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([admin_id, created_at])
 }
 
@@ -614,10 +662,14 @@ model community_platform_admin_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([community_platform_admin_id, created_at], map: "community_platform_admin_password_resets_community_pla_fe673571")
@@ -657,10 +709,14 @@ model community_platform_admin_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin community_platform_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([admin_id, created_at], map: "community_platform_admin_email_verifications_admin_id__8934ae63")

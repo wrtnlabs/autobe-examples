@@ -55,12 +55,16 @@ model discussion_board_ban_records {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   banAppeals discussion_board_ban_appeals[]
   banRecordOfAdmin discussion_board_ban_record_of_admins?
   superAdminBanRecord discussion_board_ban_record_of_super_admins?
   
+  //----
+  // INDEXES
+  //----
   @@index([ban_status, expires_at])
   @@index([expires_at])
 }
@@ -162,7 +166,8 @@ model discussion_board_moderation_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
@@ -171,6 +176,9 @@ model discussion_board_moderation_logs {
   targetUser discussion_board_users? @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
   targetSection discussion_board_sections? @relation(fields: [target_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([admin_id, performed_at])
   // spellchecker: ignore-next-line
   @@index([super_admin_id, performed_at], map: "discussion_board_moderation_logs_super_admin_id_perfor_fb236c30")
@@ -260,15 +268,23 @@ model discussion_board_content_moderation_queues {
   resolved_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   contentFlag discussion_board_content_flags @relation(fields: [content_flag_id], references: [id], onDelete: Cascade)
   assignedAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queues_of_assigned_admin_id", fields: [assigned_admin_id], references: [id], onDelete: Cascade)
   escalatedByAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queues_of_escalate_b0a092a7", fields: [escalated_by_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   assignmentHistories discussion_board_content_moderation_queue_assignments[]
   escalations discussion_board_content_moderation_queue_escalations[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([content_flag_id])
   // spellchecker: ignore-next-line
   @@index([moderation_status, priority_level, created_at], map: "discussion_board_content_moderation_queues_moderation__1ebeaff8")
@@ -333,13 +349,17 @@ model discussion_board_moderated_content_histories {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderatedArticle discussion_board_articles? @relation(fields: [moderated_article_id], references: [id], onDelete: Cascade)
   moderatedComment discussion_board_comments? @relation(fields: [moderated_comment_id], references: [id], onDelete: Cascade)
   moderatorAdmin discussion_board_admins? @relation(fields: [moderator_admin_id], references: [id], onDelete: Cascade)
   moderatorSuperAdmin discussion_board_super_admins? @relation(fields: [moderator_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([content_type, created_at], map: "discussion_board_moderated_content_histories_content_t_aca5ba97")
   // spellchecker: ignore-next-line
@@ -398,11 +418,15 @@ model discussion_board_administrator_grade_changes {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator discussion_board_admins @relation("discussion_board_administrator_grade_changes_of_admini_fb0d55d5", fields: [administrator_id], references: [id], onDelete: Cascade)
   changedByAdministrator discussion_board_admins @relation("discussion_board_administrator_grade_changes_of_change_fdba0107", fields: [changed_by_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "discussion_board_administrator_grade_changes_administr_7cb8e29c")
   // spellchecker: ignore-next-line
@@ -458,7 +482,7 @@ model discussion_board_ban_reason_categories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([name])
   @@index([is_active, sort_order])
@@ -528,12 +552,16 @@ model discussion_board_ban_appeals {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   reviewer discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_ban_record_id, status], map: "discussion_board_ban_appeals_discussion_board_ban_reco_f9021106")
   // spellchecker: ignore-next-line
@@ -593,7 +621,7 @@ model discussion_board_ban_durations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([name])
   @@index([is_permanent])
@@ -667,17 +695,24 @@ model discussion_board_content_flags {
   resolved_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   reporter discussion_board_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
   flaggedArticle discussion_board_articles? @relation(fields: [flagged_article_id], references: [id], onDelete: Cascade)
   flaggedComment discussion_board_comments? @relation(fields: [flagged_comment_id], references: [id], onDelete: Cascade)
   reviewingAdmin discussion_board_admins? @relation(fields: [reviewing_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   moderationQueue discussion_board_content_moderation_queues?
   
+  //----
+  // INDEXES
+  //----
   @@index([reviewing_admin_id])
-  
   @@index([reporter_user_id, created_at])
   @@index([status, created_at])
   // spellchecker: ignore-next-line
@@ -741,7 +776,7 @@ model discussion_board_moderation_action_types {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([code])
   @@index([category, is_active])
@@ -793,11 +828,15 @@ model discussion_board_ban_record_of_admins {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_ban_record_id], map: "discussion_board_ban_record_of_admins_discussion_board_9da79d71")
   // spellchecker: ignore-next-line
@@ -847,11 +886,15 @@ model discussion_board_ban_record_of_super_admins {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   banRecord discussion_board_ban_records @relation(fields: [discussion_board_ban_record_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_ban_record_id], map: "discussion_board_ban_record_of_super_admins_discussion_c9319451")
   // spellchecker: ignore-next-line
@@ -909,11 +952,15 @@ model discussion_board_content_moderation_queue_assignments {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   contentModerationQueue discussion_board_content_moderation_queues @relation(fields: [discussion_board_content_moderation_queue_id], references: [id], onDelete: Cascade)
   assignedAdmin discussion_board_admins @relation(fields: [assigned_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_content_moderation_queue_id, assigned_at], map: "discussion_board_content_moderation_queue_assignments__38e435ee")
   // spellchecker: ignore-next-line
@@ -999,7 +1046,8 @@ model discussion_board_content_moderation_queue_escalations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderationQueue discussion_board_content_moderation_queues @relation(fields: [discussion_board_content_moderation_queue_id], references: [id], onDelete: Cascade)
   escalatedByAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queue_escalations__d7ae31e7", fields: [escalated_by_admin_id], references: [id], onDelete: Cascade)
@@ -1007,6 +1055,9 @@ model discussion_board_content_moderation_queue_escalations {
   assignedToAdmin discussion_board_admins? @relation("discussion_board_content_moderation_queue_escalations__be5209ae", fields: [assigned_to_admin_id], references: [id], onDelete: Cascade)
   assignedToSuperAdmin discussion_board_super_admins? @relation("discussion_board_content_moderation_queue_escalations__6cd5d4e6", fields: [assigned_to_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_content_moderation_queue_id, escalation_timestamp], map: "discussion_board_content_moderation_queue_escalations__ff5097f3")
   // spellchecker: ignore-next-line

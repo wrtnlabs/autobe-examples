@@ -32,9 +32,10 @@ export namespace DiscussionBoardArticleTagTransformer {
     return {
       id: input.id,
       tag_name: input.tag_name,
+      discussion_board_article_id: input.article.id,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
       article: await DiscussionBoardArticleAtSummaryTransformer.transform(
         input.article,
       ),

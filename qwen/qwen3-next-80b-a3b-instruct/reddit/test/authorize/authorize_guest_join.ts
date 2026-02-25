@@ -11,18 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IRedditCommunityGuest.IJoin>;
+    body: IRedditCommunityGuest.IJoin;
   },
 ): Promise<IRedditCommunityGuest.IAuthorized> {
-  const joinInput = {
-    device_fingerprint:
-      props.body?.device_fingerprint ?? RandomGenerator.alphaNumeric(32),
-    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
-    referrer:
-      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IRedditCommunityGuest.IJoin;
   return await api.functional.redditCommunity.auth.guest.join(connection, {
-    body: joinInput,
+    body: props.body,
   });
 }

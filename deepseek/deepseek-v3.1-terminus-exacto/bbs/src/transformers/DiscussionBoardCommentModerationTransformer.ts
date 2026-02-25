@@ -37,14 +37,14 @@ export namespace DiscussionBoardCommentModerationTransformer {
       action_type: input.action_type,
       reason: input.reason,
       status: input.status,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       comment: await DiscussionBoardCommentAtSummaryTransformer.transform(
         input.comment,
       ),
       admin: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.admin,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
     };
   }
 }

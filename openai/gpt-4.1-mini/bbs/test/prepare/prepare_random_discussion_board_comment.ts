@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_comment(
-  input?: DeepPartial<IDiscussionBoardComment.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardComment.ICreate>,
 ): IDiscussionBoardComment.ICreate {
-  input;
-  return {};
+  return {
+    discussionBoardArticleId:
+      input?.discussionBoardArticleId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    content: input?.content ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

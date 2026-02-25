@@ -7,16 +7,20 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-// We must first verify the IDiscussionBoardComment.ICreate DTO includes 'content', 'articleId', and 'authorId'.
-// Since the DTO currently lacks these fields, and these fields are needed to build the create input, we cannot proceed without that information.
-// Request user to provide the missing DTO structure or confirm these fields exist in the DTO.
-// Without this info, compilation error cannot be fixed as keys are missing from DTO.
 export namespace DiscussionBoardCommentCollector {
   export async function collect(props: {
     body: IDiscussionBoardComment.ICreate;
+    author: IEntity;
   }) {
-    throw new Error(
-      "Cannot collect: Missing fields 'content', 'articleId', 'authorId' in IDiscussionBoardComment.ICreate DTO.",
-    );
+    const id = v4();
+    return {
+      id,
+      content: props.body.content,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      article: { connect: { id: props.body.discussionBoardArticleId } },
+      author: { connect: { id: props.author.id } },
+    } satisfies Prisma.discussion_board_commentsCreateInput;
   }
 }

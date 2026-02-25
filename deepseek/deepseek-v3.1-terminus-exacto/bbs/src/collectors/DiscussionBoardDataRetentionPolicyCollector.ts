@@ -12,14 +12,7 @@ export namespace DiscussionBoardDataRetentionPolicyCollector {
     body: IDiscussionBoardDataRetentionPolicy.ICreate;
   }) {
     const id: string = v4();
-    const now = new Date();
-    // Calculate next enforcement due date
-    const nextEnforcementDue = new Date(now);
-    nextEnforcementDue.setDate(
-      now.getDate() + props.body.retention_period_days,
-    );
     return {
-      // Scalar fields
       id,
       policy_name: props.body.policy_name,
       description: props.body.description,
@@ -28,13 +21,10 @@ export namespace DiscussionBoardDataRetentionPolicyCollector {
       compliance_standard: props.body.compliance_standard ?? null,
       is_active: props.body.is_active,
       last_enforced_at: null,
-      next_enforcement_due: toISOStringSafe(nextEnforcementDue),
-      created_at: toISOStringSafe(now),
-      updated_at: toISOStringSafe(now),
+      next_enforcement_due: null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     } satisfies Prisma.discussion_board_data_retention_policiesCreateInput;
   }
-}
-function toISOStringSafe(date: Date): string {
-  return date.toISOString();
 }

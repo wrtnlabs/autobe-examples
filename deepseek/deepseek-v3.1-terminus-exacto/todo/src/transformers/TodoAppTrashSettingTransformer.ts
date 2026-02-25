@@ -1,12 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTrashSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTrashSetting";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { TodoAppUserAtSummaryTransformer } from "./TodoAppUserAtSummaryTransformer";
 
 export namespace TodoAppTrashSettingTransformer {
   export type Payload = Prisma.todo_app_trash_settingsGetPayload<
@@ -24,7 +22,7 @@ export namespace TodoAppTrashSettingTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        user: TodoAppUserAtSummaryTransformer.select(),
+        user: true,
       },
     } satisfies Prisma.todo_app_trash_settingsFindManyArgs;
   }
@@ -40,8 +38,7 @@ export namespace TodoAppTrashSettingTransformer {
       permanent_deletion_confirmation: input.permanent_deletion_confirmation,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      user: await TodoAppUserAtSummaryTransformer.transform(input.user),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

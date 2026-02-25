@@ -15,17 +15,27 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardSuperAdministratorAdministratorRequestsRequestIdReject(props: {
   superAdministrator: SuperadministratorPayload;
   requestId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardAdministratorRequest> {
-  const updated =
-    await MyGlobal.prisma.discussion_board_administrator_requests.update({
+}): Promise<IDiscussionBoardAdministratorRequest.IRejectResponse> {
+  // Get current ISO 8601 timestamp string with correct format tag
+  const now: string & import("typia").tags.Format<"date-time"> =
+    toISOStringSafe(new Date());
+
+  // Transaction to update status to 'rejected'
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // Verify request exists or throw 404
+    await tx.discussion_board_administrator_requests.findUniqueOrThrow({
+      where: { id: props.requestId },
+      select: { id: true },
+    });
+    // Update status to 'rejected' and timestamp
+    await tx.discussion_board_administrator_requests.update({
       where: { id: props.requestId },
       data: {
         status: "rejected",
-        updated_at: toISOStringSafe(new Date()),
+        updated_at: now,
       },
     });
-  if (!updated) {
-    throw new HttpException("Administrator request not found", 404);
-  }
-  return updated;
+  });
+  // Return success true response
+  return { success: true };
 }

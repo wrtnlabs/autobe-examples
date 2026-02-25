@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardArticleImageTransformer } from "../transformers/DiscussionBoardArticleImageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,26 +19,12 @@ export async function getDiscussionBoardAdministratorArticlesArticleIdImagesImag
   imageId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardArticleImage> {
   const record =
-    await MyGlobal.prisma.discussion_board_article_images.findFirst({
-      where: {
-        id: props.imageId,
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.discussion_board_article_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      ...DiscussionBoardArticleImageTransformer.select(),
     });
-  if (!record) throw new HttpException("Image not found", 404);
-  return {
-    id: record.id,
-    discussion_board_article_id: record.discussion_board_article_id,
-    url: record.image_url,
-    description: record.description === null ? null : record.description,
-    order: record.display_order === null ? null : record.display_order,
-    file_type: null,
-    content_type: null,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at:
-      record.updated_at === null ? null : toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  };
+  if (record.discussion_board_article_id !== props.articleId) {
+    throw new HttpException("Image not found for the specified article", 404);
+  }
+  return await DiscussionBoardArticleImageTransformer.transform(record);
 }

@@ -15,12 +15,16 @@ export namespace DiscussionBoardAdministratorRequestCollector {
     const id: string = v4();
     return {
       id,
-      reason: "", // Default empty string since DTO has no reason
+      reason: props.body.reason,
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      registeredUser: { connect: { id: props.registeredUser.id } },
+      registeredUser: {
+        connect: {
+          id: props.registeredUser.id,
+        },
+      },
     } satisfies Prisma.discussion_board_administrator_requestsCreateInput;
   }
 }

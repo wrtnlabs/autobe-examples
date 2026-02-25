@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardFeatureFlagTransformer } from "../transformers/DiscussionBoardFeatureFlagTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,10 +17,10 @@ export async function getDiscussionBoardAdministratorFeatureFlagsId(props: {
   administrator: AdministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardFeatureFlag> {
-  const featureFlag =
-    await MyGlobal.prisma.discussion_board_feature_flags.findUnique({
+  const record =
+    await MyGlobal.prisma.discussion_board_feature_flags.findUniqueOrThrow({
       where: { id: props.id },
+      ...DiscussionBoardFeatureFlagTransformer.select(),
     });
-  if (!featureFlag) throw new HttpException("Feature flag not found", 404);
-  return featureFlag;
+  return await DiscussionBoardFeatureFlagTransformer.transform(record);
 }

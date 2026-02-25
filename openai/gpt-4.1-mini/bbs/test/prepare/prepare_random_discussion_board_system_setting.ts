@@ -8,6 +8,9 @@ import typia, { tags } from "typia";
 export function prepare_random_discussion_board_system_setting(
   input?: DeepPartial<IDiscussionBoardSystemSetting.ICreate> | undefined,
 ): IDiscussionBoardSystemSetting.ICreate {
-  input;
-  return {};
+  return {
+    key: input?.key ?? RandomGenerator.paragraph({ sentences: 1 }),
+    value: input?.value ?? RandomGenerator.paragraph({ sentences: 2 }),
+    description: input?.description ?? null,
+  };
 }

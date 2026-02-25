@@ -1,129 +1,55 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIRedditCommunityCommentReport } from "../../../../../api/structures/IPageIRedditCommunityCommentReport";
-import { IRedditCommunityCommentReport } from "../../../../../api/structures/IRedditCommunityCommentReport";
+import { IPageIRedditCommunityReport } from "../../../../../api/structures/IPageIRedditCommunityReport";
+import { IRedditCommunityReport } from "../../../../../api/structures/IRedditCommunityReport";
 import { PlatformadminAuth } from "../../../../../decorators/PlatformadminAuth";
 import { PlatformadminPayload } from "../../../../../decorators/payload/PlatformadminPayload";
-import { getRedditCommunityPlatformAdminCommunitiesCommunityIdReports } from "../../../../../providers/getRedditCommunityPlatformAdminCommunitiesCommunityIdReports";
-import { postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdApprove } from "../../../../../providers/postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdApprove";
-import { postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdDismiss } from "../../../../../providers/postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdDismiss";
+import { patchRedditCommunityPlatformAdminCommunitiesCommunityIdReports } from "../../../../../providers/patchRedditCommunityPlatformAdminCommunitiesCommunityIdReports";
 
 @Controller("/redditCommunity/platformAdmin/communities/:communityId/reports")
 export class RedditcommunityPlatformadminCommunitiesReportsController {
   /**
-   * Retrieve a paginated list of pending reports submitted by users for content within a specific community.
+   * Retrieve a paginated list of pending, approved, or dismissed reports for a specific community.
    *
-   * This endpoint is accessible only to moderators and owners of the community. It returns all reports that are currently pending review, allowing moderators to prioritize and resolve violations. Each report contains the reason provided by the reporter, the timestamp of submission, and a reference to the reported comment.
+   * This operation returns all reports submitted against posts or comments within the specified community, filtered by status and sorted chronologically. Only community owners and moderators have permission to view reports for their community.
    *
-   * Reported content is not included in the response to keep payloads lean and fast — the moderator must use the comment_id to fetch the original comment. This separation prevents excessive data retrieval and ensures scalability.
+   * The response includes detailed report metadata: the reporter's username, the type of content reported (post or comment) with preview, the reason for reporting, and the current status. For approved reports, the system automatically deletes the reported content and logs the moderator who acted on it.
    *
-   * Reports submitted by platform admins are excluded unless the community is owned or moderated by a platform admin. Reports status must be strictly 'pending' — approved and dismissed reports are archived and not returned here. This ensures moderators see only actionable items.
+   * Reports are never visible to regular users or moderators from other communities. When a report is dismissed, it is retained in the audit history but removed from the active list.
    *
-   * This endpoint does not support filtering by reporter, reason, or date range — those parameters are reserved for internal admin dashboards.
+   * This endpoint is critical for community moderation workflows and provides necessary context for review without exposing sensitive reporter information or system-wide data.
    *
    * @param connection
-   * @param communityId The unique identifier of the community whose reports are being retrieved. Must be a valid community UUID.
+   * @param communityId The unique identifier of the community whose reports are being queried. Must be a valid UUID.
+   * @param body Filter criteria, pagination parameters, and sorting options for report queries
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Query reddit_community_comment_reports table joined with reddit_community_communities for reports where community_id matches the provided communityId and status = 'pending'. Order by created_at descending. Apply pagination with limit and page parameters. Return report ID, reporter_id, reason, created_at, and comment_id for each report. Do not include resolved reports (status != 'pending'). Use indexes on [community_id, status, created_at] for performance. Do not join with users or comments unless necessary for response data — keep payload minimal.
+   * @x-autobe-specification Query reddit_community_reports table joined with reddit_community_report_of_posts and reddit_community_report_of_comments to determine reported content type.
+   * Join with reddit_community_members to get reporter and resolver usernames.
+   * Filter by communityId via post_id or comment_id -> posts.community_id or comments.community_id.
+   * Apply status filter for pending, approved, dismissed.
+   * Paginate using cursor-based or offset-based pagination with configurable page and limit parameters.
+   * Return only reports where the community exists and the requester is either owner or moderator.
+   * Ensure no data leakage to unauthorized communities.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
+  @TypedRoute.Patch()
   public async index(
     @PlatformadminAuth()
     platformAdmin: PlatformadminPayload,
     @TypedParam("communityId")
-    communityId: string & tags.Format<"uuid">,
-  ): Promise<IPageIRedditCommunityCommentReport.ISummary> {
-    try {
-      return await getRedditCommunityPlatformAdminCommunitiesCommunityIdReports(
-        {
-          platformAdmin,
-          communityId,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Approve a reported item and remove the associated content.
-   *
-   * This action permanently removes the reported comment or post from display and notifies the reporter that their report was upheld. Approved reports are recorded in the moderation audit log with the moderator's identity and timestamp.
-   *
-   * This operation can only be performed by community moderators or platform administrators. The report must be in 'pending' status to be approved. Upon approval, the target content (comment or post) is soft-deleted or hidden from public feeds, and a corresponding moderation action is logged.
-   *
-   * This operation cannot be undone. If the report was submitted on a comment, the comment is hidden from the comment thread. If reported on a post, the post is hidden from all feeds. The reporting user is notified that their report resulted in content removal.
-   *
-   * This action requires authentication and authorization as a moderator for the specific community associated with the report. The operation cannot be performed if the report target has already been removed or the report status is no longer pending.
-   *
-   * @param connection
-   * @param communityId The unique identifier of the community where the report was made.
-   * @param reportId The unique identifier of the report to be approved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Verify report exists, is pending, and belongs to specified community. Validate moderator has permissions for the community. Update report status to 'approved' and set resolved_at. Fetch target type (post/comment) and ID from report. Create audit entry in reddit_community_moderation_actions with appropriate subtype based on target. Soft-delete or hide the reported content according to system policy. Send notification to reporter. Return success status with updated report details.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":reportId/approve")
-  public async approve(
-    @PlatformadminAuth()
-    platformAdmin: PlatformadminPayload,
-    @TypedParam("communityId")
     communityId: string,
-    @TypedParam("reportId")
-    reportId: string,
-  ): Promise<IRedditCommunityCommentReport> {
+    @TypedBody()
+    body: IRedditCommunityReport.IRequest,
+  ): Promise<IPageIRedditCommunityReport.ISummary> {
     try {
-      return await postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdApprove(
+      return await patchRedditCommunityPlatformAdminCommunitiesCommunityIdReports(
         {
           platformAdmin,
           communityId,
-          reportId,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Dismiss a reported comment without taking further action.
-   *
-   * This endpoint allows authorized moderators or platform administrators to review and dismiss a reported comment as non-violating of community guidelines. Dismissing a report means the content remains visible and no further moderation action is taken, but the report is closed for auditing purposes.
-   *
-   * The endpoint requires the communityId and reportId to be specified in the path, ensuring the operation only applies to reports within the context of a specific community. The requester must have authority as a moderator of that community or be a platform administrator. This operation is not reversible: once dismissed, the report is archived and cannot be reopened.
-   *
-   * The endpoint is commonly used after a moderator has reviewed the reported content and determined it does not violate community rules, or if the original report was submitted by mistake. This preserves the ability to track all moderation decisions while minimizing unnecessary content actions.
-   *
-   * @param connection
-   * @param communityId The unique identifier of the community where the reported content resides. This is a UUID of the reddit_community_communities table.
-   * @param reportId The unique identifier of the report to be dismissed. This is a UUID of the reddit_community_comment_reports table.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Extract the report record with reportId and communityId from reddit_community_comment_reports. Validate that the requester is a moderator of the specified community or a platform admin. Update the report status from 'pending' to 'dismissed'. Set the resolved_at field to the current timestamp. Create a corresponding audit entry in reddit_community_moderation_actions with action_type 'dismiss', target_type 'comment', and the moderator's actor_id. Return the updated report record with new status and resolved_at.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":reportId/dismiss")
-  public async dismiss(
-    @PlatformadminAuth()
-    platformAdmin: PlatformadminPayload,
-    @TypedParam("communityId")
-    communityId: string & tags.Format<"uuid">,
-    @TypedParam("reportId")
-    reportId: string & tags.Format<"uuid">,
-  ): Promise<IRedditCommunityCommentReport> {
-    try {
-      return await postRedditCommunityPlatformAdminCommunitiesCommunityIdReportsReportIdDismiss(
-        {
-          platformAdmin,
-          communityId,
-          reportId,
+          body,
         },
       );
     } catch (error) {

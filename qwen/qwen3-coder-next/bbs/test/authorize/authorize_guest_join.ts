@@ -14,7 +14,14 @@ export async function authorize_guest_join(
     body: IDiscussionBoardGuest.IJoin;
   },
 ): Promise<IDiscussionBoardGuest.IAuthorized> {
+  const joinInput = {
+    device_fingerprint:
+      props.body.device_fingerprint ?? RandomGenerator.alphaNumeric(32),
+    ip_address:
+      props.body.ip_address ??
+      `${RandomGenerator.pick([1, 10, 172, 192])}.${RandomGenerator.pick([0, 168])}.${RandomGenerator.pick([0, 1])}.${RandomGenerator.pick([1, 254])}`,
+  } satisfies IDiscussionBoardGuest.IJoin;
   return await api.functional.discussionBoard.auth.guest.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

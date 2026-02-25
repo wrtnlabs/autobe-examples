@@ -2,10 +2,11 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardSection } from "../../../../../api/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionImage } from "../../../../../api/structures/IDiscussionBoardSectionImage";
 import { IPageIDiscussionBoardSectionImage } from "../../../../../api/structures/IPageIDiscussionBoardSectionImage";
-import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminAuth } from "../../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../../decorators/payload/SuperAdminPayload";
 import { deleteDiscussionBoardSuperAdminSectionsSectionIdImagesImageId } from "../../../../../providers/deleteDiscussionBoardSuperAdminSectionsSectionIdImagesImageId";
 import { getDiscussionBoardSuperAdminSectionsSectionIdImagesImageId } from "../../../../../providers/getDiscussionBoardSuperAdminSectionsSectionIdImagesImageId";
 import { patchDiscussionBoardSuperAdminSectionsSectionIdImages } from "../../../../../providers/patchDiscussionBoardSuperAdminSectionsSectionIdImages";
@@ -15,25 +16,33 @@ import { putDiscussionBoardSuperAdminSectionsSectionIdImagesImageId } from "../.
 @Controller("/discussionBoard/superAdmin/sections/:sectionId/images")
 export class DiscussionboardSuperadminSectionsImagesController {
   /**
-   * Create a new image attachment for a discussion board section.nnThis operation allows administrators to associate visual content such as banners, icons, or promotional images with sections. The system validates the image metadata including supported types (banner, icon, promotional, thumbnail), file size constraints, and dimension requirements.nnAdministrators with section management permissions can perform this operation. The target section must exist and be in active status. The operation follows AutoBE's standard approach where file uploading is handled through URI string properties in the request body schema rather than multipart form data.nnSuccessful creation returns the complete image record with all metadata including storage path, dimensions, and file information for verification and display purposes.
+   * Create a new image attachment for a discussion board section.
+   *
+   * This operation allows super administrators to upload and associate images with specific sections for visual branding and presentation purposes. Images can be used as banners, icons, promotional content, or thumbnails depending on the section's visual requirements. The operation supports soft deletion capabilities through the section's deleted_at field, allowing administrators to manage section and image lifecycle appropriately.
+   *
+   * The operation validates the parent section exists and is active before processing the image upload. It supports various image formats including JPEG, PNG, and GIF with comprehensive metadata storage including file dimensions, size, and accessibility information. Authorization is required at the super administrator level to ensure proper access controls for section visual content management.
+   *
+   * Security considerations include file type validation, size limits enforcement, and proper access controls. The operation maintains referential integrity with the parent section while supporting soft deletion workflows through the section's lifecycle management system.
+   *
+   * Related operations include viewing section images (GET /sections/{sectionId}/images), updating existing images (PUT /sections/{sectionId}/images/{imageId}), and deleting section images (DELETE /sections/{sectionId}/images/{imageId}).
    *
    * @param connection
-   * @param sectionId UUID of the target section for image attachment
-   * @param body Image creation data including metadata and storage information
+   * @param sectionId UUID identifier of the parent section
+   * @param body Image creation data including file metadata and type specification
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate that the requesting user is an administrator with section management permissions. Verify the target section exists and is active. Process the uploaded image file - validate file type, extract metadata (dimensions, file size), generate storage path. Create a new discussion_board_section_images record linked to the section. Handle file upload validation errors and return appropriate status codes.
+   * @x-autobe-specification Validate that the section exists and is active before creating image records. Generate unique storage path for the uploaded image file. Validate image type is one of: banner, icon, promotional, thumbnail. Ensure image dimensions and file size are within acceptable limits. Store image metadata including filename, mime type, dimensions, and alt text. Maintain referential integrity with the parent section.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardSectionImage.ICreate,
-  ): Promise<IDiscussionBoardSectionImage> {
+  ): Promise<IDiscussionBoardSection.Image> {
     try {
       return await postDiscussionBoardSuperAdminSectionsSectionIdImages({
         superAdmin,
@@ -47,29 +56,31 @@ export class DiscussionboardSuperadminSectionsImagesController {
   }
 
   /**
-   * Search and filter images associated with a specific discussion board section.
+   * Retrieve a paginated and filtered list of images associated with a specific discussion board section.
    *
-   * This operation provides comprehensive search capabilities for section images, allowing administrators to find specific images based on type, filename patterns, file properties, and content descriptions. The search is scoped to a single section to maintain proper access control and organizational boundaries.
+   * This operation allows administrators and authorized users to browse the visual content attached to a section, which includes banners, icons, promotional images, and thumbnails. According to the section management requirements, sections should support comprehensive browsing interfaces with visual indicators and content organization capabilities.
    *
-   * Supports paginated results with configurable page sizes and sorting options. Response includes complete image metadata including filename, mime type, dimensions, file size, and accessibility information. This operation is essential for section administrators managing visual content and maintaining organized image libraries for their sections.
+   * The operation supports filtering by image type (banner, icon, promotional, thumbnail) and comprehensive pagination for efficient browsing of large image collections. Each image record includes technical specifications such as filename, dimensions, file size, mime type, and image type, providing essential metadata for proper rendering in user interfaces.
+   *
+   * The system validates that the specified section exists and that the requesting user has appropriate permissions to view section images. Response data is optimized for list displays with summary information suitable for image management interfaces within the section administration workflow.
    *
    * @param connection
-   * @param sectionId Unique identifier of the target section
-   * @param body Search criteria and pagination parameters for section images
+   * @param sectionId Unique identifier of the section whose images are being retrieved
+   * @param body Filtering and pagination parameters for retrieving section images, including optional image type filtering
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query discussion_board_section_images table for images belonging to the specified sectionId. Apply filters based on request criteria: image_type, filename patterns (partial matching), mime_type, file size range, width/height constraints, and alt text search. Use pagination with configurable page sizes and sorting options. Return only images that belong to the specified section and match all filter criteria. Ensure proper indexing is used for performance on large image collections.
+   * @x-autobe-specification Query the discussion_board_section_images table filtered by the provided sectionId parameter. Apply additional filtering based on the request body parameters including imageType if specified. Implement pagination using cursor-based or offset-based pagination depending on the IRequest structure. Join with parent section to validate section existence and permissions. Return image metadata including filename, dimensions, type, and storage information while excluding sensitive storage paths from the summary view.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardSectionImage.IRequest,
-  ): Promise<IPageIDiscussionBoardSectionImage> {
+  ): Promise<IPageIDiscussionBoardSectionImage.ISummary> {
     try {
       return await patchDiscussionBoardSuperAdminSectionsSectionIdImages({
         superAdmin,
@@ -83,31 +94,25 @@ export class DiscussionboardSuperadminSectionsImagesController {
   }
 
   /**
-   * Retrieve detailed information about a specific image associated with a discussion board section.
-   *
-   * This operation returns comprehensive metadata for a section image, including file details, dimensions, and storage information. The image must belong to the specified section, ensuring proper authorization and resource scoping.
-   *
-   * The response includes technical details such as file size, MIME type, and image dimensions, which are useful for client applications that need to display or process the image. The storage path indicates where the actual image file can be accessed, while the alt text provides accessibility information for screen readers.
-   *
-   * This operation is typically used when displaying section images in the user interface, such as section banners, icons, or promotional images. It provides all necessary information for proper image rendering and accessibility compliance.
+   * Retrieve detailed information about a specific section image.nnThis operation returns comprehensive metadata for a section image including filename, MIME type, file size, dimensions, image type, storage path, and accessibility information. The image is uniquely identified by its ID and must belong to the specified section.nnSection images serve various purposes including banners for section headers, icons for navigation, promotional images for featured sections, and thumbnails for visual identification. Each image type has specific display requirements and usage contexts within the discussion board interface.nnThe operation validates that both the section and image exist and that the image belongs to the specified section. If the image cannot be found or does not belong to the section, appropriate error responses are returned.nnThis API is primarily used by the frontend to display section-specific imagery and by administrators managing section visual content. The response provides all necessary metadata for proper image rendering and accessibility compliance. Reviewing permissions: regular administrators (not just super admins) who have section management privileges can access section images for the sections they manage.
    *
    * @param connection
-   * @param sectionId UUID identifier of the section that contains the image
-   * @param imageId UUID identifier of the specific image to retrieve
+   * @param sectionId Unique identifier of the section containing the image
+   * @param imageId Unique identifier of the section image
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_section_images table to retrieve the specific image by its ID. Validate that the image belongs to the specified section by checking the discussion_board_section_id foreign key relationship. Return all image metadata including filename, mime type, file size, dimensions, image type, storage path, and alt text. Handle cases where the image doesn't exist or doesn't belong to the specified section with appropriate error responses.
+   * @x-autobe-specification Query the discussion_board_section_images table using the imageId parameter. Validate that the image exists and belongs to the specified section by checking the discussion_board_section_id foreign key relationship. Return all image metadata fields including filename, mime_type, file_size, width, height, image_type, storage_path, and alt_text. Ensure proper error handling for non-existent images or images that don't belong to the specified section.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":imageId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedParam("imageId")
     imageId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardSectionImage> {
+  ): Promise<IDiscussionBoardSection.Image> {
     try {
       return await getDiscussionBoardSuperAdminSectionsSectionIdImagesImageId({
         superAdmin,
@@ -123,32 +128,32 @@ export class DiscussionboardSuperadminSectionsImagesController {
   /**
    * Update metadata for a specific section image.
    *
-   * This operation allows administrators to modify the metadata of section images, including the filename, MIME type, image type classification, and accessibility text. Section images are visual assets associated with discussion board sections that enhance the visual presentation and branding of each section category.
+   * This operation allows administrators to modify the properties of an existing section image, such as updating the alternative text for accessibility, changing the image type classification, or adjusting other metadata fields. The image file itself cannot be replaced through this endpoint - it requires a separate file upload operation.
    *
-   * Only administrators with section management privileges can perform this operation. The system validates that the target image belongs to the specified section and ensures data integrity. Fields like file dimensions, storage path, and file size are managed by the system and cannot be modified through this API.
+   * Only administrators with section management privileges can perform this operation. The request must include valid section and image identifiers, and the image must belong to the specified section. All updates are validated against the database schema constraints before being applied.
    *
-   * Supports updating accessibility features through alt text modifications, allowing for improved Section 508 compliance and user experience for visually impaired users accessing the discussion platform.
+   * The response includes the complete updated image metadata with current values for all fields, allowing clients to verify the changes and maintain synchronization with the server state.
    *
    * @param connection
-   * @param sectionId Section identifier where the image belongs
-   * @param imageId Image identifier to update
-   * @param body Section image metadata to update
+   * @param sectionId Identifier of the section containing the target image (UUID format)
+   * @param imageId Identifier of the specific image to update (UUID format)
+   * @param body Updated image metadata fields
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update specific section image metadata. Validate that the section and image exist and belong together. Only allow updating fields that can be modified: filename, mime_type, image_type, alt_text. Preserve system-managed fields like id, discussion_board_section_id, file_size, width, height, storage_path. Validate image_type against allowed values (banner, icon, promotional, thumbnail).
+   * @x-autobe-specification Update an existing section image's metadata. Validate that both the section and image exist and that the image belongs to the specified section. Check authorization to ensure the user has admin privileges for section management. Validate the request body fields according to the database schema constraints. Update only the provided fields in the request while preserving unchanged values. Return the complete updated image object with all current metadata.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":imageId")
   public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedParam("imageId")
     imageId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardSectionImage.IUpdate,
-  ): Promise<IDiscussionBoardSectionImage> {
+  ): Promise<IDiscussionBoardSection.Image> {
     try {
       return await putDiscussionBoardSuperAdminSectionsSectionIdImagesImageId({
         superAdmin,
@@ -163,33 +168,32 @@ export class DiscussionboardSuperadminSectionsImagesController {
   }
 
   /**
-   * Permanently removes a specific image associated with a discussion board section.
+   * Remove a specific image associated with a discussion board section.
    *
-   * This operation deletes both the database record and the actual image file from storage. The image is identified by its unique ID within the context of a specific section. Once deleted, the image cannot be recovered and any references to it will become invalid.
+   * This operation permanently deletes a section image from the platform's storage system. When invoked, it removes the image file from storage and deletes the corresponding database record from the discussion_board_section_images table.
    *
-   * Administrators with section management permissions can use this operation to remove outdated, inappropriate, or unnecessary section images. The operation requires both section and image identifiers to ensure precise targeting and prevent accidental deletion of images from wrong sections.
+   * The operation requires both section and image identifiers to ensure precise targeting. The sectionId parameter ensures the image belongs to the specified section, while the imageId parameter identifies the specific image to be removed.
    *
-   * Security considerations include verifying that the requesting administrator has appropriate permissions to manage the specified section. The operation performs a hard delete, permanently removing both the database record and the physical file from storage.
+   * Administrators should use this operation when they need to remove outdated, inappropriate, or incorrectly uploaded section images. The deletion is permanent and cannot be undone, so administrators should exercise caution when using this operation.
+   *
+   * Related operations include GET /sections/{sectionId}/images for viewing section images and POST /sections/{sectionId}/images for uploading new section images.
    *
    * @param connection
-   * @param sectionId ID of the section containing the image
-   * @param imageId ID of the image to delete
+   * @param sectionId UUID identifier of the section containing the image
+   * @param imageId UUID identifier of the specific image to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Delete a specific section image by its ID within the context of a section.
+   * @x-autobe-specification Query the discussion_board_section_images table to verify the image exists and belongs to the specified section. Delete the image file from storage using the storage_path field. Remove the database record from discussion_board_section_images. Return success status upon completion.
    *
-   * Query the discussion_board_section_images table to find the image with matching ID and section ID.
-   * Verify the image exists and belongs to the specified section.
-   * Perform a hard delete operation to permanently remove the image record from the database.
-   * Delete the associated image file from storage based on the storage_path field.
-   * Update any section metadata or cache that references this image.
-   * Return appropriate success status or error if the image doesn't exist or access is denied.
+   * Validation: Ensure both sectionId and imageId are valid UUIDs. Verify the image exists and belongs to the specified section. Check administrator permissions for section management.
+   *
+   * Error handling: Return appropriate error codes for invalid IDs, non-existent images, permission violations, or storage deletion failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")
   public async erase(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedParam("imageId")

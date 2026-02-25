@@ -6,47 +6,88 @@ import { ICommunityPlatformUserEmailVerification } from "../../../../api/structu
 import { IPageICommunityPlatformUserEmailVerification } from "../../../../api/structures/IPageICommunityPlatformUserEmailVerification";
 import { UserAuth } from "../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../decorators/payload/UserPayload";
-import { getCommunityPlatformUserEmailVerificationsEmailVerificationId } from "../../../../providers/getCommunityPlatformUserEmailVerificationsEmailVerificationId";
+import { deleteCommunityPlatformUserEmailVerificationsId } from "../../../../providers/deleteCommunityPlatformUserEmailVerificationsId";
+import { getCommunityPlatformUserEmailVerificationsId } from "../../../../providers/getCommunityPlatformUserEmailVerificationsId";
 import { patchCommunityPlatformUserEmailVerifications } from "../../../../providers/patchCommunityPlatformUserEmailVerifications";
+import { postCommunityPlatformUserEmailVerifications } from "../../../../providers/postCommunityPlatformUserEmailVerifications";
+import { putCommunityPlatformUserEmailVerificationsId } from "../../../../providers/putCommunityPlatformUserEmailVerificationsId";
 
 @Controller("/communityPlatform/user/email-verifications")
 export class CommunityplatformUserEmail_verificationsController {
   /**
-   * Retrieve a paginated list of user email verification tokens in the community platform.
+   * This endpoint allows clients to initiate an email verification process for user accounts. When a user provides an email address, the system generates an email verification token and stores it in the `community_platform_user_email_verifications` table. A verification link containing this token is sent to the provided email asynchronously. This process ensures that only unique and valid email addresses are verified to comply with user registration requirements.
    *
-   * This endpoint supports filtering by verification status, token string matching, user identity, expiration date ranges, and ordering results by creation or update timestamps.
+   * Users call this endpoint during registration or when re-verification is needed. The system validates input for correct email format and uniqueness against existing users and active verification tokens. It supports idempotency by reusing unexpired tokens or generating new ones when necessary to prevent duplication.
    *
-   * Access to this endpoint is restricted to administrators and community moderators to ensure sensitive token data is protected.
+   * Authentication is not required, as this operation occurs before user login.
    *
-   * This operation is useful for administrative oversight, auditing email confirmation processes, and managing expired or valid tokens.
+   * This operation is closely related to user account management APIs such as POST /communityPlatform/users (user signup) and PATCH /communityPlatform/users/password (password changes), forming an integral part of the user identity lifecycle.
    *
-   * Related API calls include user management and session operations, which can provide context and linkage to user identities.
-   *
-   * The system enforces strict authorization controls to prevent unauthorized disclosure of email verification tokens.
-   *
-   * Common error responses include unauthorized access and invalid query parameters.
-   *
-   * Clients should handle empty results gracefully and paginate results efficiently.
-   *
-   * Comprehensive audit logs are maintained for all access to this endpoint for compliance and review purposes.
+   * Error handling returns detailed error responses for duplicates or invalid inputs to guide client correction.
    *
    * @param connection
-   * @param body Filtering criteria and pagination parameters for email verification tokens
+   * @param body Email address to initiate verification for user registration and account management.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the community_platform_user_email_verifications table applying filters on is_verified, token, user_id, expires_at, created_at, and updated_at.
-   * Implement pagination using offset and limit or cursor-based methods.
-   * Support sorting by created_at or updated_at fields.
+   * @x-autobe-specification Implement this operation by validating the input email address and checking for uniqueness against existing user emails and active verification tokens. Generate a new email verification token linked to the email and store it in the community_platform_user_email_verifications table. Trigger an asynchronous email with a verification link containing the token.
    *
-   * Return a paginated list of summarized email verification token records.
-   * Ensure authorization checks restrict access to admin or moderator roles only.
+   * Handle validation errors by returning 400 Bad Request with descriptive error messages for duplicate or invalid emails.
    *
-   * Handle query parameter validation for date ranges and token string patterns.
-   * Apply indexing on token and user_id columns for efficient filtering.
+   * No authentication or authorization required for this endpoint as its purpose is to initiate verification prior to user login.
    *
-   * Handle possible empty result sets gracefully.
+   * Ensure idempotency by allowing re-sending if an unexpired token exists, or create a new token if none exists.
    *
-   * Log operation audit for access and usage monitoring.
+   * Related APIs include user signup and password reset flows that depend on verified emails.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async createEmailVerification(
+    @UserAuth()
+    user: UserPayload,
+    @TypedBody()
+    body: ICommunityPlatformUserEmailVerification.ICreate,
+  ): Promise<ICommunityPlatformUserEmailVerification> {
+    try {
+      return await postCommunityPlatformUserEmailVerifications({
+        user,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a filtered, paginated list of user email verification records from the community platform.
+   *
+   * This operation enables clients to search email verification records by criteria such as userId, email address, verification status, and other metadata.
+   *
+   * Security is critical, so this operation requires appropriate authorization to view email verification data.
+   *
+   * The underlying data entity is community_platform_user_email_verifications, which stores email verification details per user.
+   *
+   * Validation rules ensure that filtering parameters conform to defined types and constraints.
+   *
+   * Related operations include user account management endpoints that update verification status.
+   *
+   * If an error occurs, the operation returns standard error responses including validation errors for incorrect filter criteria.
+   *
+   * This operation supports paginated results with total counts and page cursors for efficient client navigation through large datasets.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for user email verifications
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification API receives a PATCH request at /email-verifications with request body containing filtering and pagination criteria structured as ICommunityPlatformUserEmailVerification.IRequest.
+   *
+   * The service layer queries community_platform_user_email_verifications applying filters like userId, email, isVerified, and date ranges.
+   *
+   * The query returns a paginated list of email verification summary records, serialized as IPageICommunityPlatformUserEmailVerification.ISummary.
+   *
+   * Enforce authorization middleware to ensure only authorized users access this data.
+   *
+   * Return HTTP 200 with the paginated list on success, or appropriate error codes for validation failures or authorization errors.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -68,41 +109,134 @@ export class CommunityplatformUserEmail_verificationsController {
   }
 
   /**
-   * Retrieve detailed information of a specific email verification token used for user email confirmation during registration or update.
+   * Retrieve detailed information of an email verification by its unique ID for validation and user activation purposes.
    *
-   * This API operation accesses the community_platform_user_email_verifications table, which stores unique tokens, token expiration timestamps, verification status, and audit timestamps.
+   * This endpoint allows authorized consumers to fetch the email verification record to determine its status, expiration, and related information.
    *
-   * The endpoint requires the UUID of the email verification token as a path parameter.
+   * The entity corresponds to the community_platform_user_email_verifications table which stores email verification tokens used during user registration.
    *
-   * Access should be restricted to authorized actors to ensure token confidentiality.
+   * Only authenticated system components or owners should access this information due to privacy concerns.
    *
-   * This operation is a simple retrieval with no side effects.
+   * The operation expects a UUID formatted id parameter representing the verification token ID.
    *
-   * The response includes all relevant token fields, such as user association, verification state, expiration, and timestamps.
+   * If the record is not found, a 404 error should be returned.
    *
-   * Related operations include listing all tokens or creating new tokens but are outside this endpoint's scope.
+   * This API operation is typically used during the user sign-up and activation workflow to confirm email address validity.
    *
    * @param connection
-   * @param emailVerificationId Unique identifier (UUID) of the email verification token
+   * @param id Unique identifier of the email verification (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the community_platform_user_email_verifications table filtering by the primary key 'id' equal to the provided 'emailVerificationId' path parameter. Return all columns including id, user_id, token, is_verified, expires_at, created_at, updated_at, and deleted_at. Ensure proper error handling for not found or unauthorized access. No request body is applicable for this GET method.
+   * @x-autobe-specification Query the community_platform_user_email_verifications table by its primary key `id`. The database query should select all fields including email, token, creation and expiration timestamps, and status indicators for verification. Validate the UUID format of path parameter `id`. Handle not found error by returning 404 status code. Ensure authorization by checking requester permissions. Return the full details in the response body of type ICommunityPlatformUserEmailVerification.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":emailVerificationId")
-  public async at(
+  @TypedRoute.Get(":id")
+  public async atEmailVerification(
     @UserAuth()
     user: UserPayload,
-    @TypedParam("emailVerificationId")
-    emailVerificationId: string & tags.Format<"uuid">,
+    @TypedParam("id")
+    id: string & tags.Format<"uuid">,
   ): Promise<ICommunityPlatformUserEmailVerification> {
     try {
-      return await getCommunityPlatformUserEmailVerificationsEmailVerificationId(
-        {
-          user,
-          emailVerificationId,
-        },
-      );
+      return await getCommunityPlatformUserEmailVerificationsId({
+        user,
+        id,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing email verification record identified by the UUID 'id'.
+   *
+   * This operation allows users to update the status or details of their email verification token, supporting email confirmation workflows essential for account activation and security.
+   *
+   * Security considerations require that only authorized users or system components can perform this update to maintain the integrity of verification data.
+   *
+   * The email verification data entity includes fields such as email address, verification status, token expiration, and timestamps for creation and updates.
+   *
+   * Validation rules include mandatory UUID format on the 'id' path parameter and request body validation to enforce field constraints on update.
+   *
+   * Related operations might include POST /users/signup to create new email verification records and GET /email-verifications/{id} to retrieve verification status.
+   *
+   * Expected behavior returns the updated email verification record on success, or appropriate error codes on validation or authorization failure.
+   *
+   * @param connection
+   * @param id Unique identifier of the email verification record (UUID format)
+   * @param body The email verification update payload
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification 1. Validate the provided UUID 'id' path parameter for the email verification to update.
+   * 2. Authenticate the caller to ensure they have permission to update the specified email verification.
+   * 3. Validate the request body against ICommunityPlatformUserEmailVerification.IUpdate schema.
+   * 4. Perform database update on the email verification record with the provided 'id'.
+   * 5. Handle edge cases such as record not found, expired tokens, or conflicting updates with proper error responses.
+   * 6. Return the updated email verification record as response.
+   * 7. Log the update operation for audit purposes.
+   * 8. Integration with email notification services if status changes warrant user notification.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":id")
+  public async updateEmailVerification(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("id")
+    id: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformUserEmailVerification.IUpdate,
+  ): Promise<ICommunityPlatformUserEmailVerification> {
+    try {
+      return await putCommunityPlatformUserEmailVerificationsId({
+        user,
+        id,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * This API operation permanently removes an email verification token identified by its unique ID. The deletion is final and ensures that the token can no longer be used for email verification processes.
+   *
+   * Only authorized users or system administrators can perform this deletion to prevent unauthorized revocation of email verification tokens.
+   *
+   * The operation directly manipulates the underlying email verification token entity in the database. It requires a valid UUID path parameter to specify which token to remove.
+   *
+   * If the token ID does not exist, the operation should handle the error gracefully by returning a 404 Not Found response.
+   *
+   * Related operations include POST /email-verifications for creating tokens and GET /email-verifications/{id} for retrieving specific tokens.
+   *
+   * This operation returns no content upon success, adhering to RESTful best practices for delete operations.
+   *
+   * @param connection
+   * @param id Unique ID of the email verification token to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification Validate that the path parameter `id` is a valid UUID.
+   * Check that an email verification token with the given `id` exists in the database.
+   * If found, perform a permanent deletion of that record.
+   * Return HTTP 204 No Content on success.
+   * If not found, return HTTP 404 Not Found with an appropriate error message.
+   * Ensure authorization checks for user roles or admin permissions prior to deletion.
+   * Log the deletion action for audit purposes.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":id")
+  public async erase(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("id")
+    id: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteCommunityPlatformUserEmailVerificationsId({
+        user,
+        id,
+      });
     } catch (error) {
       console.log(error);
       throw error;

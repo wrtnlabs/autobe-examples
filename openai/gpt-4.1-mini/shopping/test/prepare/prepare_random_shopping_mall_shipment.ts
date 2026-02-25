@@ -6,8 +6,17 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_shipment(
-  input?: DeepPartial<IShoppingMallShipment.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallShipment.ICreate>,
 ): IShoppingMallShipment.ICreate {
-  input;
-  return {};
+  return {
+    carrierName:
+      input?.carrierName ?? RandomGenerator.paragraph({ sentences: 1 }),
+    trackingNumber:
+      input?.trackingNumber ?? RandomGenerator.paragraph({ sentences: 1 }),
+    orderItemIds: input?.orderItemIds
+      ? input.orderItemIds.map(
+          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
+        )
+      : [typia.random<string & tags.Format<"uuid">>()],
+  };
 }

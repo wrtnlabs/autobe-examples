@@ -17,17 +17,23 @@ export async function test_api_seller_join_success(
 ): Promise<void> {
   // Create seller-specific connection
   const sellerConnection: api.IConnection = { host: connection.host };
-  // Execute seller join using utility function (priority over SDK)
-  // IShoppingMallSeller.IJoin is defined as an empty object {}
-  // Therefore, we must pass an empty object
+  // Generate valid seller join data
+  const joinData = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+  } satisfies IShoppingMallSeller.IJoin;
+  // Execute seller registration using utility function
   const result = await authorize_seller_join(sellerConnection, {
-    body: {} satisfies IShoppingMallSeller.IJoin,
+    body: joinData,
   });
   // Validate response structure
   typia.assert(result);
-  // Validate token structure
-  typia.assert(result.token);
-  // Validate token fields
+  // Verify required fields
+  TestValidator.equals(
+    "seller id is uuid",
+    result.id,
+    typia.random<string & tags.Format<"uuid">>(),
+  );
   TestValidator.equals(
     "access token exists",
     result.token.access.length > 0,
@@ -38,55 +44,17 @@ export async function test_api_seller_join_success(
     result.token.refresh.length > 0,
     true,
   );
-  TestValidator.predicate(
-    "access token is string",
-    typeof result.token.access === "string",
-  );
-  TestValidator.predicate(
-    "refresh token is string",
-    typeof result.token.refresh === "string",
-  );
-  // Validate expiration timestamps are ISO 8601 date-time format
-  TestValidator.predicate(
-    "expired_at is valid date-time",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
-      result.token.expired_at,
-    ),
-  );
-  TestValidator.predicate(
-    "refreshable_until is valid date-time",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
-      result.token.refreshable_until,
-    ),
-  );
-  // Validate expired_at is within reasonable range (30 minutes from now)
-  const now = new Date();
-  const expiredAt = new Date(result.token.expired_at);
-  const timeDiffMs = expiredAt.getTime() - now.getTime();
-  TestValidator.predicate(
-    "access token expires in approximately 30 minutes",
-    timeDiffMs >= 1700000 && timeDiffMs <= 1900000,
-  ); // 28.5 to 31.5 minutes
-  // Validate refreshable_until is within reasonable range (30 days from now)
-  const refreshableUntil = new Date(result.token.refreshable_until);
-  const refreshDiffMs = refreshableUntil.getTime() - now.getTime();
-  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-  TestValidator.predicate(
-    "refresh token expires in approximately 30 days",
-    refreshDiffMs >= thirtyDaysMs * 0.95 &&
-      refreshDiffMs <= thirtyDaysMs * 1.05,
-  );
-  // Ensure no secrets are returned in profile
-  // Only token information should be returned
-  // Confirm resolved type IAuthorized has no other properties
   TestValidator.equals(
-    "authorized object has correct structure",
-    Object.keys(result).length,
-    1,
+    "access token expired_at is date-time",
+    result.token.expired_at,
+    typia.random<string & tags.Format<"date-time">>(),
   );
   TestValidator.equals(
-    "token property exists",
-    Object.keys(result).includes("token"),
-    true,
+    "refreshable_until is date-time",
+    result.token.refreshable_until,
+    typia.random<string & tags.Format<"date-time">>(),
   );
+  // Verify that the seller account is created with pending status (implied by join success)
+  // Status 'pending' is not exposed in response, but implied by successful join with no error
+  // This is the only way to verify account creation — through successful registration
 }

@@ -22,16 +22,13 @@ export async function getDiscussionBoardAdminContentFlagsFlagId(props: {
   admin: AdminPayload;
   flagId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardContentFlag> {
-  const contentFlag =
-    await MyGlobal.prisma.discussion_board_content_flags.findUnique({
+  const flag =
+    await MyGlobal.prisma.discussion_board_content_flags.findUniqueOrThrow({
       where: {
         id: props.flagId,
         deleted_at: null,
       },
       ...DiscussionBoardContentFlagTransformer.select(),
     });
-  if (!contentFlag) {
-    throw new HttpException("Content flag not found", 404);
-  }
-  return await DiscussionBoardContentFlagTransformer.transform(contentFlag);
+  return await DiscussionBoardContentFlagTransformer.transform(flag);
 }

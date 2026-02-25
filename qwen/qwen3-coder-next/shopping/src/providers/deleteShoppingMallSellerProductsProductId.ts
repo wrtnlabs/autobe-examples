@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,8 +14,8 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteShoppingMallSellerProductsProductId(props: {
   seller: SellerPayload;
   productId: string;
-}): Promise<IShoppingMallProduct> {
-  // Find the product and verify ownership
+}): Promise<void> {
+  // Verify the product exists and belongs to the seller
   const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
     where: {
       id: props.productId,
@@ -25,98 +24,144 @@ export async function deleteShoppingMallSellerProductsProductId(props: {
     },
   });
   if (!product) {
-    throw new HttpException("Product not found or access denied", 404);
+    throw new HttpException("Product not found", 404);
   }
-  // Find all variants for this product
+  // Get all variant IDs first
   const variants =
     await MyGlobal.prisma.shopping_mall_product_variants.findMany({
       where: {
         shopping_mall_product_id: props.productId,
-        deleted_at: null,
+      },
+      select: {
+        id: true,
       },
     });
-  // Extract variant IDs
   const variantIds = variants.map((v) => v.id);
-  // Find order items for these variants
-  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      shopping_mall_product_variant_id: { in: variantIds },
-    },
-  });
-  // Check for active orders referencing these variants
-  const hasActiveOrders =
+  // Get all variant snapshot IDs
+  const variantSnapshots =
+    await MyGlobal.prisma.shopping_mall_product_variant_snapshots.findMany({
+      where: {
+        shopping_mall_product_variant_id: {
+          in: variantIds,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+  const variantSnapshotIds = variantSnapshots.map((v) => v.id);
+  // Check if product has pending order items (paid or shipped status)
+  const hasPendingOrders =
     await MyGlobal.prisma.shopping_mall_order_items.findFirst({
       where: {
         shopping_mall_product_variant_id: {
           in: variantIds,
         },
-        status: { not: "cancelled" },
-      },
-    });
-  if (hasActiveOrders) {
-    throw new HttpException("Cannot delete product with active orders", 400);
-  }
-  // Check for active cancellation requests
-  const activeOrderItemIds = orderItems.map((oi) => oi.id);
-  const hasCancellationRequests =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirst({
-      where: {
-        shopping_mall_order_item_id: {
-          in: activeOrderItemIds,
+        status: {
+          in: ["paid", "shipped"],
         },
-        status: "pending",
       },
     });
-  if (hasCancellationRequests) {
+  if (hasPendingOrders) {
     throw new HttpException(
-      "Cannot delete product with pending cancellations",
+      "Product has pending orders and cannot be deleted",
       400,
     );
   }
-  // Check for active refund requests
-  const hasRefundRequests =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findFirst({
+  // Check if product has pending cancellation requests
+  const hasPendingCancellation =
+    await MyGlobal.prisma.shopping_mall_order_cancellation_requests.findFirst({
       where: {
-        shopping_mall_order_item_id: {
-          in: activeOrderItemIds,
+        order_item_id: {
+          in: await MyGlobal.prisma.shopping_mall_order_items
+            .findMany({
+              where: {
+                shopping_mall_product_variant_id: {
+                  in: variantIds,
+                },
+              },
+              select: {
+                id: true,
+              },
+            })
+            .then((items) => items.map((i) => i.id)),
         },
-        status: "pending",
       },
+      status: "pending",
     });
-  if (hasRefundRequests) {
-    throw new HttpException("Cannot delete product with pending refunds", 400);
-  }
-  // Perform soft delete on all images - deleted_at not allowed for images
-  await MyGlobal.prisma.shopping_mall_product_images.updateMany({
-    where: { shopping_mall_product_id: props.productId },
-    data: {},
-  });
-  // Perform soft delete on all variants
-  await MyGlobal.prisma.shopping_mall_product_variants.updateMany({
-    where: { shopping_mall_product_id: props.productId },
-    data: { deleted_at: new Date() },
-  });
-  // Perform soft delete on the product itself
-  const deletedProduct = await MyGlobal.prisma.shopping_mall_products.update({
-    where: { id: props.productId },
-    data: {
-      deleted_at: new Date(),
-      status: "deleted",
-    },
-  });
-  // Return the deleted product (as IShoppingMallProduct)
-  return {
-    id: deletedProduct.id,
-    shopping_mall_seller_id: deletedProduct.shopping_mall_seller_id,
-    shopping_mall_subcategory_id: deletedProduct.shopping_mall_subcategory_id,
-    name: deletedProduct.name,
-    description: deletedProduct.description,
-    base_price: deletedProduct.base_price,
-    status: deletedProduct.status,
-    created_at: toISOStringSafe(deletedProduct.created_at),
-    updated_at: toISOStringSafe(deletedProduct.updated_at),
-    deleted_at: deletedProduct.deleted_at
-      ? toISOStringSafe(deletedProduct.deleted_at)
-      : null,
-  };
 }
+if (hasPendingCancellation) {
+  throw new HttpException("Product has pending cancellation requests", 400);
+}
+// Check if product has pending refund requests
+const hasPendingRefund =
+  await MyGlobal.prisma.shopping_mall_order_refund_requests.findFirst({
+    where: {
+      shopping_mall_order_item_id: {
+        in: await MyGlobal.prisma.shopping_mall_order_items
+          .findMany({
+            where: {
+              shopping_mall_product_variant_id: {
+                in: variantIds,
+              },
+            },
+            select: {
+              id: true,
+            },
+          })
+          .then((items) => items.map((i) => i.id)),
+      },
+    },
+    status: "pending",
+  });
+if (hasPendingRefund) {
+  throw new HttpException("Product has pending refund requests", 400);
+}
+// Delete product images
+await MyGlobal.prisma.shopping_mall_product_images.deleteMany({
+  where: {
+    shopping_mall_product_id: props.productId,
+  },
+});
+// Delete inventory records
+await MyGlobal.prisma.shopping_mall_inventory_histories.deleteMany({
+  where: {
+    shopping_mall_product_variant_id: {
+      in: variantIds,
+    },
+  },
+});
+// Delete variant option values
+await MyGlobal.prisma.shopping_mall_product_variant_option_values.deleteMany({
+  where: {
+    shopping_mall_product_variant_id: {
+      in: variantIds,
+    },
+  },
+});
+// Delete variant snapshots
+await MyGlobal.prisma.shopping_mall_product_variant_snapshots.deleteMany({
+  where: {
+    id: {
+      in: variantSnapshotIds,
+    },
+  },
+});
+// Delete variants
+await MyGlobal.prisma.shopping_mall_product_variants.deleteMany({
+  where: {
+    shopping_mall_product_id: props.productId,
+  },
+});
+// Delete from customer wishlists
+await MyGlobal.prisma.shopping_mall_customer_wishlists.deleteMany({
+  where: {
+    shopping_mall_product_id: props.productId,
+  },
+});
+// Delete the product
+await MyGlobal.prisma.shopping_mall_products.delete({
+  where: {
+    id: props.productId,
+  },
+});

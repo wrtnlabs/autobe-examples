@@ -16,25 +16,62 @@ export async function deleteShoppingMallSellerProductsProductIdImagesImageId(pro
   productId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { id: props.productId },
-  });
-  if (!product) {
-    throw new HttpException("Product not found", 404);
-  }
+  // Verify product ownership
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { id: true, seller_id: true },
+    });
   if (product.seller_id !== props.seller.id) {
-    throw new HttpException("Unauthorized", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  const image = await MyGlobal.prisma.shopping_mall_product_images.findUnique({
-    where: { id: props.imageId },
-  });
-  if (!image) {
-    throw new HttpException("Image not found", 404);
-  }
+  // Verify image existence and ownership
+  const image =
+    await MyGlobal.prisma.shopping_mall_product_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      select: { id: true, shopping_mall_product_id: true },
+    });
   if (image.shopping_mall_product_id !== props.productId) {
-    throw new HttpException("Image does not belong to the product", 400);
+    throw new HttpException("Not Found", 404);
   }
+  // Delete image
   await MyGlobal.prisma.shopping_mall_product_images.delete({
     where: { id: props.imageId },
+  });
+  // Fetch product details for snapshot
+  const productForSnapshot =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        seller_id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        productImages: { select: { id: true } },
+        productVariants: {
+          select: { id: true, price_override: true, stock_quantity: true },
+        },
+      },
+    });
+  // Convert dates to ISO string
+  const snapshotData = {
+    ...productForSnapshot,
+    created_at: toISOStringSafe(productForSnapshot.created_at),
+    updated_at: toISOStringSafe(productForSnapshot.updated_at),
+    deleted_at: productForSnapshot.deleted_at
+      ? toISOStringSafe(productForSnapshot.deleted_at)
+      : null,
+  };
+  // Create snapshot record
+  await MyGlobal.prisma.shopping_mall_product_snapshots.create({
+    data: {
+      id: v4(),
+      product: { connect: { id: props.productId } },
+      snapshot_data: JSON.stringify(snapshotData),
+      created_at: toISOStringSafe(new Date()),
+    },
   });
 }

@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ITodoAppTodoHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistory";
-import { ITodoAppTodoHistoryChange } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistoryChange";
 import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -16,56 +15,28 @@ import { TodoAppTodoHistoryTransformer } from "../transformers/TodoAppTodoHistor
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function getTodoAppUserTodosTodoIdHistoriesHistoryId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
   historyId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppTodoHistory> {
   // First verify the todo belongs to the authenticated user
-  const todo = await MyGlobal.prisma.todo_app_todos.findUnique({
+  await MyGlobal.prisma.todo_app_todos.findFirstOrThrow({
     where: {
       id: props.todoId,
-      todo_app_user_id: props.user.id,
-      deleted_at: null,
+      todo_app_user_id: props.user.id, // Ensure todo belongs to user
+      deleted_at: null, // Only active todos
     },
   });
-  if (!todo) {
-    throw new HttpException("Todo not found", 404);
-  }
-  // Query the history entry using the transformer's select method
-  const history = await MyGlobal.prisma.todo_app_todo_histories.findUnique({
-    where: {
-      id: props.historyId,
-      todo_app_todo_id: props.todoId,
-      deleted_at: null,
-    },
-    ...TodoAppTodoHistoryTransformer.select(),
-  });
-  if (!history) {
-    throw new HttpException("History entry not found", 404);
-  }
-  // Query field changes separately since they're not included in the transformer
-  const fieldChanges =
-    await MyGlobal.prisma.todo_app_todo_history_changes.findMany({
+  // Retrieve the specific history entry ensuring it belongs to the user's todo
+  const history =
+    await MyGlobal.prisma.todo_app_todo_histories.findFirstOrThrow({
       where: {
-        todo_app_todo_history_id: props.historyId,
+        id: props.historyId,
+        todo_app_todo_id: props.todoId, // Ensure history belongs to the specified todo
+        deleted_at: null, // Only active history entries
       },
-      orderBy: { created_at: "asc" },
+      ...TodoAppTodoHistoryTransformer.select(),
     });
-  // Transform the history using the transformer
-  const transformedHistory =
-    await TodoAppTodoHistoryTransformer.transform(history);
-  // Add field changes to the transformed result
-  return {
-    ...transformedHistory,
-    field_changes: fieldChanges.map((change) => ({
-      id: change.id,
-      field_name: change.field_name,
-      previous_value: change.previous_value,
-      new_value: change.new_value,
-      created_at: toISOStringSafe(change.created_at),
-    })),
-  };
+  return TodoAppTodoHistoryTransformer.transform(history);
 }

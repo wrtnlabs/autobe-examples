@@ -10,26 +10,29 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardBanRecordCollector {
   export async function collect(props: {
     body: IDiscussionBoardBanRecord.ICreate;
+    discussionBoardAdmins: IEntity;
   }) {
     const id: string = v4();
-    const created_at: Date = new Date();
-    // Calculate expires_at if ban_duration_days is provided
-    const expires_at: Date | null = props.body.ban_duration_days
-      ? new Date(
-          created_at.getTime() +
-            props.body.ban_duration_days * 24 * 60 * 60 * 1000,
-        )
-      : null;
+    // Calculate expiration date for temporary bans
+    const expiresAt =
+      props.body.banDurationType === "temporary" && props.body.banDurationDays
+        ? new Date(
+            Date.now() + props.body.banDurationDays * 24 * 60 * 60 * 1000,
+          )
+        : null;
     return {
       id,
-      ban_reason: props.body.ban_reason,
-      ban_duration_days: props.body.ban_duration_days ?? null,
-      ban_status: props.body.ban_status,
-      expires_at,
+      ban_reason: props.body.banReason,
+      ban_duration_days:
+        props.body.banDurationType === "temporary"
+          ? props.body.banDurationDays
+          : null,
+      ban_status: "active",
+      expires_at: expiresAt,
       revoked_at: null,
       revoked_reason: null,
-      created_at,
-      updated_at: created_at,
+      created_at: new Date(),
+      updated_at: new Date(),
     } satisfies Prisma.discussion_board_ban_recordsCreateInput;
   }
 }

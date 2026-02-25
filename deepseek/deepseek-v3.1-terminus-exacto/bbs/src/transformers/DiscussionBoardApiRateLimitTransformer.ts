@@ -9,7 +9,7 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
-import { DiscussionBoardSuperAdminAtSummaryTransformer } from "./DiscussionBoardSuperAdminAtSummaryTransformer";
+import { DiscussionBoardSuperAdminTransformer } from "./DiscussionBoardSuperAdminTransformer";
 import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardApiRateLimitTransformer {
@@ -36,7 +36,7 @@ export namespace DiscussionBoardApiRateLimitTransformer {
         deleted_at: true,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
         admin: DiscussionBoardAdminAtSummaryTransformer.select(),
-        superAdmin: DiscussionBoardSuperAdminAtSummaryTransformer.select(),
+        superAdmin: DiscussionBoardSuperAdminTransformer.select(),
       },
     } satisfies Prisma.discussion_board_api_rate_limitsFindManyArgs;
   }
@@ -50,14 +50,14 @@ export namespace DiscussionBoardApiRateLimitTransformer {
       rate_limit_type: input.rate_limit_type,
       requests_per_interval: input.requests_per_interval,
       interval_seconds: input.interval_seconds,
-      burst_limit: input.burst_limit ?? undefined,
+      burst_limit: input.burst_limit ?? null,
       enforcement_action: input.enforcement_action,
+      enforcement_count: input.enforcement_count,
       enforced_at: input.enforced_at
         ? toISOStringSafe(input.enforced_at)
         : null,
-      enforcement_count: input.enforcement_count,
       is_active: input.is_active,
-      description: input.description ?? "",
+      description: input.description ?? null,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
@@ -67,10 +67,8 @@ export namespace DiscussionBoardApiRateLimitTransformer {
       admin: input.admin
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(input.admin)
         : null,
-      super_admin: input.superAdmin
-        ? await DiscussionBoardSuperAdminAtSummaryTransformer.transform(
-            input.superAdmin,
-          )
+      superAdmin: input.superAdmin
+        ? await DiscussionBoardSuperAdminTransformer.transform(input.superAdmin)
         : null,
     };
   }

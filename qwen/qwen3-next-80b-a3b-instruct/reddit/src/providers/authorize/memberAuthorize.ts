@@ -1,6 +1,6 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
+import { jwtAuthorize } from "./jwtAuthorize";
 import { MemberPayload } from "../../decorators/payload/MemberPayload";
 
 export async function memberAuthorize(request: {
@@ -12,11 +12,10 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
+  // Query using direct id since Member is standalone actor
   const member = await MyGlobal.prisma.reddit_community_members.findFirst({
     where: {
-      id: payload.id, // Direct ID since member is primary actor
-      deleted_at: null, // Soft-delete check
+      id: payload.id,
     },
   });
 

@@ -16,27 +16,6 @@ export async function deleteDiscussionBoardUserArticlesArticleIdImagesImageId(pr
   articleId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // First verify the article exists
-  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-    where: {
-      id: props.articleId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      discussion_board_user_id: true,
-    },
-  });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
-  }
-  // Check authorization: user must be article author
-  if (article.discussion_board_user_id !== props.user.id) {
-    throw new HttpException(
-      "Access denied: You are not the author of this article",
-      403,
-    );
-  }
   // Verify the image exists and belongs to the specified article
   const image = await MyGlobal.prisma.discussion_board_article_images.findFirst(
     {
@@ -44,18 +23,44 @@ export async function deleteDiscussionBoardUserArticlesArticleIdImagesImageId(pr
         id: props.imageId,
         discussion_board_article_id: props.articleId,
       },
+      include: {
+        article: {
+          select: {
+            id: true,
+            discussion_board_user_id: true,
+            deleted_at: true,
+          },
+        },
+      },
     },
   );
   if (!image) {
-    throw new HttpException(
-      "Image not found or does not belong to the specified article",
-      404,
-    );
+    throw new HttpException("Image not found", 404);
   }
-  // Perform the hard delete operation
+  // Verify the article exists and is not deleted
+  if (image.article.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
+  }
+  // Check if user is the article author
+  const isAuthor = image.article.discussion_board_user_id === props.user.id;
+  // If user is not the author, check if they have administrator privileges
+  let isAdmin = false;
+  if (!isAuthor) {
+    const adminRecord =
+      await MyGlobal.prisma.discussion_board_administrators.findFirst({
+        where: {
+          user_id: props.user.id,
+          is_active: true,
+          deleted_at: null,
+        },
+      });
+    isAdmin = adminRecord !== null;
+  }
+  if (!isAuthor && !isAdmin) {
+    throw new HttpException("You are not authorized to delete this image", 403);
+  }
+  // Perform the hard deletion
   await MyGlobal.prisma.discussion_board_article_images.delete({
-    where: {
-      id: props.imageId,
-    },
+    where: { id: props.imageId },
   });
 }

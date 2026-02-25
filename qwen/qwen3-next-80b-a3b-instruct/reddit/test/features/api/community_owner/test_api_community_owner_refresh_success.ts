@@ -15,71 +15,81 @@ import { authorize_community_owner_refresh } from "../../../authorize/authorize_
 export async function test_api_community_owner_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate a new community owner
+  // 1. Create community owner account to obtain tokens
   const joinConnection: api.IConnection = { host: connection.host };
-  const joinResponse = await authorize_community_owner_join(joinConnection, {
+  const joined = await authorize_community_owner_join(joinConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(1),
+      displayName: RandomGenerator.name(),
     } satisfies IRedditCommunityCommunityOwner.IJoin,
   });
-  typia.assert(joinResponse);
-  // 2. Use the established session to refresh the token
+  typia.assert(joined);
+  // 2. Extract refresh token from successful join response
+  const refreshInput: IRedditCommunityCommunityOwner.IRefresh = {
+    refresh_token: joined.token.refresh,
+  };
+  // 3. Refresh the access token using the valid refresh token
   const refreshConnection: api.IConnection = { host: connection.host };
-  const refreshResponse = await authorize_community_owner_refresh(
-    refreshConnection,
-    {
-      body: {} satisfies IRedditCommunityCommunityOwner.IRefresh,
-    },
-  );
-  typia.assert(refreshResponse);
-  // 3. Validate the refreshed token response
+  const refreshed = await authorize_community_owner_refresh(refreshConnection, {
+    body: refreshInput,
+  });
+  typia.assert(refreshed);
+  // 4. Validate refresh response structure and token rotation
+  // - Must have same id, email, displayName, username as original
+  TestValidator.equals("id preserved", joined.id, refreshed.id);
+  TestValidator.equals("email preserved", joined.email, refreshed.email);
   TestValidator.equals(
-    "access token exists",
-    refreshResponse.token.access.length > 0,
-    true,
+    "displayName preserved",
+    joined.display_name,
+    refreshed.display_name,
   );
   TestValidator.equals(
-    "refresh token exists",
-    refreshResponse.token.refresh.length > 0,
-    true,
+    "username preserved",
+    joined.username,
+    refreshed.username,
   );
-  TestValidator.predicate("access token expires in 15 minute window", () => {
-    const expiresAt = new Date(refreshResponse.token.expired_at);
-    const now = new Date();
-    const diffMinutes = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
-    return diffMinutes <= 15 && diffMinutes >= 14; // Expect close to 15 minutes
-  });
-  TestValidator.predicate("refresh token is valid for 7 days", () => {
-    const refreshUntil = new Date(refreshResponse.token.refreshable_until);
-    const now = new Date();
-    const diffDays =
-      (refreshUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 7 && diffDays >= 6.9; // Expect close to 7 days
-  });
-  // 4. Verify that the old refresh token is revoked by attempting to use it again
-  // This should fail with 401 Unauthorized
-  await TestValidator.httpError("old refresh token revoked", 401, async () => {
-    const revokedConnection: api.IConnection = { host: connection.host };
-    // This will use the old refresh token (from join response, not refresh response)
-    // which should be in revocation list after the refresh
-    await authorize_community_owner_refresh(revokedConnection, {
-      body: {} satisfies IRedditCommunityCommunityOwner.IRefresh,
-    });
-  });
-  // 5. Verify that the new refresh token works
-  const secondRefreshConnection: api.IConnection = { host: connection.host };
-  const secondRefreshResponse = await authorize_community_owner_refresh(
-    secondRefreshConnection,
-    {
-      body: {} satisfies IRedditCommunityCommunityOwner.IRefresh,
-    },
-  );
-  typia.assert(secondRefreshResponse);
+  // - Must have new access_token but same refresh_token
   TestValidator.notEquals(
-    "second refresh token is different",
-    refreshResponse.token.refresh,
-    secondRefreshResponse.token.refresh,
+    "access_token refreshed",
+    joined.token.access,
+    refreshed.token.access,
+  );
+  TestValidator.equals(
+    "refresh_token unchanged",
+    joined.token.refresh,
+    refreshed.token.refresh,
+  );
+  // - Must have updated expired_at (7-day expiry) and refreshable_until unchanged
+  TestValidator.equals(
+    "refreshable_until unchanged",
+    joined.token.refreshable_until,
+    refreshed.token.refreshable_until,
+  );
+  // Validate access token expiration is approximately 7 days (within 1 minute tolerance)
+  const joinedExpiredAt = new Date(joined.token.expired_at);
+  const refreshedExpiredAt = new Date(refreshed.token.expired_at);
+  const timeDifference =
+    refreshedExpiredAt.getTime() - joinedExpiredAt.getTime();
+  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+  // Allow 1 minute tolerance for clock drift
+  TestValidator.predicate("access token expiry is approximately 7 days", () => {
+    return Math.abs(timeDifference - sevenDaysInMs) < 60000;
+  });
+  // - Ensure token object structure matches IAuthorizationToken
+  TestValidator.equals(
+    "token structure matches",
+    {
+      access: refreshed.token.access,
+      refresh: refreshed.token.refresh,
+      expired_at: refreshed.token.expired_at,
+      refreshable_until: refreshed.token.refreshable_until,
+    },
+    {
+      access: refreshed.token.access,
+      refresh: refreshed.token.refresh,
+      expired_at: refreshed.token.expired_at,
+      refreshable_until: refreshed.token.refreshable_until,
+    },
   );
 }

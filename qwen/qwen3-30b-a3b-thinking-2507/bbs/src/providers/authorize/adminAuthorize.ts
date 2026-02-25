@@ -12,7 +12,7 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.economy_politics_board_admins.findFirst({
+  const admin = await MyGlobal.prisma.economic_political_discussion_board_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

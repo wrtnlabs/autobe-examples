@@ -1,4 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { IShoppingMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,6 +15,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallShipmentItemTransformer } from "../transformers/ShoppingMallShipmentItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,30 +23,18 @@ export async function getShoppingMallSellerShipmentItemsShipmentItemId(props: {
   seller: SellerPayload;
   shipmentItemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallShipmentItem> {
-  const shipmentItem =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findUnique({
+  // Find the shipment item by id with related shipment and order item data
+  const shipmentItemRecord =
+    await MyGlobal.prisma.shopping_mall_shipment_items.findUniqueOrThrow({
       where: { id: props.shipmentItemId },
-      include: {
-        shipment: {
-          select: { seller_id: true },
-        },
-      },
+      ...ShoppingMallShipmentItemTransformer.select(),
     });
-  if (!shipmentItem || shipmentItem.deleted_at !== null) {
-    throw new HttpException("Shipment item not found", 404);
-  }
-  if (shipmentItem.shipment.seller_id !== props.seller.id) {
+  // Authorization check: ensure the shipment belongs to the requesting seller
+  if (shipmentItemRecord.shipment.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return {
-    id: shipmentItem.id,
-    shipment_id: shipmentItem.shipment_id,
-    order_item_id: shipmentItem.order_item_id,
-    created_at: toISOStringSafe(shipmentItem.created_at),
-    updated_at: toISOStringSafe(shipmentItem.updated_at),
-    deleted_at:
-      shipmentItem.deleted_at === null
-        ? null
-        : toISOStringSafe(shipmentItem.deleted_at),
-  };
+  // Transform the record into the IShoppingMallShipmentItem response DTO
+  const shipmentItem =
+    await ShoppingMallShipmentItemTransformer.transform(shipmentItemRecord);
+  return shipmentItem;
 }

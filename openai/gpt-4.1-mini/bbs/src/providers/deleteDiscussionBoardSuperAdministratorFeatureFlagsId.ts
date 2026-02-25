@@ -15,13 +15,23 @@ export async function deleteDiscussionBoardSuperAdministratorFeatureFlagsId(prop
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const flag = await MyGlobal.prisma.discussion_board_feature_flags.findUnique({
-    where: { id: props.id },
-  });
-  if (!flag) {
-    throw new HttpException("Feature flag not found", 404);
-  }
-  await MyGlobal.prisma.discussion_board_feature_flags.delete({
-    where: { id: props.id },
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    const { id, superAdministrator } = props;
+    await prisma.discussion_board_feature_flags.findUniqueOrThrow({
+      where: { id },
+    });
+    await prisma.discussion_board_feature_flags.delete({ where: { id } });
+    await prisma.discussion_board_audit_logs.create({
+      data: {
+        id: v4(),
+        event_type: "deleteFeatureFlag",
+        actor_id: superAdministrator.id,
+        actor_type: "superadministrator",
+        target_id: id,
+        target_type: "featureFlag",
+        created_at: new Date().toISOString() as string &
+          tags.Format<"date-time">,
+      },
+    });
   });
 }

@@ -8,8 +8,8 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { DiscussionBoardSystemMessageCollector } from "../collectors/DiscussionBoardSystemMessageCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardSystemMessageTransformer } from "../transformers/DiscussionBoardSystemMessageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,37 +17,31 @@ export async function postDiscussionBoardAdministratorSystemMessages(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardSystemMessage.ICreate;
 }): Promise<IDiscussionBoardSystemMessage> {
-  const { body } = props;
-  const data = await DiscussionBoardSystemMessageCollector.collect({ body });
+  const now = new Date().toISOString() as string &
+    import("typia").tags.Format<"date-time">;
+
   const existing =
     await MyGlobal.prisma.discussion_board_system_messages.findUnique({
-      where: { code: data.code },
+      where: { code: props.body.code },
       select: { id: true },
     });
   if (existing !== null) {
     throw new HttpException(
-      `System message code '${data.code}' already exists.`,
+      `System message code '${props.body.code}' already exists.`,
       400,
     );
   }
-  const now = toISOStringSafe(new Date());
-  const created = await MyGlobal.prisma.$transaction(async (tx) => {
-    return await tx.discussion_board_system_messages.create({
-      data: {
-        ...data,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    });
-  });
-  return {
-    id: created.id,
-    code: created.code,
-    message_text: created.message_text,
-    message_type: created.message_type,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
+  const data = {
+    id: v4() as string & import("typia").tags.Format<"uuid">,
+    code: props.body.code,
+    message_text: props.body.messageText,
+    message_type: props.body.messageType,
+    created_at: now,
+    updated_at: now,
     deleted_at: null,
   };
+  const created = await MyGlobal.prisma.discussion_board_system_messages.create(
+    { data },
+  );
+  return await DiscussionBoardSystemMessageTransformer.transform(created);
 }

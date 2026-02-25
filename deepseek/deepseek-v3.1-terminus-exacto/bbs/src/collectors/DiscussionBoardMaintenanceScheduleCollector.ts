@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardMaintenanceScheduleCollector {
   export async function collect(props: {
     body: IDiscussionBoardMaintenanceSchedule.ICreate;
-    discussionBoardAdmins: IEntity;
+    discussionBoardAdmins: IEntity; // from authorized actor
   }) {
     const id: string = v4();
     return {
@@ -22,7 +22,7 @@ export namespace DiscussionBoardMaintenanceScheduleCollector {
       scheduled_end_time: new Date(props.body.scheduled_end_time),
       actual_start_time: null,
       actual_end_time: null,
-      status: "scheduled",
+      status: props.body.status,
       estimated_duration_minutes: props.body.estimated_duration_minutes,
       actual_duration_minutes: null,
       impact_level: props.body.impact_level,
@@ -30,7 +30,7 @@ export namespace DiscussionBoardMaintenanceScheduleCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Relations
+      // BelongsTo relations
       scheduledByAdmin: { connect: { id: props.discussionBoardAdmins.id } },
       performedByAdmin: undefined,
     } satisfies Prisma.discussion_board_maintenance_schedulesCreateInput;

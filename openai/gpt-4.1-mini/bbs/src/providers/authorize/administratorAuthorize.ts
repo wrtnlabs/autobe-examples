@@ -4,7 +4,7 @@ import { jwtAuthorize } from "./jwtAuthorize";
 import { AdministratorPayload } from "../../decorators/payload/AdministratorPayload";
 
 export async function administratorAuthorize(request: { headers: { authorization?: string } }): Promise<AdministratorPayload> {
-  const payload: AdministratorPayload = jwtAuthorize({ request }) as AdministratorPayload;
+  const payload = jwtAuthorize({ request }) as AdministratorPayload;
 
   if (payload.type !== "administrator") {
     throw new ForbiddenException(`You're not ${payload.type}`);

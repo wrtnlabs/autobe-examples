@@ -16,14 +16,18 @@ export namespace DiscussionBoardCommentReportAtSummaryTransformer {
     return {
       select: {
         id: true,
-        status: true,
         reason: true,
+        status: true,
         resolution_details: true,
         resolved_at: true,
         created_at: true,
         updated_at: true,
         reporter: DiscussionBoardUserAtSummaryTransformer.select(),
-        reportedComment: { select: { id: true } },
+        reportedComment: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_commentsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_comment_reportsFindManyArgs;
   }
@@ -32,12 +36,13 @@ export namespace DiscussionBoardCommentReportAtSummaryTransformer {
   ): Promise<IDiscussionBoardCommentReport.ISummary> {
     return {
       id: input.id,
-      status: input.status,
-      reason: input.reason,
-      created_at: input.created_at.toISOString(),
       reporter: await DiscussionBoardUserAtSummaryTransformer.transform(
         input.reporter,
       ),
+      reason: input.reason,
+      status: input.status as "pending" | "under_review" | "resolved",
+      created_at: input.created_at.toISOString(),
+      resolved_at: input.resolved_at?.toISOString() ?? null,
     };
   }
 }

@@ -18,6 +18,7 @@ export namespace DiscussionBoardCommentAtSummaryTransformer {
         id: true,
         content: true,
         created_at: true,
+        updated_at: true,
         author: DiscussionBoardUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_commentsFindManyArgs;
@@ -28,10 +29,11 @@ export namespace DiscussionBoardCommentAtSummaryTransformer {
     return {
       id: input.id,
       content: input.content,
-      created_at: input.created_at.toISOString(),
       author: await DiscussionBoardUserAtSummaryTransformer.transform(
         input.author,
       ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

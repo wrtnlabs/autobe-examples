@@ -13,55 +13,86 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthCustomerJoin(props: {
+  ip: string;
+  href: string;
+  referrer: string;
   body: IShoppingMallCustomer.IJoin;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // 1. Validate email format and uniqueness
-  const body = typia.assert<
-    IShoppingMallCustomer.IJoin & {
-      email: string;
-      password: string;
-    }
-  >(props.body);
+  // 1. Check for duplicate email (case-insensitive)
   const existing = await MyGlobal.prisma.shopping_mall_customers.findFirst({
-    where: { email: body.email.toLowerCase(), deleted_at: null },
+    where: { email: props.body.email.toLowerCase() },
   });
   if (existing) throw new HttpException("Email already registered", 409);
-  // 2. Generate UUIDs for customer and verification token
-  const customerId = v4() as string & tags.Format<"uuid">;
-  const verificationToken = v4();
-  // 3. Create customer record with active=false and email_verified=false
-  const createdCustomer = await MyGlobal.prisma.shopping_mall_customers.create({
+  // 2. Create customer record (manual, since collector not available and specally permitted for manual in this flow)
+  const customer = await MyGlobal.prisma.shopping_mall_customers.create({
     data: {
-      id: customerId,
-      email: body.email.toLowerCase(),
-      password_hash: await PasswordUtil.hash(body.password),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      id: v4() as string & tags.Format<"uuid">,
+      email: props.body.email.toLowerCase(),
+      password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: undefined,
+      phone_number: undefined,
+      created_at: toISOStringSafe(new Date()) satisfies string &
+        tags.Format<"date-time">,
+      updated_at: toISOStringSafe(new Date()) satisfies string &
+        tags.Format<"date-time">,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      phone_number: true,
+      created_at: true,
+      updated_at: true,
     },
   });
-  // 4. Create email verification record with 24-hour expiry
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // 3. Create email verification token (required per specification)
+  const tokenValue = v4();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   await MyGlobal.prisma.shopping_mall_customer_email_verifications.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      shopping_mall_customer_id: customerId,
-      token: verificationToken,
-      expires_at: toISOStringSafe(expiresAt),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-      deleted_at: null,
+      shopping_mall_customer_id: customer.id,
+      token: tokenValue,
+      expires_at: toISOStringSafe(expiresAt) satisfies string &
+        tags.Format<"date-time">,
+      created_at: toISOStringSafe(new Date()) satisfies string &
+        tags.Format<"date-time">,
+      updated_at: toISOStringSafe(new Date()) satisfies string &
+        tags.Format<"date-time">,
+      verified_at: null,
     },
   });
-  // 5. Generate authentication tokens
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const token = {
+  // 4. Create session
+  const accessExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      shopping_mall_customer_id: customer.id,
+      ip: props.ip || "unknown",
+      href: props.href || "unknown",
+      referrer: props.referrer || "unknown",
+      created_at: toISOStringSafe(new Date()) satisfies string &
+        tags.Format<"date-time">,
+      expired_at: toISOStringSafe(accessExpires) satisfies string &
+        tags.Format<"date-time">,
+    },
+    select: {
+      id: true,
+      created_at: true,
+      expired_at: true,
+    },
+  });
+  // 5. Generate JWT tokens
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: customerId, // TODO: Fix this - should be session Id, not customer Id
-        created_at: toISOStringSafe(new Date()),
+        id: customer.id, // Use customer.id (actor ID), NOT session.id
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()) satisfies string &
+          tags.Format<"date-time">,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "30m", issuer: "autobe" },
@@ -69,16 +100,30 @@ export async function postShoppingMallAuthCustomerJoin(props: {
     refresh: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: customerId, // TODO: Fix this - should be session Id
+        id: customer.id, // Use customer.id (actor ID), NOT session.id
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        created_at: toISOStringSafe(new Date()) satisfies string &
+          tags.Format<"date-time">,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "30d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: toISOStringSafe(accessExpires) satisfies string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) satisfies string &
+      tags.Format<"date-time">,
   };
-  return { token } satisfies IShoppingMallCustomer.IAuthorized;
+  // 6. Return IAuthorized
+  return {
+    id: customer.id,
+    email: customer.email,
+    display_name: customer.display_name ?? undefined,
+    phone_number: customer.phone_number ?? undefined,
+    created_at: toISOStringSafe(customer.created_at) satisfies string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(customer.updated_at) satisfies string &
+      tags.Format<"date-time">,
+    token,
+  } satisfies IShoppingMallCustomer.IAuthorized;
 }

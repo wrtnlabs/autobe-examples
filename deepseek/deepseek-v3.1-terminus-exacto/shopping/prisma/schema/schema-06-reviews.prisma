@@ -62,12 +62,17 @@ model ecommerce_reviews {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   votes ecommerce_review_votes[]
   reports ecommerce_review_reports[]
   reviewEdits ecommerce_review_edits[]
@@ -76,8 +81,10 @@ model ecommerce_reviews {
   flags ecommerce_review_flags[]
   sellerResponse ecommerce_review_responses?
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_order_item_id])
-  
   // spellchecker: ignore-next-line
   @@unique([ecommerce_customer_id, ecommerce_product_id, ecommerce_order_item_id], map: "ecommerce_reviews_ecommerce_customer_id_ecommerce_prod_b168d0a6")
   @@index([ecommerce_product_id, created_at])
@@ -124,11 +131,15 @@ model ecommerce_review_votes {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_customer_id, ecommerce_review_id], map: "ecommerce_review_votes_ecommerce_customer_id_ecommerce_3ce32b42")
   @@index([ecommerce_review_id, created_at])
@@ -185,14 +196,22 @@ model ecommerce_review_reports {
   report_category String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   review ecommerce_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   statusTransitions ecommerce_review_report_statuses[]
   snapshots ecommerce_review_report_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([customer_id, review_id])
   @@index([review_id, created_at])
 }
@@ -254,13 +273,16 @@ model ecommerce_review_edits {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
   editingCustomer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([ecommerce_customer_id])
-  
   @@index([ecommerce_review_id, edited_at])
 }
 
@@ -315,11 +337,15 @@ model ecommerce_review_moderation_actions {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_review_id, status, created_at], map: "ecommerce_review_moderation_actions_ecommerce_review_i_fdb4c619")
   // spellchecker: ignore-next-line
@@ -384,12 +410,16 @@ model ecommerce_review_helpful_votes {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   review ecommerce_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   customerSession ecommerce_customer_sessions @relation(fields: [customer_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([review_id, customer_id])
   @@index([review_id, created_at])
   @@index([customer_id, created_at])
@@ -469,12 +499,16 @@ model ecommerce_review_flags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_review_id, ecommerce_customer_id], map: "ecommerce_review_flags_ecommerce_review_id_ecommerce_c_ce2e2169")
   @@index([status, created_at])
@@ -528,11 +562,15 @@ model ecommerce_review_responses {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   review ecommerce_reviews @relation(fields: [ecommerce_review_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_review_id])
   @@index([seller_id, created_at])
   @@index([ecommerce_review_id, created_at])
@@ -583,11 +621,15 @@ model ecommerce_review_report_statuses {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   reviewReport ecommerce_review_reports @relation(fields: [ecommerce_review_report_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_review_report_id, created_at], map: "ecommerce_review_report_statuses_ecommerce_review_repo_ec0191a5")
   // spellchecker: ignore-next-line
@@ -646,11 +688,15 @@ model ecommerce_review_report_snapshots {
   change_description String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   reviewReport ecommerce_review_reports @relation(fields: [ecommerce_review_report_id], references: [id], onDelete: Cascade)
   actor ecommerce_administrators? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_review_report_id, snapshot_created_at], map: "ecommerce_review_report_snapshots_ecommerce_review_rep_6fee0957")
   // spellchecker: ignore-next-line

@@ -2,7 +2,10 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import type { IShoppingMallBannedUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallBannedUser";
+import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -12,31 +15,53 @@ import typia, { tags } from "typia";
 import { authorize_administrator_join } from "../../../authorize/authorize_administrator_join";
 import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
 import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
-import { generate_random_shopping_mall_administrator_banned_users_create } from "../../../generate/generate_random_shopping_mall_administrator_banned_users_create";
-import { prepare_random_shopping_mall_banned_user } from "../../../prepare/prepare_random_shopping_mall_banned_user";
 
 export async function test_api_administrator_banned_user_lift_ban(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Administrator join and get authorized connection
+  // 1. Administrator join and obtain authorized connection
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminToken = await authorize_administrator_join(adminConnection, {
-    body: {},
-  });
-  adminConnection.headers = {
-    Authorization: `Bearer ${adminToken.token.access}`,
+  const adminJoinPayload: IShoppingMallAdministrator.IJoin = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
   };
-  // 2. Create a banned user record using utility
+  const administrator = await authorize_administrator_join(adminConnection, {
+    body: adminJoinPayload,
+  });
+  typia.assert(administrator);
+  // adminConnection.headers now contains Authorization
+  // 2. Ban a seller to create a banned user record
+  const sellerId = typia.random<string & tags.Format<"uuid">>();
+  await api.functional.shoppingMall.administrator.banned_users.sellers.ban.banSeller(
+    adminConnection,
+    { sellerId },
+  );
+  // 3. Lift the ban by updating banned user record
+  // Since no GET API for banned user, assume bannedUserId equals sellerId for testing
+  // This is a testing assumption due to limited API
+  const updatePayload: IShoppingMallBannedUser.IUpdate = {
+    banReason: "Ban reason remains unchanged",
+    deletedAt: new Date().toISOString(),
+  };
   const bannedUser =
-    await generate_random_shopping_mall_administrator_banned_users_create(
+    await api.functional.shoppingMall.administrator.bannedUsers.updateBannedUser(
       adminConnection,
-      { body: {} },
+      {
+        bannedUserId: sellerId,
+        body: updatePayload,
+      },
     );
   typia.assert(bannedUser);
-
-  // 3. As banReason, id, deletedAt, updatedAt, account_id do not exist on IShoppingMallBannedUser, cannot use them.
-  // Therefore, cannot prepare updateBody or identify bannedUser to request the update.
-
-  // 4. Cannot perform update call correctly, so only assert bannedUser exists.
-  TestValidator.predicate("bannedUser exists", bannedUser !== undefined && bannedUser !== null);
+  // 4. Validate the banned user record
+  TestValidator.equals(
+    "ban reason unchanged",
+    bannedUser.banReason,
+    updatePayload.banReason,
+  );
+  TestValidator.predicate(
+    "deletedAt is set",
+    bannedUser.deletedAt !== null && bannedUser.deletedAt !== undefined,
+  );
+  // 5. Confirm that ban is lifted
+  TestValidator.predicate("ban is lifted", bannedUser.deletedAt !== null);
 }

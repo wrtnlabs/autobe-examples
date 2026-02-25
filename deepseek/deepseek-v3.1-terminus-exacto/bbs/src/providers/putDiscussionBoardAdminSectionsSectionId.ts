@@ -19,17 +19,18 @@ export async function putDiscussionBoardAdminSectionsSectionId(props: {
   sectionId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSection.IUpdate;
 }): Promise<IDiscussionBoardSection> {
-  // Check if section exists and is not deleted
+  // Verify section exists
   const existingSection =
-    await MyGlobal.prisma.discussion_board_sections.findUnique({
-      where: { id: props.sectionId, deleted_at: null },
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: {
+        id: props.sectionId,
+        deleted_at: null,
+      },
+      select: { id: true },
     });
-  if (!existingSection) {
-    throw new HttpException("Section not found", 404);
-  }
-  // Validate unique name constraint (excluding current section)
-  if (props.body.name) {
-    const existingSectionWithSameName =
+  // Check name uniqueness if updating name
+  if (props.body.name !== undefined) {
+    const existingSectionWithName =
       await MyGlobal.prisma.discussion_board_sections.findFirst({
         where: {
           name: props.body.name,
@@ -37,29 +38,33 @@ export async function putDiscussionBoardAdminSectionsSectionId(props: {
           deleted_at: null,
         },
       });
-    if (existingSectionWithSameName) {
-      throw new HttpException("Section name already exists", 400);
+    if (existingSectionWithName) {
+      throw new HttpException("Section name must be unique", 400);
     }
   }
-  // Prepare update data
-  const updateData: Prisma.discussion_board_sectionsUpdateInput = {
-    updated_at: toISOStringSafe(new Date()),
+  // Build update data with only provided fields
+  const updateData = {
+    ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.description !== undefined && {
+      description: props.body.description,
+    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.display_order !== undefined && {
+      display_order: props.body.display_order,
+    }),
     lastModifiedByAdmin: { connect: { id: props.admin.id } },
-  };
-  // Add optional fields if provided
-  if (props.body.name !== undefined) updateData.name = props.body.name;
-  if (props.body.description !== undefined)
-    updateData.description = props.body.description;
-  if (props.body.status !== undefined) updateData.status = props.body.status;
-  if (props.body.display_order !== undefined)
-    updateData.display_order = props.body.display_order;
-  // Update section
-  const updatedSection = await MyGlobal.prisma.discussion_board_sections.update(
-    {
+    updated_at: new Date(),
+  } satisfies Prisma.discussion_board_sectionsUpdateInput;
+  // Update the section
+  await MyGlobal.prisma.discussion_board_sections.update({
+    where: { id: props.sectionId },
+    data: updateData,
+  });
+  // Fetch and return updated section
+  const updatedSection =
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
       where: { id: props.sectionId },
-      data: updateData,
       ...DiscussionBoardSectionTransformer.select(),
-    },
-  );
+    });
   return await DiscussionBoardSectionTransformer.transform(updatedSection);
 }

@@ -18,19 +18,16 @@ export async function patchDiscussionBoardSuperAdministratorSystemMessages(props
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardSystemMessage.IRequest;
 }): Promise<IPageIDiscussionBoardSystemMessage.ISummary> {
-  const page = (props.body as any).page ?? 1;
-  const limit = (props.body as any).limit ?? 100;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const where = {
-    ...(typeof (props.body as any).code === "string" &&
-    (props.body as any).code.length > 0
-      ? { code: (props.body as any).code }
-      : {}),
-    ...(typeof (props.body as any).message_type === "string" &&
-    (props.body as any).message_type.length > 0
-      ? { message_type: (props.body as any).message_type }
-      : {}),
-  } satisfies Prisma.discussion_board_system_messagesWhereInput;
+  const where: Prisma.discussion_board_system_messagesWhereInput = {};
+  if (props.body.code !== undefined) {
+    where.code = props.body.code;
+  }
+  if (props.body.messageType !== undefined) {
+    where.message_type = props.body.messageType;
+  }
   const data = await MyGlobal.prisma.discussion_board_system_messages.findMany({
     where,
     skip,
@@ -41,27 +38,23 @@ export async function patchDiscussionBoardSuperAdministratorSystemMessages(props
       code: true,
       message_text: true,
       message_type: true,
-      created_at: true,
-      updated_at: true,
     },
   });
   const total = await MyGlobal.prisma.discussion_board_system_messages.count({
     where,
   });
   return {
-    data: data.map((item) => ({
-      id: item.id,
-      code: item.code,
-      message_text: item.message_text,
-      message_type: item.message_type,
-      created_at: toISOStringSafe(item.created_at),
-      updated_at: toISOStringSafe(item.updated_at),
+    data: data.map((record) => ({
+      id: record.id,
+      code: record.code,
+      messageText: record.message_text,
+      messageType: record.message_type,
     })),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
   };
 }

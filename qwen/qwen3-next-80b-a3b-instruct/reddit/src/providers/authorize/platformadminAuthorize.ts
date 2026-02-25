@@ -12,11 +12,9 @@ export async function platformadminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
   const admin = await MyGlobal.prisma.reddit_community_platform_admins.findFirst({
     where: {
-      id: payload.id, // standalone actor - direct ID match
-      deleted_at: null, 
+      id: payload.id,
     },
   });
 

@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_post_vote(
-  input?: DeepPartial<ICommunityPlatformPostVote.ICreate> | undefined,
+  input?: DeepPartial<ICommunityPlatformPostVote.ICreate>,
 ): ICommunityPlatformPostVote.ICreate {
-  input;
-  return {};
+  return {
+    post_id: input?.post_id ?? typia.random<string & tags.Format<"uuid">>(),
+    vote_type:
+      input?.vote_type ?? RandomGenerator.pick(["upvote", "downvote"] as const),
+  };
 }

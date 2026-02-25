@@ -17,75 +17,104 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCommunityAuthMemberJoin(props: {
   body: IRedditCommunityMember.IJoin;
 }): Promise<IRedditCommunityMember.IAuthorized> {
-  // 1. Check for existing email
+  // 1. Check duplicate email or username
   const existing = await MyGlobal.prisma.reddit_community_members.findFirst({
-    where: { email: props.body.email },
-  });
-  if (existing) throw new HttpException("Email already registered", 409);
-  // 2. Create member - generate id explicitly
-  const now = new Date();
-  const createdAt = toISOStringSafe(now);
-  const updatedAt = toISOStringSafe(now);
-  const memberId = v4();
-  const member = await MyGlobal.prisma.reddit_community_members.create({
-    data: {
-      id: memberId,
-      email: props.body.email,
-      password_hash: await PasswordUtil.hash(props.body.password),
-      display_name: props.body.email.split("@")[0],
-      created_at: createdAt,
-      updated_at: updatedAt,
-      deleted_at: null,
+    where: {
+      OR: [{ email: props.body.email }, { username: props.body.username }],
     },
   });
-  // 3. Create session - generate id explicitly
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
+  if (existing) {
+    throw new HttpException("Email or username already registered", 409);
+  }
+  // 2. Create member manually (no collector available) — using only schema-defined fields
+  const member = await MyGlobal.prisma.reddit_community_members.create({
+    data: {
+      id: v4(),
+      email: props.body.email.trim().toLowerCase(),
+      password_hash: await PasswordUtil.hash(props.body.password),
+      username: props.body.username,
+      display_name: props.body.displayName ?? "", // Fixed: use empty string instead of null to satisfy string type
+      bio: null,
+      avatar_url: null,
+      karma_score: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_deleted: false,
+    },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      display_name: true,
+      bio: true,
+      avatar_url: true,
+      karma_score: true,
+      created_at: true,
+      updated_at: true,
+      is_deleted: true,
+    },
+  });
+  // 3. Create session manually — using relation property name "member" (NOT reddit_community_member_id)
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.reddit_community_member_sessions.create(
     {
       data: {
-        id: sessionId,
-        reddit_community_member_id: member.id,
-        access_token: v4(),
-        refresh_token: v4(),
-        ip: "unknown",
-        href: "",
-        created_at: createdAt,
-        expired_at: toISOStringSafe(accessExpires),
+        id: v4(),
+        member: { connect: { id: member.id } },
+        ip: "0.0.0.0",
+        href: "/redditCommunity/auth/member/join",
+        referrer: "",
+        created_at: new Date().toISOString(),
+        expired_at: accessExpires.toISOString(),
       },
     },
   );
-  // 4. Generate JWT tokens - remove all satisfies type assertions
-  const access_token = jwt.sign(
+  // 4. Generate JWT tokens
+  const access = jwt.sign(
     {
       type: "member",
       id: member.id,
       session_id: session.id,
-      created_at: createdAt,
+      created_at: new Date().toISOString(), // Fixed: use current time, not member.created_at
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh_token = jwt.sign(
+  const refresh = jwt.sign(
     {
       type: "member",
       id: member.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: createdAt,
+      created_at: new Date().toISOString(), // Fixed: use current time, not member.created_at
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 5. Return IAuthorized - remove all satisfies type assertions
+  // 5. Return IAuthorized — with correct type casting for date-time fields
   return {
-    id: member.id,
+    id: member.id as string & tags.Format<"uuid">,
+    email: null,
+    username: member.username,
+    display_name: member.display_name, // Already string type
+    bio: member.bio,
+    avatar_url: member.avatar_url,
+    karma_score: member.karma_score,
+    created_at: (member.created_at as string).toString() as string &
+      tags.Format<"date-time">,
+    updated_at: (member.updated_at as string).toString() as string &
+      tags.Format<"date-time">,
+    is_deleted: member.is_deleted,
+    access,
+    refresh,
     token: {
-      access: access_token,
-      refresh: refresh_token,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      access,
+      refresh,
+      expired_at: accessExpires.toISOString() as string &
+        tags.Format<"date-time">,
+      refreshable_until: refreshExpires.toISOString() as string &
+        tags.Format<"date-time">,
     },
-  };
+  } satisfies IRedditCommunityMember.IAuthorized;
 }

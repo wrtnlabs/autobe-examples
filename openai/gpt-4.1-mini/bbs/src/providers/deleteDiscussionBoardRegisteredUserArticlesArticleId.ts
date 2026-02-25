@@ -15,13 +15,11 @@ export async function deleteDiscussionBoardRegisteredUserArticlesArticleId(props
   registeredUser: RegistereduserPayload;
   articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
-    select: { id: true, registered_user_id: true },
-  });
-  if (!article) {
-    throw new HttpException("Not Found", 404);
-  }
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId },
+      select: { id: true, registered_user_id: true },
+    });
   if (article.registered_user_id !== props.registeredUser.id) {
     throw new HttpException("Forbidden", 403);
   }

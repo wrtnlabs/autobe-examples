@@ -15,10 +15,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getDiscussionBoardAdminsAdminId(props: {
   adminId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardAdmin> {
-  const admin = await MyGlobal.prisma.discussion_board_admins.findUnique({
-    where: { id: props.adminId },
-    ...DiscussionBoardAdminTransformer.select(),
-  });
-  if (!admin) throw new HttpException("Administrator not found", 404);
+  const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
+    {
+      where: { id: props.adminId },
+      ...DiscussionBoardAdminTransformer.select(),
+    },
+  );
   return await DiscussionBoardAdminTransformer.transform(admin);
 }

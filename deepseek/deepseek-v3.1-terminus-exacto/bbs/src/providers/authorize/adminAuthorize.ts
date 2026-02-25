@@ -12,11 +12,10 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query admin record using id field (admin is standalone, not extending User)
   const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null, // Soft-delete check
+      deleted_at: null,
     },
   });
 

@@ -7,9 +7,11 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace DiscussionBoardBanDurationAtSummaryTransformer {
+  // 1. Payload type first
   export type Payload = Prisma.discussion_board_ban_durationsGetPayload<
     ReturnType<typeof select>
   >;
+  // 2. select() function second
   export function select() {
     return {
       select: {
@@ -24,13 +26,13 @@ export namespace DiscussionBoardBanDurationAtSummaryTransformer {
       },
     } satisfies Prisma.discussion_board_ban_durationsFindManyArgs;
   }
+  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardBanDuration.ISummary> {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
       duration_hours: input.duration_hours,
       is_permanent: input.is_permanent,
     };

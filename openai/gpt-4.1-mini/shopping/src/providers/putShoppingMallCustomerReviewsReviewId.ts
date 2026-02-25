@@ -1,5 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallSaleReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSaleReview";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,52 +13,55 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallReviewTransformer } from "../transformers/ShoppingMallReviewTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putShoppingMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
   reviewId: string & tags.Format<"uuid">;
-  body: IShoppingMallSaleReview.IUpdate;
-}): Promise<IShoppingMallSaleReview> {
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUnique({
-    where: { id: props.reviewId },
-  });
-  if (!review) {
-    throw new HttpException("Review not found", 404);
-  }
-  if (review.customer_id !== props.customer.id) {
+  body: IShoppingMallReview.IUpdate;
+}): Promise<IShoppingMallReview> {
+  const existing =
+    await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+      where: { id: props.reviewId },
+      select: {
+        id: true,
+        customer_id: true,
+        rating: true,
+        body: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        order_id: true,
+        order_item_id: true,
+      },
+    });
+  if (existing.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if ("rating" in props.body && typeof props.body.rating === "number") {
-    if (props.body.rating < 1 || props.body.rating > 5) {
-      throw new HttpException("Rating must be between 1 and 5", 400);
-    }
-  }
+  await MyGlobal.prisma.shopping_mall_review_snapshots.create({
+    data: {
+      id: v4(),
+      review: { connect: { id: props.reviewId } },
+      rating: existing.rating,
+      body: existing.body ?? null,
+      created_at: toISOStringSafe(existing.created_at),
+      updated_at: toISOStringSafe(existing.updated_at),
+      deleted_at: existing.deleted_at
+        ? toISOStringSafe(existing.deleted_at)
+        : null,
+      snapshot_created_at: toISOStringSafe(new Date()),
+    },
+  });
   const updated = await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
     data: {
-      rating:
-        "rating" in props.body && typeof props.body.rating === "number"
-          ? props.body.rating
-          : undefined,
-      body:
-        "body" in props.body
-          ? props.body.body === undefined
-            ? null
-            : props.body.body
-          : undefined,
+      rating: props.body.rating,
+      body: props.body.body ?? null,
       updated_at: toISOStringSafe(new Date()),
     },
+    ...ShoppingMallReviewTransformer.select(),
   });
-  return {
-    id: updated.id,
-    rating: updated.rating,
-    body: updated.body,
-    customer_id: updated.customer_id,
-    order_id: updated.order_id,
-    order_item_id: updated.order_item_id,
-    created_at: updated.created_at,
-    updated_at: updated.updated_at,
-  };
+  return await ShoppingMallReviewTransformer.transform(updated);
 }

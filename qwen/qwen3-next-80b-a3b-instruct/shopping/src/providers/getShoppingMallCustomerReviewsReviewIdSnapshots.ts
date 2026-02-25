@@ -11,89 +11,43 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallReviewSnapshotTransformer } from "../transformers/ShoppingMallReviewSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallCustomerReviewsReviewIdSnapshots(props: {
   customer: CustomerPayload;
   reviewId: string;
+  page?: number;
+  limit?: number;
 }): Promise<IPageIShoppingMallReviewSnapshot> {
-  const { reviewId } = props;
-  // Extract pagination parameters from NestJS request context that is automatically provided
-  // The framework automatically parses query parameters into request query object
-  const page = 1;
-  const limit = 100;
-  // Apply pagination limits
-  const pageNumber = Math.max(1, page);
-  const limitNumber = Math.max(1, Math.min(limit, 1000));
-  const skip = (pageNumber - 1) * limitNumber;
-  // Query for all snapshots of the specified review
+  const { customer, reviewId, page = 1, limit = 10 } = props;
+  // Verify review exists (automatic 404 if not found)
+  await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+    where: { id: reviewId },
+  });
   const snapshots =
     await MyGlobal.prisma.shopping_mall_review_snapshots.findMany({
-      where: {
-        review_id: reviewId,
-      },
-      skip,
-      take: limitNumber,
-      orderBy: {
-        created_at: "asc",
-      },
-      select: {
-        id: true,
-        review_id: true,
-        actor_id: true,
-        rating: true,
-        text: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        actor_type: true,
-      },
+      where: { review_id: reviewId },
+      orderBy: { changed_at: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+      ...ShoppingMallReviewSnapshotTransformer.select(),
     });
-  // Count total snapshots for pagination
   const total = await MyGlobal.prisma.shopping_mall_review_snapshots.count({
-    where: {
-      review_id: reviewId,
-    },
+    where: { review_id: reviewId },
   });
-  // Transform snapshots - convert dates to strings and maintain correct types
-  const transformedSnapshots = snapshots.map((snapshot) => ({
-    id: snapshot.id satisfies string as string & tags.Format<"uuid">,
-    review_id: snapshot.review_id satisfies string as string &
-      tags.Format<"uuid">,
-    actor_id: snapshot.actor_id satisfies string as string &
-      tags.Format<"uuid">,
-    rating: snapshot.rating,
-    text: snapshot.text,
-    created_at: toISOStringSafe(
-      snapshot.created_at,
-    ) satisfies string as string & tags.Format<"date-time">,
-    updated_at: toISOStringSafe(
-      snapshot.updated_at,
-    ) satisfies string as string & tags.Format<"date-time">,
-    deleted_at:
-      snapshot.deleted_at === null
-        ? null
-        : (toISOStringSafe(snapshot.deleted_at) satisfies string as string &
-            tags.Format<"date-time">),
-    actor_type: snapshot.actor_type,
-  }));
-  // Return paginated response with correct type
+  const data = await ArrayUtil.asyncMap(
+    snapshots,
+    ShoppingMallReviewSnapshotTransformer.transform,
+  );
   return {
-    data: transformedSnapshots,
+    data,
     pagination: {
-      current: pageNumber satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      limit: limitNumber satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      records: total satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      pages: Math.ceil(total / limitNumber) satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-    },
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

@@ -45,15 +45,23 @@ model ecommerce_categories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   parent ecommerce_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_categories[]
   subcategories ecommerce_categories[] @relation("recursive")
   products ecommerce_products[]
   adminOperations ecommerce_admin_category_operations[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
   @@index([parent_category_id, created_at])
   @@index([created_at])
@@ -125,11 +133,16 @@ model ecommerce_products {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   category ecommerce_categories @relation(fields: [ecommerce_category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_products[]
   images ecommerce_product_images[]
   variants ecommerce_product_variants[]
@@ -139,6 +152,9 @@ model ecommerce_products {
   reviews ecommerce_reviews[]
   administrativeActions ecommerce_administrative_action_of_products[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_seller_id, name])
   @@index([ecommerce_category_id, created_at])
 }
@@ -180,10 +196,14 @@ model ecommerce_product_images {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_product_id, position])
   @@index([ecommerce_product_id, created_at])
 }
@@ -246,10 +266,15 @@ model ecommerce_product_variants {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationshipVariants ecommerce_metadata_registry_relationship_of_variants[]
   inventoryRecords ecommerce_inventory_records[]
   snapshots ecommerce_variant_snapshots[]
@@ -257,6 +282,9 @@ model ecommerce_product_variants {
   orderItems ecommerce_order_items[]
   orderItemPurchaseSnapshots ecommerce_order_item_purchase_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([sku])
   @@index([ecommerce_product_id, created_at])
   @@index([quantity])
@@ -320,15 +348,23 @@ model ecommerce_inventory_records {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   variant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   order ecommerce_orders? @relation(fields: [ecommerce_order_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots ecommerce_inventory_snapshots[]
   modificationRestorations ecommerce_modification_inventory_restorations[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_product_variant_id, created_at], map: "ecommerce_inventory_records_ecommerce_product_variant__91db9faf")
   @@index([ecommerce_seller_id, created_at])
@@ -404,10 +440,14 @@ model ecommerce_product_snapshots {
   change_reason String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([ecommerce_product_id, created_at])
   @@index([seller_id, created_at])
   @@index([category_id, created_at])
@@ -489,17 +529,20 @@ model ecommerce_variant_snapshots {
   operation_type String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   variant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers? @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers? @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([ecommerce_customer_id])
   @@index([ecommerce_seller_id])
   @@index([ecommerce_administrator_id])
-  
   // spellchecker: ignore-next-line
   @@index([ecommerce_product_variant_id, created_at], map: "ecommerce_variant_snapshots_ecommerce_product_variant__12e766f8")
   @@index([created_at])
@@ -561,10 +604,14 @@ model ecommerce_inventory_snapshots {
   new_reason String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   inventoryRecord ecommerce_inventory_records @relation(fields: [ecommerce_inventory_record_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_inventory_record_id, created_at], map: "ecommerce_inventory_snapshots_ecommerce_inventory_reco_2ae5f7bb")
   // spellchecker: ignore-next-line
@@ -619,10 +666,14 @@ model ecommerce_seller_profile_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_profile_snapshots_ecommerce_seller_id_dcce15a3")
 }

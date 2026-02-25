@@ -9,25 +9,30 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace CommunityPlatformCommentCollector {
   export async function collect(props: {
-    body: ICommunityPlatformComment.ICreate & {
-      content: string;
-    };
+    body: ICommunityPlatformComment.ICreate;
     user: IEntity;
-    post: IEntity;
-    parent?: IEntity | null;
   }) {
-    const id = v4();
-    const now = new Date();
+    const id: string = v4();
     return {
       id,
       content: props.body.content,
       is_deleted: false,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       user: { connect: { id: props.user.id } },
-      post: { connect: { id: props.post.id } },
-      parent: props.parent ? { connect: { id: props.parent.id } } : undefined,
+      post: { connect: { id: props.body.postId } },
+      parent: props.body.parentId
+        ? { connect: { id: props.body.parentId } }
+        : undefined,
+      reportedContentReports: undefined,
+      userVotes: undefined,
+      commentReports: undefined,
+      moderationLogs: undefined,
+      children: undefined,
+      commentVotes: undefined,
+      commentSortOrders: undefined,
+      deletionRecords: undefined,
     } satisfies Prisma.community_platform_commentsCreateInput;
   }
 }

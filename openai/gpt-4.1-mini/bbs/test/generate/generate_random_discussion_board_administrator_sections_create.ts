@@ -1,5 +1,11 @@
 import api from "@ORGANIZATION/PROJECT-api";
+import type { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
+import type { IDiscussionBoardAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorGrade";
+import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import type { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import type { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import type { IDiscussionBoardSectionAdminLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionAdminLog";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -17,12 +23,10 @@ export async function generate_random_discussion_board_administrator_sections_cr
 ): Promise<IDiscussionBoardSection> {
   const prepared: IDiscussionBoardSection.ICreate =
     prepare_random_discussion_board_section(props.body);
-  const result: IDiscussionBoardSection =
-    await api.functional.discussionBoard.administrator.sections.create(
-      connection,
-      {
-        body: prepared,
-      },
-    );
-  return result;
+  return await api.functional.discussionBoard.administrator.sections.create(
+    connection,
+    {
+      body: prepared,
+    },
+  );
 }

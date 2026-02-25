@@ -1,4 +1,7 @@
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardCommentPaginationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCommentPaginationSetting";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,61 +21,67 @@ export async function putDiscussionBoardAdminArticlesArticleIdCommentPaginationS
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardCommentPaginationSetting.IUpdate;
 }): Promise<IDiscussionBoardCommentPaginationSetting> {
-  // Verify article exists
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
+  // 1. Verify article exists
+  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+    where: { id: props.articleId, deleted_at: null },
   });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
-  }
-  // Check if pagination settings exist
+  // 2. Check if pagination settings exist using discussion_board_article_id field (unique constraint)
   const existingSettings =
     await MyGlobal.prisma.discussion_board_comment_pagination_settings.findUnique(
       {
         where: { discussion_board_article_id: props.articleId },
       },
     );
-  if (!existingSettings) {
-    throw new HttpException(
-      "Comment pagination settings not found for this article",
-      404,
-    );
+  const now = new Date(Date.now());
+  let result;
+  if (existingSettings) {
+    // 3a. Update existing settings
+    const updateData: Prisma.discussion_board_comment_pagination_settingsUpdateInput =
+      {
+        updated_at: now,
+        last_comment_count_update: now,
+      };
+    // Only update comments_per_page if provided
+    if (props.body.comments_per_page !== undefined) {
+      updateData.comments_per_page = props.body.comments_per_page;
+    }
+    result =
+      await MyGlobal.prisma.discussion_board_comment_pagination_settings.update(
+        {
+          where: { id: existingSettings.id },
+          data: updateData,
+          ...DiscussionBoardCommentPaginationSettingTransformer.select(),
+        },
+      );
+  } else {
+    // 3b. Create new settings using article relation
+    const commentsPerPage = props.body.comments_per_page ?? 50;
+    // Get total comment count
+    const totalCommentCount =
+      await MyGlobal.prisma.discussion_board_comments.count({
+        where: {
+          article: { id: props.articleId },
+          deleted_at: null,
+        },
+      });
+    result =
+      await MyGlobal.prisma.discussion_board_comment_pagination_settings.create(
+        {
+          data: {
+            id: v4(),
+            article: { connect: { id: props.articleId } },
+            comments_per_page: commentsPerPage,
+            total_comment_count: totalCommentCount,
+            last_comment_count_update: now,
+            created_at: now,
+            updated_at: now,
+          } satisfies Prisma.discussion_board_comment_pagination_settingsCreateInput,
+          ...DiscussionBoardCommentPaginationSettingTransformer.select(),
+        },
+      );
   }
-  // Validate comments_per_page range if provided
-  if (
-    props.body.comments_per_page !== undefined &&
-    (props.body.comments_per_page < 1 || props.body.comments_per_page > 100)
-  ) {
-    throw new HttpException("Comments per page must be between 1 and 100", 400);
-  }
-  // Validate total_comment_count if provided
-  if (
-    props.body.total_comment_count !== undefined &&
-    props.body.total_comment_count < 0
-  ) {
-    throw new HttpException("Total comment count cannot be negative", 400);
-  }
-  // Prepare update data
-  const updateData: Prisma.discussion_board_comment_pagination_settingsUpdateInput =
-    {
-      updated_at: toISOStringSafe(new Date()),
-    };
-  // Add optional fields if provided
-  if (props.body.comments_per_page !== undefined) {
-    updateData.comments_per_page = props.body.comments_per_page;
-  }
-  if (props.body.total_comment_count !== undefined) {
-    updateData.total_comment_count = props.body.total_comment_count;
-    updateData.last_comment_count_update = toISOStringSafe(new Date());
-  }
-  // Update the settings
-  const updatedSettings =
-    await MyGlobal.prisma.discussion_board_comment_pagination_settings.update({
-      where: { id: existingSettings.id },
-      data: updateData,
-      ...DiscussionBoardCommentPaginationSettingTransformer.select(),
-    });
+  // 4. Transform and return
   return await DiscussionBoardCommentPaginationSettingTransformer.transform(
-    updatedSettings,
+    result,
   );
 }

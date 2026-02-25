@@ -17,7 +17,6 @@ export namespace DiscussionBoardCommentRateLimitAtSummaryTransformer {
       select: {
         id: true,
         submitted_at: true,
-        created_at: true,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_comment_rate_limitsFindManyArgs;

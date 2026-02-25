@@ -11,10 +11,18 @@ import typia, { tags } from "typia";
 export async function authorize_citizen_join(
   connection: api.IConnection,
   props: {
-    body: IEconomicBoardCitizen.IJoin;
+    body?: IEconomicBoardCitizen.IJoin;
   },
 ): Promise<IEconomicBoardCitizen.IAuthorized> {
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    display_name: props.body?.display_name ?? RandomGenerator.name(),
+    bio:
+      props.body?.bio ??
+      RandomGenerator.paragraph({ sentences: 1, wordMin: 5, wordMax: 10 }),
+  } satisfies IEconomicBoardCitizen.IJoin;
   return await api.functional.economicBoard.auth.citizen.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

@@ -15,11 +15,10 @@ export async function authorize_user_join(
   },
 ): Promise<ITodoAppUser.IAuthorized> {
   const joinInput = {
-    // ITodoAppUser.IJoin is an empty object, so we don't need to provide any fields
-    // but we must still pass an object that satisfies the type
-    ...props.body,
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
   } satisfies ITodoAppUser.IJoin;
-  return await api.functional.todoApp.auth.user.join(connection, {
+  return await api.functional.todoApp.auth.join(connection, {
     body: joinInput,
   });
 }

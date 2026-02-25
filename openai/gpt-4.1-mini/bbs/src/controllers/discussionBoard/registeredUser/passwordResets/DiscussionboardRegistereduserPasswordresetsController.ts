@@ -3,52 +3,108 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardRegisteredUserPasswordReset } from "../../../../api/structures/IDiscussionBoardRegisteredUserPasswordReset";
-import { IPageIDiscussionBoardRegisteredUserPasswordReset } from "../../../../api/structures/IPageIDiscussionBoardRegisteredUserPasswordReset";
 import { RegistereduserAuth } from "../../../../decorators/RegistereduserAuth";
 import { RegistereduserPayload } from "../../../../decorators/payload/RegistereduserPayload";
-import { getDiscussionBoardRegisteredUserPasswordResetsId } from "../../../../providers/getDiscussionBoardRegisteredUserPasswordResetsId";
+import { deleteDiscussionBoardRegisteredUserPasswordResetsPasswordResetId } from "../../../../providers/deleteDiscussionBoardRegisteredUserPasswordResetsPasswordResetId";
+import { getDiscussionBoardRegisteredUserPasswordResetsPasswordResetId } from "../../../../providers/getDiscussionBoardRegisteredUserPasswordResetsPasswordResetId";
 import { patchDiscussionBoardRegisteredUserPasswordResets } from "../../../../providers/patchDiscussionBoardRegisteredUserPasswordResets";
+import { postDiscussionBoardRegisteredUserPasswordResets } from "../../../../providers/postDiscussionBoardRegisteredUserPasswordResets";
 
 @Controller("/discussionBoard/registeredUser/passwordResets")
 export class DiscussionboardRegistereduserPasswordresetsController {
   /**
-   * Retrieve a filtered and paginated list of password reset tokens across all user roles in the discussion board system.
+   * Initiates a password reset request by generating a secure token associated with the provided email address. This operation supports users who have forgotten their passwords and need to reset them securely.
    *
-   * This administration-only endpoint supports authorized administrators and super administrators to audit and monitor active password reset tokens issued to registered users, administrators, and super administrators.
+   * This API endpoint accepts an email address as input and verifies whether it is registered in the system. If registered, it generates a password reset token and stores it in the appropriate password reset table in the database.
    *
-   * It allows filtering by token expiration status, associated user type, and supports cursor-based pagination for efficient browsing.
+   * No authentication is required to access this endpoint to facilitate ease of password recovery.
    *
-   * The response provides a paginated summary excluding sensitive token strings for security.
+   * The response returns the details of the password reset token or a success acknowledgment, which the client can use to guide the next steps in password reset flow.
    *
-   * Requests must be made by authorized administrator roles only. This endpoint is not intended for regular registered user access.
+   * Error handling must cover cases of invalid email format and unregistered emails with appropriate error responses.
    *
-   * Security is enforced to limit access to administrative users.
-   *
-   * Related operations include account management and session listing APIs for all user roles.
-   *
-   * All data is sourced from the discussion_board_registered_user_password_resets, discussion_board_administrator_password_resets, and discussion_board_super_administrator_password_resets tables.
+   * This operation is essential for user account security and streamlined password recovery processes.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for password reset tokens.
+   * @param body Payload containing the user's email address for password reset initiation
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor registeredUser
-   * @x-autobe-specification Implement service logic to query password reset tokens from all relevant tables: discussion_board_registered_user_password_resets, discussion_board_administrator_password_resets, and discussion_board_super_administrator_password_resets.
-   * Include JOIN operations to fetch related user/administrator IDs for display.
-   * Apply filtering logic based on request body search criteria including token expiration status and user type filters.
-   * Exclude sensitive fields like raw token strings from response.
-   * Return results in cursor-based pagination format as per IPageIDiscussionBoardRegisteredUserPasswordReset.ISummary schema.
-   * Ensure role-based access control is enforced, restricting this operation to administrator and super administrator roles.
-   * Handle potential edge cases such as empty results, invalid filter values, and expired tokens.
-   * Log access and search operations for auditing purposes as per system logging policies.
+   * @x-autobe-specification On receiving the POST request with an email address, validate the email format. Query the user tables to verify the existence of the email among registered users, administrators, or super administrators.
+   *
+   * If the email exists, generate a unique, secure reset token and record it in the corresponding password reset table with an expiration timestamp. The token must be cryptographically secure and follow system policies.
+   *
+   * Return the password reset token details in the response for confirmation.
+   *
+   * If the email does not exist, return a standardized error response indicating no such email is registered.
+   *
+   * Log the password reset request event for auditing and monitoring.
+   *
+   * This operation should be idempotent and secure against enumeration attacks by not revealing whether the email exists in error messages.
+   *
+   * Handle database transaction atomically to ensure data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Post()
+  public async createPasswordReset(
     @RegistereduserAuth()
     registeredUser: RegistereduserPayload,
     @TypedBody()
-    body: IDiscussionBoardRegisteredUserPasswordReset.IRequest,
-  ): Promise<IPageIDiscussionBoardRegisteredUserPasswordReset.ISummary> {
+    body: IDiscussionBoardRegisteredUserPasswordReset.ICreate,
+  ): Promise<IDiscussionBoardRegisteredUserPasswordReset.ICreate> {
+    try {
+      return await postDiscussionBoardRegisteredUserPasswordResets({
+        registeredUser,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset a user's password using a valid password reset token.
+   *
+   * This operation allows a user to securely update their password provided they have a valid reset token that proves their identity and authorization to change the password.
+   *
+   * The system validates the reset token against stored password reset requests to ensure it is active and has not expired. On successful validation, the user's password is updated securely using appropriate hashing algorithms.
+   *
+   * This endpoint is critical for user account recovery scenarios where users have forgotten their passwords or need emergency password resets.
+   *
+   * Request body contains the reset token and the new password. The endpoint returns a success flag indicating whether the reset was successful.
+   *
+   * No additional authentication is required as possession of the valid reset token is sufficient for authorization.
+   *
+   * Related API operations include POST /auth/change-password for password change of authenticated users, and POST /auth/login for authentication.
+   *
+   * @param connection
+   * @param body Password reset token and new password
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor registeredUser
+   * @x-autobe-specification Implement service logic to accept a reset token and new password in the request body. Validate the token exists and is not expired in the password reset tables (discussion_board_registered_user_password_resets, discussion_board_administrator_password_resets, discussion_board_super_administrator_password_resets).
+   *
+   * If valid, hash the new password using secure algorithm and update the corresponding user's password record.
+   *
+   * Ensure to invalidate the used reset token to prevent reuse.
+   *
+   * Return success status and appropriate error messages for invalid or expired tokens.
+   *
+   * Log actions for security and audit purposes.
+   *
+   * Handle edge cases such as malformed tokens or concurrent reset attempts.
+   *
+   * No user authentication required as token suffices for identity verification.
+   *
+   * This operation integrates with audit logging and notification systems to track resets and alert users if necessary.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async resetPassword(
+    @RegistereduserAuth()
+    registeredUser: RegistereduserPayload,
+    @TypedBody()
+    body: IDiscussionBoardRegisteredUserPasswordReset.IPatch,
+  ): Promise<IDiscussionBoardRegisteredUserPasswordReset> {
     try {
       return await patchDiscussionBoardRegisteredUserPasswordResets({
         registeredUser,
@@ -61,53 +117,101 @@ export class DiscussionboardRegistereduserPasswordresetsController {
   }
 
   /**
-   * Retrieve a single password reset token by its unique ID.
+   * Retrieve detailed information about a specific password reset token identified by its unique UUID. This token is used during password recovery workflows to securely manage password reset requests. The response includes token status, expiration, and associated user information if applicable.
    *
-   * This operation fetches detailed information about a specific password reset token record within the discussion board platform.
+   * Access to this endpoint is typically restricted to authorized components verifying the token's validity before allowing password change.
    *
-   * Password reset tokens represent secure, time-limited tokens enabling users (registered users, administrators, super administrators) to reset their account passwords.
+   * This operation directly maps to the discussion_board_registered_user_password_resets or similar entity which stores reset tokens with expiration and status fields to enforce secure password resets.
    *
-   * The token entities are linked to their respective owner accounts and include audit timestamps indicating creation, update, expiration, and soft deletion status.
+   * The API client must supply the passwordResetId as a path parameter in UUID format to query the specific reset token.
    *
-   * Access to this endpoint should be restricted to authorized administrators and password recovery services to maintain system security.
+   * This is a read-only operation, using GET method and returns the password reset token entity if found or an error if the token is invalid or expired.
    *
-   * This read-only operation ensures that the token validity and relationship to the owner can be securely verified without modification capabilities.
-   *
-   * Common usage scenarios involve password reset workflows on user request or administrative inspection.
+   * Related operations include those for requesting password resets and updating the password post validation.
    *
    * @param connection
-   * @param id Unique identifier (UUID) of the password reset token record.
+   * @param passwordResetId Unique identifier for the password reset token in UUID format
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor registeredUser
-   * @x-autobe-specification Query the database password reset tables (discussion_board_registered_user_password_resets, discussion_board_administrator_password_resets, discussion_board_super_administrator_password_resets) to find a record matching the given UUID 'id'.
-   *
-   * Include joins to fetch related owner user details if necessary for validation.
-   *
-   * Return the record including all fields: id, owner id, token, expiration timestamp, created_at, updated_at, deleted_at.
-   *
-   * Ensure the query is optimized for secure retrieval of sensitive password reset data.
-   *
-   * Handle soft deletion by excluding records with non-null deleted_at, or clearly indicate status in response.
-   *
-   * Implement role-based authorization checks externally to restrict API access.
-   *
-   * No request body is required as this is a GET request.
-   *
-   * Respond with a DTO type corresponding to IDiscussionBoardRegisteredUserPasswordReset or similar based on owner type.
+   * @x-autobe-specification Query the discussion_board_registered_user_password_resets table using passwordResetId as the primary key. Validate existence and expiry of the token. Return the full password reset entity data including user reference and expiration timestamp. Handle errors for invalid or expired tokens gracefully. No modifications are performed in this operation. Security validations and authorization checks are enforced at service layers before allowing access to this sensitive token data.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":id")
+  @TypedRoute.Get(":passwordResetId")
   public async at(
     @RegistereduserAuth()
     registeredUser: RegistereduserPayload,
-    @TypedParam("id")
-    id: string & tags.Format<"uuid">,
+    @TypedParam("passwordResetId")
+    passwordResetId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardRegisteredUserPasswordReset> {
     try {
-      return await getDiscussionBoardRegisteredUserPasswordResetsId({
-        registeredUser,
-        id,
-      });
+      return await getDiscussionBoardRegisteredUserPasswordResetsPasswordResetId(
+        {
+          registeredUser,
+          passwordResetId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * This API operation permanently deletes a password reset token identified by its unique UUID of a registered user from the system.
+   *
+   * This endpoint is intended to be used by authorized registered users or administrators to revoke or remove password reset tokens to maintain secure password reset functionality.
+   *
+   * The `passwordResetId` path parameter is a UUID that uniquely identifies the password reset token record in the `discussion_board_registered_user_password_resets` table.
+   *
+   * This deletion is irreversible, and proper authentication and authorization must be enforced by the system.
+   *
+   * No request body is required for this operation.
+   *
+   * A successful operation returns no content (204 No Content).
+   *
+   * Commonly, this API is used in conjunction with operations that create or list password reset tokens.
+   *
+   * Security considerations require audit logging of this operation to trace token revocations.
+   *
+   * Related database entities include `discussion_board_registered_user_password_resets` which should be referenced in implementation and documentation context.
+   *
+   * @param connection
+   * @param passwordResetId The unique identifier of the password reset token to be deleted.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor registeredUser
+   * @x-autobe-specification Perform a secure deletion of the password reset token identified by passwordResetId.
+   *
+   * - Validate the passwordResetId as a UUID format in path.
+   * - Authenticate and authorize the actor initiating the request.
+   * - Query the corresponding password reset token record in the database.
+   * - If not found, return a 404 Not Found error.
+   * - If found, delete the record permanently in a transactional context.
+   * - Log the deletion event for audit purposes including actor identity and timestamp.
+   * - Return 204 No Content HTTP status indicating successful removal.
+   *
+   * No request body needed.
+   *
+   * No response body is returned.
+   *
+   * Ensure audit logging and security checks are performed.
+   *
+   * This operation is critical in maintaining password reset token lifecycle and system security.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":passwordResetId")
+  public async erasePasswordReset(
+    @RegistereduserAuth()
+    registeredUser: RegistereduserPayload,
+    @TypedParam("passwordResetId")
+    passwordResetId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardRegisteredUserPasswordResetsPasswordResetId(
+        {
+          registeredUser,
+          passwordResetId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

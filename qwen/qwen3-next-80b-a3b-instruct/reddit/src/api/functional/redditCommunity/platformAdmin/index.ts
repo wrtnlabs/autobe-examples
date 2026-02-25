@@ -1,6 +1,9 @@
 export * as posts from "./posts/index";
-export * as bans from "./bans/index";
-export * as communities from "./communities/index";
-export * as moderation_actions from "./moderation_actions/index";
 export * as reports from "./reports/index";
-export * as analytics from "./analytics/index";
+export * as communities from "./communities/index";
+export * as members from "./members/index";
+export * as users from "./users/index";
+export * as community_owners from "./community_owners/index";
+export * as community_moderators from "./community_moderators/index";
+export * as platform_admins from "./platform_admins/index";
+export * as admin from "./admin/index";

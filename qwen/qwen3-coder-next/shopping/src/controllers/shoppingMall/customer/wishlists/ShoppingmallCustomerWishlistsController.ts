@@ -2,64 +2,43 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IShoppingMallWishlist } from "../../../../api/structures/IShoppingMallWishlist";
-import { IShoppingMallWishlistHistory } from "../../../../api/structures/IShoppingMallWishlistHistory";
+import { IPageIShoppingMallWishlistItem } from "../../../../api/structures/IPageIShoppingMallWishlistItem";
+import { IShoppingMallCustomerWishlist } from "../../../../api/structures/IShoppingMallCustomerWishlist";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
-import { deleteShoppingMallCustomerWishlistsWishlistId } from "../../../../providers/deleteShoppingMallCustomerWishlistsWishlistId";
-import { getShoppingMallCustomerWishlistsWishlistIdHistory } from "../../../../providers/getShoppingMallCustomerWishlistsWishlistIdHistory";
+import { deleteShoppingMallCustomerWishlistsWishlistItemId } from "../../../../providers/deleteShoppingMallCustomerWishlistsWishlistItemId";
 import { patchShoppingMallCustomerWishlists } from "../../../../providers/patchShoppingMallCustomerWishlists";
 import { postShoppingMallCustomerWishlists } from "../../../../providers/postShoppingMallCustomerWishlists";
 
 @Controller("/shoppingMall/customer/wishlists")
 export class ShoppingmallCustomerWishlistsController {
   /**
-   * Add a product to the customer's wishlist.
+   * Add a product to the authenticated customer's wishlist.
    *
-   * This API endpoint allows authenticated customers to add products to their personal wishlist. The wishlist system enables customers to save products for potential future purchase while maintaining product interest tracking over time.
+   * This endpoint allows customers to save products for future consideration by adding them to their personal wishlist. When a product is added to the wishlist, it creates a persistent record linking the customer to the product for later reference.
    *
-   * ## Security Considerations
+   * The operation validates that:
+   * - The customer is authenticated and authorized
+   * - The product exists and is available
+   * - The product is not already in the customer's wishlist
+   * - The product has not been deleted by its seller
    *
-   * - Only authenticated customers can access this endpoint
-   * - The system automatically associates the product with the authenticated customer
-   * - Customers cannot add products to other customers' wishlists
-   *
-   * ## Database Integration
-   *
-   * The operation creates a record in the shopping_mall_wishlists table, which maintains:
-   * - The customer's unique identifier
-   * - The product being added to the wishlist
-   * - Timestamps for creation and last update
-   * - Soft deletion support for historical preservation
-   *
-   * ## Business Rules
-   *
-   * - Duplicate entries are prevented through composite unique constraint
-   * - Attempting to add the same product twice returns a conflict error
-   * - Products remain in wishlist until explicitly removed by the customer
-   *
-   * ## Related Operations
-   *
-   * - `GET /wishlists`: Retrieve customer's entire wishlist
-   * - `DELETE /wishlists/{productId}`: Remove product from wishlist
-   * - `GET /wishlists/availability`: Check wishlist product availability status
+   * Upon successful addition, the product becomes visible in the customer's wishlist with full product information including name, main image, price, and availability status.
    *
    * @param connection
-   * @param body Product information for wishlist entry
+   * @param body Product addition request to customer's wishlist
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Create a new wishlist entry for the authenticated customer and specified product.
+   * @x-autobe-specification Create a new wishlist item in the shopping_mall_customer_wishlists table.
    *
-   * 1. Extract the authenticated customer's ID from the JWT token
-   * 2. Validate the product_id from the request body exists in the database
-   * 3. Check for duplicate entry using the composite unique constraint (customer_id, product_id)
-   * 4. Create a new shopping_mall_wishlist record with:
-   *    - customer_id from the authenticated user
-   *    - product_id from the request body
-   *    - Timestamps for created_at and updated_at
-   * 5. Return the created wishlist entry
+   * 1. Extract customer ID from authenticated session
+   * 2. Validate product ID exists and is active
+   * 3. Check wishlist uniqueness constraint (customer + product)
+   * 4. Create wishlist item record with added_at timestamp
+   * 5. Return created wishlist item with full product details
+   * 6. Handle uniqueness constraint violation with appropriate error
    *
-   * Handle duplicate entries by returning 409 Conflict with appropriate error code.
+   * The operation enforces the business rule that customers cannot add the same product to their wishlist multiple times. The product should not be deleted or inactive when adding to wishlist.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -67,8 +46,8 @@ export class ShoppingmallCustomerWishlistsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallWishlist.ICreate,
-  ): Promise<IShoppingMallWishlist> {
+    body: IShoppingMallCustomerWishlist.ICreate,
+  ): Promise<IShoppingMallCustomerWishlist> {
     try {
       return await postShoppingMallCustomerWishlists({
         customer,
@@ -81,34 +60,30 @@ export class ShoppingmallCustomerWishlistsController {
   }
 
   /**
-   * Update customer wishlist items with partial modifications.
+   * Retrieve a paginated list of customer wishlist items.
    *
-   * This API endpoint allows customers to update their wishlist configurations using partial data updates. It supports various wishlist management operations including updating product quantities, modifying wishlist metadata, and managing wishlist items.
+   * This operation fetches all products that the authenticated customer has added to their wishlist. Each wishlist item includes comprehensive product information such as name, main image, current price, stock status, and seller shop name.
    *
-   * ## Security Considerations
-   *
-   * - Only the wishlist owner can modify their wishlist
-   * - Customer authentication required via Bearer token
-   * - Authorization enforced at service layer
-   *
-   * ## Database Integration
-   *
-   * This operation updates records in the shopping_mall_wishlists table and may create history records in shopping_mall_wishlist_histories for audit trail purposes.
+   * The wishlist is displayed in paginated format with configurable page sizes, allowing customers to browse their saved products efficiently. Products that are out of stock or have been deleted by their seller are marked as unavailable to prevent customer confusion.
    *
    * @param connection
-   * @param body Partial wishlist update request containing fields to modify
+   * @param body Pagination parameters for wishlist list
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update wishlist items by processing partial data updates. The service layer should validate customer ownership, apply partial updates to wishlist records, and create audit history entries for the modification. Handle optimistic locking for concurrent updates.
+   * @x-autobe-specification Query shopping_mall_customer_wishlists table joined with shopping_mall_products table.
+   * Include product details, main image URL, current price, and stock status.
+   * Mark products as unavailable if is_deleted is true or no in-stock variants exist.
+   * Return paginated results with configurable page size (default 20 items per page).
+   * Apply join with shopping_mall_product_variants to check stock availability.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async update(
+  public async index(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallWishlist.IRequest,
-  ): Promise<IShoppingMallWishlist> {
+    body: IPageIShoppingMallWishlistItem.IRequest,
+  ): Promise<IPageIShoppingMallWishlistItem.ISummary> {
     try {
       return await patchShoppingMallCustomerWishlists({
         customer,
@@ -121,84 +96,36 @@ export class ShoppingmallCustomerWishlistsController {
   }
 
   /**
-   * Remove a product from customer's wishlist.
+   * Remove a product from the customer's wishlist.
    *
-   * This endpoint permanently removes a specific wishlist entry from the system. When a customer deletes a wishlist item, the product reference is removed from their wishlist, but the product itself remains available in the catalog. The deletion is permanent and cannot be undone.
+   * This operation permanently deletes a wishlist item record when the customer requests removal of a specific product from their wishlist. The system validates that the customer owns the wishlist item before deletion.
    *
-   * **Customer Ownership**: Customers can only delete their own wishlist items. The system verifies that the wishlist entry's shopping_mall_customer_id matches the authenticated customer's ID.
-   *
-   * **Admin Access**: Administrators and super administrators can delete any wishlist item for platform management purposes.
-   *
-   * **Related Operations**:
-   * - `GET /customers/me/wishlist` retrieves the complete customer wishlist
-   * - `POST /customers/me/wishlist` adds new products to the wishlist
-   * - `GET /customers/me/wishlist/availability` checks current availability status of wishlist items
-   *
-   * **Business Logic**:
-   * - Wishlist items can be deleted at any time without restrictions
-   * - Deletion does not affect product availability or inventory
-   * - The system maintains audit trails of all wishlist modifications
+   * The operation automatically handles product availability - if a product is deleted by its seller, the system removes it from all customer wishlists through a separate automated process.
    *
    * @param connection
-   * @param wishlistId The unique identifier of the wishlist item to delete
+   * @param wishlistItemId Wishlist item's unique identifier (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Delete a specific wishlist entry from shopping_mall_wishlists table by its primary key id.
+   * @x-autobe-specification Delete wishlist item from shopping_mall_customer_wishlists table.
+   * 1. Find wishlist item by id and customer_id (from JWT)
+   * 2. Validate wishlist item exists and belongs to customer
+   * 3. Delete wishlist item record
+   * 4. Return success response
    *
-   * 1. Retrieve wishlist entry by id from shopping_mall_wishlists table
-   * 2. Verify customer ownership: check that shopping_mall_customer_id matches authenticated customer's ID (or admin has override)
-   * 3. Delete the wishlist entry record
-   * 4. Return success response with no body
-   * 5. Handle errors: wishlist not found, customer not authorized, database errors
+   * Edge case: Product may have been deleted by seller - wishlist item cleanup handled by scheduled job, not this endpoint.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":wishlistId")
+  @TypedRoute.Delete(":wishlistItemId")
   public async erase(
     @CustomerAuth()
     customer: CustomerPayload,
-    @TypedParam("wishlistId")
-    wishlistId: string,
+    @TypedParam("wishlistItemId")
+    wishlistItemId: string,
   ): Promise<void> {
     try {
-      return await deleteShoppingMallCustomerWishlistsWishlistId({
+      return await deleteShoppingMallCustomerWishlistsWishlistItemId({
         customer,
-        wishlistId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve the complete history of additions and removals for a specific wishlist item.
-   *
-   * This endpoint provides a chronological log of all actions performed on a wishlist item, including when items were added to the wishlist and when they were removed. The history is useful for tracking customer preferences over time and understanding wishlist behavior patterns.
-   *
-   * The response includes detailed information about each historical action including the action type (added or removed), timestamp of the action, and the complete state of the wishlist item at that point in time.
-   *
-   * @param connection
-   * @param wishlistId Target wishlist's unique identifier (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_wishlist_histories table to retrieve all history records for the specified wishlist_id.
-   * Sort results by created_at timestamp in descending order (newest first) to show most recent actions first.
-   * Include only the id, wishlist_id, action_type, and created_at fields in the response.
-   * Handle case where no history records exist by returning empty array.
-   * Verify that the wishlist exists before querying history.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":wishlistId/history")
-  public async history(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("wishlistId")
-    wishlistId: string,
-  ): Promise<IShoppingMallWishlistHistory> {
-    try {
-      return await getShoppingMallCustomerWishlistsWishlistIdHistory({
-        customer,
-        wishlistId,
+        wishlistItemId,
       });
     } catch (error) {
       console.log(error);

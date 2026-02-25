@@ -22,6 +22,9 @@ export namespace DiscussionBoardBanRecordAtRevokeTransformer {
         revoked_reason: true,
         created_at: true,
         updated_at: true,
+        banAppeals: true,
+        banRecordOfAdmin: true,
+        superAdminBanRecord: true,
       },
     } satisfies Prisma.discussion_board_ban_recordsFindManyArgs;
   }
@@ -29,7 +32,7 @@ export namespace DiscussionBoardBanRecordAtRevokeTransformer {
     input: Payload,
   ): Promise<IDiscussionBoardBanRecord.IRevoke> {
     return {
-      revoked_reason: input.revoked_reason ?? undefined,
+      revoked_reason: input.revoked_reason,
     };
   }
 }

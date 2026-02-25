@@ -18,12 +18,15 @@ export namespace EcommerceProductImageTransformer {
       select: {
         id: true,
         image_url: true,
-        caption: true,
-        is_primary: true,
+        is_main: true,
+        position: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         product: EcommerceProductAtSummaryTransformer.select(),
+        snapshots: {
+          select: {},
+        },
       },
     } satisfies Prisma.ecommerce_product_imagesFindManyArgs;
   }
@@ -33,11 +36,11 @@ export namespace EcommerceProductImageTransformer {
     return {
       id: input.id,
       image_url: input.image_url,
-      caption: input.caption ?? null,
-      is_primary: input.is_primary ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      is_main: input.is_main,
+      position: input.position,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       product: await EcommerceProductAtSummaryTransformer.transform(
         input.product,
       ),

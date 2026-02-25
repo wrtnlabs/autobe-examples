@@ -10,5 +10,16 @@ export async function guestAuthorize(request: { headers: { authorization?: strin
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
+  const guest = await MyGlobal.prisma.community_platform_guests.findFirst({
+    where: {
+      id: payload.id,
+      deleted_at: null
+    },
+  });
+
+  if (guest === null) {
+    throw new ForbiddenException("Guest not found or deleted");
+  }
+
   return payload;
 }

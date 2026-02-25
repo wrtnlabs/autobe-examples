@@ -10,8 +10,9 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardCommentReportCollector {
   export async function collect(props: {
     body: IDiscussionBoardCommentReport.ICreate;
-    discussionBoardUsers: IEntity;
-    discussionBoardComments: IEntity;
+    discussionBoardComments: IEntity; // from path parameter commentId
+    discussionBoardUsers: IEntity; // from authorized actor
+    discussionBoardUserSessions: IEntity; // from authorized session
   }) {
     const id: string = v4();
     return {

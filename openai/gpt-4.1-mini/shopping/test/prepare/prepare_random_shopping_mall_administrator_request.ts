@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_administrator_request(
-  input?: DeepPartial<IShoppingMallAdministratorRequest.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallAdministratorRequest.ICreate>,
 ): IShoppingMallAdministratorRequest.ICreate {
-  input;
-  return {};
+  return {
+    actor_type:
+      input?.actor_type ??
+      RandomGenerator.pick(["customer", "seller"] as const),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+  };
 }

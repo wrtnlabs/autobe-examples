@@ -37,7 +37,7 @@ model shopping_mall_administrator_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@index([status])
   @@index([created_at])
@@ -79,10 +79,14 @@ model shopping_mall_administrator_grades {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   administrators shopping_mall_administrators[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
   @@index([grade])
 }
@@ -123,10 +127,14 @@ model shopping_mall_seller_approvals {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([shopping_mall_seller_id])
   @@index([status])
 }
@@ -161,11 +169,15 @@ model shopping_mall_product_categories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sales shopping_mall_sales[]
   subcategories shopping_mall_product_subcategories[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
 }
 
@@ -205,12 +217,20 @@ model shopping_mall_product_subcategories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   category shopping_mall_product_categories @relation(fields: [shopping_mall_product_category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   products shopping_mall_products[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_product_category_id, name], map: "shopping_mall_product_subcategories_shopping_mall_prod_ba558b4d")
   // spellchecker: ignore-next-line
@@ -251,11 +271,15 @@ model shopping_mall_banned_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers? @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([shopping_mall_customer_id])
   @@unique([shopping_mall_seller_id])
   @@index([created_at])
@@ -307,10 +331,14 @@ model shopping_mall_administrative_audit_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "shopping_mall_administrative_audit_logs_administrator__7c976fdc")
 }
@@ -348,9 +376,13 @@ model shopping_mall_seller_suspensions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([seller_id, suspended_at])
 }

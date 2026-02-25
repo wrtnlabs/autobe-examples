@@ -11,13 +11,19 @@ import typia, { tags } from "typia";
 export async function authorize_super_administrator_join(
   connection: api.IConnection,
   props: {
-    body: IDiscussionBoardSuperAdministrator.IJoin;
+    body?: Partial<IDiscussionBoardSuperAdministrator.IJoin>;
   },
 ): Promise<IDiscussionBoardSuperAdministrator.IAuthorized> {
+  const body: IDiscussionBoardSuperAdministrator.IJoin = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
+    ip: props.body?.ip ?? null,
+  };
   return await api.functional.discussionBoard.auth.superAdministrator.join(
     connection,
-    {
-      body: props.body,
-    },
+    { body },
   );
 }

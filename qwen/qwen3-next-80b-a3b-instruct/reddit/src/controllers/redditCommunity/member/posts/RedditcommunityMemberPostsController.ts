@@ -2,31 +2,47 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIRedditCommunityPost } from "../../../../api/structures/IPageIRedditCommunityPost";
 import { IRedditCommunityPost } from "../../../../api/structures/IRedditCommunityPost";
+import { IRedditCommunityPostVote } from "../../../../api/structures/IRedditCommunityPostVote";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditCommunityMemberPostsPostId } from "../../../../providers/deleteRedditCommunityMemberPostsPostId";
+import { patchRedditCommunityMemberPosts } from "../../../../providers/patchRedditCommunityMemberPosts";
+import { patchRedditCommunityMemberPostsPostId } from "../../../../providers/patchRedditCommunityMemberPostsPostId";
+import { patchRedditCommunityMemberPostsPostIdVote } from "../../../../providers/patchRedditCommunityMemberPostsPostIdVote";
 import { postRedditCommunityMemberPosts } from "../../../../providers/postRedditCommunityMemberPosts";
-import { putRedditCommunityMemberPostsPostId } from "../../../../providers/putRedditCommunityMemberPostsPostId";
 
 @Controller("/redditCommunity/member/posts")
 export class RedditcommunityMemberPostsController {
   /**
-   * Create a new post in a community with one of three content types: text, link, or image.
+   * Create a new post in a specified community.
    *
-   * This endpoint allows authenticated members to publish content to communities they are subscribed to. The post must contain exactly one of the following content fields: textContent (for written content), url (for external links), or imageUrl (for image attachments). Title is required and must be between 3 and 200 characters.
+   * This operation allows a registered user to submit a new post (text, link, or image) to a community they are subscribed to. The post must include a title (5-300 characters) and exactly one content field appropriate to the post type. The system validates that the user is not banned from the target community and that the content meets size/format requirements.
    *
-   * For textContent, the content must be between 1 and 10,000 characters. For url, the value must conform to RFC 3986 URL specification and must not point to a malicious domain. For imageUrl, the URL must point to a publicly accessible image in .jpg, .jpeg, .png, .gif, or .webp format and must be under 10MB in size.
+   * When a post is successfully created, the system initializes its voteScore to 0, commentCount to 0, and sets the status to "active". A PostCreated event is emitted for downstream analytics and feed updates.
    *
-   * The user must be an authenticated member with an active subscription to the target community. If not subscribed, the request will fail with POST_COMMUNITY_SUBSCRIPTION_REQUIRED error. The newly created post will have an initial vote score of zero, zero comments, and active status. The post's author and associated community are automatically derived from the authenticated user and provided community identifier.
+   * This operation differs from updating or deleting a post in that it creates a new entity with a unique identifier. It does not modify existing content. This endpoint requires authentication via JWT bearer token.
    *
-   * After successful creation, the full post object is returned with system-generated fields including createdAt, updatedAt, and postId. This endpoint emits a PostCreated event for downstream systems. No user-supplied fields for karma, vote score, or comment count are accepted — those are managed system-side.
+   * Failure conditions include: user not logged in, user not subscribed to the community, invalid title length, missing or invalid content field, invalid URL format, image format/size violations, or community ownership restrictions.
    *
    * @param connection
-   * @param body Creation data for a new post in a community
+   * @param body Definition of required fields and content type selection for creating a new post.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new post with exactly one content field: textContent, url, or imageUrl. Validate: title length (3–200 chars), textContent length (1–10000 chars), url conforms to RFC 3986, imageUrl is valid HTTPS image under 10MB with .jpg/.jpeg/.png/.gif/.webp extension. Verify that the authenticated user is subscribed to the target community via reddit_community_user_communities table. Set initial voteScore=0, commentCount=0, status=active, createdAt=now, updatedAt=now. Do not allow multiple content fields to be non-null. If imageUrl provided, validate file extension and size. Associate post with authorId (from JWT) and communityId (from communityName in request).
+   * @x-autobe-specification Insert a new record into reddit_community_posts table with fields: title, community_id, author_id, status ('active'), created_at, vote_score (0), comment_count (0), and one of content/url/image_url based on post type.
+   *
+   * Validate that user is subscribed to the community by checking reddit_community_subscriptions for user_id = current_user_id AND community_id = request.community_id.
+   *
+   * Reject if community is archived or deleted by checking status of the community in reddit_community_communities.
+   *
+   * Validate title length: 5 to 300 characters.
+   *
+   * For type='text': ensure content is present and 1-10,000 characters.
+   * For type='link': ensure url is a valid HTTP/HTTPS URL with domain and path, no localhost/127.0.0.1.
+   * For type='image': ensure imageUrl is a valid URL and the extension is .jpg, .jpeg, .png, or .gif, and file size estimated under 5MB.
+   *
+   * If validated, return the created post object with full user and community context, including author.username and community.name.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -48,40 +64,88 @@ export class RedditcommunityMemberPostsController {
   }
 
   /**
-   * Update an existing post by its ID.
+   * Retrieve a paginated, filtered, and sorted list of public posts from the RedditCommunity platform.
    *
-   * This endpoint allows the original author of a post to edit the title and/or content of their post. The edit operation is atomic and preserves all other post properties such as vote score, comment count, creation timestamp, and status. The user may update exactly one content type field (textContent, url, or imageUrl) while setting all other content fields to null. This ensures a clean, deterministic content model.
+   * This endpoint serves as the primary feed interface for users to discover content across communities. It supports complex filtering by community, time range, and sorting algorithm (hot, new, top, controversial) to tailor the content experience dynamically. All returned posts are public and not deleted.
    *
-   * Users must be authenticated and must own the post to perform this operation. The system validates that the JWT-attached userId matches the post's authorId before allowing modification. Posts from other users cannot be edited, even by moderators or community owners.
+   * For community-specific feeds, clients may optionally filter by community_id. When no community is provided, the API returns the global feed of all public posts. Sorting algorithms dynamically weight content by recency and user engagement:
    *
-   * This operation does not change the post's community association, visibility, or vote statistics. To delete a post, users must use the DELETE /posts/{postId} endpoint. This update operation is intended solely for content revision.
+   * - 'hot': Combines post popularity with recency using logarithmic decay
+   * - 'new': Orders strictly by creation timestamp (most recent first)
+   * - 'top': Ranks by vote score within a user-defined time window (today, week, month, year, or all)
+   * - 'controversial': Highlights posts with balanced upvotes and downvotes, indicating polarizing content
    *
-   * Content validation rules:
-   * - textContent: must be between 1 and 10,000 characters
-   * - url: must be a valid RFC 3986 URL
-   * - imageUrl: must be a publicly accessible image URL in .jpg, .jpeg, .png, .gif, or .webp format under 10MB
+   * This endpoint supports cursor-based pagination with a fixed limit of 20 items per page. Each response includes total count and cursor references for efficient navigation through large result sets.
    *
-   * After a successful update, the updatedAt timestamp is set to the current server time, and the complete updated post object is returned in the response.
+   * Authorization: Unauthenticated guests may access this endpoint to view public content. Authenticated users receive the same results but with enhanced personalization context in other endpoints (e.g., subscription status).
+   *
+   * Related operations:
+   * - `GET /feed/home` — Restricted to subscribed communities only
+   * - `GET /feed/popular` — Equivalent to this endpoint without community filter
+   * - `POST /posts` — For creating a new post
+   * - `PATCH /posts/{postId}` — For editing a specific post
+   * - `GET /posts/{postId}` — For retrieving a single post with full comment tree
    *
    * @param connection
-   * @param postId The unique identifier of the post to edit. This is a UUID that references a specific post in the reddit_community_posts table.
-   * @param body The updated content and title for the post. Must contain exactly one content field: textContent, url, or imageUrl. Other content fields must be omitted or set to null.
+   * @param body Search and pagination parameters for filtering and ordering posts.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update an existing post with new title and content. The request must contain exactly one content field: textContent, url, or imageUrl. All other content fields must be set to null. Only the author of the post can update it. Validate that the authorId in the JWT matches the post's authorId. Update the updatedAt timestamp to current time. Apply atomic update to post record. Ensure no other fields (voteScore, commentCount, createdAt, status) are modified. Return updated post after successful update. If content field is null or empty, return validation error. If postId does not exist or is deleted, return 404. If user is not the author, return 403 Forbidden.
+   * @x-autobe-specification Query reddit_community_posts table with filtering by community_id if provided, apply sorting algorithm based on 'sort' parameter ('hot' = log10(vote_score + 1) - (created_at - now)/3600000, 'new' = created_at DESC, 'top' = vote_score DESC with timeFilter, 'controversial' = abs(upvotes-downvotes)/(upvotes+downvotes+1)), apply pagination with limit=20 and cursor-based offset. Join with reddit_community_communities to include community name. Exclude deleted posts (is_deleted = false) and ensure visibility rules (public posts only).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":postId")
+  @TypedRoute.Patch()
+  public async index(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IRedditCommunityPost.IRequest,
+  ): Promise<IPageIRedditCommunityPost.ISummary> {
+    try {
+      return await patchRedditCommunityMemberPosts({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing post with new title, text content, link, or image.
+   *
+   * This operation allows authenticated users to edit their own posts, or moderators/platform administrators to edit any post in their jurisdiction. Users may update the title, main content (for text posts), external URL (for link posts), or image link (for image posts). The post's type and community cannot be changed after creation.
+   *
+   * To maintain data integrity, all content fields are subject to the enforced length limits: title must be 1–300 characters, content must be 1–10,000 characters, and URLs must be valid HTTP/HTTPS formats. Any field not provided in the request body remains unchanged.
+   *
+   * The system automatically updates the updatedAt timestamp to reflect the edit. Edited posts display an "Edited" badge if modified more than 5 minutes after creation. Vote scores and comment counts persist unconditionally.
+   *
+   * This operation does not delete or alter the post's author, community, or status. Attempts to change these fields will be rejected with a 400 error.
+   *
+   * Related operations:
+   * - POST /posts: Create a new post
+   * - DELETE /posts/{postId}: Permanently delete a post
+   * - GET /posts/{postId}: Retrieve a post's full details and comments
+   *
+   * @param connection
+   * @param postId Unique identifier of the post to update. Must reference an existing record in reddit_community_posts with is_deleted = false. Uses UUID format.
+   * @param body Fields to update for the post. At least one field must be provided. All fields are optional and can be omitted to leave unchanged. Must not contain author_id, community_id, or type fields.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Update an existing post by ID. Validate that the authenticated user is either the post author or a moderator of the owning community. Allow partial updates of title (max 300 chars), content (max 10,000 chars), url (if present, must be valid HTTP/HTTPS URL), or image_url (if present, must be valid URL). Preserve existing post type and community. Do not allow changing author_id, community_id, or post type. Re-validate field lengths and URL formats if fields are provided. Update the updated_at timestamp to current UTC time. Do not delete or reset vote_score or comment_count. Return the full updated post object including current vote_score and comment_count. Apply transaction to ensure atomicity of update and timestamp change. Reject if post is marked as is_deleted = true.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch(":postId")
   public async update(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("postId")
-    postId: string & tags.Format<"uuid">,
+    postId: string,
     @TypedBody()
     body: IRedditCommunityPost.IUpdate,
   ): Promise<IRedditCommunityPost> {
     try {
-      return await putRedditCommunityMemberPostsPostId({
+      return await patchRedditCommunityMemberPostsPostId({
         member,
         postId,
         body,
@@ -93,32 +157,27 @@ export class RedditcommunityMemberPostsController {
   }
 
   /**
-   * Permanently delete a specific post and all of its associated comments and votes.
+   * Permanently delete a post and all its associated comments from the database.
    *
-   * This operation completely removes a post from the database, including all comments made on it and any associated upvotes or downvotes. This is a hard delete operation - the post and its children are not archived, hidden, or marked as deleted. Once deleted, this content cannot be recovered.
+   * This operation removes the specified post and all its comments from the database entirely. The data is irrevocably erased and cannot be recovered. This action is irreversible and does not retain any metadata flags such as "deleted" or "archived".
    *
-   * Authentication is required. Only the user who created the post or a moderator/admin for the community where the post was made can delete it. Non-authenticated users cannot access this endpoint.
+   * Only the post author, a community moderator of the post's community, or a platform administrator may perform this action. Deleted posts are no longer visible in any feed, profile, or API response.
    *
-   * Upon successful deletion, the entire post object is returned in the response body, allowing the client to update its UI state immediately. This design provides immediate feedback without requiring an additional request.
+   * Audit logs are retained separately and record the deletion event, including the actor and timestamp. Reports on this post remain as archived records, accessible only to moderators and system admins.
    *
-   * To preserve data integrity, the deletion cascades to all related records:
-   * - All comments on the post are deleted
-   * - All post votes are removed
-   * - All post report entries are removed
-   *
-   * This operation does not support bulk deletion or bulk actions. Only one post may be deleted per request. The target post is identified exclusively by the postId path parameter.
-   *
-   * There is an inconsistency with the database model description which mentions a moderation_action_of_posts table for audit purposes. However, the provided schema does not include a `deleted_at` column, audit log linkage, or tombstone record creation. This confirms that it is a hard delete implementation and not a soft delete system.
-   *
-   * Note: This operation does not provide a reason field or comment field for deletion because it is not a moderation action - it is an author-initiated deletion. If a moderator deletes a post, the moderation_action table will record this separately as a mod action, but the post itself is still permanently removed from the dataset on this endpoint.
+   * This hard delete behavior aligns with the database schema, which has no soft-delete fields (e.g., is_deleted, deleted_at) and treats posts as fully mutable with permanent removal.
    *
    * @param connection
-   * @param postId The unique identifier (UUID) of the post to delete. Must match the ID of an existing post in the database.
+   * @param postId The unique identifier of the post to delete. Must match the id field in reddit_community_posts.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete the post record from the database with CASCADE to remove associated comments and votes. Perform permission check: verify that the authenticated user is either the post author or a moderator of the post's community. If permission is denied, return 403 Forbidden. If post does not exist, return 404 Not Found. If successful, return the deleted post object with full structure before it is removed from the database. No transaction rollback needed as deletion is final and immediate.
-   *
-   * The operation uses direct deletion without soft delete columns or archive state. This is confirmed by review of the skipsoftdelete check in requirements - this is a hard delete operation.
+   * @x-autobe-specification Execute delete operation on reddit_community_posts table using postId path parameter.
+   * Identify post by id and verify user has permission: author, community moderator, or platform admin.
+   * Set is_deleted = true for the target post.
+   * Ensure deletion cascades to associated comments (prisma relation handles this).
+   * Update community post_count by decrementing by 1 (handled via trigger).
+   * Record audit event with user id, action, and timestamp.
+   * Return 200 OK if successful. Return 403 if unauthorized. Return 404 if post not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":postId")
@@ -126,12 +185,52 @@ export class RedditcommunityMemberPostsController {
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("postId")
-    postId: string & tags.Format<"uuid">,
-  ): Promise<IRedditCommunityPost> {
+    postId: string,
+  ): Promise<void> {
     try {
       return await deleteRedditCommunityMemberPostsPostId({
         member,
         postId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cast, change, or remove a vote on a post.
+   *
+   * This operation allows authenticated users to influence the popularity and visibility of a post by voting. Users can upvote (+1), downvote (-1), or remove their existing vote to return the score to its pre-vote state.
+   *
+   * The system enforces strict rules: users cannot vote on their own posts. Each user may have at most one active vote per post. Vote changes are atomic and immediately reflected in the post's vote score and the author's karma. For example, changing an upvote to a downvote results in a net score change of -2 and a karma penalty of -2 for the author.
+   *
+   * This operation is fundamental to the community's feedback mechanism. Higher vote scores increase post visibility in feeds, particularly under the 'Hot' and 'Top' sorting algorithms. Controversial posts—those with high vote volume but near-zero net scores—are surfaced to encourage balanced discussion.
+   *
+   * This operation depends on accurate tracking in the reddit_community_post_votes table and triggers karma recalculations in the reddit_community_members model.
+   *
+   * @param connection
+   * @param postId The unique identifier of the post being voted on. Must be a valid UUID.
+   * @param body The desired vote state to apply to the post.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Fetch post by postId. Check if user is authenticated. If user_id equals post's author_id, return error USER_CANNOT_VOTE_ON_OWN_CONTENT. Check existing vote record for user_id/post_id. If vote exists and vote_type matches requested voteType, delete record and adjust post score by -1 or +1 (opposite of original vote). If vote exists and vote_type differs from request, update vote_type and adjust post score by +2 or -2 (removing previous vote and applying new). If no vote exists and voteType is 'none', return error INVALID_VOTE_STATE. If no vote exists, create new record with vote_type and adjust post score by +1 or -1. Update author's karma by net delta of vote changes. Return updated post voteScore. All operations in a single transaction.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch(":postId/vote")
+  public async vote(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditCommunityPostVote.IRequest,
+  ): Promise<IRedditCommunityPostVote.ISummary> {
+    try {
+      return await patchRedditCommunityMemberPostsPostIdVote({
+        member,
+        postId,
+        body,
       });
     } catch (error) {
       console.log(error);

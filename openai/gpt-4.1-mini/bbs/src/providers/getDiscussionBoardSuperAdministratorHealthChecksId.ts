@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardHealthCheckTransformer } from "../transformers/DiscussionBoardHealthCheckTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,22 +17,10 @@ export async function getDiscussionBoardSuperAdministratorHealthChecksId(props: 
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardHealthCheck> {
-  const record =
-    await MyGlobal.prisma.discussion_board_health_checks.findUnique({
+  const healthCheck =
+    await MyGlobal.prisma.discussion_board_health_checks.findUniqueOrThrow({
       where: { id: props.id },
+      ...DiscussionBoardHealthCheckTransformer.select(),
     });
-  if (record === null) {
-    throw new HttpException("Health check not found", 404);
-  }
-  return {
-    id: record.id,
-    status: record.status,
-    checked_at:
-      record.checked_at === null ? null : toISOStringSafe(record.checked_at),
-    details: record.details === null ? null : record.details,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  };
+  return await DiscussionBoardHealthCheckTransformer.transform(healthCheck);
 }

@@ -10,21 +10,42 @@ import { postTodoAppAuthUserRefresh } from "../../../../providers/postTodoAppAut
 @Controller("/todoApp/auth/user")
 export class TodoappAuthUserController {
   /**
-   * The join operation allows new users to create an account in the Todo application by providing their email address, password, and display name. This endpoint validates the uniqueness of the email address across all registered users and ensures password meets security requirements before creating the account. Upon successful registration, the system automatically generates JWT access and refresh tokens for immediate authentication, allowing the user to start using the application without requiring a separate login step.
+   * User registration endpoint that creates a new account with email and password authentication.
    *
-   * Security considerations include proper password hashing using industry-standard bcrypt algorithm with appropriate salt rounds. The email validation ensures no duplicate accounts can be created with the same email address, maintaining data integrity. The operation integrates with the todo_app_users table's email uniqueness constraint to prevent registration conflicts.
+   * This operation allows new users to register for the Todo application by providing their email address, password, and display name. The system validates the email format, ensures email uniqueness across all users, and validates password strength according to security requirements. Upon successful validation, the user account is created with the provided credentials and profile information.
    *
-   * The response includes both access and refresh tokens, with the access token having a shorter expiration time for security and the refresh token allowing for extended sessions without requiring re-authentication. This design follows JWT best practices for secure authentication workflows in multi-user applications.
+   * The operation generates both access and refresh JWT tokens upon successful registration, allowing the user to immediately authenticate and begin using the application. The access token has a 30-minute expiration while the refresh token lasts for 30 days, following the security specifications outlined in the authentication requirements.
    *
-   * Related operations include the login endpoint for existing users and refresh endpoint for token management. Users who successfully join can immediately proceed to create and manage their personal todo lists with full privacy guarantees as specified in the application requirements.
+   * Security considerations include proper password hashing using industry-standard algorithms, email validation to prevent abuse, and secure token generation with appropriate claims including user ID and role information. The system maintains complete data isolation between users, ensuring privacy guarantees from the moment of account creation.
+   *
+   * Related operations include the login endpoint for existing users and the refresh endpoint for token renewal. This registration workflow is the entry point for new users to access the Todo application's personal task management capabilities.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Registration information including email, password, and display name for new user account creation
+   * @param body Registration information including email, password, and display name
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification This operation handles user registration by creating a new user account with email and password validation. The service layer validates that the email is unique and not already registered, hashes the password using bcrypt before storing it, and creates a new user record with email, hashed password, and display name. JWT tokens are generated for immediate authentication after successful registration. Validation includes checking email format, password strength requirements, and ensuring email uniqueness across the system.
+   * @x-autobe-specification The join operation creates a new user account by validating the email uniqueness and password strength, then storing the hashed password in the database. It generates JWT tokens for immediate authentication after registration.
+   *
+   * The implementation should:
+   * 1. Validate email format and check uniqueness against existing users
+   * 2. Validate password meets security requirements
+   * 3. Hash the password using bcrypt with appropriate salt rounds
+   * 4. Create user record with email, hashed password, and display name
+   * 5. Generate access and refresh tokens with user claims
+   * 6. Return tokens in the authorized response
+   *
+   * Business rules from requirements:
+   * - Email must be unique across all users
+   * - Password must meet security requirements
+   * - Display name is required
+   * - Account creation timestamp is recorded
+   *
+   * Error handling:
+   * - Return specific validation errors for email/password issues
+   * - Handle database constraints for duplicate emails
+   * - Ensure secure token generation
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -46,21 +67,40 @@ export class TodoappAuthUserController {
   }
 
   /**
-   * The login operation enables existing users to authenticate with their email address and password credentials. This endpoint validates the provided credentials against the stored records in the todo_app_users table, specifically checking the email existence and verifying the password hash matches using secure cryptographic comparison. The operation implements security best practices by not revealing whether a particular email address is registered, returning generic error messages for authentication failures to prevent email enumeration attacks.
+   * User authentication endpoint that validates email and password credentials for existing users.
    *
-   * Authentication workflow involves querying the user by email, comparing the provided password with the stored password_hash using bcrypt verification, and generating new JWT tokens upon successful validation. The system maintains session security through token expiration policies, with access tokens having shorter lifetimes and refresh tokens allowing for session continuity without frequent re-authentication.
+   * This operation allows registered users to authenticate and obtain JWT tokens for accessing the Todo application. The system validates the provided email and password against stored credentials, ensuring secure authentication through proper password hashing comparison. Upon successful validation, the operation generates new access and refresh tokens with appropriate expiration times.
    *
-   * Security measures include rate limiting to protect against brute force attacks and proper error handling to avoid information leakage. The operation integrates seamlessly with the application's privacy-focused design, ensuring that authenticated users can only access their own todo data with complete isolation from other users' information.
+   * The authentication process follows industry security standards by using bcrypt for password comparison, implementing rate limiting to prevent brute force attacks, and providing generic error messages that don't reveal whether the email or password was incorrect. This maintains security while providing appropriate user feedback.
    *
-   * This endpoint works in conjunction with the join and refresh operations to provide a complete authentication system. Successful login grants users access to their personal todo management features, including creating, viewing, editing, and deleting todos with comprehensive history tracking as specified in the business requirements.
+   * Successful authentication grants the user access to their personal todo management features, including creating, viewing, editing, and deleting todos, as well as accessing profile management capabilities. The generated tokens include user identification claims that enforce data isolation, ensuring users can only access their own todo data.
+   *
+   * This operation works in conjunction with the join endpoint for new users and the refresh endpoint for token renewal. The authentication workflow supports the complete user session management lifecycle as specified in the security requirements.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Authentication credentials including email and password for user login
+   * @param body Authentication credentials including email and password
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification This operation handles user authentication by validating email and password credentials against stored user records. The service layer looks up the user by email, verifies the password hash matches using bcrypt comparison, and generates new JWT tokens if credentials are valid. The operation includes rate limiting to prevent brute force attacks and returns appropriate error messages for invalid credentials without revealing whether the email exists in the system. Upon successful authentication, the user's last login timestamp would be updated if such a field existed in the schema.
+   * @x-autobe-specification The login operation authenticates existing users by validating email and password credentials against stored hashed passwords.
+   *
+   * The implementation should:
+   * 1. Find user by email (case-insensitive lookup)
+   * 2. Verify password hash matches using bcrypt compare
+   * 3. Generate new access and refresh tokens
+   * 4. Update last login timestamp if needed
+   * 5. Return tokens in authorized response
+   *
+   * Business rules from requirements:
+   * - Invalid credentials return generic error (don't specify email/password)
+   * - Implement rate limiting to prevent brute force attacks
+   * - Follow secure token generation practices
+   *
+   * Error handling:
+   * - Handle invalid credentials with generic error message
+   * - Account lockout after excessive failed attempts
+   * - Token generation failures
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -82,21 +122,40 @@ export class TodoappAuthUserController {
   }
 
   /**
-   * The refresh operation allows authenticated users to renew their JWT tokens without requiring full re-authentication with email and password credentials. This endpoint accepts a valid refresh token and generates new access and refresh tokens with updated expiration times, enabling continuous session management while maintaining security through periodic token rotation.
+   * Token refresh endpoint that renews JWT access tokens using a valid refresh token.
    *
-   * Token refresh workflow involves validating the provided refresh token's signature and expiration status, then generating new tokens with fresh expiration timestamps. The system implements security best practices by potentially maintaining a token blacklist or tracking token usage patterns to detect and prevent token reuse or compromise. This approach balances user convenience with security requirements.
+   * This operation allows authenticated users to extend their session by refreshing expired access tokens without requiring full re-authentication. The system validates the provided refresh token for authenticity and expiration, then generates a new access token with updated expiration time. The refresh operation implements secure token rotation, potentially issuing a new refresh token while invalidating the old one to enhance security.
    *
-   * Security considerations include proper token validation, prevention of token reuse attacks, and secure token generation practices. The refresh mechanism works in conjunction with the application's privacy-focused architecture, ensuring that only valid, authenticated users can maintain access to their personal todo data with complete isolation from other users' information.
+   * The refresh mechanism supports the 30-minute access token expiration policy while maintaining user convenience through the 30-day refresh token lifespan. This balances security requirements with positive user experience by minimizing frequent re-authentication requests during active usage sessions.
    *
-   * This operation complements the join and login endpoints by providing session continuity without frequent password re-entry. Users can seamlessly continue their todo management activities while the system maintains secure authentication through periodic token refresh cycles. The implementation follows JWT best practices for secure token management in web applications.
+   * Security considerations include proper token validation, prevention of token reuse, and secure generation of new tokens with appropriate claims. The operation maintains the user's authenticated state while refreshing credentials, ensuring uninterrupted access to todo management features.
+   *
+   * This endpoint completes the authentication lifecycle alongside the join and login operations, providing comprehensive session management for the Todo application. Users can maintain continuous access to their personal task management system through proper token refresh workflows.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh token for generating new access and refresh tokens
+   * @param body Refresh token for generating new access token
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification This operation handles JWT token refresh by validating the provided refresh token and generating new access and refresh tokens. The service layer verifies the refresh token signature and expiration, then creates new tokens with updated expiration times. This allows users to maintain their session without re-authenticating with email and password. The operation includes security measures to detect token reuse and invalidate compromised tokens if necessary.
+   * @x-autobe-specification The refresh operation renews JWT tokens using a valid refresh token, implementing secure token rotation.
+   *
+   * The implementation should:
+   * 1. Validate the refresh token signature and expiration
+   * 2. Verify the refresh token hasn't been revoked
+   * 3. Generate new access token with updated expiration
+   * 4. Optionally rotate refresh token (new token, invalidate old)
+   * 5. Return new tokens in authorized response
+   *
+   * Business rules from requirements:
+   * - Refresh tokens expire after 30 days
+   * - Token rotation enhances security
+   * - Invalid refresh tokens require re-authentication
+   *
+   * Error handling:
+   * - Handle expired or invalid refresh tokens
+   * - Token revocation scenarios
+   * - Secure token generation failures
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

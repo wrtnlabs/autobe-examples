@@ -1,4 +1,5 @@
 import { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
+import { IEcommerceCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerAddress";
 import { IEcommerceOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrder";
 import { IEcommerceShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceShipment";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -17,16 +18,18 @@ export namespace EcommerceShipmentAtSummaryTransformer {
     return {
       select: {
         id: true,
-        carrier: true,
+        carrier_name: true,
         tracking_number: true,
-        shipping_date: true,
-        estimated_delivery_date: true,
-        actual_delivery_date: true,
         status: true,
-        order: EcommerceOrderAtSummaryTransformer.select(),
+        shipment_date: true,
+        expected_delivery_date: true,
         created_at: true,
+        order: EcommerceOrderAtSummaryTransformer.select(),
         updated_at: true,
         deleted_at: true,
+        shipmentItems: {
+          select: {},
+        },
       },
     } satisfies Prisma.ecommerce_shipmentsFindManyArgs;
   }
@@ -35,16 +38,13 @@ export namespace EcommerceShipmentAtSummaryTransformer {
   ): Promise<IEcommerceShipment.ISummary> {
     return {
       id: input.id,
-      carrier: input.carrier,
+      carrier_name: input.carrier_name,
       tracking_number: input.tracking_number,
-      shipping_date: input.shipping_date.toISOString(),
-      estimated_delivery_date: input.estimated_delivery_date
-        ? input.estimated_delivery_date.toISOString()
-        : null,
       status: input.status,
+      shipment_date: toISOStringSafe(input.shipment_date),
+      expected_delivery_date: toISOStringSafe(input.expected_delivery_date),
+      created_at: toISOStringSafe(input.created_at),
       order: await EcommerceOrderAtSummaryTransformer.transform(input.order),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
     };
   }
 }

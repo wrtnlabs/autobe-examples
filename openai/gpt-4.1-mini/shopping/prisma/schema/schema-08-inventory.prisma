@@ -32,10 +32,14 @@ model shopping_mall_inventory_histories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_histories_shopping_mall_produc_065e82e8")
 }

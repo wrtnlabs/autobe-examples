@@ -4,31 +4,42 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardBanRecord } from "../../../../structures/IDiscussionBoardBanRecord";
-import { IDiscussionBoardUserBan } from "../../../../structures/IDiscussionBoardUserBan";
-import { IPageIDiscussionBoardUserBan } from "../../../../structures/IPageIDiscussionBoardUserBan";
+import { IPageIDiscussionBoardBanRecord } from "../../../../structures/IPageIDiscussionBoardBanRecord";
 
 export * as appeals from "./appeals/index";
 
 /**
- * Create a new user ban record in the discussion board system.
+ * Create a new ban record to restrict a user's access to the discussion board platform.
  *
- * This operation allows administrators to ban users from the platform with specified reasons and durations. The ban prevents the targeted user from logging in while maintaining visibility of their existing content. Administrators must provide a detailed ban reason and select appropriate ban duration parameters.
+ * This operation allows administrators to ban users who violate platform rules or community guidelines. The ban prevents the user from logging in and participating in discussions while preserving their existing content visibility. Administrators must provide a detailed ban reason (minimum 10 characters) and select an appropriate ban duration.
  *
- * The system supports both temporary bans with specific expiration dates and permanent bans that remain active indefinitely. All ban actions are recorded with comprehensive audit trails including the banning administrator's identity, ban reason, and timestamps for accountability.
+ * The ban creation process leverages the platform's polymorphic ownership pattern, linking the ban record to either regular administrators or super administrators based on the requesting user's role. This ensures proper attribution and audit trail completeness. Temporary bans automatically expire after the specified duration, while permanent bans require manual revocation by an administrator.
  *
- * Banned users retain read-only access to public content but lose all interactive capabilities including article creation, commenting, and profile editing. Existing articles and comments from banned users remain visible to maintain discussion integrity while preventing further participation.
+ * Related operations include viewing active bans (GET /bans), modifying ban details (PUT /bans/{banId}), and revoking bans (DELETE /bans/{banId}). Administrators should reference the ban reason categories and duration options available in the system when creating bans.
  *
- * Administrators can later review, modify, or revoke bans through separate management operations. The ban creation process includes validation checks to ensure proper authorization and prevent duplicate active bans for the same user.
- *
- * The operation creates records in the discussion_board_user_bans table, which tracks user banning actions with comprehensive audit trail support. The ban record links to the banned user and the administrator who issued the ban, creating complete accountability for moderation actions.
- *
- * This API requires administrator-level permissions and validates that the banning administrator has the authority to perform this action. The system ensures banned users' content remains visible while preventing them from logging in, supporting the platform's moderation requirements.
+ * Security considerations: Only authenticated administrators with appropriate permissions can create bans. The system validates that the target user exists and is not already subject to an active ban before creating a new record. The operation automatically determines the correct administrator attribution based on the authenticated user's role.
  *
  * @param props.connection
- * @param props.body Ban creation parameters including banned user, reason, and duration details
+ * @param props.body Ban creation parameters including target user, reason, and duration
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Create a new ban record in the discussion_board_user_bans table. Validate that the banned user exists and is not already banned. Validate that the banning administrator has proper permissions. Set ban status to 'active' and calculate expiration timestamp based on duration. Ensure all required fields are populated and validate ban duration type consistency.
+ * @x-autobe-specification Create a new ban record in the discussion_board_ban_records table.
+ *
+ * Validate that the target user exists and is not already banned.
+ * Validate that the administrator has permission to ban users.
+ * Require a ban reason with minimum 10 characters as specified in requirements.
+ * Handle both permanent and temporary bans based on ban_duration_days.
+ * Set ban_status to 'active' initially.
+ * Calculate expires_at timestamp for temporary bans.
+ * Link the ban record to the appropriate administrator type (regular or super admin).
+ * Immediately revoke the user's authentication access by updating session status.
+ * Record comprehensive audit information including timestamps and administrator details.
+ * Return the complete ban record with all fields for confirmation.
+ *
+ * Database operations:
+ * - Insert into discussion_board_ban_records with all required fields
+ * - Update user session status if applicable
+ * - Create audit trail entry for moderation actions
  * @path /discussionBoard/admin/bans
  * @accessor api.functional.discussionBoard.admin.bans.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -58,12 +69,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Ban creation parameters including banned user, reason, and duration details
+     * Ban creation parameters including target user, reason, and duration
      */
-    body: IDiscussionBoardUserBan.ICreate;
+    body: IDiscussionBoardBanRecord.ICreate;
   };
-  export type Body = IDiscussionBoardUserBan.ICreate;
-  export type Response = IDiscussionBoardUserBan;
+  export type Body = IDiscussionBoardBanRecord.ICreate;
+  export type Response = IDiscussionBoardBanRecord;
 
   export const METADATA = {
     method: "POST",
@@ -79,8 +90,8 @@ export namespace create {
   } as const;
 
   export const path = () => "/discussionBoard/admin/bans";
-  export const random = (): IDiscussionBoardUserBan =>
-    typia.random<IDiscussionBoardUserBan>();
+  export const random = (): IDiscussionBoardBanRecord =>
+    typia.random<IDiscussionBoardBanRecord>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -107,13 +118,44 @@ export namespace create {
 }
 
 /**
- * Search and filter ban records with paginated results.nnThis operation provides administrators with comprehensive search capabilities across all ban records in the system. Administrators can filter by ban status (active, expired, revoked, appealed), banned user information, banning administrator, date ranges, appeal status, and perform text search on ban reasons.nnThe search supports complex filtering combinations to help administrators efficiently manage the ban system. Results are paginated with configurable page sizes and include summary information about each ban record for quick review.nnOnly administrators have access to this operation as it contains sensitive moderation information. The response includes essential ban details while maintaining performance for large datasets. Regular administrators and super administrators can both access this functionality for comprehensive ban management.
+ * Retrieve a filtered and paginated list of user ban records for administrative review and management.
+ *
+ * This operation provides comprehensive search capabilities for ban management, allowing administrators to filter ban records by status, duration, appeal status, banning administrator, and date ranges. The response includes essential ban information needed for moderation dashboard displays and ban review workflows.
+ *
+ * Administrators can use this endpoint to monitor active bans, review pending appeals, track ban history, and analyze moderation patterns. The operation supports the requirement that administrators can view lists of banned users with detailed ban reasons and status information.
+ *
+ * Security considerations include restricting access to administrators only and ensuring proper authorization checks for sensitive ban information. The operation integrates with the broader moderation system to provide complete visibility into user banning activities.
+ *
+ * Related operations include viewing individual ban details, updating ban status, and managing ban appeals through dedicated endpoints.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for ban records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the discussion_board_user_bans table with comprehensive filtering capabilities. Apply filters for ban status, banned user information, banning administrator, date ranges (ban start/end dates), appeal status, and text search on ban reasons. Join with user and administrator tables to include display names in search results. Implement cursor-based pagination for efficient large result sets. Validate that only administrators can access this endpoint. Return summary information optimized for list displays.
+ * @x-autobe-specification Query discussion_board_user_bans table with comprehensive filtering options.
+ *
+ * Support filtering by:
+ * - ban_status (active, expired, revoked, appealed)
+ * - appeal_status (none, pending, under_review, approved, rejected)
+ * - banning_administrator_id (for filtering by specific administrator)
+ * - ban_duration_type (temporary, permanent)
+ * - date ranges for ban_started_at and ban_ends_at
+ * - text search on ban_reason
+ *
+ * Implement pagination with cursor-based or offset-based approach.
+ * Join with discussion_board_users to get banned user information.
+ * Join with discussion_board_admins to get banning administrator information.
+ * Return summary information optimized for ban management interface.
+ *
+ * Include sorting options:
+ * - ban_started_at (newest/oldest first)
+ * - ban_ends_at (for expiration ordering)
+ * - ban_status (grouping active bans first)
+ *
+ * Validation:
+ * - Ensure only administrators can access this endpoint
+ * - Validate filter parameters against allowed values
+ * - Handle empty result sets gracefully
  * @path /discussionBoard/admin/bans
  * @accessor api.functional.discussionBoard.admin.bans.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -145,10 +187,10 @@ export namespace index {
     /**
      * Search criteria and pagination parameters for ban records
      */
-    body: IDiscussionBoardUserBan.IRequest;
+    body: IDiscussionBoardBanRecord.IRequest;
   };
-  export type Body = IDiscussionBoardUserBan.IRequest;
-  export type Response = IPageIDiscussionBoardUserBan.ISummary;
+  export type Body = IDiscussionBoardBanRecord.IRequest;
+  export type Response = IPageIDiscussionBoardBanRecord.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -164,8 +206,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/discussionBoard/admin/bans";
-  export const random = (): IPageIDiscussionBoardUserBan.ISummary =>
-    typia.random<IPageIDiscussionBoardUserBan.ISummary>();
+  export const random = (): IPageIDiscussionBoardBanRecord.ISummary =>
+    typia.random<IPageIDiscussionBoardBanRecord.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -194,17 +236,17 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific ban record.
  *
- * This operation provides administrators with comprehensive ban details including the original ban reason, duration settings, current status, expiration information, and any revocation details. The response includes all audit trail information such as creation and update timestamps.
+ * This operation provides administrators with comprehensive ban details including the ban reason, duration, current status, expiration information, and audit trail timestamps. The response includes all fields from the ban record to support moderation review processes.
  *
- * Administrators can use this operation to review ban decisions, check ban status, and understand the complete context of a user banning action. The operation supports administrative oversight and accountability by providing transparent access to ban record details.
+ * Administrators can use this operation to review specific ban decisions, check ban status and expiration dates, and understand the context behind user restrictions. The operation supports the requirement that administrators can view ban reasons and manage banned users effectively.
  *
- * Access to this operation is restricted to administrators only, ensuring that sensitive ban information remains protected from regular users.
+ * This API operation integrates with the broader moderation system, providing access to ban records that are created through administrator actions and maintained for accountability and compliance purposes.
  *
  * @param props.connection
  * @param props.banId Unique identifier of the ban record to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the discussion_board_ban_records table by the provided banId parameter. Return the complete ban record with all fields including ban_reason, ban_duration_days, ban_status, expires_at, revoked_at, revoked_reason, created_at, and updated_at. Validate that the banId exists and return appropriate error if not found. This operation is primarily for administrative viewing of ban details.
+ * @x-autobe-specification Query the discussion_board_ban_records table by the provided ban ID. Include all ban details such as ban reason, duration, status, expiration timestamp, and revocation information. Ensure the ban record exists and return appropriate error responses if not found. This operation supports administrator workflows for reviewing ban decisions and managing user restrictions.
  * @path /discussionBoard/admin/bans/:banId
  * @accessor api.functional.discussionBoard.admin.bans.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -279,126 +321,19 @@ export namespace at {
 }
 
 /**
- * Update an existing ban record with modified ban details.
+ * Delete a specific ban record from the platform, effectively unbanning the associated user.
  *
- * This operation allows administrators to modify ban information including ban reason, duration, status, and revocation details. The ban record must exist in the system and the administrator must have appropriate permissions to modify ban records.
+ * This operation allows administrators to remove ban records that are no longer needed or were issued in error. When a ban record is deleted, the previously banned user regains access to the platform and can log in normally again. The operation returns the complete ban record that was deleted, including all audit trail information such as the original ban reason, duration, and administrator who issued the ban.
  *
- * When updating a ban record, administrators can modify the ban reason text, adjust the ban duration (for temporary bans), change the ban status (active, expired, revoked), and provide revocation details if applicable. The operation validates that the ban record exists and that the requested modifications are valid based on the current ban state.
+ * Administrators should use this operation carefully as it reverses banning actions. The system maintains a comprehensive audit trail of all ban-related activities, including deletions, to ensure accountability and compliance with moderation policies. Only active bans can be deleted through this operation - expired or already revoked bans cannot be deleted as they represent historical records.
  *
- * This API operation supports the comprehensive ban management system described in the database schema, allowing administrators to maintain accurate ban records and ensure proper moderation workflow. The operation preserves audit trail integrity by updating the existing ban record rather than creating new records for modifications.
- *
- * Administrators should use this operation to correct ban details, update ban status based on appeals or expiration, or provide additional context for ban decisions. The operation ensures that all ban modifications are properly tracked and maintain the integrity of the moderation system.
+ * This operation complements the banning functionality by providing the necessary unbanning capability that administrators require for proper user management and moderation workflow support.
  *
  * @param props.connection
- * @param props.banId Unique identifier of the ban record to update
- * @param props.body Updated ban information including modified fields
+ * @param props.banId Unique identifier of the ban record to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the discussion_board_ban_records table to find the ban record by the provided banId. Validate that the ban record exists and that the requesting administrator has permission to update ban records.
- *
- * Update the ban record with the provided fields from the request body. Only update fields that are provided in the request - preserve existing values for omitted fields. Validate that status transitions are valid (e.g., cannot reactivate an expired ban without proper authority).
- *
- * For status changes to 'revoked', require revocation_reason and update revoked_at timestamp. For status changes to 'expired', validate that the ban duration has actually expired. Update the updated_at timestamp to reflect the modification time.
- *
- * Return the complete updated ban record including all fields. Ensure the response includes the current state after all modifications have been applied.
- * @path /discussionBoard/admin/bans/:banId
- * @accessor api.functional.discussionBoard.admin.bans.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the ban record to update
-     */
-    banId: string & tags.Format<"uuid">;
-
-    /**
-     * Updated ban information including modified fields
-     */
-    body: IDiscussionBoardBanRecord.IUpdate;
-  };
-  export type Body = IDiscussionBoardBanRecord.IUpdate;
-  export type Response = IDiscussionBoardBanRecord;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/discussionBoard/admin/bans/:banId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/discussionBoard/admin/bans/${encodeURIComponent(props.banId ?? "null")}`;
-  export const random = (): IDiscussionBoardBanRecord =>
-    typia.random<IDiscussionBoardBanRecord>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("banId")(() => typia.assert(props.banId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Permanently delete a ban record from the discussion board system.
- *
- * This operation removes a specific ban record identified by its unique UUID identifier. When a ban record is deleted, the associated user is effectively unbanned and regains full access to the platform. The operation removes the ban record from the database along with all ban-related restrictions from the user's account.
- *
- * Administrators should use this operation carefully as it removes the ban record and its associated audit trail. The operation requires administrator privileges and validates that the ban record exists before proceeding with deletion. After successful deletion, the system updates user access permissions and removes any login restrictions associated with the ban.
- *
- * This operation supports the administrator capability to unban users by removing ban records from the system. It complements the ban management workflow by providing a mechanism to reverse banning decisions when appropriate.
- *
- * @param props.connection
- * @param props.banId UUID identifier of the ban record to delete
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor admin
- * @x-autobe-specification Delete a ban record by its UUID identifier. This operation permanently removes the ban record from the discussion_board_user_bans table, effectively unbanning the user. The operation should validate that the ban record exists and that the requesting administrator has permission to delete ban records. After deletion, the system should update any related records and ensure the user's login capabilities are restored if the ban was active.
+ * @x-autobe-specification Delete a ban record by ID, effectively unbanning the user. Query the discussion_board_user_bans table using the banId parameter. Verify that the ban exists and is currently active before deletion. If the ban has already expired or been revoked, return appropriate error. Ensure proper audit trail by recording the deletion action in system logs. Return the deleted ban record for confirmation.
  * @path /discussionBoard/admin/bans/:banId
  * @accessor api.functional.discussionBoard.admin.bans.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -406,7 +341,7 @@ export namespace update {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<erase.Response> {
+): Promise<void> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -427,11 +362,10 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * UUID identifier of the ban record to delete
+     * Unique identifier of the ban record to delete
      */
     banId: string & tags.Format<"uuid">;
   };
-  export type Response = IDiscussionBoardBanRecord;
 
   export const METADATA = {
     method: "DELETE",
@@ -445,12 +379,11 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/discussionBoard/admin/bans/${encodeURIComponent(props.banId ?? "null")}`;
-  export const random = (): IDiscussionBoardBanRecord =>
-    typia.random<IDiscussionBoardBanRecord>();
+  export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): Response => {
+  ): void => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
@@ -459,6 +392,115 @@ export namespace erase {
     });
     try {
       assert.param("banId")(() => typia.assert(props.banId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Revoke an active ban before its expiration date.
+ *
+ * This operation allows administrators to manually lift a ban that is currently active. When a ban is revoked, the banned user regains access to the platform immediately, regardless of the original ban duration. The revocation requires a reason to be provided for audit trail purposes.
+ *
+ * The operation validates that the ban exists and is currently active. If the ban has already expired or been previously revoked, the operation will fail. Successful revocation updates the ban record with the revocation timestamp and reason, changing the ban status to 'revoked'.
+ *
+ * Administrators should use this operation when they determine that a ban should be lifted early, such as when new information comes to light or when the circumstances that led to the ban have changed. The revocation reason should clearly explain why the ban is being lifted.
+ *
+ * Related operations include viewing ban details (GET /bans/{banId}) and creating new bans (POST /bans).
+ *
+ * @param props.connection
+ * @param props.banId Unique identifier of the ban record to revoke
+ * @param props.body Revocation reason and details
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification Update the ban record by setting revoked_at to current timestamp and revoked_reason to the provided value. Validate that the ban exists and is currently active (not already revoked or expired). Return the updated ban record with new revocation status.
+ *
+ * Implementation steps:
+ * 1. Find the ban record by banId
+ * 2. Check if ban is currently active (ban_status = 'active')
+ * 3. Update revoked_at to current timestamp
+ * 4. Set revoked_reason from request body
+ * 5. Update ban_status to 'revoked'
+ * 6. Return the updated ban record
+ * @path /discussionBoard/admin/bans/:banId/revoke
+ * @accessor api.functional.discussionBoard.admin.bans.revoke
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function revoke(
+  connection: IConnection,
+  props: revoke.Props,
+): Promise<revoke.Response> {
+  return true === connection.simulate
+    ? revoke.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...revoke.METADATA,
+          path: revoke.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace revoke {
+  export type Props = {
+    /**
+     * Unique identifier of the ban record to revoke
+     */
+    banId: string & tags.Format<"uuid">;
+
+    /**
+     * Revocation reason and details
+     */
+    body: IDiscussionBoardBanRecord.IRevoke;
+  };
+  export type Body = IDiscussionBoardBanRecord.IRevoke;
+  export type Response = IDiscussionBoardBanRecord;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/discussionBoard/admin/bans/:banId/revoke",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/discussionBoard/admin/bans/${encodeURIComponent(props.banId ?? "null")}/revoke`;
+  export const random = (): IDiscussionBoardBanRecord =>
+    typia.random<IDiscussionBoardBanRecord>();
+  export const simulate = (
+    connection: IConnection,
+    props: revoke.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: revoke.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("banId")(() => typia.assert(props.banId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -2,43 +2,33 @@ import { TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IDiscussionBoardPerformanceMetric } from "../../../../api/structures/IDiscussionBoardPerformanceMetric";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { IDiscussionBoardArticleViewStatEvent } from "../../../../api/structures/IDiscussionBoardArticleViewStatEvent";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { getDiscussionBoardSuperAdminStatistics } from "../../../../providers/getDiscussionBoardSuperAdminStatistics";
 
 @Controller("/discussionBoard/superAdmin/statistics")
 export class DiscussionboardSuperadminStatisticsController {
   /**
-   * Retrieve comprehensive platform statistics for administrative monitoring and analytics.
+   * Retrieve comprehensive system-wide statistics for the discussion board platform.
    *
-   * This operation provides aggregated metrics from across the discussion board platform, including user engagement statistics, content creation metrics, section activity levels, and system performance indicators. The statistics are designed to support administrative decision-making, platform health monitoring, and user engagement analysis.
+   * This operation provides aggregated metrics across three main categories: user engagement, content quality, and technical performance. The statistics include monthly active users (MAU), daily active users (DAU), average session duration, article creation rates, comment-to-article ratios, user retention rates, system uptime percentages, average response times, and error rates by functionality.
    *
-   * Administrators can use this data to track platform growth, identify popular content categories, monitor system performance, and make data-driven decisions about platform management. The statistics include both raw counts and calculated metrics that provide insights into user behavior and content engagement patterns.
+   * The data is sourced from multiple database tables including user activities, article and comment statistics, and performance monitoring metrics. All statistics are calculated for the current reporting period with appropriate time-based aggregations to provide meaningful insights into platform health and user engagement patterns.
    *
-   * The response includes separate categories for user statistics, content statistics, section statistics, and system performance metrics, allowing administrators to focus on specific areas of interest while maintaining a comprehensive overview of platform health and activity levels.
+   * This endpoint is primarily intended for administrator use to monitor platform performance and make data-driven decisions about content strategy and technical improvements. The statistics provide a comprehensive overview of platform usage patterns and system reliability.
    *
    * @param connection
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Aggregate statistics from multiple database tables:
-   * - discussion_board_users: count active users, total users
-   * - discussion_board_articles: count published articles, total articles
-   * - discussion_board_comments: count total comments
-   * - discussion_board_sections: count active sections
-   * - discussion_board_article_view_stats: sum total views and unique viewers
-   * - discussion_board_section_statistics: aggregate section engagement metrics
-   * - discussion_board_performance_metrics: retrieve recent performance indicators
-   * - discussion_board_system_activities: count recent platform activities
-   *
-   * Calculate derived metrics like average views per article, engagement rates, and growth trends. Return comprehensive statistics suitable for administrative dashboards and platform monitoring.
+   * @x-autobe-specification Query multiple database tables to aggregate comprehensive system statistics. Calculate user engagement metrics from discussion_board_users and discussion_board_system_activities tables, including monthly active users (MAU), daily active users (DAU), and average session duration. Compute content quality metrics from discussion_board_articles and discussion_board_comments tables, such as article creation rate, comment-to-article ratio, and user retention rates. Retrieve technical performance metrics from discussion_board_performance_metrics table, including system uptime percentage, average response times, and error rates by functionality. Aggregate section statistics from discussion_board_section_statistics for overall platform health indicators. Calculate all metrics for the current month and provide comparison data with previous month where applicable.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get()
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-  ): Promise<IDiscussionBoardPerformanceMetric> {
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+  ): Promise<IDiscussionBoardArticleViewStatEvent> {
     try {
       return await getDiscussionBoardSuperAdminStatistics({
         superAdmin,

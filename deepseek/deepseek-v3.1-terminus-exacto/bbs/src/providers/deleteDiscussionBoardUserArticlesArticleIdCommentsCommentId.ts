@@ -16,50 +16,38 @@ export async function deleteDiscussionBoardUserArticlesArticleIdCommentsCommentI
   articleId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // First verify the comment exists and belongs to the specified article
-  const comment = await MyGlobal.prisma.discussion_board_comments.findUnique({
-    where: { id: props.commentId },
-    select: {
-      id: true,
-      discussion_board_article_id: true,
-      discussion_board_user_id: true,
-      deleted_at: true,
+  // Verify article exists (findFirstOrThrow for better error handling)
+  await MyGlobal.prisma.discussion_board_articles.findFirstOrThrow({
+    where: {
+      id: props.articleId,
+      deleted_at: null,
     },
+    select: { id: true }, // Only need existence check
   });
-  if (!comment) {
-    throw new HttpException("Comment not found", 404);
-  }
-  if (comment.discussion_board_article_id !== props.articleId) {
-    throw new HttpException(
-      "Comment does not belong to the specified article",
-      404,
-    );
-  }
-  if (comment.deleted_at !== null) {
-    throw new HttpException("Comment already deleted", 404);
-  }
-  // Check authorization: users can only delete their own comments
-  if (comment.discussion_board_user_id !== props.user.id) {
-    // Check if user has administrator privileges
-    const adminCheck = await MyGlobal.prisma.discussion_board_admins.findFirst({
+  // Fetch comment with ownership and article validation
+  const comment =
+    await MyGlobal.prisma.discussion_board_comments.findFirstOrThrow({
       where: {
-        id: props.user.id,
-        deleted_at: null,
+        id: props.commentId,
+        discussion_board_article_id: props.articleId,
       },
     });
-    if (!adminCheck) {
-      throw new HttpException(
-        "You don't have permission to delete this comment",
-        403,
-      );
-    }
+  // Authorization check - user must own the comment
+  if (comment.discussion_board_user_id !== props.user.id) {
+    throw new HttpException("You can only delete your own comments", 403);
   }
-  // Soft delete the comment by setting deleted_at timestamp
+  // Check if already deleted
+  if (comment.deleted_at !== null) {
+    throw new HttpException("Comment already deleted", 410);
+  }
+  // Get current timestamp as ISO string
+  const now = new Date().toISOString();
+  // Perform soft deletion with ISO string timestamps
   await MyGlobal.prisma.discussion_board_comments.update({
     where: { id: props.commentId },
     data: {
-      deleted_at: toISOStringSafe(new Date()),
+      deleted_at: now,
+      updated_at: now,
     },
   });
-  // Return void for 204 No Content response
 }

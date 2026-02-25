@@ -14,47 +14,21 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putShoppingMallAdministratorNotificationsPreferences(props: {
   administrator: AdministratorPayload;
-  body: IShoppingMallUserNotificationPreference.IUpdateMany;
-}): Promise<IShoppingMallUserNotificationPreference[]> {
-  if (!props.body || Object.keys(props.body).length === 0) {
-    return [];
+  body: IShoppingMallUserNotificationPreference.IUpdate;
+}): Promise<void> {
+  const updateResult =
+    await MyGlobal.prisma.shopping_mall_user_notification_preferences.updateMany(
+      {
+        where: { administrator_id: props.administrator.id },
+        data: {
+          channel_name: props.body.channelName,
+          notification_type: props.body.notificationType,
+          is_enabled: props.body.isEnabled,
+          updated_at: new Date(),
+        },
+      },
+    );
+  if (updateResult.count === 0) {
+    throw new HttpException("Forbidden", 403);
   }
-  const administratorId = props.administrator.id;
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    const now = toISOStringSafe(new Date());
-    const preferences = Object.values(props.body) as unknown as Array<{
-      channelName: string;
-      notificationType: string;
-      isEnabled: boolean;
-    }>;
-    for (const preference of preferences) {
-      await prisma.shopping_mall_user_notification_preferences.upsert({
-        where: {
-          administrator_id_channel_name_notification_type: {
-            administrator_id: administratorId,
-            channel_name: preference.channelName,
-            notification_type: preference.notificationType,
-          },
-        },
-        update: {
-          is_enabled: preference.isEnabled,
-          updated_at: now,
-        },
-        create: {
-          id: v4(),
-          administrator_id: administratorId,
-          channel_name: preference.channelName,
-          notification_type: preference.notificationType,
-          is_enabled: preference.isEnabled,
-          created_at: now,
-          updated_at: now,
-        },
-      });
-    }
-  });
-  const updatedPreferences =
-    await MyGlobal.prisma.shopping_mall_user_notification_preferences.findMany({
-      where: { administrator_id: administratorId },
-    });
-  return updatedPreferences;
 }

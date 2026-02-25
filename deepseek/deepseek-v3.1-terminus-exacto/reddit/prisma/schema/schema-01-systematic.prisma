@@ -1,105 +1,79 @@
-/// Platform-wide configuration settings and system parameters that control
-/// global platform behavior.
+/// Stores platform-wide configuration settings and feature flags that
+/// control system behavior and enable/disable features globally.
 ///
-/// This table stores all system-level configurations that apply across the
-/// entire platform, including feature flags, rate limits, security settings,
-/// and operational parameters. Each configuration has a unique key, typed
-/// value, and descriptive metadata to ensure proper system operation.
+/// This table serves as the centralized configuration management system for
+/// the entire platform. It stores key-value pairs with type information,
+/// scoping capabilities, and audit trails. Configuration values can control
+/// feature toggles, system behavior parameters, and platform-wide settings.
 ///
-/// Configurations are managed by platform administrators and can be
-/// dynamically updated without requiring code changes. The system supports
-/// various value types including strings, numbers, booleans, and JSON
-/// objects for complex configurations.
-///
-/// All configuration changes are tracked through the standard temporal
-/// fields, allowing administrators to audit configuration history and roll
-/// back changes if necessary. Configurations can be marked as active or
-/// inactive to enable gradual rollout of changes.
-///
-/// This table serves as the central repository for all platform-wide
-/// settings that need to be configurable at runtime, supporting the
-/// platform's operational flexibility and maintainability.
+/// Each configuration entry includes metadata for proper validation and
+/// usage context. The scope field allows configurations to be applied
+/// globally, per-environment, or per-feature. {@link
+/// community_platform_feature_flags} extends this functionality with more
+/// sophisticated feature toggle management.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_configurations {
+model community_platform_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Unique identifier for the configuration setting. Used to reference the
-  /// configuration in code and administration interfaces.
+  /// Unique identifier for the configuration setting. Used to retrieve
+  /// configuration values programmatically.
   config_key String
   
-  /// The actual value of the configuration setting. Interpreted according to
-  /// the config_type field.
+  /// The actual configuration value stored as string. Interpretation depends
+  /// on data_type field.
   config_value String
   
-  /// Data type of the configuration value. Valid values: 'string', 'boolean',
-  /// 'int', 'double', 'json'.
-  config_type String
+  /// Data type of the configuration value (boolean, integer, string, json,
+  /// etc.).
+  data_type String
   
-  /// Human-readable description explaining the purpose and usage of this
-  /// configuration setting.
-  description String
-  
-  /// Scope of the configuration's applicability. Valid values: 'global',
-  /// 'environment', 'instance'.
+  /// Scope of the configuration (global, environment, feature, user_group).
   scope String
   
-  /// Whether this configuration setting is currently active and being applied
-  /// by the system.
+  /// Human-readable description of what this configuration controls.
+  description String
+  
+  /// Whether this configuration setting is currently active and should be
+  /// applied.
   is_active Boolean
   
-  /// Timestamp when this configuration was initially created.
+  /// Timestamp when this configuration was created.
   created_at DateTime
   
-  /// Timestamp when this configuration was last modified.
+  /// Timestamp when this configuration was last updated.
   updated_at DateTime
   
-  /// Timestamp when this configuration was soft-deleted, allowing for audit
-  /// trail and potential restoration.
+  /// Timestamp when this configuration was soft-deleted for versioning.
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
-  apiRateLimits community_platform_api_rate_limits[]
-  notificationSettings community_platform_notification_settings[]
-  systemAlerts community_platform_system_alerts[]
-  
   @@unique([config_key])
   @@index([scope, is_active])
-  // spellchecker: ignore-next-line
-  @@index([config_type, is_active], map: "community_platform_system_configurations_config_type_i_b5e79e7f")
+  @@index([scope, config_key])
   @@index([created_at])
 }
 
-/// System-wide audit trail capturing all significant security events, user
-/// actions, and compliance activities.
+/// Comprehensive audit trail of all significant system events and user
+/// actions for security monitoring and compliance requirements.
 ///
-/// This table serves as the central repository for security auditing,
-/// compliance tracking, and forensic analysis. It records events such as
-/// user logins, content modifications, administrative actions, and system
-/// configuration changes. Each record includes detailed context about the
-/// event, the actor who performed it, the target entity affected, and the
-/// outcome.
+/// This table captures detailed information about platform activities
+/// including user authentication events, content creation/modification,
+/// voting actions, moderation activities, and system operations. Each record
+/// includes actor identification, action type, target entity references, IP
+/// address tracking, and comprehensive metadata for forensic analysis.
 ///
-/// The audit trail supports security investigations, regulatory compliance
-/// requirements, and system monitoring. Records are immutable once created
-/// and provide a complete historical record of platform activity for
-/// auditing purposes.
-///
-/// Audit logs reference a single actor through the actor_id field with an
-/// actor_type discriminator to identify whether the action was performed by
-/// a user, moderator, or administrator. This ensures referential integrity
-/// and simplifies query patterns.
-///
-/// All audit records include comprehensive metadata including IP addresses,
-/// user agents, request identifiers, and detailed action descriptions to
-/// support forensic analysis and compliance reporting.
+/// The audit logs support security monitoring, compliance reporting, and
+/// incident investigation by providing a complete historical record of
+/// platform activities. Records are append-only and cannot be modified to
+/// ensure audit integrity.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -110,92 +84,525 @@ model community_platform_audit_logs {
   /// Primary Key.
   id String @id
   
-  /// Reference to the actor who performed the action. The actor_type field
-  /// identifies whether this is a user, moderator, or administrator. {@link
-  /// community_platform_users.id}, {@link community_platform_moderators.id},
-  /// {@link community_platform_admins.id}
-  actor_id String
+  /// Community where the action occurred. {@link
+  /// community_platform_communities.id}
+  community_id String?
   
-  /// Type of actor who performed the action: 'user', 'moderator', or 'admin'.
-  /// This field works with actor_id to identify the specific actor.
+  /// Post that was the target of the action. {@link
+  /// community_platform_posts.id}
+  post_id String?
+  
+  /// Comment that was the target of the action. {@link
+  /// community_platform_comments.id}
+  comment_id String?
+  
+  /// Type of actor who performed the action (user, moderator, admin, system).
   actor_type String
   
-  /// Type of audit event (e.g., 'user_login', 'content_create',
-  /// 'content_edit', 'content_delete', 'user_ban', 'system_config_change').
-  event_type String
+  /// ID of the actor who performed the action (references user_id,
+  /// moderator_id, or admin_id based on actor_type).
+  actor_id String
   
-  /// Subcategory of the event for detailed classification (e.g.,
-  /// 'post_create', 'comment_create', 'community_create').
-  event_subtype String?
+  /// Type of action performed (e.g., login, create_post, edit_comment, vote,
+  /// moderate, delete).
+  action_type String
   
-  /// Type of entity affected by the action (e.g., 'user', 'post', 'comment',
-  /// 'community', 'system').
-  target_entity_type String
-  
-  /// ID of the specific entity affected by the action.
-  target_entity_id String?
+  /// Detailed description of the action performed, including any relevant
+  /// metadata.
+  action_details String?
   
   /// IP address from which the action was performed.
-  ip_address String?
+  ip_address String
   
   /// User agent string of the client that performed the action.
   user_agent String?
   
-  /// Unique identifier for the HTTP request that triggered the action.
-  request_id String?
+  /// Whether the action was successful or resulted in an error.
+  success Boolean
   
-  /// Detailed description of the action performed, including any relevant
-  /// context.
-  action_details String?
-  
-  /// Result of the action (e.g., 'success', 'failure', 'partial_success').
-  outcome String
-  
-  /// Error message if the action failed.
+  /// Error message if the action failed, null if successful.
   error_message String?
   
-  /// Additional metadata about the event in JSON format.
-  metadata String?
-  
-  /// Timestamp when the audit event was recorded.
+  /// Timestamp when the audit record was created.
   created_at DateTime
   
-  /// Timestamp when the audit event was last updated. Typically matches
-  /// created_at since audit records are immutable.
+  /// Timestamp when the audit record was last updated.
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
-  actor community_platform_users @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
   
-  @@index([actor_id])
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userAuditLog community_platform_audit_log_of_users?
+  moderatorAuditLog community_platform_audit_log_of_moderators?
+  auditLog community_platform_audit_log_of_admins?
   
-  @@index([event_type, created_at])
-  // spellchecker: ignore-next-line
-  @@index([target_entity_type, target_entity_id, created_at], map: "community_platform_audit_logs_target_entity_type_targe_8daab2e3")
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([actor_type, actor_id, created_at], map: "community_platform_audit_logs_actor_type_actor_id_crea_45804fe6")
+  @@index([action_type, created_at])
+  @@index([community_id, created_at])
+  @@index([post_id, created_at])
+  @@index([comment_id, created_at])
+  @@index([ip_address, created_at])
+}
+
+/// Standardized categories for content reports with predefined reasons and
+/// moderation guidelines for consistent reporting across the platform.
+///
+/// This table provides a centralized system for categorizing user reports,
+/// ensuring consistent handling of reported content and standardized
+/// moderation workflows. Each category includes predefined reasons that
+/// users can select when reporting content, along with specific moderation
+/// guidelines that help moderators handle reports consistently.
+///
+/// Categories are used by both users (when selecting report reasons) and
+/// moderators (when reviewing and acting on reports). The system supports
+/// platform-wide standardization while allowing for community-specific
+/// customizations through category assignments.
+///
+/// {@link community_platform_reports} reference these categories to
+/// categorize user-submitted reports.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifier for the report category used for internal
+  /// reference and display.
+  name String
+  
+  /// User-friendly display name shown to users when selecting report
+  /// categories.
+  display_name String
+  
+  /// Detailed description explaining the purpose and scope of this report
+  /// category.
+  description String
+  
+  /// Severity classification (low, medium, high, critical) that determines
+  /// moderation priority and handling procedures.
+  severity_level String
+  
+  /// Specific guidelines and procedures for moderators handling reports in
+  /// this category.
+  moderation_guidelines String
+  
+  /// Whether this report category is currently active and available for use.
+  is_active Boolean
+  
+  /// Timestamp when this report category was created.
+  created_at DateTime
+  
+  /// Timestamp when this report category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this report category was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  // spellchecker: ignore-next-line
+  @@index([severity_level, is_active], map: "community_platform_report_categories_severity_level_is_8ce07f8c")
   @@index([created_at])
 }
 
-/// Scheduled maintenance periods and system downtime tracking for platform
-/// infrastructure.
+/// Periodic snapshots of platform statistics including user counts, content
+/// volumes, and engagement metrics for trend analysis.
 ///
-/// This table manages scheduled maintenance windows that allow platform
-/// administrators to notify users about planned downtime and track
-/// maintenance completion. Each maintenance window includes start and end
-/// times, description of work being performed, impact level assessment, and
-/// tracking of maintenance status from scheduled through completion.
+/// This table captures comprehensive platform metrics at regular intervals
+/// to enable historical trend analysis, performance monitoring, and business
+/// intelligence reporting. Each snapshot represents a point-in-time
+/// measurement of platform health and growth.
 ///
-/// Maintenance windows support both planned maintenance (regular updates,
-/// infrastructure improvements) and emergency maintenance (notifications for
-/// unexpected downtime). The table provides audit trails for maintenance
-/// activities and supports reporting on system availability metrics.
+/// Key metrics tracked include user registration patterns, content creation
+/// rates, community growth statistics, and overall engagement levels. These
+/// snapshots are used for capacity planning, feature adoption analysis, and
+/// identifying seasonal usage patterns.
 ///
-/// Created by system administrators through the administrative interface and
-/// visible to users via maintenance notifications that display relevant
-/// downtime information.
+/// Snapshots are typically generated on a scheduled basis (daily, weekly,
+/// monthly) and provide the foundation for platform analytics dashboards and
+/// executive reporting.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this snapshot was captured, representing the point-in-time
+  /// measurement.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated for audit trail purposes.
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was soft deleted, allowing for data
+  /// retention policies.
+  deleted_at DateTime?
+  
+  /// Total number of registered users on the platform at snapshot time.
+  total_users Int
+  
+  /// Number of users who were active within the last 24 hours.
+  active_users_24h Int
+  
+  /// Number of users who were active within the last 7 days.
+  active_users_7d Int
+  
+  /// Number of users who were active within the last 30 days.
+  active_users_30d Int
+  
+  /// Total number of communities created on the platform.
+  total_communities Int
+  
+  /// Number of communities with recent activity (posts/comments).
+  active_communities Int
+  
+  /// Total number of posts created across all communities.
+  total_posts Int
+  
+  /// Number of posts created within the last 24 hours.
+  posts_24h Int
+  
+  /// Number of posts created within the last 7 days.
+  posts_7d Int
+  
+  /// Total number of comments created across all posts.
+  total_comments Int
+  
+  /// Number of comments created within the last 24 hours.
+  comments_24h Int
+  
+  /// Number of comments created within the last 7 days.
+  comments_7d Int
+  
+  /// Total number of votes cast on posts and comments.
+  total_votes Int
+  
+  /// Number of votes cast within the last 24 hours.
+  votes_24h Int
+  
+  /// Number of votes cast within the last 7 days.
+  votes_7d Int
+  
+  /// Total number of community subscriptions across all users.
+  total_subscriptions Int
+  
+  /// Number of new community subscriptions created within the last 24 hours.
+  new_subscriptions_24h Int
+  
+  /// Average number of posts created per active user.
+  avg_posts_per_user Float
+  
+  /// Average number of comments created per active user.
+  avg_comments_per_user Float
+  
+  /// Average number of votes cast per active user.
+  avg_votes_per_user Float
+  
+  /// Percentage growth rate of user base compared to previous period.
+  user_growth_rate Float
+  
+  /// Percentage growth rate of total content (posts + comments) compared to
+  /// previous period.
+  content_growth_rate Float
+  
+  /// Overall platform engagement rate calculated as active users divided by
+  /// total users.
+  engagement_rate Float
+  
+  /// Maximum number of users concurrently active during the snapshot period.
+  peak_concurrent_users Int
+  
+  /// Average duration of user sessions in minutes.
+  avg_session_duration Float
+  
+  /// Percentage of users who leave the platform after viewing only one page.
+  bounce_rate Float
+  
+  /// Percentage of new users who return to the platform within 7 days of
+  /// registration.
+  retention_rate_7d Float
+  
+  /// Percentage of new users who return to the platform within 30 days of
+  /// registration.
+  retention_rate_30d Float
+  
+  /// Number of moderation actions performed within the last 24 hours.
+  moderation_actions_24h Int
+  
+  /// Number of content reports resolved by moderators within the last 24 hours.
+  reports_resolved_24h Int
+  
+  /// Platform uptime percentage for the period covered by the snapshot.
+  system_uptime_percentage Float
+  
+  /// Average API response time in milliseconds.
+  avg_response_time Float
+  
+  /// Percentage of requests that resulted in errors.
+  error_rate Float
+  
+  /// Time period covered by this snapshot (daily, weekly, monthly).
+  snapshot_period String
+  
+  /// Optional notes or observations about this snapshot period.
+  snapshot_notes String?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([created_at])
+  // spellchecker: ignore-next-line
+  @@index([created_at, snapshot_period], map: "community_platform_system_snapshots_created_at_snapsho_552537bc")
+  @@index([total_users, created_at])
+  @@index([total_posts, created_at])
+  // spellchecker: ignore-next-line
+  @@index([total_comments, created_at], map: "community_platform_system_snapshots_total_comments_cre_18de3b37")
+  // spellchecker: ignore-next-line
+  @@index([engagement_rate, created_at], map: "community_platform_system_snapshots_engagement_rate_cr_e9a88686")
+}
+
+/// Feature toggle system allowing controlled rollout of new features and A/B
+/// testing capabilities across the platform.
+///
+/// Stores feature flag configurations with various rollout strategies
+/// including boolean toggles, percentage-based releases, and user-specific
+/// targeting. Supports environment-specific configurations and provides
+/// audit trail for flag changes.
+///
+/// Used by platform administrators to safely deploy new features with
+/// gradual rollout, conduct A/B testing experiments, and manage feature
+/// availability across different user segments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the feature flag used in code references.
+  name String
+  
+  /// Human-readable description explaining the feature flag's purpose and
+  /// usage.
+  description String
+  
+  /// Type of feature flag: 'boolean', 'percentage', or 'user_specific'.
+  flag_type String
+  
+  /// Current status of the feature flag: 'active', 'inactive', or 'archived'.
+  status String
+  
+  /// Boolean value for boolean-type flags when enabled/disabled.
+  boolean_value Boolean?
+  
+  /// Percentage value (0-100) for percentage-based rollout flags.
+  percentage_value Int?
+  
+  /// Timestamp when the feature flag rollout was initiated.
+  rollout_started_at DateTime?
+  
+  /// Timestamp when the feature flag rollout was completed.
+  rollout_completed_at DateTime?
+  
+  /// Timestamp when the feature flag was created.
+  created_at DateTime
+  
+  /// Timestamp when the feature flag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the feature flag was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  targetingRules community_platform_feature_flag_targeting_rules[]
+  environmentConfigurations community_platform_feature_flag_environments[]
+  environmentDetails community_platform_feature_flag_environment_details[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([status, created_at])
+  @@index([flag_type, status])
+}
+
+/// Rate limiting configuration and tracking for API endpoints to prevent
+/// abuse and ensure fair resource allocation.
+///
+/// This table stores rate limit rules for specific API endpoints, tracks
+/// current usage against those limits, and manages expiration timers for
+/// rate limit windows. Each record represents a rate limit configuration for
+/// a specific endpoint-method combination with real-time usage tracking.
+///
+/// Rate limits are enforced per endpoint basis, allowing different limits
+/// for different API operations while preventing API abuse and ensuring fair
+/// resource distribution across users.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_api_rate_limits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// API endpoint path pattern that this rate limit applies to (e.g.,
+  /// '/api/posts', '/api/comments/*').
+  endpoint_path String
+  
+  /// HTTP method this rate limit applies to (GET, POST, PUT, DELETE, etc.).
+  http_method String
+  
+  /// Maximum number of requests allowed within the time window.
+  max_requests Int
+  
+  /// Time window in seconds for the rate limit (e.g., 3600 for hourly limits).
+  time_window_seconds Int
+  
+  /// Current number of requests made within the current time window.
+  current_usage Int
+  
+  /// Timestamp when the current rate limit window started.
+  window_start_time DateTime
+  
+  /// Timestamp when the current rate limit window expires.
+  window_end_time DateTime
+  
+  /// Whether this rate limit configuration is currently active and enforced.
+  is_active Boolean
+  
+  /// Human-readable description of what this rate limit protects.
+  description String?
+  
+  /// Timestamp when this rate limit configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this rate limit configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([endpoint_path, http_method], map: "community_platform_api_rate_limits_endpoint_path_http__73215702")
+  @@index([window_end_time])
+  @@index([is_active])
+}
+
+/// System-generated alerts and notifications for platform administrators
+/// regarding performance issues, security concerns, and system events.
+///
+/// This table tracks all automated alerts generated by the platform
+/// monitoring systems. Alerts cover performance degradation, security
+/// incidents, system errors, and other critical events requiring
+/// administrator attention. Each alert includes type classification,
+/// severity level, current status, and resolution tracking.
+///
+/// Alerts are managed through administrator workflows where they can be
+/// acknowledged, investigated, and resolved. The system maintains a complete
+/// audit trail of alert lifecycle from creation to resolution.
+///
+/// Related entities: {@link community_platform_configurations} for system
+/// settings, {@link community_platform_error_logs} for error tracking,
+/// {@link community_platform_system_snapshots} for performance metrics.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_alerts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Category of the alert such as performance, security, system, or
+  /// maintenance.
+  alert_type String
+  
+  /// Severity level indicating impact (critical, high, medium, low).
+  severity String
+  
+  /// Current state of the alert (new, acknowledged, investigating, resolved).
+  status String
+  
+  /// Brief descriptive title summarizing the alert condition.
+  title String
+  
+  /// Detailed description of the alert including symptoms and impact.
+  description String
+  
+  /// System component or service that generated the alert.
+  source_component String
+  
+  /// Timestamp when administrator first acknowledged the alert.
+  acknowledged_at DateTime?
+  
+  /// Timestamp when alert was marked as resolved.
+  resolved_at DateTime?
+  
+  /// Administrator notes describing how the alert was resolved.
+  resolution_notes String?
+  
+  /// Timestamp when the alert was initially generated by the system.
+  created_at DateTime
+  
+  /// Timestamp of last update to the alert record.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status, created_at])
+  @@index([alert_type, severity])
+  // spellchecker: ignore-next-line
+  @@index([source_component, created_at], map: "community_platform_system_alerts_source_component_crea_ad006312")
+}
+
+/// Scheduled maintenance periods and platform downtime notifications to
+/// manage user expectations and service availability.
+///
+/// Tracks planned and emergency maintenance windows with start/end times,
+/// notification content, and status management. Used by platform
+/// administrators to schedule downtime and communicate service interruptions
+/// to users.
+///
+/// Maintenance windows can be scheduled in advance for planned maintenance
+/// or created reactively for emergency situations. Each window includes
+/// notification content that is displayed to users before and during the
+/// maintenance period.
+///
+/// Related entities: {@link community_platform_configurations} for platform
+/// settings, {@link community_platform_system_alerts} for alert generation.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -206,66 +613,78 @@ model community_platform_maintenance_windows {
   /// Primary Key.
   id String @id
   
-  /// Detailed description of the maintenance work being performed during the
-  /// scheduled window.
+  /// Descriptive title of the maintenance window for administrative reference.
+  title String
+  
+  /// Detailed description of the maintenance activities and impact on users.
   description String
   
-  /// Scheduled start time of the maintenance window when downtime begins.
-  start_time DateTime
+  /// Type of maintenance: planned, emergency, security, performance, etc.
+  maintenance_type String
   
-  /// Scheduled end time of the maintenance window when service is expected to
-  /// be restored.
-  end_time DateTime
+  /// Planned start time of the maintenance window.
+  scheduled_start DateTime
   
-  /// Current status of the maintenance window (scheduled, in-progress,
-  /// completed, cancelled).
+  /// Planned end time of the maintenance window.
+  scheduled_end DateTime
+  
+  /// Actual start time when maintenance began (may differ from scheduled).
+  actual_start DateTime?
+  
+  /// Actual end time when maintenance completed.
+  actual_end DateTime?
+  
+  /// Current status: scheduled, active, completed, cancelled.
   status String
   
-  /// Impact assessment level for the maintenance (low, medium, high, critical).
+  /// Message displayed to users about the maintenance window.
+  notification_message String
+  
+  /// When the maintenance notification was sent to users.
+  notification_sent_at DateTime?
+  
+  /// Impact severity: low, medium, high, critical.
   impact_level String
   
-  /// Timestamp when the maintenance window was scheduled and created.
+  /// List of platform services affected by the maintenance.
+  affected_services String
+  
+  /// When the maintenance window was created.
   created_at DateTime
   
-  /// Timestamp when the maintenance window record was last updated.
+  /// When the maintenance window was last updated.
   updated_at DateTime
   
-  /// Timestamp when the maintenance window record was soft-deleted (nullable
-  /// for active records).
+  /// Soft delete timestamp for historical tracking.
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
-  @@unique([start_time, end_time])
-  @@index([start_time, status])
-  @@index([status, impact_level])
+  // spellchecker: ignore-next-line
+  @@index([scheduled_start, scheduled_end], map: "community_platform_maintenance_windows_scheduled_start_40c0fa76")
+  @@index([status])
+  @@index([maintenance_type])
+  @@index([impact_level])
 }
 
-/// System error logging and exception tracking table for platform-wide error
-/// monitoring.
+/// Centralized error logging and exception tracking system for monitoring
+/// platform health and identifying bugs requiring developer attention.
 ///
-/// This table captures all system errors and exceptions that occur during
-/// platform operation, providing comprehensive audit trails for debugging
-/// and system health monitoring. Each record includes detailed error
-/// information, severity classification, contextual metadata, and resolution
-/// status tracking.
+/// This table captures all system errors, exceptions, and issues that occur
+/// during platform operation. It provides comprehensive error metadata
+/// including severity levels, source information, stack traces, and
+/// contextual data to assist developers in debugging and resolving issues.
 ///
-/// The error logs support various error types including application
-/// exceptions, database errors, API failures, authentication errors, and
-/// system-level failures. They integrate with the platform's monitoring and
-/// alerting systems to provide real-time error detection and historical
-/// analysis capabilities.
+/// Each error log entry includes timestamps for when the error occurred and
+/// when it was resolved, along with status tracking to monitor error
+/// resolution workflows. The table supports filtering by error severity,
+/// source component, and resolution status for efficient monitoring and
+/// alerting.
 ///
-/// Error logs are automatically generated by the system's error handling
-/// middleware and provide developers with the necessary context to diagnose
-/// and resolve issues efficiently. The logs include stack traces, request
-/// details, user context, and environmental information to facilitate
-/// comprehensive error analysis.
-///
-/// {@link community_platform_system_configurations} defines error logging
-/// configurations and retention policies that govern this table's data
-/// management lifecycle.
+/// Related entities: {@link community_platform_configurations} for system
+/// settings that might influence error behavior, {@link
+/// community_platform_system_alerts} for error-triggered alerts.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
@@ -280,1880 +699,1421 @@ model community_platform_error_logs {
   /// error types.
   error_code String
   
-  /// Detailed error message describing the exception or failure condition.
+  /// Human-readable error message describing the exception or issue that
+  /// occurred.
   error_message String
   
-  /// Error category classification such as 'application', 'database', 'api',
-  /// 'authentication', or 'system'.
-  error_type String
+  /// Error severity level indicating impact (critical, error, warning, info,
+  /// debug).
+  severity String
   
-  /// Error severity classification: 'critical', 'error', 'warning', 'info', or
-  /// 'debug'.
-  severity_level String
+  /// System component or module where the error originated (e.g.,
+  /// authentication, posts, comments).
+  source_component String
   
-  /// Complete stack trace for debugging and error analysis purposes.
+  /// Full stack trace or detailed error information for debugging purposes.
   stack_trace String?
   
-  /// URL of the request that triggered the error, if applicable.
-  request_url String?
+  /// Correlation ID for tracing the request flow across multiple system
+  /// components.
+  request_id String?
   
-  /// HTTP method of the request that triggered the error.
-  request_method String?
-  
-  /// User agent string from the request that caused the error.
+  /// Client user agent string for identifying the source of problematic
+  /// requests.
   user_agent String?
   
-  /// IP address of the client that triggered the error.
+  /// IP address of the client that triggered the error for security monitoring.
   ip_address String?
   
-  /// ID of the authenticated user who triggered the error, if applicable.
-  user_id String?
+  /// HTTP status code associated with the error response.
+  http_status Int?
   
-  /// System component where the error occurred (e.g., 'authentication',
-  /// 'posts', 'comments', 'feeds').
-  component String
+  /// Additional contextual information about the error circumstances.
+  error_context String?
   
-  /// Environment where the error occurred: 'production', 'staging',
-  /// 'development', or 'testing'.
-  environment String
-  
-  /// Whether the error has been resolved or acknowledged by the development
-  /// team.
-  resolved Boolean
-  
-  /// Timestamp when the error was marked as resolved.
+  /// Timestamp when the error was resolved or acknowledged by developers.
   resolved_at DateTime?
   
-  /// ID of the administrator who resolved the error.
-  resolved_by String?
+  /// Current status of error resolution (open, investigating, resolved,
+  /// ignored).
+  resolution_status String
   
-  /// Timestamp when the error was logged.
+  /// Developer notes documenting the error resolution process and findings.
+  resolution_notes String?
+  
+  /// Timestamp when the error originally occurred in the system.
+  occurred_at DateTime
+  
+  /// Timestamp when this error log entry was created in the database.
   created_at DateTime
   
-  /// Timestamp when the error record was last updated.
+  /// Timestamp when this error log entry was last updated.
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
-  @@index([created_at])
-  @@index([error_type, created_at])
-  @@index([severity_level, created_at])
-  @@index([component, created_at])
-  @@index([resolved, created_at])
+  @@index([severity, occurred_at])
+  @@index([source_component, occurred_at])
+  @@index([resolution_status, occurred_at])
+  @@index([occurred_at])
 }
 
-/// API rate limiting configuration and enforcement tracking system. This
-/// table manages rate limiting rules for different API endpoints, tracks
-/// enforcement actions, and maintains usage patterns for audit and
-/// optimization purposes.
+/// Central authentication token repository storing temporary authentication
+/// credentials with expiration tracking.
 ///
-/// Each record represents a rate limiting rule for a specific API endpoint
-/// and actor type combination. The system tracks actual usage against
-/// configured limits and records enforcement actions when limits are
-/// exceeded. This enables fair API usage, prevents abuse, and provides
-/// comprehensive monitoring for platform performance optimization.
+/// This table serves as a generic container for authentication tokens used
+/// across the platform, supporting email verification, password reset, and
+/// other temporary authentication workflows. Each token has a defined
+/// purpose, expiration timeframe, and security metadata for audit purposes.
 ///
-/// The table integrates with the broader systematic infrastructure to
-/// provide centralized rate limiting management across all platform
-/// components. {@link community_platform_system_configurations} provides
-/// global rate limiting settings, while this table handles endpoint-specific
-/// enforcement. Actor-specific rate limiting ensures appropriate access
-/// levels for different user types.
+/// The table maintains token lifecycle management with creation, usage
+/// tracking, and automatic expiration. Security features include IP address
+/// tracking, user agent recording, and strict expiration enforcement to
+/// prevent token reuse.
+///
+/// Tokens are managed through subtype relationships with specific actor
+/// tables to maintain normalization and ensure each token belongs to exactly
+/// one actor type (user, moderator, or admin).
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_api_rate_limits {
+model community_platform_auth_tokens {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the system configuration that defines global rate limiting
-  /// settings. {@link community_platform_system_configurations.id}
-  community_platform_system_configuration_id String?
+  /// Type of authentication token indicating its purpose and usage context.
+  token_type String
   
-  /// The specific API endpoint path that this rate limit applies to. Examples:
-  /// '/api/v1/posts', '/api/v1/comments', '/api/v1/users'.
-  api_endpoint String
+  /// The actual token value used for authentication verification.
+  token_value String
   
-  /// Type of actor this rate limit applies to: 'user', 'moderator', 'admin',
-  /// or 'global' for system-wide limits.
-  actor_type String
-  
-  /// Type of rate limiting: 'requests_per_minute', 'requests_per_hour',
-  /// 'requests_per_day', or 'burst' for short-term limits.
-  rate_limit_type String
-  
-  /// Maximum number of requests allowed within the specified time period.
-  requests_per_period Int
-  
-  /// Time period in seconds for which the rate limit applies (e.g., 60 for
-  /// per-minute, 3600 for hourly limits).
-  time_period_seconds Int
-  
-  /// Action to take when rate limit is exceeded: 'block' (immediate
-  /// rejection), 'delay' (throttle requests), or 'warn' (allow with warning).
-  enforcement_action String
-  
-  /// Whether this rate limiting rule is currently active and being enforced.
-  is_active Boolean
-  
-  /// Timestamp of the last enforcement action taken for this rate limit rule.
-  last_enforcement_at DateTime?
-  
-  /// Total number of enforcement actions taken for this rate limit rule.
-  enforcement_count Int
-  
-  /// Timestamp when this rate limiting rule was created.
+  /// Timestamp when the token was generated and stored.
   created_at DateTime
   
-  /// Timestamp when this rate limit rule was last updated.
+  /// Timestamp when the token was last updated.
   updated_at DateTime
   
-  /// Timestamp when this rate limit rule was soft-deleted (if applicable).
+  /// Timestamp when the token was soft deleted.
   deleted_at DateTime?
   
-  //----
-  // RELATIONS
-  //----
-  systemConfiguration community_platform_system_configurations? @relation(fields: [community_platform_system_configuration_id], references: [id], onDelete: Cascade)
+  /// Timestamp when the token becomes invalid and cannot be used.
+  expires_at DateTime
   
-  enforcements community_platform_api_rate_limit_enforcements[]
-  usagePatterns community_platform_api_rate_limit_usages[]
+  /// Timestamp when the token was successfully used for authentication.
+  used_at DateTime?
   
-  // spellchecker: ignore-next-line
-  @@index([community_platform_system_configuration_id], map: "community_platform_api_rate_limits_community_platform__93c8ea9c")
-  
-  // spellchecker: ignore-next-line
-  @@unique([api_endpoint, actor_type, rate_limit_type], map: "community_platform_api_rate_limits_api_endpoint_actor__cca341e5")
-  @@index([is_active, created_at])
-  // spellchecker: ignore-next-line
-  @@index([actor_type, rate_limit_type], map: "community_platform_api_rate_limits_actor_type_rate_lim_9bfe3a36")
-  @@index([last_enforcement_at])
-}
-
-/// Platform performance metrics and health monitoring data for system-wide
-/// tracking and analysis.
-///
-/// This table stores aggregated performance metrics collected from various
-/// platform components to monitor system health, performance trends, and
-/// identify potential issues. Metrics include response times, throughput
-/// rates, error percentages, and resource utilization data.
-///
-/// Key metrics tracked:
-/// - API response times across different endpoints
-/// - Database query performance and connection metrics
-/// - System uptime and availability percentages
-/// - Error rates and exception tracking
-/// - Resource utilization (CPU, memory, disk usage)
-/// - User activity and traffic patterns
-///
-/// The data supports performance optimization, capacity planning, and
-/// proactive issue detection. Metrics are aggregated at regular intervals
-/// (e.g., hourly, daily) to provide trend analysis while maintaining
-/// manageable data volume.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_metrics {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Type of metric being recorded (e.g., api_response_time,
-  /// database_query_time, error_rate, uptime_percentage).
-  metric_type String
-  
-  /// Numerical value of the recorded metric.
-  metric_value Float
-  
-  /// Unit of measurement for the metric value (e.g., milliseconds, percentage,
-  /// requests_per_second).
-  metric_unit String
-  
-  /// Specific platform component the metric relates to (e.g., api_gateway,
-  /// database, authentication_service).
-  component String?
-  
-  /// Specific API endpoint or service method being measured.
-  endpoint String?
-  
-  /// Time period over which the metric was aggregated (e.g., hourly, daily,
-  /// weekly).
-  aggregation_period String
-  
-  /// Number of samples used to calculate this aggregated metric value.
-  sample_count Int
-  
-  /// Indicates whether this metric exceeded configured performance thresholds.
-  threshold_exceeded Boolean
-  
-  /// Timestamp when this metric aggregation was recorded.
-  recorded_at DateTime
-  
-  /// Timestamp when this metric record was created.
-  created_at DateTime
-  
-  /// Timestamp when this metric record was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  // spellchecker: ignore-next-line
-  @@unique([metric_type, component, endpoint, aggregation_period, recorded_at], map: "community_platform_system_metrics_metric_type_componen_7342ce1d")
-  @@index([metric_type, recorded_at])
-  @@index([component, recorded_at])
-  // spellchecker: ignore-next-line
-  @@index([threshold_exceeded, recorded_at], map: "community_platform_system_metrics_threshold_exceeded_r_bb316291")
-}
-
-/// Automated content filtering rules and keyword lists for platform-wide
-/// content moderation.
-///
-/// This table stores predefined filtering rules that automatically scan and
-/// moderate content across all communities. It includes keyword-based
-/// filtering, pattern matching rules, and automated moderation actions. Each
-/// filter rule can be configured with specific matching criteria, action
-/// types, and activation status.
-///
-/// Filters can target various content types including post titles, post
-/// bodies, comment text, and user-generated content. The system uses these
-/// rules to automatically flag, hide, or remove content that violates
-/// platform guidelines.
-///
-/// These rules are independently managed by platform administrators and can
-/// be prioritized, enabled/disabled, and tracked for effectiveness.
-///
-/// {@link community_platform_admins.id} tracks which administrator created
-/// and manages each filtering rule.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_content_moderation_filters {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Administrator who created this filtering rule. {@link
-  /// community_platform_admins.id}
-  created_by_admin_id String
-  
-  /// Descriptive name for the filtering rule for administrative identification.
-  rule_name String
-  
-  /// Type of filtering rule (keyword, regex_pattern, content_category,
-  /// spam_detection).
-  filter_type String
-  
-  /// The actual filtering pattern or keyword to match against content.
-  pattern String
-  
-  /// Detailed description of what this filter targets and why it exists.
-  description String
-  
-  /// Action to take when content matches (flag, hide, remove, require_review).
-  action_type String
-  
-  /// Severity level of the violation (low, medium, high, critical).
-  severity_level String
-  
-  /// Type of content this filter applies to (post_title, post_body, comment,
-  /// username).
-  target_content_type String
-  
-  /// Whether this filtering rule is currently active and being enforced.
-  is_active Boolean
-  
-  /// Whether the pattern matching should be case-sensitive.
-  case_sensitive Boolean
-  
-  /// Whether to match whole words only or allow partial matches.
-  match_whole_word Boolean
-  
-  /// Priority level for rule application order (lower numbers = higher
-  /// priority).
-  priority Int
-  
-  /// When this filtering rule expires and becomes inactive.
-  expires_at DateTime?
-  
-  /// Counter tracking how many times this rule has matched content.
-  match_count Int
-  
-  /// When this rule last matched content.
-  last_matched_at DateTime?
-  
-  /// When this filtering rule was created.
-  created_at DateTime
-  
-  /// When this filtering rule was last updated.
-  updated_at DateTime
-  
-  /// When this filtering rule was soft deleted (if applicable).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  createdByAdmin community_platform_admins @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([created_by_admin_id], map: "community_platform_content_moderation_filters_created__d77a4e2d")
-  
-  @@unique([rule_name])
-  // spellchecker: ignore-next-line
-  @@index([filter_type, is_active], map: "community_platform_content_moderation_filters_filter_t_6092bf54")
-  // spellchecker: ignore-next-line
-  @@index([target_content_type, is_active], map: "community_platform_content_moderation_filters_target_c_d791eaa6")
-  // spellchecker: ignore-next-line
-  @@index([severity_level, is_active], map: "community_platform_content_moderation_filters_severity_4a004e62")
-  // spellchecker: ignore-next-line
-  @@index([priority, is_active], map: "community_platform_content_moderation_filters_priority_1c4fda6a")
-  // spellchecker: ignore-next-line
-  @@index([is_active, expires_at], map: "community_platform_content_moderation_filters_is_activ_a555b939")
-  @@index([created_at])
-  // spellchecker: ignore-next-line
-  @@index([last_matched_at], map: "community_platform_content_moderation_filters_last_mat_99092c05")
-}
-
-/// System email templates for notifications and communications.
-///
-/// This table stores predefined email templates used by the platform for
-/// various system notifications including user registration confirmations,
-/// password reset emails, community notifications, and other automated
-/// communications. Templates support both HTML and plain text formats to
-/// ensure compatibility across different email clients.
-///
-/// Each template includes subject line, content body, and metadata for
-/// template management. Templates can be activated or deactivated as needed,
-/// and soft deletion allows for template archival while maintaining
-/// referential integrity.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_email_templates {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique identifier name for the email template used in code references.
-  name String
-  
-  /// Email subject line template with support for variable substitution.
-  subject String
-  
-  /// HTML formatted email body content with template variables.
-  body_html String
-  
-  /// Plain text version of the email body for clients that don't support HTML.
-  body_text String
-  
-  /// Category of email template (e.g., registration, notification,
-  /// password_reset).
-  template_type String
-  
-  /// Whether this template is currently active and available for use.
-  is_active Boolean
-  
-  /// Human-readable description of the template's purpose and usage.
-  description String?
-  
-  /// Timestamp when the template was created.
-  created_at DateTime
-  
-  /// Timestamp when the template was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the template was soft deleted, allowing for archival.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  notificationSettings community_platform_notification_settings[]
-  
-  @@unique([name])
-  @@index([template_type, is_active])
-  @@index([created_at])
-}
-
-/// Platform-wide notification configuration and delivery settings.
-///
-/// This table stores system-level notification preferences and delivery
-/// configurations that apply across the entire platform. It includes
-/// settings for different notification types (email, push, in-app), delivery
-/// optimization parameters, rate limiting rules, and platform-wide
-/// notification behavior.
-///
-/// The configuration supports multiple notification channels with
-/// independent settings for each channel type. Settings include delivery
-/// timing, content formatting, user preference defaults, and performance
-/// optimization parameters.
-///
-/// This table integrates with the {@link community_platform_email_templates}
-/// table for email notification content and the {@link
-/// community_platform_system_configurations} table for general platform
-/// settings. It also serves as the default configuration that users can
-/// override through their personal notification preferences.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_settings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to email template for standardized notification content
-  /// formatting. {@link community_platform_email_templates.id}
-  email_template_id String?
-  
-  /// Reference to system configuration for platform-wide settings integration.
-  /// {@link community_platform_system_configurations.id}
-  system_configuration_id String?
-  
-  /// Type of notification being configured (e.g., 'email', 'push', 'in_app',
-  /// 'system').
-  notification_type String
-  
-  /// Specific notification channel within the type (e.g., 'welcome_email',
-  /// 'comment_reply_push').
-  channel_name String
-  
-  /// User-friendly description of this notification configuration for
-  /// administrative interfaces.
-  description String
-  
-  /// Whether this notification channel is currently active.
-  enabled Boolean
-  
-  /// Default state for new users (users can override this preference).
-  default_enabled Boolean
-  
-  /// Configuration status (active, inactive, draft, archived) for lifecycle
-  /// management.
-  status String
-  
-  /// Minimum delay before notification delivery for batching optimization.
-  delivery_delay_minutes Int?
-  
-  /// Maximum number of notifications per user per hour to prevent spam.
-  rate_limit_per_hour Int?
-  
-  /// Notification priority (low, medium, high, critical) for delivery ordering.
-  priority_level String
-  
-  /// Number of delivery retry attempts before marking as failed.
-  retry_count Int
-  
-  /// Delay between delivery retry attempts.
-  retry_delay_minutes Int
-  
-  /// Time after which undelivered notifications expire and are discarded.
-  expiration_hours Int
-  
-  /// Maximum number of notifications to process in a single batch.
-  batch_size Int?
-  
-  /// Timeout for notification delivery attempts.
-  delivery_timeout_seconds Int
-  
-  /// Timestamp when this notification configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when this notification configuration was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this notification configuration was soft deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  emailTemplate community_platform_email_templates? @relation(fields: [email_template_id], references: [id], onDelete: Cascade)
-  systemConfiguration community_platform_system_configurations? @relation(fields: [system_configuration_id], references: [id], onDelete: Cascade)
-  
-  userOverrides community_platform_notification_setting_user_overrides[]
-  settingLogs community_platform_notification_setting_logs[]
-  
-  @@index([email_template_id])
-  // spellchecker: ignore-next-line
-  @@index([system_configuration_id], map: "community_platform_notification_settings_system_config_325b49e9")
-  
-  // spellchecker: ignore-next-line
-  @@unique([notification_type, channel_name], map: "community_platform_notification_settings_notification__16ead318")
-  // spellchecker: ignore-next-line
-  @@index([enabled, priority_level], map: "community_platform_notification_settings_enabled_prior_362953f1")
-  // spellchecker: ignore-next-line
-  @@index([notification_type, enabled], map: "community_platform_notification_settings_notification__98892cde")
-  @@index([status])
-  @@index([updated_at])
-}
-
-/// Configuration and tracking for automated data backup schedules.
-///
-/// This table manages backup configurations including schedule frequency,
-/// retention policies, storage targets, and execution status. It serves as
-/// the central hub for automated backup operations across the platform,
-/// ensuring data protection and disaster recovery capabilities.
-///
-/// Each backup schedule defines a specific backup job with its own
-/// configuration, target storage, and execution pattern. The system uses
-/// this table to determine when backups should run, what data to include,
-/// and how long to retain backup copies.
-///
-/// Backup schedules can be configured for different data types (full
-/// database, partial backups, specific components) and can target various
-/// storage destinations (local storage, cloud storage, external systems).
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_backup_schedules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique name identifying this backup schedule for administrative reference.
-  schedule_name String
-  
-  /// Detailed description of what this backup schedule protects and its
-  /// purpose.
-  description String?
-  
-  /// Type of backup operation (full, incremental, differential,
-  /// component-specific).
-  backup_type String
-  
-  /// Backup frequency schedule (daily, weekly, monthly, custom cron
-  /// expression).
-  frequency String
-  
-  /// Number of days to retain backup copies before automatic deletion.
-  retention_days Int
-  
-  /// Storage destination for backups (local, s3, azure, google_cloud, custom).
-  target_storage String
-  
-  /// JSON configuration for the target storage provider with connection
-  /// details.
-  storage_config String?
-  
-  /// Whether this backup schedule is currently active and should execute.
-  is_enabled Boolean
-  
-  /// Timestamp of the most recent successful backup execution.
-  last_execution DateTime?
-  
-  /// Scheduled timestamp for the next backup execution.
-  next_execution DateTime?
-  
-  /// Current status of the backup schedule (pending, running, completed,
-  /// failed, disabled).
-  execution_status String
-  
-  /// Error details from the last failed backup execution for troubleshooting.
-  error_message String?
-  
-  /// Total number of successful backup executions for this schedule.
-  success_count Int
-  
-  /// Total number of failed backup executions for this schedule.
-  failure_count Int
-  
-  /// Timestamp when this backup schedule was created.
-  created_at DateTime
-  
-  /// Timestamp when this backup schedule was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this backup schedule was soft-deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  @@unique([schedule_name])
-  // spellchecker: ignore-next-line
-  @@index([is_enabled, next_execution], map: "community_platform_backup_schedules_is_enabled_next_ex_9dff4ba5")
-  @@index([execution_status])
-  @@index([backup_type])
-}
-
-/// System alert configurations and notification rules for platform-wide
-/// monitoring.
-///
-/// This table stores core system alert definitions including alert types,
-/// severity levels, and activation status. Alerts can be configured for
-/// various system events such as performance degradation, security
-/// incidents, resource thresholds, and maintenance notifications.
-///
-/// Each alert configuration includes activation status, severity
-/// classification, and basic triggering conditions. Complex escalation rules
-/// and threshold configurations are stored in separate normalized tables to
-/// maintain 1NF compliance.
-///
-/// {@link community_platform_system_configurations.id} provides global
-/// system settings that may influence alert behavior. Alert configurations
-/// are managed through system administration interfaces and support targeted
-/// notification delivery based on administrator roles.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alerts {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to system configuration that may affect alert behavior. {@link
-  /// community_platform_system_configurations.id}
-  system_configuration_id String?
-  
-  /// Unique identifier name for the alert configuration.
-  alert_name String
-  
-  /// Category of alert such as performance, security, maintenance, or resource.
-  alert_type String
-  
-  /// Severity classification: info, warning, error, or critical.
-  severity_level String
-  
-  /// Whether this alert configuration is currently enabled.
-  is_active Boolean
-  
-  /// Minimum time in seconds between repeated alerts of same type.
-  cooldown_period Int
-  
-  /// Timestamp when this alert configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when this alert configuration was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this alert configuration was soft-deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  systemConfiguration community_platform_system_configurations? @relation(fields: [system_configuration_id], references: [id], onDelete: Cascade)
-  
-  notificationMethodAssignments community_platform_system_alert_notification_methods[]
-  targetRoles community_platform_system_alert_target_roles[]
-  escalationRules community_platform_system_alert_escalation_rules[]
-  thresholdConfigs community_platform_system_alert_threshold_configs[]
-  
-  @@unique([alert_name])
-  @@index([alert_type, severity_level])
-  @@index([is_active, created_at])
-  // spellchecker: ignore-next-line
-  @@index([system_configuration_id, created_at], map: "community_platform_system_alerts_system_configuration__829276c1")
-}
-
-/// Aggregated platform usage statistics and analytics for monitoring
-/// platform health and growth.
-///
-/// This table stores comprehensive platform-wide metrics collected at
-/// regular intervals, providing insights into user engagement, content
-/// creation patterns, and overall platform performance. Statistics are
-/// aggregated to enable efficient reporting and trend analysis without
-/// querying individual user or content tables.
-///
-/// The statistics include user activity metrics (daily/monthly active
-/// users), content creation rates (posts/comments per period), engagement
-/// metrics (votes, views), and growth indicators. Each record represents a
-/// snapshot of platform performance at a specific point in time, allowing
-/// for historical trend analysis and performance monitoring.
-///
-/// These statistics are essential for business intelligence, capacity
-/// planning, and identifying platform health issues. They support the
-/// systematic monitoring requirements defined in the platform
-/// specifications.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_platform_statistics {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Start timestamp of the statistics aggregation period.
-  period_start DateTime
-  
-  /// End timestamp of the statistics aggregation period.
-  period_end DateTime
-  
-  /// Total number of registered users on the platform.
-  total_users Int
-  
-  /// Number of unique users active in the past 24 hours.
-  active_users_daily Int
-  
-  /// Number of unique users active in the past 30 days.
-  active_users_monthly Int
-  
-  /// Total number of communities created on the platform.
-  total_communities Int
-  
-  /// Number of communities with activity in the current period.
-  active_communities Int
-  
-  /// Total number of posts created on the platform.
-  total_posts Int
-  
-  /// Number of new posts created during the aggregation period.
-  posts_created Int
-  
-  /// Total number of comments created on the platform.
-  total_comments Int
-  
-  /// Number of new comments created during the aggregation period.
-  comments_created Int
-  
-  /// Total number of votes cast on the platform.
-  total_votes Int
-  
-  /// Number of votes cast during the aggregation period.
-  votes_cast Int
-  
-  /// Total number of post views on the platform.
-  total_views Int
-  
-  /// Number of post views recorded during the aggregation period.
-  views_recorded Int
-  
-  /// Average karma score across all users.
-  average_karma Float
-  
-  /// Number of new users registered during the period.
-  new_users_registered Int
-  
-  /// Percentage of users who remained active from previous period.
-  user_retention_rate Float
-  
-  /// Timestamp when this statistics record was created.
-  created_at DateTime
-  
-  /// Timestamp when this statistics record was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  // spellchecker: ignore-next-line
-  @@unique([period_start, period_end], map: "community_platform_platform_statistics_period_start_pe_719cf6fe")
-  @@index([period_start])
-  @@index([period_end])
-  @@index([created_at])
-}
-
-/// Detailed tracking of individual rate limit enforcement actions for audit
-/// and analysis purposes.
-///
-/// This table records each instance where API rate limiting is enforced,
-/// capturing the specific API endpoint, the actor making the request, the
-/// enforcement timestamp, and the nature of the enforcement action. This
-/// data supports compliance auditing, usage pattern analysis, and system
-/// optimization by providing granular visibility into rate limit enforcement
-/// events.
-///
-/// Each record represents a single enforcement action triggered when an
-/// actor exceeds their rate limit quota for a specific API endpoint. The
-/// enforcement details include the action taken (e.g., request rejection,
-/// temporary blocking) and supporting metadata for analysis.
-///
-/// This table integrates with {@link community_platform_api_rate_limits} for
-/// endpoint configuration reference and with actor tables ({@link
-/// community_platform_users}, {@link community_platform_moderators}, {@link
-/// community_platform_admins}) for identity tracking.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_api_rate_limit_enforcements {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the API rate limit configuration that triggered this
-  /// enforcement. {@link community_platform_api_rate_limits.id}
-  api_rate_limit_id String
-  
-  /// Reference to the user actor who triggered the rate limit enforcement.
-  /// Nullable as enforcement may apply to different actor types. {@link
-  /// community_platform_users.id}
-  user_id String?
-  
-  /// Reference to the moderator actor who triggered the rate limit
-  /// enforcement. Nullable as enforcement may apply to different actor types.
-  /// {@link community_platform_moderators.id}
-  moderator_id String?
-  
-  /// Reference to the admin actor who triggered the rate limit enforcement.
-  /// Nullable as enforcement may apply to different actor types. {@link
-  /// community_platform_admins.id}
-  admin_id String?
-  
-  /// Type of enforcement action taken when rate limit was exceeded. Common
-  /// values include 'request_rejected', 'temporary_block', 'delayed_response'.
-  enforcement_action String
-  
-  /// Detailed reason for the enforcement, including specific rate limit
-  /// violation details.
-  enforcement_reason String
-  
-  /// Number of requests made by the actor that triggered the enforcement.
-  request_count Int
-  
-  /// The rate limit threshold that was exceeded, representing the maximum
-  /// allowed requests per time window.
-  limit_threshold Int
-  
-  /// Duration of the enforcement action in minutes, if applicable (e.g.,
-  /// temporary block duration).
-  enforcement_duration_minutes Int?
-  
-  /// IP address of the client making the requests, for additional tracking and
-  /// analysis.
-  client_ip String
-  
-  /// User agent string from the HTTP request headers, for client
-  /// identification.
-  user_agent String?
-  
-  /// Timestamp when the enforcement action was recorded.
-  created_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  apiRateLimit community_platform_api_rate_limits @relation(fields: [api_rate_limit_id], references: [id], onDelete: Cascade)
-  user community_platform_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  moderator community_platform_moderators? @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
-  admin community_platform_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([api_rate_limit_id, created_at], map: "community_platform_api_rate_limit_enforcements_api_rat_74cde0b7")
-  // spellchecker: ignore-next-line
-  @@index([user_id, created_at], map: "community_platform_api_rate_limit_enforcements_user_id_6c5cc1bd")
-  // spellchecker: ignore-next-line
-  @@index([moderator_id, created_at], map: "community_platform_api_rate_limit_enforcements_moderat_5b9a224d")
-  // spellchecker: ignore-next-line
-  @@index([admin_id, created_at], map: "community_platform_api_rate_limit_enforcements_admin_i_2caeea35")
-  // spellchecker: ignore-next-line
-  @@index([client_ip, created_at], map: "community_platform_api_rate_limit_enforcements_client__5dc4bc2d")
-  // spellchecker: ignore-next-line
-  @@index([enforcement_action, created_at], map: "community_platform_api_rate_limit_enforcements_enforce_83d033c9")
-}
-
-/// Usage pattern analysis tracking for API endpoint usage across different
-/// actor types.
-///
-/// This table captures detailed usage patterns for API endpoints, enabling
-/// analysis of consumption patterns across different user roles and actor
-/// types. It tracks usage metrics, peak usage times, and consumption trends
-/// to support capacity planning, rate limit optimization, and performance
-/// monitoring.
-///
-/// The data collected helps identify high-traffic endpoints, understand
-/// usage patterns by actor type, and optimize API rate limiting strategies
-/// based on actual usage patterns. Access parent rate limit configuration
-/// via the {@link community_platform_api_rate_limits} relationship.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_api_rate_limit_usages {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent rate limit configuration. {@link
-  /// community_platform_api_rate_limits.id}
-  community_platform_api_rate_limit_id String
-  
-  /// Number of API calls made during the tracking period.
-  usage_count Int
-  
-  /// Timestamp of peak usage during the tracking period.
-  peak_usage_time DateTime
-  
-  /// Average response time for API calls in milliseconds.
-  average_response_time Float
-  
-  /// Percentage of API calls that resulted in errors.
-  error_rate Float
-  
-  /// Start timestamp of the usage tracking period.
-  period_start DateTime
-  
-  /// End timestamp of the usage tracking period.
-  period_end DateTime
-  
-  /// Timestamp when this usage pattern record was created.
-  created_at DateTime
-  
-  /// Timestamp when this usage pattern record was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this usage pattern record was soft deleted (nullable for
-  /// active records).
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  rateLimit community_platform_api_rate_limits @relation(fields: [community_platform_api_rate_limit_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@index([community_platform_api_rate_limit_id, period_start], map: "community_platform_api_rate_limit_usages_community_pla_da0586c9")
-  // spellchecker: ignore-next-line
-  @@index([period_start, period_end], map: "community_platform_api_rate_limit_usages_period_start__138ff5da")
-}
-
-/// User-specific notification preference overrides that allow individual
-/// users to customize notification settings beyond platform defaults.
-///
-/// This table stores individual user preferences that override the
-/// system-wide notification settings defined in {@link
-/// community_platform_notification_settings}. Each record represents a
-/// specific user's customization for a particular notification type,
-/// enabling personalized notification experiences while maintaining
-/// platform-wide defaults.
-///
-/// Users can override settings such as email notifications, push
-/// notifications, frequency preferences, and content filtering rules. The
-/// system will always prioritize user-specific overrides when available,
-/// falling back to platform defaults when no override exists.
-///
-/// The table supports granular control over notification preferences,
-/// allowing users to fine-tune their notification experience based on their
-/// individual preferences and usage patterns.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_setting_user_overrides {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the platform notification setting being overridden. {@link
-  /// community_platform_notification_settings.id}
-  notification_setting_id String
-  
-  /// Reference to the user who created this override. {@link
-  /// community_platform_users.id}
-  user_id String
-  
-  /// The user-specific override value for this notification setting. This
-  /// value takes precedence over the platform default when the user is
-  /// involved.
-  override_value String
-  
-  /// Timestamp when this override was first created by the user.
-  created_at DateTime
-  
-  /// Timestamp when this override was last modified by the user.
-  updated_at DateTime
-  
-  /// Timestamp when this override was soft-deleted by the user. Allows for
-  /// preference recovery.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  notificationSetting community_platform_notification_settings @relation(fields: [notification_setting_id], references: [id], onDelete: Cascade)
-  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([notification_setting_id, user_id], map: "community_platform_notification_setting_user_overrides_c6a90157")
-  // spellchecker: ignore-next-line
-  @@index([user_id, created_at], map: "community_platform_notification_setting_user_overrides_847961fc")
-  // spellchecker: ignore-next-line
-  @@index([notification_setting_id, created_at], map: "community_platform_notification_setting_user_overrides_65e1479c")
-  // spellchecker: ignore-next-line
-  @@index([created_at], map: "community_platform_notification_setting_user_overrides_d98a7ee9")
-}
-
-/// Audit trail for notification configuration changes, tracking
-/// modifications to settings and delivery parameters.
-///
-/// This table provides comprehensive logging of all changes made to
-/// notification settings across the platform. It captures who made the
-/// change, when it occurred, what specific settings were modified, and the
-/// before/after values for complete auditability. Each log entry represents
-/// a single modification event to notification settings, supporting both
-/// platform-wide and user-specific notification configurations.
-///
-/// The audit trail supports compliance requirements, troubleshooting, and
-/// rollback capabilities by preserving the complete history of notification
-/// configuration changes. It integrates with the notification settings table
-/// to provide context for each modification and uses proper subtype pattern
-/// for actor references to maintain data integrity.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_setting_logs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the notification setting that was modified. {@link
-  /// community_platform_notification_settings.id}
-  notification_setting_id String
-  
-  /// Type of actor who performed the modification (user, moderator, admin).
-  actor_type String
-  
-  /// Type of modification action performed (create, update, delete, enable,
-  /// disable).
-  action_type String
-  
-  /// JSON array of field names that were modified in this change event.
-  changed_fields String
-  
-  /// JSON object containing the previous values of modified fields before the
-  /// change.
-  old_values String?
-  
-  /// JSON object containing the new values of modified fields after the change.
-  new_values String?
-  
-  /// Human-readable description of what was changed and why.
-  change_description String?
-  
-  /// IP address of the actor who performed the change for security auditing.
+  /// IP address from which the token was requested for security tracking.
   ip_address String?
   
-  /// User agent string of the client that performed the change.
+  /// User agent string from the requesting device for audit purposes.
   user_agent String?
   
-  /// Timestamp when the configuration change was logged.
-  created_at DateTime
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  authTokenOfUser community_platform_auth_token_of_users?
+  moderatorToken community_platform_auth_token_of_moderators?
+  adminToken community_platform_auth_token_of_admins?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
-  notificationSetting community_platform_notification_settings @relation(fields: [notification_setting_id], references: [id], onDelete: Cascade)
-  
-  userLog community_platform_notification_setting_log_of_users?
-  moderatorLog community_platform_notification_setting_log_of_moderators?
-  adminLog community_platform_notification_setting_log_of_admins?
-  
-  // spellchecker: ignore-next-line
-  @@index([notification_setting_id, created_at], map: "community_platform_notification_setting_logs_notificat_e15b0a89")
-  // spellchecker: ignore-next-line
-  @@index([actor_type, created_at], map: "community_platform_notification_setting_logs_actor_typ_fb175555")
-  // spellchecker: ignore-next-line
-  @@index([action_type, created_at], map: "community_platform_notification_setting_logs_action_ty_9308c6c6")
+  @@unique([token_value])
+  @@index([expires_at])
+  @@index([token_type, expires_at])
 }
 
-/// Junction table connecting system alerts to their configured notification
-/// methods, enabling multiple notification methods per alert.
+/// Tracks user login patterns, content creation frequency, and engagement
+/// metrics for security and analytics purposes.
 ///
-/// This table establishes a many-to-many relationship between system alerts
-/// and notification delivery methods, allowing each alert to be configured
-/// with multiple notification channels such as email, SMS, push
-/// notifications, webhooks, etc. Each record represents a specific
-/// notification method assignment for a particular system alert.
+/// This table provides comprehensive activity tracking for regular users
+/// across the platform. It captures login events, content creation patterns,
+/// voting activities, and engagement metrics to support security monitoring,
+/// user behavior analysis, and platform optimization.
 ///
-/// The junction structure supports flexible alert notification strategies
-/// where different alert types can use different combinations of
-/// notification methods based on severity, time of day, or other criteria.
-/// This normalized design enables system administrators to configure
-/// sophisticated notification workflows without altering the core alert
-/// system structure.
+/// Records are created automatically when users perform significant actions
+/// like logging in, creating content, voting, or engaging with community
+/// features. The data supports anomaly detection for security purposes and
+/// provides insights into user engagement patterns for product optimization.
 ///
-/// Integrity constraints ensure that alerts have valid notification method
-/// configurations and that duplicate method assignments for the same alert
-/// are prevented.
+/// Related entities: {@link community_platform_users}, {@link
+/// community_platform_posts}, {@link community_platform_comments}
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_notification_methods {
+model community_platform_user_activities {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// References the parent system alert that this notification method belongs
-  /// to. {@link community_platform_system_alerts.id}
-  system_alert_id String
+  /// Reference to the user who performed the activity. {@link
+  /// community_platform_users.id}.
+  user_id String
   
-  /// References the notification method type configuration. {@link
-  /// community_platform_system_alert_notification_method_types.id}
-  notification_method_type_id String
+  /// Reference to the post involved in the activity. {@link
+  /// community_platform_posts.id}.
+  post_id String?
   
-  /// Whether this notification method assignment is currently active for the
-  /// alert.
-  is_active Boolean
+  /// Reference to the comment involved in the activity. {@link
+  /// community_platform_comments.id}.
+  comment_id String?
   
-  /// Number of retry attempts configured for this notification method when
-  /// delivery fails.
-  retry_count Int
+  /// Type of activity performed (login, post_create, comment_create, vote,
+  /// etc.).
+  activity_type String
   
-  //----
-  // RELATIONS
-  //----
-  systemAlert community_platform_system_alerts @relation(fields: [system_alert_id], references: [id], onDelete: Cascade)
-  notificationMethodType community_platform_system_alert_notification_method_types @relation(fields: [notification_method_type_id], references: [id], onDelete: Cascade)
+  /// Additional details about the activity for context and debugging.
+  activity_details String?
   
-  configurations community_platform_system_alert_notification_method_configs[]
-  escalationRuleNotifications community_platform_system_alert_escalation_rule_notifications[]
+  /// IP address from which the activity was performed for security tracking.
+  ip_address String?
   
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_id, notification_method_type_id], map: "community_platform_system_alert_notification_methods_s_a2bf3904")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_id, is_active], map: "community_platform_system_alert_notification_methods_s_d6bef34a")
-  // spellchecker: ignore-next-line
-  @@index([notification_method_type_id, is_active], map: "community_platform_system_alert_notification_methods_n_579a260f")
-}
-
-/// Normalized table for alert target role assignments, supporting multiple
-/// roles per alert.
-///
-/// This table establishes relationships between system alerts and the target
-/// roles that should receive notifications for those alerts. Each system
-/// alert can target multiple roles (e.g., administrators, moderators,
-/// specific user groups), and each role type can be associated with multiple
-/// alerts. This normalization allows flexible alert targeting without
-/// hardcoding role-specific logic in the alert configuration.
-///
-/// The table supports the systematic notification system by enabling
-/// role-based alert distribution, ensuring that different types of alerts
-/// reach the appropriate audience based on their responsibilities and
-/// permissions within the platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_target_roles {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  /// User agent string for device and browser identification.
+  user_agent String?
   
-  /// Reference to the parent system alert requiring role-based targeting.
-  /// {@link community_platform_system_alerts.id}
-  community_platform_system_alert_id String
+  /// Whether a login attempt was successful (only for login activities).
+  login_success Boolean?
   
-  /// Role type identifier that should receive the alert notifications. Values
-  /// include 'admin', 'moderator', 'user', or custom role identifiers.
-  target_role String
+  /// Whether content was created during this activity.
+  content_created Boolean?
   
-  /// Timestamp when the role assignment was created for the system alert.
+  /// Calculated engagement score for the activity.
+  engagement_score Int?
+  
+  /// Timestamp when the activity was recorded.
   created_at DateTime
   
-  /// Timestamp when the role assignment was last updated.
+  /// Timestamp when the activity record was last updated.
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
-  systemAlert community_platform_system_alerts @relation(fields: [community_platform_system_alert_id], references: [id], onDelete: Cascade)
-  
-  escalationRuleAssignments community_platform_system_alert_escalation_rule_targets[]
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_system_alert_id, target_role], map: "community_platform_system_alert_target_roles_community_cdf267d0")
-  @@index([target_role])
-}
-
-/// Core escalation rule definitions for system alerts. Each rule defines
-/// escalation conditions, notification methods, and target roles for alert
-/// escalation workflows.
-///
-/// Escalation rules determine how alerts progress through different levels
-/// when not acknowledged or resolved within specified timeframes. Rules
-/// include conditions for escalation triggers, notification methods for each
-/// escalation level, and target roles that should receive escalated
-/// notifications.
-///
-/// This table integrates with {@link community_platform_system_alerts} for
-/// alert definitions and serves as the parent for escalation-specific
-/// configuration tables.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_escalation_rules {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the parent system alert definition. {@link
-  /// community_platform_system_alerts.id}
-  system_alert_id String
-  
-  /// Unique name identifier for the escalation rule configuration.
-  rule_name String
-  
-  /// Detailed description of the escalation rule's purpose and behavior.
-  description String?
-  
-  /// Type of condition that triggers escalation (time-based, severity-based,
-  /// manual).
-  escalation_condition_type String
-  
-  /// Numerical level indicating the escalation stage (1 = initial, 2 = first
-  /// escalation, etc.).
-  escalation_level Int
-  
-  /// Timestamp when the escalation rule was created.
-  created_at DateTime
-  
-  /// Timestamp when the escalation rule was last updated.
-  updated_at DateTime
+  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
-  systemAlert community_platform_system_alerts @relation(fields: [system_alert_id], references: [id], onDelete: Cascade)
-  
-  escalationRuleNotifications community_platform_system_alert_escalation_rule_notifications[]
-  escalationRuleTargets community_platform_system_alert_escalation_rule_targets[]
-  thresholds community_platform_system_alert_escalation_rule_thresholds[]
-  
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_id, rule_name], map: "community_platform_system_alert_escalation_rules_syste_35f7f71c")
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_id, escalation_level], map: "community_platform_system_alert_escalation_rules_syste_d1c36540")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_id], map: "community_platform_system_alert_escalation_rules_syste_03735f5b")
-  // spellchecker: ignore-next-line
-  @@index([escalation_condition_type, escalation_level], map: "community_platform_system_alert_escalation_rules_escal_67c14a5b")
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([user_id, created_at])
+  @@index([activity_type, created_at])
   @@index([created_at])
 }
 
-/// Normalized table for system alert threshold configurations with
-/// structured data types.
+/// Core system notification entity storing notification content, type,
+/// priority, and lifecycle status.
 ///
-/// This table stores threshold settings for system alerts, allowing flexible
-/// configuration of alert conditions with proper data types and comparison
-/// operators. Each threshold configuration belongs to a specific system
-/// alert and defines the conditions that trigger the alert.
+/// This table contains the common notification data shared across all
+/// notification types. Actor-specific targeting and relationships are
+/// handled through dedicated subtype tables to maintain proper normalization
+/// and avoid polymorphic ownership patterns.
 ///
-/// Threshold configurations support various data types including numeric
-/// values, percentage thresholds, count-based triggers, and boolean
-/// conditions. The table enables complex alerting logic while maintaining
-/// data integrity through proper normalization.
+/// Notifications support various types including report alerts, moderation
+/// actions, platform announcements, and user-specific activities. The
+/// notification lifecycle is tracked from creation through delivery,
+/// reading, and potential dismissal.
 ///
-/// Each threshold configuration includes the comparison operator, threshold
-/// value, data type specification, and activation status. This design
-/// supports sophisticated alerting systems that can monitor system metrics,
-/// performance indicators, and operational thresholds across the platform.
-///
-/// The table integrates with {@link community_platform_system_alerts} to
-/// provide comprehensive alert management capabilities for platform
-/// monitoring and operational oversight.
+/// Broadcast notifications are handled through a separate broadcast flag and
+/// dedicated delivery tracking tables. Community-specific and
+/// content-specific notifications maintain proper relationships through
+/// foreign key references.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_threshold_configs {
+model community_platform_system_notifications {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Reference to the parent system alert. {@link
-  /// community_platform_system_alerts.id}
-  system_alert_id String
+  /// Community context for community-specific notifications. {@link
+  /// community_platform_communities.id}
+  related_community_id String?
   
-  /// Descriptive name for the threshold configuration, identifying its purpose
-  /// and context.
-  threshold_name String
+  /// Related post for post-specific notifications. {@link
+  /// community_platform_posts.id}
+  related_post_id String?
   
-  /// Data type of the threshold value (e.g., 'number', 'percentage', 'count',
-  /// 'boolean').
-  data_type String
+  /// Related comment for comment-specific notifications. {@link
+  /// community_platform_comments.id}
+  related_comment_id String?
   
-  /// Comparison operator for threshold evaluation (e.g., '>', '<', '>=', '<=',
-  /// '==', '!=').
-  comparison_operator String
+  /// Type of notification indicating the category and purpose of the message.
+  notification_type String
   
-  /// The threshold value to compare against, stored as string to support
-  /// various data types.
-  threshold_value String
+  /// Notification title providing a brief summary of the content.
+  title String
   
-  /// Whether this threshold configuration is currently active and being
-  /// monitored.
-  is_enabled Boolean
+  /// Full notification message content with detailed information.
+  message String
   
-  /// Detailed description of what this threshold monitors and when it triggers.
-  description String?
+  /// Notification priority level (low, normal, high, urgent) for delivery
+  /// handling.
+  priority String
   
-  /// Timestamp when this threshold configuration was created.
+  /// Current system status of the notification (pending, processing,
+  /// completed).
+  status String
+  
+  /// Indicates if this is a broadcast notification intended for all users.
+  is_broadcast Boolean
+  
+  /// Optional URL for notification actions or deep linking to relevant content.
+  action_url String?
+  
+  /// Timestamp when the notification was created.
   created_at DateTime
   
-  /// Timestamp when this threshold configuration was last updated.
+  /// Timestamp when the notification was processed by the system.
+  processed_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  relatedCommunity community_platform_communities? @relation(fields: [related_community_id], references: [id], onDelete: Cascade)
+  relatedPost community_platform_posts? @relation(fields: [related_post_id], references: [id], onDelete: Cascade)
+  relatedComment community_platform_comments? @relation(fields: [related_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userDelivery community_platform_system_notification_of_users?
+  moderatorDelivery community_platform_system_notification_of_moderators?
+  adminDeliveries community_platform_system_notification_of_admins[]
+  broadcastDeliveries community_platform_system_notification_broadcast_deliveries[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([related_community_id], map: "community_platform_system_notifications_related_commun_681e1d00")
+  @@index([related_post_id])
+  @@index([related_comment_id])
+  // spellchecker: ignore-next-line
+  @@index([notification_type, created_at], map: "community_platform_system_notifications_notification_t_263eaed8")
+  // spellchecker: ignore-next-line
+  @@index([is_broadcast, created_at], map: "community_platform_system_notifications_is_broadcast_c_2d0a4ae0")
+  @@index([status, created_at])
+}
+
+/// Tracks content items awaiting moderation review with workflow state
+/// management.
+///
+/// This table manages the moderation queue workflow for reported content,
+/// tracking assignment to moderators, review status, and resolution
+/// outcomes. It serves as the central coordination point for moderation
+/// activities across the platform.
+///
+/// Each queue item represents a moderation task that needs review, whether
+/// it's a reported post, comment, or other content. The workflow includes
+/// assignment to specific moderators, tracking review progress, and
+/// recording final resolution decisions.
+///
+/// Queue items are created when content is reported or flagged for review,
+/// and they progress through various statuses (pending, assigned, in-review,
+/// resolved) until completion. This system enables efficient moderation
+/// workflow management and prevents duplicate reviews of the same content.
+///
+/// {@link community_platform_reports.id} provides the original report
+/// context, while {@link community_platform_moderators.id} tracks moderator
+/// assignments for accountability and workload balancing.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator assigned to review this queue item. {@link
+  /// community_platform_moderators.id}
+  community_platform_moderator_id String?
+  
+  /// Reference to the post being moderated, if applicable. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String?
+  
+  /// Reference to the comment being moderated, if applicable. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String?
+  
+  /// Current workflow status of the moderation queue item. Values: pending,
+  /// assigned, in-review, resolved, dismissed.
+  status String
+  
+  /// Priority level for moderation review. Values: low, normal, high, critical.
+  priority String
+  
+  /// Timestamp when the queue item was assigned to a moderator for review.
+  assigned_at DateTime?
+  
+  /// Timestamp when the moderator began reviewing the content.
+  review_started_at DateTime?
+  
+  /// Timestamp when the moderation review was completed and resolved.
+  resolved_at DateTime?
+  
+  /// Final resolution decision. Values: approved, removed, warned, banned,
+  /// dismissed.
+  resolution String?
+  
+  /// Detailed explanation of the resolution decision for audit purposes.
+  resolution_reason String?
+  
+  /// Timestamp when the queue item was created.
+  created_at DateTime
+  
+  /// Timestamp when the queue item was last updated.
   updated_at DateTime
   
-  /// Timestamp when this threshold configuration was soft deleted, if
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator community_platform_moderators? @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments? @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_moderation_queues_community_platfor_a83f105f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_moderation_queues_community_platfor_8ba5a43f")
+  @@unique([status, priority])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, status], map: "community_platform_moderation_queues_community_platfor_453634a4")
+  @@index([assigned_at])
+  @@index([created_at])
+}
+
+/// Subtype table for audit logs specifically performed by users, maintaining
+/// the relationship between audit logs and user actors.
+///
+/// This table establishes a 1:1 relationship between audit log entries and
+/// the user actors who performed those actions. It serves as a subtype table
+/// that extends the main audit logs table with user-specific context,
+/// enabling efficient querying of audit trails by user actor.
+///
+/// The relationship ensures that each audit log entry performed by a user is
+/// properly attributed to that specific user actor, supporting
+/// accountability and audit trail integrity across the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_log_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated audit log entry's {@link community_platform_audit_logs.id}.
+  community_platform_audit_log_id String
+  
+  /// User actor who performed the audit action's {@link
+  /// community_platform_users.id}.
+  community_platform_user_id String
+  
+  /// Timestamp when this audit log subtype relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this audit log subtype relationship was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this audit log subtype relationship was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  auditLog community_platform_audit_logs @relation(fields: [community_platform_audit_log_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_audit_log_id], map: "community_platform_audit_log_of_users_community_platfo_f7cb2727")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, created_at], map: "community_platform_audit_log_of_users_community_platfo_693fecc1")
+  @@index([created_at])
+}
+
+/// Subtype table establishing the relationship between audit log entries and
+/// moderator actors.
+///
+/// This table serves as a junction table that links audit log entries
+/// specifically to moderator actors, providing accountability and
+/// traceability for moderator activities. It maintains the 1:1 relationship
+/// between audit logs and the moderator actors who performed the actions.
+///
+/// The table ensures that audit logs performed by moderators are properly
+/// categorized and can be efficiently queried for moderation audit purposes
+/// without violating foreign key direction constraints.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_log_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main audit log entry. {@link
+  /// community_platform_audit_logs.id}
+  community_platform_audit_log_id String
+  
+  /// Timestamp when the moderator audit log relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when the moderator audit log relationship was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the moderator audit log relationship was soft deleted, or
+  /// null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  auditLog community_platform_audit_logs @relation(fields: [community_platform_audit_log_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_audit_log_id], map: "community_platform_audit_log_of_moderators_community_p_4c69063f")
+  @@index([created_at])
+}
+
+/// Subtype table for audit logs specifically performed by administrators,
+/// maintaining the relationship between audit logs and admin actors.
+///
+/// This table establishes a 1:1 relationship between audit log entries and
+/// administrator actors, providing admin-specific context for audit trail
+/// tracking. It supports accountability and review of administrative actions
+/// across the platform.
+///
+/// Each record links an audit log entry with the specific administrator who
+/// performed the action, enabling detailed tracking of administrative
+/// activities for security monitoring and compliance requirements. {@link
+/// community_platform_audit_logs.id} {@link community_platform_admins.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_audit_log_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main audit log entry. {@link
+  /// community_platform_audit_logs.id}
+  community_platform_audit_log_id String
+  
+  /// Reference to the administrator who performed the audit action. {@link
+  /// community_platform_admins.id}
+  community_platform_admin_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  auditLog community_platform_audit_logs @relation(fields: [community_platform_audit_log_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_audit_log_id], map: "community_platform_audit_log_of_admins_community_platf_8f6a29c3")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_admin_id], map: "community_platform_audit_log_of_admins_community_platf_0a16b7a1")
+}
+
+/// Stores key-value targeting rules for user-specific feature flags,
+/// enabling complex user segmentation and A/B testing configurations.
+///
+/// Each rule defines a specific condition that determines which users
+/// receive a particular feature flag. Rules can target user attributes,
+/// behavior patterns, or other segmentation criteria. The key-value
+/// structure allows flexible rule definition without requiring schema
+/// changes for new targeting criteria.
+///
+/// Rules are evaluated in conjunction with the main feature flag
+/// configuration to determine flag activation for individual users. This
+/// supports gradual rollouts, A/B testing, and targeted feature releases
+/// based on user characteristics.
+///
+/// This table works with {@link community_platform_feature_flags} to provide
+/// granular control over feature availability across the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_targeting_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the feature flag this targeting rule applies to. {@link
+  /// community_platform_feature_flags.id}
+  community_platform_feature_flag_id String
+  
+  /// The targeting rule key that defines the segmentation criteria (e.g.,
+  /// 'user_role', 'karma_threshold', 'join_date').
+  rule_key String
+  
+  /// The value for the targeting rule that determines flag activation (e.g.,
+  /// 'moderator', '100', '2024-01-01').
+  rule_value String
+  
+  /// The comparison operator for rule evaluation (e.g., 'equals',
+  /// 'greater_than', 'contains').
+  rule_operator String
+  
+  /// Human-readable description of what this targeting rule accomplishes.
+  description String?
+  
+  /// Whether this targeting rule is currently active and should be evaluated.
+  is_active Boolean
+  
+  /// Rule evaluation priority (lower numbers evaluated first) for complex rule
+  /// combinations.
+  priority Int
+  
+  /// Timestamp when this targeting rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this targeting rule was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this targeting rule was soft-deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  featureFlag community_platform_feature_flags @relation(fields: [community_platform_feature_flag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_feature_flag_id, rule_key, rule_value], map: "community_platform_feature_flag_targeting_rules_commun_30e29110")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_feature_flag_id, is_active], map: "community_platform_feature_flag_targeting_rules_commun_012b6dfe")
+  // spellchecker: ignore-next-line
+  @@index([rule_key, rule_value], map: "community_platform_feature_flag_targeting_rules_rule_k_e6b4d6c4")
+  @@index([priority])
+}
+
+/// Junction table linking feature flags to specific environments, supporting
+/// environment-specific flag configurations.
+///
+/// This table enables feature flags to have different settings across
+/// different environments (development, staging, production, etc.). Each
+/// record represents a feature flag configuration for a specific
+/// environment, allowing controlled rollout and testing of features.
+///
+/// Relationships:
+/// - Links to {@link community_platform_feature_flags} for the feature flag
+/// definition
+/// - Links to environment entities for environment-specific configurations
+/// - Supports granular control over feature availability across deployment
+/// stages
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_environments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the feature flag being configured. {@link
+  /// community_platform_feature_flags.id}
+  feature_flag_id String
+  
+  /// Whether the feature flag is enabled in this specific environment.
+  is_enabled Boolean
+  
+  /// Percentage of users who should see this feature when enabled (0-100).
+  rollout_percentage Int?
+  
+  /// Timestamp when this environment configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this environment configuration was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this environment configuration was soft deleted, or null
+  /// if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  featureFlag community_platform_feature_flags @relation(fields: [feature_flag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  flagDetails community_platform_feature_flag_environment_details[]
+  targetingRules community_platform_feature_flag_environment_targeting_rules[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([feature_flag_id], map: "community_platform_feature_flag_environments_feature_f_a0e40411")
+  // spellchecker: ignore-next-line
+  @@index([feature_flag_id, is_enabled], map: "community_platform_feature_flag_environments_feature_f_36213417")
+  @@index([created_at])
+}
+
+/// Junction table for 1:1 relationship mapping between authentication tokens
+/// and user accounts.
+///
+/// This table establishes a strict one-to-one relationship where each
+/// authentication token (email verification, password reset, etc.) is
+/// uniquely assigned to a single user account. The unique constraints ensure
+/// that tokens cannot be shared across multiple users and each user can only
+/// have one active token of each type at a time.
+///
+/// Used by the authentication system to manage token ownership and validate
+/// token-user associations during verification workflows. {@link
+/// community_platform_auth_tokens.id} {@link community_platform_users.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_auth_token_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated authentication token's {@link
+  /// community_platform_auth_tokens.id}.
+  community_platform_auth_token_id String
+  
+  /// Associated user account's {@link community_platform_users.id}.
+  community_platform_user_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  authToken community_platform_auth_tokens @relation(fields: [community_platform_auth_token_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_auth_token_id], map: "community_platform_auth_token_of_users_community_platf_375dff05")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_id], map: "community_platform_auth_token_of_users_community_platf_45c1ad85")
+}
+
+/// Junction table establishing 1:1 relationship between auth tokens and
+/// moderators.
+///
+/// Each record links a specific authentication token (email verification,
+/// password reset, etc.) to a moderator actor. This enables token-based
+/// authentication flows specifically for moderators while maintaining proper
+/// separation of concerns between token management and actor identity.
+///
+/// The table supports various token types including email verification
+/// tokens, password reset tokens, and other authentication-related tokens
+/// with expiration mechanisms. Each token is uniquely associated with
+/// exactly one moderator through the auth_token_id constraint.
+///
+/// This table works in conjunction with {@link
+/// community_platform_auth_tokens} for token storage and {@link
+/// community_platform_moderators} for moderator identity management.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_auth_token_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authentication token. {@link
+  /// community_platform_auth_tokens.id}
+  auth_token_id String
+  
+  /// Reference to the moderator actor. {@link community_platform_moderators.id}
+  moderator_id String
+  
+  /// Timestamp when the token-actor relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when the token-actor relationship was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  authToken community_platform_auth_tokens @relation(fields: [auth_token_id], references: [id], onDelete: Cascade)
+  moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([auth_token_id])
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "community_platform_auth_token_of_moderators_moderator__25939ca9")
+}
+
+/// Junction table establishing a 1:1 relationship between authentication
+/// tokens and admin accounts.
+///
+/// This table serves as a subtype entity that links specific authentication
+/// tokens (such as email verification tokens or password reset tokens) to
+/// admin accounts. It ensures that each token is uniquely associated with
+/// exactly one admin account, supporting the authentication workflow for
+/// platform administrators.
+///
+/// The relationship maintains referential integrity between {@link
+/// community_platform_auth_tokens} and {@link community_platform_admins},
+/// enabling secure token management and authentication flows specifically
+/// for administrative users.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_auth_token_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authentication token. {@link
+  /// community_platform_auth_tokens.id}
+  community_platform_auth_token_id String
+  
+  /// Reference to the admin account. {@link community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Timestamp when the token-admin relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when the token-admin relationship was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  authToken community_platform_auth_tokens @relation(fields: [community_platform_auth_token_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_auth_token_id], map: "community_platform_auth_token_of_admins_community_plat_225cf6f6")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, created_at], map: "community_platform_auth_token_of_admins_community_plat_0075bdea")
+}
+
+/// User-specific notification delivery tracking with read status and user
+/// interactions.
+///
+/// This table establishes a 1:1 relationship between system notifications
+/// and individual users, tracking the delivery lifecycle of notifications to
+/// specific users. It maintains read/unread status, delivery timestamps, and
+/// user interaction tracking for personalized notification management.
+///
+/// Each record represents a notification instance delivered to a specific
+/// user, allowing for individual notification state management separate from
+/// the broadcast notification system. This enables features like marking
+/// notifications as read, tracking user engagement with notifications, and
+/// supporting user-specific notification preferences.
+///
+/// {@link community_platform_system_notifications.id} represents the source
+/// notification being delivered. {@link community_platform_users.id}
+/// identifies the recipient user.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_notification_of_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source notification being delivered. {@link
+  /// community_platform_system_notifications.id}
+  community_platform_system_notification_id String
+  
+  /// Recipient user for this notification delivery. {@link
+  /// community_platform_users.id}
+  community_platform_user_id String
+  
+  /// Timestamp when the notification was successfully delivered to the user.
+  delivered_at DateTime
+  
+  /// Timestamp when the user marked the notification as read.
+  read_at DateTime?
+  
+  /// Timestamp when the user dismissed or cleared the notification.
+  dismissed_at DateTime?
+  
+  /// Number of times the user has interacted with this notification.
+  interaction_count Int
+  
+  /// Current delivery status of the notification (pending, delivered, failed,
+  /// read, dismissed).
+  delivery_status String
+  
+  /// Timestamp when this delivery record was created.
+  created_at DateTime
+  
+  /// Timestamp when this delivery record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  systemNotification community_platform_system_notifications @relation(fields: [community_platform_system_notification_id], references: [id], onDelete: Cascade)
+  user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_system_notification_id], map: "community_platform_system_notification_of_users_commun_74cc1b4e")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_system_notification_id, community_platform_user_id], map: "community_platform_system_notification_of_users_commun_1a991f03")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, delivery_status], map: "community_platform_system_notification_of_users_commun_2955fece")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_id, read_at], map: "community_platform_system_notification_of_users_commun_f7765809")
+  // spellchecker: ignore-next-line
+  @@index([delivered_at], map: "community_platform_system_notification_of_users_delive_f8c920a9")
+}
+
+/// Moderator-specific notification delivery tracking with moderation context.
+///
+/// This table tracks the delivery and read status of system notifications
+/// specifically for moderators. It maintains the relationship between system
+/// notifications and moderator actors, storing moderator-specific context
+/// such as read status, delivery timestamps, and any moderation-specific
+/// metadata.
+///
+/// Each record represents a single notification instance delivered to a
+/// specific moderator, allowing for personalized notification tracking and
+/// moderator-specific notification preferences. This enables features like
+/// unread notification counts, notification dismissal, and
+/// moderator-specific notification settings.
+///
+/// Related entities: {@link community_platform_moderators} for moderator
+/// identity, {@link community_platform_system_notifications} for
+/// notification content.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_notification_of_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target moderator's {@link community_platform_moderators.id}.
+  community_platform_moderator_id String
+  
+  /// Target system notification's {@link
+  /// community_platform_system_notifications.id}.
+  community_platform_system_notification_id String
+  
+  /// Whether the moderator has read the notification.
+  is_read Boolean
+  
+  /// Timestamp when the notification was delivered to the moderator.
+  delivered_at DateTime
+  
+  /// Timestamp when the moderator marked the notification as read.
+  read_at DateTime?
+  
+  /// Timestamp when the moderator dismissed the notification.
+  dismissed_at DateTime?
+  
+  /// Additional context specific to moderation scenarios, such as community ID
+  /// or report reference.
+  moderation_context String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
+  notification community_platform_system_notifications @relation(fields: [community_platform_system_notification_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_system_notification_id], map: "community_platform_system_notification_of_moderators_c_44d2df32")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_moderator_id, community_platform_system_notification_id], map: "community_platform_system_notification_of_moderators_c_f72d7a18")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_moderator_id, is_read], map: "community_platform_system_notification_of_moderators_c_4b5f4945")
+  // spellchecker: ignore-next-line
+  @@index([delivered_at], map: "community_platform_system_notification_of_moderators_d_a35a5c81")
+}
+
+/// Admin-specific notification delivery tracking with system-wide context.
+///
+/// This table establishes the relationship between system notifications and
+/// admin actors, tracking delivery status, read status, and admin-specific
+/// interactions. Each record represents a specific notification delivered to
+/// a particular admin user, allowing for targeted notification management
+/// and tracking of admin engagement with system-wide alerts and
+/// announcements.
+///
+/// Notifications can include platform-wide alerts, security notifications,
+/// system maintenance announcements, and other administrative communications
+/// that require admin attention. The tracking of delivery and read status
+/// ensures that critical notifications are properly acknowledged by platform
+/// administrators.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_notification_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the system notification being delivered. {@link
+  /// community_platform_system_notifications.id}
+  community_platform_system_notification_id String
+  
+  /// Reference to the admin user receiving the notification. {@link
+  /// community_platform_admins.id}
+  community_platform_admin_id String
+  
+  /// Timestamp when the notification was successfully delivered to the admin.
+  delivered_at DateTime
+  
+  /// Timestamp when the admin marked the notification as read.
+  read_at DateTime?
+  
+  /// Timestamp when the admin acknowledged or acted upon the notification.
+  acknowledged_at DateTime?
+  
+  /// Current status of notification delivery (pending, delivered, failed,
+  /// read, acknowledged).
+  delivery_status String
+  
+  /// Timestamp when this delivery record was created.
+  created_at DateTime
+  
+  /// Timestamp when this delivery record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  systemNotification community_platform_system_notifications @relation(fields: [community_platform_system_notification_id], references: [id], onDelete: Cascade)
+  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_system_notification_id, community_platform_admin_id], map: "community_platform_system_notification_of_admins_commu_20ea6048")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_admin_id, delivery_status], map: "community_platform_system_notification_of_admins_commu_ec3d455f")
+  // spellchecker: ignore-next-line
+  @@index([delivered_at], map: "community_platform_system_notification_of_admins_deliv_40029d89")
+  @@index([read_at])
+}
+
+/// Tracks delivery status and statistics for broadcast notifications sent to
+/// all platform users simultaneously.
+///
+/// This table manages the delivery lifecycle of mass notifications,
+/// including delivery attempts, success/failure tracking, and delivery
+/// metrics. Broadcast notifications are sent to all users at once, requiring
+/// efficient tracking of delivery status across the entire user base.
+///
+/// Each record represents the delivery status for a specific broadcast
+/// notification, tracking when the notification was sent, delivery
+/// completion status, and any delivery failures that occurred during the
+/// broadcast process.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_system_notification_broadcast_deliveries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "community_platform_system_notification_broadcast_deliv_786595d8")
+  
+  /// Reference to the broadcast notification being delivered. {@link
+  /// community_platform_system_notifications.id}
+  system_notification_id String
+  
+  /// Current status of the broadcast delivery process (pending, in_progress,
+  /// completed, failed).
+  delivery_status String
+  
+  /// Total number of users who should receive this broadcast notification.
+  total_recipients Int
+  
+  /// Number of users who have successfully received the notification.
+  delivered_count Int
+  
+  /// Number of users who failed to receive the notification due to delivery
+  /// errors.
+  failed_count Int
+  
+  /// When the broadcast notification is scheduled to be sent to users.
+  scheduled_at DateTime?
+  
+  /// When the broadcast delivery process actually began.
+  started_at DateTime?
+  
+  /// When the broadcast delivery process completed (successfully or with
+  /// failures).
+  completed_at DateTime?
+  
+  /// Description of any delivery failures that occurred during the broadcast
+  /// process.
+  error_message String?
+  
+  /// When this delivery tracking record was created.
+  created_at DateTime
+  
+  /// When this delivery tracking record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  systemNotification community_platform_system_notifications @relation(fields: [system_notification_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([system_notification_id, delivery_status], map: "community_platform_system_notification_broadcast_deliv_c130a6c6")
+  // spellchecker: ignore-next-line
+  @@index([scheduled_at], map: "community_platform_system_notification_broadcast_deliv_161a4799")
+  // spellchecker: ignore-next-line
+  @@index([delivery_status, created_at], map: "community_platform_system_notification_broadcast_deliv_f7ebdc5e")
+}
+
+/// Stores detailed environment-specific settings and metadata for feature
+/// flag configurations.
+///
+/// This table provides granular control over feature flag behavior in
+/// different environments, allowing for environment-specific rollout
+/// percentages, targeting rules, and configuration overrides. Each record
+/// represents the detailed settings for a specific feature flag in a
+/// specific environment.
+///
+/// Key relationships:
+/// - References {@link community_platform_feature_flags} for the feature
+/// flag definition
+/// - References {@link community_platform_feature_flag_environments} for the
+/// environment context
+/// - Supports complex rollout strategies and A/B testing configurations
+///
+/// This table enables sophisticated feature management including gradual
+/// rollouts, user segmentation, and environment-specific feature behavior.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_environment_details {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the feature flag being configured. {@link
+  /// community_platform_feature_flags.id}
+  community_platform_feature_flag_id String
+  
+  /// Reference to the environment where these settings apply. {@link
+  /// community_platform_feature_flag_environments.id}
+  community_platform_feature_flag_environment_id String
+  
+  /// Timestamp when this environment-specific configuration was created.
+  created_at DateTime
+  
+  /// Timestamp when this environment-specific configuration was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  featureFlag community_platform_feature_flags @relation(fields: [community_platform_feature_flag_id], references: [id], onDelete: Cascade)
+  environment community_platform_feature_flag_environments @relation(fields: [community_platform_feature_flag_environment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  targetingRules community_platform_feature_flag_environment_detail_targeting_rules[]
+  configurationOverrides community_platform_feature_flag_environment_detail_configuration_overrides[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_feature_flag_environment_id], map: "community_platform_feature_flag_environment_details_co_6d03ad77")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_feature_flag_id, community_platform_feature_flag_environment_id], map: "community_platform_feature_flag_environment_details_co_f1d3910e")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "community_platform_feature_flag_environment_details_cr_fb0360e4")
+}
+
+/// Stores individual targeting rules for feature flags in specific
+/// environments, enabling advanced user segmentation and A/B testing
+/// configurations without JSON serialization.
+///
+/// Each record represents a single key-value targeting rule that applies to
+/// a specific feature flag environment. This normalization allows for
+/// complex targeting configurations while maintaining database integrity and
+/// query performance. Rules can include user attributes, geographic
+/// targeting, percentage rollouts, or any other segmentation criteria needed
+/// for feature flag evaluation.
+///
+/// This table works in conjunction with {@link
+/// community_platform_feature_flag_environments} to provide granular control
+/// over feature flag behavior across different deployment environments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_environment_targeting_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "community_platform_feature_flag_environment_targeting__7b68e9ca")
+  
+  /// The feature flag environment this targeting rule applies to. {@link
+  /// community_platform_feature_flag_environments.id}
+  community_platform_feature_flag_environment_id String
+  
+  /// The targeting rule key that defines the segmentation criteria (e.g.,
+  /// 'user_role', 'geo_location', 'percentage').
+  rule_key String
+  
+  /// The value associated with the targeting rule key, defining the specific
+  /// condition or threshold.
+  rule_value String
+  
+  /// Timestamp when this targeting rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this targeting rule was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this targeting rule was soft-deleted, allowing for rule
+  /// archival and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  featureFlagEnvironment community_platform_feature_flag_environments @relation(fields: [community_platform_feature_flag_environment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_feature_flag_environment_id, rule_key], map: "community_platform_feature_flag_environment_targeting__b4eaa1d1")
+  // spellchecker: ignore-next-line
+  @@index([rule_key], map: "community_platform_feature_flag_environment_targeting__a182b8cc")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "community_platform_feature_flag_environment_targeting__4e014cb6")
+}
+
+/// Stores individual targeting rules for feature flags in specific
+/// environments, normalized from JSON data.
+///
+/// Each record represents a single targeting rule configuration that
+/// determines which users should receive a specific feature flag setting.
+/// These rules are normalized from JSON configuration data to enable
+/// efficient querying and rule management. The rules support complex user
+/// segmentation and A/B testing scenarios.
+///
+/// Targeting rules can include user attributes, geographic location, account
+/// age, karma thresholds, and other criteria for feature flag evaluation.
+/// Each rule is associated with a specific feature flag environment detail
+/// configuration. {@link
+/// community_platform_feature_flag_environment_details}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_environment_detail_targeting_rules {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "community_platform_feature_flag_environment_detail_tar_fe1bcd39")
+  
+  /// The feature flag environment detail configuration this targeting rule
+  /// belongs to. {@link
+  /// community_platform_feature_flag_environment_details.id}
+  community_platform_feature_flag_environment_detail_id String
+  
+  /// The targeting rule key that identifies what type of targeting criteria
+  /// this rule represents (e.g., 'user_karma_threshold', 'account_age_days',
+  /// 'geographic_region').
+  rule_key String
+  
+  /// The value for the targeting rule, which may represent thresholds,
+  /// specific values, or configuration parameters for the targeting criteria.
+  rule_value String
+  
+  /// The comparison operator for the targeting rule (e.g., 'equals',
+  /// 'greater_than', 'contains', 'in_list').
+  rule_operator String
+  
+  /// The evaluation order of this rule within the targeting rule set,
+  /// determining rule precedence when multiple rules apply.
+  rule_order Int
+  
+  /// Whether this targeting rule is currently active and should be evaluated
+  /// during feature flag checks.
+  is_active Boolean
+  
+  /// Timestamp when this targeting rule was created.
+  created_at DateTime
+  
+  /// Timestamp when this targeting rule was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this targeting rule was soft deleted, or null if still
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  featureFlagEnvironmentDetail community_platform_feature_flag_environment_details @relation(fields: [community_platform_feature_flag_environment_detail_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_feature_flag_environment_detail_id, rule_key], map: "community_platform_feature_flag_environment_detail_tar_239000db")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_feature_flag_environment_detail_id, rule_order], map: "community_platform_feature_flag_environment_detail_tar_1ff483d1")
+  // spellchecker: ignore-next-line
+  @@index([is_active], map: "community_platform_feature_flag_environment_detail_tar_5ceb6f95")
+  // spellchecker: ignore-next-line
+  @@index([rule_key], map: "community_platform_feature_flag_environment_detail_tar_84290e28")
+}
+
+/// Stores individual configuration overrides for feature flags in specific
+/// environments, normalized from JSON data.
+///
+/// This table maintains key-value pairs for feature flag configuration
+/// overrides, providing a normalized storage approach instead of JSON
+/// serialization. Each record represents a single configuration override
+/// setting that applies to a specific feature flag environment detail. The
+/// key-value structure enables flexible configuration management while
+/// maintaining database integrity and query performance.
+///
+/// Configuration overrides allow environment-specific customization of
+/// feature flag behavior without modifying the core flag definition. This
+/// supports complex A/B testing scenarios and environment-specific feature
+/// variations.
+///
+/// {@link community_platform_feature_flag_environment_details.id}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_feature_flag_environment_detail_configuration_overrides {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "community_platform_feature_flag_environment_detail_con_2d1164cf")
+  
+  /// Reference to the feature flag environment detail this override belongs
+  /// to. {@link community_platform_feature_flag_environment_details.id}
+  community_platform_feature_flag_environment_detail_id String
+  
+  /// The configuration key name for this override setting. Examples:
+  /// 'enabled', 'percentage', 'variant', 'threshold'
+  config_key String
+  
+  /// The configuration value for this override setting. Stores the actual
+  /// override value as a string.
+  config_value String
+  
+  /// Timestamp when this configuration override was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration override was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration override was soft deleted, if
   /// applicable.
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
-  systemAlert community_platform_system_alerts @relation(fields: [system_alert_id], references: [id], onDelete: Cascade)
+  featureFlagEnvironmentDetail community_platform_feature_flag_environment_details @relation(fields: [community_platform_feature_flag_environment_detail_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
-  @@unique([system_alert_id, threshold_name], map: "community_platform_system_alert_threshold_configs_syst_f17506f9")
+  @@unique([community_platform_feature_flag_environment_detail_id, config_key], map: "community_platform_feature_flag_environment_detail_con_a478a0a8")
   // spellchecker: ignore-next-line
-  @@index([system_alert_id, is_enabled], map: "community_platform_system_alert_threshold_configs_syst_45d9e633")
-  // spellchecker: ignore-next-line
-  @@index([data_type, is_enabled], map: "community_platform_system_alert_threshold_configs_data_892000de")
-}
-
-/// Lookup table defining available notification method types for system
-/// alerts with configuration schemas and capabilities.
-///
-/// This table serves as a reference catalog for notification method types
-/// that can be configured in the system. Each type defines the available
-/// notification channels (email, SMS, push notifications, webhooks, etc.)
-/// along with their specific configuration requirements and capability
-/// constraints. The table provides the metadata needed to validate and
-/// process notification configurations consistently across the platform.
-///
-/// Types define both technical implementations (like SMTP configuration for
-/// email) and platform capabilities (such as whether the method supports
-/// rich content, attachments, or templating). This enables the system to
-/// provide appropriate configuration interfaces and validation rules for
-/// each notification method type.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_notification_method_types {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique name identifier for the notification method type (e.g., 'email',
-  /// 'sms', 'push_notification', 'webhook').
-  name String
-  
-  /// Human-readable description explaining what this notification method type
-  /// represents and its intended use cases.
-  description String
-  
-  /// JSON schema defining the configuration parameters required for this
-  /// notification method type.
-  configuration_schema String?
-  
-  /// Whether this notification method type supports rich content formatting
-  /// like HTML, Markdown, or template variables.
-  supports_rich_content Boolean
-  
-  /// Whether this notification method type supports file attachments or
-  /// embedded media.
-  supports_attachments Boolean
-  
-  /// Delivery guarantee level: 'at_most_once', 'at_least_once', 'exactly_once'.
-  delivery_guarantee String
-  
-  //----
-  // RELATIONS
-  //----
-  notificationMethodAssignments community_platform_system_alert_notification_methods[]
-  
-  // spellchecker: ignore-next-line
-  @@unique([name], map: "community_platform_system_alert_notification_method_ty_a767d154")
-  // spellchecker: ignore-next-line
-  @@index([delivery_guarantee], map: "community_platform_system_alert_notification_method_ty_e4fee0cd")
-}
-
-/// Subtype table for notification setting logs performed by user actors,
-/// maintaining referential integrity and eliminating nullable foreign keys.
-///
-/// This table establishes a clean relationship between notification setting
-/// logs and user actors, ensuring that each log entry performed by a user
-/// has a dedicated reference without requiring nullable foreign keys in the
-/// main notification setting logs table. It supports the systematic tracking
-/// of notification configuration changes made by user actors within the
-/// platform.
-///
-/// Each record represents a specific notification setting log entry
-/// performed by a user actor, linking back to the main notification setting
-/// log and the user who performed the action. This design ensures proper
-/// actor-specific relationships and maintains data integrity across the
-/// notification system.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_setting_log_of_users {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the main notification setting log entry. {@link
-  /// community_platform_notification_setting_logs.id}
-  notification_setting_log_id String
-  
-  /// Reference to the user actor who performed the notification setting
-  /// change. {@link community_platform_users.id}
-  user_id String
-  
-  /// Timestamp when this user-specific notification setting log entry was
-  /// created.
-  created_at DateTime
-  
-  /// Timestamp when this user-specific notification setting log entry was last
-  /// updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  notificationSettingLog community_platform_notification_setting_logs @relation(fields: [notification_setting_log_id], references: [id], onDelete: Cascade)
-  user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([notification_setting_log_id], map: "community_platform_notification_setting_log_of_users_n_acb0f4f4")
-  // spellchecker: ignore-next-line
-  @@index([user_id, created_at], map: "community_platform_notification_setting_log_of_users_u_cd9a6969")
-  // spellchecker: ignore-next-line
-  @@index([created_at], map: "community_platform_notification_setting_log_of_users_c_7a489d05")
-}
-
-/// Subtype table for notification setting logs performed by moderator
-/// actors. This table ensures proper actor-specific relationships by
-/// maintaining a clean reference to moderator actors and eliminating
-/// nullable foreign keys. Each record represents a notification setting log
-/// entry specifically performed by a moderator actor, providing clear
-/// separation from other actor types.
-///
-/// This table connects to the main {@link
-/// community_platform_notification_setting_logs} table via a unique foreign
-/// key relationship, ensuring that each notification setting log entry is
-/// properly attributed to a specific moderator actor. The design maintains
-/// referential integrity and supports efficient querying of
-/// moderator-specific notification setting activities.
-///
-/// The table supports audit trail requirements for notification
-/// configuration changes made by moderators, enabling comprehensive tracking
-/// of who modified what settings and when. This is essential for platform
-/// administration and compliance purposes.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_setting_log_of_moderators {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the main notification setting log entry. {@link
-  /// community_platform_notification_setting_logs.id}
-  notification_setting_log_id String
-  
-  /// Reference to the moderator actor who performed the notification setting
-  /// change. {@link community_platform_moderators.id}
-  community_platform_moderator_id String
-  
-  /// Reference to the moderator session context for audit trail compliance.
-  /// {@link community_platform_moderator_sessions.id}
-  community_platform_moderator_session_id String?
-  
-  /// Timestamp when the moderator notification setting log entry was created.
-  created_at DateTime
-  
-  /// Timestamp when the moderator notification setting log entry was last
-  /// updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  notificationSettingLog community_platform_notification_setting_logs @relation(fields: [notification_setting_log_id], references: [id], onDelete: Cascade)
-  moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
-  moderatorSession community_platform_moderator_sessions? @relation(fields: [community_platform_moderator_session_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([notification_setting_log_id], map: "community_platform_notification_setting_log_of_moderat_29c8b707")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_moderator_id, created_at], map: "community_platform_notification_setting_log_of_moderat_12a70dd4")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_moderator_session_id, created_at], map: "community_platform_notification_setting_log_of_moderat_87c1c09a")
-}
-
-/// Subtype table for notification setting logs performed by admin actors,
-/// providing clean actor reference separation.
-///
-/// This table stores audit trail records specifically for notification
-/// setting modifications performed by platform administrators. Each record
-/// captures a single notification setting change event initiated by an admin
-/// actor, linking to the main notification setting log entry.
-///
-/// The table ensures proper referential integrity by maintaining a direct
-/// relationship to the admin actor table, eliminating the need for nullable
-/// foreign keys or polymorphic ownership patterns. This design supports
-/// comprehensive audit trails for administrative actions on notification
-/// settings while maintaining clean separation from user and moderator actor
-/// logs.
-///
-/// Each log entry includes timestamp information for tracking when the
-/// change occurred. The table integrates with the broader notification
-/// system to provide complete visibility into configuration changes made by
-/// administrators, with all business logic fields properly stored in the
-/// parent notification setting logs table.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_notification_setting_log_of_admins {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Admin actor who performed the notification setting change. {@link
-  /// community_platform_admins.id}
-  community_platform_admin_id String
-  
-  /// Reference to the main notification setting log entry. {@link
-  /// community_platform_notification_setting_logs.id}
-  community_platform_notification_setting_log_id String
-  
-  /// Timestamp when the notification setting change was logged.
-  created_at DateTime
-  
-  /// Timestamp when the log entry was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the log entry was soft-deleted for audit purposes.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  admin community_platform_admins @relation(fields: [community_platform_admin_id], references: [id], onDelete: Cascade)
-  notificationSettingLog community_platform_notification_setting_logs @relation(fields: [community_platform_notification_setting_log_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_notification_setting_log_id], map: "community_platform_notification_setting_log_of_admins__4da92b40")
-  // spellchecker: ignore-next-line
-  @@index([community_platform_admin_id, created_at], map: "community_platform_notification_setting_log_of_admins__bc38386a")
-  // spellchecker: ignore-next-line
-  @@index([created_at], map: "community_platform_notification_setting_log_of_admins__e4266a17")
-}
-
-/// Stores method-specific configuration settings for notification method
-/// assignments, decomposed from JSON to maintain First Normal Form
-/// compliance.
-///
-/// This table contains individual configuration parameters for different
-/// notification methods such as email, SMS, push notifications, webhooks,
-/// and other notification delivery mechanisms. Each configuration setting is
-/// stored as an atomic value rather than JSON blobs to ensure proper
-/// database normalization and efficient querying.
-///
-/// The table supports various notification method types with their specific
-/// requirements, including SMTP settings for email, API endpoints for
-/// webhooks, device tokens for push notifications, and other method-specific
-/// parameters. All configurations are tied to specific notification method
-/// assignments and can be validated against the notification method type
-/// constraints.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_notification_method_configs {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id(map: "community_platform_system_alert_notification_method_co_824faed1")
-  
-  /// References the notification method this configuration belongs to. {@link
-  /// community_platform_system_alert_notification_methods.id}
-  community_platform_system_alert_notification_method_id String
-  
-  /// Configuration parameter key name (e.g., 'smtp_host', 'api_endpoint',
-  /// 'device_token').
-  config_key String
-  
-  /// Configuration parameter value stored as string representation.
-  config_value String
-  
-  /// Data type of the configuration value (e.g., 'string', 'number',
-  /// 'boolean', 'uri').
-  config_type String
-  
-  /// Timestamp when this configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when this configuration was last updated.
-  updated_at DateTime
-  
-  //----
-  // RELATIONS
-  //----
-  notificationMethod community_platform_system_alert_notification_methods @relation(fields: [community_platform_system_alert_notification_method_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([community_platform_system_alert_notification_method_id, config_key], map: "community_platform_system_alert_notification_method_co_ef6f442c")
-  // spellchecker: ignore-next-line
-  @@index([config_key], map: "community_platform_system_alert_notification_method_co_f4219226")
-}
-
-/// Junction table connecting escalation rules to notification methods with
-/// level-specific configurations. Each record represents a notification
-/// method assigned to a specific escalation level within an escalation rule,
-/// storing configuration settings that apply only to that particular level.
-///
-/// This table enables the many-to-many relationship between {@link
-/// community_platform_system_alert_escalation_rules} and {@link
-/// community_platform_system_alert_notification_methods}, allowing each
-/// escalation rule to use multiple notification methods at different
-/// escalation levels with level-specific settings. The level field
-/// determines which escalation level (1, 2, 3, etc.) this notification
-/// method applies to, while the configuration fields store settings specific
-/// to that level-method combination.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_escalation_rule_notifications {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id(map: "community_platform_system_alert_escalation_rule_notifi_fe9c1082")
-  
-  /// Reference to the escalation rule this notification assignment belongs to.
-  /// {@link community_platform_system_alert_escalation_rules.id}
-  system_alert_escalation_rule_id String
-  
-  /// Reference to the notification method assigned to this escalation level.
-  /// {@link community_platform_system_alert_notification_methods.id}
-  system_alert_notification_method_id String
-  
-  /// The escalation level this notification method applies to (1 for first
-  /// level, 2 for second level, etc.). Determines when this notification
-  /// method should be triggered during the escalation process.
-  escalation_level Int
-  
-  /// Level-specific configuration settings for this notification method,
-  /// stored as JSON. Contains method-specific parameters like message
-  /// templates, delivery timing, retry settings, and other customization
-  /// options.
-  configuration String?
-  
-  /// Whether this notification method is enabled for this escalation level.
-  /// Allows temporary disabling of specific notification methods without
-  /// removing the assignment.
-  enabled Boolean
-  
-  /// Priority order for notification delivery within this escalation level.
-  /// Lower numbers indicate higher priority for delivery sequencing.
-  priority Int
-  
-  /// Timestamp when this notification assignment was created.
-  created_at DateTime
-  
-  /// Timestamp when this notification assignment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this notification assignment was soft deleted, allowing
-  /// for restoration if needed.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  escalationRule community_platform_system_alert_escalation_rules @relation(fields: [system_alert_escalation_rule_id], references: [id], onDelete: Cascade)
-  notificationMethod community_platform_system_alert_notification_methods @relation(fields: [system_alert_notification_method_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_escalation_rule_id, system_alert_notification_method_id, escalation_level], map: "community_platform_system_alert_escalation_rule_notifi_58073a89")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_escalation_rule_id, escalation_level], map: "community_platform_system_alert_escalation_rule_notifi_212858e5")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_notification_method_id, enabled], map: "community_platform_system_alert_escalation_rule_notifi_65bd612a")
-  // spellchecker: ignore-next-line
-  @@index([escalation_level, priority], map: "community_platform_system_alert_escalation_rule_notifi_fbc3f009")
-}
-
-/// Junction table connecting system alert escalation rules to target roles
-/// with escalation-specific permissions.
-///
-/// This table establishes a many-to-many relationship between escalation
-/// rules and the roles that should be notified at each escalation level.
-/// Each record defines which roles receive notifications for specific
-/// escalation rules and what permissions they have at that escalation level.
-/// The permissions field allows for granular control over what actions each
-/// role can perform when notified at a particular escalation stage.
-///
-/// For example, a 'moderator' role might have read-only permissions at the
-/// first escalation level, but gain approval/denial permissions at higher
-/// escalation levels. This enables sophisticated escalation workflows where
-/// different roles gain different capabilities as alerts progress through
-/// the escalation hierarchy.
-///
-/// The table ensures that escalation notifications are properly targeted and
-/// that role permissions are appropriately scoped to each escalation level,
-/// maintaining security and workflow integrity throughout the alert
-/// management process.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_escalation_rule_targets {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reference to the escalation rule being configured. {@link
-  /// community_platform_system_alert_escalation_rules.id}
-  system_alert_escalation_rule_id String
-  
-  /// Reference to the target role being assigned to this escalation level.
-  /// {@link community_platform_system_alert_target_roles.id}
-  system_alert_target_role_id String
-  
-  /// JSON-encoded permissions configuration defining what actions this role
-  /// can perform at this escalation level. Contains role-specific capabilities
-  /// like 'read_only', 'approve_deny', 'escalate', 'resolve', etc.
-  permissions String
-  
-  /// Timestamp when this escalation rule target assignment was created.
-  created_at DateTime
-  
-  /// Timestamp when this escalation rule target assignment was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this escalation rule target assignment was soft-deleted,
-  /// if applicable.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  escalationRule community_platform_system_alert_escalation_rules @relation(fields: [system_alert_escalation_rule_id], references: [id], onDelete: Cascade)
-  targetRole community_platform_system_alert_target_roles @relation(fields: [system_alert_target_role_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_escalation_rule_id, system_alert_target_role_id], map: "community_platform_system_alert_escalation_rule_target_bd5bf8ee")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_escalation_rule_id, created_at], map: "community_platform_system_alert_escalation_rule_target_7e8ca7d5")
-  // spellchecker: ignore-next-line
-  @@index([system_alert_target_role_id, created_at], map: "community_platform_system_alert_escalation_rule_target_c5cbe9de")
-}
-
-/// Stores threshold configurations for escalation conditions with specific
-/// values and validation rules.
-///
-/// This table provides detailed threshold configuration for system alert
-/// escalation rules, allowing for precise control over when escalation
-/// conditions are triggered. Each threshold includes specific numeric
-/// values, comparison operators, and validation rules to ensure proper
-/// escalation behavior.
-///
-/// Thresholds are used to define the conditions under which alerts should
-/// escalate to higher levels of notification or different response
-/// protocols. This enables sophisticated alert management where escalation
-/// is triggered by specific metric thresholds rather than simple time-based
-/// rules.
-///
-/// {@link community_platform_system_alert_escalation_rules}
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model community_platform_system_alert_escalation_rule_thresholds {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id(map: "community_platform_system_alert_escalation_rule_thresh_b7857687")
-  
-  /// Reference to the parent escalation rule that this threshold belongs to.
-  /// {@link community_platform_system_alert_escalation_rules.id}
-  system_alert_escalation_rule_id String
-  
-  /// Type of threshold being configured (e.g., 'cpu_usage', 'memory_usage',
-  /// 'error_rate', 'response_time').
-  threshold_type String
-  
-  /// Comparison operator for threshold evaluation (e.g., 'greater_than',
-  /// 'less_than', 'equal_to', 'not_equal_to').
-  comparison_operator String
-  
-  /// Numeric value that triggers the threshold condition.
-  threshold_value Float
-  
-  /// Unit of measurement for the threshold value (e.g., 'percent',
-  /// 'milliseconds', 'count', 'megabytes').
-  unit String
-  
-  /// Time window in seconds over which the threshold is evaluated for
-  /// sustained conditions.
-  duration_window Int?
-  
-  /// Number of consecutive threshold breaches required before escalation is
-  /// triggered.
-  consecutive_occurrences Int?
-  
-  /// JSON string containing additional validation rules and constraints for
-  /// the threshold.
-  validation_rules String?
-  
-  /// Human-readable description of what this threshold monitors and when it
-  /// should trigger escalation.
-  description String
-  
-  /// Whether this threshold configuration is currently active and being
-  /// evaluated.
-  is_active Boolean
-  
-  /// Timestamp when this threshold configuration was created.
-  created_at DateTime
-  
-  /// Timestamp when this threshold configuration was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when this threshold configuration was soft deleted.
-  deleted_at DateTime?
-  
-  //----
-  // RELATIONS
-  //----
-  escalationRule community_platform_system_alert_escalation_rules @relation(fields: [system_alert_escalation_rule_id], references: [id], onDelete: Cascade)
-  
-  // spellchecker: ignore-next-line
-  @@unique([system_alert_escalation_rule_id, threshold_type], map: "community_platform_system_alert_escalation_rule_thresh_4fde834e")
-  // spellchecker: ignore-next-line
-  @@index([threshold_type, is_active], map: "community_platform_system_alert_escalation_rule_thresh_389381f3")
-  // spellchecker: ignore-next-line
-  @@index([created_at], map: "community_platform_system_alert_escalation_rule_thresh_07d0cdbb")
-  // spellchecker: ignore-next-line
-  @@index([is_active, threshold_type], map: "community_platform_system_alert_escalation_rule_thresh_7e1bda75")
+  @@index([config_key], map: "community_platform_feature_flag_environment_detail_con_ce8407a2")
 }

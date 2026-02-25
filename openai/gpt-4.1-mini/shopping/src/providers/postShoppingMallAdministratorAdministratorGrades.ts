@@ -8,7 +8,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallAdministratorGradeCollector } from "../collectors/ShoppingMallAdministratorGradeCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { ShoppingMallAdministratorGradeTransformer } from "../transformers/ShoppingMallAdministratorGradeTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,52 +18,24 @@ export async function postShoppingMallAdministratorAdministratorGrades(props: {
   administrator: AdministratorPayload;
   body: IShoppingMallAdministratorGrade.ICreate;
 }): Promise<IShoppingMallAdministratorGrade> {
-  const now = toISOStringSafe(new Date());
-  // Extract body fields with type assertions to satisfy typesystem
-  const { name, grade, super_administrator } = props.body as {
-    name: string;
-    grade: number;
-    super_administrator: boolean;
-  };
-  return await MyGlobal.prisma.$transaction(async (prisma) => {
-    const conflict = await prisma.shopping_mall_administrator_grades.findFirst({
-      where: {
-        OR: [{ name }, { grade }],
-        deleted_at: null,
-      },
-    });
-    if (conflict) {
-      if (conflict.name === name) {
-        throw new HttpException("Administrator grade name already exists", 400);
-      } else {
-        throw new HttpException(
-          "Administrator grade value already exists",
-          400,
-        );
-      }
+  try {
+    const created =
+      await MyGlobal.prisma.shopping_mall_administrator_grades.create({
+        data: await ShoppingMallAdministratorGradeCollector.collect({
+          body: props.body,
+        }),
+        ...ShoppingMallAdministratorGradeTransformer.select(),
+      });
+    return await ShoppingMallAdministratorGradeTransformer.transform(created);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002" &&
+      Array.isArray(error.meta?.target) &&
+      error.meta.target.includes("name")
+    ) {
+      throw new HttpException("Administrator grade name must be unique", 400);
     }
-    const created = await prisma.shopping_mall_administrator_grades.create({
-      data: {
-        id: v4(),
-        name,
-        grade,
-        super_administrator,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    });
-    return {
-      id: created.id,
-      name: created.name,
-      grade: created.grade,
-      super_administrator: created.super_administrator,
-      created_at: toISOStringSafe(created.created_at),
-      updated_at: toISOStringSafe(created.updated_at),
-      deleted_at:
-        created.deleted_at === null
-          ? null
-          : toISOStringSafe(created.deleted_at),
-    };
-  });
+    throw error;
+  }
 }

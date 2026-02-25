@@ -1,4 +1,8 @@
-import { ICommunityPlatformReportDecision } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportDecision";
+import { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
+import { ICommunityPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReport";
+import { ICommunityPlatformReportReason } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportReason";
+import { ICommunityPlatformReportsDecision } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportsDecision";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -8,50 +12,89 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { CommunityPlatformReportDecisionCollector } from "../collectors/CommunityPlatformReportDecisionCollector";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
+import { CommunityPlatformReportsDecisionTransformer } from "../transformers/CommunityPlatformReportsDecisionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postCommunityPlatformModeratorReportsDecisions(props: {
   moderator: ModeratorPayload;
-  body: ICommunityPlatformReportDecision.ICreate;
-}): Promise<ICommunityPlatformReportDecision> {
-  const validDecisions = ["approved", "dismissed"] as const;
-  if (!validDecisions.includes((props.body as any).decision)) {
-    throw new HttpException("Invalid decision value", 400);
+  body: ICommunityPlatformReportsDecision.ICreate;
+}): Promise<ICommunityPlatformReportsDecision> {
+  const { moderator, body } = props;
+  const reportId = body.reportId;
+  const status = body.status;
+  const comment = body.comment ?? null;
+  if (status !== "approved" && status !== "dismissed") {
+    throw new HttpException("Invalid decision status", 400);
   }
-  const report = await MyGlobal.prisma.community_platform_reports.findUnique({
-    where: { id: (props.body as any).report_id },
-    select: { id: true },
-  });
-  if (!report) {
-    throw new HttpException("Report not found", 404);
-  }
-  const mod = await MyGlobal.prisma.community_platform_moderators.findUnique({
-    where: { id: props.moderator.id },
-    select: { id: true },
-  });
+  const report =
+    await MyGlobal.prisma.community_platform_reports.findUniqueOrThrow({
+      where: { id: reportId },
+      select: {
+        id: true,
+        community_platform_user_id: true,
+      },
+    });
+  const mod =
+    await MyGlobal.prisma.community_platform_community_moderators.findFirst({
+      where: {
+        id: moderator.id,
+        deleted_at: null,
+      },
+    });
   if (!mod) {
-    throw new HttpException("Moderator not authorized", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  const data = await CommunityPlatformReportDecisionCollector.collect({
-    body: props.body,
-    decision: (props.body as any).decision,
-    comments: (props.body as any).comments ?? null,
-    report,
-    moderator: mod,
+  const decisionId = v4();
+  const now = toISOStringSafe(new Date());
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const created = await tx.community_platform_reports_decisions.create({
+      data: {
+        id: decisionId,
+        report: { connect: { id: reportId } },
+        moderator: { connect: { id: moderator.id } },
+        decision: status,
+        comments: comment,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      ...CommunityPlatformReportsDecisionTransformer.select(),
+    });
+    if (status === "approved") {
+      const reportedContents =
+        await tx.community_platform_reported_contents.findMany({
+          where: { community_platform_report_id: reportId },
+          select: {
+            id: true,
+            community_platform_reported_post_id: true,
+            community_platform_reported_comment_id: true,
+          },
+        });
+      for (const content of reportedContents) {
+        if (content.community_platform_reported_post_id !== null) {
+          await tx.community_platform_posts.delete({
+            where: { id: content.community_platform_reported_post_id },
+          });
+        } else if (content.community_platform_reported_comment_id !== null) {
+          await tx.community_platform_post_comments.delete({
+            where: { id: content.community_platform_reported_comment_id },
+          });
+        }
+      }
+      await tx.community_platform_reports.delete({ where: { id: reportId } });
+    } else if (status === "dismissed") {
+      await tx.community_platform_reports.update({
+        where: { id: reportId },
+        data: { deleted_at: now },
+      });
+    }
+    return await tx.community_platform_reports_decisions
+      .findUniqueOrThrow({
+        where: { id: decisionId },
+        ...CommunityPlatformReportsDecisionTransformer.select(),
+      })
+      .then(CommunityPlatformReportsDecisionTransformer.transform);
   });
-  const created =
-    await MyGlobal.prisma.community_platform_reports_decisions.create({ data });
-  return {
-    id: created.id,
-    report_id: created.report_id,
-    moderator_id: created.moderator_id,
-    decision: created.decision,
-    comments: created.comments ?? null,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
-  };
 }

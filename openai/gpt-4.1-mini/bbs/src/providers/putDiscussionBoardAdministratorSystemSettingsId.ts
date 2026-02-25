@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardSystemSettingTransformer } from "../transformers/DiscussionBoardSystemSettingTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,21 +18,40 @@ export async function putDiscussionBoardAdministratorSystemSettingsId(props: {
   id: string & tags.Format<"uuid">;
   body: IDiscussionBoardSystemSetting.IUpdate;
 }): Promise<IDiscussionBoardSystemSetting> {
-  const record =
-    await MyGlobal.prisma.discussion_board_system_settings.findUnique({
-      where: { id: props.id },
-    });
-  if (record === null) {
-    throw new HttpException("System setting not found", 404);
+  await MyGlobal.prisma.discussion_board_system_settings.findUniqueOrThrow({
+    where: { id: props.id },
+  });
+  if (props.body.key !== undefined) {
+    const existing =
+      await MyGlobal.prisma.discussion_board_system_settings.findUnique({
+        where: { key: props.body.key },
+      });
+    if (existing !== null && existing.id !== props.id) {
+      throw new HttpException(`Key '${props.body.key}' already exists`, 409);
+    }
   }
-  if (record.deleted_at !== null) {
-    throw new HttpException("Cannot update deleted system setting", 400);
-  }
-  const now = toISOStringSafe(new Date());
+  const now = new Date().toISOString();
+  const updateData = {
+    ...(props.body.key !== undefined && { key: props.body.key }),
+    ...(props.body.value !== undefined && { value: props.body.value }),
+    ...(Object.prototype.hasOwnProperty.call(props.body, "description") && {
+      description:
+        props.body.description === undefined ? null : props.body.description,
+    }),
+    ...(Object.prototype.hasOwnProperty.call(props.body, "deleted_at") && {
+      deleted_at:
+        props.body.deleted_at === undefined ? null : props.body.deleted_at,
+    }),
+    updated_at: now,
+  };
   await MyGlobal.prisma.discussion_board_system_settings.update({
     where: { id: props.id },
-    data: { updated_at: now },
+    data: updateData,
   });
-  // Return empty object as IDiscussionBoardSystemSetting has no defined properties
-  return {};
+  const updated =
+    await MyGlobal.prisma.discussion_board_system_settings.findUniqueOrThrow({
+      where: { id: props.id },
+      ...DiscussionBoardSystemSettingTransformer.select(),
+    });
+  return await DiscussionBoardSystemSettingTransformer.transform(updated);
 }

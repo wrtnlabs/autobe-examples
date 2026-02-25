@@ -18,63 +18,43 @@ export async function patchShoppingMallSellerProductsProductIdVariants(props: {
   seller: SellerPayload;
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProductVariant.IRequest;
-}): Promise<IPageIShoppingMallProductVariant> {
+}): Promise<IPageIShoppingMallProductVariant.ISummary> {
   const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
     where: { id: props.productId },
-    select: { id: true, seller_id: true, deleted_at: true },
+    select: { seller_id: true },
   });
-  if (!product || product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  if (product.seller_id !== props.seller.id) {
+  if (!product || product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Defining default pagination values due to missing 'page' and 'limit' in IRequest
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Validate variants property existence and type
-  if (!Array.isArray((props.body as any).variants)) {
-    throw new HttpException("Variants list must be an array", 400);
-  }
-  const variantsInput = (props.body as any).variants as Array<any>;
-  const updatedVariants = await MyGlobal.prisma.$transaction(async (prisma) => {
-    for (const variantUpdate of variantsInput) {
-      const dupCount = await prisma.shopping_mall_product_variants.count({
-        where: {
-          shopping_mall_product_id: props.productId,
-          sku_code: variantUpdate.sku_code,
-          NOT: { id: variantUpdate.id },
-          deleted_at: null,
-        },
-      });
-      if (dupCount > 0) {
-        throw new HttpException(
-          `Duplicate sku_code '${variantUpdate.sku_code}' for product`,
-          400,
-        );
-      }
-      await prisma.shopping_mall_product_variants.update({
-        where: { id: variantUpdate.id },
-        data: {
-          sku_code: variantUpdate.sku_code,
-          price_override:
-            variantUpdate.price_override === undefined
-              ? null
-              : variantUpdate.price_override,
-          stock_quantity: variantUpdate.stock_quantity,
-          updated_at: toISOStringSafe(new Date()),
-        },
-      });
-    }
-    const variants = await prisma.shopping_mall_product_variants.findMany({
-      where: { shopping_mall_product_id: props.productId, deleted_at: null },
+  const where: Prisma.shopping_mall_product_variantsWhereInput = {
+    shopping_mall_product_id: props.productId,
+    ...(props.body.skuCode
+      ? { sku_code: { contains: props.body.skuCode } }
+      : {}),
+    ...(props.body.priceOverrideMin !== undefined
+      ? { price_override: { gte: props.body.priceOverrideMin } }
+      : {}),
+    ...(props.body.priceOverrideMax !== undefined
+      ? { price_override: { lte: props.body.priceOverrideMax } }
+      : {}),
+    ...(props.body.stockQuantityMin !== undefined
+      ? { stock_quantity: { gte: props.body.stockQuantityMin } }
+      : {}),
+    ...(props.body.stockQuantityMax !== undefined
+      ? { stock_quantity: { lte: props.body.stockQuantityMax } }
+      : {}),
+  };
+  const variants =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
+      where,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
       select: {
         id: true,
-        shopping_mall_product_id: true,
         sku_code: true,
         price_override: true,
         stock_quantity: true,
@@ -83,30 +63,32 @@ export async function patchShoppingMallSellerProductsProductIdVariants(props: {
         deleted_at: true,
       },
     });
-    return variants;
+  const total = await MyGlobal.prisma.shopping_mall_product_variants.count({
+    where,
   });
-  const totalVariants =
-    await MyGlobal.prisma.shopping_mall_product_variants.count({
-      where: { shopping_mall_product_id: props.productId, deleted_at: null },
-    });
-  const transformedVariants = updatedVariants.map((v) => ({
-    id: v.id as string & tags.Format<"uuid">,
-    shopping_mall_product_id: v.shopping_mall_product_id as string &
-      tags.Format<"uuid">,
-    sku_code: v.sku_code,
-    price_override: v.price_override === null ? null : v.price_override,
-    stock_quantity: v.stock_quantity,
-    created_at: toISOStringSafe(v.created_at),
-    updated_at: toISOStringSafe(v.updated_at),
-    deleted_at: v.deleted_at === null ? null : toISOStringSafe(v.deleted_at),
-  }));
+  const transformedData: IShoppingMallProductVariant.ISummary[] = variants.map(
+    (v) => ({
+      id: v.id,
+      skuCode: v.sku_code,
+      priceOverride: v.price_override === null ? null : v.price_override,
+      stockQuantity: v.stock_quantity,
+      createdAt: v.created_at.toISOString() as string &
+        tags.Format<"date-time">,
+      updatedAt: v.updated_at.toISOString() as string &
+        tags.Format<"date-time">,
+      deletedAt:
+        v.deleted_at === null
+          ? null
+          : (v.deleted_at.toISOString() as string & tags.Format<"date-time">),
+    }),
+  );
   return {
-    data: transformedVariants,
     pagination: {
       current: page,
-      limit,
-      records: totalVariants,
-      pages: Math.ceil(totalVariants / limit),
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
+    data: transformedData,
   };
 }

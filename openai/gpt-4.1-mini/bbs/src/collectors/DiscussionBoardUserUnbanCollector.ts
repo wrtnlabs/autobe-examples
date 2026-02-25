@@ -10,18 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardUserUnbanCollector {
   export async function collect(props: {
     body: IDiscussionBoardUserUnban.ICreate;
-    userBan: IEntity;
-    administrator: IEntity;
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
-      reason: "",
+      reason: props.body.reason,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      userBan: { connect: { id: props.userBan.id } },
-      administrator: { connect: { id: props.administrator.id } },
+      userBan: { connect: { id: props.body.userBanId } },
+      administrator: { connect: { id: props.body.administratorId } },
     } satisfies Prisma.discussion_board_user_unbansCreateInput;
   }
 }

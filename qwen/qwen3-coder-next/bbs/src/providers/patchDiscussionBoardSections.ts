@@ -1,5 +1,7 @@
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -12,23 +14,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardSections(props: {
-  body: IDiscussionBoardSection.IUpdate;
-}): Promise<IDiscussionBoardSection> {
-  // For batch update, we need to specify which section(s) to update
-  // Based on the path '/discussionBoard/sections', this appears to be a batch update operation
-  // However, the section update should target a specific section
-  // Assuming the implementation requires a specific section identifier from the context
-  // Since the props only contains body, we need to handle this as a batch update
-  // or require additional context. Let's assume this is meant to update sections
-  // based on some criteria from the body or require admin context.
-  // Given the operation specification mentions 'Update discussion_board_sections table record'
-  // and 'Apply update to section identified by current admin context',
-  // but the props structure doesn't include admin context, we'll handle this
-  // as a general update that requires proper context.
-  // Since the actual implementation context is unclear from the props,
-  // and the system expects us to work with the provided structure,
-  // we'll implement a basic update assuming admin context is available elsewhere.
-  // For now, implement as a simple update without specific section targeting
-  // (this would need to be adjusted based on actual context)
-  throw new HttpException("Section ID required for update", 400);
+  body: IDiscussionBoardSection.IRequest;
+}): Promise<IPageIDiscussionBoardSection.ISummary> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Build where clause
+  const whereClause: Prisma.discussion_board_sectionsWhereInput = {
+    ...(props.body.search && {
+      OR: [
+        { name: { contains: props.body.search, mode: "insensitive" } },
+        { description: { contains: props.body.search, mode: "insensitive" } },
+      ],
+    }),
+    ...(props.body.sectionIds && { id: { in: props.body.sectionIds } }),
+  };
+  // Fetch paginated data
+  const data = await MyGlobal.prisma.discussion_board_sections.findMany({
+    where: whereClause,
+    skip,
+    take: limit,
+    orderBy: { created_at: Prisma.SortOrder.desc },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      created_at: true,
+    },
+  });
+  // Count total records
+  const total = await MyGlobal.prisma.discussion_board_sections.count({
+    where: whereClause,
+  });
+  // Transform to response DTO
+  const transformedData: IDiscussionBoardSection.ISummary[] = data.map(
+    (record) => ({
+      id: record.id as string & tags.Format<"uuid">,
+      name: record.name,
+      description: record.description,
+    }),
+  );
+  return {
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: limit > 0 ? Math.ceil(total / limit) : 0,
+    } satisfies IPage.IPagination,
+    data: transformedData,
+  } satisfies IPageIDiscussionBoardSection.ISummary;
 }

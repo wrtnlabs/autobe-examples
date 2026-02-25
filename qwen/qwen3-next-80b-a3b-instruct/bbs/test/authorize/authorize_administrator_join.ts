@@ -11,12 +11,17 @@ import typia, { tags } from "typia";
 export async function authorize_administrator_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEconomicBoardAdministrator.IJoin>;
+    body: IEconomicBoardAdministrator.IJoin;
   },
 ): Promise<IEconomicBoardAdministrator.IAuthorized> {
-  const joinInput = props.body ?? {};
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+  } satisfies IEconomicBoardAdministrator.IJoin;
   return await api.functional.economicBoard.auth.administrator.join(
     connection,
-    { body: joinInput },
+    {
+      body: joinInput,
+    },
   );
 }

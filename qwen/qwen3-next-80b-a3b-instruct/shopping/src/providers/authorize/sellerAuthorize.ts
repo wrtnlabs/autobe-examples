@@ -12,16 +12,16 @@ export async function sellerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
+  // Query using seller_id fk from session schema, check soft-delete
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: {
       id: payload.id,
-      approval_status: "approved",
-      deleted_at: null
+      deleted_at: null,
     },
   });
 
   if (seller === null) {
-    throw new ForbiddenException("You're not enrolled or not approved");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

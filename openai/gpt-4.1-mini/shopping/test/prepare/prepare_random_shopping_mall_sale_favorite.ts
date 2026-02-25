@@ -6,8 +6,10 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_sale_favorite(
-  input?: DeepPartial<IShoppingMallSaleFavorite.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSaleFavorite.ICreate>,
 ): IShoppingMallSaleFavorite.ICreate {
-  input;
-  return {};
+  return {
+    shoppingMallSaleId:
+      input?.shoppingMallSaleId ?? typia.random<string & tags.Format<"uuid">>(),
+  };
 }

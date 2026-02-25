@@ -18,20 +18,14 @@ export async function getDiscussionBoardAdminSectionsSectionIdSnapshotsSnapshotI
   sectionId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSectionSnapshot> {
+  // First verify the snapshot exists and belongs to the specified section
   const snapshot =
-    await MyGlobal.prisma.discussion_board_section_snapshots.findUnique({
+    await MyGlobal.prisma.discussion_board_section_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
         discussion_board_section_id: props.sectionId,
-        deleted_at: null,
       },
       ...DiscussionBoardSectionSnapshotTransformer.select(),
     });
-  if (!snapshot) {
-    throw new HttpException(
-      "Section snapshot not found or does not belong to the specified section",
-      404,
-    );
-  }
   return await DiscussionBoardSectionSnapshotTransformer.transform(snapshot);
 }

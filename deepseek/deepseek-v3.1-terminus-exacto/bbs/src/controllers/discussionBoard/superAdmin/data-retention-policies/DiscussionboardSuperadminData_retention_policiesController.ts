@@ -4,9 +4,8 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardDataRetentionPolicy } from "../../../../api/structures/IDiscussionBoardDataRetentionPolicy";
 import { IPageIDiscussionBoardDataRetentionPolicy } from "../../../../api/structures/IPageIDiscussionBoardDataRetentionPolicy";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
-import { deleteDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId } from "../../../../providers/deleteDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { getDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId } from "../../../../providers/getDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId";
 import { patchDiscussionBoardSuperAdminDataRetentionPolicies } from "../../../../providers/patchDiscussionBoardSuperAdminDataRetentionPolicies";
 import { postDiscussionBoardSuperAdminDataRetentionPolicies } from "../../../../providers/postDiscussionBoardSuperAdminDataRetentionPolicies";
@@ -15,27 +14,35 @@ import { putDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId } from "../..
 @Controller("/discussionBoard/superAdmin/data-retention-policies")
 export class DiscussionboardSuperadminData_retention_policiesController {
   /**
-   * Create a new data retention policy for the discussion board system.
+   * Create a new data retention policy for the discussion board platform.
    *
-   * This operation allows system administrators to define new data retention policies that govern how long different types of user and system data should be retained before automatic deletion or archival. Each policy specifies retention periods, data types covered, and compliance requirements for regulatory adherence. Supports soft deletion through the deleted_at field for policy lifecycle management.
+   * This API operation allows system super administrators to define new data retention policies that specify how long different types of data should be retained before automatic deletion or archival. Each policy includes comprehensive configuration details such as retention period, action type, compliance standards, and activation status. The operation supports soft deleted policies through the "deleted_at" field, allowing for policy lifecycle management and archival.
    *
-   * Policies include detailed descriptions, retention periods in days, specific action types when retention expires, and optional compliance standard references. The system enforces policy uniqueness by policy name and validates all input parameters to ensure data integrity and compliance with business rules.
+   * The operation validates all input parameters including policy name uniqueness, retention period constraints, and valid action types. Upon successful creation, the system automatically generates the policy ID and timestamps while enforcing business rules for data retention compliance.
    *
-   * The created policy can be immediately activated or kept inactive for future enforcement. The operation returns the complete policy object including system-generated identifiers and timestamps for reference and audit purposes.
+   * Super administrators can use this endpoint to establish data governance policies that align with regulatory requirements like GDPR and CCPA, ensuring proper data lifecycle management across the platform. Created policies implement soft deletion capabilities for comprehensive policy lifecycle management.
    *
-   * This API supports the data privacy and compliance requirements of the discussion board platform, enabling proper data lifecycle management according to regulatory standards like GDPR and CCPA. Policies created through this endpoint can later be associated with specific data types through separate mapping operations.
+   * Related operations include viewing existing policies via GET /data-retention-policies and updating policies via PUT /data-retention-policies/{policyId}.
    *
    * @param connection
-   * @param body Policy creation parameters including name, description, retention period, action type, and activation status
+   * @param body Data retention policy creation parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Implement the creation of a new data retention policy with full validation. Required fields: policy_name (unique), description, retention_period_days (positive integer), retention_action (specific allowed values), is_active (boolean). Optional field: compliance_standard. Validate policy_name uniqueness to prevent duplicates. Auto-generate timestamps for created_at and updated_at. Validate retention_period_days is reasonable (e.g., 1-7300 days range). Validate retention_action against allowed values like 'delete', 'archive', 'anonymize'. Set initial enforcement status with next_enforcement_due calculated based on retention period. Perform database transaction to ensure atomic creation. Return appropriate error responses for validation failures.
+   * @x-autobe-specification Validate input parameters including policy name uniqueness check against existing policies.
+   * Create new record in discussion_board_data_retention_policies table with generated UUID.
+   * Set created_at and updated_at timestamps to current time.
+   * Initialize last_enforced_at and next_enforcement_due as null since policy is newly created.
+   * Ensure retention_period_days is positive integer.
+   * Validate retention_action is one of valid action types (delete, archive, anonymize).
+   * Return the complete created policy object with all fields populated.
+   * Handle potential conflicts if policy_name already exists.
+   * Implement proper error handling for validation failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardDataRetentionPolicy.ICreate,
   ): Promise<IDiscussionBoardDataRetentionPolicy> {
@@ -51,31 +58,25 @@ export class DiscussionboardSuperadminData_retention_policiesController {
   }
 
   /**
-   * Search and retrieve data retention policies with advanced filtering capabilities.
+   * Retrieve a paginated and filtered list of data retention policies for administrative review and compliance management.
    *
-   * This operation provides comprehensive search functionality for data retention policies, allowing administrators to find policies by name, description, compliance standards, retention actions, and activity status. The response includes paginated results with policy summaries optimized for list displays.
+   * This operation provides comprehensive search capabilities for data retention policies, allowing administrators to efficiently manage platform compliance with data protection regulations. The filtering options support various compliance workflows including policy audits, retention period verification, and regulatory compliance checks.
    *
-   * Supports complex search criteria including partial name matching, full-text search on descriptions, exact matching on compliance standards and retention actions, and boolean filtering by active status. The pagination system ensures efficient handling of large policy sets while maintaining performance.
+   * Search functionality includes partial matching on policy names, multiple compliance standard filtering, retention action categorization, and active status filtering to support diverse administrative use cases. The response format is optimized for policy management interfaces with summaries containing essential policy information.
    *
-   * This is a critical administrative operation for compliance management, allowing administrators to review, audit, and manage data retention policies across the discussion board platform.
+   * Administrators can use this operation to monitor data retention enforcement, prepare for regulatory audits, and ensure platform compliance with data protection standards across all user content and system records.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for data retention policies
+   * @param body Search criteria and pagination parameters for retrieving data retention policies
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query discussion_board_data_retention_policies table with comprehensive search and filtering capabilities.
-   *
-   * Apply filters on policy_name (partial match), description (text search), compliance_standard, retention_action, and is_active status.
-   * Support pagination with configurable page sizes and cursor-based pagination for large result sets.
-   * Join with discussion_board_data_retention_policy_data_types to include data type mappings in response if requested.
-   * Implement case-insensitive search for text fields and exact matching for enum-like fields.
-   * Return results sorted by most recently updated policies first by default, with configurable sorting options.
+   * @x-autobe-specification Query discussion_board_data_retention_policies table with pagination and advanced filtering. Apply search filters on policy_name (partial match), compliance_standard, retention_action, is_active status, and retention_period_days range. Support case-insensitive search for policy_name. Include sorting by created_at, updated_at, or policy_name. Implement cursor-based pagination for efficient large result sets. Return policy summaries optimized for administrative review and management.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardDataRetentionPolicy.IRequest,
   ): Promise<IPageIDiscussionBoardDataRetentionPolicy.ISummary> {
@@ -91,27 +92,25 @@ export class DiscussionboardSuperadminData_retention_policiesController {
   }
 
   /**
-   * Retrieve detailed information about a specific data retention policy.
+   * Retrieve detailed information about a specific data retention policy configured in the discussion board platform.
    *
-   * This operation returns comprehensive details for a single data retention policy, including its name, description, retention period, compliance standards, enforcement schedule, and status. The response includes both the core policy configuration and the specific data types that this retention policy governs.
+   * This operation provides access to the complete policy definition including retention periods, compliance standards, enforcement schedules, and current status. Data retention policies are essential for maintaining regulatory compliance with standards such as GDPR and CCPA, ensuring proper data lifecycle management across the platform.
    *
-   * Retention policies define how long different categories of data should be retained on the discussion board platform before automatic deletion or archival. These policies support regulatory compliance with standards such as GDPR and CCPA by ensuring proper data lifecycle management.
+   * The response includes all policy metadata from the discussion_board_data_retention_policies table, including policy configuration, retention periods, compliance standards, enforcement status, and audit trail information. Soft-deleted policies (where deleted_at is not null) are filtered out from results.
    *
-   * This endpoint is restricted to super administrators only, as data retention policies contain sensitive compliance information and system configuration details. Super administrators can use this operation to review policy details, verify compliance requirements, and monitor enforcement schedules.
-   *
-   * The operation provides complete visibility into policy configuration and its application across different data categories within the system, supporting audit and compliance verification processes.
+   * Access to data retention policies is restricted to authorized administrators with system configuration privileges to ensure proper data governance and security compliance. Both regular administrators and super administrators may access this endpoint based on their permission levels.
    *
    * @param connection
    * @param policyId Unique identifier of the data retention policy to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_data_retention_policies table by ID to retrieve a specific data retention policy. Include all fields: policy_name, description, retention_period_days, retention_action, compliance_standard, is_active, last_enforced_at, next_enforcement_due, created_at, updated_at, deleted_at. Also retrieve related data type mappings from discussion_board_data_retention_policy_data_types junction table to show which data types this policy applies to. Handle soft-deleted records appropriately based on deleted_at field.
+   * @x-autobe-specification Query the discussion_board_data_retention_policies table by the provided policyId parameter. Return the complete policy record including all fields defined in the schema. Validate that the policy exists and return appropriate error if not found. Include related data type mappings from discussion_board_data_retention_policy_data_types table if needed for comprehensive policy information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":policyId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("policyId")
     policyId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardDataRetentionPolicy> {
@@ -127,34 +126,28 @@ export class DiscussionboardSuperadminData_retention_policiesController {
   }
 
   /**
-   * Update an existing data retention policy with new configuration values.
+   * Update an existing data retention policy with the specified ID.
    *
-   * This API operation allows system administrators to modify the parameters of an existing data retention policy. When a policy is updated, all changes are immediately applied and the system will begin enforcing the new policy settings according to the configured enforcement schedule. The operation supports updating policy details including retention period, action type, compliance standards, and activation status.
+   * This operation allows super administrators to modify active data retention policies including policy name, description, retention period, retention action, compliance standards, and activation status. The policy ID is provided in the URL path, and the request must contain the complete updated policy object excluding the read-only ID field.
    *
-   * When modifying a policy, administrators can adjust the retention period in days, change the retention action (delete, archive, anonymize), update compliance standards, and toggle the policy's active status. The system validates all input parameters to ensure they conform to business rules and regulatory requirements before applying the changes.
+   * Only policies that have not been soft-deleted can be updated. The system checks that the `deleted_at` field is NULL before processing any modifications. Policy names must remain unique across the system, with validation excluding the current policy from duplicate checks. Retention periods are validated to ensure reasonable timeframes (1-3650 days), and retention actions must be one of the supported types (delete, archive, anonymize). Compliance standards follow common regulatory frameworks like GDPR and CCPA.
    *
-   * The response includes the complete updated policy object with all current values, including automatically managed timestamps for tracking when the policy was last modified. This operation maintains referential integrity with the associated data type mappings defined in the discussion_board_data_retention_policy_data_types junction table.
+   * The system automatically updates the `updated_at` timestamp and handles enforcement scheduling by recalculating `next_enforcement_due` based on the updated retention period for active policies. Data type mappings associated with the policy remain intact unless explicitly modified through separate operations. Deleted policies (those with `deleted_at` set) cannot be modified through this operation.
    *
-   * Security considerations require that only authorized super administrators with appropriate permissions can modify data retention policies, as these settings affect data privacy and compliance requirements across the entire platform. The deletion behavior uses soft delete (via deleted_at field) allowing policies to be restored if needed.
-   *
-   * Dependencies include the prerequisite that the policy ID must exist in the discussion_board_data_retention_policies table and the user must have super administrator privileges to access this endpoint.
+   * This operation provides full lifecycle management for retention policies, supporting compliance requirements and data governance while maintaining referential integrity with associated data type mappings in the `discussion_board_data_retention_policy_data_types` junction table.
    *
    * @param connection
-   * @param policyId Unique identifier of the data retention policy to update
-   * @param body Updated configuration values for the data retention policy
+   * @param policyId The unique identifier of the data retention policy to update
+   * @param body Complete data retention policy update object, excluding the primary key ID and non-modifiable system fields like created_at and deleted_at
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate that the policyId exists in the discussion_board_data_retention_policies table before proceeding with updates. Apply business logic validation to ensure retention periods are reasonable (minimum 1 day, maximum configured system limit). Validate retention action is one of the allowed values (delete, archive, anonymize). Ensure compliance standards follow expected formats if provided.
-   *
-   * Update only the fields provided in the request body, leaving unspecified fields unchanged. Update the updated_at timestamp to current time. If the policy is being reactivated (is_active changed to true), recalculate next_enforcement_due based on current time and retention period. If retention_period_days is modified, update next_enforcement_due accordingly.
-   *
-   * Return the complete updated policy object including both modified and unchanged fields. Handle concurrent modification scenarios gracefully using database transaction isolation levels to prevent data corruption.
+   * @x-autobe-specification Update an existing data retention policy by ID. Requires complete policy object with all fields except the primary key. The system validates retention periods, action types, and maintains referential integrity with data type mappings. Supports policy name uniqueness validation and compliance standard formatting.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":policyId")
   public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("policyId")
     policyId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -166,36 +159,6 @@ export class DiscussionboardSuperadminData_retention_policiesController {
         policyId,
         body,
       });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Soft deletes a data retention policy from the system by marking it as deleted.nnThis operation performs a soft delete on the specified data retention policy record based on its unique identifier. Data retention policies define how long different types of data should be retained before automatic deletion or archival, supporting regulatory compliance requirements.nnAdministrators can use this operation to remove outdated or unnecessary retention policies from the system while maintaining audit trails through the soft deletion mechanism. The policy is marked as deleted but retains its record for compliance and historical tracking purposes.nnThis operation requires super administrator privileges and performs comprehensive validation to ensure only authorized users can modify system-wide data retention policies.
-   *
-   * @param connection
-   * @param policyId Unique identifier of the data retention policy to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Delete data retention policy by UUID identifier. Perform hard deletion from discussion_board_data_retention_policies table using the policyId path parameter. Validate that the policy exists before deletion. Ensure proper authorization checks for administrator access. Handle cascading effects if any related records exist.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":policyId")
-  public async erase(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("policyId")
-    policyId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId(
-        {
-          superAdmin,
-          policyId,
-        },
-      );
     } catch (error) {
       console.log(error);
       throw error;

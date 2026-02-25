@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import type { IShoppingMallProductCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductCategory";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -18,40 +19,46 @@ import { prepare_random_shopping_mall_product_category } from "../../../prepare/
 export async function test_api_product_category_create_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Test successful creation of a new product category by an authorized administrator.
-  // Verify unique category name enforcement, timestamps, and proper returned data.
-  // 1. Administrator joins to obtain authorized connection
+  // 1. Administrator authentication by join
   const adminConnection: api.IConnection = { host: connection.host };
-  const joinBody: IShoppingMallAdministrator.IJoin = {};
-  const authorized: IShoppingMallAdministrator.IAuthorized =
-    await authorize_administrator_join(adminConnection, { body: joinBody });
-  adminConnection.headers ??= {};
-  adminConnection.headers.Authorization = authorized.token.access;
-  // 2. Create product category with empty body (since ICreate definition has no properties)
-  const category: IShoppingMallProductCategory =
+  const adminAuthorized = await authorize_administrator_join(
+    adminConnection,
+    {},
+  );
+  // 2. Prepare product category create request body with unique name and description
+  const body: IShoppingMallProductCategory.ICreate = {
+    name: `Category_${RandomGenerator.alphabets(8)}`,
+    description: RandomGenerator.paragraph({ sentences: 3 }),
+  } satisfies IShoppingMallProductCategory.ICreate;
+  // 3. Call category create utility function
+  const category =
     await generate_random_shopping_mall_administrator_product_categories_create(
       adminConnection,
-      {},
+      { body },
     );
   typia.assert(category);
-  // 3. Attempt creating another category with same parameters to confirm conflict error
-  await TestValidator.error(
-    "duplicate category name triggers error",
-    async () => {
-      await generate_random_shopping_mall_administrator_product_categories_create(
-        adminConnection,
-        {},
-      );
-    },
+  // 4. Validate response properties
+  TestValidator.predicate(
+    "category id exists",
+    typeof category.id === "string" && category.id.length > 0,
   );
-  // 4. Attempt using base connection directly should produce authorization error
-  await TestValidator.error(
-    "access denied for non-admin connection",
-    async () => {
-      await generate_random_shopping_mall_administrator_product_categories_create(
-        connection,
-        {},
-      );
-    },
+  TestValidator.equals("category name matches", category.name, body.name);
+  TestValidator.equals(
+    "category description matches",
+    category.description,
+    body.description,
+  );
+  TestValidator.predicate(
+    "created_at is ISO date",
+    typeof category.created_at === "string" && category.created_at.length > 0,
+  );
+  TestValidator.predicate(
+    "updated_at is ISO date",
+    typeof category.updated_at === "string" && category.updated_at.length > 0,
+  );
+  // deleted_at must be null or undefined
+  TestValidator.predicate(
+    "deleted_at is null or undefined",
+    category.deleted_at === null || category.deleted_at === undefined,
   );
 }

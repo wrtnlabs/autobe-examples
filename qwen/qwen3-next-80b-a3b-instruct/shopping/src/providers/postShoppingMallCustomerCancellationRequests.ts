@@ -8,62 +8,66 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallCancellationRequestCollector } from "../collectors/ShoppingMallCancellationRequestCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallCancellationRequestTransformer } from "../transformers/ShoppingMallCancellationRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postShoppingMallCustomerCancellationRequests(props: {
   customer: CustomerPayload;
   body: IShoppingMallCancellationRequest.ICreate;
-}): Promise<void> {
-  // JSON Schema validation has already guaranteed the request body contains
-  // 'reason' and 'order_item_id' with correct format and length per operation spec.
-  // Runtime validation is strictly prohibited by AutoBE principles.
-  // Direct type assertion to extract fields from empty DTO: trusted by framework validation
-  const orderItemId = (props.body as any).order_item_id as string;
-  const reason = (props.body as any).reason as string;
-  // Validate order item status through database (complies with 09-cancellation-refund.md)
-  const orderItem = await MyGlobal.prisma.shopping_mall_order_items.findUnique({
-    where: { id: orderItemId },
-    select: { id: true, status: true, customer_id: true }, // Exactly as defined in schema
-  });
-  if (!orderItem) {
-    throw new HttpException("Order item not found", 404);
+}): Promise<IShoppingMallCancellationRequest> {
+  const latestPaidOrderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findFirst({
+      where: {
+        shopping_mall_order_id: props.customer.id,
+        status: "paid",
+        deleted_at: null,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+      select: { id: true, status: true },
+    });
+  if (!latestPaidOrderItem) {
+    throw new HttpException("No paid order items found for cancellation", 404);
   }
-  if (orderItem.status !== "paid") {
+  const orderItemId = latestPaidOrderItem.id;
+  const existingRequest =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirst({
+      where: {
+        order_item_id: orderItemId,
+        status: "pending",
+        deleted_at: null,
+      },
+    });
+  if (existingRequest) {
     throw new HttpException(
-      "Cannot cancel items that are not in paid status",
-      400,
+      "Cancellation request already pending for this item",
+      409,
     );
   }
-  if (orderItem.customer_id !== props.customer.id) {
-    throw new HttpException("You cannot cancel items that are not yours", 403);
-  }
-  const now = toISOStringSafe(new Date());
-  const autoApproveAt = toISOStringSafe(
-    new Date(Date.now() + 48 * 60 * 60 * 1000),
-  );
-  // Create cancellation request using correct schema field names
-  await MyGlobal.prisma.shopping_mall_cancellation_requests.create({
+  const created =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.create({
+      data: await ShoppingMallCancellationRequestCollector.collect({
+        body: props.body,
+        shoppingMallOrderItems: { id: orderItemId },
+        shoppingMallCustomers: { id: props.customer.id },
+      }),
+      ...ShoppingMallCancellationRequestTransformer.select(),
+    });
+  await MyGlobal.prisma.shopping_mall_inventory_logs.create({
     data: {
       id: v4(),
-      order_item_id: orderItemId,
-      customer_id: props.customer.id,
-      reason,
-      status: "pending",
-      created_at: now,
-      updated_at: now,
-      auto_approve_at: autoApproveAt,
+      variant_id: latestPaidOrderItem.id,
+      reason: "cancellation_reserve",
+      change_quantity: -1,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
   });
-  // Create system log using EXACT field names from schema: created_at, event_type, severity, metadata
-  await MyGlobal.prisma.shopping_mall_system_logs.create({
-    data: {
-      id: v4(),
-      created_at: now,
-      event_type: "create_cancellation_request",
-      severity: "info",
-      metadata: JSON.stringify({ reason }),
-    },
-  });
+  return await ShoppingMallCancellationRequestTransformer.transform(created);
 }

@@ -20,36 +20,48 @@ export async function patchEcommerceCustomerSessions(props: {
   customer: CustomerPayload;
   body: IEcommerceCustomerSession.IRequest;
 }): Promise<IPageIEcommerceCustomerSession.ISummary> {
-  const now = toISOStringSafe(new Date());
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const sortField = props.body.sortField || "created_at";
+  const sortDirection = props.body.sortDirection === "asc" ? "asc" : "desc";
+  const validSortFields = [
+    "customer_id",
+    "ip",
+    "href",
+    "referrer",
+    "created_at",
+    "updated_at",
+    "expired_at",
+  ];
+  const safeSortField = validSortFields.includes(sortField)
+    ? sortField
+    : "created_at";
   const where: Prisma.ecommerce_customer_sessionsWhereInput = {
-    expired_at: { gt: now },
+    deleted_at: null,
+    ...(props.body.customer_id ? { customer_id: props.body.customer_id } : {}),
+    ...(props.body.ip ? { ip: props.body.ip } : {}),
+    ...(props.body.href ? { href: props.body.href } : {}),
+    ...(props.body.referrer ? { referrer: props.body.referrer } : {}),
+    ...(props.body.expired_at ? { expired_at: props.body.expired_at } : {}),
   };
-  if (props.body.ip) where.ip = props.body.ip;
-  if (props.body.href) where.href = props.body.href;
-  if (props.body.referrer) where.referrer = props.body.referrer;
-  const data = await MyGlobal.prisma.ecommerce_customer_sessions.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    ...EcommerceCustomerSessionAtSummaryTransformer.select(),
-  });
   const total = await MyGlobal.prisma.ecommerce_customer_sessions.count({
     where,
   });
-  return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceCustomerSessionAtSummaryTransformer.transform,
-    ),
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-  } satisfies IPageIEcommerceCustomerSession.ISummary;
+  const sessions = await MyGlobal.prisma.ecommerce_customer_sessions.findMany({
+    where,
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { [safeSortField]: sortDirection },
+    ...EcommerceCustomerSessionAtSummaryTransformer.select(),
+  });
+  const data = await ArrayUtil.asyncMap(sessions, (session) =>
+    EcommerceCustomerSessionAtSummaryTransformer.transform(session),
+  );
+  const pagination = {
+    current: page,
+    limit,
+    records: total,
+    pages: Math.ceil(total / limit),
+  } satisfies IPage.IPagination;
+  return { data, pagination } satisfies IPageIEcommerceCustomerSession.ISummary;
 }

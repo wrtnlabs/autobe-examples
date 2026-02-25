@@ -17,14 +17,19 @@ export async function getDiscussionBoardAdminSystemConfigurationsConfigurationId
   admin: AdminPayload;
   configurationId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSystemConfiguration> {
+  // findUniqueOrThrow automatically throws HTTP 404 if record not found
   const configuration =
-    await MyGlobal.prisma.discussion_board_system_configurations.findUnique({
-      where: { id: props.configurationId },
-      ...DiscussionBoardSystemConfigurationTransformer.select(),
-    });
-  if (!configuration) {
-    throw new HttpException("System configuration not found", 404);
-  }
+    await MyGlobal.prisma.discussion_board_system_configurations.findUniqueOrThrow(
+      {
+        where: {
+          id: props.configurationId,
+          deleted_at: null, // Exclude soft-deleted configurations
+        },
+        // Use the transformer's select() method directly as shown in the loaded transformer
+        ...DiscussionBoardSystemConfigurationTransformer.select(),
+      },
+    );
+  // Transform database record to API response using the transformer
   return await DiscussionBoardSystemConfigurationTransformer.transform(
     configuration,
   );

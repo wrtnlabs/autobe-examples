@@ -31,7 +31,7 @@ export namespace DiscussionBoardCommentVoteTransformer {
   ): Promise<IDiscussionBoardCommentVote> {
     return {
       id: input.id,
-      vote_type: input.vote_type as "upvote" | "downvote",
+      vote_type: input.vote_type,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),

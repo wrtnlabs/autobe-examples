@@ -12,66 +12,67 @@ import typia, { tags } from "typia";
 import { authorize_user_join } from "../../../authorize/authorize_user_join";
 import { authorize_user_login } from "../../../authorize/authorize_user_login";
 import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
+import { generate_random_todo_app_user_todos_create } from "../../../generate/generate_random_todo_app_user_todos_create";
+import { prepare_random_todo_app_todo } from "../../../prepare/prepare_random_todo_app_todo";
 
-/**
- * Test successful retrieval of an existing todo owned by the authenticated user.
- * Since todo creation returns void, we need to use an alternative approach:
- * 1. Create a new user account
- * 2. Use the todo retrieval endpoint with a valid todo ID
- * 3. Validate the returned todo structure and ownership
- */
 export async function test_api_todo_retrieval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user-specific connection
+  // Create authenticated user connection
   const userConnection: api.IConnection = { host: connection.host };
-  // 1. Register and authenticate user
-  const authorizedUser = await authorize_user_join(userConnection, {
+  const user = await authorize_user_join(userConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
+      password: "test1234",
+      display_name: "Test User",
+      href: "http://localhost:3000",
+      referrer: "http://localhost:3000",
     } satisfies ITodoAppUser.IJoin,
   });
-  typia.assert(authorizedUser);
-  // 2. Since todo creation returns void, we need a valid todo ID to test retrieval
-  // For this test, we'll assume there's at least one todo in the system
-  // and retrieve it to validate the response structure
-  // Generate a random UUID that might exist in the system
-  const testTodoId = typia.random<string & tags.Format<"uuid">>();
-  // 3. Attempt to retrieve the todo (this may succeed or fail depending on existence)
-  // We'll handle both cases gracefully
-  try {
-    const retrievedTodo = await api.functional.todoApp.user.todos.at(
-      userConnection,
-      {
-        todoId: testTodoId,
-      },
-    );
-    typia.assert(retrievedTodo);
-    // Validate the todo structure if retrieval was successful
-    TestValidator.predicate("todo has valid ID", retrievedTodo.id.length > 0);
-    TestValidator.predicate("todo has title", retrievedTodo.title.length > 0);
-    TestValidator.predicate(
-      "completion status is valid",
-      retrievedTodo.completion_status === "incomplete" ||
-        retrievedTodo.completion_status === "complete",
-    );
-    TestValidator.predicate(
-      "created_at is valid date",
-      !isNaN(new Date(retrievedTodo.created_at).getTime()),
-    );
-    TestValidator.predicate(
-      "updated_at is valid date",
-      !isNaN(new Date(retrievedTodo.updated_at).getTime()),
-    );
-    TestValidator.predicate(
-      "user information is present",
-      retrievedTodo.user.id.length > 0,
-    );
-  } catch (error) {
-    // If todo doesn't exist, that's acceptable for this test
-    // The main goal is to test the retrieval endpoint functionality
-    TestValidator.predicate("retrieval attempt completed", true);
-  }
+  typia.assert(user);
+  // Create test todo
+  const todo = await generate_random_todo_app_user_todos_create(
+    userConnection,
+    {
+      body: {
+        title: "Test Todo",
+      } satisfies ITodoAppTodo.ICreate,
+    },
+  );
+  typia.assert(todo);
+  // Retrieve the todo
+  const retrievedTodo = await api.functional.todoApp.user.todos.at(
+    userConnection,
+    {
+      todoId: todo.id,
+    },
+  );
+  typia.assert(retrievedTodo);
+  // Validate the retrieval response
+  TestValidator.equals("todo id matches", retrievedTodo.id, todo.id);
+  TestValidator.equals("todo title matches", retrievedTodo.title, "Test Todo");
+  TestValidator.equals("user id matches", retrievedTodo.user.id, user.id);
+  TestValidator.equals(
+    "user email matches",
+    retrievedTodo.user.email,
+    user.email,
+  );
+  TestValidator.equals(
+    "user display name matches",
+    retrievedTodo.user.display_name,
+    user.display_name,
+  );
+  TestValidator.predicate(
+    "created_at is valid",
+    retrievedTodo.created_at.length > 0,
+  );
+  TestValidator.predicate(
+    "updated_at is valid",
+    retrievedTodo.updated_at.length > 0,
+  );
+  TestValidator.predicate(
+    "completion_status is boolean",
+    typeof retrievedTodo.completion_status === "boolean",
+  );
+  TestValidator.equals("deleted_at is null", retrievedTodo.deleted_at, null);
 }

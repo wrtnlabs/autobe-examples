@@ -15,7 +15,7 @@ export async function communitymoderatorAuthorize(request: {
   const communitymoderator = await MyGlobal.prisma.reddit_community_community_moderators.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      is_deleted: false,
     },
   });
 

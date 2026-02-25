@@ -16,12 +16,27 @@ export namespace RedditCommunityMemberAtSummaryTransformer {
         id: true,
         email: true,
         password_hash: true,
+        username: true,
         display_name: true,
         bio: true,
         avatar_url: true,
+        karma_score: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
+        is_deleted: true,
+        sessions: true,
+        passwordResets: true,
+        emailVerifications: true,
+        ownedCommunity: true,
+        moderatedCommunities: true,
+        bans: true,
+        subscriptions: true,
+        posts: true,
+        postVotes: true,
+        comments: true,
+        commentVotes: true,
+        reports: true,
+        resolvedReports: true,
       },
     } satisfies Prisma.reddit_community_membersFindManyArgs;
   }
@@ -30,10 +45,12 @@ export namespace RedditCommunityMemberAtSummaryTransformer {
   ): Promise<IRedditCommunityMember.ISummary> {
     return {
       id: input.id,
+      username: input.username,
       display_name: input.display_name,
-      avatar_url: input.avatar_url ?? undefined,
       bio: input.bio ?? undefined,
-      created_at: toISOStringSafe(input.created_at),
+      avatar_url: input.avatar_url ?? undefined,
+      karma_score: Number(input.karma_score),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

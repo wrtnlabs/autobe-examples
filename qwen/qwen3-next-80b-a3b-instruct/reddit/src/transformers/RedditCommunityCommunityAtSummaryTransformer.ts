@@ -17,11 +17,14 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
         name: true,
         description: true,
         icon_url: true,
-        subscriber_count: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         owner: true,
+        moderator: true,
+        moderators: true,
+        bans: true,
+        subscribers: true,
+        posts: true,
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
@@ -31,10 +34,11 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
+      description: input.description,
       icon_url: input.icon_url ?? null,
-      subscriber_count: Number(input.subscriber_count),
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      subscriber_count: input.subscribers.length,
     };
   }
 }

@@ -10,20 +10,27 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardBackupRecordCollector } from "../collectors/DiscussionBoardBackupRecordCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardBackupRecordTransformer } from "../transformers/DiscussionBoardBackupRecordTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminBackupRecords(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardBackupRecord.ICreate;
 }): Promise<IDiscussionBoardBackupRecord> {
+  // Use Collector to transform Create DTO to database CreateInput
+  const data = await DiscussionBoardBackupRecordCollector.collect({
+    body: props.body,
+  });
+  // Create the backup record with superAdmin as initiator
   const created = await MyGlobal.prisma.discussion_board_backup_records.create({
-    data: await DiscussionBoardBackupRecordCollector.collect({
-      body: props.body,
-    }),
+    data: {
+      ...data,
+      initiatedByAdmin: { connect: { id: props.superAdmin.id } },
+    },
     ...DiscussionBoardBackupRecordTransformer.select(),
   });
+  // Transform the database record to API response DTO
   return await DiscussionBoardBackupRecordTransformer.transform(created);
 }

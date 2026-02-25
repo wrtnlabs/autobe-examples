@@ -1,7 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageITodoAppTodoTrash } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTodoTrash";
-import { ITodoAppTodoTrash } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoTrash";
+import { IPageITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTodo";
+import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,54 +17,67 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchTodoAppUserTrash(props: {
   user: UserPayload;
-  body: ITodoAppTodoTrash.IRequest;
-}): Promise<IPageITodoAppTodoTrash.ISummary> {
-  // Fetch data and total count
-  const data = await MyGlobal.prisma.todo_app_todo_trashes.findMany({
-    where: {
-      user_id: props.user.id,
-    },
-    orderBy: {
-      deleted_at: "desc",
-    },
+  body: ITodoAppTodo.IRequest;
+}): Promise<IPageITodoAppTodo.ISummary> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const whereInput = {
+    todo_app_user_id: props.user.id,
+    is_deleted: true,
+    ...(props.body.status !== null &&
+    props.body.status !== undefined &&
+    props.body.status !== "all"
+      ? {
+          is_complete: props.body.status === "complete",
+        }
+      : {}),
+  } satisfies Prisma.todo_app_todosWhereInput;
+  const data = await MyGlobal.prisma.todo_app_todos.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: [{ deleted_at: "desc" as const }],
     select: {
       id: true,
-      todo_id: true,
       title: true,
-      deleted_at: true,
-      todo: {
+      is_complete: true,
+      start_date: true,
+      due_date: true,
+      created_at: true,
+      user: {
         select: {
-          due_date: true,
-          start_date: true,
+          id: true,
+          email: true,
+          created_at: true,
         },
       },
     },
   });
-  const total = await MyGlobal.prisma.todo_app_todo_trashes.count({
-    where: {
-      user_id: props.user.id,
-    },
+  const total = await MyGlobal.prisma.todo_app_todos.count({
+    where: whereInput,
   });
-  // Transform to response DTO
-  const transformedData: ITodoAppTodoTrash.ISummary[] = data.map((record) => ({
-    id: record.id,
-    todo_id: record.todo_id,
-    title: record.title,
-    deleted_at: toISOStringSafe(record.deleted_at),
-    due_date: record.todo?.due_date
-      ? toISOStringSafe(record.todo.due_date)
-      : null,
-    start_date: record.todo?.start_date
-      ? toISOStringSafe(record.todo.start_date)
-      : null,
-  }));
   return {
-    data: transformedData,
+    data: data.map((record) => ({
+      id: record.id as string & tags.Format<"uuid">,
+      title: record.title,
+      is_complete: record.is_complete,
+      start_date:
+        record.start_date === null ? null : toISOStringSafe(record.start_date),
+      due_date:
+        record.due_date === null ? null : toISOStringSafe(record.due_date),
+      created_at: toISOStringSafe(record.created_at),
+      author: {
+        id: record.user.id as string & tags.Format<"uuid">,
+        email: record.user.email,
+        created_at: toISOStringSafe(record.user.created_at),
+      } satisfies ITodoAppUser.ISummary,
+    })),
     pagination: {
-      current: 1,
-      limit: 10,
+      current: page,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / 10) || 1,
-    },
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

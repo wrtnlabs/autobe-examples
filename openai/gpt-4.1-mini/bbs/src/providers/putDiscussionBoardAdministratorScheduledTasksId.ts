@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardScheduledTaskTransformer } from "../transformers/DiscussionBoardScheduledTaskTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,28 +18,75 @@ export async function putDiscussionBoardAdministratorScheduledTasksId(props: {
   id: string & tags.Format<"uuid">;
   body: IDiscussionBoardScheduledTask.IUpdate;
 }): Promise<IDiscussionBoardScheduledTask> {
-  const task =
-    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
-      where: { id: props.id },
-      select: { id: true },
-    });
-  if (!task) {
-    throw new HttpException("Scheduled task not found", 404);
-  }
-  await MyGlobal.prisma.discussion_board_scheduled_tasks.update({
-    where: { id: props.id },
-    data: {
-      updated_at: toISOStringSafe(new Date()),
-      // Since IDiscussionBoardScheduledTask.IUpdate is empty, no fields are updated explicitly
-    },
-  });
-  // Return the updated record by querying it directly
-  const updated =
-    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
+  // Retrieve existing scheduled task or throw 404
+  const existing =
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUniqueOrThrow({
       where: { id: props.id },
     });
-  if (!updated) {
-    throw new HttpException("Scheduled task not found after update", 404);
+  // Validate task_name uniqueness if updated
+  if (
+    props.body.taskName !== undefined &&
+    props.body.taskName !== existing.task_name
+  ) {
+    const duplicate =
+      await MyGlobal.prisma.discussion_board_scheduled_tasks.findFirst({
+        where: { task_name: props.body.taskName },
+      });
+    if (duplicate !== null) {
+      throw new HttpException("Task name already used", 400);
+    }
   }
-  return updated;
+  // Validate cron schedule pattern if updated
+  if (props.body.schedulePattern !== undefined) {
+    const cronPattern = props.body.schedulePattern.trim();
+    if (!isValidCron(cronPattern)) {
+      throw new HttpException("Invalid cron schedule pattern", 400);
+    }
+  }
+  // Validate status if updated
+  const allowedStatuses = ["active", "inactive", "paused"];
+  if (
+    props.body.status !== undefined &&
+    !allowedStatuses.includes(props.body.status)
+  ) {
+    throw new HttpException("Invalid status value", 400);
+  }
+  // Prepare update data
+  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  const dataToUpdate = {
+    ...(props.body.taskName !== undefined && {
+      task_name: props.body.taskName,
+    }),
+    ...(props.body.schedulePattern !== undefined && {
+      schedule_pattern: props.body.schedulePattern,
+    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    updated_at: now,
+  };
+  // Update the record
+  const updatedDb =
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.update({
+      where: { id: props.id },
+      data: dataToUpdate,
+      ...DiscussionBoardScheduledTaskTransformer.select(),
+    });
+  // Transform and return the updated record
+  return await DiscussionBoardScheduledTaskTransformer.transform(updatedDb);
+}
+/**
+ * Simple cron schedule validation function.
+ * Accepts 5 or 6 fields separated by spaces.
+ * Each field must contain only digits, *, /, -, or , characters.
+ * This is a basic check and does not guarantee valid cron semantics.
+ *
+ * @param pattern - Cron schedule string to validate
+ * @returns boolean indicating if pattern is valid.
+ */
+function isValidCron(pattern: string): boolean {
+  const parts = pattern.split(" ");
+  if (parts.length < 5 || parts.length > 6) {
+    return false;
+  }
+  const regex = /^[\d\*\/\-\,]+$/;
+  return parts.every((part) => regex.test(part));
 }

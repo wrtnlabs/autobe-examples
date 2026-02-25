@@ -15,13 +15,16 @@ export async function deleteDiscussionBoardAdministratorSystemSettingsId(props: 
   administrator: AdministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Check existence or throw 404
   const existing =
     await MyGlobal.prisma.discussion_board_system_settings.findUnique({
       where: { id: props.id },
+      select: { id: true },
     });
-  if (existing === null) {
-    throw new HttpException("System setting not found", 404);
+  if (!existing) {
+    throw new HttpException("Not Found", 404);
   }
+  // Delete the system setting
   await MyGlobal.prisma.discussion_board_system_settings.delete({
     where: { id: props.id },
   });

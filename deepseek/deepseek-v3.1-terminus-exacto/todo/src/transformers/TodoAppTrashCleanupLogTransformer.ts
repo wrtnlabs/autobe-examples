@@ -2,7 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ITodoAppTrashCleanupLog } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTrashCleanupLog";
 import { ITodoAppTrashItem } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTrashItem";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
@@ -44,7 +43,9 @@ export namespace TodoAppTrashCleanupLogTransformer {
       operation_status: input.operation_status,
       error_message: input.error_message ?? undefined,
       started_at: input.started_at.toISOString(),
-      completed_at: input.completed_at?.toISOString() ?? null,
+      completed_at: input.completed_at
+        ? input.completed_at.toISOString()
+        : null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       trashItem: await TodoAppTrashItemAtSummaryTransformer.transform(

@@ -12,7 +12,7 @@ import { prepare_random_discussion_board_section } from "../prepare/prepare_rand
 export async function generate_random_discussion_board_admin_sections_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardSection.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardSection.ICreate>;
   },
 ): Promise<IDiscussionBoardSection> {
   const prepared: IDiscussionBoardSection.ICreate =

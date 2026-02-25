@@ -1,3 +1,4 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -17,37 +18,40 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchDiscussionBoardSuperAdmins(props: {
   body: IDiscussionBoardSuperAdmin.IRequest;
 }): Promise<IPageIDiscussionBoardSuperAdmin.ISummary> {
-  const page = 1; // Default to page 1 since no page parameter in request body
-  const limit = 100; // Default limit as per specification
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(Math.max(1, props.body.limit ?? 100), 100);
   const skip = (page - 1) * limit;
-  // Build WHERE conditions with proper date handling
-  const whereConditions: Prisma.discussion_board_super_adminsWhereInput = {
+  // Build where clause with proper type safety
+  const whereInput: Prisma.discussion_board_section_administratorsWhereInput = {
     deleted_at: null,
+    ...(props.body.permission_level && {
+      permission_level: props.body.permission_level,
+    }),
+    ...(props.body.assignment_date_start && {
+      assignment_date: {
+        gte: props.body.assignment_date_start,
+      },
+    }),
+    ...(props.body.assignment_date_end && {
+      assignment_date: {
+        lte: props.body.assignment_date_end,
+      },
+    }),
   };
-  // Handle date range filtering with proper ISO string conversion
-  if (props.body.start_date || props.body.end_date) {
-    whereConditions.created_at = {};
-    if (props.body.start_date) {
-      whereConditions.created_at.gte = props.body.start_date;
-    }
-    if (props.body.end_date) {
-      whereConditions.created_at.lte = props.body.end_date;
-    }
-  }
-  // Get paginated data
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_super_admins.findMany({
-      where: whereConditions,
+  // Execute queries sequentially
+  const data =
+    await MyGlobal.prisma.discussion_board_section_administrators.findMany({
+      where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
+      orderBy: { assignment_date: "desc" },
       ...DiscussionBoardSuperAdminAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.discussion_board_super_admins.count({
-      where: whereConditions,
-    }),
-  ]);
-  // Transform results using the transformer
+    });
+  const total =
+    await MyGlobal.prisma.discussion_board_section_administrators.count({
+      where: whereInput,
+    });
+  // Transform data using the transformer
   const transformedData = await ArrayUtil.asyncMap(
     data,
     DiscussionBoardSuperAdminAtSummaryTransformer.transform,
@@ -58,7 +62,7 @@ export async function patchDiscussionBoardSuperAdmins(props: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total > 0 ? Math.ceil(total / limit) : 0,
     } satisfies IPage.IPagination,
   };
 }

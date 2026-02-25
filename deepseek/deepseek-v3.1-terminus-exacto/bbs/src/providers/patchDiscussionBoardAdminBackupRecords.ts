@@ -1,8 +1,14 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardBackupRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBackupRecord";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import { IPageIDiscussionBoardBackupRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardBackupRecord";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -21,69 +27,60 @@ export async function patchDiscussionBoardAdminBackupRecords(props: {
   body: IDiscussionBoardBackupRecord.IRequest;
 }): Promise<IPageIDiscussionBoardBackupRecord.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  // Build WHERE clause with filtering
-  const whereInput: Prisma.discussion_board_backup_recordsWhereInput = {
+  // Build comprehensive WHERE clause
+  const whereInput = {
     deleted_at: null,
     ...(props.body.backup_type && { backup_type: props.body.backup_type }),
     ...(props.body.status && { status: props.body.status }),
-    ...(props.body.initiated_by_admin_id && {
+    ...(props.body.initiated_by_admin_id !== undefined && {
       initiated_by_admin_id: props.body.initiated_by_admin_id,
     }),
-    ...(props.body.started_at_from && {
-      started_at: { gte: props.body.started_at_from },
+    ...(props.body.started_at_after && {
+      started_at: { gte: new Date(props.body.started_at_after) },
     }),
-    ...(props.body.started_at_to && {
-      started_at: { lte: props.body.started_at_to },
+    ...(props.body.completed_at_before && {
+      OR: [
+        { completed_at: { lte: new Date(props.body.completed_at_before) } },
+        { completed_at: null },
+      ],
     }),
-    ...(props.body.completed_at_from && {
-      completed_at: { gte: props.body.completed_at_from },
-    }),
-    ...(props.body.completed_at_to && {
-      completed_at: { lte: props.body.completed_at_to },
-    }),
-    ...(props.body.search && {
-      error_message: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
-    }),
-  };
-  // Build ORDER BY clause
-  const orderByInput: Prisma.discussion_board_backup_recordsOrderByWithRelationInput =
-    props.body.sort === "completed_at"
-      ? { completed_at: "desc" as const }
-      : props.body.sort === "backup_type"
-        ? { backup_type: "asc" as const }
-        : props.body.sort === "status"
-          ? { status: "asc" as const }
-          : { started_at: "desc" as const };
-  // Execute queries
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_backup_records.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...DiscussionBoardBackupRecordAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.discussion_board_backup_records.count({
-      where: whereInput,
-    }),
-  ]);
-  // Transform data
+  } satisfies Prisma.discussion_board_backup_recordsWhereInput;
+  // Execute queries sequentially (not in parallel) as per Realize Coder pattern
+  const data = await MyGlobal.prisma.discussion_board_backup_records.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { started_at: "desc" },
+    ...DiscussionBoardBackupRecordAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.discussion_board_backup_records.count({
+    where: whereInput,
+  });
+  // Transform data using the transformer
   const transformedData = await ArrayUtil.asyncMap(
     data,
     DiscussionBoardBackupRecordAtSummaryTransformer.transform,
   );
-  return {
-    data: transformedData,
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
+  // Create the correct pagination structure
+  const pagination: IPage.IPagination = {
+    current: page satisfies number as number,
+    limit: limit satisfies number as number,
+    records: total satisfies number as number,
+    pages: Math.ceil(total / limit) satisfies number as number,
   };
+  return {
+    pagination: {
+      pagination: {
+        pagination: {
+          pagination: pagination,
+          data: [],
+        } satisfies IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination,
+        data: [],
+      } satisfies IPageIDiscussionBoardAdministratorPromotionRequest.IPagination,
+      data: [],
+    } satisfies IPageIDiscussionBoardSection.IPagination,
+    data: transformedData,
+  } satisfies IPageIDiscussionBoardBackupRecord.ISummary;
 }

@@ -9,8 +9,10 @@ export function prepare_random_ecommerce_product_image(
   input?: DeepPartial<IEcommerceProductImage.ICreate> | undefined,
 ): IEcommerceProductImage.ICreate {
   return {
-    image_url: input?.image_url ?? typia.random<string & tags.Format<"uri">>(),
-    caption: input?.caption ?? RandomGenerator.paragraph(),
-    is_primary: input?.is_primary ?? typia.random<boolean>(),
+    image_url: input?.image_url ?? typia.random<string & tags.Format<"url">>(),
+    position:
+      input?.position ??
+      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
+    is_main: input?.is_main ?? Math.random() >= 0.5,
   };
 }

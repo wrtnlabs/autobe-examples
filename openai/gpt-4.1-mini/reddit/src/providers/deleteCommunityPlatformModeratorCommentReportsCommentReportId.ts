@@ -15,23 +15,30 @@ export async function deleteCommunityPlatformModeratorCommentReportsCommentRepor
   moderator: ModeratorPayload;
   commentReportId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const report =
+  const existingReport =
     await MyGlobal.prisma.community_platform_comment_reports.findUnique({
       where: { id: props.commentReportId },
     });
-  if (!report) {
+  if (!existingReport) {
     throw new HttpException("Comment report not found", 404);
   }
-  await MyGlobal.prisma.community_platform_comment_reports.delete({
-    where: { id: props.commentReportId },
-  });
-  await MyGlobal.prisma.community_platform_moderation_logs.create({
-    data: {
-      id: v4(),
-      moderator_id: props.moderator.id,
-      action_type: "delete_comment_report",
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-    },
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.community_platform_comment_reports.delete({
+      where: { id: props.commentReportId },
+    });
+    const logId = v4() as string & tags.Format<"uuid">;
+    const createdAt = new Date().toISOString() as string &
+      tags.Format<"date-time">;
+    await tx.community_platform_moderation_logs.create({
+      data: {
+        id: logId,
+        moderator_id: props.moderator.id,
+        target_type: "comment_report",
+        target_id: props.commentReportId,
+        action_type: "delete",
+        detail: "Deleted comment report",
+        created_at: createdAt,
+      },
+    });
   });
 }

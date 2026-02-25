@@ -17,16 +17,21 @@ export async function getDiscussionBoardRegisteredUserArticlesArticleIdImagesIma
   articleId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardArticleImage> {
-  const record =
-    await MyGlobal.prisma.discussion_board_article_images.findFirst({
-      where: {
-        id: props.imageId,
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
-      },
+  const image =
+    await MyGlobal.prisma.discussion_board_article_images.findUniqueOrThrow({
+      where: { id: props.imageId },
     });
-  if (!record) {
-    throw new HttpException("Image not found", 404);
+  if (image.discussion_board_article_id !== props.articleId) {
+    throw new HttpException("Article image not found", 404);
   }
-  return {};
+  return {
+    id: image.id,
+    discussionBoardArticleId: image.discussion_board_article_id,
+    imageUrl: image.image_url,
+    description: image.description ?? undefined,
+    displayOrder: image.display_order,
+    createdAt: toISOStringSafe(image.created_at),
+    updatedAt: toISOStringSafe(image.updated_at),
+    deletedAt: image.deleted_at ? toISOStringSafe(image.deleted_at) : null,
+  };
 }

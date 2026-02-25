@@ -1,15 +1,6 @@
 export * as auth from "./auth/index";
-export * as administrator from "./administrator/index";
 export * as customer from "./customer/index";
+export * as administrator from "./administrator/index";
 export * as seller from "./seller/index";
-export * as sellerProfileSnapshots from "./sellerProfileSnapshots/index";
-export * as orderItemSnapshots from "./orderItemSnapshots/index";
-export * as reviewSnapshots from "./reviewSnapshots/index";
-export * as cancellationRequestSnapshots from "./cancellationRequestSnapshots/index";
-export * as refundRequestSnapshots from "./refundRequestSnapshots/index";
-export * as auditLogs from "./auditLogs/index";
-export * as systemSettings from "./systemSettings/index";
-export * as systemVersions from "./systemVersions/index";
-export * as productReviews from "./productReviews/index";
+export * as sales from "./sales/index";
 export * as productReviewSnapshots from "./productReviewSnapshots/index";
-export * as products from "./products/index";

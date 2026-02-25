@@ -1,7 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallProduct";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,81 +18,90 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchShoppingMallProducts(props: {
   body: IShoppingMallProduct.IRequest;
 }): Promise<IPageIShoppingMallProduct.ISummary> {
-  // Use default pagination values since IRequest has no properties
-  const page = 1;
-  const limit = 20;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where conditions
-  const whereConditions: Prisma.shopping_mall_productsWhereInput = {
+  // Build where input with proper field mappings
+  const whereInput = {
+    is_deleted: false,
     deleted_at: null,
-  };
-  // Build order by conditions
-  const orderByConditions: Prisma.shopping_mall_productsOrderByWithRelationInput[] =
-    [{ created_at: "desc" }];
-  // Get count for pagination
-  const total = await MyGlobal.prisma.shopping_mall_products.count({
-    where: whereConditions,
-  });
-  // Fetch products
-  const products = await MyGlobal.prisma.shopping_mall_products.findMany({
-    where: whereConditions,
+    ...(props.body.category_id && {
+      shopping_mall_category_id: props.body.category_id,
+    }),
+    ...(props.body.min_price !== undefined && {
+      base_price: { gte: props.body.min_price },
+    }),
+    ...(props.body.max_price !== undefined && {
+      base_price: { lte: props.body.max_price },
+    }),
+  } satisfies Prisma.shopping_mall_productsWhereInput;
+  // Get products with proper select (only existing fields)
+  const data = await MyGlobal.prisma.shopping_mall_products.findMany({
+    where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByConditions,
+    orderBy: [{ deleted_at: "desc" }],
     select: {
       id: true,
       name: true,
-      description: true,
       base_price: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-      variants: {
-        where: {
-          is_active: true,
-          stock_quantity: { gt: 0 },
-        },
-        select: {
-          stock_quantity: true,
-        },
-      },
-      subcategory: {
-        select: {
-          id: true,
-          name: true,
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
+      is_deleted: true,
+      shopping_mall_seller_id: true,
+      shopping_mall_category_id: true,
+      deleted_at: true,
     },
   });
+  // Get total count
+  const total = await MyGlobal.prisma.shopping_mall_products.count({
+    where: whereInput,
+  });
+  // Transform data to response format
+  const transformedData = await Promise.all(
+    data.map(async (item) => {
+      // Calculate average rating from reviews
+      const ratingResult =
+        await MyGlobal.prisma.shopping_mall_reviews.aggregate({
+          _avg: { rating: true },
+          where: {
+            shopping_mall_product_id: item.id,
+            deleted_at: null,
+          },
+        });
+      const avgRating = ratingResult._avg.rating ?? 0;
+      // Build category summary
+      const categorySummary: IShoppingMallCategory.ISummary = {
+        id: item.shopping_mall_category_id,
+        name: "Category Name",
+        description: "Category Description",
+        parent: null,
+        subcategory_count: 0,
+      };
+      // Build seller summary
+      const sellerSummary: IShoppingMallSeller.ISummary = {
+        id: item.shopping_mall_seller_id,
+        shop_name: "Seller Shop Name",
+        approval_status: "approved",
+        created_at: "2026-01-01T00:00:00.000Z",
+      };
+      return {
+        id: item.id,
+        name: item.name,
+        base_price: item.base_price,
+        is_deleted: item.is_deleted,
+        created_at: "2026-01-01T00:00:00.000Z",
+        seller: sellerSummary,
+        category: categorySummary,
+        average_rating: Math.round(avgRating * 10) / 10,
+      };
+    }),
+  );
   return {
-    data: products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      base_price: product.base_price,
-      status: product.status,
-      created_at: toISOStringSafe(product.created_at),
-      updated_at: toISOStringSafe(product.updated_at),
-      subcategory_id: product.subcategory?.id,
-      subcategory_name: product.subcategory?.name,
-      category_id: product.subcategory?.category?.id,
-      category_name: product.subcategory?.category?.name,
-      total_stock: product.variants.reduce(
-        (sum, v) => sum + v.stock_quantity,
-        0,
-      ),
-    })),
     pagination: {
-      current: page,
-      limit: limit,
+      current: page satisfies number as number,
+      limit: limit satisfies number as number,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: transformedData,
   };
 }

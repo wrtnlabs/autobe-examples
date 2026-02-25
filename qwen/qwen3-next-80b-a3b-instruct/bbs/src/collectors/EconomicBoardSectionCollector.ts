@@ -14,12 +14,13 @@ export namespace EconomicBoardSectionCollector {
     const id: string = v4();
     return {
       id,
-      name: "",
-      description: "",
+      name: props.body.name,
+      description: props.body.description ?? "",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      status: "active",
+      articles: undefined,
+      snapshots: undefined,
     } satisfies Prisma.economic_board_sectionsCreateInput;
   }
 }

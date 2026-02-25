@@ -1,11 +1,16 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import type { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import type { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import type { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import type { IPageIDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardArticle";
+import type { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -21,149 +26,211 @@ import { prepare_random_discussion_board_article } from "../../../prepare/prepar
 export async function test_api_article_search_advanced_filtering(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create first user and articles
-  const user1Connection: api.IConnection = { host: connection.host };
-  const user1 = await authorize_user_join(user1Connection, {
+  // Create first user
+  const userConnection1: api.IConnection = { host: connection.host };
+  const user1 = await authorize_user_join(userConnection1, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
+      password: "password123",
+      display_name: "Test User 1",
     } satisfies IDiscussionBoardUser.IJoin,
   });
   typia.assert(user1);
-  // Generate a random section ID for testing
-  const sectionId = typia.random<string & tags.Format<"uuid">>();
-  // Create articles with different statuses
-  const publishedArticle1 =
-    await generate_random_discussion_board_user_articles_create(
-      user1Connection,
-      {
-        body: {
-          title: RandomGenerator.paragraph({ sentences: 2 }),
-          content: RandomGenerator.content({ paragraphs: 3 }),
-          section_id: sectionId,
-          status: "published",
-        } satisfies IDiscussionBoardArticle.ICreate,
-      },
-    );
-  typia.assert(publishedArticle1);
-  const draftArticle1 =
-    await generate_random_discussion_board_user_articles_create(
-      user1Connection,
-      {
-        body: {
-          title: RandomGenerator.paragraph({ sentences: 2 }),
-          content: RandomGenerator.content({ paragraphs: 3 }),
-          section_id: sectionId,
-          status: "draft",
-        } satisfies IDiscussionBoardArticle.ICreate,
-      },
-    );
-  typia.assert(draftArticle1);
-  // Create second user and articles
-  const user2Connection: api.IConnection = { host: connection.host };
-  const user2 = await authorize_user_join(user2Connection, {
+  // Create second user
+  const userConnection2: api.IConnection = { host: connection.host };
+  const user2 = await authorize_user_join(userConnection2, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
+      password: "password123",
+      display_name: "Test User 2",
     } satisfies IDiscussionBoardUser.IJoin,
   });
   typia.assert(user2);
-  const publishedArticle2 =
+  // Create multiple articles with varied content for testing
+  const articles: IDiscussionBoardArticle[] = [];
+  // Create articles with different content patterns for search testing
+  // User1 articles with "technology" theme
+  const techArticle1 =
     await generate_random_discussion_board_user_articles_create(
-      user2Connection,
+      userConnection1,
       {
         body: {
-          title: RandomGenerator.paragraph({ sentences: 2 }),
-          content: RandomGenerator.content({ paragraphs: 3 }),
-          section_id: sectionId,
-          status: "published",
+          title: "Latest Technology Trends in 2024",
+          content:
+            "Artificial intelligence and machine learning are transforming industries worldwide with innovative applications that revolutionize how we work and live.",
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
         } satisfies IDiscussionBoardArticle.ICreate,
       },
     );
-  typia.assert(publishedArticle2);
-  const archivedArticle2 =
+  typia.assert(techArticle1);
+  articles.push(techArticle1);
+  const techArticle2 =
     await generate_random_discussion_board_user_articles_create(
-      user2Connection,
+      userConnection1,
       {
         body: {
-          title: RandomGenerator.paragraph({ sentences: 2 }),
-          content: RandomGenerator.content({ paragraphs: 3 }),
-          section_id: sectionId,
-          status: "archived",
+          title: "Cloud Computing Advancements",
+          content:
+            "Modern cloud platforms provide scalable solutions for businesses seeking digital transformation through distributed computing architectures.",
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
         } satisfies IDiscussionBoardArticle.ICreate,
       },
     );
-  typia.assert(archivedArticle2);
-  // Test individual filtering capabilities
-  // Test status filtering
-  const publishedResults =
-    await api.functional.discussionBoard.user.articles.index(user1Connection, {
-      body: {
-        status: "published",
-      } satisfies IDiscussionBoardArticle.IRequest,
-    });
-  typia.assert(publishedResults);
-  TestValidator.predicate(
-    "published articles should include published status only",
-    publishedResults.data.every((article) => article.status === "published"),
-  );
-  const draftResults = await api.functional.discussionBoard.user.articles.index(
-    user1Connection,
+  typia.assert(techArticle2);
+  articles.push(techArticle2);
+  // User2 articles with "business" theme
+  const businessArticle1 =
+    await generate_random_discussion_board_user_articles_create(
+      userConnection2,
+      {
+        body: {
+          title: "Business Strategy for Startups",
+          content:
+            "Effective business planning requires thorough market analysis and strategic positioning to achieve sustainable growth and competitive advantage.",
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+        } satisfies IDiscussionBoardArticle.ICreate,
+      },
+    );
+  typia.assert(businessArticle1);
+  articles.push(businessArticle1);
+  const businessArticle2 =
+    await generate_random_discussion_board_user_articles_create(
+      userConnection2,
+      {
+        body: {
+          title: "Digital Marketing Techniques",
+          content:
+            "Modern marketing strategies leverage data analytics and customer insights to optimize campaign performance and maximize return on investment.",
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+        } satisfies IDiscussionBoardArticle.ICreate,
+      },
+    );
+  typia.assert(businessArticle2);
+  articles.push(businessArticle2);
+  // Additional articles for more varied testing
+  const additionalArticle =
+    await generate_random_discussion_board_user_articles_create(
+      userConnection1,
+      {
+        body: {
+          title: "Sustainable Development Goals",
+          content:
+            "Global initiatives focus on environmental protection and social equity through coordinated international cooperation and policy implementation.",
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+        } satisfies IDiscussionBoardArticle.ICreate,
+      },
+    );
+  typia.assert(additionalArticle);
+  articles.push(additionalArticle);
+  // Wait a moment to ensure articles are properly indexed
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Test 1: Author filtering
+  const user1Results = await api.functional.discussionBoard.user.articles.index(
+    userConnection1,
     {
       body: {
-        status: "draft",
+        discussion_board_user_id: user1.id,
+        limit: 10,
       } satisfies IDiscussionBoardArticle.IRequest,
     },
   );
-  typia.assert(draftResults);
+  typia.assert(user1Results);
+  // Validate that results belong to user1
   TestValidator.predicate(
-    "draft articles should include draft status only",
-    draftResults.data.every((article) => article.status === "draft"),
+    "author filter should return only user1 articles",
+    user1Results.data.every((article) => article.author.id === user1.id),
   );
-  // Test author filtering
-  const authorResults =
-    await api.functional.discussionBoard.user.articles.index(user1Connection, {
+  // Test 2: Text search in title (partial matching)
+  const titleSearchResults =
+    await api.functional.discussionBoard.user.articles.index(userConnection1, {
       body: {
-        author_id: user1.id,
+        title: "Technology",
+        limit: 10,
       } satisfies IDiscussionBoardArticle.IRequest,
     });
-  typia.assert(authorResults);
+  typia.assert(titleSearchResults);
+  // Validate that search found relevant articles
   TestValidator.predicate(
-    "author-filtered articles should belong to specified author",
-    authorResults.data.every((article) => article.author.id === user1.id),
+    "title search should find technology-related articles",
+    titleSearchResults.data.length > 0,
   );
-  // Test date range filtering
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const dateRangeResults =
-    await api.functional.discussionBoard.user.articles.index(user1Connection, {
-      body: {
-        created_after: yesterday,
-        created_before: tomorrow,
-      } satisfies IDiscussionBoardArticle.IRequest,
-    });
-  typia.assert(dateRangeResults);
-  // Test combined filtering
-  const combinedResults =
-    await api.functional.discussionBoard.user.articles.index(user1Connection, {
-      body: {
-        author_id: user1.id,
-        status: "published",
-        created_after: yesterday,
-      } satisfies IDiscussionBoardArticle.IRequest,
-    });
-  typia.assert(combinedResults);
   TestValidator.predicate(
-    "combined filter results should match all criteria",
-    combinedResults.data.every(
+    "title search results should contain search term",
+    titleSearchResults.data.every((article) =>
+      article.title.toLowerCase().includes("technology"),
+    ),
+  );
+  // Test 3: Text search in content (partial matching)
+  const contentSearchResults =
+    await api.functional.discussionBoard.user.articles.index(userConnection1, {
+      body: {
+        content: "business",
+        limit: 10,
+      } satisfies IDiscussionBoardArticle.IRequest,
+    });
+  typia.assert(contentSearchResults);
+  // Validate that search found relevant articles
+  TestValidator.predicate(
+    "content search should find business-related articles",
+    contentSearchResults.data.length > 0,
+  );
+  // Test 4: Combined author and text search
+  const combinedSearchResults =
+    await api.functional.discussionBoard.user.articles.index(userConnection1, {
+      body: {
+        discussion_board_user_id: user1.id,
+        title: "Technology",
+        limit: 10,
+      } satisfies IDiscussionBoardArticle.IRequest,
+    });
+  typia.assert(combinedSearchResults);
+  // Validate combined filter results
+  TestValidator.predicate(
+    "combined filter should return user1's technology articles",
+    combinedSearchResults.data.every(
       (article) =>
         article.author.id === user1.id &&
-        article.status === "published" &&
-        new Date(article.created_at) >= new Date(yesterday),
+        article.title.toLowerCase().includes("technology"),
     ),
+  );
+  // Test 5: Empty search returns all articles (with reasonable limit)
+  const allResults = await api.functional.discussionBoard.user.articles.index(
+    userConnection1,
+    {
+      body: {
+        limit: 20,
+      } satisfies IDiscussionBoardArticle.IRequest,
+    },
+  );
+  typia.assert(allResults);
+  TestValidator.predicate(
+    "empty search should return articles",
+    allResults.data.length > 0,
+  );
+  // Test 6: Search with no results
+  const noResults = await api.functional.discussionBoard.user.articles.index(
+    userConnection1,
+    {
+      body: {
+        title: "NonexistentSearchTermXYZ123",
+        limit: 10,
+      } satisfies IDiscussionBoardArticle.IRequest,
+    },
+  );
+  typia.assert(noResults);
+  TestValidator.equals(
+    "search for nonexistent term should return empty results",
+    noResults.data.length,
+    0,
   );
 }

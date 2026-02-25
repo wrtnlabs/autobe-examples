@@ -1,0 +1,86 @@
+/// Primary content entity for discussion board articles.
+///
+/// Articles are the main discussion content created by users within
+/// sections. Each article has a title, content body, is assigned to exactly
+/// one section, and has an author (user). Articles support soft deletion to
+/// preserve banned users' content visibility.
+///
+/// Relationships:
+/// - Belongs to a {@link discussion_board_section} via section reference
+/// - Authored by a {@link discussion_board_user} via user reference
+/// - Has associated {@link discussion_board_article_files} for file attachments
+/// - Has associated {@link discussion_board_article_images} for image
+/// attachments
+/// - Has associated {@link discussion_board_article_tags} for tag associations
+/// - Has associated {@link discussion_board_comments} for discussion
+///
+/// Business rules:
+/// - Title: 3-200 characters, required
+/// - Content: 10-50,000 characters, required
+/// - Author can edit their own articles
+/// - Author can delete their own articles (soft delete)
+/// - Administrators can delete any article
+/// - Cascade deletes attachments, images, tags, and comments when hard deleted
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section where this article is published. Every article must belong to
+  /// exactly one section. References {@link discussion_board_sections.id}.
+  discussion_board_section_id String
+  
+  /// Author of this article. The user who created and owns this article.
+  /// References {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// Article title. Must be between 3 and 200 characters. Used for display and
+  /// search indexing.
+  title String
+  
+  /// Article content body. Text content between 10 and 50,000 characters.
+  /// Supports plain text formatting.
+  content String
+  
+  /// Timestamp when the article was created. Automatically set on article
+  /// creation.
+  created_at DateTime
+  
+  /// Timestamp when the article was last updated. Updated automatically when
+  /// article is modified.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft-deleted. Null if article is active.
+  /// Used to preserve banned users' content visibility while hiding from
+  /// normal browsing.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  files discussion_board_article_files[]
+  images discussion_board_article_images[]
+  articleTags discussion_board_article_tags[]
+  comments discussion_board_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_articles_discussion_board_section_id__cb7d94c3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_articles_discussion_board_user_id_cre_906977c0")
+}

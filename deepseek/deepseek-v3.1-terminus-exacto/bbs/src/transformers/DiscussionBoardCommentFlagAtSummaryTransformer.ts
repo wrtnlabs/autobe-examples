@@ -18,20 +18,18 @@ export namespace DiscussionBoardCommentFlagAtSummaryTransformer {
     return {
       select: {
         id: true,
+        flag_reason: true,
         flag_type: true,
         status: true,
-        created_at: true,
-        flag_reason: true,
         resolution_notes: true,
+        created_at: true,
         reviewed_at: true,
         resolved_at: true,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
-        reviewer: DiscussionBoardAdminAtSummaryTransformer.select(),
         comment: {
-          select: {
-            id: true,
-          },
-        },
+          select: { id: true },
+        } satisfies Prisma.discussion_board_commentsFindManyArgs,
+        reviewer: DiscussionBoardAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_comment_flagsFindManyArgs;
   }
@@ -42,13 +40,13 @@ export namespace DiscussionBoardCommentFlagAtSummaryTransformer {
       id: input.id,
       flag_type: input.flag_type,
       status: input.status,
-      created_at: input.created_at.toISOString(),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
       reviewer: input.reviewer
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.reviewer,
           )
         : null,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

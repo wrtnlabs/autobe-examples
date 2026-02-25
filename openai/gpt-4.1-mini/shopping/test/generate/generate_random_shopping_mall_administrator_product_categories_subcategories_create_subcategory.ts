@@ -1,5 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IShoppingMallProductCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductCategory";
 import type { IShoppingMallProductSubcategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSubcategory";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -14,17 +15,17 @@ export async function generate_random_shopping_mall_administrator_product_catego
   props: {
     body?: DeepPartial<IShoppingMallProductSubcategory.ICreate> | undefined;
     params: {
-      categoryId: string;
+      productCategoryId: string;
     };
   },
 ): Promise<IShoppingMallProductSubcategory> {
   const prepared: IShoppingMallProductSubcategory.ICreate =
     prepare_random_shopping_mall_product_subcategory(props.body);
   const result: IShoppingMallProductSubcategory =
-    await api.functional.shoppingMall.administrator.product.categories.subcategories.createSubcategory(
+    await api.functional.shoppingMall.administrator.product_categories.subcategories.createSubcategory(
       connection,
       {
-        categoryId: props.params.categoryId,
+        productCategoryId: props.params.productCategoryId,
         body: prepared,
       },
     );

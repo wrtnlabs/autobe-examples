@@ -1,5 +1,4 @@
 import { IDiscussionBoardCommentRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCommentRateLimit";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,12 +18,11 @@ export async function getDiscussionBoardAdminCommentRateLimitsRateLimitId(props:
   rateLimitId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardCommentRateLimit> {
   const rateLimit =
-    await MyGlobal.prisma.discussion_board_comment_rate_limits.findUnique({
-      where: { id: props.rateLimitId },
-      ...DiscussionBoardCommentRateLimitTransformer.select(),
-    });
-  if (!rateLimit) {
-    throw new HttpException("Rate limit record not found", 404);
-  }
+    await MyGlobal.prisma.discussion_board_comment_rate_limits.findUniqueOrThrow(
+      {
+        where: { id: props.rateLimitId },
+        ...DiscussionBoardCommentRateLimitTransformer.select(),
+      },
+    );
   return await DiscussionBoardCommentRateLimitTransformer.transform(rateLimit);
 }

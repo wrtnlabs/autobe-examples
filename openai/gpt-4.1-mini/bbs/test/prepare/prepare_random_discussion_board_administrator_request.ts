@@ -6,8 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_administrator_request(
-  input?: DeepPartial<IDiscussionBoardAdministratorRequest.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardAdministratorRequest.ICreate>,
 ): IDiscussionBoardAdministratorRequest.ICreate {
-  input;
-  return {};
+  return {
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+  };
 }

@@ -18,39 +18,106 @@ export async function patchShoppingMallCustomerUserNotifications(props: {
   customer: CustomerPayload;
   body: IShoppingMallUserNotification.IRequest;
 }): Promise<IPageIShoppingMallUserNotification.ISummary> {
-  const page = 1;
-  const limit = 20;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const where = {
-    owner_id: props.customer.id,
-    owner_type: "customer",
+  // Construct date filters as ISO strings (no native Date usage)
+  const deliveredFrom = props.body.deliveredFrom ?? null;
+  const deliveredTo = props.body.deliveredTo ?? null;
+  const readFrom = props.body.readFrom ?? null;
+  const readTo = props.body.readTo ?? null;
+  // Build Prisma where filter
+  const where: Prisma.shopping_mall_user_notificationsWhereInput = {
     deleted_at: null,
+    owner_id: props.customer.id,
+    owner_type: props.body.ownerType ?? props.customer.type,
+    ...(props.body.isRead !== undefined && { is_read: props.body.isRead }),
+    ...((deliveredFrom || deliveredTo) && {
+      delivered_at: {
+        ...(deliveredFrom && { gte: deliveredFrom }),
+        ...(deliveredTo && { lte: deliveredTo }),
+      },
+    }),
+    ...((readFrom || readTo) && {
+      read_at: {
+        ...(readFrom && { gte: readFrom }),
+        ...(readTo && { lte: readTo }),
+      },
+    }),
   };
-  const [notifications, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_user_notifications.findMany({
+  // Full-text search on title and body
+  if (props.body.search) {
+    where.OR = [
+      { title: { contains: props.body.search, mode: "insensitive" } },
+      { body: { contains: props.body.search, mode: "insensitive" } },
+    ];
+  }
+  // Allowed sorting fields
+  const orderByAllowed = ["created_at", "delivered_at", "read_at"] as const;
+  type OrderByField = (typeof orderByAllowed)[number];
+  const orderByField: string = props.body.sortBy ?? "created_at";
+  const orderDirection = props.body.sortOrder ?? "desc";
+  // Build orderBy condition
+  const orderBy: Prisma.shopping_mall_user_notificationsOrderByWithRelationInput =
+    {};
+  if (orderByAllowed.includes(orderByField as OrderByField)) {
+    orderBy[orderByField as OrderByField] = orderDirection;
+  } else {
+    orderBy["created_at"] = "desc";
+  }
+  // Query total count
+  const totalCount =
+    await MyGlobal.prisma.shopping_mall_user_notifications.count({ where });
+  // Query paginated records
+  const records =
+    await MyGlobal.prisma.shopping_mall_user_notifications.findMany({
       where,
       skip,
       take: limit,
-      orderBy: [{ delivered_at: "desc" }, { created_at: "desc" }],
-    }),
-    MyGlobal.prisma.shopping_mall_user_notifications.count({ where }),
-  ]);
+      orderBy,
+      select: {
+        id: true,
+        owner_type: true,
+        title: true,
+        body: true,
+        url: true,
+        image_url: true,
+        is_read: true,
+        delivered_at: true,
+        read_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        notification_template_id: true,
+      },
+    });
+  // Convert records to DTO format with safe ISO string conversion
+  const data = records.map((record) => ({
+    id: record.id,
+    ownerType: record.owner_type,
+    title: record.title,
+    body: record.body,
+    url: record.url ?? null,
+    imageUrl: record.image_url ?? null,
+    isRead: record.is_read,
+    deliveredAt: record.delivered_at
+      ? toISOStringSafe(record.delivered_at)
+      : null,
+    readAt: record.read_at ? toISOStringSafe(record.read_at) : null,
+    createdAt: toISOStringSafe(record.created_at) as string &
+      tags.Format<"date-time">,
+    updatedAt: toISOStringSafe(record.updated_at) as string &
+      tags.Format<"date-time">,
+    deletedAt: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
+    notificationTemplateId: record.notification_template_id,
+  }));
   return {
-    data: notifications.map((n) => ({
-      id: n.id,
-      owner_id: n.owner_id,
-      owner_type: n.owner_type,
-      title: n.title,
-      content: n.body, // use body instead of non-existing content
-      is_read: n.is_read,
-      delivered_at: n.delivered_at ? toISOStringSafe(n.delivered_at) : null, // safely pass null
-      created_at: toISOStringSafe(n.created_at),
-    })),
     pagination: {
       current: page,
-      limit: limit,
-      records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      limit,
+      records: totalCount,
+      pages: Math.ceil(totalCount / limit),
     },
+    data,
   };
 }

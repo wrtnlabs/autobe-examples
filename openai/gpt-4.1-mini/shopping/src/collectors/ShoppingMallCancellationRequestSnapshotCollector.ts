@@ -9,20 +9,23 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace ShoppingMallCancellationRequestSnapshotCollector {
   export async function collect(props: {
-    reason: string;
-    status: string;
-    cancellationRequest: IEntity;
     body: IShoppingMallCancellationRequestSnapshot.ICreate;
   }) {
+    const { cancellation_request_id, reason, status, created_at, updated_at } =
+      props.body;
     const id: string = v4();
     return {
       id,
-      reason: props.reason,
-      status: props.status,
-      created_at: new Date(),
-      updated_at: new Date(),
+      reason,
+      status,
+      created_at: new Date(created_at),
+      updated_at: new Date(updated_at),
       deleted_at: null,
-      cancellationRequest: { connect: { id: props.cancellationRequest.id } },
+      cancellationRequest: {
+        connect: {
+          id: cancellation_request_id,
+        },
+      },
     } satisfies Prisma.shopping_mall_cancellation_request_snapshotsCreateInput;
   }
 }

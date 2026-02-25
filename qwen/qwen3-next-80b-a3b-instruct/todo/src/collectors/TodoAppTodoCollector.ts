@@ -15,15 +15,16 @@ export namespace TodoAppTodoCollector {
     const id: string = v4();
     return {
       id,
-      title: "Untitled",
-      description: null,
-      start_date: null,
-      due_date: null,
-      completed: false,
+      title: props.body.title,
+      description: props.body.description ?? null,
+      start_date: props.body.start_date ?? null,
+      due_date: props.body.due_date ?? null,
+      is_completed: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       user: { connect: { id: props.todoAppUsers.id } },
+      histories: undefined,
     } satisfies Prisma.todo_app_todosCreateInput;
   }
 }

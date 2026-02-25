@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { ShoppingMallProductImageCollector } from "../collectors/ShoppingMallProductImageCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallProductImageTransformer } from "../transformers/ShoppingMallProductImageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,31 +19,51 @@ export async function postShoppingMallSellerProductsProductIdImages(props: {
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProductImage.ICreate;
 }): Promise<IShoppingMallProductImage> {
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { id: props.productId },
-    select: { id: true, deleted_at: true },
+  // Verify that the seller owns the specified product
+  const sellerOwns = await MyGlobal.prisma.shopping_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      seller: {
+        id: props.seller.id,
+      },
+      deleted_at: null,
+    },
+    select: { id: true },
   });
-  if (!product || product.deleted_at !== null) {
-    throw new HttpException("Product not found or has been deleted", 404);
+  if (!sellerOwns) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Cast props.body to any to access missing properties
-  const bodyAny = props.body as any;
-  const createInput = await ShoppingMallProductImageCollector.collect({
-    body: props.body,
-    image_url: bodyAny.image_url,
-    display_order: bodyAny.display_order,
-    shopping_mall_product_id: props.productId as string,
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    // Shift display_order for existing images to maintain order
+    await tx.shopping_mall_product_images.updateMany({
+      where: {
+        shopping_mall_product_id: props.productId,
+        display_order: { gte: props.body.display_order },
+        deleted_at: null,
+      },
+      data: { display_order: { increment: 1 } },
+    });
+    // Collect data for creating new image record
+    const collected = await ShoppingMallProductImageCollector.collect({
+      body: props.body,
+      shoppingMallProducts: { id: props.productId },
+    });
+    // Get current time as ISO string with correct type
+    const now = toISOStringSafe(new Date()) as string &
+      tags.Format<"date-time">;
+    const createInput = {
+      ...collected,
+      id: v4() as string & tags.Format<"uuid">,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    } satisfies Prisma.shopping_mall_product_imagesCreateInput;
+    // Create new image record within transaction
+    const created = await tx.shopping_mall_product_images.create({
+      data: createInput,
+      ...ShoppingMallProductImageTransformer.select(),
+    });
+    // Transform created record to response DTO
+    return await ShoppingMallProductImageTransformer.transform(created);
   });
-  const created = await MyGlobal.prisma.shopping_mall_product_images.create({
-    data: createInput,
-  });
-  return {
-    id: created.id,
-    shopping_mall_product_id: created.shopping_mall_product_id,
-    image_url: created.image_url,
-    display_order: created.display_order,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
-  };
 }

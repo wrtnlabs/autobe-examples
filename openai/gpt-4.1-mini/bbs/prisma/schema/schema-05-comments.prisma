@@ -31,13 +31,21 @@ model discussion_board_comments {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   author discussion_board_registered_users @relation(fields: [discussion_board_registered_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots discussion_board_comment_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
   // spellchecker: ignore-next-line
@@ -76,10 +84,14 @@ model discussion_board_comment_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_co_67d99e69")
 }

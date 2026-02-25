@@ -15,16 +15,13 @@ export async function deleteDiscussionBoardAdministratorArticlesArticleId(props:
   administrator: AdministratorPayload;
   articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+  // Verify article existence
+  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
     where: { id: props.articleId },
     select: { id: true },
   });
-  if (article === null) {
-    throw new HttpException("Article not found", 404);
-  }
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.discussion_board_articles.delete({
-      where: { id: props.articleId },
-    }),
-  ]);
+  // Delete article, cascade deletes comments
+  await MyGlobal.prisma.discussion_board_articles.delete({
+    where: { id: props.articleId },
+  });
 }

@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallBannedUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallBannedUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,25 +14,32 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAdministratorBannedUsersSellersSellerIdUnban(props: {
   administrator: AdministratorPayload;
   sellerId: string & tags.Format<"uuid">;
-}): Promise<IShoppingMallBannedUser> {
-  const bannedUser =
-    await MyGlobal.prisma.shopping_mall_banned_users.findUnique({
-      where: { shopping_mall_seller_id: props.sellerId },
-    });
-  if (!bannedUser) {
-    throw new HttpException("Ban record not found", 404);
-  }
-  const deletedBan = await MyGlobal.prisma.shopping_mall_banned_users.delete({
-    where: { shopping_mall_seller_id: props.sellerId },
+}): Promise<void> {
+  const banRecord = await MyGlobal.prisma.shopping_mall_banned_users.findFirst({
+    where: {
+      shopping_mall_seller_id: props.sellerId,
+      deleted_at: null,
+    },
   });
-  return {
-    shopping_mall_seller_id: deletedBan.shopping_mall_seller_id!,
-    reason: deletedBan.ban_reason,
-    created_at: toISOStringSafe(deletedBan.created_at),
-    updated_at: toISOStringSafe(deletedBan.updated_at),
-    deleted_at:
-      deletedBan.deleted_at === null
-        ? undefined
-        : toISOStringSafe(deletedBan.deleted_at),
-  };
+  if (banRecord === null) {
+    throw new HttpException(
+      "Seller not currently banned or does not exist.",
+      404,
+    );
+  }
+  await MyGlobal.prisma.shopping_mall_banned_users.delete({
+    where: { id: banRecord.id },
+  });
+  await MyGlobal.prisma.shopping_mall_administrative_audit_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      administrator_id: props.administrator.id,
+      action_type: "unban_seller",
+      target_id: props.sellerId,
+      target_entity: "seller",
+      action_description: "Unban a seller",
+      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
+      updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
+    },
+  });
 }

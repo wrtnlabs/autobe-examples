@@ -15,49 +15,81 @@ import { authorize_community_owner_refresh } from "../../../authorize/authorize_
 export async function test_api_community_owner_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create a new community owner account with random credentials
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(16);
+  // 1. Create a new community owner account via join
   const joinConnection: api.IConnection = { host: connection.host };
-  const joinResponse = await authorize_community_owner_join(joinConnection, {
+  const password = RandomGenerator.alphaNumeric(16);
+  const joined = await authorize_community_owner_join(joinConnection, {
     body: {
-      email,
+      email: typia.random<string & tags.Format<"email">>(),
       password,
+      displayName: RandomGenerator.name(),
     } satisfies IRedditCommunityCommunityOwner.IJoin,
   });
-  typia.assert(joinResponse);
-  // 2. Log in with the same credentials used for account creation
+  typia.assert(joined);
+  // 2. Login with the same email and password
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginResponse = await authorize_community_owner_login(loginConnection, {
+  const loggedin = await authorize_community_owner_login(loginConnection, {
     body: {
-      email,
+      email: joined.email,
       password,
     } satisfies IRedditCommunityCommunityOwner.ILogin,
   });
-  typia.assert(loginResponse);
-  // 3. Validate the login response structure
+  typia.assert(loggedin);
+  // 3. Validate the returned IAuthorized structure
+  TestValidator.equals("id matches", loggedin.id, joined.id);
+  TestValidator.equals("email matches", loggedin.email, joined.email);
   TestValidator.equals(
-    "access token exists",
-    typeof loginResponse.token.access,
-    "string",
+    "displayName matches",
+    loggedin.display_name,
+    joined.display_name,
   );
   TestValidator.predicate(
-    "access token is not empty",
-    () => loginResponse.token.access.length > 0,
+    "username is non-empty",
+    loggedin.username.length > 0,
+  );
+  TestValidator.predicate(
+    "created_at is valid date-time",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(loggedin.created_at),
+  );
+  TestValidator.predicate(
+    "updated_at is valid date-time",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(loggedin.updated_at),
+  );
+  TestValidator.equals("is_deleted is false", loggedin.is_deleted, false);
+  TestValidator.predicate(
+    "karma_score is int32",
+    Number.isInteger(loggedin.karma_score),
+  );
+  // 4. Validate the IAuthorizationToken structure
+  TestValidator.equals(
+    "access token exists",
+    loggedin.token.access.length > 10,
+    true,
   );
   TestValidator.equals(
     "refresh token exists",
-    typeof loginResponse.token.refresh,
-    "string",
+    loggedin.token.refresh.length > 10,
+    true,
   );
   TestValidator.predicate(
-    "refresh token is not empty",
-    () => loginResponse.token.refresh.length > 0,
+    "expired_at is valid",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(
+      loggedin.token.expired_at,
+    ),
   );
-  // 4. Verify that the connection headers contain the access token for subsequent requests
-  TestValidator.equals(
-    "Authorization header set",
-    loginConnection.headers?.Authorization,
-    loginResponse.token.access,
+  TestValidator.predicate(
+    "refreshable_until is valid",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(
+      loggedin.token.refreshable_until,
+    ),
+  );
+  TestValidator.predicate(
+    "expired_at is after now",
+    new Date(loggedin.token.expired_at) > new Date(),
+  );
+  TestValidator.predicate(
+    "refreshable_until is after expired_at",
+    new Date(loggedin.token.refreshable_until) >
+      new Date(loggedin.token.expired_at),
   );
 }

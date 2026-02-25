@@ -1,9 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import type { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
+import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
-import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,92 +10,131 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { generate_random_discussion_board_admin_sections_create } from "../../../generate/generate_random_discussion_board_admin_sections_create";
+import { generate_random_discussion_board_super_admin_sections_create } from "../../../generate/generate_random_discussion_board_super_admin_sections_create";
+import { prepare_random_discussion_board_section } from "../../../prepare/prepare_random_discussion_board_section";
 
-/**
- * Test the scenario where a super administrator demotes another super administrator to regular administrator grade.
- * Verifies that the grade field changes from 'super' to 'regular', the grade_changed_at timestamp is updated,
- * and the administrator record now references regular admin authentication instead of super admin authentication.
- * Also validates that super administrators cannot demote themselves.
- */
 export async function test_api_administrator_demotion_super_to_regular(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create two super administrator accounts
-  const demoterConnection: api.IConnection = { host: connection.host };
-  const targetConnection: api.IConnection = { host: connection.host };
-  // Create demoter super admin account
-  const demoterSuperAdmin = await authorize_super_admin_join(
-    demoterConnection,
+  // Create actor-specific connections
+  const demotingSuperAdminConnection: api.IConnection = {
+    host: connection.host,
+  };
+  const targetSuperAdminConnection: api.IConnection = { host: connection.host };
+  // Step 1: Create and authenticate demoting super admin
+  const demotingSuperAdmin = await authorize_super_admin_join(
+    demotingSuperAdminConnection,
     {
       body: {
         email: typia.random<string & tags.Format<"email">>(),
-        password: typia.random<string & tags.Format<"password">>(),
-        privilege_level: "super_admin",
+        password: RandomGenerator.alphaNumeric(16),
+        href: "http://localhost:3000",
+        referrer: "http://localhost:3000",
+        ip: typia.random<string & tags.Format<"ipv4">>(),
       } satisfies IDiscussionBoardSuperAdmin.IJoin,
     },
   );
-  typia.assert(demoterSuperAdmin);
-  // Create target super admin account
-  const targetSuperAdmin = await authorize_super_admin_join(targetConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
-      privilege_level: "super_admin",
-    } satisfies IDiscussionBoardSuperAdmin.IJoin,
-  });
+  typia.assert(demotingSuperAdmin);
+  // Step 2: Create and authenticate target super admin to be demoted
+  const targetSuperAdmin = await authorize_super_admin_join(
+    targetSuperAdminConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+        href: "http://localhost:3000",
+        referrer: "http://localhost:3000",
+        ip: typia.random<string & tags.Format<"ipv4">>(),
+      } satisfies IDiscussionBoardSuperAdmin.IJoin,
+    },
+  );
   typia.assert(targetSuperAdmin);
-  // Since we don't have utility functions to create administrator records,
-  // we need to work with the existing system flow. The test will focus on
-  // the demotion functionality assuming administrator records exist.
-  // Demote the target super administrator to regular administrator
-  const updatedAdministrator =
-    await api.functional.discussionBoard.superAdmin.administrators.update(
-      demoterConnection,
+  // Step 3: Verify target super admin has super admin privileges before demotion
+  const sectionBeforeDemotion =
+    await api.functional.discussionBoard.superAdmin.sections.create(
+      targetSuperAdminConnection,
       {
-        administratorId: targetSuperAdmin.id, // Using super admin ID as administrator ID
         body: {
-          grade: "regular",
-        } satisfies IDiscussionBoardAdministratorPromotionApproval.IUpdate,
+          name: RandomGenerator.name(),
+          description: RandomGenerator.paragraph({ sentences: 2 }),
+          status: "active",
+          display_order: 1,
+        } satisfies IDiscussionBoardSection.ICreate,
       },
     );
-  typia.assert(updatedAdministrator);
-  // Validate the demotion was successful
-  TestValidator.equals(
-    "grade should be 'regular'",
-    updatedAdministrator.grade,
-    "regular",
-  );
-  TestValidator.notEquals(
-    "grade_changed_at should be updated",
-    updatedAdministrator.grade_changed_at,
-    null,
-  );
-  TestValidator.equals(
-    "super_admin should be null",
-    updatedAdministrator.super_admin,
-    null,
-  );
-  TestValidator.notEquals(
-    "admin should be populated",
-    updatedAdministrator.admin,
-    null,
-  );
+  typia.assert(sectionBeforeDemotion);
   TestValidator.predicate(
-    "is_active should remain true",
-    updatedAdministrator.is_active,
+    "section created by super admin",
+    sectionBeforeDemotion.id !== undefined,
   );
-  // Test that super administrators cannot demote themselves
-  await TestValidator.error("should not allow self-demotion", async () => {
+  // Step 4: Perform demotion from super admin to regular admin
+  const demotionResult =
     await api.functional.discussionBoard.superAdmin.administrators.update(
-      demoterConnection,
+      demotingSuperAdminConnection,
       {
-        administratorId: demoterSuperAdmin.id,
+        administratorId: targetSuperAdmin.id,
         body: {
-          grade: "regular",
-        } satisfies IDiscussionBoardAdministratorPromotionApproval.IUpdate,
+          permission_level: "admin",
+        } satisfies IDiscussionBoardSuperAdmin.IUpdate,
+      },
+    );
+  typia.assert(demotionResult);
+  TestValidator.equals(
+    "permission level updated to admin",
+    demotionResult.permission_level,
+    "admin",
+  );
+  // Step 5: Verify target loses super admin privileges
+  await TestValidator.error(
+    "cannot create section as super admin",
+    async () => {
+      await api.functional.discussionBoard.superAdmin.sections.create(
+        targetSuperAdminConnection,
+        {
+          body: {
+            name: RandomGenerator.name(),
+            description: RandomGenerator.paragraph({ sentences: 2 }),
+            status: "active",
+            display_order: 2,
+          } satisfies IDiscussionBoardSection.ICreate,
+        },
+      );
+    },
+  );
+  // Step 6: Verify target retains regular admin capabilities
+  const adminSection =
+    await api.functional.discussionBoard.admin.sections.create(
+      targetSuperAdminConnection,
+      {
+        body: {
+          name: RandomGenerator.name(),
+          description: RandomGenerator.paragraph({ sentences: 2 }),
+          status: "active",
+          display_order: 3,
+        } satisfies IDiscussionBoardSection.ICreate,
+      },
+    );
+  typia.assert(adminSection);
+  TestValidator.predicate(
+    "section created by regular admin",
+    adminSection.id !== undefined,
+  );
+  // Step 7: Test self-demotion prevention
+  await TestValidator.error("cannot demote self", async () => {
+    await api.functional.discussionBoard.superAdmin.administrators.update(
+      demotingSuperAdminConnection,
+      {
+        administratorId: demotingSuperAdmin.id,
+        body: {
+          permission_level: "admin",
+        } satisfies IDiscussionBoardSuperAdmin.IUpdate,
       },
     );
   });

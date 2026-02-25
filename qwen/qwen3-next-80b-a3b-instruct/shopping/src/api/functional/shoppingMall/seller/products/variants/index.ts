@@ -5,21 +5,27 @@ import typia from "typia";
 
 import { IShoppingMallProductVariant } from "../../../../../structures/IShoppingMallProductVariant";
 
+export * as snapshots from "./snapshots/index";
+
 /**
- * Create a new product variant under an existing product.
+ * Create a new variant for an existing product.
  *
- * This operation allows sellers to add specific product configurations, including unique SKU codes, variant options (such as size, color, or other distinguishing attributes), optional price overrides, and initial stock quantities to a parent product. Variants enable differentiated offerings of the same core product while maintaining centralized management under the original product listing.
+ * This operation allows a seller to add a new SKU configuration (e.g., different color, size, or option set) to a product that already exists on the platform. Each variant represents a unique product configuration with its own SKU code, optional price override, and specific option values (such as {"color": "Red", "size": "Large"}). The system strictly enforces that the SKU code must be unique across all variants of the same product and that the variant's product cannot have been deleted or suspended.
  *
- * All product variants must have a unique SKU code that is globally unique across the platform. Variant options are stored as a JSON object with key-value pairs representing product features. The stock level must be zero or greater, and the system will prevent sales when stock reaches zero.
+ * The variant's stock quantity is initialized to zero upon creation, and inventory adjustments are tracked separately through the inventory_logs table. Changes to the product's variant list trigger a product snapshot preserving the complete state of the product and its variants at the moment of change. This ensures that historical orders always reflect the accurate product configuration at time of purchase, regardless of subsequent edits.
  *
- * This operation requires authentication with a seller account that owns the referenced product. All variants created through this endpoint are subject to the platform's immutable snapshot principle - the variant state at creation will be preserved in order item snapshots for dispute resolution. The variant's product and seller profile data will be permanently associated with this variant.
+ * This endpoint is accessible only to authenticated sellers who own the product. It does not allow bulk creation; each variant must be created individually. The request body must include at least one option value. If the product is not owned by the authenticated seller, or if the SKU code conflicts with an existing variant of this product, the request will fail with a 409 Conflict error.
+ *
+ * Calls to this endpoint are automatically logged and audited. All variant creation events are captured in the product's immutable history, enabling administrators to reconstruct the product's evolution over time.
+ *
+ * This operation depends on the following prerequisite: The product ID provided must belong to a product that is active (not deleted), owned by the authenticated seller, and has a status of 'approved' or 'active'. If the product does not meet these criteria, the request will be denied.
  *
  * @param props.connection
- * @param props.productId The unique identifier of the parent product under which this variant is being created.
- * @param props.body Details for creating a new product variant.
+ * @param props.productId Unique identifier of the product to which this variant belongs. Must be a valid UUID and owned by the authenticated seller.
+ * @param props.body Details required to create a new product variant, including unique SKU code, optional price override, and option values in JSON format.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Insert a new shopping_mall_product_variants record with the provided parameters. Validate that the productId exists and is not deleted. Verify that provided SKU is not already used by any other variant. Set created_at and updated_at to current timestamp. Set deleted_at to null. Initialize stock to specified value. Validate price_override is null or non-negative. Return the complete variant record including generated id and timestamps. Do not link inventory_histories here - those are created only on actual stock changes (purchase, restock, adjustment).
+ * @x-autobe-specification Query shopping_mall_products to verify existence and ownership of the product by the authenticated seller. Validate that the product is active (deleted_at is null) and approved. Check for duplicate SKU in shopping_mall_product_variants where product_id = productId and sku_code = request.sku_code, excluding variants with deleted_at. Create new shopping_mall_product_variant with received fields, setting created_at/updated_at to now, stock_quantity to 0, and deleted_at to null. Generate a unique variant_id (UUID). Within one transaction, create a shopping_mall_product_variant_snapshot record with all variant fields and action type 'create'. Then, update the parent shopping_mall_product with updated_at = now and create a snapshot of the full product state including the newly added variant in the variant_snapshots array. Log the event in admin audit trail with actor, timestamp, and product_id. Return the created variant object with full details including id, created_at, updated_at.
  * @path /shoppingMall/seller/products/:productId/variants
  * @accessor api.functional.shoppingMall.seller.products.variants.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -49,12 +55,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * The unique identifier of the parent product under which this variant is being created.
+     * Unique identifier of the product to which this variant belongs. Must be a valid UUID and owned by the authenticated seller.
      */
     productId: string;
 
     /**
-     * Details for creating a new product variant.
+     * Details required to create a new product variant, including unique SKU code, optional price override, and option values in JSON format.
      */
     body: IShoppingMallProductVariant.ICreate;
   };
@@ -105,21 +111,23 @@ export namespace create {
 }
 
 /**
- * Update the price override and stock quantity for a specific product variant.
+ * Update an existing product variant's SKU code, price, or option values.
  *
- * This operation allows sellers to modify the pricing and inventory of their own product variants. All changes are permanently recorded in the inventory_history table with the reason "variant update". The updated_at timestamp is automatically refreshed to reflect the modification.
+ * This endpoint allows sellers to modify the specifications of a product variant, such as changing its SKU code, adjusting its price, or updating its option values (e.g., color or size). All changes trigger the creation of an immutable product-snapshot-SKV record that preserves the exact state of the variant before modification. This ensures historical accuracy for order fulfillment and dispute resolution, in accordance with the platform's snapshot principle.
  *
- * This is a permanent, hard update—there is no soft delete mechanism in the system. The operation does not affect any existing order items, as those preserve immutable snapshots of the variant's state at the time of purchase, in accordance with the platform's snapshot principle.
+ * The variant being updated must not be referenced by any order items with status "paid" or "shipped", as this would violate the integrity of committed transactions. If such order items exist, the operation will fail with a 409 Conflict response. The SKU code must remain unique across all variants on the entire platform to prevent ambiguity in inventory management. Any modification of variant options (e.g., changing "color: Red" to "color: Blue") is treated as a structural change and requires a new snapshot, allowing customers and administrators to trace the variant's evolution.
  *
- * Only sellers who own the product may perform this update. Price overrides must be zero or greater and maintain exactly two decimal places. Stock quantities must be non-negative integers. Attempting to update a product variant that no longer exists returns a 404 error.
+ * All changes are logged with the seller ID and timestamp, ensuring accountability. This endpoint does not support mass updates or batch operations; each variant must be updated individually. For bulk changes, sellers should use the variant management dashboard, which triggers individual calls to this endpoint in sequence.
+ *
+ * The operation does not affect inventory or stock levels. Stock adjustments must be performed via dedicated inventory endpoints. The variant's parent product must be active; if the product is deleted, this endpoint will return a 404 Not Found. The system implements soft deletion via the deleted_at column — the variant remains in database history but is marked inactive and becomes unavailable for new purchases.
  *
  * @param props.connection
- * @param props.productId The unique identifier of the product to which the variant belongs. Must be a UUID.
- * @param props.variantId The unique identifier of the product variant to be updated. Must be a UUID.
- * @param props.body Fields to update for the product variant.
+ * @param props.productId Unique identifier of the product this variant belongs to.
+ * @param props.variantId Unique identifier of the product variant.
+ * @param props.body Partial update fields for the variant. Any combination of SKU code, price, and options can be modified in a single request.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_variants by variant_id and product_id to ensure relationship validity. Validate that the variant has not been logically deleted (deleted_at is null). Check that user is owner of the variant (seller_id matches authenticated user). Validate price_override is numeric, not negative, and has at most two decimal places. Validate stock is a non-negative integer. Apply updates to price_override and stock fields, setting updated_at to current timestamp. Create a new inventory_history record with change = (new_stock - old_stock), reason = "variant update", variant_id, and seller_id. Return the full updated variant object. If variant not found or not owned by user, return 404. If price_override or stock fails validation, return 400.
+ * @x-autobe-specification Retrieve variant by variantId and productId. Validate seller owns variant. Check if variant has any order items with status 'paid' or 'shipped' via shopping_mall_order_items. If found, return 409 Conflict with error code 'VARIANT_IN_USE'. Validate SKU uniqueness across all shopping_mall_product_variants. Validate option_values format as JSON object. If any field (sku_code, price, option_values) is provided, create new shopping_mall_product_variant_snapshots record with current state as previous values. Update shopping_mall_product_variants record with new values and update_at timestamp. Return 200 OK with updated variant object including new values.
  * @path /shoppingMall/seller/products/:productId/variants/:variantId
  * @accessor api.functional.shoppingMall.seller.products.variants.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -149,17 +157,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The unique identifier of the product to which the variant belongs. Must be a UUID.
+     * Unique identifier of the product this variant belongs to.
      */
     productId: string;
 
     /**
-     * The unique identifier of the product variant to be updated. Must be a UUID.
+     * Unique identifier of the product variant.
      */
     variantId: string;
 
     /**
-     * Fields to update for the product variant.
+     * Partial update fields for the variant. Any combination of SKU code, price, and options can be modified in a single request.
      */
     body: IShoppingMallProductVariant.IUpdate;
   };
@@ -211,31 +219,38 @@ export namespace update {
 }
 
 /**
- * Permanently deletes a product variant from the shoppingMall system.
+ * Permanently delete a product variant if no active orders, cancellations, or refunds are associated with it.
  *
- * This operation removes a specific product variant (SKU) from the platform's catalog. Deletion is only permitted when no order items reference this variant in 'paid' or 'shipped' status, as enforced by the inventory management rules. Once deleted, the variant is permanently removed from all product listings and search results, and cannot be restored.
+ * This operation performs a hard delete on the product variant record, completely removing it from the marketplace. The deletion is conditional and denied if any order items exist with status 'paid' or 'shipped', or if any pending cancellation or refund requests are linked to this variant. This ensures transactional integrity and prevents loss of financial accountability for completed transactions.
  *
- * This is a hard deletion, not a soft delete. Unlike inventory adjustments or product edits which create snapshots, this operation permanently removes the variant's existence from the active catalog. The system enforces referential integrity: if any order item exists with this variant_id (with status 'paid' or 'shipped'), the deletion is blocked, preserving the immutable snapshot principle that ensures historical order accuracy.
+ * After successful deletion, an immutable reference to this variant's state is preserved in the shopping_mall_product_snapshot_variants junction table, linked to the product's current snapshot. This allows historical reporting and audit trails without preserving the live variant record.
  *
- * The operation is only accessible to sellers who own the product or to administrators with elevated privileges. For sellers, deletion requires a complete validation that no order items reference the variant. The variant's data is purged from the primary table, but its deletion is logged in system_audit logs and remains visible in all historical order item snapshots for audit purposes.
+ * All associated inventory records are permanently removed. The variant's original pricing and SKU data remain accessible through its snapshot record.
  *
- * This operation is the only mechanism to remove a variant from the active system. After deletion, any cart items containing this variant are automatically removed and marked as 'unavailable'. Any wishlist items containing this variant are also removed as per the wishlist management requirements.
+ * This API is only accessible to authenticated sellers who own the product. Admins cannot directly delete variants through this endpoint (they must use admin-level approval flows). Customers cannot interact with this endpoint.
  *
- * Note: Product snapshots containing this variant will remain accessible through order items and product version history, preserving complete audit trails for disputes, returns, and regulatory compliance.
+ * Note: This operation does not delete the parent product. Products may remain in the catalog even if all variants are deleted, and will appear as 'unavailable' to customers.
  *
  * @param props.connection
- * @param props.productId The unique UUID identifier of the product that contains the variant.
- * @param props.variantId The unique SKU code of the product variant to delete.
+ * @param props.productId The unique identifier of the product that contains this variant.
+ * @param props.variantId The unique identifier of the variant to be deleted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Perform a hard deletion of a product variant.
- * 1. Validate that the variant_id exists and belongs to the specified product_id.
- * 2. Validate that the variant is owned by the authenticated seller or the requester is an admin.
- * 3. Check the shopping_mall_order_items table for any records with variant_id = {variantId} and status in ['paid', 'shipped']. If any records exist, return 409 Conflict: 'Cannot delete variant because it has paid or shipped order items'.
- * 4. Check the shopping_mall_cart_items table for any records with variant_id = {variantId}. If any exist, remove them from the cart.
- * 5. Delete the variant record from the shopping_mall_product_variants table.
- * 6. Log the deletion event in the shopping_mall_system_logs table with actor, timestamp, and variant_id.
- * 7. Return 204 No Content on successful deletion.
+ * @x-autobe-specification 1. Validate that the variant with variantId exists and belongs to productId (foreign key constraint). Ensure the requesting seller owns the product via JWT token verification.
+ *
+ * 2. Check the shopping_mall_order_items table for any records with shopping_mall_product_variant_id = variantId where status IN ('paid', 'shipped'). If any found, return 409 Conflict with message: "Cannot delete variant because it has paid or shipped order items".
+ *
+ * 3. Check the shopping_mall_cancellation_requests table for any records with order_item_id IN (SELECT id FROM shopping_mall_order_items WHERE shopping_mall_product_variant_id = variantId) and status = 'pending'. If any found, return 409 Conflict with message: "Cannot delete variant because it has pending cancellation requests".
+ *
+ * 4. Check the shopping_mall_refund_requests table for any records with order_item_id IN (SELECT id FROM shopping_mall_order_items WHERE shopping_mall_product_variant_id = variantId) and status = 'pending'. If any found, return 409 Conflict with message: "Cannot delete variant because it has pending refund requests".
+ *
+ * 5. If all checks pass, update the shopping_mall_product_variants record: set deleted_at to current timestamp.
+ *
+ * 6. Create an immutable record in shopping_mall_product_variant_snapshots with all current variant fields (sku_code, price, options, created_at, updated_at) and operation_type: "delete".
+ *
+ * 7. Delete all associated inventory_logs records for this variant (shopping_mall_inventory_logs.variant_id = variantId).
+ *
+ * 8. Return the deleted variant's data in response body as IShoppingMallProductVariant for audit trail consistency.
  * @path /shoppingMall/seller/products/:productId/variants/:variantId
  * @accessor api.functional.shoppingMall.seller.products.variants.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -264,12 +279,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The unique UUID identifier of the product that contains the variant.
+     * The unique identifier of the product that contains this variant.
      */
     productId: string;
 
     /**
-     * The unique SKU code of the product variant to delete.
+     * The unique identifier of the variant to be deleted.
      */
     variantId: string;
   };

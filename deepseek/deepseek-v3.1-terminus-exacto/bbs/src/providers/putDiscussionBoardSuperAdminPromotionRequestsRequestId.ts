@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
-import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -11,78 +11,91 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardAdministratorPromotionRequestTransformer } from "../transformers/DiscussionBoardAdministratorPromotionRequestTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardAdministratorPromotionApprovalTransformer } from "../transformers/DiscussionBoardAdministratorPromotionApprovalTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function putDiscussionBoardSuperAdminPromotionRequestsRequestId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   requestId: string & tags.Format<"uuid">;
-  body: IDiscussionBoardAdministratorPromotionRequest.IUpdate;
-}): Promise<IDiscussionBoardAdministratorPromotionRequest> {
-  const promotionRequest =
-    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.findUnique(
+  body: IDiscussionBoardAdministratorPromotionApproval.IUpdate;
+}): Promise<IDiscussionBoardAdministratorPromotionApproval> {
+  // Verify promotion request exists and is in pending status
+  const request =
+    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.findUniqueOrThrow(
       {
         where: { id: props.requestId },
+        select: {
+          id: true,
+          discussion_board_user_id: true,
+          status: true,
+          discussion_board_administrator_id: true,
+        },
       },
     );
-  if (!promotionRequest) {
-    throw new HttpException("Promotion request not found", 404);
-  }
-  if (promotionRequest.status !== "pending") {
+  if (request.status !== "pending") {
     throw new HttpException(
       "Promotion request has already been processed",
       400,
     );
   }
-  if (
-    !props.body.status ||
-    (props.body.status !== "approved" && props.body.status !== "rejected")
-  ) {
-    throw new HttpException("Status must be 'approved' or 'rejected'", 400);
-  }
-  const currentTimestamp = toISOStringSafe(new Date());
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    let administratorId: string | null = null;
-    if (props.body.status === "approved") {
-      const newAdministrator = await tx.discussion_board_administrators.create({
+  const now = new Date();
+  let administratorAssignmentId: string | null = null;
+  // Update promotion request based on approval decision
+  if (props.body.approved) {
+    // Create administrator assignment when approved
+    const administrator =
+      await MyGlobal.prisma.discussion_board_administrators.create({
         data: {
           id: v4(),
-          user_id: promotionRequest.discussion_board_user_id,
+          user_id: request.discussion_board_user_id,
           grade: "regular",
-          promoted_at: new Date(currentTimestamp),
-          is_active: true,
-          created_at: new Date(currentTimestamp),
-          updated_at: new Date(currentTimestamp),
+          created_at: now,
+          updated_at: now,
+          promoted_at: now, // Add missing required field
+          is_active: true, // Add missing required field
         },
       });
-      administratorId = newAdministrator.id;
-    }
-    const updatedRequest =
-      await tx.discussion_board_administrator_promotion_requests.update({
+    administratorAssignmentId = administrator.id;
+    // Update promotion request with approval details
+    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.update(
+      {
         where: { id: props.requestId },
         data: {
-          status: props.body.status!,
-          approved_at:
-            props.body.status === "approved"
-              ? new Date(currentTimestamp)
-              : null,
-          rejected_at:
-            props.body.status === "rejected"
-              ? new Date(currentTimestamp)
-              : null,
+          status: "approved",
+          approved_at: now,
           reviewer_discussion_board_super_admin_id: props.superAdmin.id,
           reviewer_notes: props.body.reviewer_notes ?? null,
-          discussion_board_administrator_id: administratorId,
-          updated_at: new Date(currentTimestamp),
+          discussion_board_administrator_id: administratorAssignmentId,
+          updated_at: now,
         },
-        ...DiscussionBoardAdministratorPromotionRequestTransformer.select(),
-      });
-    return await DiscussionBoardAdministratorPromotionRequestTransformer.transform(
-      updatedRequest,
+      },
     );
-  });
+  } else {
+    // Update promotion request with rejection details
+    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.update(
+      {
+        where: { id: props.requestId },
+        data: {
+          status: "rejected",
+          rejected_at: now,
+          reviewer_discussion_board_super_admin_id: props.superAdmin.id,
+          reviewer_notes: props.body.reviewer_notes ?? null,
+          updated_at: now,
+        },
+      },
+    );
+  }
+  // Retrieve and return the updated promotion request
+  const updatedRequest =
+    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.findUniqueOrThrow(
+      {
+        where: { id: props.requestId },
+        ...DiscussionBoardAdministratorPromotionApprovalTransformer.select(),
+      },
+    );
+  return DiscussionBoardAdministratorPromotionApprovalTransformer.transform(
+    updatedRequest,
+  );
 }

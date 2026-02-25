@@ -8,69 +8,69 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardBanReasonCategoryTransformer } from "../transformers/DiscussionBoardBanReasonCategoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardSuperAdminBanReasonCategoriesCategoryId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   categoryId: string & tags.Format<"uuid">;
   body: IDiscussionBoardBanReasonCategory.IUpdate;
 }): Promise<IDiscussionBoardBanReasonCategory> {
-  // Find existing category
-  const existingCategory =
-    await MyGlobal.prisma.discussion_board_ban_reason_categories.findUnique({
-      where: { id: props.categoryId, deleted_at: null },
-    });
-  if (!existingCategory) {
-    throw new HttpException("Ban reason category not found", 404);
-  }
-  // Check if any fields are being updated
-  const hasUpdates = Object.keys(props.body).some(
-    (key) => props.body[key as keyof typeof props.body] !== undefined,
-  );
-  if (!hasUpdates) {
-    // Return existing category if no updates
-    return await DiscussionBoardBanReasonCategoryTransformer.transform(
-      existingCategory,
+  // 1. Verify the category exists
+  const existing =
+    await MyGlobal.prisma.discussion_board_ban_reason_categories.findUniqueOrThrow(
+      {
+        where: { id: props.categoryId },
+        select: { id: true, name: true },
+      },
     );
-  }
-  // Validate name uniqueness if name is being updated
-  if (
-    props.body.name !== undefined &&
-    props.body.name !== existingCategory.name
-  ) {
-    const existingWithSameName =
+  // 2. Check for name uniqueness conflict if name is being updated
+  if (props.body.name !== undefined && props.body.name !== existing.name) {
+    const conflicting =
       await MyGlobal.prisma.discussion_board_ban_reason_categories.findFirst({
         where: {
           name: props.body.name,
-          deleted_at: null,
           id: { not: props.categoryId },
+          deleted_at: null, // Only check active (not soft-deleted) categories
         },
+        select: { id: true },
       });
-    if (existingWithSameName) {
-      throw new HttpException("Ban reason category name already exists", 400);
+    if (conflicting !== null) {
+      throw new HttpException(
+        `Category name '${props.body.name}' already exists`,
+        400,
+      );
     }
   }
-  // Perform update with transformer
+  // 3. Build update data with conditional field updates
+  const updateData: Prisma.discussion_board_ban_reason_categoriesUpdateInput = {
+    ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.description !== undefined && {
+      description: props.body.description,
+    }),
+    ...(props.body.is_active !== undefined && {
+      is_active: props.body.is_active,
+    }),
+    ...(props.body.sort_order !== undefined && {
+      sort_order: props.body.sort_order,
+    }),
+    updated_at: new Date(),
+  };
+  // 4. Perform update
+  await MyGlobal.prisma.discussion_board_ban_reason_categories.update({
+    where: { id: props.categoryId },
+    data: updateData,
+  });
+  // 5. Retrieve updated category with transformer
   const updated =
-    await MyGlobal.prisma.discussion_board_ban_reason_categories.update({
-      where: { id: props.categoryId },
-      data: {
-        ...(props.body.name !== undefined && { name: props.body.name }),
-        ...(props.body.description !== undefined && {
-          description: props.body.description,
-        }),
-        ...(props.body.is_active !== undefined && {
-          is_active: props.body.is_active,
-        }),
-        ...(props.body.sort_order !== undefined && {
-          sort_order: props.body.sort_order,
-        }),
-        updated_at: toISOStringSafe(new Date()),
+    await MyGlobal.prisma.discussion_board_ban_reason_categories.findUniqueOrThrow(
+      {
+        where: { id: props.categoryId },
+        ...DiscussionBoardBanReasonCategoryTransformer.select(),
       },
-      ...DiscussionBoardBanReasonCategoryTransformer.select(),
-    });
+    );
+  // 6. Return transformed result
   return await DiscussionBoardBanReasonCategoryTransformer.transform(updated);
 }

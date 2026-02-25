@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_product_subcategory(
-  input?: DeepPartial<IShoppingMallProductSubcategory.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallProductSubcategory.ICreate>,
 ): IShoppingMallProductSubcategory.ICreate {
-  input;
-  return {};
+  return {
+    name: input?.name ?? RandomGenerator.name(),
+    description:
+      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

@@ -15,32 +15,37 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 export async function test_api_customer_user_notification_preference_deletion_unauthorized(
   connection: api.IConnection,
 ): Promise<void> {
-  // Test that attempting to delete a user notification preference without owning it results in 403 Forbidden error
-  // Create first customer account (owner of the notification preference)
-  const customer1Connection: api.IConnection = { host: connection.host };
-  const customer1Auth = await authorize_customer_join(customer1Connection, {
-    body: typia.random<IShoppingMallCustomer.IJoin>(),
+  // This test verifies that a customer cannot delete another customer's notification preference.
+  // 1. Register first customer and create a notification preference
+  const firstCustomerConnection: api.IConnection = { host: connection.host };
+  const firstCustomer = await authorize_customer_join(firstCustomerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "password1234",
+    },
   });
-  typia.assert(customer1Auth);
-  customer1Connection.headers = { Authorization: customer1Auth.token.access };
-  // Create second customer account (attempts to delete other's preference)
-  const customer2Connection: api.IConnection = { host: connection.host };
-  const customer2Auth = await authorize_customer_join(customer2Connection, {
-    body: typia.random<IShoppingMallCustomer.IJoin>(),
-  });
-  typia.assert(customer2Auth);
-  customer2Connection.headers = { Authorization: customer2Auth.token.access };
-  // We assume first customer has a userNotificationPreferenceId they own
-  // Since there is no API given to create or list preferences, use a random UUID to simulate an existing preference owned by another user
-  const fakePreferenceId = typia.random<string & tags.Format<"uuid">>();
-  // Attempt deletion by second customer; expect 403 Forbidden
+  // Simulate creating a notification preference for first customer
+  // Since no utility or SDK for creation is provided, simulate by generating a UUID as preference ID
+  const firstPreferenceId = typia.random<string & tags.Format<"uuid">>();
+  // 2. Register second customer
+  const secondCustomerConnection: api.IConnection = { host: connection.host };
+  const secondCustomer = await authorize_customer_join(
+    secondCustomerConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: "password1234",
+      },
+    },
+  );
+  // 3. Attempt to delete first customer's preference using second customer's connection
   await TestValidator.httpError(
-    "customer cannot delete notification preference of another user",
+    "forbidden deletion by unauthorized customer",
     403,
     async () => {
-      await api.functional.shoppingMall.customer.userNotificationPreferences.erase(
-        customer2Connection,
-        { userNotificationPreferenceId: fakePreferenceId },
+      await api.functional.shoppingMall.customer.userNotificationPreferences.eraseUserNotificationPreference(
+        secondCustomerConnection,
+        { preferenceId: firstPreferenceId },
       );
     },
   );

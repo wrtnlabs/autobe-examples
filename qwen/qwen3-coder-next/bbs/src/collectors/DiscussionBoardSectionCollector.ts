@@ -10,15 +10,14 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardSectionCollector {
   export async function collect(props: {
     body: IDiscussionBoardSection.ICreate;
+    discussionBoardAdmins: IEntity;
+    discussionBoardAdminSessions: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      name: (props.body as any).name,
-      description: (props.body as any).description ?? null,
+      id: v4(),
+      name: props.body.name,
+      description: props.body.description ?? null,
       created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
     } satisfies Prisma.discussion_board_sectionsCreateInput;
   }
 }

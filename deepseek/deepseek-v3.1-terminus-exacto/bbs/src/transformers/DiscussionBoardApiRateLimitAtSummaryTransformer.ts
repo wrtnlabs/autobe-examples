@@ -44,11 +44,13 @@ export namespace DiscussionBoardApiRateLimitAtSummaryTransformer {
       rate_limit_type: input.rate_limit_type,
       requests_per_interval: input.requests_per_interval,
       interval_seconds: input.interval_seconds,
-      burst_limit: input.burst_limit ?? null,
       enforcement_action: input.enforcement_action,
-      is_active: input.is_active,
       enforcement_count: input.enforcement_count,
-      enforced_at: input.enforced_at?.toISOString() ?? null,
+      is_active: input.is_active,
+      enforced_at: input.enforced_at?.toISOString() ?? undefined,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

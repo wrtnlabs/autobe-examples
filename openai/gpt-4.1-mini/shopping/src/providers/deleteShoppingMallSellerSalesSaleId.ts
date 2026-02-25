@@ -15,17 +15,19 @@ export async function deleteShoppingMallSellerSalesSaleId(props: {
   seller: SellerPayload;
   saleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const sale = await MyGlobal.prisma.shopping_mall_sales.findUnique({
+  const sale = await MyGlobal.prisma.shopping_mall_sales.findUniqueOrThrow({
     where: { id: props.saleId },
-    select: { id: true, seller_id: true },
+    select: { seller_id: true },
   });
-  if (sale === null) {
-    throw new HttpException("Sale not found", 404);
-  }
   if (sale.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  await MyGlobal.prisma.shopping_mall_sales.delete({
-    where: { id: props.saleId },
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.shopping_mall_sale_units.deleteMany({
+      where: { shopping_mall_sale_id: props.saleId },
+    });
+    await prisma.shopping_mall_sales.delete({
+      where: { id: props.saleId },
+    });
   });
 }

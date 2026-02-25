@@ -7,10 +7,6 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace DiscussionBoardErrorLogAtSummaryTransformer {
-  // IMPORTANT: This DTO represents aggregated statistics which cannot be
-  // implemented using Prisma's standard select()/transform() pattern.
-  // The aggregation fields (error_count, first_occurred_at, last_occurred_at)
-  // require GROUP BY operations that Prisma doesn't support in findMany().
   export type Payload = Prisma.discussion_board_error_logsGetPayload<
     ReturnType<typeof select>
   >;
@@ -38,38 +34,13 @@ export namespace DiscussionBoardErrorLogAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardErrorLog.ISummary> {
-    // NOTE: Aggregated fields cannot be computed from individual records
-    // This transformer pattern is incompatible with aggregated DTOs
-    throw new Error(
-      "DiscussionBoardErrorLogAtSummaryTransformer: ISummary DTO requires aggregation which cannot be implemented in standard transform(). Use aggregation services instead.",
-    );
-  }
-  /**
-   * Recommended alternative implementation using aggregation service pattern
-   */
-  export async function aggregateSummary(): Promise<
-    IDiscussionBoardErrorLog.ISummary[]
-  > {
-    // This would typically use Prisma's groupBy or raw SQL
-    // Example implementation (pseudo-code):
-    // const result = await prisma.discussion_board_error_logs.groupBy({
-    //   by: ['error_type', 'severity', 'component', 'environment'],
-    //   _count: { _all: true },
-    //   _min: { occurred_at: true },
-    //   _max: { occurred_at: true }
-    // });
-    //
-    // return result.map(item => ({
-    //   error_type: item.error_type,
-    //   severity: item.severity,
-    //   component: item.component ?? undefined,
-    //   environment: item.environment,
-    //   error_count: item._count._all,
-    //   first_occurred_at: item._min.occurred_at.toISOString(),
-    //   last_occurred_at: item._max.occurred_at.toISOString(),
-    // }));
-    throw new Error(
-      "Aggregation service implementation required for DiscussionBoardErrorLogAtSummaryTransformer",
-    );
+    return {
+      id: input.id,
+      error_type: input.error_type,
+      severity: input.severity,
+      environment: input.environment,
+      component: input.component ?? undefined,
+      occurred_at: input.occurred_at.toISOString(),
+    };
   }
 }

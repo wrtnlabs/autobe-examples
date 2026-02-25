@@ -1,4 +1,10 @@
+import { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
+import { IDiscussionBoardAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorGrade";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import { IDiscussionBoardSectionAdminLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionAdminLog";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -8,7 +14,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { DiscussionBoardSectionCollector } from "../collectors/DiscussionBoardSectionCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardSectionTransformer } from "../transformers/DiscussionBoardSectionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,51 +24,42 @@ export async function postDiscussionBoardAdministratorSections(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardSection.ICreate;
 }): Promise<IDiscussionBoardSection> {
-  const name = (
-    props.body as {
-      name: string;
-    }
-  ).name satisfies string as string;
-  const description = (
-    props.body as {
-      description: string;
-    }
-  ).description satisfies string as string;
-  if (!name || name.trim() === "") {
-    throw new HttpException("Name must be provided and non-empty", 400);
+  // Validate uniqueness of the section name
+  const existing = await MyGlobal.prisma.discussion_board_sections.findUnique({
+    where: { name: props.body.name },
+    select: { id: true },
+  });
+  if (existing !== null) {
+    throw new HttpException(
+      `Section name '${props.body.name}' already exists.`,
+      409,
+    );
   }
-  if (!description || description.trim() === "") {
-    throw new HttpException("Description must be provided and non-empty", 400);
-  }
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  const id: string & tags.Format<"uuid"> = v4();
-  try {
-    const created = await MyGlobal.prisma.discussion_board_sections.create({
-      data: {
-        id,
-        name,
-        description,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    });
-    return {
-      id: created.id,
-      name: created.name,
-      description: created.description,
-      created_at: toISOStringSafe(created.created_at),
-      updated_at: toISOStringSafe(created.updated_at),
-    };
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002" &&
-      Array.isArray(error.meta?.target) &&
-      error.meta.target.includes("name")
-    ) {
-      throw new HttpException(`Section name already exists`, 400);
-    }
-    throw error;
-  }
+  // Collect data for creation
+  const data = await DiscussionBoardSectionCollector.collect({
+    body: props.body,
+  });
+  // Create the new section
+  const section = await MyGlobal.prisma.discussion_board_sections.create({
+    data,
+    ...DiscussionBoardSectionTransformer.select(),
+  });
+  // Generate timestamps as ISO strings
+  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  // Generate admin log id
+  const logId = v4() as string & tags.Format<"uuid">;
+  // Insert admin log for the creation
+  await MyGlobal.prisma.discussion_board_section_admin_logs.create({
+    data: {
+      id: logId,
+      action_type: "create",
+      note: null,
+      administrator: { connect: { id: props.administrator.id } },
+      section: { connect: { id: section.id } },
+      created_at: now,
+      updated_at: now,
+    },
+  });
+  // Transform and return result
+  return await DiscussionBoardSectionTransformer.transform(section);
 }

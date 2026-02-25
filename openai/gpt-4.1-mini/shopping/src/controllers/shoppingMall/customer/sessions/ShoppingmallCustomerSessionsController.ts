@@ -1,46 +1,53 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallCustomerSession } from "../../../../api/structures/IPageIShoppingMallCustomerSession";
 import { IShoppingMallCustomerSession } from "../../../../api/structures/IShoppingMallCustomerSession";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
-import { getShoppingMallCustomerSessionsSessionId } from "../../../../providers/getShoppingMallCustomerSessionsSessionId";
 import { patchShoppingMallCustomerSessions } from "../../../../providers/patchShoppingMallCustomerSessions";
 
 @Controller("/shoppingMall/customer/sessions")
 export class ShoppingmallCustomerSessionsController {
   /**
-   * Retrieve a paginated list of active customer sessions in the shopping mall platform.
+   * Retrieve a paginated and filtered list of active or expired JWT session tokens used for authentication.
    *
-   * This operation supports complex search criteria including filtering by customer ID, IP address, session creation, and expiration timestamps.
+   * This operation supports complex search criteria including filtering by user type, session validity, expiration times, IP addresses, and client user-agent strings.
    *
-   * Sessions represent JWT tokens issued upon customer login, including metadata such as client IP, accessed URL (href), and HTTP referrer for audit and security monitoring.
+   * Pagination controls the number of entries returned per page, with options for sorting by creation or expiration dates.
    *
-   * Access is restricted to authenticated customers and administrators, ensuring protected viewing of session data.
+   * Access is restricted to administrators with appropriate permissions to view session management information.
    *
-   * This list endpoint supports pagination, sorting, and filtering to efficiently manage and audit sessions.
+   * Returned data includes session ID, user ID, token expiration, last connection IP, user-agent, and timestamps.
    *
-   * Related endpoints include login and logout operations which create and destroy sessions respectively.
+   * This operation relies on querying the underlying `shopping_mall_customer_sessions` or `shopping_mall_seller_sessions` tables (or similar session storage) with filters applied at the database level.
+   *
+   * It complements operations for individual session retrieval or session termination.
+   *
+   * Errors occur if invalid filter parameters are provided or unauthorized access attempted.
+   *
+   * Does not perform session creation or deletion; strictly for viewing and managing existing sessions.
    *
    * @param connection
-   * @param body Filter criteria and pagination parameters for customer session listing.
+   * @param body Search, filter, and pagination parameters for session records
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a service layer that queries both shopping_mall_customer_sessions and shopping_mall_seller_sessions tables, applying filters from the request body on fields such as shopping_mall_customer_id, seller_id, ip, created_at, and expired_at.
+   * @x-autobe-specification Implement a service layer method to query session records from the database with filters received in the PATCH request body.
    *
-   * Consolidate results into a unified paginated response including session ID, user type (customer or seller), user ID, IP, href, referrer, creation and expiration timestamps.
+   * Allow filters such as user ID, user type (customer, seller), token expiration range, IP address substring matching, and user-agent substring matching.
    *
-   * Support pagination parameters like page number and page size, as well as sorting by created_at descending by default.
+   * Apply pagination with limit, offset, or cursor-based approach supplied in request body.
    *
-   * Ensure proper authorization checks that only allow members and administrators to access this endpoint.
+   * Sort results by creationDate descending by default, allowing client override.
    *
-   * Handle errors such as invalid filter parameters and return appropriate HTTP status codes.
+   * Return a paginated list of session summaries including session ID, user ID, expiration timestamp, IP address, user agent, creation and update timestamps.
    *
-   * Implement efficient database queries using indices on user IDs and timestamps.
+   * Ensure only authenticated administrators can access this endpoint; validate and sanitize inputs.
    *
-   * Provide documentation linking to authentication endpoints and user management interfaces.
+   * Log access attempts and errors for audit compliance.
+   *
+   * Use database indexes on user ID and expiration Date to optimize performance.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -54,60 +61,6 @@ export class ShoppingmallCustomerSessionsController {
       return await patchShoppingMallCustomerSessions({
         customer,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information of a specific customer session by session ID.
-   *
-   * This operation accesses the `shopping_mall_customer_sessions` table which stores JWT session tokens for customer authentication and metadata like IP address, referer URL, href URL, and creation/expiry timestamps.
-   *
-   * It requires the unique `sessionId` path parameter which is a UUID string identifying the session.
-   *
-   * Access to this operation should be limited to authorized actors such as administrators or the owning customers.
-   *
-   * The response includes all key session attributes:
-   * - `id`: the session UUID
-   * - `shoppingMallCustomerId`: the UUID of the associated customer
-   * - `ip`: IP address of the login client
-   * - `href`: the URL accessed during session creation
-   * - `referrer`: the HTTP referer header received
-   * - `createdAt`: timestamp when the session record was created
-   * - `expiredAt`: timestamp when the session expires
-   *
-   * No request body is required for this GET operation.
-   *
-   * Common use cases include auditing session activity, security monitoring, and customer session management.
-   *
-   *
-   * @param connection
-   * @param sessionId Unique identifier of the customer session (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_customer_sessions table filtering by id = :sessionId parameter.
-   * Validate sessionId is a UUID string.
-   * Return full session record matching the sessionId.
-   * If session not found, return 404 error.
-   * Restrict access to owning customer or administrators.
-   * No request body needed.
-   * Use path parameter for sessionId as string UUID.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":sessionId")
-  public async at(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("sessionId")
-    sessionId: string & tags.Format<"uuid">,
-  ): Promise<IShoppingMallCustomerSession> {
-    try {
-      return await getShoppingMallCustomerSessionsSessionId({
-        customer,
-        sessionId,
       });
     } catch (error) {
       console.log(error);

@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardSystemSettingTransformer } from "../transformers/DiscussionBoardSystemSettingTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,19 +17,12 @@ export async function getDiscussionBoardSuperAdministratorSystemSettingsId(props
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSystemSetting> {
+  // Query the system setting by id from the database
   const record =
-    await MyGlobal.prisma.discussion_board_system_settings.findUnique({
+    await MyGlobal.prisma.discussion_board_system_settings.findUniqueOrThrow({
       where: { id: props.id },
+      ...DiscussionBoardSystemSettingTransformer.select(),
     });
-  if (!record) throw new HttpException("System setting not found", 404);
-  return {
-    id: record.id,
-    key: record.key,
-    value: record.value,
-    description: record.description === null ? null : record.description,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  };
+  // Transform and return the record
+  return await DiscussionBoardSystemSettingTransformer.transform(record);
 }

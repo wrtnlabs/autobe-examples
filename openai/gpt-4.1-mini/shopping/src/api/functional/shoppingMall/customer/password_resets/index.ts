@@ -1,58 +1,43 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallCustomerPasswordReset } from "../../../../structures/IPageIShoppingMallCustomerPasswordReset";
 import { IShoppingMallCustomerPasswordReset } from "../../../../structures/IShoppingMallCustomerPasswordReset";
 
 /**
- * Retrieve a filtered and paginated list of password reset tokens for customers, sellers, and administrators within the shopping mall platform.
+ * Retrieve a filtered, paginated list of password reset tokens for both customers and sellers in the shopping mall platform.
  *
- * This operation allows administrators to search password reset tokens by user type, expiration status, token value, creation date range, and usage status (for sellers).
+ * This operation allows administrators or security auditors to search password reset tokens by various criteria such as token string, associated customer or seller IDs, creation or expiration timestamps, and soft deletion status.
  *
- * Security is paramount as these tokens enable password recovery; therefore, access is restricted to authorized administrative actors only.
+ * Password reset tokens are sensitive security artifacts that facilitate secure password recovery workflows. Hence, access to this endpoint is restricted to authorized actors with audit privileges.
  *
- * The operation queries the following database tables:
- * - `shopping_mall_customer_password_resets`
- * - `shopping_mall_seller_password_resets`
- * - `shopping_mall_administrator_password_resets`
+ * The request payload enables advanced filtering options including exact or partial matches on token strings, filtering by associated entity IDs, date ranges for creation and expiration, and pagination/sorting control.
  *
- * Each record includes token value, associated user ID, expiration timestamps, and usage markers if applicable.
+ * The response returns a paginated summary list of matching password reset tokens, showing token metadata but not the actual reset tokens (for security).
  *
- * This endpoint supports pagination, sorting, and filtering to efficiently browse active and historical password reset tokens.
+ * Related database tables are `shopping_mall_customer_password_resets` and `shopping_mall_seller_password_resets` which store the tokens along with timestamps and linkage to customers or sellers.
  *
- * Related operations:
- * - POST /password-resets for creating new reset tokens (not covered here)
- *
- * Expected behavior includes:
- * - Validating request filter criteria
- * - Returning paginated results
- * - Secure filtering by user role and token status
- *
- * Errors return standard HTTP error codes and messages.
+ * Relevant related operations include token creation endpoints for customer and seller password resets, which manage lifecycle and security aspects separately.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for password reset tokens.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification This operation is executed via a PATCH method accepting a complex request body defining multiple filter criteria such as user role (customer, seller, administrator), token value substring, expiration date ranges, and usage status for sellers.
+ * @x-autobe-specification This operation queries the `shopping_mall_customer_password_resets` and `shopping_mall_seller_password_resets` tables using the advanced search criteria provided in the request body. It supports pagination and sorting.
  *
- * The service layer should query all three password reset tables, union results, and apply filter criteria accordingly.
+ * The service layer must:
+ * - Validate the request body for correct filter parameters.
+ * - Construct database queries to fetch matching reset tokens from both customer and seller reset tables.
+ * - Exclude actual token values from responses for security.
+ * - Return paginated results with summaries including creation and expiration timestamps.
+ * - Handle soft deleted tokens by filtering according to provided criteria.
+ * - Authorize access for administrator and security roles only.
  *
- * Pagination parameters such as page number and page size must be supported, with default sorting by creation date descending.
+ * Efficient SQL queries using indexes on token and expiration timestamps should be used to optimize performance.
  *
- * The response returns a paged list of token summaries containing token id, user id (customerId, sellerId, or administratorId), token string, expiration and creation timestamps, usage timestamp for sellers, and soft delete status.
- *
- * Only authorized administrative roles (e.g., administrators and super administrators) may access this endpoint.
- *
- * Implement necessary security checks and validation of input.
- *
- * Handle edge cases such as empty results or invalid filters gracefully.
- *
- * Support partial token matching and exact enum filters for user roles and usage status.
- *
- * Ensure high-performance querying with indexes on token and user ID columns for each table.
+ * Errors should be handled gracefully with relevant status codes and messages.
  * @path /shoppingMall/customer/password-resets
  * @accessor api.functional.shoppingMall.customer.password_resets.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -117,108 +102,6 @@ export namespace index {
     });
     try {
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a password reset token record by its unique ID.
- *
- * This API operation allows fetching details of a password reset token for either a customer or a seller in the shopping mall platform. It provides information such as the associated user ID (customer or seller), creation date, expiration date, usage status (if applicable), and whether the token has been soft-deleted.
- *
- * This endpoint is typically used by administrative interfaces or internal services to verify password reset requests and their statuses.
- *
- * Security considerations include ensuring that only authorized actors (admins or system services) can access sensitive token data.
- *
- * Since both customer and seller password reset tokens share similar structure, this endpoint can serve generic purposes where allowed.
- *
- * Failure to find the token by ID returns a 404 Not Found error response.
- *
- * This operation requires admin or system-level authorization due to sensitive nature of password reset tokens.
- *
- * @param props.connection
- * @param props.passwordResetId Unique identifier of the password reset token (UUID)
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the password resets table filtered by the primary key 'id' equal to the given path parameter 'passwordResetId'.
- * Return all relevant fields including associated user id, token string, creation, expiration, usage (if seller), and deletion timestamps.
- * Validate the requesting actor has admin or system-level authorization.
- * Handle not-found results with 404 error.
- * No request body is required.
- * Respond with the full password reset entity as defined in the database schema.
- * Use consistent naming with the DTOs: IShoppingMallSellerPasswordReset or IShoppingMallCustomerPasswordReset.
- * Since the API merges these entities under a single endpoint, use a union response schema or discriminator if applicable (depending on implementation, here just return a generic union type for flexibility).
- * @path /shoppingMall/customer/password-resets/:passwordResetId
- * @accessor api.functional.shoppingMall.customer.password_resets.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the password reset token (UUID)
-     */
-    passwordResetId: string & tags.Format<"uuid">;
-  };
-  export type Response = IShoppingMallCustomerPasswordReset;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/shoppingMall/customer/password-resets/:passwordResetId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/customer/password-resets/${encodeURIComponent(props.passwordResetId ?? "null")}`;
-  export const random = (): IShoppingMallCustomerPasswordReset =>
-    typia.random<IShoppingMallCustomerPasswordReset>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("passwordResetId")(() =>
-        typia.assert(props.passwordResetId),
-      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

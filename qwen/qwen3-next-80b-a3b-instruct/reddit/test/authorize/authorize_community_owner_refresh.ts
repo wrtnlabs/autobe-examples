@@ -14,7 +14,7 @@ export async function authorize_community_owner_refresh(
     body: IRedditCommunityCommunityOwner.IRefresh;
   },
 ): Promise<IRedditCommunityCommunityOwner.IAuthorized> {
-  return await api.functional.redditCommunity.auth.communityOwner.refresh(
+  return await api.functional.redditCommunity.auth.community_owner.refresh(
     connection,
     {
       body: props.body,

@@ -1,20 +1,5 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { IEcommerceAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceAddress";
-import { IEcommerceCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCancellationRequest";
-import { IEcommerceCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCart";
-import { IEcommerceCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCartItem";
 import { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
-import { IEcommerceCustomerEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerEmailVerification";
-import { IEcommerceCustomerPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerPasswordReset";
-import { IEcommerceCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerSession";
-import { IEcommerceDefaultAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceDefaultAddress";
-import { IEcommerceOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrder";
-import { IEcommerceOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrderItem";
-import { IEcommerceProductReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductReview";
-import { IEcommerceProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductVariant";
-import { IEcommerceRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceRefundRequest";
-import { IEcommerceShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceShipment";
-import { IEcommerceWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -28,9 +13,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceAuthCustomerLogin(props: {
-  ip: string;
-  href: string;
-  referrer: string;
   body: IEcommerceCustomer.ILogin;
 }): Promise<IEcommerceCustomer.IAuthorized> {
   const customer = await MyGlobal.prisma.ecommerce_customers.findFirst({
@@ -38,31 +20,48 @@ export async function postEcommerceAuthCustomerLogin(props: {
     select: {
       id: true,
       email: true,
-      display_name: true,
-      phone: true,
+      email_verified: true,
+      is_suspended: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
       password_hash: true,
     },
   });
-  if (!customer) throw new HttpException("Invalid credentials", 401);
+  if (!customer) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  if (!customer.email_verified) {
+    throw new HttpException("Email not verified", 401);
+  }
+  if (customer.is_suspended) {
+    throw new HttpException("Account suspended", 401);
+  }
+  if (customer.deleted_at != null) {
+    throw new HttpException("Account deleted", 401);
+  }
   const isValid = await PasswordUtil.verify(
     props.body.password,
     customer.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_customer_sessions.create({
     data: {
       id: v4(),
-      customer_id: customer.id,
-      ip: props.ip,
-      href: props.href,
-      referrer: props.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
+      customer: {
+        connect: { id: customer.id },
+      },
+      created_at: now.toISOString(),
+      expired_at: accessExpires.toISOString(),
+      ip: "127.0.0.1",
+      href: "",
+      referrer: "",
+      updated_at: now.toISOString(),
     },
   });
   const token = {
@@ -71,7 +70,7 @@ export async function postEcommerceAuthCustomerLogin(props: {
         type: "customer",
         id: customer.id,
         session_id: session.id,
-        created_at: toISOStringSafe(new Date()),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "30m", issuer: "autobe" },
@@ -82,30 +81,27 @@ export async function postEcommerceAuthCustomerLogin(props: {
         id: customer.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
-  return {
+  const customerData = {
     id: customer.id,
     email: customer.email,
-    display_name: customer.display_name,
-    phone: customer.phone,
-    created_at: toISOStringSafe(customer.created_at),
-    updated_at: toISOStringSafe(customer.updated_at),
+    email_verified: customer.email_verified,
+    is_suspended: customer.is_suspended,
+    created_at: (customer.created_at as Date).toISOString(),
+    updated_at: (customer.updated_at as Date).toISOString(),
     deleted_at: customer.deleted_at
-      ? toISOStringSafe(customer.deleted_at)
-      : customer.deleted_at,
-    token: token,
-    defaultAddress: {
-      id: "00000000-0000-0000-0000-000000000000",
-      createdAt: toISOStringSafe(new Date()),
-      updatedAt: toISOStringSafe(new Date()),
-      deletedAt: null,
-    },
-  } satisfies IEcommerceCustomer.IAuthorized;
+      ? (customer.deleted_at as Date).toISOString()
+      : null,
+  };
+  return {
+    ...customerData,
+    token,
+  };
 }

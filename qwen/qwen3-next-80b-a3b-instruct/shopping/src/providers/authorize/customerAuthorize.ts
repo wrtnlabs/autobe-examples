@@ -12,11 +12,11 @@ export async function customerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
+  // Query directly by id since customer is standalone actor (no User inheritance)
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null, // Soft-delete check
     },
   });
 

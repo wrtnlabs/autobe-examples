@@ -1,4 +1,3 @@
-export * as guests from "./guests/index";
-export * as guestSessions from "./guestSessions/index";
+export * as sessions from "./sessions/index";
+export * as sections from "./sections/index";
 export * as search from "./search/index";
-export * as tags from "./tags/index";

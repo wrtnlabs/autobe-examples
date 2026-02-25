@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardFeatureFlagTransformer } from "../transformers/DiscussionBoardFeatureFlagTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,37 +18,29 @@ export async function putDiscussionBoardSuperAdministratorFeatureFlagsId(props: 
   id: string & tags.Format<"uuid">;
   body: IDiscussionBoardFeatureFlag.IUpdate;
 }): Promise<IDiscussionBoardFeatureFlag> {
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    const existingFlag = await tx.discussion_board_feature_flags.findUnique({
+  const featureFlag =
+    await MyGlobal.prisma.discussion_board_feature_flags.findUnique({
       where: { id: props.id },
+      select: { id: true, deleted_at: true },
     });
-    if (!existingFlag) {
-      throw new HttpException("Feature flag not found", 404);
-    }
-    // No properties in body to update, so only update updated_at
-    const updatedFlag = await tx.discussion_board_feature_flags.update({
+  if (featureFlag === null || featureFlag.deleted_at !== null) {
+    throw new HttpException("Feature flag not found", 404);
+  }
+  const updateData: Prisma.discussion_board_feature_flagsUpdateInput = {
+    ...(props.body.code !== undefined && { code: props.body.code }),
+    ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.description !== undefined && {
+      description: props.body.description,
+    }),
+    ...(props.body.enabled !== undefined && { enabled: props.body.enabled }),
+  };
+  const updatedFeatureFlag =
+    await MyGlobal.prisma.discussion_board_feature_flags.update({
       where: { id: props.id },
-      data: {
-        updated_at: now,
-      },
+      data: updateData,
+      ...DiscussionBoardFeatureFlagTransformer.select(),
     });
-    // Audit log of update action can be added here if required
-    return {
-      id: updatedFlag.id as string & tags.Format<"uuid">,
-      code: updatedFlag.code,
-      name: updatedFlag.name,
-      description:
-        updatedFlag.description === null ? null : updatedFlag.description,
-      enabled: updatedFlag.enabled,
-      created_at: toISOStringSafe(updatedFlag.created_at) as string &
-        tags.Format<"date-time">,
-      updated_at: toISOStringSafe(updatedFlag.updated_at) as string &
-        tags.Format<"date-time">,
-      deleted_at:
-        updatedFlag.deleted_at === null || updatedFlag.deleted_at === undefined
-          ? null
-          : toISOStringSafe(updatedFlag.deleted_at),
-    };
-  });
+  return await DiscussionBoardFeatureFlagTransformer.transform(
+    updatedFeatureFlag,
+  );
 }

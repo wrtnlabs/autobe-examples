@@ -1,7 +1,11 @@
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
+import { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
 import { IDiscussionBoardArticleTagMapping } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTagMapping";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardArticleTagMapping } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardArticleTagMapping";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,101 +15,86 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardArticleTransformer } from "../transformers/DiscussionBoardArticleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdministratorArticlesArticleIdTagMappings(props: {
   administrator: AdministratorPayload;
   articleId: string & tags.Format<"uuid">;
-  body: IDiscussionBoardArticleTagMapping.IPatch;
-}): Promise<IPageIDiscussionBoardArticleTagMapping.ISummary> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
-    select: { id: true, author: { select: { id: true } } },
+  body: IDiscussionBoardArticleTagMapping.IUpdate;
+}): Promise<IDiscussionBoardArticle> {
+  const { articleId, body } = props;
+  // Validate article existence
+  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+    where: { id: articleId },
   });
-  if (!article) throw new HttpException("Article not found", 404);
-  const administratorId = typia.assert<string & tags.Format<"uuid">>(
-    props.administrator.id,
-  );
-  if (article.author.id !== administratorId) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const tag_ids =
-    (
-      props.body as
-        | {
-            tags: (string & tags.Format<"uuid">)[];
-          }
-        | undefined
-    )?.tags ?? [];
-  return await MyGlobal.prisma.$transaction(async (prisma) => {
-    const existingMappings =
-      await prisma.discussion_board_article_tag_mappings.findMany({
-        where: { discussion_board_article_id: props.articleId },
-        select: { discussion_board_tag_id: true },
-      });
-    const existingTagIds = new Set(
-      existingMappings.map((m) => m.discussion_board_tag_id),
-    );
-    const inputTagIds = new Set(tag_ids);
-    const tagsToRemove = Array.from(existingTagIds).filter(
-      (id) => !inputTagIds.has(id),
-    );
-    const tagsToAdd = Array.from(inputTagIds).filter(
-      (id) => !existingTagIds.has(id),
-    );
-    if (tagsToRemove.length > 0) {
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    // Remove tag mappings
+    const removeIds = Array.isArray((body as any).remove)
+      ? ((body as any).remove as string[])
+      : [];
+    if (removeIds.length > 0) {
       await prisma.discussion_board_article_tag_mappings.deleteMany({
         where: {
-          discussion_board_article_id: props.articleId,
-          discussion_board_tag_id: { in: tagsToRemove },
+          discussion_board_article_id: articleId,
+          discussion_board_tag_id: { in: removeIds },
         },
       });
     }
-    if (tagsToAdd.length > 0) {
-      const now = new Date();
-      const nowString = toISOStringSafe(now);
-      await prisma.discussion_board_article_tag_mappings.createMany({
-        data: tagsToAdd.map((tagId) => ({
-          id: v4(),
-          discussion_board_article_id: props.articleId,
-          discussion_board_tag_id: tagId,
-          created_at: nowString,
-          updated_at: nowString,
-        })),
+    // Add new tag mappings
+    const addIds = Array.isArray((body as any).add)
+      ? ((body as any).add as string[])
+      : [];
+    if (addIds.length > 0) {
+      const uniqueAddTags = Array.from(new Set(addIds));
+      // Verify existence of tags
+      const existingTags = await prisma.discussion_board_article_tags.findMany({
+        where: { id: { in: uniqueAddTags } },
+        select: { id: true },
       });
+      const existingTagIds = new Set(existingTags.map((tag) => tag.id));
+      const validTagIdsToAdd = uniqueAddTags.filter((tagId) =>
+        existingTagIds.has(tagId),
+      );
+      if (validTagIdsToAdd.length === 0) return;
+      // Find existing mappings to avoid duplicates
+      const existingMappings =
+        await prisma.discussion_board_article_tag_mappings.findMany({
+          where: {
+            discussion_board_article_id: articleId,
+            discussion_board_tag_id: { in: validTagIdsToAdd },
+          },
+          select: { discussion_board_tag_id: true },
+        });
+      const existingMappingTagIds = new Set(
+        existingMappings.map((m) => m.discussion_board_tag_id),
+      );
+      const tagIdsToCreate = validTagIdsToAdd.filter(
+        (tagId) => !existingMappingTagIds.has(tagId),
+      );
+      const currentTimestamp = toISOStringSafe(new Date());
+      const createData = tagIdsToCreate.map((tagId) => ({
+        id: v4(),
+        discussion_board_article_id: articleId,
+        discussion_board_tag_id: tagId,
+        created_at: currentTimestamp,
+        updated_at: currentTimestamp,
+        deleted_at: null,
+      }));
+      if (createData.length > 0) {
+        await prisma.discussion_board_article_tag_mappings.createMany({
+          data: createData,
+          skipDuplicates: true,
+        });
+      }
     }
-    const updatedMappings =
-      await prisma.discussion_board_article_tag_mappings.findMany({
-        where: { discussion_board_article_id: props.articleId },
-        select: {
-          id: true,
-          discussion_board_article_id: true,
-          discussion_board_tag_id: true,
-        },
-      });
-    const tagIds = updatedMappings.map((m) => m.discussion_board_tag_id);
-    const tags = await prisma.discussion_board_tags.findMany({
-      where: { id: { in: tagIds } },
-      select: { id: true, name: true },
-    });
-    const tagMap = new Map(tags.map((t) => [t.id, t]));
-    return {
-      pagination: {
-        current: 1,
-        limit: updatedMappings.length,
-        records: updatedMappings.length,
-        pages: 1,
-      },
-      data: updatedMappings.map((m) => ({
-        id: m.id,
-        article_id: m.discussion_board_article_id,
-        tag_id: m.discussion_board_tag_id,
-        tag: {
-          id: tagMap.get(m.discussion_board_tag_id)?.id ?? "",
-          name: tagMap.get(m.discussion_board_tag_id)?.name ?? "",
-        },
-      })),
-    };
   });
+  // Retrieve updated article with relations to return
+  const updatedArticle =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: articleId },
+      ...DiscussionBoardArticleTransformer.select(),
+    });
+  return DiscussionBoardArticleTransformer.transform(updatedArticle);
 }

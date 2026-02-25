@@ -18,52 +18,85 @@ export async function patchDiscussionBoardAdministratorScheduledTasks(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardScheduledTask.IRequest;
 }): Promise<IPageIDiscussionBoardScheduledTask.ISummary> {
-  const page = 1 as number & tags.Type<"int32"> & tags.Minimum<0>;
-  const limit = 100 as number & tags.Type<"int32"> & tags.Minimum<0>;
-  const skip = (page - 1) * limit;
-  const whereCondition = {
-    deleted_at: null as null,
-  } satisfies Prisma.discussion_board_scheduled_tasksWhereInput;
-  const orderByCondition = [
-    { last_run_at: "desc" as const },
-    { created_at: "desc" as const },
-  ] satisfies Prisma.discussion_board_scheduled_tasksOrderByWithRelationInput[];
-  const data = await MyGlobal.prisma.discussion_board_scheduled_tasks.findMany({
-    where: whereCondition,
-    skip,
-    take: limit,
-    orderBy: orderByCondition,
-    select: {
-      task_name: true,
-      schedule_pattern: true,
-      last_run_at: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-    },
-  });
+  const {
+    taskName,
+    status,
+    schedulePattern,
+    lastRunAtMin,
+    lastRunAtMax,
+    page = 1,
+    limit = 20,
+    sort = "asc",
+  } = props.body;
+  const where: Prisma.discussion_board_scheduled_tasksWhereInput = {
+    deleted_at: null,
+    ...(taskName ? { task_name: { contains: taskName } } : {}),
+    ...(status ? { status } : {}),
+    ...(schedulePattern
+      ? { schedule_pattern: { contains: schedulePattern } }
+      : {}),
+    ...(lastRunAtMin || lastRunAtMax
+      ? {
+          last_run_at: {
+            ...(lastRunAtMin ? { gte: lastRunAtMin } : {}),
+            ...(lastRunAtMax ? { lte: lastRunAtMax } : {}),
+          },
+        }
+      : {}),
+  };
+  const safePage =
+    Number.isInteger(page) && page !== null && page !== undefined && page > 0
+      ? page
+      : 1;
+  const safeLimit =
+    Number.isInteger(limit) &&
+    limit !== null &&
+    limit !== undefined &&
+    limit > 0 &&
+    limit <= 100
+      ? limit
+      : 20;
+  const skip = (safePage - 1) * safeLimit;
+  const orderBy: Prisma.discussion_board_scheduled_tasksOrderByWithRelationInput =
+    {
+      task_name: sort === "asc" ? "asc" : "desc",
+    };
+  const records =
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.findMany({
+      where,
+      skip,
+      take: safeLimit,
+      orderBy,
+      select: {
+        id: true,
+        task_name: true,
+        schedule_pattern: true,
+        last_run_at: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
   const total = await MyGlobal.prisma.discussion_board_scheduled_tasks.count({
-    where: whereCondition,
+    where,
   });
   return {
-    data: data.map((record) => ({
-      task_name: record.task_name,
-      schedule_pattern: record.schedule_pattern,
-      last_run_at: record.last_run_at
-        ? (toISOStringSafe(record.last_run_at) as string &
-            tags.Format<"date-time">)
-        : null,
-      status: record.status,
-      created_at: toISOStringSafe(record.created_at) as string &
-        tags.Format<"date-time">,
-      updated_at: toISOStringSafe(record.updated_at) as string &
-        tags.Format<"date-time">,
+    data: records.map((r) => ({
+      id: r.id,
+      taskName: r.task_name,
+      schedulePattern: r.schedule_pattern,
+      lastRunAt: r.last_run_at === null ? "" : toISOStringSafe(r.last_run_at),
+      status: r.status,
+      createdAt: r.created_at === null ? "" : toISOStringSafe(r.created_at),
+      updatedAt: r.updated_at === null ? "" : toISOStringSafe(r.updated_at),
+      deletedAt: r.deleted_at === null ? "" : toISOStringSafe(r.deleted_at),
     })),
     pagination: {
-      current: page,
-      limit: limit,
+      current: safePage,
+      limit: safeLimit,
       records: total,
-      pages: total > 0 ? Math.ceil(total / limit) : 0,
+      pages: Math.ceil(total / safeLimit),
     },
   };
 }

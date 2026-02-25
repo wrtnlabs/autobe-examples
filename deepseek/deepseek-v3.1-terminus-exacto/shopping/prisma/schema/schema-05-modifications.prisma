@@ -52,17 +52,25 @@ model ecommerce_cancellation_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots ecommerce_cancellation_request_snapshots[]
   statusTransitions ecommerce_cancellation_request_statuses[]
   responseRecord ecommerce_cancellation_response_records?
   inventoryRestorations ecommerce_modification_inventory_restorations[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_order_item_id])
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, created_at], map: "ecommerce_cancellation_requests_ecommerce_customer_id__5038fa39")
@@ -133,17 +141,25 @@ model ecommerce_refund_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   modificationSnapshots ecommerce_refund_request_snapshots[]
   statusHistories ecommerce_refund_request_statuses[]
   refundResponses ecommerce_refund_response_records[]
   inventoryRestorations ecommerce_modification_inventory_restorations[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_order_item_id])
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, requested_at], map: "ecommerce_refund_requests_ecommerce_customer_id_reques_483c79d8")
@@ -204,10 +220,14 @@ model ecommerce_cancellation_request_snapshots {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_cancellation_request_snapshots_ecommerce_can_0051bc5a")
 }
@@ -271,18 +291,21 @@ model ecommerce_refund_request_snapshots {
   change_description String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
   modifyingCustomer ecommerce_customers? @relation(fields: [modifying_customer_id], references: [id], onDelete: Cascade)
   modifyingSeller ecommerce_sellers? @relation(fields: [modifying_seller_id], references: [id], onDelete: Cascade)
   modifyingAdministrator ecommerce_administrators? @relation(fields: [modifying_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([modifying_customer_id])
   @@index([modifying_seller_id])
   // spellchecker: ignore-next-line
   @@index([modifying_administrator_id], map: "ecommerce_refund_request_snapshots_modifying_administr_58d3e89f")
-  
   // spellchecker: ignore-next-line
   @@index([ecommerce_refund_request_id, created_at], map: "ecommerce_refund_request_snapshots_ecommerce_refund_re_1efa4ca8")
 }
@@ -333,10 +356,14 @@ model ecommerce_cancellation_request_statuses {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_cancellation_request_statuses_ecommerce_canc_7b838a06")
   @@index([status, created_at])
@@ -383,10 +410,14 @@ model ecommerce_refund_request_statuses {
   reason String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_refund_request_id, created_at], map: "ecommerce_refund_request_statuses_ecommerce_refund_req_f9f496c3")
   @@index([status, created_at])
@@ -439,11 +470,15 @@ model ecommerce_cancellation_response_records {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cancellationRequest ecommerce_cancellation_requests @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_cancellation_request_id], map: "ecommerce_cancellation_response_records_ecommerce_canc_96ed5942")
   // spellchecker: ignore-next-line
@@ -496,11 +531,15 @@ model ecommerce_refund_response_records {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   refundRequest ecommerce_refund_requests @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_refund_request_id], map: "ecommerce_refund_response_records_ecommerce_refund_req_f098e240")
   // spellchecker: ignore-next-line
@@ -560,12 +599,16 @@ model ecommerce_modification_inventory_restorations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cancellationRequest ecommerce_cancellation_requests? @relation(fields: [ecommerce_cancellation_request_id], references: [id], onDelete: Cascade)
   refundRequest ecommerce_refund_requests? @relation(fields: [ecommerce_refund_request_id], references: [id], onDelete: Cascade)
   inventoryRecord ecommerce_inventory_records @relation(fields: [ecommerce_inventory_record_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_cancellation_request_id, created_at], map: "ecommerce_modification_inventory_restorations_ecommerc_d434b93b")
   // spellchecker: ignore-next-line

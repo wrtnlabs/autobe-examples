@@ -18,17 +18,20 @@ export async function patchShoppingMallCustomerSessions(props: {
   customer: CustomerPayload;
   body: IShoppingMallCustomerSession.IRequest;
 }): Promise<IPageIShoppingMallCustomerSession.ISummary> {
-  // Use fixed pagination defaults because props.body.page and limit do not exist
-  const page = 1;
-  const limit = 20;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Empty filter because deleted_at does not exist in Prisma WhereInput types
-  const customerWhere: Prisma.shopping_mall_customer_sessionsWhereInput = {};
-  const sellerWhere: Prisma.shopping_mall_seller_sessionsWhereInput = {};
-  // Query customer sessions
-  const [customerSessions, customerSessionsCount] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_customer_sessions.findMany({
-      where: customerWhere,
+  const where = {
+    ...(props.body.shoppingMallCustomerId && {
+      shopping_mall_customer_id: props.body.shoppingMallCustomerId,
+    }),
+    ...(props.body.ip && { ip: { contains: props.body.ip } }),
+    ...(props.body.href && { href: { contains: props.body.href } }),
+    ...(props.body.referrer && { referrer: { contains: props.body.referrer } }),
+  } satisfies Prisma.shopping_mall_customer_sessionsWhereInput;
+  const sessions =
+    await MyGlobal.prisma.shopping_mall_customer_sessions.findMany({
+      where,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
@@ -41,86 +44,25 @@ export async function patchShoppingMallCustomerSessions(props: {
         created_at: true,
         expired_at: true,
       },
-    }),
-    MyGlobal.prisma.shopping_mall_customer_sessions.count({
-      where: customerWhere,
-    }),
-  ]);
-  // Query seller sessions
-  const [sellerSessions, sellerSessionsCount] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_seller_sessions.findMany({
-      where: sellerWhere,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        seller_id: true,
-        ip: true,
-        href: true,
-        referrer: true,
-        created_at: true,
-        expired_at: true,
-      },
-    }),
-    MyGlobal.prisma.shopping_mall_seller_sessions.count({ where: sellerWhere }),
-  ]);
-  // Define session type
-  type Session = {
-    id: string & tags.Format<"uuid">;
-    user_type: "customer" | "seller";
-    user_id: string & tags.Format<"uuid">;
-    ip: string | null;
-    href: string | null;
-    referrer: string | null;
-    created_at: string & tags.Format<"date-time">;
-    expired_at: (string & tags.Format<"date-time">) | null;
-  };
-  // Map customer sessions
-  const mappedCustomerSessions: Session[] = customerSessions.map((session) => ({
-    id: session.id,
-    user_type: "customer",
-    user_id: session.shopping_mall_customer_id,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at) as string &
-      tags.Format<"date-time">,
-    expired_at: session.expired_at
-      ? (toISOStringSafe(session.expired_at) as string &
-          tags.Format<"date-time">)
-      : null,
-  }));
-  // Map seller sessions
-  const mappedSellerSessions: Session[] = sellerSessions.map((session) => ({
-    id: session.id,
-    user_type: "seller",
-    user_id: session.seller_id,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    created_at: toISOStringSafe(session.created_at) as string &
-      tags.Format<"date-time">,
-    expired_at: session.expired_at
-      ? (toISOStringSafe(session.expired_at) as string &
-          tags.Format<"date-time">)
-      : null,
-  }));
-  // Merge and sort sessions by created_at desc
-  const allSessions = [...mappedCustomerSessions, ...mappedSellerSessions].sort(
-    (a, b) =>
-      a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0,
-  );
-  // Slice first limit after merging
-  const pagedSessions = allSessions.slice(0, limit);
-  // Return combined summary
+    });
+  const total = await MyGlobal.prisma.shopping_mall_customer_sessions.count({
+    where,
+  });
   return {
+    data: sessions.map((s) => ({
+      id: s.id,
+      shoppingMallCustomerId: s.shopping_mall_customer_id,
+      ip: s.ip,
+      href: s.href,
+      referrer: s.referrer,
+      createdAt: toISOStringSafe(s.created_at),
+      expiredAt: toISOStringSafe(s.expired_at),
+    })),
     pagination: {
       current: page,
-      limit,
-      records: customerSessionsCount + sellerSessionsCount,
-      pages: Math.ceil((customerSessionsCount + sellerSessionsCount) / limit),
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
-    data: pagedSessions,
   };
 }

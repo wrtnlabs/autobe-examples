@@ -11,14 +11,16 @@ export namespace DiscussionBoardFeatureFlagCollector {
   export async function collect(props: {
     body: IDiscussionBoardFeatureFlag.ICreate;
   }) {
+    const id: string = v4();
+    const now = new Date();
     return {
-      id: v4(),
-      code: "",
-      name: "",
-      description: "",
-      enabled: false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      id,
+      code: props.body.code,
+      name: props.body.name,
+      description: props.body.description,
+      enabled: props.body.enabled,
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     } satisfies Prisma.discussion_board_feature_flagsCreateInput;
   }

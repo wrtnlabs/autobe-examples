@@ -10,20 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardAdministratorPromotionCollector {
   export async function collect(props: {
     body: IDiscussionBoardAdministratorPromotion.ICreate;
-    administrator: IEntity;
-    oldGrade: IEntity;
-    newGrade: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
     return {
       id,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      administrator: { connect: { id: props.administrator.id } },
-      oldGrade: { connect: { id: props.oldGrade.id } },
-      newGrade: { connect: { id: props.newGrade.id } },
+      administrator: {
+        connect: { id: props.body.discussion_board_administrator_id },
+      },
+      oldGrade: { connect: { id: props.body.old_grade_id } },
+      newGrade: { connect: { id: props.body.new_grade_id } },
     } satisfies Prisma.discussion_board_administrator_promotionsCreateInput;
   }
 }

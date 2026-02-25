@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { DiscussionBoardCommentAtSummaryTransformer } from "../transformers/DiscussionBoardCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,43 +19,71 @@ export async function patchDiscussionBoardArticlesArticleIdComments(props: {
   body: IDiscussionBoardComment.IRequest;
 }): Promise<IPageIDiscussionBoardComment.ISummary> {
   // Verify article exists
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
     where: { id: props.articleId },
   });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
-  }
-  // Validate and set pagination parameters
-  const page = Math.max(1, props.body.page ?? 1);
-  const limit = Math.min(Math.max(1, props.body.limit ?? 20), 100);
+  // Parse pagination parameters
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 50, 100); // Max 100 per system constraints
   const skip = (page - 1) * limit;
-  // Build WHERE clause with proper Prisma syntax
-  const whereInput = {
-    discussion_board_article_id: props.articleId,
+  // Build WHERE clause
+  const whereClause: Prisma.discussion_board_commentsWhereInput = {
+    article: { id: props.articleId },
     deleted_at: null,
-    ...(props.body.search &&
-      props.body.search.trim() !== "" && {
-        content: {
-          contains: props.body.search.trim(),
-          mode: "insensitive" as const,
-        },
-      }),
-  } satisfies Prisma.discussion_board_commentsWhereInput;
-  // Query comments with pagination
+    ...(props.body.search && {
+      content: { contains: props.body.search, mode: "insensitive" },
+    }),
+    ...(props.body.author_display_name && {
+      author: { display_name: { equals: props.body.author_display_name } },
+    }),
+    ...(props.body.created_at_start && {
+      created_at: { gte: props.body.created_at_start },
+    }),
+    ...(props.body.created_at_end && {
+      created_at: { lte: props.body.created_at_end },
+    }),
+    ...(props.body.updated_at_start && {
+      updated_at: { gte: props.body.updated_at_start },
+    }),
+    ...(props.body.updated_at_end && {
+      updated_at: { lte: props.body.updated_at_end },
+    }),
+  };
+  // Query data sequentially
   const data = await MyGlobal.prisma.discussion_board_comments.findMany({
-    where: whereInput,
+    where: whereClause,
+    include: {
+      author: {
+        select: {
+          id: true,
+          display_name: true,
+          bio: true,
+          created_at: true,
+        },
+      },
+    } satisfies Prisma.discussion_board_commentsInclude,
+    orderBy: { created_at: "asc" },
     skip,
     take: limit,
-    orderBy: { created_at: "asc" as const },
-    ...DiscussionBoardCommentAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.discussion_board_comments.count({
-    where: whereInput,
+    where: whereClause,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    DiscussionBoardCommentAtSummaryTransformer.transform,
+  // Transform data to response format
+  const transformedData = data.map(
+    (comment) =>
+      ({
+        id: comment.id,
+        content: comment.content,
+        author: {
+          id: comment.author.id,
+          display_name: comment.author.display_name,
+          bio: comment.author.bio === null ? undefined : comment.author.bio,
+          created_at: toISOStringSafe(comment.author.created_at),
+        } satisfies IDiscussionBoardUser.ISummary,
+        created_at: toISOStringSafe(comment.created_at),
+        updated_at: toISOStringSafe(comment.updated_at),
+      }) satisfies IDiscussionBoardComment.ISummary,
   );
   return {
     data: transformedData,
@@ -66,5 +93,5 @@ export async function patchDiscussionBoardArticlesArticleIdComments(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIDiscussionBoardComment.ISummary;
 }

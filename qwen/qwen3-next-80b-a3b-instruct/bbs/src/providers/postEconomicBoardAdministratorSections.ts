@@ -8,7 +8,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EconomicBoardSectionCollector } from "../collectors/EconomicBoardSectionCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { EconomicBoardSectionTransformer } from "../transformers/EconomicBoardSectionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,11 +18,33 @@ export async function postEconomicBoardAdministratorSections(props: {
   administrator: AdministratorPayload;
   body: IEconomicBoardSection.ICreate;
 }): Promise<IEconomicBoardSection> {
-  // Cannot access 'name' or 'description' as they do not exist on IEconomicBoardSection.ICreate
-  // This is a schema mismatch error - the code assumes properties that are not in the type definition
-  // Since this is an error in the contract between code and external API, it's out of scope for type casting fixes
-  // We must reject as the issue is structural, not a casting issue
-  throw new Error(
-    "IEconomicBoardSection.ICreate does not contain 'name' or 'description' properties. Verify the API schema definition.",
-  );
+  // Normalize section name to title case (e.g., 'economy' -> 'Economy')
+  const normalizedName = props.body.name
+    .split(" ")
+    .map(
+      (word: string) =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    )
+    .join(" ");
+  // Check for existing active section with same (case-insensitive) name
+  const existing = await MyGlobal.prisma.economic_board_sections.findFirst({
+    where: {
+      name: normalizedName,
+      deleted_at: null,
+    },
+  });
+  if (existing !== null) {
+    throw new HttpException("Section name already exists", 409);
+  }
+  // Use collector to transform request to Prisma create input
+  const createInput = await EconomicBoardSectionCollector.collect({
+    body: { ...props.body, name: normalizedName },
+  });
+  // Create the section
+  const created = await MyGlobal.prisma.economic_board_sections.create({
+    data: createInput,
+    ...EconomicBoardSectionTransformer.select(),
+  });
+  // Transform and return the result
+  return await EconomicBoardSectionTransformer.transform(created);
 }

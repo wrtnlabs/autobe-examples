@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallProductImageTransformer } from "../transformers/ShoppingMallProductImageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,38 +18,40 @@ export async function getShoppingMallSellerProductsProductIdImagesImageId(props:
   productId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductImage> {
-  const image = await MyGlobal.prisma.shopping_mall_product_images.findFirst({
-    where: {
-      id: props.imageId,
-      shopping_mall_product_id: props.productId,
-      deleted_at: null,
-    },
+  const record = await MyGlobal.prisma.shopping_mall_product_images.findUnique({
+    where: { id: props.imageId },
     select: {
-      id: true,
+      ...ShoppingMallProductImageTransformer.select().select,
       shopping_mall_product_id: true,
-      image_url: true,
-      display_order: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
     },
   });
-  if (image === null) {
-    throw new HttpException("Image not found", 404);
+  if (!record) {
+    throw new HttpException("Product image not found", 404);
   }
-  function toISOStringSafe(
-    date: Date | null,
-  ): (string & tags.Format<"date-time">) | null {
-    if (date === null) return null;
-    return date.toISOString() as string & tags.Format<"date-time">;
+  if (record.shopping_mall_product_id !== props.productId) {
+    throw new HttpException("Product image not found", 404);
   }
-  return {
-    id: image.id,
-    shopping_mall_product_id: image.shopping_mall_product_id,
-    image_url: image.image_url,
-    display_order: image.display_order,
-    created_at: toISOStringSafe(image.created_at),
-    updated_at: toISOStringSafe(image.updated_at),
-    deleted_at: toISOStringSafe(image.deleted_at),
+  const productRecord = await MyGlobal.prisma.shopping_mall_products.findUnique(
+    {
+      where: { id: props.productId },
+      select: {
+        id: true,
+        seller_id: true,
+      },
+    },
+  );
+  if (!productRecord) {
+    throw new HttpException("Product not found", 404);
+  }
+  if (productRecord.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Do NOT convert Date fields to string for transform input to fix type error
+  const transformedRecord = {
+    ...record,
+    product: {
+      id: productRecord.id,
+    },
   };
+  return await ShoppingMallProductImageTransformer.transform(transformedRecord);
 }

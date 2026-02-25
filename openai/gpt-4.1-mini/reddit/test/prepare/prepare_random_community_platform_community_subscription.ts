@@ -6,10 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_community_subscription(
-  input?:
-    | DeepPartial<ICommunityPlatformCommunitySubscription.ICreate>
-    | undefined,
+  input?: DeepPartial<ICommunityPlatformCommunitySubscription.ICreate>,
 ): ICommunityPlatformCommunitySubscription.ICreate {
-  input;
-  return {};
+  return {
+    communityCode: input?.communityCode ?? RandomGenerator.alphabets(10),
+  };
 }

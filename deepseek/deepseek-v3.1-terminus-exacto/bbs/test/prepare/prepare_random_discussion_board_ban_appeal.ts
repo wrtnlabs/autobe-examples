@@ -12,11 +12,11 @@ export function prepare_random_discussion_board_ban_appeal(
     appeal_reason:
       input?.appeal_reason ??
       RandomGenerator.content({
-        paragraphs: 3,
-        sentenceMin: 5,
-        sentenceMax: 10,
-        wordMin: 3,
-        wordMax: 8,
+        paragraphs: 1,
+        sentenceMin: 3,
+        sentenceMax: 5,
+        wordMin: 5,
+        wordMax: 12,
       }),
   };
 }

@@ -23,6 +23,11 @@ export namespace DiscussionBoardSystemConfigurationAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        performanceMetrics: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_performance_metricsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_system_configurationsFindManyArgs;
   }
@@ -30,11 +35,10 @@ export namespace DiscussionBoardSystemConfigurationAtSummaryTransformer {
     input: Payload,
   ): Promise<IDiscussionBoardSystemConfiguration.ISummary> {
     return {
-      id: input.id,
       config_key: input.config_key,
       data_type: input.data_type,
       category: input.category,
-      description: input.description,
+      is_sensitive: input.is_sensitive,
     };
   }
 }

@@ -6,8 +6,19 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_banned_user(
-  input?: DeepPartial<IShoppingMallBannedUser.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallBannedUser.ICreate>,
 ): IShoppingMallBannedUser.ICreate {
-  input;
-  return {};
+  return {
+    shoppingMallCustomerId:
+      input?.shoppingMallCustomerId ??
+      (input?.shoppingMallSellerId
+        ? null
+        : typia.random<string & tags.Format<"uuid">>()),
+    shoppingMallSellerId:
+      input?.shoppingMallSellerId ??
+      (input?.shoppingMallCustomerId
+        ? null
+        : typia.random<string & tags.Format<"uuid">>()),
+    banReason: input?.banReason ?? RandomGenerator.paragraph({ sentences: 2 }),
+  };
 }

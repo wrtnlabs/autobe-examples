@@ -1,8 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
-import type { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,9 +19,7 @@ export async function generate_random_reddit_community_member_posts_create(
 ): Promise<IRedditCommunityPost> {
   const prepared: IRedditCommunityPost.ICreate =
     prepare_random_reddit_community_post(props.body);
-  const result: IRedditCommunityPost =
-    await api.functional.redditCommunity.member.posts.create(connection, {
-      body: prepared,
-    });
-  return result;
+  return await api.functional.redditCommunity.member.posts.create(connection, {
+    body: prepared,
+  });
 }

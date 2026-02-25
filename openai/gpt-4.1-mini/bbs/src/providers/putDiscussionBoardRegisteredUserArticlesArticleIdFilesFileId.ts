@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
+import { DiscussionBoardArticleFileTransformer } from "../transformers/DiscussionBoardArticleFileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,32 +21,55 @@ export async function putDiscussionBoardRegisteredUserArticlesArticleIdFilesFile
 }): Promise<IDiscussionBoardArticleFile> {
   const file = await MyGlobal.prisma.discussion_board_article_files.findUnique({
     where: { id: props.fileId },
+    select: {
+      id: true,
+      article_id: true,
+    },
   });
-  if (!file) throw new HttpException("File not found", 404);
-  if (file.article_id !== props.articleId)
-    throw new HttpException("File does not belong to article", 400);
-  if (!("authorId" in file) || file.authorId !== props.registeredUser.id)
+  if (!file || file.article_id !== props.articleId) {
+    throw new HttpException(
+      "File not found or does not belong to the article",
+      404,
+    );
+  }
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    select: {
+      id: true,
+      registered_user_id: true,
+    },
+  });
+  if (!article) {
+    throw new HttpException("Article not found", 404);
+  }
+  if (article.registered_user_id !== props.registeredUser.id) {
     throw new HttpException("Forbidden", 403);
+  }
+  const updateData: {
+    file_name?: string;
+    file_type?: string;
+    file_size?: number;
+    download_url?: string;
+    display_order?: number;
+    updated_at: string & tags.Format<"date-time">;
+  } = {
+    updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
+  };
+  if (props.body.fileName !== undefined)
+    updateData.file_name = props.body.fileName;
+  if (props.body.fileType !== undefined)
+    updateData.file_type = props.body.fileType;
+  if (props.body.fileSize !== undefined)
+    updateData.file_size = props.body.fileSize;
+  if (props.body.downloadUrl !== undefined)
+    updateData.download_url = props.body.downloadUrl;
+  if (props.body.displayOrder !== undefined)
+    updateData.display_order = props.body.displayOrder;
   const updatedFile =
     await MyGlobal.prisma.discussion_board_article_files.update({
       where: { id: props.fileId },
-      data: {
-        ...props.body,
-        updated_at: new Date(),
-      },
+      data: updateData,
+      ...DiscussionBoardArticleFileTransformer.select(),
     });
-  return {
-    id: updatedFile.id,
-    created_at: toISOStringSafe(updatedFile.created_at),
-    updated_at: toISOStringSafe(updatedFile.updated_at),
-    deleted_at: updatedFile.deleted_at
-      ? toISOStringSafe(updatedFile.deleted_at)
-      : null,
-    display_order: updatedFile.display_order,
-    article_id: updatedFile.article_id,
-    file_name: updatedFile.file_name,
-    file_type: updatedFile.file_type,
-    file_size: updatedFile.file_size,
-    download_url: updatedFile.download_url,
-  };
+  return await DiscussionBoardArticleFileTransformer.transform(updatedFile);
 }

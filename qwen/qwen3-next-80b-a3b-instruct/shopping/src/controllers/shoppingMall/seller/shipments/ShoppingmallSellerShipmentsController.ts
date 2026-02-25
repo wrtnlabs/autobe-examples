@@ -1,119 +1,55 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
 import { IShoppingMallShipment } from "../../../../api/structures/IShoppingMallShipment";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { postShoppingMallSellerShipmentsOrderItemId } from "../../../../providers/postShoppingMallSellerShipmentsOrderItemId";
-import { putShoppingMallSellerShipmentsShipmentId } from "../../../../providers/putShoppingMallSellerShipmentsShipmentId";
+import { postShoppingMallSellerShipments } from "../../../../providers/postShoppingMallSellerShipments";
 
 @Controller("/shoppingMall/seller/shipments")
 export class ShoppingmallSellerShipmentsController {
   /**
-   * Create a new shipment record for a single order item. This operation initiates the physical delivery process by recording the carrier and tracking information, and transitions the associated order item status from 'paid' to 'shipped'.
+   * Create a new shipment for one or more order items with status 'paid'.
    *
-   * Each shipment is linked to exactly one order item and must be created by the seller who fulfilled that item. This ensures proper accountability and prevents cross-seller shipment bundling, which would violate the platform's business rules.
+   * This operation allows a seller to initiate the physical shipping process by bundling one or more order items into a single shipment. The seller must provide the carrier name and tracking number for the shipment, both of which are required fields. Each order item must belong to the seller initiating this request and must have status 'paid'. When a shipment is successfully created, the system automatically updates the status of all included order items to 'shipped' and associates them with the new shipment record.
    *
-   * The system requires the carrier name and tracking number to be provided, creating a permanent record of the delivery logistics at the time of shipment. Once created, the shipment record cannot be altered, deleted, or modified in any way. The system automatically transitions the associated order item to 'delivered' after 14 days if the customer does not manually confirm delivery, as defined in the platform's delivery policy.
+   * Shipment creation is only permitted for seller actors. Customers cannot create shipments. All shipments are tied to a specific order and seller, enforcing the business rule that items cannot be shipped across seller boundaries. The tracking number is stored exactly as provided and becomes the primary identifier for customer delivery tracking.
    *
-   * This operation triggers the creation of immutable snapshots preserving the exact state of:
-   * - The seller's profile (shop name, description, logo)
-   * - The product (name, description, images, category)
-   * - The product variant (SKU, option values, price, stock quantity at time of shipment)
+   * The system does not allow the creation of shipments for order items with any status other than 'paid'. If any item in the request has status 'shipped', 'delivered', 'cancelled', or 'refunded', the entire operation fails with a 400 error. This ensures temporal consistency between order items and shipment states.
    *
-   * These snapshots are preserved for the lifetime of the platform, enabling complete dispute resolution and audit trail integrity regardless of future changes to products or seller profiles.
-   *
-   * This operation must be called after the seller has prepared the physical package and is ready to hand it over to the carrier. The tracking number must be the actual carrier-provided identifier, not a placeholder or dummy value.
-   *
-   * Related Operations:
-   * - GET /orders/{orderId}/items - To view which order items are eligible for shipment (status: 'paid')
-   * - POST /orders/{orderId}/items/{itemId}/confirm-delivery - For customer to manually confirm delivery
-   * - GET /shipments - To view all shipment records for audit purposes
-   *
-   * Important: No shipment can contain items from multiple sellers. Each shipment must reference exactly one order item belonging to a single seller.
+   * This operation triggers notifications to the customer and updates order status tracking in the shopping_mall_orders table.
    *
    * @param connection
-   * @param orderItemId Unique identifier for the order item associated with this shipment
-   * @param body Carrier and tracking information for shipping the order item
+   * @param body Fields required to create a new shipment.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new shipment record for an order item with status 'paid'.
+   * @x-autobe-specification Validate request body: all order_item_ids must belong to requesting seller, all must have status 'paid', carrier_name and tracking_number are non-empty strings.
    *
-   * 1. Validate order item exists and has status 'paid' using {orderItemId} path parameter
-   * 2. Verify order item belongs to the authenticated seller
-   * 3. Validate carrier name is non-empty and ≤100 characters
-   * 4. Validate tracking number is alphanumeric and 8-32 characters
-   * 5. Create shipment record with provided data
-   * 6. Set status to 'shipped'
-   * 7. Set created_at to current timestamp
-   * 8. Associate the shipment with the given order item
-   * 9. Update the associated order item's status from 'paid' to 'shipped'
-   * 10. Return the created shipment record with full details
+   * Begin transaction:
+   *   - Create new shopping_mall_shipments record with carrier_name, tracking_number, current timestamp as shipped_at, and seller_id from request context.
+   *   - For each order_item_id:
+   *     - Retrieve order item from shopping_mall_order_items with id = order_item_id.
+   *     - Validate seller_id matches requesting seller.
+   *     - Validate status === 'paid'.
+   *     - Update order_item.status to 'shipped' and set updated_at to current timestamp.
+   *     - Create shopping_mall_shipment_items record linking shipment_id to order_item_id.
+   *   - Update parent shopping_mall_orders.status to 'shipped' if all items are now shipped.
+   * Commit transaction.
    *
-   * Edge cases:
-   * - If order item status is not 'paid', return 400
-   * - If carrier name is empty or exceeds 100 characters, return 400
-   * - If tracking number is empty, contains non-alphanumeric characters, or is not 8-32 chars, return 400
-   * - If order item is not owned by authenticated seller, return 403
-   * - If order item is already shipped, return 409
-   *
-   * Transaction must be atomic - if any validation fails, rollback all changes.
+   * Return 201 Created with shipment id in response header Location. Return error 400 if any validation fails, 401 if unauthorized, 403 if not seller, 404 if any item not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":orderItemId")
+  @TypedRoute.Post()
   public async create(
     @SellerAuth()
     seller: SellerPayload,
-    @TypedParam("orderItemId")
-    orderItemId: string,
     @TypedBody()
     body: IShoppingMallShipment.ICreate,
-  ): Promise<IShoppingMallShipment> {
+  ): Promise<void> {
     try {
-      return await postShoppingMallSellerShipmentsOrderItemId({
+      return await postShoppingMallSellerShipments({
         seller,
-        orderItemId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update a shipment record's status in a controlled manner according to platform business rules.
-   *
-   * This endpoint allows only specific status transitions for shipment records as defined by the shoppingMall platform's immutable audit principle. When a customer receives their order, they may confirm delivery, which triggers a status change from 'shipped' to 'delivered'. The system will also automatically change the status to 'auto-delivered' after 14 days if delivery has not been confirmed by the customer. This endpoint is designed to maintain a verifiable, unchangeable audit trail for all delivery events.
-   *
-   * No other status transitions are permitted. Attempting to set the status to 'shipped' on an already shipped record (or any other unauthorized state change) will result in an error. The system strictly enforces that shipment status can only progress forward and cannot be reverted or set to arbitrary values. The carrier and tracking number information may be updated once to ensure accuracy of delivery tracking, but any subsequent changes to tracking details must create a new shipment record rather than modifying the existing one.
-   *
-   * This operation works in conjunction with the order item status transitions. When a shipment's status changes to 'delivered' or 'auto-delivered', the system automatically updates the associated order items' status to 'delivered' as well. This ensures full consistency between the physical delivery record and the digital order status.
-   *
-   * The endpoint is protected to prevent unauthorized access - only customers who placed the order or system-level processes can initiate status updates. This design reinforces the platform's foundational principle that all commercial transactions must leave an immutable, verifiable audit trail that cannot be manipulated retroactively.
-   *
-   * @param connection
-   * @param shipmentId Unique identifier of the shipment to be updated. Must match exactly with the shopping_mall_shipments.id field.
-   * @param body Parameters to update the shipment record with new status and tracking information.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Accept shipmentId from path parameter. Validate that shipmentId exists and is associated with a valid shipment record. Check current shipment status - only allow status update from 'shipped' to 'delivered' or 'auto-delivered'. Validate that status parameter is one of the allowed values: 'delivered' or 'auto-delivered'. If status is 'delivered', record confirmation metadata including timestamp, IP address, and device information. If status is 'auto-delivered', verify that 14 days have passed since shipment creation. Update the shipment record with new status and any provided tracking information. Ensure the carrier name and tracking number are provided and valid (alphanumeric, 8-32 characters). Validate that the tracking number is unique and properly formatted. Update the associated order items' status to match the new shipment status. Log all status transitions in the immutable audit trail. Return the updated shipment record with current status and timestamps.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":shipmentId")
-  public async update(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("shipmentId")
-    shipmentId: string,
-    @TypedBody()
-    body: IShoppingMallShipment.IUpdate,
-  ): Promise<IShoppingMallShipment> {
-    try {
-      return await putShoppingMallSellerShipmentsShipmentId({
-        seller,
-        shipmentId,
         body,
       });
     } catch (error) {

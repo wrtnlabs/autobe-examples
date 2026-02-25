@@ -10,17 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallShipmentConfirmationCollector {
   export async function collect(props: {
     body: IShoppingMallShipmentConfirmation.ICreate;
-    shipment: IEntity;
-    confirmedAt: Date;
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
-      confirmed_at: props.confirmedAt,
+      confirmed_at: props.body.confirmedAt
+        ? new Date(props.body.confirmedAt)
+        : new Date(),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      shipment: { connect: { id: props.shipment.id } },
+      shipment: { connect: { id: props.body.shoppingMallShipmentId } },
     } satisfies Prisma.shopping_mall_shipment_confirmationsCreateInput;
   }
 }

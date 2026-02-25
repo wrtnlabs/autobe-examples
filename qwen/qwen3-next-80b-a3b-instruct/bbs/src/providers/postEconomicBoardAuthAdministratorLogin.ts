@@ -9,65 +9,59 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EconomicBoardAdministratorAtSummaryTransformer } from "../transformers/EconomicBoardAdministratorAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postEconomicBoardAuthAdministratorLogin(props: {
   body: IEconomicBoardAdministrator.ILogin;
 }): Promise<IEconomicBoardAdministrator.IAuthorized> {
-  // Operation specification requires password verification, but ILogin lacks password field.
-  // This is a schema-specification contradiction. Implementation cannot proceed.
-  // However, to preserve type safety, we return a minimal IAuthorized object.
-  // In production, this would trigger an alert for schema fix.
+  // 1. Find administrator with explicit password_hash
   const admin = await MyGlobal.prisma.economic_board_administrators.findFirst({
-    where: {
-      email: props.body.email,
-      status: "active",
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
-      id: true,
-      email: true,
-      display_name: true,
-      bio: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
+      ...EconomicBoardAdministratorAtSummaryTransformer.select().select,
       password_hash: true,
     },
   });
-  if (!admin) {
-    // Simulate 401 without password check (violates spec, but type safe)
-    throw new HttpException("Invalid credentials", 401);
-  }
-  // Simulate session creation - note: without password verification, this is insecure
-  // But we must preserve type structure
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 20 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  if (!admin) throw new HttpException("Invalid credentials", 401);
+  // 2. Verify password
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    admin.password_hash,
+  );
+  if (!isValid) throw new HttpException("Invalid credentials", 401);
+  // 3. Check banned status
+  if (admin.is_banned)
+    throw new HttpException("Your account has been banned", 403);
+  // 4. Create new session
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
   const session =
     await MyGlobal.prisma.economic_board_administrator_sessions.create({
       data: {
         id: v4(),
         administrator_id: admin.id,
-        ip: "0.0.0.0", // Fake since props.ip not available
-        href: "", // Fake since props.body.href not available
-        referrer: "", // Fake since props.body.referrer not available
-        created_at: toISOStringSafe(now),
-        expired_at: toISOStringSafe(refreshExpires),
+        ip: "unknown",
+        href: "unknown",
+        referrer: "unknown",
+        created_at: toISOStringSafe(new Date()),
+        expired_at: toISOStringSafe(accessExpires),
       },
     });
-  // Generate tokens with fake password check - only used to satisfy typing
-  const token: IAuthorizationToken = {
+  // 5. Generate JWT tokens
+  const token = {
     access: jwt.sign(
       {
         type: "administrator",
         id: admin.id,
         session_id: session.id,
-        created_at: toISOStringSafe(now),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "20m", issuer: "autobe" },
+      { expiresIn: "15m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
@@ -75,7 +69,7 @@ export async function postEconomicBoardAuthAdministratorLogin(props: {
         id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(now),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "14d", issuer: "autobe" },
@@ -83,7 +77,31 @@ export async function postEconomicBoardAuthAdministratorLogin(props: {
     expired_at: toISOStringSafe(accessExpires),
     refreshable_until: toISOStringSafe(refreshExpires),
   };
+  // 6. Transform admin data
+  const transformedAdmin =
+    await EconomicBoardAdministratorAtSummaryTransformer.transform(admin);
+  // 7. Construct complete IAuthorized object with explicit status mapping
+  const mappedStatus: IEconomicBoardAdministrator["admin_request_status"] =
+    admin.admin_request_status === "pending"
+      ? "pending"
+      : admin.admin_request_status === "approved"
+        ? "approved"
+        : admin.admin_request_status === "rejected"
+          ? "rejected"
+          : "pending"; // Default fallback as per business rules
   return {
-    token,
+    ...transformedAdmin,
+    role: "administrator",
+    admin_request_status: mappedStatus,
+    updated_at: admin.updated_at?.toISOString() ?? null,
+    access_token: token.access,
+    refresh_token: token.refresh,
+    token: {
+      access: token.access,
+      refresh: token.refresh,
+      expired_at: token.expired_at satisfies string & tags.Format<"date-time">,
+      refreshable_until: token.refreshable_until satisfies string &
+        tags.Format<"date-time">,
+    },
   } satisfies IEconomicBoardAdministrator.IAuthorized;
 }

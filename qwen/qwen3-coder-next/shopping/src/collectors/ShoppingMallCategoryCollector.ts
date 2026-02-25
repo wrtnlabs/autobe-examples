@@ -13,8 +13,9 @@ export namespace ShoppingMallCategoryCollector {
   }) {
     return {
       id: v4(),
-      name: "",
-      description: null,
+      name: props.body.name,
+      description: props.body.description ?? null,
+      parent_category_id: props.body.parent_category_id ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

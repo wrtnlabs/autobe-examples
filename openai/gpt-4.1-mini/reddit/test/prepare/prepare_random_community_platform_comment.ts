@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_comment(
-  input?: DeepPartial<ICommunityPlatformComment.ICreate> | undefined,
+  input?: DeepPartial<ICommunityPlatformComment.ICreate>,
 ): ICommunityPlatformComment.ICreate {
-  input;
-  return {};
+  return {
+    content: input?.content ?? RandomGenerator.paragraph({ sentences: 3 }),
+    postId: input?.postId ?? typia.random<string & tags.Format<"uuid">>(),
+    parentId: input?.parentId !== undefined ? input.parentId : null,
+  };
 }

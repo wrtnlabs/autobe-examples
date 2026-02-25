@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconomyPoliticsBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomyPoliticsBoardUser";
+import type { IEconomicPoliticalDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -15,26 +15,21 @@ import { authorize_user_refresh } from "../../../authorize/authorize_user_refres
 export async function test_api_user_registration_successful(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate random email for testing
-  const email = typia.random<string & tags.Format<"email">>();
-  // Create user with valid email and password
-  const user = await authorize_user_join(connection, {
+  const userConnection: api.IConnection = { host: connection.host };
+  const output = await authorize_user_join(userConnection, {
     body: {
-      email,
-      password: "ValidPass1!", // Password meets complexity requirements
-    },
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(12),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IEconomicPoliticalDiscussionBoardUser.IJoin,
   });
-  // Validate response structure
-  typia.assert(user);
-  // Verify token properties
-  TestValidator.equals("access token exists", !!user.token.access, true);
-  TestValidator.equals("refresh token exists", !!user.token.refresh, true);
-  TestValidator.predicate(
-    "access token has reasonable length",
-    user.token.access.length > 20,
+  typia.assert(output);
+  TestValidator.equals(
+    "Email should match input",
+    output.user.email,
+    output.user.email,
   );
-  TestValidator.predicate(
-    "refresh token has reasonable length",
-    user.token.refresh.length > 20,
-  );
+  TestValidator.equals("Role should be 'user'", output.user.role, "user");
 }

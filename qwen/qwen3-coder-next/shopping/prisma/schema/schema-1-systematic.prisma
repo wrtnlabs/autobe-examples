@@ -1,0 +1,327 @@
+/// System-wide audit logs capturing all critical operations for compliance
+/// and troubleshooting. Records who performed what action, when, from which
+/// IP address, and what changes were made. Supports comprehensive audit
+/// trail requirements for security, debugging, and regulatory compliance.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of actor who performed the operation (customer, seller, admin,
+  /// system).
+  actor_type String
+  
+  /// ID of the actor who performed the operation (references customer, seller,
+  /// admin, or system records).
+  actor_id String
+  
+  /// Type of operation performed (create, read, update, delete, login, logout,
+  /// approve, reject, suspend, unsuspend).
+  operation_type String
+  
+  /// Type of entity affected by the operation (customer, seller, product,
+  /// order, review, etc.).
+  entity_type String
+  
+  /// ID of the entity affected by the operation.
+  entity_id String
+  
+  /// IP address from which the operation was performed.
+  ip_address String
+  
+  /// User agent string of the client performing the operation.
+  user_agent String?
+  
+  /// JSON string containing previous values before the operation (for update
+  /// operations).
+  old_values String?
+  
+  /// JSON string containing new values after the operation.
+  new_values String?
+  
+  /// Human-readable description of the operation performed.
+  description String?
+  
+  /// Timestamp when the audit log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete tracking. Nullable - null means not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+  @@index([actor_id, created_at])
+  @@index([operation_type, created_at])
+  // spellchecker: ignore-next-line
+  @@index([entity_type, entity_id, created_at], map: "shopping_mall_system_audit_logs_entity_type_entity_id__23b08c11")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, operation_type, created_at], map: "shopping_mall_system_audit_logs_actor_type_operation_t_35ff6598")
+}
+
+/// Configuration settings for platform customization, including theme
+/// preferences, feature flags, and global system parameters that affect the
+/// entire shopping mall platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configurations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key for each setting
+  config_key String
+  
+  /// Configuration category for organization
+  category String?
+  
+  /// Whether this configuration is enabled
+  is_enabled Boolean
+  
+  /// Description of what this configuration does
+  description String?
+  
+  /// The last user who modified this configuration
+  updated_by String?
+  
+  /// When this configuration was created
+  created_at DateTime
+  
+  /// When this configuration was last updated
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  configurationValues shopping_mall_system_configuration_values[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([config_key])
+}
+
+/// Reference data for standardized values used across domains, ensuring
+/// consistency and maintainability of domain-specific values like status
+/// codes and configuration options.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_reference_data {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique reference data name for categorization
+  name String
+  
+  /// Unique value within each name category
+  value String
+  
+  /// Human-readable label for UI display
+  label String
+  
+  /// Optional description providing context or usage instructions
+  description String?
+  
+  /// Optional sort order for display priority
+  sort_order Int?
+  
+  /// Whether this reference data is active and usable
+  is_active Boolean
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cacheInvalidationLogs shopping_mall_system_cache_trackings[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name, value])
+  @@index([name, is_active])
+}
+
+/// Database migration history record tracking schema changes and version
+/// control.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_migrations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who executed this migration. {@link
+  /// shopping_mall_admins.id}.
+  admin_id String
+  
+  /// Name of the migration file or script that was executed.
+  migration_name String
+  
+  /// Timestamp when this migration was executed in the database.
+  executed_at DateTime
+  
+  /// Hash of the migration file content for integrity verification.
+  migration_hash String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([admin_id])
+  @@unique([migration_name])
+}
+
+/// Cache invalidation tracking system for efficient cache management across
+/// the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_cache_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Invalidated table name referencing system_reference_data.name.
+  table_name String
+  
+  /// User who triggered the cache invalidation for audit trail.
+  admin_id String?
+  
+  /// Cache key pattern that was invalidated
+  cache_key_pattern String
+  
+  /// Description of what was invalidated and why
+  description String
+  
+  /// Timestamp when cache invalidation was performed
+  invalidated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cacheTable shopping_mall_system_reference_data @relation(fields: [table_name], references: [id], onDelete: Cascade)
+  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([invalidated_at])
+  @@index([cache_key_pattern])
+  // spellchecker: ignore-next-line
+  @@index([table_name, invalidated_at], map: "shopping_mall_system_cache_trackings_table_name_invali_3fe87193")
+  // spellchecker: ignore-next-line
+  @@index([admin_id, invalidated_at], map: "shopping_mall_system_cache_trackings_admin_id_invalida_49dc90c7")
+}
+
+/// Atomic configuration values for each setting with typed storage for
+/// proper normalization. Stores individual configuration settings as
+/// key-value pairs with explicit data types, ensuring First Normal Form
+/// compliance and enabling efficient configuration management across the
+/// platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_system_configuration_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Configuration setting this value belongs to. {@link
+  /// shopping_mall_system_configurations.id}.
+  configuration_id String
+  
+  /// Name of the configuration setting. This is a denormalized copy of the
+  /// configuration name for efficient lookups without joins. Maximum 100
+  /// characters.
+  configuration_name String
+  
+  /// String value for string-type configurations. Maximum 255 characters.
+  /// Exactly one of value_string, value_integer, value_double, value_boolean,
+  /// or value_datetime must be populated.
+  value_string String?
+  
+  /// Integer value for integer-type configurations. Exactly one of
+  /// value_string, value_integer, value_double, value_boolean, or
+  /// value_datetime must be populated.
+  value_integer Int?
+  
+  /// Double value for decimal-type configurations. Exactly one of
+  /// value_string, value_integer, value_double, value_boolean, or
+  /// value_datetime must be populated.
+  value_double Float?
+  
+  /// Boolean value for flag-type configurations. Exactly one of value_string,
+  /// value_integer, value_double, value_boolean, or value_datetime must be
+  /// populated.
+  value_boolean Boolean?
+  
+  /// Datetime value for timestamp-type configurations. Exactly one of
+  /// value_string, value_integer, value_double, value_boolean, or
+  /// value_datetime must be populated.
+  value_datetime DateTime?
+  
+  /// Seller-specific configuration override. If null, this is a system-wide
+  /// configuration. {@link shopping_mall_sellers.id}.
+  seller_id String?
+  
+  /// Whether this configuration value is currently active. Enables
+  /// configuration versioning without deleting previous values.
+  is_active Boolean
+  
+  /// When this configuration value was created.
+  created_at DateTime
+  
+  /// When this configuration value was last updated.
+  updated_at DateTime
+  
+  /// When this configuration value was soft deleted (null if not deleted).
+  /// Enables recovery of accidentally deleted configurations.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  configuration shopping_mall_system_configurations @relation(fields: [configuration_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([configuration_id])
+  // spellchecker: ignore-next-line
+  @@unique([configuration_name, seller_id, deleted_at], map: "shopping_mall_system_configuration_values_configuratio_5227c0d3")
+  @@index([seller_id])
+  @@index([is_active])
+  // spellchecker: ignore-next-line
+  @@index([configuration_name, is_active], map: "shopping_mall_system_configuration_values_configuratio_beea357e")
+}

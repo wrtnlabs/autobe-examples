@@ -14,16 +14,14 @@ export namespace DiscussionBoardSectionCollector {
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
       name: props.body.name,
       description: props.body.description,
-      status: "active",
-      display_order: props.body.display_order,
+      status: props.body.status ?? "active",
+      display_order: props.body.display_order ?? 0,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
       createdByAdmin: { connect: { id: props.discussionBoardAdmins.id } },
       lastModifiedByAdmin: undefined,
     } satisfies Prisma.discussion_board_sectionsCreateInput;

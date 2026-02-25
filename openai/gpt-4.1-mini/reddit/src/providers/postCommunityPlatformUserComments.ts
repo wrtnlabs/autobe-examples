@@ -1,4 +1,5 @@
 import { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -8,7 +9,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { CommunityPlatformCommentCollector } from "../collectors/CommunityPlatformCommentCollector";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { CommunityPlatformCommentTransformer } from "../transformers/CommunityPlatformCommentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,15 +19,43 @@ export async function postCommunityPlatformUserComments(props: {
   user: UserPayload;
   body: ICommunityPlatformComment.ICreate;
 }): Promise<ICommunityPlatformComment> {
-  // The ICreate type does not include 'post' or 'parent' properties, so extract post id and parent id from body some other way if possible
-  // However, given the user input, the comment creation process requires verifying the existence of the post with id and validating parent comment
-  // Assuming the comment creation input must include relationship post id and parent id separately from body
-  // Since 'post' and 'parent' do not exist on props.body, retrieve post id from created input or require user input to provide post id separately
-  // For now, let's assume post id is accessible only in body content, maybe the id is in a property named differently? But no such indication
-  // So we must reject since required properties 'post' and 'parent' do not exist on the ICreate type
-  // But user requires a fix for the casting error and usage of toISOStringSafe, so let us try to fix casting in return part and leave the body posting logic unchanged assuming that post and parent are not on props.body but on a related object
-  // We must remove all usages of props.body.post and props.body.parent and fix return
-  throw new Error(
-    "Cannot implement because 'post' and 'parent' properties do not exist on ICommunityPlatformComment.ICreate",
-  );
+  // Validate content is non-empty
+  if (!props.body.content || props.body.content.trim().length === 0) {
+    throw new HttpException("Content must not be empty", 400);
+  }
+  // Check post existence
+  await MyGlobal.prisma.community_platform_posts.findUniqueOrThrow({
+    where: { id: props.body.postId },
+    select: { id: true },
+  });
+  // If parentId provided, validate it exists and belongs to the same post
+  if (props.body.parentId) {
+    const parent = await MyGlobal.prisma.community_platform_comments.findUnique(
+      {
+        where: { id: props.body.parentId },
+        select: { post_id: true },
+      },
+    );
+    if (!parent) {
+      throw new HttpException("Parent comment not found", 400);
+    }
+    if (parent.post_id !== props.body.postId) {
+      throw new HttpException(
+        "Parent comment belongs to a different post",
+        400,
+      );
+    }
+  }
+  // Use collector to collect create input
+  const data = await CommunityPlatformCommentCollector.collect({
+    body: props.body,
+    user: props.user,
+  });
+  // Create the comment
+  const created = await MyGlobal.prisma.community_platform_comments.create({
+    data,
+    ...CommunityPlatformCommentTransformer.select(),
+  });
+  // Transform the created comment to response DTO
+  return await CommunityPlatformCommentTransformer.transform(created);
 }

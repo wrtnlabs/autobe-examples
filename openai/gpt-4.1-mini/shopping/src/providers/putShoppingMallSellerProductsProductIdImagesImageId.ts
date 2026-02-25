@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallProductImageTransformer } from "../transformers/ShoppingMallProductImageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,39 +19,42 @@ export async function putShoppingMallSellerProductsProductIdImagesImageId(props:
   imageId: string & tags.Format<"uuid">;
   body: IShoppingMallProductImage.IUpdate;
 }): Promise<IShoppingMallProductImage> {
-  const image = await MyGlobal.prisma.shopping_mall_product_images.findFirst({
-    where: {
-      id: props.imageId,
-      shopping_mall_product_id: props.productId,
-      deleted_at: null,
-    },
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { id: true, seller_id: true },
+    });
+  if (product.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const image =
+    await MyGlobal.prisma.shopping_mall_product_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      select: { id: true, shopping_mall_product_id: true },
+    });
+  if (image.shopping_mall_product_id !== props.productId) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Use current date time as ISO string for updated_at
+  const updatedAtISO: string & tags.Format<"date-time"> =
+    new Date().toISOString();
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.shopping_mall_product_images.update({
+      where: { id: props.imageId },
+      data: {
+        ...(props.body.imageUrl !== undefined && {
+          image_url: props.body.imageUrl,
+        }),
+        ...(props.body.displayOrder !== undefined && {
+          display_order: props.body.displayOrder,
+        }),
+        updated_at: updatedAtISO,
+      },
+    });
+    return await tx.shopping_mall_product_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      ...ShoppingMallProductImageTransformer.select(),
+    });
   });
-  if (!image) {
-    throw new HttpException("Product image not found", 404);
-  }
-  const data: Prisma.shopping_mall_product_imagesUpdateInput = {
-    updated_at: toISOStringSafe(new Date()),
-  };
-  if ("image_url" in props.body) {
-    const imgUrl = props.body.image_url;
-    data.image_url = imgUrl === null ? { set: null } : { set: imgUrl };
-  }
-  if ("display_order" in props.body) {
-    const dispOrder = props.body.display_order;
-    data.display_order =
-      dispOrder === null ? { set: null } : { set: dispOrder };
-  }
-  const updated = await MyGlobal.prisma.shopping_mall_product_images.update({
-    where: { id: props.imageId },
-    data,
-  });
-  return {
-    id: updated.id,
-    shopping_mall_product_id: updated.shopping_mall_product_id,
-    image_url: updated.image_url ?? null,
-    display_order: updated.display_order ?? null,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
-  };
+  return await ShoppingMallProductImageTransformer.transform(updated);
 }

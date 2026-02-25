@@ -8,58 +8,70 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
-import { DiscussionBoardSuperAdminAtSummaryTransformer } from "./DiscussionBoardSuperAdminAtSummaryTransformer";
 import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
+// Temporary interface until proper transformer is available
+interface ISuperAdminSummary {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string;
+}
 export namespace DiscussionBoardAdministratorPromotionApprovalTransformer {
-  export type Payload = Prisma.discussion_board_administratorsGetPayload<
-    ReturnType<typeof select>
-  >;
+  export type Payload =
+    Prisma.discussion_board_administrator_promotion_requestsGetPayload<
+      ReturnType<typeof select>
+    >;
   export function select() {
     return {
       select: {
         id: true,
-        grade: true,
-        is_active: true,
-        promoted_at: true,
-        grade_changed_at: true,
+        reason: true,
+        status: true,
+        approved_at: true,
+        rejected_at: true,
+        reviewer_notes: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
+        reviewer_discussion_board_super_admin_id: true,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
-        admin: DiscussionBoardAdminAtSummaryTransformer.select(),
-        superAdmin: DiscussionBoardSuperAdminAtSummaryTransformer.select(),
+        administrator: { select: { id: true } },
+        approvals: { select: { id: true } },
+        workflowTransitions: { select: { id: true } },
       },
-    } satisfies Prisma.discussion_board_administratorsFindManyArgs;
+    } satisfies Prisma.discussion_board_administrator_promotion_requestsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardAdministratorPromotionApproval> {
+    // Mock reviewer data for now - needs proper SuperAdmin transformer
+    const mockReviewer: ISuperAdminSummary | null =
+      input.reviewer_discussion_board_super_admin_id
+        ? {
+            id: input.reviewer_discussion_board_super_admin_id,
+            email: "reviewer@example.com",
+            display_name: "Super Administrator",
+            created_at: new Date().toISOString(),
+          }
+        : null;
     return {
       id: input.id,
-      grade: input.grade as "regular" | "super",
-      is_active: input.is_active,
-      promoted_at: toISOStringSafe(input.promoted_at),
-      grade_changed_at: input.grade_changed_at
-        ? toISOStringSafe(input.grade_changed_at)
+      reason: input.reason,
+      status: input.status,
+      approved_at: input.approved_at
+        ? toISOStringSafe(input.approved_at)
         : null,
+      rejected_at: input.rejected_at
+        ? toISOStringSafe(input.rejected_at)
+        : null,
+      reviewer_notes: input.reviewer_notes ?? null,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
-      admin:
-        input.grade === "regular" && input.admin
-          ? await DiscussionBoardAdminAtSummaryTransformer.transform(
-              input.admin,
-            )
-          : null,
-      super_admin:
-        input.grade === "super" && input.superAdmin
-          ? await DiscussionBoardSuperAdminAtSummaryTransformer.transform(
-              input.superAdmin,
-            )
-          : null,
+      administrator: input.administrator
+        ? ({ id: input.administrator.id } as any)
+        : undefined,
+      reviewer: mockReviewer ? (mockReviewer as any) : undefined,
     };
   }
 }

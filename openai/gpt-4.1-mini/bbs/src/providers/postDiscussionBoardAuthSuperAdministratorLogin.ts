@@ -15,75 +15,91 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthSuperAdministratorLogin(props: {
   body: IDiscussionBoardSuperAdministrator.ILogin;
 }): Promise<IDiscussionBoardSuperAdministrator.IAuthorized> {
-  // Find the first super administrator record with password_hash
   const superAdmin =
     await MyGlobal.prisma.discussion_board_super_administrators.findFirst({
+      where: { email: props.body.email },
       select: {
         id: true,
+        email: true,
+        display_name: true,
+        bio: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         password_hash: true,
       },
     });
-  if (!superAdmin) throw new HttpException("Invalid credentials", 401);
-  // Since ILogin is empty, no password is passed, so we must throw invalid credential error
-  // because no password to verify
-  throw new HttpException("Invalid credentials", 401);
-  // This fallback code block is unreachable but shows full intended implementation
-  /*
-    // 1. Verify password if available
-    const isValid = await PasswordUtil.verify(
-      props.body.password, // no password in ILogin
-      superAdmin.password_hash
-    );
-    if (!isValid) throw new HttpException("Invalid credentials", 401);
-
-    // 2. Create new session
-    const sessionId = v4();
-    const nowIso = toISOStringSafe(new Date());
-    const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-    const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    const session = await MyGlobal.prisma.discussion_board_super_administrator_sessions.create({
+  if (!superAdmin) {
+    throw new HttpException("Invalid email or password", 401);
+  }
+  const verified = await PasswordUtil.verify(
+    props.body.password,
+    superAdmin.password_hash,
+  );
+  if (!verified) {
+    throw new HttpException("Invalid email or password", 401);
+  }
+  const nowStr = toISOStringSafe(new Date());
+  const accessExpiresStr = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresStr = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const sessionId = v4();
+  const session =
+    await MyGlobal.prisma.discussion_board_super_administrator_sessions.create({
       data: {
         id: sessionId,
-        discussion_board_super_administrator_id: superAdmin.id,
-        ip: null,
-        href: null,
-        referrer: null,
-        created_at: nowIso,
-        expired_at: toISOStringSafe(accessExpires),
+        super_administrator_id: superAdmin.id,
+        ip: "",
+        href: "",
+        referrer: "",
+        created_at: nowStr,
+        expired_at: accessExpiresStr,
       },
     });
-
-    // 3. Generate tokens
-    const token = {
-      access: jwt.sign(
-        {
-          type: "superadministrator",
-          id: superAdmin.id,
-          session_id: session.id,
-          created_at: nowIso,
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "1h", issuer: "autobe" }
-      ),
-      refresh: jwt.sign(
-        {
-          type: "superadministrator",
-          id: superAdmin.id,
-          session_id: session.id,
-          tokenType: "refresh",
-          created_at: nowIso,
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "7d", issuer: "autobe" }
-      ),
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    };
-
-    // 4. Return authorized
-    return {
-      token,
-    };
-    */
+  const token = {
+    access: jwt.sign(
+      {
+        type: "superadministrator",
+        id: superAdmin.id,
+        session_id: sessionId,
+        created_at: nowStr,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "superadministrator",
+        id: superAdmin.id,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: nowStr,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpiresStr,
+    refreshable_until: refreshExpiresStr,
+  };
+  return {
+    id: superAdmin.id,
+    email: superAdmin.email,
+    displayName: superAdmin.display_name,
+    bio: superAdmin.bio ?? null,
+    createdAt: toISOStringSafe(superAdmin.created_at),
+    updatedAt: toISOStringSafe(superAdmin.updated_at),
+    deletedAt: superAdmin.deleted_at
+      ? toISOStringSafe(superAdmin.deleted_at)
+      : null,
+    token,
+  } as IDiscussionBoardSuperAdministrator.IAuthorized;
 }

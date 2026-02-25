@@ -20,16 +20,19 @@ export async function postDiscussionBoardAuthAdminJoin(props: {
   const existing = await MyGlobal.prisma.discussion_board_admins.findFirst({
     where: { email: props.body.email },
   });
-  if (existing) throw new HttpException("Email already registered", 409);
-  // Create admin record with password hashing
+  if (existing) {
+    throw new HttpException("Email already registered", 409);
+  }
+  // Extract IP address from body or use default
+  const ip = props.body.ip ?? "0.0.0.0";
+  const now = new Date();
   const adminId = v4();
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  const now = toISOStringSafe(new Date());
+  // Create administrator record
   const admin = await MyGlobal.prisma.discussion_board_admins.create({
     data: {
       id: adminId,
       email: props.body.email,
-      password_hash: passwordHash,
+      password_hash: await PasswordUtil.hash(props.body.password),
       display_name: props.body.display_name,
       created_at: now,
       updated_at: now,
@@ -37,17 +40,17 @@ export async function postDiscussionBoardAuthAdminJoin(props: {
     },
     ...DiscussionBoardAdminTransformer.select(),
   });
-  // Create session record
+  // Calculate token expiration times
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
   const sessionId = v4();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // Generate proper JWT tokens for session storage
+  // Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "admin",
-      id: adminId,
+      id: admin.id,
       session_id: sessionId,
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -55,38 +58,39 @@ export async function postDiscussionBoardAuthAdminJoin(props: {
   const refreshToken = jwt.sign(
     {
       type: "admin",
-      id: adminId,
+      id: admin.id,
       session_id: sessionId,
       tokenType: "refresh",
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
+  // Create session record with actual tokens using relation connection
   await MyGlobal.prisma.discussion_board_admin_sessions.create({
     data: {
       id: sessionId,
-      discussion_board_admin_id: adminId,
+      admin: { connect: { id: admin.id } },
       access_token: accessToken,
       refresh_token: refreshToken,
-      ip: props.body.ip ?? "unknown",
-      user_agent: "registration",
-      referrer: props.body.referrer,
+      ip: ip,
+      user_agent: props.body.href,
+      referrer: props.body.referrer ?? null,
       created_at: now,
-      expired_at: toISOStringSafe(accessExpires),
+      expired_at: accessExpires,
       last_accessed_at: now,
     },
   });
-  // Generate response tokens
-  const token = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
-  // Return IAuthorized response
+  // Transform admin data and return IAuthorized response
+  const transformedAdmin =
+    await DiscussionBoardAdminTransformer.transform(admin);
   return {
-    ...(await DiscussionBoardAdminTransformer.transform(admin)),
-    token,
+    ...transformedAdmin,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
+    },
   } satisfies IDiscussionBoardAdmin.IAuthorized;
 }

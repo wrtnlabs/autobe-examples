@@ -1,10 +1,10 @@
-import { ForbiddenException } from "@nestjs/common";
-import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize";
-import { AdminPayload } from "../../decorators/payload/AdminPayload";
+import { ForbiddenException  from "@nestjs/common";
+import { MyGlobal  from "../../MyGlobal";
+import { jwtAuthorize  from "./jwtAuthorize";
+import { AdminPayload  from "../../decorators/payload/AdminPayload";
 
 export async function adminAuthorize(request: {
-  headers: { authorization?: string };
+  headers: { authorization?: string ;
 }): Promise<AdminPayload> {
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
@@ -24,4 +24,4 @@ export async function adminAuthorize(request: {
   }
 
   return payload;
-}
+;

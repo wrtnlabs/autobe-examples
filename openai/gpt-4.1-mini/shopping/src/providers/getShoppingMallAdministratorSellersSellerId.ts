@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { ShoppingMallSellerTransformer } from "../transformers/ShoppingMallSellerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,31 +17,9 @@ export async function getShoppingMallAdministratorSellersSellerId(props: {
   administrator: AdministratorPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSeller> {
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id: props.sellerId },
-    select: {
-      id: true,
-      email: true,
-      shop_name: true,
-      shop_description: true,
-      logo_uri: true,
-      approval_status: true,
-      rejection_reason: true,
-      created_at: true,
-      updated_at: true,
-    },
+    ...ShoppingMallSellerTransformer.select(),
   });
-  if (!seller) throw new HttpException("Seller not found", 404);
-  return {
-    id: seller.id,
-    email: seller.email,
-    shop_name: seller.shop_name,
-    shop_description: seller.shop_description,
-    logo_uri: seller.logo_uri,
-    approval_status: seller.approval_status,
-    rejection_reason:
-      seller.rejection_reason === null ? null : seller.rejection_reason,
-    created_at: toISOStringSafe(seller.created_at),
-    updated_at: toISOStringSafe(seller.updated_at),
-  };
+  return await ShoppingMallSellerTransformer.transform(seller);
 }

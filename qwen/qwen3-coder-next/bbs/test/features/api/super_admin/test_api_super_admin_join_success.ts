@@ -8,76 +8,39 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
+/**
+ * Test successful super administrator registration flow.
+ * 1. Create a new super admin account with valid email and strong password
+ * 2. Validate response includes proper authentication tokens and structure
+ */
 export async function test_api_super_admin_join_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create actor-specific connection for super admin operations
-  const superAdminConnection: api.IConnection = { host: connection.host };
-  // Perform super admin join operation with empty body (as per IDiscussionBoardSuperAdmin.IJoin definition)
-  const result = await api.functional.discussionBoard.auth.super_admin.join(
-    superAdminConnection,
-    {
-      body: {},
-    },
-  );
-  // Validate the response structure
-  typia.assert(result);
-  // Verify authentication token is present and properly structured
-  TestValidator.predicate("token exists", () => result.token !== undefined);
-  TestValidator.equals(
-    "access token present",
-    result.token.access !== undefined,
-    true,
-  );
-  TestValidator.equals(
-    "refresh token present",
-    result.token.refresh !== undefined,
-    true,
-  );
-  // Validate token expiration fields
-  TestValidator.equals(
-    "expired_at present",
-    result.token.expired_at !== undefined,
-    true,
-  );
-  TestValidator.equals(
-    "refreshable_until present",
-    result.token.refreshable_until !== undefined,
-    true,
-  );
-  // Verify expiration dates are in ISO format
-  TestValidator.predicate(
-    "expired_at format",
-    () => !isNaN(Date.parse(result.token.expired_at)),
-  );
-  TestValidator.predicate(
-    "refreshable_until format",
-    () => !isNaN(Date.parse(result.token.refreshable_until)),
-  );
-  // Verify access token is a non-empty string (JWT format)
-  TestValidator.predicate(
-    "access token format",
-    () =>
-      typeof result.token.access === "string" && result.token.access.length > 0,
-  );
-  // Verify refresh token is a non-empty string
-  TestValidator.predicate(
-    "refresh token format",
-    () =>
-      typeof result.token.refresh === "string" &&
-      result.token.refresh.length > 0,
-  );
-  // Verify expiration times are in the future
-  const now = new Date();
-  TestValidator.predicate(
-    "expired_at in future",
-    () => new Date(result.token.expired_at) > now,
-  );
-  TestValidator.predicate(
-    "refreshable_until in future",
-    () => new Date(result.token.refreshable_until) > now,
-  );
+  // Generate test data
+  const email = typia.random<string & typia.tags.Format<"email">>();
+  const password = "TestP@ssw0rd123!";
+  const name = "Super Admin Test";
+  // Register new super admin
+  const output: IDiscussionBoardSuperAdmin.IAuthorized =
+    await api.functional.discussionBoard.auth.superAdmin.join(connection, {
+      body: {
+        email,
+        password,
+        name,
+      } satisfies IDiscussionBoardSuperAdmin.IJoin,
+    });
+  // Complete validation of response structure
+  typia.assert(output);
+  // Verify the token was set in the connection
+  if (!connection.headers?.Authorization) {
+    throw new Error("Authorization header should be set after join");
+  }
+  // Verify returned data matches input
+  if (output.email !== email) {
+    throw new Error("Returned email should match registered email");
+  }
 }

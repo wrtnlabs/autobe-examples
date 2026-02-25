@@ -61,11 +61,16 @@ model discussion_board_sections {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   createdByAdmin discussion_board_admins @relation("discussion_board_sections_of_created_by_admin_id", fields: [created_by_admin_id], references: [id], onDelete: Cascade)
   lastModifiedByAdmin discussion_board_admins? @relation("discussion_board_sections_of_last_modified_by_admin_id", fields: [last_modified_by_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   auditActions discussion_board_audit_logs[]
   snapshots discussion_board_section_snapshots[]
   statistic discussion_board_section_statistics?
@@ -77,6 +82,9 @@ model discussion_board_sections {
   articles discussion_board_articles[]
   moderationLogs discussion_board_moderation_logs[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
   @@index([status, display_order])
   @@index([created_by_admin_id, created_at])
@@ -127,10 +135,14 @@ model discussion_board_section_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_section_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_39571b0c")
 }
@@ -180,10 +192,14 @@ model discussion_board_section_statistics {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_section_id], map: "discussion_board_section_statistics_discussion_board_s_fa4ca89f")
   @@index([last_activity_at])
@@ -244,12 +260,16 @@ model discussion_board_section_administrators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins? @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_admin_id, discussion_board_section_id], map: "discussion_board_section_administrators_discussion_boa_728d3f9a")
   // spellchecker: ignore-next-line
@@ -312,11 +332,15 @@ model discussion_board_section_preferences {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_user_id, discussion_board_section_id], map: "discussion_board_section_preferences_discussion_board__0b3713b4")
   // spellchecker: ignore-next-line
@@ -375,10 +399,14 @@ model discussion_board_section_archives {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_section_id], map: "discussion_board_section_archives_discussion_board_sec_c978e527")
   @@index([archived_at])
@@ -437,10 +465,14 @@ model discussion_board_section_files {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_section_id, created_at], map: "discussion_board_section_files_discussion_board_sectio_71fe0a43")
   @@index([file_type])
@@ -497,10 +529,14 @@ model discussion_board_section_images {
   alt_text String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_section_id, image_type], map: "discussion_board_section_images_discussion_board_secti_b552eb1b")
   @@index([image_type])

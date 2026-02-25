@@ -9,72 +9,97 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardMaintenanceScheduleTransformer } from "../transformers/DiscussionBoardMaintenanceScheduleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardSuperAdminMaintenanceSchedulesScheduleId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   scheduleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardMaintenanceSchedule.IUpdate;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
-  // Check if maintenance schedule exists
-  const existingSchedule =
-    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUnique({
-      where: { id: props.scheduleId, deleted_at: null },
-      ...DiscussionBoardMaintenanceScheduleTransformer.select(),
-    });
-  if (!existingSchedule) {
-    throw new HttpException("Maintenance schedule not found", 404);
+  // Verify the schedule exists and is not completed/cancelled
+  const existing =
+    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
+      {
+        where: { id: props.scheduleId },
+      },
+    );
+  if (existing.status === "completed" || existing.status === "cancelled") {
+    throw new HttpException(
+      "Cannot update completed or cancelled maintenance schedule",
+      400,
+    );
   }
-  // Validate timing constraints if both start and end times are provided
-  if (props.body.scheduled_start_time && props.body.scheduled_end_time) {
-    const startTime = new Date(props.body.scheduled_start_time).getTime();
-    const endTime = new Date(props.body.scheduled_end_time).getTime();
-    if (endTime <= startTime) {
-      throw new HttpException(
-        "Scheduled end time must be after scheduled start time",
-        400,
-      );
-    }
-  }
-  // Validate status transitions
-  if (props.body.status) {
-    const validTransitions: Record<string, string[]> = {
-      scheduled: ["in-progress", "cancelled"],
-      "in-progress": ["completed", "cancelled"],
-      completed: [],
-      cancelled: [],
-    };
-    const currentStatus = existingSchedule.status;
-    const newStatus = props.body.status;
-    // Fix: Use type assertion to ensure currentStatus is a valid key
-    const validTransitionsForStatus = validTransitions[currentStatus];
-    if (
-      currentStatus !== newStatus &&
-      validTransitionsForStatus &&
-      !validTransitionsForStatus.includes(newStatus)
-    ) {
-      throw new HttpException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
-        400,
-      );
-    }
-  }
-  // Prepare update data using object spread for conciseness
+  // Validate datetime strings directly from body
+  const validatedStartTime = props.body.scheduled_start_time;
+  const validatedEndTime = props.body.scheduled_end_time;
+  // Build update data witproper date handling
   const updateData: Prisma.discussion_board_maintenance_schedulesUpdateInput = {
-    ...props.body,
-    updated_at: toISOStringSafe(new Date()), // This will be converted to ISO string
+    updated_at: toISOStringSafe(new Date()),
   };
-  // Perform the update
-  const updatedSchedule =
-    await MyGlobal.prisma.discussion_board_maintenance_schedules.update({
-      where: { id: props.scheduleId },
-      data: updateData,
-      ...DiscussionBoardMaintenanceScheduleTransformer.select(),
-    });
-  return await DiscussionBoardMaintenanceScheduleTransformer.transform(
-    updatedSchedule,
-  );
+  // Update fields with proper validation
+  if (props.body.maintenance_type !== undefined) {
+    updateData.maintenance_type = props.body.maintenance_type;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (validatedStartTime !== undefined) {
+    updateData.scheduled_start_time = new Date(validatedStartTime);
+  }
+  if (validatedEndTime !== undefined) {
+    updateData.scheduled_end_time = new Date(validatedEndTime);
+  }
+  if (props.body.impact_level !== undefined) {
+    updateData.impact_level = props.body.impact_level;
+  }
+  if (props.body.notes !== undefined) {
+    updateData.notes = props.body.notes;
+  }
+  // Handle status transitions with proper validation
+  if (props.body.status !== undefined) {
+    updateData.status = props.body.status;
+    // Status transition validation
+    if (
+      props.body.status === "in-progress" &&
+      existing.status === "scheduled"
+    ) {
+      // When starting maintenance, use current time for actual start
+      updateData.actual_start_time = new Date();
+      updateData.performedByAdmin = { connect: { id: props.superAdmin.id } };
+    }
+    if (
+      props.body.status === "completed" &&
+      ["scheduled", "in-progress"].includes(existing.status)
+    ) {
+      // When completing maintenance, use current time for actual end
+      updateData.actual_end_time = new Date();
+      // Calculate actual duration
+      const startTime = existing.actual_start_time || new Date();
+      const endTime = new Date();
+      const duration = Math.round(
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60),
+      );
+      updateData.actual_duration_minutes = duration;
+      if (!existing.performed_by_admin_id) {
+        updateData.performedByAdmin = { connect: { id: props.superAdmin.id } };
+      }
+    }
+  }
+  // Perform update
+  await MyGlobal.prisma.discussion_board_maintenance_schedules.update({
+    where: { id: props.scheduleId },
+    data: updateData,
+  });
+  // Return updated record
+  const updated =
+    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
+      {
+        where: { id: props.scheduleId },
+        ...DiscussionBoardMaintenanceScheduleTransformer.select(),
+      },
+    );
+  return DiscussionBoardMaintenanceScheduleTransformer.transform(updated);
 }

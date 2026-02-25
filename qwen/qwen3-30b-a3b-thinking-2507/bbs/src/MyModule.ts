@@ -1,54 +1,58 @@
 import { Module } from "@nestjs/common";
 
-import { EconomypoliticsboardAdminAdministrator_requestsController } from "./controllers/economyPoliticsBoard/admin/administrator-requests/EconomypoliticsboardAdminAdministrator_requestsController";
-import { EconomypoliticsboardAdminArticlesController } from "./controllers/economyPoliticsBoard/admin/articles/EconomypoliticsboardAdminArticlesController";
-import { EconomypoliticsboardAdminSectionsController } from "./controllers/economyPoliticsBoard/admin/sections/EconomypoliticsboardAdminSectionsController";
-import { EconomypoliticsboardAdminUsersBansController } from "./controllers/economyPoliticsBoard/admin/users/bans/EconomypoliticsboardAdminUsersBansController";
-import { EconomypoliticsboardAdminsController } from "./controllers/economyPoliticsBoard/admins/EconomypoliticsboardAdminsController";
-import { EconomypoliticsboardArticlesController } from "./controllers/economyPoliticsBoard/articles/EconomypoliticsboardArticlesController";
-import { EconomypoliticsboardArticlesAttachmentsController } from "./controllers/economyPoliticsBoard/articles/attachments/EconomypoliticsboardArticlesAttachmentsController";
-import { EconomypoliticsboardArticlesTagsController } from "./controllers/economyPoliticsBoard/articles/tags/EconomypoliticsboardArticlesTagsController";
-import { EconomypoliticsboardAuthAdminController } from "./controllers/economyPoliticsBoard/auth/admin/EconomypoliticsboardAuthAdminController";
-import { EconomypoliticsboardAuthSuperadminController } from "./controllers/economyPoliticsBoard/auth/superAdmin/EconomypoliticsboardAuthSuperadminController";
-import { EconomypoliticsboardAuthUserController } from "./controllers/economyPoliticsBoard/auth/user/EconomypoliticsboardAuthUserController";
-import { EconomypoliticsboardSectionsController } from "./controllers/economyPoliticsBoard/sections/EconomypoliticsboardSectionsController";
-import { EconomypoliticsboardSuperadminsController } from "./controllers/economyPoliticsBoard/superadmins/EconomypoliticsboardSuperadminsController";
-import { EconomypoliticsboardUserAdministrator_requestsController } from "./controllers/economyPoliticsBoard/user/administrator-requests/EconomypoliticsboardUserAdministrator_requestsController";
-import { EconomypoliticsboardUserArticlesController } from "./controllers/economyPoliticsBoard/user/articles/EconomypoliticsboardUserArticlesController";
-import { EconomypoliticsboardUserBansController } from "./controllers/economyPoliticsBoard/user/bans/EconomypoliticsboardUserBansController";
-import { EconomypoliticsboardUserFiltersController } from "./controllers/economyPoliticsBoard/user/filters/EconomypoliticsboardUserFiltersController";
-import { EconomypoliticsboardUserProfileController } from "./controllers/economyPoliticsBoard/user/profile/EconomypoliticsboardUserProfileController";
-import { EconomypoliticsboardUserQueriesController } from "./controllers/economyPoliticsBoard/user/queries/EconomypoliticsboardUserQueriesController";
-import { EconomypoliticsboardUserResultsController } from "./controllers/economyPoliticsBoard/user/results/EconomypoliticsboardUserResultsController";
-import { EconomypoliticsboardUserSearchController } from "./controllers/economyPoliticsBoard/user/search/EconomypoliticsboardUserSearchController";
-import { EconomypoliticsboardUserSessionsController } from "./controllers/economyPoliticsBoard/user/sessions/EconomypoliticsboardUserSessionsController";
-import { EconomypoliticsboardUsersController } from "./controllers/economyPoliticsBoard/users/EconomypoliticsboardUsersController";
+import { EconomicpoliticaldiscussionboardAdminAdminRequestsController } from "./controllers/economicPoliticalDiscussionBoard/admin/admin/requests/EconomicpoliticaldiscussionboardAdminAdminRequestsController";
+import { EconomicpoliticaldiscussionboardAdminAdminsController } from "./controllers/economicPoliticalDiscussionBoard/admin/admins/EconomicpoliticaldiscussionboardAdminAdminsController";
+import { EconomicpoliticaldiscussionboardAdminArticlesController } from "./controllers/economicPoliticalDiscussionBoard/admin/articles/EconomicpoliticaldiscussionboardAdminArticlesController";
+import { EconomicpoliticaldiscussionboardAdminBansController } from "./controllers/economicPoliticalDiscussionBoard/admin/bans/EconomicpoliticaldiscussionboardAdminBansController";
+import { EconomicpoliticaldiscussionboardAdminRequestsController } from "./controllers/economicPoliticalDiscussionBoard/admin/requests/EconomicpoliticaldiscussionboardAdminRequestsController";
+import { EconomicpoliticaldiscussionboardAdminSectionsController } from "./controllers/economicPoliticalDiscussionBoard/admin/sections/EconomicpoliticaldiscussionboardAdminSectionsController";
+import { EconomicpoliticaldiscussionboardAdminTagsController } from "./controllers/economicPoliticalDiscussionBoard/admin/tags/EconomicpoliticaldiscussionboardAdminTagsController";
+import { EconomicpoliticaldiscussionboardAdminUsersController } from "./controllers/economicPoliticalDiscussionBoard/admin/users/EconomicpoliticaldiscussionboardAdminUsersController";
+import { EconomicpoliticaldiscussionboardArticlesController } from "./controllers/economicPoliticalDiscussionBoard/articles/EconomicpoliticaldiscussionboardArticlesController";
+import { EconomicpoliticaldiscussionboardArticlesAttachmentsController } from "./controllers/economicPoliticalDiscussionBoard/articles/attachments/EconomicpoliticaldiscussionboardArticlesAttachmentsController";
+import { EconomicpoliticaldiscussionboardArticlesCommentsController } from "./controllers/economicPoliticalDiscussionBoard/articles/comments/EconomicpoliticaldiscussionboardArticlesCommentsController";
+import { EconomicpoliticaldiscussionboardAuthAdminController } from "./controllers/economicPoliticalDiscussionBoard/auth/admin/EconomicpoliticaldiscussionboardAuthAdminController";
+import { EconomicpoliticaldiscussionboardAuthGuestController } from "./controllers/economicPoliticalDiscussionBoard/auth/guest/EconomicpoliticaldiscussionboardAuthGuestController";
+import { EconomicpoliticaldiscussionboardAuthUserController } from "./controllers/economicPoliticalDiscussionBoard/auth/user/EconomicpoliticaldiscussionboardAuthUserController";
+import { EconomicpoliticaldiscussionboardSectionsController } from "./controllers/economicPoliticalDiscussionBoard/sections/EconomicpoliticaldiscussionboardSectionsController";
+import { EconomicpoliticaldiscussionboardTagsController } from "./controllers/economicPoliticalDiscussionBoard/tags/EconomicpoliticaldiscussionboardTagsController";
+import { EconomicpoliticaldiscussionboardUserArticlesController } from "./controllers/economicPoliticalDiscussionBoard/user/articles/EconomicpoliticaldiscussionboardUserArticlesController";
+import { EconomicpoliticaldiscussionboardUserArticlesAttachmentsController } from "./controllers/economicPoliticalDiscussionBoard/user/articles/attachments/EconomicpoliticaldiscussionboardUserArticlesAttachmentsController";
+import { EconomicpoliticaldiscussionboardUserArticlesCommentsController } from "./controllers/economicPoliticalDiscussionBoard/user/articles/comments/EconomicpoliticaldiscussionboardUserArticlesCommentsController";
+import { EconomicpoliticaldiscussionboardUserEmail_verificationsController } from "./controllers/economicPoliticalDiscussionBoard/user/email-verifications/EconomicpoliticaldiscussionboardUserEmail_verificationsController";
+import { EconomicpoliticaldiscussionboardUserPassword_resetsController } from "./controllers/economicPoliticalDiscussionBoard/user/password-resets/EconomicpoliticaldiscussionboardUserPassword_resetsController";
+import { EconomicpoliticaldiscussionboardUserProfileController } from "./controllers/economicPoliticalDiscussionBoard/user/profile/EconomicpoliticaldiscussionboardUserProfileController";
+import { EconomicpoliticaldiscussionboardUserRequestsController } from "./controllers/economicPoliticalDiscussionBoard/user/requests/EconomicpoliticaldiscussionboardUserRequestsController";
+import { EconomicpoliticaldiscussionboardUserSessionsController } from "./controllers/economicPoliticalDiscussionBoard/user/sessions/EconomicpoliticaldiscussionboardUserSessionsController";
+import { EconomicpoliticaldiscussionboardUsersController } from "./controllers/economicPoliticalDiscussionBoard/users/EconomicpoliticaldiscussionboardUsersController";
 
 @Module({
   controllers: [
-    EconomypoliticsboardAuthUserController,
-    EconomypoliticsboardAuthAdminController,
-    EconomypoliticsboardAuthSuperadminController,
-    EconomypoliticsboardUsersController,
-    EconomypoliticsboardUserProfileController,
-    EconomypoliticsboardUserSessionsController,
-    EconomypoliticsboardAdminsController,
-    EconomypoliticsboardSuperadminsController,
-    EconomypoliticsboardSectionsController,
-    EconomypoliticsboardAdminSectionsController,
-    EconomypoliticsboardArticlesController,
-    EconomypoliticsboardUserArticlesController,
-    EconomypoliticsboardAdminArticlesController,
-    EconomypoliticsboardArticlesAttachmentsController,
-    EconomypoliticsboardArticlesTagsController,
-    EconomypoliticsboardAdminAdministrator_requestsController,
-    EconomypoliticsboardAdminUsersBansController,
-    EconomypoliticsboardUserBansController,
-    EconomypoliticsboardUserAdministrator_requestsController,
-    EconomypoliticsboardUserFiltersController,
-    EconomypoliticsboardUserQueriesController,
-    EconomypoliticsboardUserResultsController,
-    EconomypoliticsboardUserSearchController,
+    EconomicpoliticaldiscussionboardAuthGuestController,
+    EconomicpoliticaldiscussionboardAuthUserController,
+    EconomicpoliticaldiscussionboardAuthAdminController,
+    EconomicpoliticaldiscussionboardUserSessionsController,
+    EconomicpoliticaldiscussionboardUserPassword_resetsController,
+    EconomicpoliticaldiscussionboardUserEmail_verificationsController,
+    EconomicpoliticaldiscussionboardAdminUsersController,
+    EconomicpoliticaldiscussionboardUsersController,
+    EconomicpoliticaldiscussionboardUserProfileController,
+    EconomicpoliticaldiscussionboardAdminAdminsController,
+    EconomicpoliticaldiscussionboardSectionsController,
+    EconomicpoliticaldiscussionboardAdminSectionsController,
+    EconomicpoliticaldiscussionboardArticlesController,
+    EconomicpoliticaldiscussionboardUserArticlesController,
+    EconomicpoliticaldiscussionboardAdminArticlesController,
+    EconomicpoliticaldiscussionboardTagsController,
+    EconomicpoliticaldiscussionboardAdminTagsController,
+    EconomicpoliticaldiscussionboardArticlesAttachmentsController,
+    EconomicpoliticaldiscussionboardUserArticlesAttachmentsController,
+    EconomicpoliticaldiscussionboardArticlesCommentsController,
+    EconomicpoliticaldiscussionboardUserArticlesCommentsController,
+    EconomicpoliticaldiscussionboardAdminAdminRequestsController,
+    EconomicpoliticaldiscussionboardAdminRequestsController,
+    EconomicpoliticaldiscussionboardUserRequestsController,
+    EconomicpoliticaldiscussionboardAdminBansController,
   ],
 })
 export class MyModule {}

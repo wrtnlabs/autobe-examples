@@ -10,17 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace CommunityPlatformCommunitySubscriptionCollector {
   export async function collect(props: {
     body: ICommunityPlatformCommunitySubscription.ICreate;
-    community: IEntity;
-    user: IEntity;
+    communityPlatformUsers: IEntity;
   }) {
-    const id: string = v4();
+    const community =
+      await MyGlobal.prisma.community_platform_communities.findFirstOrThrow({
+        where: { name: props.body.communityCode },
+      });
     return {
-      id,
+      id: v4(),
+      community: { connect: { id: community.id } },
+      user: { connect: { id: props.communityPlatformUsers.id } },
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      community: { connect: { id: props.community.id } },
-      user: { connect: { id: props.user.id } },
     } satisfies Prisma.community_platform_community_subscriptionsCreateInput;
   }
 }

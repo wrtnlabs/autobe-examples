@@ -10,28 +10,20 @@ export * as changes from "./changes/index";
 export * as snapshots from "./snapshots/index";
 
 /**
- * Retrieve a paginated list of edit history entries for a specific todo with filtering and sorting capabilities.
+ * Retrieve a paginated list of edit history entries for a specific todo with comprehensive change tracking information, referencing the todo_app_todo_histories database table and its relationship with todo_app_todo_history_changes.
  *
- * This operation provides comprehensive access to the audit trail of changes made to a todo, allowing users to track modifications including title changes, description updates, and date adjustments. Each history entry includes timestamp information, user identification, and detailed field-level change tracking through the associated todo_app_todo_history_changes table.
+ * This operation provides access to the complete audit trail of modifications made to a todo, querying the todo_app_todo_histories table which records each edit operation performed on todos with timestamp and user context. Each history entry includes timestamp information from the created_at column, the user who performed the edit from todo_app_user_id, and detailed field-level change records showing previous and new values from the todo_app_todo_history_changes child table.
  *
- * The response includes pagination metadata for efficient navigation through potentially extensive history datasets. Users can filter results by date ranges and sort entries chronologically to focus on specific time periods or recent changes.
+ * The response includes pagination metadata for navigating through large history datasets. History entries are sorted chronologically by created_at with most recent edits appearing first. Users can review the complete modification history to understand how their todo has evolved over time, including field changes to title, description, start date, or due date captured in the field_name, previous_value, and new_value columns.
  *
- * Security is enforced through ownership validation - users can only access history for todos they own, ensuring complete data isolation between users as specified in the privacy requirements. The operation integrates with the comprehensive history tracking system that captures every edit operation with immutable audit trail capabilities.
- *
- * Related operations include viewing individual todo details through GET /todos/{todoId} and managing the todo itself through update and completion operations. The history system provides transparency and accountability for all todo modifications, supporting compliance requirements and user trust.
+ * This history tracking is essential for compliance, audit purposes, and user transparency, providing a complete record of all modifications through the todo_app_todo_histories table as the primary audit trail for todo modifications and the todo_app_todo_history_changes table for granular field-level change tracking.
  *
  * @param props.connection
- * @param props.todoId Unique identifier of the todo whose history is being retrieved
- * @param props.body Pagination and filtering parameters for history retrieval
+ * @param props.todoId Unique identifier of the target todo for which to retrieve edit history
+ * @param props.body Search criteria and pagination parameters for filtering history entries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor user
- * @x-autobe-specification Query the todo_app_todo_histories table joined with todo_app_todo_history_changes for detailed field-level change information. Validate that the authenticated user owns the specified todo before proceeding with history retrieval.
- *
- * Apply pagination using cursor-based or offset-based approach with configurable page sizes. Support filtering by date ranges using the created_at field. Sort results by created_at in descending order (newest first) by default, with option for ascending order.
- *
- * For each history entry, include the timestamp, user information, and aggregated field changes from the child table. Handle cases where history entries may have multiple field changes within a single edit operation.
- *
- * Implement proper error handling for invalid todo IDs, unauthorized access attempts, and pagination boundary conditions. Ensure performance optimization through proper indexing on todo_app_todo_id and created_at fields.
+ * @x-autobe-specification Query todo_app_todo_histories table filtered by the provided todoId path parameter. Include necessary joins with todo_app_todo_history_changes to gather field-level change details. Apply pagination with configurable page size and cursor-based navigation. Sort results by created_at descending to show most recent edits first. Validate that the todo exists and belongs to the authenticated user before querying history. Return comprehensive summary including edit timestamp, user information, and field change details.
  * @path /todoApp/user/todos/:todoId/histories
  * @accessor api.functional.todoApp.user.todos.histories.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -61,12 +53,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Unique identifier of the todo whose history is being retrieved
+     * Unique identifier of the target todo for which to retrieve edit history
      */
     todoId: string & tags.Format<"uuid">;
 
     /**
-     * Pagination and filtering parameters for history retrieval
+     * Search criteria and pagination parameters for filtering history entries
      */
     body: ITodoAppTodoHistory.IRequest;
   };
@@ -117,18 +109,20 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific edit history entry for a todo with all associated field changes.
+ * Retrieve detailed information about a specific edit history entry for a user's todo.
  *
- * This operation returns the complete audit trail record for a single edit event performed on a todo. Each history entry represents a distinct edit operation that may have modified multiple fields such as title, description, start date, or due date. The response includes the history metadata (timestamp, user who performed the edit) along with detailed field-level changes showing what was modified from previous values to new values.
+ * This operation provides access to individual history entries that record edit operations performed on todos. Each history entry captures when a change was made, who made the change, and includes references to the specific field modifications recorded in the todo_app_todo_history_changes table.
  *
- * The operation ensures data privacy by verifying that the authenticated user owns both the todo and the history entry being accessed. This maintains the privacy guarantees where users can only view their own todo edit histories. The response provides comprehensive audit trail information suitable for displaying detailed edit history views in the user interface.
+ * The response includes the complete history metadata including creation timestamp, user reference, and links to associated field changes. Users can access this information to understand the complete audit trail of modifications made to their todos over time.
+ *
+ * Security validation ensures that users can only access history entries for their own todos, maintaining the privacy and data isolation requirements of the application.
  *
  * @param props.connection
- * @param props.todoId The ID of the todo whose history is being accessed
- * @param props.historyId The ID of the specific history entry to retrieve
+ * @param props.todoId ID of the todo that owns the history entry
+ * @param props.historyId ID of the specific history entry to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor user
- * @x-autobe-specification Query the todo_app_todo_histories table by the provided historyId, ensuring it belongs to the specified todoId. Join with todo_app_todo_history_changes to retrieve all field changes associated with this history entry. Validate that both the todo and history entry exist and belong to the authenticated user. Return the complete history record with embedded field changes array.
+ * @x-autobe-specification Retrieve a specific todo history entry by its ID, ensuring the history belongs to the specified todo and the authenticated user owns both the todo and history. Validate that the history entry exists and is accessible to the current user. Return the complete history entry with all field change details and metadata.
  * @path /todoApp/user/todos/:todoId/histories/:historyId
  * @accessor api.functional.todoApp.user.todos.histories.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -157,12 +151,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The ID of the todo whose history is being accessed
+     * ID of the todo that owns the history entry
      */
     todoId: string & tags.Format<"uuid">;
 
     /**
-     * The ID of the specific history entry to retrieve
+     * ID of the specific history entry to retrieve
      */
     historyId: string & tags.Format<"uuid">;
   };

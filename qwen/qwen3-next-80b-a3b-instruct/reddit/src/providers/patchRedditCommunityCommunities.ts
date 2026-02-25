@@ -18,46 +18,45 @@ export async function patchRedditCommunityCommunities(props: {
   body: IRedditCommunityCommunity.IRequest;
 }): Promise<IPageIRedditCommunityCommunity.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 25;
   const skip = (page - 1) * limit;
-  // Apply filters and sorting
   const whereInput = {
-    deleted_at: null,
     ...(props.body.search && {
-      name: {
-        contains: props.body.search,
-        mode: "insensitive",
-      },
+      OR: [
+        { name: { contains: props.body.search, mode: "insensitive" } },
+        { description: { contains: props.body.search, mode: "insensitive" } },
+      ],
     }),
   } satisfies Prisma.reddit_community_communitiesWhereInput;
-  const orderByInput = (
-    props.body.sort === "popular"
-      ? { subscriber_count: "desc" as const }
-      : { name: "asc" as const }
-  ) satisfies Prisma.reddit_community_communitiesOrderByWithRelationInput;
-  // Fetch paginated data
+  const orderByInput = (() => {
+    switch (props.body.sort) {
+      case "new":
+        return { created_at: "asc" };
+      case "top":
+      default:
+        return { subscriber_count: "desc" };
+    }
+  })() satisfies Prisma.reddit_community_communitiesOrderByWithRelationInput;
   const data = await MyGlobal.prisma.reddit_community_communities.findMany({
     where: whereInput,
-    orderBy: orderByInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...RedditCommunityCommunityAtSummaryTransformer.select(),
   });
-  // Count total matching records
   const total = await MyGlobal.prisma.reddit_community_communities.count({
     where: whereInput,
   });
-  // Transform and return paginated response
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCommunityCommunityAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCommunityCommunityAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIRedditCommunityCommunity.ISummary;
 }

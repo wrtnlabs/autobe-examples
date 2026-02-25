@@ -14,12 +14,13 @@ export namespace CommunityPlatformPostReportCollector {
     reportedPost: IEntity;
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       id,
-      reason: "Automatically generated reason",
+      reason: props.body.reason,
       status: "pending",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       reportingUser: { connect: { id: props.reportingUser.id } },
       reportedPost: { connect: { id: props.reportedPost.id } },

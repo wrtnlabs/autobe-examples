@@ -16,20 +16,19 @@ import { DiscussionBoardApiRateLimitTransformer } from "../transformers/Discussi
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function getDiscussionBoardAdminApiRateLimitsRateLimitId(props: {
   admin: AdminPayload;
   rateLimitId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardApiRateLimit> {
   const rateLimit =
-    await MyGlobal.prisma.discussion_board_api_rate_limits.findUnique({
+    await MyGlobal.prisma.discussion_board_api_rate_limits.findUniqueOrThrow({
       where: {
         id: props.rateLimitId,
-        deleted_at: null, // Only retrieve non-deleted records
+        deleted_at: null,
       },
       ...DiscussionBoardApiRateLimitTransformer.select(),
     });
-  if (!rateLimit) {
-    throw new HttpException("API rate limit not found", 404);
-  }
   return await DiscussionBoardApiRateLimitTransformer.transform(rateLimit);
 }

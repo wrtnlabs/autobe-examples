@@ -9,36 +9,45 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardDataRetentionPolicyCollector } from "../collectors/DiscussionBoardDataRetentionPolicyCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardDataRetentionPolicyTransformer } from "../transformers/DiscussionBoardDataRetentionPolicyTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminDataRetentionPolicies(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardDataRetentionPolicy.ICreate;
 }): Promise<IDiscussionBoardDataRetentionPolicy> {
-  // Check if policy name already exists
+  // Check if policy name already exists (including soft-deleted ones due to unique constraint)
   const existingPolicy =
     await MyGlobal.prisma.discussion_board_data_retention_policies.findFirst({
       where: {
         policy_name: props.body.policy_name,
-        deleted_at: null,
       },
     });
   if (existingPolicy) {
-    throw new HttpException(
-      `Policy name "${props.body.policy_name}" already exists`,
-      400,
-    );
+    throw new HttpException("Policy name already exists", 409);
   }
-  // Create the policy using collector pattern
-  const created =
-    await MyGlobal.prisma.discussion_board_data_retention_policies.create({
-      data: await DiscussionBoardDataRetentionPolicyCollector.collect({
-        body: props.body,
-      }),
-      ...DiscussionBoardDataRetentionPolicyTransformer.select(),
-    });
-  return await DiscussionBoardDataRetentionPolicyTransformer.transform(created);
+  try {
+    // Create the policy using collector
+    const created =
+      await MyGlobal.prisma.discussion_board_data_retention_policies.create({
+        data: await DiscussionBoardDataRetentionPolicyCollector.collect({
+          body: props.body,
+        }),
+        ...DiscussionBoardDataRetentionPolicyTransformer.select(),
+      });
+    // Transform and return the response
+    return await DiscussionBoardDataRetentionPolicyTransformer.transform(
+      created,
+    );
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new HttpException("Policy name already exists", 409);
+    }
+    throw error;
+  }
 }

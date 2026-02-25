@@ -15,13 +15,14 @@ export async function deleteCommunityPlatformUserCommunitiesCommunityId(props: {
   user: UserPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const existing =
-    await MyGlobal.prisma.community_platform_communities.findUnique({
+  const community =
+    await MyGlobal.prisma.community_platform_communities.findUniqueOrThrow({
       where: { id: props.communityId },
+      select: { id: true, owner_user_id: true },
     });
-  if (existing === null) throw new HttpException("Community not found", 404);
-  if (existing.owner_user_id !== props.user.id)
+  if (community.owner_user_id !== props.user.id) {
     throw new HttpException("Forbidden", 403);
+  }
   await MyGlobal.prisma.community_platform_communities.delete({
     where: { id: props.communityId },
   });

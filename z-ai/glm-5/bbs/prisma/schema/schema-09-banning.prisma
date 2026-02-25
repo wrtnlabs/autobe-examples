@@ -1,0 +1,208 @@
+/// Records of user bans performed by administrators.
+///
+/// Each ban record captures the target user, the administrator who performed
+/// the ban,
+/// the reason for the ban (10-1000 characters), and the timestamp. Ban
+/// records are
+/// immutable and persist for audit purposes even after unbanning.
+///
+/// Related tables:
+/// - {@link discussion_board_users} - Target users and administrator actors
+/// - {@link discussion_board_unbans} - Records of ban removal
+/// - {@link discussion_board_ban_histories} - Immutable audit trail
+///
+/// @namespace Banning
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The banned user who cannot login. {@link discussion_board_users.id}.
+  discussion_board_user_id String
+  
+  /// The administrator who performed the ban action. {@link
+  /// discussion_board_users.id}.
+  discussion_board_administrator_id String
+  
+  /// Reason for the ban, recorded for transparency and audit. Must be between
+  /// 10 and 1000 characters.
+  reason String
+  
+  /// Timestamp when the ban was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_users @relation("discussion_board_bans_of_discussion_board_user_id", fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_users @relation("discussion_board_bans_of_discussion_board_administrator_id", fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  unban discussion_board_unbans?
+  banHistories discussion_board_ban_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_bans_discussion_board_administrator_i_c5c400f0")
+}
+
+/// Records unban actions that reverse active ban records. Each unban
+/// references the original ban record, the administrator who performed the
+/// unban, and includes a required reason text (10-1000 characters). This
+/// table maintains a complete audit trail of unbanning decisions for
+/// compliance and administrative review. One-to-one relationship with {@link
+/// discussion_board_bans} ensures each ban can only be reversed once.
+/// Supports the administrative workflow for restoring user access after ban
+/// appeals or policy reversals.
+///
+/// @namespace Banning
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_unbans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original ban record being reversed. Each ban can only
+  /// have one unban action, creating a one-to-one relationship. {@link
+  /// discussion_board_bans.id}
+  discussion_board_ban_id String
+  
+  /// The administrator who performed the unban action. References the users
+  /// table since administrators are users with elevated permissions. {@link
+  /// discussion_board_users.id}
+  administrator_id String
+  
+  /// The reason for unbanning the user. Required text field with minimum 10
+  /// characters and maximum 1,000 characters. Provides documentation for the
+  /// administrative decision and supports audit requirements. Stored as
+  /// plaintext without markdown or HTML interpretation.
+  reason String
+  
+  /// Timestamp when the unban action was performed. Records when the user's
+  /// access was restored.
+  created_at DateTime
+  
+  /// Timestamp when the unban record was last modified. Typically unchanged
+  /// after initial creation as unban records are generally immutable.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the unban record. Used for audit
+  /// preservation when records are administratively removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ban discussion_board_bans @relation(fields: [discussion_board_ban_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_users @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([discussion_board_ban_id])
+  @@index([administrator_id, created_at])
+}
+
+/// Immutable audit trail for all ban and unban administrative actions.
+///
+/// This table serves as a compliance-focused, append-only record of all user
+/// ban and unban operations performed by administrators. Each entry captures
+/// the complete context of the action including the affected user, the
+/// administrator who performed the action, the reason provided, and
+/// timestamp.
+///
+/// **Key Characteristics:**
+/// - Immutable: Records cannot be modified or deleted once created
+/// - Persistent: Records survive even when referenced users or ban records
+/// are deleted
+/// - Compliance-ready: Supports filtering by date range, administrator, and
+/// action type
+///
+/// **Action Types:**
+/// - BAN: Records when a user is banned from the platform
+/// - UNBAN: Records when a previously banned user has their access restored
+///
+/// **Relationships:**
+/// - References {@link discussion_board_users} for both target user and
+/// administrator
+/// - May reference {@link discussion_board_bans} for unban actions to link
+/// back to the original ban record
+///
+/// **Query Patterns:**
+/// - Filter by action type for reporting
+/// - Filter by administrator for accountability tracking
+/// - Filter by date range for compliance audits
+/// - Filter by target user for user history viewing
+///
+/// @namespace Banning
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who was banned or unbanned. Nullable to support FR-AUDIT-005:
+  /// when a user account is deleted, audit records are retained with
+  /// anonymized references. {@link discussion_board_users.id}
+  discussion_board_user_id String?
+  
+  /// The administrator who performed the ban or unban action. Nullable to
+  /// support FR-AUDIT-005: when an administrator account is deleted, audit
+  /// records are retained with anonymized references. {@link
+  /// discussion_board_users.id}
+  actor_id String?
+  
+  /// Reference to the original ban record for unban actions. NULL for BAN
+  /// actions. Used to trace the complete ban lifecycle. Nullable to preserve
+  /// audit records if the original ban record is deleted. {@link
+  /// discussion_board_bans.id}
+  discussion_board_ban_id String?
+  
+  /// Type of administrative action performed. BAN indicates a user was banned
+  /// from the platform; UNBAN indicates a previously banned user had their
+  /// access restored. Used for filtering and reporting.
+  action_type String
+  
+  /// The reason text provided for the ban or unban action. Required for all
+  /// actions (minimum 10 characters, maximum 1,000 characters as per business
+  /// rules). Stored in plaintext without markdown or HTML interpretation.
+  reason String
+  
+  /// Timestamp when the ban or unban action was executed. Used for
+  /// chronological sorting and date range filtering in audit reports.
+  /// Automatically recorded by the system at the time of action.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  targetUser discussion_board_users? @relation("discussion_board_ban_histories_of_discussion_board_user_id", fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
+  actor discussion_board_users? @relation("discussion_board_ban_histories_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
+  ban discussion_board_bans? @relation(fields: [discussion_board_ban_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_ban_id])
+  @@index([action_type])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_user_id, created_at], map: "discussion_board_ban_histories_discussion_board_user_i_4eb1acb3")
+  @@index([actor_id, created_at])
+}

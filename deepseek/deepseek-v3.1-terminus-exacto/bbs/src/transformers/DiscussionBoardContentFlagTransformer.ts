@@ -34,7 +34,7 @@ export namespace DiscussionBoardContentFlagTransformer {
         flaggedArticle: DiscussionBoardArticleAtSummaryTransformer.select(),
         flaggedComment: DiscussionBoardCommentAtSummaryTransformer.select(),
         reviewingAdmin: DiscussionBoardAdminAtSummaryTransformer.select(),
-        // Removed non-existent property 'discussion_board_content_moderation_queues'
+        moderationQueue: true,
       },
     } satisfies Prisma.discussion_board_content_flagsFindManyArgs;
   }
@@ -44,18 +44,12 @@ export namespace DiscussionBoardContentFlagTransformer {
     return {
       id: input.id,
       flag_reason: input.flag_reason,
-      status: input.status as
-        | "pending"
-        | "under_review"
-        | "resolved"
-        | "dismissed",
+      status: input.status,
       resolution_reason: input.resolution_reason ?? null,
-      resolved_at: input.resolved_at
-        ? toISOStringSafe(input.resolved_at)
-        : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
+      resolved_at: input.resolved_at ? input.resolved_at.toISOString() : null,
       reporter: await DiscussionBoardUserAtSummaryTransformer.transform(
         input.reporter,
       ),

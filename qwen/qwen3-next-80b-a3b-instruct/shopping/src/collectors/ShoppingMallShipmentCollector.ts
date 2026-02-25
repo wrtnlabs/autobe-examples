@@ -10,19 +10,27 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallShipmentCollector {
   export async function collect(props: {
     body: IShoppingMallShipment.ICreate;
-    shoppingMallOrderItems: IEntity;
+    shoppingMallOrders: IEntity;
     shoppingMallSellers: IEntity;
-    shoppingMallSellerSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      carrier: "Unknown",
-      tracking_number: "TBD",
-      status: "shipped",
+      carrier_name: props.body.carrier_name,
+      tracking_number: props.body.tracking_number,
+      shipped_at: new Date(),
       created_at: new Date(),
-      estimated_delivery_date: null,
-      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
+      updated_at: new Date(),
+      order: { connect: { id: props.shoppingMallOrders.id } },
+      seller: { connect: { id: props.shoppingMallSellers.id } },
+      shipmentItems: {
+        create: await Promise.all(
+          props.body.order_item_ids.map(async (order_item_id) => ({
+            id: v4(),
+            orderItem: { connect: { id: order_item_id } },
+          })),
+        ),
+      },
     } satisfies Prisma.shopping_mall_shipmentsCreateInput;
   }
 }

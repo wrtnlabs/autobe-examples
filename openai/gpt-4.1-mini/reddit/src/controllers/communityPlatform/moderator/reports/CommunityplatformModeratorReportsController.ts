@@ -1,58 +1,115 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { ICommunityPlatformReport } from "../../../../api/structures/ICommunityPlatformReport";
+import { IPageICommunityPlatformReport } from "../../../../api/structures/IPageICommunityPlatformReport";
 import { ModeratorAuth } from "../../../../decorators/ModeratorAuth";
 import { ModeratorPayload } from "../../../../decorators/payload/ModeratorPayload";
-import { postCommunityPlatformModeratorReportsReportIdApprove } from "../../../../providers/postCommunityPlatformModeratorReportsReportIdApprove";
+import { deleteCommunityPlatformModeratorReportsReportId } from "../../../../providers/deleteCommunityPlatformModeratorReportsReportId";
+import { getCommunityPlatformModeratorReportsReportId } from "../../../../providers/getCommunityPlatformModeratorReportsReportId";
+import { patchCommunityPlatformModeratorReports } from "../../../../providers/patchCommunityPlatformModeratorReports";
 import { postCommunityPlatformModeratorReportsReportIdDismiss } from "../../../../providers/postCommunityPlatformModeratorReportsReportIdDismiss";
+import { putCommunityPlatformModeratorReportsReportId } from "../../../../providers/putCommunityPlatformModeratorReportsReportId";
 
-@Controller("/communityPlatform/moderator/reports/:reportId")
+@Controller("/communityPlatform/moderator/reports")
 export class CommunityplatformModeratorReportsController {
   /**
-   * Approve a user report on a post or comment, changing its status from pending or other states to 'approved'.
+   * Retrieve a paginated list of reports on posts or comments in the community platform, allowing moderators to view and filter reports for their communities.
    *
-   * This operation is restricted to community moderators, who have the permission to approve reports after reviewing their contents.
+   * This endpoint enables filtering reports based on content type (post/comment), report status (pending, approved, dismissed), reporting user, community, and date ranges.
    *
-   * The approval process involves updating the report status in the database, potentially triggering deletion or other actions on the reported content.
+   * Moderators can use this list to oversee reported content, make decisions, and maintain community standards.
    *
-   * This operation references the community_platform_reports table in the database schema to modify the specific report identified by the reportId path parameter.
+   * Security considerations: Access limited to authenticated moderators and admins.
    *
-   * Request authorization is required to ensure only moderators can perform this action.
+   * The operation queries the reports table joined with reported_contents, report_reasons, users (as reporting user), and communities (if filter applied).
    *
-   * If successful, returns the updated report entity with the new status indicating approval.
+   * Validation rules include ensuring correct status values, pagination parameters, and optional filters.
    *
-   * Related API operations include dismissing a report, rejecting changes, and retrieving report details for moderation.
+   * Related API operations include POST /reports/posts/{postId}, POST /reports/comments/{commentId} for creating reports and POST /reports/{reportId}/approve or /dismiss to act on reports.
    *
-   * No request body is necessary for this operation as the action is explicitly defined by the endpoint itself and the authenticated user context.
-   *
-   * Error responses include 404 if the report is not found and 403 if the user is unauthorized.
-   *
+   * Expected behavior includes returning only reports the moderator is authorized to see, paginated search response, and clear error messages for invalid parameters.
    *
    * @param connection
-   * @param reportId Identifier of the report to approve, formatted as UUID.
+   * @param body Search criteria and pagination parameters for report listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification 1. Validate the reportId path parameter as a UUID corresponding to an existing report.
-   * 2. Check that the authenticated user has moderator permissions in the community related to the report.
-   * 3. Update the community_platform_reports record's status field to 'approved'.
-   * 4. Optionally, create an entry in community_platform_reports_decisions recording the approval with moderatorId and timestamps.
-   * 5. Return the updated report record data.
-   * 6. Handle errors for not found and unauthorized access.
-   * 7. No request body is required.
+   * @x-autobe-specification Perform a paginated filtered search on the reports entity.
+   * Apply filters based on content type (post or comment), status (pending, approved, dismissed), reporting user ID, community ID, and date ranges.
+   * Join with reported_contents to fetch reported post or comment data.
+   * Join with report_reasons for explanation texts.
+   * Apply moderator scope filtering to show only reports from communities they moderate.
+   * Return paginated results with total count, current page, and page size.
+   * Ensure input validation for filter formats and pagination parameters.
+   * Raise errors for invalid values.
    *
+   * Use ICommunityPlatformReport.IRequest as request body schema for input parameters.
+   * Return IPageICommunityPlatformReport.ISummary as response, containing pagination metadata and summary of reports.
+   *
+   * No path parameters required as this endpoint serves global search capability for moderators across all communities they moderate.
+   *
+   * Moderators and admins have access to this endpoint with authorization checking at the service layer.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post("approve")
-  public async approve(
+  @TypedRoute.Patch()
+  public async index(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
+    @TypedBody()
+    body: ICommunityPlatformReport.IRequest,
+  ): Promise<IPageICommunityPlatformReport.ISummary> {
+    try {
+      return await patchCommunityPlatformModeratorReports({
+        moderator,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific user-generated report on posts or comments within the community platform.
+   *
+   * This operation allows authorized community moderators and administrators to access comprehensive data for a given report, identified by its unique reportId.
+   *
+   * The response includes the reporting user, the content being reported (post or comment), the reason text, current status of the report (pending, approved, dismissed), timestamps for report creation and resolution, and any moderation actions taken.
+   *
+   * Security measures ensure that only authorized actors with moderation privileges for the relevant community can view this report detail.
+   *
+   * This endpoint interacts primarily with the community_platform_reports table, linked report reasons, reported contents, and user entities to compile a thorough report overview.
+   *
+   * Validation includes verifying the existence of the reportId and access rights of the requester.
+   *
+   * This operation is a read-only endpoint without side-effects, supporting the moderation workflow to review and decide on reported content.
+   *
+   * Related operations include POST /reports/{reportId}/approve and POST /reports/{reportId}/dismiss for report disposition actions.
+   *
+   * @param connection
+   * @param reportId Unique identifier of the report to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor moderator
+   * @x-autobe-specification Execute a database query to fetch the report entry from the community_platform_reports table by the reportId path parameter.
+   * Join with community_platform_report_reasons to get detailed reason text.
+   * Join with community_platform_reported_contents to determine whether the report targets a post or comment and to retrieve the relevant target content details.
+   * Include reporter user information from community_platform_users to identify the reporting member.
+   * Enforce authorization check ensuring only moderators of the associated community or admins can fetch report details.
+   * Return the full report data including status, timestamps, and any linked moderation decisions.
+   * No request body is needed.
+   * The endpoint is designed for GET method following RESTFUL conventions for fetching a single resource by ID.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":reportId")
+  public async at(
     @ModeratorAuth()
     moderator: ModeratorPayload,
     @TypedParam("reportId")
     reportId: string & tags.Format<"uuid">,
   ): Promise<ICommunityPlatformReport> {
     try {
-      return await postCommunityPlatformModeratorReportsReportIdApprove({
+      return await getCommunityPlatformModeratorReportsReportId({
         moderator,
         reportId,
       });
@@ -63,41 +120,152 @@ export class CommunityplatformModeratorReportsController {
   }
 
   /**
-   * Dismiss a user report on a post or comment by updating its status to 'dismissed', effectively removing it from active moderation queues.
+   * Update a specific report by its unique identifier (reportId). This operation allows moderators or authorized users to modify the status or details of the report, such as approving, dismissing, or updating report comments and status.
    *
-   * This operation targets the report identified by the reportId path parameter, the UUID primary key in the community_platform_reports table.
+   * The reports are stored in the `community_platform_reports` table which captures user-submitted reports on posts or comments including the reporting user ID, target content, reason, status, and timestamps.
    *
-   * This API is intended for community moderators and admins authorized to manage reports.
+   * Authorization is restricted to community moderators and administrators who have the permissions to review and act upon reports.
    *
-   * Successful execution updates the report's status field to 'dismissed' and persists this change in the database.
+   * Business rules enforce that when a report is approved, the related content is deleted, and when dismissed, the report is removed from active listings. This endpoint enables the update of the report's current state and associated moderation decisions.
    *
-   * This operation complements report review endpoints such as GET /reports/{reportId} for detail and POST /reports/{reportId}/approve for approving reports.
+   * This operation complements the report creation and moderation workflow endpoints such as POST /reports/posts/{postId}, POST /reports/comments/{commentId}, POST /reports/{reportId}/approve, and POST /reports/{reportId}/dismiss.
    *
-   * Errors occur if the specified report does not exist or the user lacks authorization.
-   *
-   * The endpoint uses HTTP POST method to signify an action; no request body is required.
-   *
-   * Refer to the community_platform_reports database table for data field details and constraints.
+   * Error handling includes returning appropriate 404 if the report ID does not exist, and validation errors for improper status values or missing required fields in the update request.
    *
    * @param connection
-   * @param reportId Unique identifier of the report to dismiss (UUID)
+   * @param reportId The unique identifier of the report to update
+   * @param body Fields for updating the report
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Implement POST /reports/{reportId}/dismiss to mark the specified report's status as 'dismissed'.
-   *
-   * Retrieve the report by its UUID primary key.
-   * Update 'status' field to 'dismissed'.
-   * Persist the change in the transaction.
-   * Return the updated report entity in the response.
-   *
-   * Handle errors if the report does not exist or user lacks permission.
-   *
-   * This operation does not require a request body.
-   *
-   * Use path parameter 'reportId' with UUID format as identifier.
+   * @x-autobe-specification Perform an update on the `community_platform_reports` table record identified by the `reportId` path parameter.
+   * Validate the incoming request body fields against `ICommunityPlatformReport.IUpdate` schema.
+   * Ensure authorization verifies the user is either a moderator or admin with report handling rights.
+   * Update the report's status, reason, and other modifiable fields as specified in the request body.
+   * Handle state transitions such as 'approved' triggering deletion of the reported content and 'dismissed' removing the report from active listings.
+   * Return the updated report record as response.
+   * Log updates and moderation actions in `community_platform_reports_decisions` if applicable.
+   * Ensure proper transaction handling to maintain data integrity.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post("dismiss")
+  @TypedRoute.Put(":reportId")
+  public async updateReport(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
+    @TypedParam("reportId")
+    reportId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformReport.IUpdate,
+  ): Promise<ICommunityPlatformReport> {
+    try {
+      return await putCommunityPlatformModeratorReportsReportId({
+        moderator,
+        reportId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes a specific report identified by its unique reportId from the system.
+   *
+   * This operation is intended for moderators or administrators who have the right to manage reports within the community platform.
+   *
+   * The report entity corresponds to records in the `community_platform_reports` table which stores user-submitted reports on posts or comments, including details such as who reported, the reported content, reasons, and the current status of the report.
+   *
+   * Deleting a report permanently removes it from the database, ensuring it no longer appears in moderation queues or reporting lists.
+   *
+   * Security considerations enforce that only authorized users, typically moderators or admins, may invoke this operation.
+   *
+   * This operation is part of the moderation workflow and is usually called after a report is resolved or deemed unnecessary.
+   *
+   * No request body is needed because the action targets the resource identified by path parameter.
+   *
+   * If the specified reportId does not exist, the operation should return a 404 error.
+   *
+   * Related operations include:
+   * - POST /reports/{reportId}/approve to approve and delete reported content
+   * - POST /reports/{reportId}/dismiss to dismiss and keep the content
+   *
+   * Error handling should gracefully manage database constraints and permission issues.
+   *
+   * @param connection
+   * @param reportId Unique identifier of the report to be deleted (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor moderator
+   * @x-autobe-specification Perform a delete operation on the `community_platform_reports` table where the primary key matches the given reportId.
+   *
+   * Ensure that the delete operation is authorized and that proper audit logging occurs through middleware or higher layers.
+   *
+   * Return no content in the response upon successful deletion.
+   *
+   * If the reportId does not exist, return a 404 error indicating the resource was not found.
+   *
+   * Do not cascade delete related post or comment data; only the report record is removed.
+   *
+   * Transactions are simple as it is a single-row delete.
+   *
+   * This API endpoint is used by moderators or admins during report management.
+   *
+   * Ensure idempotency: deleting an already deleted or non-existent report should yield 404 consistently.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":reportId")
+  public async erase(
+    @ModeratorAuth()
+    moderator: ModeratorPayload,
+    @TypedParam("reportId")
+    reportId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteCommunityPlatformModeratorReportsReportId({
+        moderator,
+        reportId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Dismiss a user report by a community moderator.
+   *
+   * This endpoint enables community moderators to dismiss an active user report on a post or comment within their managed community. Dismissing a report signifies that the content in question is deemed acceptable, and the report will no longer appear in the moderator's report list.
+   *
+   * Authorization is required, and this action is restricted to moderators assigned to the relevant community.
+   *
+   * The API interacts with the community_platform_reports table which stores all user reports related to posts or comments. The dismissal involves updating the report's status to dismissed and removing it from active report queries.
+   *
+   * No request body is needed since this is a status toggle operation based on the report ID.
+   *
+   * Related endpoints include:
+   * - POST /reports/{reportId}/approve: Approve a report to delete the reported content.
+   * - GET /communities/{communityName}/reports: View active reports in a community.
+   *
+   * This operation guarantees content preservation while cleaning up report queues, maintaining community quality control.
+   *
+   * Errors include 404 if the reportId does not exist or the moderator lacks permission.
+   *
+   * @param connection
+   * @param reportId Report identifier (UUID) to dismiss.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor moderator
+   * @x-autobe-specification Validate reportId exists and moderator authorization.
+   * Update report status to dismissed in community_platform_reports table.
+   * Remove report from active report listings.
+   * Use transaction to ensure atomic update.
+   * Return updated report entity.
+   * Handle errors for invalid reportId or unauthorized access.
+   * Log dismissal action for audit.
+   * Notify client of success with updated status.
+   * No request body since no additional input is required.
+   *
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":reportId/dismiss")
   public async dismiss(
     @ModeratorAuth()
     moderator: ModeratorPayload,

@@ -1,7 +1,5 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardCommentModeration } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCommentModeration";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -9,12 +7,17 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
-import { DiscussionBoardCommentAtSummaryTransformer } from "./DiscussionBoardCommentAtSummaryTransformer";
 
 export namespace DiscussionBoardCommentModerationAtSummaryTransformer {
+  /**
+   * Prisma payload type containing all selected fields from discussion_board_comment_moderations
+   */
   export type Payload = Prisma.discussion_board_comment_moderationsGetPayload<
     ReturnType<typeof select>
   >;
+  /**
+   * Selects the necessary fields from discussion_board_comment_moderations for building the summary DTO
+   */
   export function select() {
     return {
       select: {
@@ -24,11 +27,18 @@ export namespace DiscussionBoardCommentModerationAtSummaryTransformer {
         status: true,
         created_at: true,
         updated_at: true,
-        comment: DiscussionBoardCommentAtSummaryTransformer.select(),
+        comment: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_commentsFindManyArgs,
         admin: DiscussionBoardAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_comment_moderationsFindManyArgs;
   }
+  /**
+   * Transforms Prisma payload data into IDiscussionBoardCommentModeration.ISummary DTO
+   */
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardCommentModeration.ISummary> {
@@ -37,13 +47,9 @@ export namespace DiscussionBoardCommentModerationAtSummaryTransformer {
       action_type: input.action_type,
       reason: input.reason,
       status: input.status,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
       admin: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.admin,
-      ),
-      comment: await DiscussionBoardCommentAtSummaryTransformer.transform(
-        input.comment,
       ),
     };
   }

@@ -7,7 +7,6 @@ import { IPageIDiscussionBoardMaintenanceSchedule } from "../../../../api/struct
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { deleteDiscussionBoardAdminMaintenanceSchedulesScheduleId } from "../../../../providers/deleteDiscussionBoardAdminMaintenanceSchedulesScheduleId";
-import { getDiscussionBoardAdminMaintenanceSchedulesDashboard } from "../../../../providers/getDiscussionBoardAdminMaintenanceSchedulesDashboard";
 import { getDiscussionBoardAdminMaintenanceSchedulesScheduleId } from "../../../../providers/getDiscussionBoardAdminMaintenanceSchedulesScheduleId";
 import { patchDiscussionBoardAdminMaintenanceSchedules } from "../../../../providers/patchDiscussionBoardAdminMaintenanceSchedules";
 import { postDiscussionBoardAdminMaintenanceSchedules } from "../../../../providers/postDiscussionBoardAdminMaintenanceSchedules";
@@ -16,27 +15,13 @@ import { putDiscussionBoardAdminMaintenanceSchedulesScheduleId } from "../../../
 @Controller("/discussionBoard/admin/maintenance-schedules")
 export class DiscussionboardAdminMaintenance_schedulesController {
   /**
-   * Create a new maintenance schedule for system maintenance activities.
-   *
-   * This operation allows administrators to schedule planned maintenance windows for the discussion board platform. Maintenance schedules include comprehensive details about the type of maintenance, expected duration, impact level, and responsible administrators.
-   *
-   * When creating a maintenance schedule, administrators must provide essential information including the maintenance type (system update, database backup, security patch, etc.), detailed description of the activity, scheduled start and end times, estimated duration, and impact assessment. The system validates that scheduled times are in the future and that the scheduled end time occurs after the scheduled start time.
-   *
-   * Maintenance schedules employ logical deletion capabilities using the deleted_at field when removal is necessary, preserving audit trails while preventing active display. The status field tracks maintenance progress through various lifecycle stages from 'scheduled' to 'completed' or 'cancelled'.
-   *
-   * Administrators creating maintenance schedules must have appropriate permissions to schedule system maintenance. The operation automatically assigns the current administrator as the scheduling administrator and sets the initial status to 'scheduled'. Maintenance schedules can be created for various impact levels from low-impact maintenance requiring minimal downtime to critical maintenance affecting platform availability.
-   *
-   * Related operations include viewing maintenance schedules via GET /maintenance-schedules/{id}, updating schedules via PUT /maintenance-schedules/{id}, and searching maintenance schedules via PATCH /maintenance-schedules. Administrators can also track maintenance execution progress and update actual timing information through subsequent operations.
+   * Create a new system maintenance schedule for planned downtime, updates, or infrastructure improvements.nnThis endpoint allows administrators to schedule maintenance windows for the discussion board platform. Maintenance schedules include detailed timing information, expected duration, impact level assessment, and assignment of responsibility. The system tracks maintenance progress from scheduled status through completion, with administrators responsible for updating status as maintenance progresses.nnAll maintenance schedules require validation of the scheduled administrator's existence, maintenance type classification, detailed description of work planned, proper timing parameters, and impact assessment. Maintenance windows should be scheduled during off-peak hours to minimize user impact whenever possible. The schedule begins in 'scheduled' status and transitions to 'in-progress' when maintenance begins, then 'completed' when finished.nnAdministrators creating maintenance schedules must have appropriate system administration permissions. This operation creates records in the discussion_board_maintenance_schedules table and establishes relationships with the discussion_board_admins table for both scheduling and performance tracking.
    *
    * @param connection
-   * @param body Maintenance schedule creation data including timing, description, and impact assessment
+   * @param body Maintenance schedule creation data including timing parameters, description, and impact assessment
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the requesting administrator has permission to create maintenance schedules. Check that scheduled_start_time is in the future and scheduled_end_time occurs after scheduled_start_time. Validate that estimated_duration_minutes matches the difference between scheduled start and end times. Ensure maintenance_type and impact_level values are from predefined valid options.
-   *
-   * Create a new record in the discussion_board_maintenance_schedules table with the provided data. Set the scheduled_by_admin_id to the current authenticated administrator's ID. Set status to 'scheduled' and actual fields (actual_start_time, actual_end_time, actual_duration_minutes) to null since maintenance hasn't started yet. Set created_at and updated_at timestamps to current time.
-   *
-   * Return the complete created maintenance schedule record including system-generated fields like ID and timestamps. Handle validation errors for required fields and data format issues. Ensure proper transaction handling for database operations.
+   * @x-autobe-specification Create a new maintenance schedule record in the discussion_board_maintenance_schedules table. Validate all required fields including scheduled_by_admin_id, maintenance_type, description, scheduled_start_time, scheduled_end_time, estimated_duration_minutes, impact_level, and status. Set created_at and updated_at timestamps to current time. Initialize actual_start_time, actual_end_time, actual_duration_minutes, and performed_by_admin_id as null since the maintenance hasn't been performed yet. Ensure the scheduled_by_admin_id references an existing administrator. Validate that scheduled_end_time is after scheduled_start_time and that the estimated_duration_minutes matches the difference between end and start times. Return the complete created maintenance schedule object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -58,19 +43,27 @@ export class DiscussionboardAdminMaintenance_schedulesController {
   }
 
   /**
-   * Search and retrieve a paginated list of system maintenance schedules with advanced filtering options.
+   * Search and retrieve a paginated list of maintenance schedules with advanced filtering capabilities.
    *
-   * This operation provides comprehensive search capabilities for maintenance schedule records, allowing administrators to filter by maintenance type, status, scheduled time ranges, impact level, and responsible administrators. The response includes essential schedule information optimized for list displays with pagination support.
+   * This operation provides administrators with comprehensive search functionality for maintenance schedule records. Users can filter by maintenance type, status, scheduled date ranges, impact level, and administrator assignments. The operation supports complex querying with pagination for efficient browsing of maintenance history and upcoming schedules.
    *
-   * Administrators can use this operation to monitor upcoming maintenance activities, review past maintenance history, and track maintenance progress. The search functionality supports complex filtering criteria including date ranges, status combinations, and impact level filtering for effective maintenance management.
+   * Security considerations require administrator-level access to view maintenance schedules, as this information contains sensitive operational details about system maintenance windows and infrastructure management. The operation integrates with the comprehensive audit trail system to track all maintenance-related activities.
    *
-   * Security considerations require administrator-level access to view maintenance schedule data, as this information contains system operation details that should not be publicly accessible. Related operations include viewing individual maintenance schedule details and creating new maintenance schedules.
+   * Related operations include creating new maintenance schedules (POST /maintenance-schedules), updating existing schedules (PUT /maintenance-schedules/{id}), and viewing individual schedule details (GET /maintenance-schedules/{id}). This search operation serves as the primary interface for administrators to monitor and manage all maintenance activities across the platform.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for maintenance schedules
+   * @param body Search criteria and pagination parameters for maintenance schedule filtering
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_maintenance_schedules table with advanced filtering capabilities. Support filtering by maintenance_type, status, scheduled_start_time range, impact_level, and administrator assignments. Implement pagination with configurable page sizes and sorting options. Join with discussion_board_admins table to include administrator names in the response. Apply proper authorization checks to ensure only administrators can access maintenance schedule data.
+   * @x-autobe-specification Query the discussion_board_maintenance_schedules table with comprehensive filtering and pagination support.
+   *
+   * Apply filters based on maintenance_type, status, scheduled_start_time range, scheduled_end_time range, impact_level, and administrator assignments. Support text search on description field using full-text search capabilities.
+   *
+   * Implement cursor-based pagination for efficient handling of large result sets. Include sorting options by scheduled_start_time (ascending/descending), created_at, and status priority.
+   *
+   * Join with administrator tables to include administrator details in the response. Handle soft-deleted records appropriately based on the deleted_at field.
+   *
+   * Validate all filter parameters and ensure proper error handling for invalid date ranges or unsupported filter combinations. Return appropriate HTTP status codes for successful searches, empty results, and validation errors.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -92,19 +85,29 @@ export class DiscussionboardAdminMaintenance_schedulesController {
   }
 
   /**
-   * Retrieve detailed information about a specific maintenance schedule in the discussion board platform.
+   * Retrieve detailed information about a specific maintenance schedule by its unique identifier.
    *
-   * This operation provides comprehensive access to maintenance scheduling data including planned timing windows, responsible administrators, status tracking, and execution details. Maintenance schedules are used by administrators to plan system downtime, updates, and infrastructure improvements while minimizing disruption to users.
+   * This operation provides comprehensive maintenance schedule details including planned timing windows, current execution status, responsible administrators, and maintenance specifications. Administrators can use this endpoint to monitor maintenance progress, review scheduled downtime, and track maintenance execution history.
    *
-   * Access to this endpoint is restricted to administrators who require visibility into system maintenance planning and execution. The response includes both scheduled and actual timing information, impact assessment, and detailed descriptions of the maintenance activities being performed.
+   * The response includes all fields from the discussion_board_maintenance_schedules table as documented in the database schema, providing complete visibility into maintenance planning and execution. This operation is essential for administrative oversight of system maintenance activities and supports maintenance workflow management.
    *
-   * Maintenance schedule information is critical for system reliability and operational transparency, allowing administrators to coordinate maintenance activities, communicate planned downtime to users, and track the completion status of system improvements.
+   * Security considerations require that only authenticated administrators should have access to maintenance schedule information, as these details may contain sensitive system information and planned downtime schedules that should not be publicly exposed.
+   *
+   * Related operations include PATCH /maintenance-schedules for listing maintenance schedules with filtering capabilities, and PUT /maintenance-schedules/{scheduleId} for updating maintenance schedule details during execution.
    *
    * @param connection
    * @param scheduleId Unique identifier of the maintenance schedule to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_maintenance_schedules table by the scheduleId UUID parameter. Return all fields including scheduling details, admin assignments, timing information (both planned and actual), status, impact level, and notes. The response should include the complete maintenance schedule object to provide administrators with full visibility for monitoring and planning purposes.
+   * @x-autobe-specification Query the discussion_board_maintenance_schedules table by primary key using the provided scheduleId parameter. Include all fields from the maintenance schedule record including timing information, status, impact level, and administrator assignments.
+   *
+   * Join with discussion_board_admins table to resolve scheduled_by_admin_id and performed_by_admin_id references, including administrator display names in the response for better usability.
+   *
+   * Validate that the scheduleId parameter is a valid UUID format before querying the database. Return appropriate error responses for invalid UUID formats or non-existent maintenance schedule IDs.
+   *
+   * Ensure the response includes calculated fields where appropriate, such as actual_duration_minutes when actual_start_time and actual_end_time are available. Format timestamp fields according to ISO 8601 standards for consistency.
+   *
+   * Handle soft-deleted records appropriately by filtering out maintenance schedules where deleted_at is not null, unless specifically requested for audit purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":scheduleId")
@@ -126,31 +129,20 @@ export class DiscussionboardAdminMaintenance_schedulesController {
   }
 
   /**
-   * Update an existing maintenance schedule with new information.
+   * Update an existing system maintenance schedule with modified timing, status, assignment, or descriptive information.
    *
-   * This API operation allows administrators to modify maintenance schedule details including timing, description, status, and impact level. The operation requires a valid maintenance schedule ID and updates all provided fields atomically.
+   * This operation allows administrators to modify maintenance schedule details including timing adjustments, status updates, administrator reassignment, and impact level changes. Only administrators with appropriate permissions can update maintenance schedules, and certain status transitions require specific field validations (e.g., actual timing information when moving to in-progress or completed status).
    *
-   * Administrators can update maintenance schedules to reflect changes in planned maintenance windows, adjust timing information, update status based on actual progress, or modify maintenance descriptions. The operation validates that the schedule exists and that the requesting administrator has appropriate permissions.
+   * The system validates that scheduled end times occur after scheduled start times and maintains consistency between estimated and actual duration fields. Status transitions follow logical progression from scheduled to in-progress to completed, with appropriate timestamp recording for audit purposes.
    *
-   * When updating maintenance schedules, administrators can modify both planned timing (scheduled_start_time, scheduled_end_time) and actual timing (actual_start_time, actual_end_time) to track maintenance progress. Status updates allow transitioning between scheduled, in-progress, completed, and cancelled states.
-   *
-   * The operation ensures data consistency by validating all field constraints and maintaining referential integrity with administrator relationships. Updated maintenance schedules are immediately reflected in system maintenance tracking and notification systems.
-   *
-   * Related operations include GET /maintenance-schedules/{scheduleId} for retrieving maintenance schedule details and PATCH /maintenance-schedules for searching maintenance schedules with filtering capabilities.
+   * Administrators can update maintenance type classifications, impact assessments, and detailed descriptions to reflect changing maintenance requirements or scope adjustments. The operation provides comprehensive maintenance schedule management capabilities for system administrators.
    *
    * @param connection
    * @param scheduleId Unique identifier of the maintenance schedule to update
-   * @param body Updated maintenance schedule information
+   * @param body Updated maintenance schedule information with modified fields
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_maintenance_schedules table by scheduleId to verify existence.
-   * Validate that the requesting administrator has permission to update maintenance schedules.
-   * Update all provided fields in the maintenance schedule record atomically.
-   * Validate field constraints: maintenance_type must be valid, timing must be logical (end after start), status transitions must follow valid workflow.
-   * Update the updated_at timestamp to reflect the modification time.
-   * Return the complete updated maintenance schedule object with all fields.
-   * Handle concurrent updates with optimistic locking if multiple administrators attempt to modify the same schedule.
-   * Log the update operation in the audit trail for compliance and tracking purposes.
+   * @x-autobe-specification Update an existing maintenance schedule record. Validate that the schedule exists and is not completed or cancelled. Check that the updating admin has appropriate permissions. For status transitions (e.g., scheduled → in-progress), validate required fields are populated (actual start time when starting maintenance). Handle timing validation to ensure scheduled_end_time is after scheduled_start_time. Update the performed_by_admin_id when status changes to in-progress or completed. Maintain audit trail of changes. Return the complete updated schedule object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":scheduleId")
@@ -175,29 +167,27 @@ export class DiscussionboardAdminMaintenance_schedulesController {
   }
 
   /**
-   * Permanently removes a maintenance schedule record from the system by marking it as deleted.
+   * Permanently delete a maintenance schedule record from the system.
    *
-   * This operation performs a soft deletion of the specified maintenance schedule by setting the deleted_at timestamp. The record remains in the database for audit purposes but is effectively removed from active use. Only administrators with appropriate permissions can delete maintenance schedules.
+   * This operation removes a maintenance schedule entry completely from the discussion board platform. When executed successfully, the maintenance schedule record is permanently deleted along with all its associated data. This operation is typically performed by administrators when a maintenance schedule is no longer needed or was created in error.
    *
-   * The deletion process includes validation to ensure the schedule exists and has not already been deleted. If the schedule is currently in progress (status = 'in-progress'), the deletion may be restricted or require additional authorization depending on system policies.
+   * The operation requires administrator privileges as maintenance schedule management is restricted to authorized personnel only. The system validates that the requesting user has appropriate permissions before allowing the deletion to proceed.
    *
-   * After successful deletion, the operation returns the complete maintenance schedule record with the updated deleted_at timestamp for confirmation. This allows administrators to verify the deletion and maintain proper audit trails for maintenance activities.
+   * After successful deletion, the maintenance schedule is completely removed from the database and cannot be recovered. This operation should be used with caution as it results in permanent data loss. Related audit logs may retain references to the deleted maintenance schedule for compliance purposes.
    *
-   * Related operations include creating maintenance schedules (POST /maintenance-schedules), updating schedules (PUT /maintenance-schedules/{scheduleId}), and listing schedules (PATCH /maintenance-schedules) for comprehensive maintenance management.
+   * Security considerations include proper authorization checks to ensure only authorized administrators can perform this operation. The system logs all deletion activities for audit trail purposes.
    *
    * @param connection
    * @param scheduleId Unique identifier of the maintenance schedule to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_maintenance_schedules table by the provided scheduleId to locate the target maintenance schedule.
-   *
-   * Validate that the schedule exists and has not already been deleted (deleted_at is null). If the schedule is not found or already deleted, return appropriate error responses.
-   *
-   * Check authorization to ensure the requesting administrator has permission to delete maintenance schedules. This may involve verifying administrator privileges and ensuring the schedule can be safely deleted (e.g., not currently in progress).
-   *
-   * Perform the soft deletion by updating the deleted_at column with the current timestamp. Preserve all other schedule information for audit purposes.
-   *
-   * Return the complete maintenance schedule record with the updated deleted_at timestamp to confirm successful deletion. Include all schedule details for verification and audit trail completeness.
+   * @x-autobe-specification Validate that the requesting user has administrator privileges before proceeding with deletion.
+   * Query the discussion_board_maintenance_schedules table to find the record with the specified scheduleId.
+   * If no record exists with the given scheduleId, return a 404 Not Found error.
+   * Perform a hard delete operation by removing the record from the database.
+   * Log the deletion activity in the audit trail system for compliance tracking.
+   * Return appropriate HTTP status code (204 No Content) upon successful deletion.
+   * Ensure proper error handling for database connection issues or constraint violations.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":scheduleId")
@@ -206,41 +196,11 @@ export class DiscussionboardAdminMaintenance_schedulesController {
     admin: AdminPayload,
     @TypedParam("scheduleId")
     scheduleId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardMaintenanceSchedule> {
+  ): Promise<void> {
     try {
       return await deleteDiscussionBoardAdminMaintenanceSchedulesScheduleId({
         admin,
         scheduleId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve comprehensive dashboard statistics and overview information for maintenance schedule management across the discussion board platform.
-   *
-   * This operation provides administrators with a high-level view of maintenance schedule performance, aggregating data from the discussion_board_maintenance_schedules table. The dashboard includes key performance indicators such as count of upcoming maintenance windows, completion rate percentages for recent maintenance, average duration accuracy comparing estimated vs actual maintenance times, and maintenance activity trends over time.
-   *
-   * Administrators can use this dashboard to monitor maintenance schedule adherence, identify performance patterns such as consistently underestimated maintenance durations, and make data-driven decisions for future maintenance planning. The aggregated data supports proactive maintenance management by highlighting areas needing attention and validating maintenance process effectiveness.
-   *
-   * The dashboard applies filters to exclude soft-deleted records (deleted_at IS NULL) and calculates statistics based on maintenance status classifications (scheduled, in-progress, completed, cancelled). All aggregation operations are performed at the database level for optimal performance when dealing with maintenance schedule histories.
-   *
-   * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_maintenance_schedules table to aggregate maintenance statistics. Calculate metrics including: count of upcoming maintenance, count of completed maintenance in last 30 days, average actual duration vs estimated duration, completion rate percentage, and recent maintenance activity. Filter by status to separate scheduled vs completed maintenance. Calculate performance metrics comparing estimated vs actual durations. Return aggregated dashboard data optimized for administrative overview.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get("dashboard")
-  public async dashboard(
-    @AdminAuth()
-    admin: AdminPayload,
-  ): Promise<IDiscussionBoardMaintenanceSchedule> {
-    try {
-      return await getDiscussionBoardAdminMaintenanceSchedulesDashboard({
-        admin,
       });
     } catch (error) {
       console.log(error);

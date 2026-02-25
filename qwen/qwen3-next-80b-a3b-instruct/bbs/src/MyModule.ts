@@ -1,80 +1,90 @@
 import { Module } from "@nestjs/common";
 
-import { EconomicboardAdministratorAnalyticsCommentsController } from "./controllers/economicBoard/administrator/analytics/comments/EconomicboardAdministratorAnalyticsCommentsController";
-import { EconomicboardAdministratorAuditCreationsController } from "./controllers/economicBoard/administrator/audit/creations/EconomicboardAdministratorAuditCreationsController";
-import { EconomicboardAdministratorAuditDeletionsController } from "./controllers/economicBoard/administrator/audit/deletions/EconomicboardAdministratorAuditDeletionsController";
-import { EconomicboardAdministratorBansController } from "./controllers/economicBoard/administrator/bans/EconomicboardAdministratorBansController";
-import { EconomicboardAdministratorMetricsController } from "./controllers/economicBoard/administrator/metrics/EconomicboardAdministratorMetricsController";
-import { EconomicboardAdministratorModerationCommentsController } from "./controllers/economicBoard/administrator/moderation/comments/EconomicboardAdministratorModerationCommentsController";
-import { EconomicboardAdministratorModerationUnmoderatedController } from "./controllers/economicBoard/administrator/moderation/unmoderated/EconomicboardAdministratorModerationUnmoderatedController";
-import { EconomicboardAdministratorReportsCommentsController } from "./controllers/economicBoard/administrator/reports/comments/EconomicboardAdministratorReportsCommentsController";
-import { EconomicboardAdministratorReportsCommentsSectionController } from "./controllers/economicBoard/administrator/reports/comments/section/EconomicboardAdministratorReportsCommentsSectionController";
+import { EconomicboardAdministratorAdminBanned_usersController } from "./controllers/economicBoard/administrator/admin/banned-users/EconomicboardAdministratorAdminBanned_usersController";
+import { EconomicboardAdministratorAdminUsersController } from "./controllers/economicBoard/administrator/admin/users/EconomicboardAdministratorAdminUsersController";
+import { EconomicboardAdministratorAdminUsers_unbanController } from "./controllers/economicBoard/administrator/admin/users/unban/EconomicboardAdministratorAdminUsers_unbanController";
+import { EconomicboardAdministratorAnalyticsController } from "./controllers/economicBoard/administrator/analytics/EconomicboardAdministratorAnalyticsController";
+import { EconomicboardAdministratorArticle_viewsController } from "./controllers/economicBoard/administrator/article-views/EconomicboardAdministratorArticle_viewsController";
+import { EconomicboardAdministratorArticlesController } from "./controllers/economicBoard/administrator/articles/EconomicboardAdministratorArticlesController";
+import { EconomicboardAdministratorArticlesCommentsController } from "./controllers/economicBoard/administrator/articles/comments/EconomicboardAdministratorArticlesCommentsController";
+import { EconomicboardAdministratorBanned_usersController } from "./controllers/economicBoard/administrator/banned-users/EconomicboardAdministratorBanned_usersController";
+import { EconomicboardAdministratorCommentsController } from "./controllers/economicBoard/administrator/comments/EconomicboardAdministratorCommentsController";
+import { EconomicboardAdministratorReportsActivityController } from "./controllers/economicBoard/administrator/reports/activity/EconomicboardAdministratorReportsActivityController";
 import { EconomicboardAdministratorSectionsController } from "./controllers/economicBoard/administrator/sections/EconomicboardAdministratorSectionsController";
-import { EconomicboardAdministratorTagsController } from "./controllers/economicBoard/administrator/tags/popular/EconomicboardAdministratorTagsController";
+import { EconomicboardAdministratorSectionsSnapshotsController } from "./controllers/economicBoard/administrator/sections/snapshots/EconomicboardAdministratorSectionsSnapshotsController";
+import { EconomicboardAdministratorUsersController } from "./controllers/economicBoard/administrator/users/ban/EconomicboardAdministratorUsersController";
+import { EconomicboardArticle_snapshotsController } from "./controllers/economicBoard/article-snapshots/EconomicboardArticle_snapshotsController";
+import { EconomicboardArticle_snapshotsAttachmentsController } from "./controllers/economicBoard/article-snapshots/attachments/EconomicboardArticle_snapshotsAttachmentsController";
+import { EconomicboardArticle_snapshotsTagsController } from "./controllers/economicBoard/article-snapshots/tags/EconomicboardArticle_snapshotsTagsController";
 import { EconomicboardArticlesController } from "./controllers/economicBoard/articles/EconomicboardArticlesController";
-import { EconomicboardArticlesFilesController } from "./controllers/economicBoard/articles/files/EconomicboardArticlesFilesController";
-import { EconomicboardArticlesImagesController } from "./controllers/economicBoard/articles/images/EconomicboardArticlesImagesController";
-import { EconomicboardArticlesStatsController } from "./controllers/economicBoard/articles/stats/EconomicboardArticlesStatsController";
-import { EconomicboardArticlesTagsController } from "./controllers/economicBoard/articles/tags/EconomicboardArticlesTagsController";
+import { EconomicboardArticlesAttachmentsController } from "./controllers/economicBoard/articles/attachments/EconomicboardArticlesAttachmentsController";
+import { EconomicboardArticlesCommentsController } from "./controllers/economicBoard/articles/comments/EconomicboardArticlesCommentsController";
+import { EconomicboardArticlesSnapshotsController } from "./controllers/economicBoard/articles/snapshots/EconomicboardArticlesSnapshotsController";
 import { EconomicboardAuthAdministratorController } from "./controllers/economicBoard/auth/administrator/EconomicboardAuthAdministratorController";
 import { EconomicboardAuthCitizenController } from "./controllers/economicBoard/auth/citizen/EconomicboardAuthCitizenController";
 import { EconomicboardAuthSuperadministratorController } from "./controllers/economicBoard/auth/superAdministrator/EconomicboardAuthSuperadministratorController";
-import { EconomicboardCitizenAdmin_requestsController } from "./controllers/economicBoard/citizen/admin-requests/EconomicboardCitizenAdmin_requestsController";
+import { EconomicboardCitizenController } from "./controllers/economicBoard/citizen/EconomicboardCitizenController";
+import { EconomicboardCitizenArticlesController } from "./controllers/economicBoard/citizen/articles/EconomicboardCitizenArticlesController";
 import { EconomicboardCitizenArticlesCommentsController } from "./controllers/economicBoard/citizen/articles/comments/EconomicboardCitizenArticlesCommentsController";
 import { EconomicboardCitizenCommentsController } from "./controllers/economicBoard/citizen/comments/EconomicboardCitizenCommentsController";
-import { EconomicboardCitizenEmail_verificationsController } from "./controllers/economicBoard/citizen/email-verifications/EconomicboardCitizenEmail_verificationsController";
-import { EconomicboardCitizenPassword_resetsController } from "./controllers/economicBoard/citizen/password-resets/EconomicboardCitizenPassword_resetsController";
-import { EconomicboardCitizenProfileController } from "./controllers/economicBoard/citizen/profile/EconomicboardCitizenProfileController";
-import { EconomicboardCitizenProfileStatsController } from "./controllers/economicBoard/citizen/profile/stats/EconomicboardCitizenProfileStatsController";
-import { EconomicboardCitizenSessionsController } from "./controllers/economicBoard/citizen/sessions/EconomicboardCitizenSessionsController";
-import { EconomicboardCitizenTagsController } from "./controllers/economicBoard/citizen/tags/popular/EconomicboardCitizenTagsController";
-import { EconomicboardSearchController } from "./controllers/economicBoard/search/EconomicboardSearchController";
+import { EconomicboardCitizenReportsActivityController } from "./controllers/economicBoard/citizen/reports/activity/EconomicboardCitizenReportsActivityController";
+import { EconomicboardCitizenSearchesController } from "./controllers/economicBoard/citizen/searches/EconomicboardCitizenSearchesController";
+import { EconomicboardSection_snapshotsController } from "./controllers/economicBoard/section-snapshots/EconomicboardSection_snapshotsController";
 import { EconomicboardSectionsController } from "./controllers/economicBoard/sections/EconomicboardSectionsController";
-import { EconomicboardSuperadministratorAdmin_requestsController } from "./controllers/economicBoard/superAdministrator/admin-requests/EconomicboardSuperadministratorAdmin_requestsController";
-import { EconomicboardSuperadministratorAuditCreationsController } from "./controllers/economicBoard/superAdministrator/audit/creations/EconomicboardSuperadministratorAuditCreationsController";
-import { EconomicboardSuperadministratorAuditDeletionsController } from "./controllers/economicBoard/superAdministrator/audit/deletions/EconomicboardSuperadministratorAuditDeletionsController";
-import { EconomicboardSuperadministratorMetricsController } from "./controllers/economicBoard/superAdministrator/metrics/EconomicboardSuperadministratorMetricsController";
-import { EconomicboardSuperadministratorSectionsController } from "./controllers/economicBoard/superAdministrator/sections/EconomicboardSuperadministratorSectionsController";
+import { EconomicboardSuperadministratorAdminAdmin_requestsController } from "./controllers/economicBoard/superAdministrator/admin/admin-requests/EconomicboardSuperadministratorAdminAdmin_requestsController";
+import { EconomicboardSuperadministratorAdminAudit_logsController } from "./controllers/economicBoard/superAdministrator/admin/audit-logs/EconomicboardSuperadministratorAdminAudit_logsController";
+import { EconomicboardSuperadministratorAdminUsersController } from "./controllers/economicBoard/superAdministrator/admin/users/demote/EconomicboardSuperadministratorAdminUsersController";
+import { EconomicboardSuperadministratorAdminUsersPromote_adminController } from "./controllers/economicBoard/superAdministrator/admin/users/promote-admin/EconomicboardSuperadministratorAdminUsersPromote_adminController";
+import { EconomicboardSuperadministratorAdminUsersPromoteController } from "./controllers/economicBoard/superAdministrator/admin/users/promote/EconomicboardSuperadministratorAdminUsersPromoteController";
+import { EconomicboardSuperadministratorBanned_usersController } from "./controllers/economicBoard/superAdministrator/banned-users/EconomicboardSuperadministratorBanned_usersController";
+import { EconomicboardSuperadministratorRequestsController } from "./controllers/economicBoard/superAdministrator/requests/EconomicboardSuperadministratorRequestsController";
+import { EconomicboardSuperadministratorUsersController } from "./controllers/economicBoard/superAdministrator/users/demote/EconomicboardSuperadministratorUsersController";
 import { EconomicboardTagsController } from "./controllers/economicBoard/tags/EconomicboardTagsController";
+import { EconomicboardUsersController } from "./controllers/economicBoard/users/EconomicboardUsersController";
 
 @Module({
   controllers: [
     EconomicboardAuthCitizenController,
     EconomicboardAuthAdministratorController,
     EconomicboardAuthSuperadministratorController,
-    EconomicboardCitizenProfileController,
-    EconomicboardCitizenSessionsController,
-    EconomicboardCitizenEmail_verificationsController,
-    EconomicboardCitizenPassword_resetsController,
+    EconomicboardCitizenController,
+    EconomicboardSuperadministratorAdminAudit_logsController,
     EconomicboardArticlesController,
-    EconomicboardArticlesFilesController,
-    EconomicboardArticlesImagesController,
-    EconomicboardArticlesStatsController,
-    EconomicboardArticlesTagsController,
+    EconomicboardCitizenArticlesController,
+    EconomicboardAdministratorArticlesController,
+    EconomicboardArticlesCommentsController,
     EconomicboardCitizenArticlesCommentsController,
-    EconomicboardCitizenCommentsController,
+    EconomicboardAdministratorArticlesCommentsController,
     EconomicboardSectionsController,
     EconomicboardAdministratorSectionsController,
-    EconomicboardSuperadministratorSectionsController,
-    EconomicboardAdministratorBansController,
-    EconomicboardSearchController,
     EconomicboardTagsController,
-    EconomicboardCitizenAdmin_requestsController,
-    EconomicboardSuperadministratorAdmin_requestsController,
-    EconomicboardCitizenProfileStatsController,
-    EconomicboardAdministratorMetricsController,
-    EconomicboardSuperadministratorMetricsController,
-    EconomicboardCitizenTagsController,
-    EconomicboardAdministratorTagsController,
-    EconomicboardAdministratorReportsCommentsController,
-    EconomicboardAdministratorReportsCommentsSectionController,
-    EconomicboardAdministratorAnalyticsCommentsController,
-    EconomicboardAdministratorModerationUnmoderatedController,
-    EconomicboardAdministratorModerationCommentsController,
-    EconomicboardAdministratorAuditCreationsController,
-    EconomicboardSuperadministratorAuditCreationsController,
-    EconomicboardAdministratorAuditDeletionsController,
-    EconomicboardSuperadministratorAuditDeletionsController,
+    EconomicboardArticlesAttachmentsController,
+    EconomicboardArticlesSnapshotsController,
+    EconomicboardArticle_snapshotsController,
+    EconomicboardArticle_snapshotsAttachmentsController,
+    EconomicboardArticle_snapshotsTagsController,
+    EconomicboardAdministratorSectionsSnapshotsController,
+    EconomicboardSection_snapshotsController,
+    EconomicboardAdministratorArticle_viewsController,
+    EconomicboardAdministratorAdminUsersController,
+    EconomicboardAdministratorAdminUsers_unbanController,
+    EconomicboardSuperadministratorAdminAdmin_requestsController,
+    EconomicboardSuperadministratorRequestsController,
+    EconomicboardUsersController,
+    EconomicboardCitizenCommentsController,
+    EconomicboardAdministratorCommentsController,
+    EconomicboardSuperadministratorAdminUsersPromote_adminController,
+    EconomicboardSuperadministratorUsersController,
+    EconomicboardAdministratorBanned_usersController,
+    EconomicboardSuperadministratorBanned_usersController,
+    EconomicboardSuperadministratorAdminUsersPromoteController,
+    EconomicboardSuperadministratorAdminUsersController,
+    EconomicboardAdministratorAdminBanned_usersController,
+    EconomicboardCitizenSearchesController,
+    EconomicboardCitizenReportsActivityController,
+    EconomicboardAdministratorReportsActivityController,
+    EconomicboardAdministratorAnalyticsController,
+    EconomicboardAdministratorUsersController,
   ],
 })
 export class MyModule {}

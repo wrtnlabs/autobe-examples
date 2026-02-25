@@ -16,13 +16,17 @@ export namespace RedditCommunityPlatformAdminAtSummaryTransformer {
         id: true,
         email: true,
         password_hash: true,
+        username: true,
         display_name: true,
         bio: true,
         avatar_url: true,
-        karma: true,
+        karma_score: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
+        is_deleted: true,
+        sessions: true,
+        passwordResets: true,
+        emailVerification: true,
       },
     } satisfies Prisma.reddit_community_platform_adminsFindManyArgs;
   }
@@ -31,10 +35,12 @@ export namespace RedditCommunityPlatformAdminAtSummaryTransformer {
   ): Promise<IRedditCommunityPlatformAdmin.ISummary> {
     return {
       id: input.id,
-      display_name: input.display_name,
-      bio: input.bio ?? null,
-      avatar_url: input.avatar_url ?? null,
-      karma: input.karma,
+      username: input.username,
+      email: input.email,
+      is_deleted: input.is_deleted,
+      karma_score: input.karma_score,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

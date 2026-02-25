@@ -3,31 +3,33 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IDiscussionBoardPerformanceMetric } from "../../../../structures/IDiscussionBoardPerformanceMetric";
-import { IPageIDiscussionBoardPerformanceMetric } from "../../../../structures/IPageIDiscussionBoardPerformanceMetric";
+import { IDiscussionBoardSystemActivity } from "../../../../structures/IDiscussionBoardSystemActivity";
+import { IPageIDiscussionBoardSystemActivity } from "../../../../structures/IPageIDiscussionBoardSystemActivity";
 
-export * as bans from "./bans/index";
-export * as flags from "./flags/index";
-export * as moderation_efficiency from "./moderation_efficiency/index";
-export * as ban_durations from "./ban_durations/index";
-export * as moderation_action_types from "./moderation_action_types/index";
+export * as article_views from "./article_views/index";
+export * as sections from "./sections/index";
+export * as user_activity from "./user_activity/index";
 
 /**
- * Retrieve system performance metrics and analytics data for monitoring platform health and performance optimization.
+ * Query analytics data across multiple system data sources with advanced filtering capabilities.
  *
- * This operation provides comprehensive access to performance metrics collected from various components of the discussion board platform. Administrators can query metrics by type, source component, time range, and specific date periods to analyze system behavior, identify performance bottlenecks, and monitor platform health.
+ * This operation provides super administrators with comprehensive analytics query functionality across all available analytics data sources in the discussion board platform. The system supports filtering by date ranges, activity types, metric categories, and target entities, enabling detailed analysis of platform usage patterns, performance metrics, and user engagement statistics.
  *
- * The response includes essential performance indicators such as response times, resource utilization metrics, error rates, and request counts. Each metric record contains the measurement value, unit, collection timestamp, and source component information for detailed analysis.
+ * Super administrators can use this endpoint to retrieve aggregated analytics data for reporting, monitoring, and optimization purposes. The operation supports pagination for large result sets and allows filtering by specific analytics categories including system activities, performance metrics, article view statistics, section engagement metrics, and audit trail events.
  *
- * This analytics endpoint supports capacity planning, performance optimization, and proactive monitoring of service level agreements. The data can be used to generate performance reports, identify trends, and make data-driven decisions about infrastructure scaling and optimization.
+ * Security considerations require that only authenticated super administrators have access to this analytics endpoint, as it provides system-wide visibility into platform usage patterns and performance metrics. The response includes summary analytics data optimized for reporting and dashboard display.
  *
- * Security considerations: This operation is restricted to super administrators only, as it provides access to sensitive system performance data that could reveal infrastructure architecture details, capacity patterns, and system vulnerabilities. Regular administrators do not have access to performance analytics to protect system security.
+ * Related operations include individual analytics endpoints for specific data sources, but this unified endpoint provides the most comprehensive analytics query capability for cross-source analysis and reporting needs.
  *
  * @param props.connection
- * @param props.body Analytics query parameters including metric filters, time ranges, and pagination settings
+ * @param props.body Analytics query parameters including filters, date ranges, and pagination settings
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the discussion_board_performance_metrics table with comprehensive filtering capabilities. Apply filters based on metric_type, source_component, time_range, and collection_timestamp ranges. Support pagination through cursor-based or offset-based pagination. Join with system_configurations table if configuration_id filtering is required. Aggregate metrics by type and time periods when requested. Return summary-level data optimized for analytics dashboards with essential performance indicators.
+ * @x-autobe-specification Query multiple analytics data sources based on request parameters. Implement filtering logic for each analytics category: system activities, performance metrics, article view stats, section statistics, and audit logs. Apply date range filtering, activity type matching, and entity targeting. Aggregate results across data sources and return paginated response with analytics summaries.
+ *
+ * For system activities: filter by activity_type, target_entity_type, date ranges, and success status. For performance metrics: filter by metric_type, source_component, and time ranges. For article view stats: filter by article ID and date ranges. For section statistics: filter by section ID and activity periods. For audit logs: filter by action_type, actor_type, and date ranges.
+ *
+ * Implement pagination with configurable page sizes and sorting options. Handle empty result sets gracefully and provide comprehensive error handling for invalid filter parameters. Ensure all queries are optimized for performance with appropriate database indexes.
  * @path /discussionBoard/superAdmin/analytics
  * @accessor api.functional.discussionBoard.superAdmin.analytics.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -57,12 +59,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Analytics query parameters including metric filters, time ranges, and pagination settings
+     * Analytics query parameters including filters, date ranges, and pagination settings
      */
-    body: IDiscussionBoardPerformanceMetric.IRequest;
+    body: IDiscussionBoardSystemActivity.IRequest;
   };
-  export type Body = IDiscussionBoardPerformanceMetric.IRequest;
-  export type Response = IPageIDiscussionBoardPerformanceMetric.ISummary;
+  export type Body = IDiscussionBoardSystemActivity.IRequest;
+  export type Response = IPageIDiscussionBoardSystemActivity.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -78,8 +80,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/discussionBoard/superAdmin/analytics";
-  export const random = (): IPageIDiscussionBoardPerformanceMetric.ISummary =>
-    typia.random<IPageIDiscussionBoardPerformanceMetric.ISummary>();
+  export const random = (): IPageIDiscussionBoardSystemActivity.ISummary =>
+    typia.random<IPageIDiscussionBoardSystemActivity.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,

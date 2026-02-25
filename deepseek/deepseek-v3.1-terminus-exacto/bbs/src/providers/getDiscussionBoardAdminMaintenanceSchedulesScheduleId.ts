@@ -18,17 +18,17 @@ export async function getDiscussionBoardAdminMaintenanceSchedulesScheduleId(prop
   admin: AdminPayload;
   scheduleId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
+  // Fetch maintenance schedule by ID, filtering out soft-deleted records
   const schedule =
-    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUnique({
-      where: {
-        id: props.scheduleId,
-        deleted_at: null, // Only non-deleted schedules
+    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
+      {
+        where: {
+          id: props.scheduleId,
+          deleted_at: null,
+        },
+        ...DiscussionBoardMaintenanceScheduleTransformer.select(),
       },
-      ...DiscussionBoardMaintenanceScheduleTransformer.select(),
-    });
-  if (!schedule) {
-    throw new HttpException("Maintenance schedule not found", 404);
-  }
+    );
   return await DiscussionBoardMaintenanceScheduleTransformer.transform(
     schedule,
   );

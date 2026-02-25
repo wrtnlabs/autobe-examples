@@ -1,0 +1,180 @@
+/// User accounts with email/password credentials, verification status, and
+/// display name. Serves as the primary identity record for all
+/// authentication flows and permission structures. All business operations
+/// related to user accounts originate from this model.
+///
+/// Key relationships:
+/// - Governed by session table: todo_app_user_sessions
+/// - Manages password reset tokens via: todo_app_user_password_resets
+/// - Handles email verification via: todo_app_user_email_verifications
+/// - User-owned todos tracked through: todo_app_todos table
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Registered email address used for account identification. Must be unique
+  /// across all user accounts.
+  email String
+  
+  /// Securely hashed password representation. Never stores plaintext passwords.
+  password_hash String
+  
+  /// User's customizable display name visible to other users. Max 30
+  /// characters.
+  display_name String?
+  
+  /// Timestamp when the user account was created.
+  created_at DateTime
+  
+  /// Timestamp when user profile was last modified.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions todo_app_user_sessions[]
+  passwordResets todo_app_user_password_resets[]
+  emailVerifications todo_app_user_email_verifications[]
+  todos todo_app_todos[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens with access and refresh capabilities for authenticated
+/// user sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user associated with this session.
+  todo_app_user_id String
+  
+  /// IP address used during login.
+  ip String?
+  
+  /// Current URL of the session.
+  href String?
+  
+  /// Referrer URL for the session.
+  referrer String?
+  
+  /// Session creation time.
+  created_at DateTime
+  
+  /// Session expiration time.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_user_id, created_at])
+}
+
+/// Password reset tokens with 15-minute expiration and usage tracking.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user associated with this password reset token. {@link
+  /// todo_app_users.id}.
+  user_id String
+  
+  /// The unique password reset token for user account restoration.
+  token String
+  
+  /// Expiration timestamp in UTC. Valid for 15 minutes from token creation.
+  expires_at DateTime
+  
+  /// Timestamp when the reset token was used to successfully update the
+  /// password.
+  used_at DateTime?
+  
+  /// Timestamp when this password reset record was created.
+  created_at DateTime
+  
+  /// Timestamp when this password reset record was last updated (e.g., expiry
+  /// reset).
+  updated_at DateTime
+  
+  /// Timestamp when this password reset record was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([user_id, expires_at])
+}
+
+/// Email verification tokens with expiration for registration completion.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who requested email verification. {@link todo_app_users.id}
+  user_id String
+  
+  /// Unique verification token for email validation.
+  token String
+  
+  /// Expiration timestamp of the verification token.
+  expires_at DateTime
+  
+  /// Timestamp of token creation.
+  created_at DateTime
+  
+  /// Timestamp of last update to the token record.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@unique([token])
+}

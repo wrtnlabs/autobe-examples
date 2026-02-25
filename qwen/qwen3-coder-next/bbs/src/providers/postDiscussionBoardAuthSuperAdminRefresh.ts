@@ -15,17 +15,59 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthSuperAdminRefresh(props: {
   body: IDiscussionBoardSuperAdmin.IRefresh;
 }): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  // For refresh operations, the refresh token is typically provided via
-  // authorization header which is handled by NestJS guards.
-  // Since the IRefresh type is empty, we assume the framework provides
-  // access to the current session/actor through a decorator or context.
-  //
-  // For now, we'll create a minimal implementation that assumes
-  // the session context is available through another mechanism.
-  // In a real implementation, you would extract the session from
-  // the request context or use a decorator like @JwtPayload().
-  throw new HttpException(
-    "Not implemented: refresh token extraction mechanism not available",
-    501,
+  const session =
+    await MyGlobal.prisma.discussion_board_super_admin_sessions.findFirst({
+      where: {
+        refresh_token: props.body.refresh_token,
+        active: true,
+        expired_at: { gt: new Date() },
+      },
+    });
+  if (!session) {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  const accessExpires = new Date();
+  accessExpires.setHours(accessExpires.getHours() + 1);
+  const refreshExpires = new Date();
+  refreshExpires.setDate(refreshExpires.getDate() + 7);
+  const accessToken = jwt.sign(
+    {
+      type: "superadmin",
+      id: session.super_admin_id,
+      session_id: session.id,
+      created_at: accessExpires.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
   );
+  const refreshToken = jwt.sign(
+    {
+      type: "superadmin",
+      id: session.super_admin_id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: refreshExpires.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  const admin =
+    await MyGlobal.prisma.discussion_board_super_admins.findUniqueOrThrow({
+      where: { id: session.super_admin_id },
+    });
+  return {
+    id: admin.id,
+    email: admin.email,
+    isSuperAdmin: admin.is_super_admin,
+    canPromoteSuperAdmins: admin.can_promote_super_admins,
+    createdAt: admin.created_at.toISOString(),
+    updatedAt: admin.updated_at.toISOString(),
+    deletedAt: admin.deleted_at?.toISOString() ?? null,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
+    },
+  };
 }

@@ -1,8 +1,14 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import { IPageIDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardMaintenanceSchedule";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,92 +17,89 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardMaintenanceScheduleAtSummaryTransformer } from "../transformers/DiscussionBoardMaintenanceScheduleAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardSuperAdminMaintenanceSchedules(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardMaintenanceSchedule.IRequest;
 }): Promise<IPageIDiscussionBoardMaintenanceSchedule.ISummary> {
+  // Parse pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build WHERE clause with structured approach
-  const whereConditions: Prisma.discussion_board_maintenance_schedulesWhereInput =
-    {
-      deleted_at: null,
-    };
-  // Add filter conditions if provided
-  if (props.body.maintenance_type) {
-    whereConditions.maintenance_type = props.body.maintenance_type;
-  }
-  if (props.body.status) {
-    whereConditions.status = props.body.status;
-  }
-  if (props.body.impact_level) {
-    whereConditions.impact_level = props.body.impact_level;
-  }
-  // Handle date range filtering
-  if (
-    props.body.scheduled_start_time_from ||
-    props.body.scheduled_start_time_to
-  ) {
-    whereConditions.scheduled_start_time = {};
-    if (props.body.scheduled_start_time_from) {
-      whereConditions.scheduled_start_time.gte =
-        props.body.scheduled_start_time_from;
-    }
-    if (props.body.scheduled_start_time_to) {
-      whereConditions.scheduled_start_time.lte =
-        props.body.scheduled_start_time_to;
-    }
-  }
-  // Execute paginated query
+  // Build WHERE clause with all filters
+  const whereInput: Prisma.discussion_board_maintenance_schedulesWhereInput = {
+    deleted_at: null,
+    ...(props.body.search && {
+      description: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.maintenance_type && {
+      maintenance_type: props.body.maintenance_type,
+    }),
+    ...(props.body.status && {
+      status: props.body.status,
+    }),
+    ...(props.body.impact_level && {
+      impact_level: props.body.impact_level,
+    }),
+    ...((props.body.scheduled_start_time_from ||
+      props.body.scheduled_start_time_to) && {
+      scheduled_start_time: {
+        ...(props.body.scheduled_start_time_from && {
+          gte: new Date(props.body.scheduled_start_time_from),
+        }),
+        ...(props.body.scheduled_start_time_to && {
+          lte: new Date(props.body.scheduled_start_time_to),
+        }),
+      },
+    }),
+    ...((props.body.scheduled_end_time_from ||
+      props.body.scheduled_end_time_to) && {
+      scheduled_end_time: {
+        ...(props.body.scheduled_end_time_from && {
+          gte: new Date(props.body.scheduled_end_time_from),
+        }),
+        ...(props.body.scheduled_end_time_to && {
+          lte: new Date(props.body.scheduled_end_time_to),
+        }),
+      },
+    }),
+  };
+  // Fetch paginated data with correct table name
   const data =
     await MyGlobal.prisma.discussion_board_maintenance_schedules.findMany({
-      where: whereConditions,
+      where: whereInput,
       skip,
       take: limit,
-      orderBy: { scheduled_start_time: "desc" },
-      include: {
-        scheduledByAdmin: {
-          select: {
-            id: true,
-            email: true,
-            display_name: true,
-            created_at: true,
-          },
-        },
-      },
+      orderBy: { scheduled_start_time: "desc" as const },
+      ...DiscussionBoardMaintenanceScheduleAtSummaryTransformer.select(),
     });
+  // Count total records
   const total =
     await MyGlobal.prisma.discussion_board_maintenance_schedules.count({
-      where: whereConditions,
+      where: whereInput,
     });
-  // Transform results to ISummary format with proper typing
-  const transformedData: IDiscussionBoardMaintenanceSchedule.ISummary[] =
-    data.map((record) => ({
-      id: record.id as string & tags.Format<"uuid">,
-      maintenance_type: record.maintenance_type,
-      status: record.status,
-      scheduled_start_time: toISOStringSafe(record.scheduled_start_time),
-      scheduled_end_time: toISOStringSafe(record.scheduled_end_time),
-      impact_level: record.impact_level,
-      scheduledByAdmin: {
-        id: record.scheduledByAdmin.id as string & tags.Format<"uuid">,
-        email: record.scheduledByAdmin.email as string & tags.Format<"email">,
-        display_name: record.scheduledByAdmin.display_name,
-        created_at: toISOStringSafe(record.scheduledByAdmin.created_at),
-      },
-    }));
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    DiscussionBoardMaintenanceScheduleAtSummaryTransformer.transform,
+  );
+  // Calculate pagination metadata
+  const pages = total === 0 ? 0 : Math.ceil(total / limit);
+  // Return with correct pagination structure
   return {
     data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
   };
 }

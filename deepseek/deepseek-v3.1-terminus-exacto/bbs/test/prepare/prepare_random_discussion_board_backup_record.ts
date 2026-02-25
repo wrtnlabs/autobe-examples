@@ -17,14 +17,10 @@ export function prepare_random_discussion_board_backup_record(
         "database_only",
         "files_only",
       ] as const),
-    initiated_by_admin_id:
-      input?.initiated_by_admin_id ??
-      typia.random<string & tags.Format<"uuid">>(),
     file_path:
       input?.file_path ??
-      `/backups/discussion-board/${RandomGenerator.alphaNumeric(8)}.tar.gz`,
-    size_bytes:
-      input?.size_bytes ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
+      (Math.random() > 0.5
+        ? `/backups/${RandomGenerator.alphabets(8)}.tar.gz`
+        : null),
   };
 }

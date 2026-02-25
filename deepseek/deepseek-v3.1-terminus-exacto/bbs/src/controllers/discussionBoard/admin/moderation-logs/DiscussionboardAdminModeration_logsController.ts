@@ -1,30 +1,29 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IDiscussionBoardModerationLog } from "../../../../api/structures/IDiscussionBoardModerationLog";
-import { IPageIDiscussionBoardModerationLog } from "../../../../api/structures/IPageIDiscussionBoardModerationLog";
+import { IDiscussionBoardModeratedContentHistory } from "../../../../api/structures/IDiscussionBoardModeratedContentHistory";
+import { IPageIDiscussionBoardModeratedContentHistory } from "../../../../api/structures/IPageIDiscussionBoardModeratedContentHistory";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminModerationLogsModerationLogId } from "../../../../providers/getDiscussionBoardAdminModerationLogsModerationLogId";
 import { patchDiscussionBoardAdminModerationLogs } from "../../../../providers/patchDiscussionBoardAdminModerationLogs";
 
 @Controller("/discussionBoard/admin/moderation-logs")
 export class DiscussionboardAdminModeration_logsController {
   /**
-   * Retrieve a filtered and paginated list of moderation activity logs for comprehensive audit and compliance oversight.
+   * Search and filter moderation logs with comprehensive filtering capabilities for administrative audit and compliance tracking.
    *
-   * This operation provides administrators with complete access to the moderation audit trail, enabling detailed review of all moderation actions performed across the platform. The search functionality supports granular filtering by action type, administrator identity (both regular and super administrators), target entities (articles, comments, users, sections), timeframes, and status to facilitate efficient moderation oversight and compliance reporting.
+   * This operation provides administrators with powerful search capabilities to review moderation activities across the platform. The search supports filtering by action type, administrator identity (regular or super administrator), target entities (articles, comments, users, sections), time periods, and action status. This enables comprehensive audit trail analysis and compliance verification.
    *
-   * Administrators can search for specific moderation patterns, review individual administrator performance, track moderation workflows, and generate detailed compliance reports. The response includes summary information optimized for list displays while maintaining complete audit trail integrity through comprehensive logging references to all related entities.
+   * Administrators can use this operation to investigate specific moderation patterns, track administrator activity, review action outcomes, and generate compliance reports. The search results include detailed information about each moderation action including who performed it, what action was taken, when it occurred, and the target entity involved. This supports accountability and transparency in the moderation system.
    *
-   * Security considerations require that only authenticated administrators can access this operation, with appropriate authorization checks to ensure administrators can only view logs relevant to their permission level. Regular administrators may have limited visibility compared to super administrators who can access the complete moderation history as documented in the database schema's comprehensive audit trail design.
+   * The operation integrates with the complete moderation log database schema, supporting all filtering options available through the indexed fields including action type descriptions, administrator identities, and target entity relationships. Pagination ensures efficient handling of large result sets while maintaining comprehensive search capabilities.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for moderation log filtering
+   * @param body Search criteria and pagination parameters for filtering moderation logs
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_moderation_logs table with comprehensive filtering capabilities. Support filtering by action_type, admin_id, super_admin_id, target_article_id, target_comment_id, target_user_id, target_section_id, status, and date ranges (performed_at, scheduled_at, completed_at). Implement pagination with configurable page sizes and cursor-based navigation for large result sets. Join with related tables (admins, super_admins, target entities) to include display names and contextual information. Sort results by performed_at descending by default to show most recent activities first. Include search functionality on action_description using full-text search capabilities.
+   * @x-autobe-specification Query the discussion_board_moderation_logs table with flexible filtering and pagination. Implement search filters for action_type, admin_id, super_admin_id, target_article_id, target_comment_id, target_user_id, target_section_id, status, and date ranges (performed_at, created_at). Support partial text matching on action_description using trigram search. Join with administrator and target entity tables to resolve IDs to display names. Implement cursor-based pagination for large result sets. Return paginated results with moderation log summaries excluding sensitive system fields. Apply appropriate access control to ensure only authorized administrators can access moderation logs.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -32,46 +31,12 @@ export class DiscussionboardAdminModeration_logsController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IDiscussionBoardModerationLog.IRequest,
-  ): Promise<IPageIDiscussionBoardModerationLog.ISummary> {
+    body: IDiscussionBoardModeratedContentHistory.IRequest,
+  ): Promise<IPageIDiscussionBoardModeratedContentHistory.ISummary> {
     try {
       return await patchDiscussionBoardAdminModerationLogs({
         admin,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information for a specific moderation log record.
-   *
-   * This operation provides comprehensive audit trail data for individual moderation actions performed by administrators or super administrators. The response includes complete details about the moderation action, including the performer (admin or super admin), target entity (article, comment, user, or section), action type, description, timestamps, and status information.
-   *
-   * Administrators can use this endpoint to review specific moderation actions for compliance auditing, accountability tracking, and moderation workflow analysis. The operation supports detailed investigation of moderation activities by providing complete context including IP address, user agent, and error information when applicable.
-   *
-   * Access to moderation logs is restricted to authorized administrators only, ensuring that sensitive moderation audit information remains protected within the administrative scope.
-   *
-   * @param connection
-   * @param moderationLogId Unique identifier of the moderation log record to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_moderation_logs table by the provided moderationLogId UUID. Include all foreign key relationships to fetch complete administrator, super administrator, and target entity information. Return the full moderation log record with all fields populated. Validate that the moderation log exists and return appropriate error if not found.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":moderationLogId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("moderationLogId")
-    moderationLogId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardModerationLog> {
-    try {
-      return await getDiscussionBoardAdminModerationLogsModerationLogId({
-        admin,
-        moderationLogId,
       });
     } catch (error) {
       console.log(error);

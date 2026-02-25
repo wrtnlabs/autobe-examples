@@ -19,49 +19,32 @@ export async function putDiscussionBoardAdminSectionsSectionIdFilesFileId(props:
   fileId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSectionFile.IUpdate;
 }): Promise<IDiscussionBoardSectionFile> {
-  // Validate that the section exists
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
-    where: { id: props.sectionId },
+  // Verify file exists and belongs to the specified section, and is not deleted
+  await MyGlobal.prisma.discussion_board_section_files.findUniqueOrThrow({
+    where: {
+      id: props.fileId,
+      discussion_board_section_id: props.sectionId,
+      deleted_at: null,
+    },
+    select: { id: true },
   });
-  if (!section) {
-    throw new HttpException("Section not found", 404);
-  }
-  // Validate that the file exists and belongs to the specified section
-  const existingFile =
-    await MyGlobal.prisma.discussion_board_section_files.findUnique({
-      where: {
-        id: props.fileId,
-        discussion_board_section_id: props.sectionId,
-      },
-    });
-  if (!existingFile) {
-    throw new HttpException(
-      "File not found or does not belong to the specified section",
-      404,
-    );
-  }
-  // Prepare update data
-  const updateData: Prisma.discussion_board_section_filesUpdateInput = {
-    filename:
-      props.body.filename !== undefined
-        ? props.body.filename
-        : existingFile.filename,
-    file_type:
-      props.body.file_type !== undefined
-        ? props.body.file_type
-        : existingFile.file_type,
-    description:
-      props.body.description !== undefined
-        ? props.body.description
-        : existingFile.description,
-    updated_at: new Date().toISOString(),
-  };
-  // Update the file metadata
+  // Update the file description and timestamp
+  await MyGlobal.prisma.discussion_board_section_files.update({
+    where: { id: props.fileId },
+    data: {
+      description:
+        props.body.description === null
+          ? null
+          : (props.body.description ?? undefined),
+      updated_at: new Date(),
+    },
+  });
+  // Retrieve the updated file with full data using transformer's select
   const updatedFile =
-    await MyGlobal.prisma.discussion_board_section_files.update({
+    await MyGlobal.prisma.discussion_board_section_files.findUniqueOrThrow({
       where: { id: props.fileId },
-      data: updateData,
       ...DiscussionBoardSectionFileTransformer.select(),
     });
-  return await DiscussionBoardSectionFileTransformer.transform(updatedFile);
+  // Transform and return using the transformer
+  return DiscussionBoardSectionFileTransformer.transform(updatedFile);
 }

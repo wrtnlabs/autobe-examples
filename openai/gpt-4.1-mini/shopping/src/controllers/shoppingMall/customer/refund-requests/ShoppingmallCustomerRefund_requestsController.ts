@@ -10,59 +10,39 @@ import { deleteShoppingMallCustomerRefundRequestsRefundRequestId } from "../../.
 import { getShoppingMallCustomerRefundRequestsRefundRequestId } from "../../../../providers/getShoppingMallCustomerRefundRequestsRefundRequestId";
 import { patchShoppingMallCustomerRefundRequests } from "../../../../providers/patchShoppingMallCustomerRefundRequests";
 import { postShoppingMallCustomerRefundRequests } from "../../../../providers/postShoppingMallCustomerRefundRequests";
-import { putShoppingMallCustomerRefundRequestsRefundRequestId } from "../../../../providers/putShoppingMallCustomerRefundRequestsRefundRequestId";
 
 @Controller("/shoppingMall/customer/refund-requests")
 export class ShoppingmallCustomerRefund_requestsController {
   /**
-   * Create a new refund request for a delivered order item by the authenticated customer.
+   * Create a refund request for a delivered order item within 7 days of delivery.
    *
-   * This operation allows customers to submit refund requests specifying the order item and reason. The refund request status is initially set to pending.
+   * This API operation allows an authenticated customer to request a refund for a specific order item that has the status "delivered." The refund request must be submitted within the allowed 7-day period starting from the delivery date.
    *
-   * The refund request may later be processed by the seller who can approve or reject it providing a response reason.
+   * The refund request includes a required reason describing the customer's rationale for the refund. Sellers will later approve or reject the refund, with snapshots captured for audit and dispute resolution purposes.
    *
-   * Security ensures that only authenticated customers can create refund requests for their own orders.
+   * This operation corresponds to the `shopping_mall_refund_requests` database table, which stores refund request details including the requester, order item, reason, status, and timestamps. Immutable snapshots of these requests are recorded in the `shopping_mall_refund_request_snapshots` table for historical and audit purposes.
    *
-   * The underlying data model is based on the shopping_mall_refund_requests table which tracks all refund requests, their statuses, and timestamps.
+   * Security-wise, this operation requires authentication of a customer actor with appropriate authorization to ensure only the owner of the delivered order item can create refund requests.
    *
-   * Relevant fields include:
-   * - request_reason: customer provided reason
-   * - status: tracks request state (pending, approved, rejected)
-   * - requested_at: timestamp of request creation
-   * - responded_at: timestamp of seller response, null initially
+   * Related operations include seller refund request responses and snapshot retrieval APIs.
    *
-   * No path parameters as this is a POST to the collection resource.
-   *
-   * Related operations:
-   * - GET /refund-requests to list refund requests
-   * - POST /orders/{orderItemId}/refund to create refund request per order item
-   *
-   * The operation handles validation ensuring business rules like only delivered items can be refunded are enforced at service layer.
-   *
-   * Errors may occur if the order item does not belong to the customer, or is not eligible for refund.
-   *
-   * Response returns the created refund request with all relevant fields including timestamps and status.
-   *
-   * This operation is crucial to the refund workflow and ensures accurate tracking of refunds within the e-commerce platform.
+   * Errors including unauthorized access, expired request window beyond 7 days, and invalid order item status are handled with appropriate response codes and messages.
    *
    * @param connection
-   * @param body Refund request creation payload including order item ID, customer ID, seller ID, and request reason.
+   * @param body Refund request creation details matching IShoppingMallRefund.ICreate schema.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the refund request input data.
-   * Verify that the order item belongs to the authenticated customer and is in a deliverable/refundable status.
-   * Insert a new record into shopping_mall_refund_requests with status set to 'pending'.
-   * Set requested_at to current timestamp.
-   * Set responded_at and seller_response_reason to null.
-   * Return the created refund request record as response.
-   * Ensure proper error handling for invalid requests (e.g., invalid order item, unauthorized access).
-   * Use transactions to maintain data integrity.
-   * Notify the seller about the new refund request.
-   * Authorize operation only for authenticated customers.
+   * @x-autobe-specification - Validate authenticated customer context.
+   * - Validate order item status is "delivered" and delivery date within 7 days.
+   * - Validate refund reason is provided.
+   * - Insert new record into shopping_mall_refund_requests table with requester customer ID, order item ID, reason, and creation timestamp.
+   * - Trigger notification to seller about refund request.
+   * - Return created refund request resource in response.
+   * - Handle errors for unauthorized, invalid item status, or time expired refunds.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
-  public async createRefundRequest(
+  public async create(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
@@ -80,30 +60,32 @@ export class ShoppingmallCustomerRefund_requestsController {
   }
 
   /**
-   * Retrieve a paginated and filtered list of refund requests for order items made by customers.
+   * Retrieve a filtered and paginated list of refund requests submitted by customers for delivered order items.
    *
-   * This operation allows authenticated customers to fetch their refund requests with advanced filtering capabilities including filtering by seller, status, and date ranges. Customers can only view their own refund requests, ensuring data privacy and security.
+   * This endpoint enables authorized personnel (administrators and sellers) to review refund requests within the system. It supports filtering by request status, seller, customer, date ranges, and other criteria necessary for managing refunds effectively.
    *
-   * The underlying data is stored in the `shopping_mall_refund_requests` table which tracks refund reasons, status, seller response reasons, timestamps for request creation and response, and soft delete status. The operation excludes any requests marked as deleted.
+   * The refund requests are stored in the 'shopping_mall_refund_requests' table with fields capturing the request reason, approval status, timestamps of request and response, and related order and order item information.
    *
-   * Validation rules ensure filtering fields are correctly parsed and pagination parameters are applied properly. Related operations include `POST /shoppingMall/customer/refund-requests` to create a refund request and `GET /shoppingMall/customer/refund-requests/{id}` to retrieve detailed information about a specific refund request.
+   * Security is crucial: access to this endpoint is restricted to admin and seller roles with appropriate authentication and permission checks.
    *
-   * Expected behavior includes consistent and stable pagination, filtered search results based on provided criteria, and appropriate error handling for unauthorized access or invalid filter parameters.
+   * The response provides a paginated summary of refund requests to efficiently handle large result sets. This endpoint complements other refund management operations like approving or rejecting refunds via other endpoints.
+   *
+   * Expected errors include validation errors on filters and unauthorized access errors.
+   *
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for refund requests.
+   * @param body Search criteria and pagination parameters for filtering refund requests.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Perform a paginated search on the shopping_mall_refund_requests table applying filters on customer ID, seller ID, request status, request date range, and soft deletion status (exclude deleted records).
-   * The query should join related tables for customer and seller information if needed for response.
-   * Implement pagination with cursor or offset parameters as defined in IShoppingMallRefundRequest.IRequest.
-   * Return results as paginated summaries using IPageIShoppingMallRefundRequest.ISummary.
-   * Apply security filter to allow customers only to access their own requests.
-   * Handle invalid filter values with appropriate error responses.
+   * @x-autobe-specification Query the 'shopping_mall_refund_requests' table applying filters from the request body such as status, seller ID, customer ID, and date ranges for request creation and response. Implement pagination using cursor or offset methods.
    *
-   * Database queries should leverage indexes on customer ID, seller ID, and status for performance.
+   * Perform necessary joins with 'shopping_mall_order_items', 'shopping_mall_orders', 'shopping_mall_customers', and 'shopping_mall_sellers' tables to resolve entity names and statuses.
    *
-   * This search operation does not modify any data and is idempotent.
+   * Validate filter inputs and permissions based on user role (admin or seller).
+   *
+   * Return the results in a paginated format with essential refund request summary fields including approval status, reason, and timestamps.
+   *
+   * Handle errors gracefully with appropriate HTTP status codes and error messages.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -125,36 +107,43 @@ export class ShoppingmallCustomerRefund_requestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific refund request identified by refundRequestId.
+   * Retrieve detailed information of a specific refund request by its unique refundRequestId.
    *
-   * This endpoint provides refund request details including customer rationale, seller response, timestamps for request and response, and current status.
+   * This API operation provides comprehensive data about the refund request including:
+   * - The customer who requested the refund and their ID
+   * - The seller handling the refund request
+   * - The referenced order item associated with the refund
+   * - The reason given by the customer for the refund request
+   * - The current status of the refund request (e.g., pending, approved, rejected)
+   * - The optional seller response reason
+   * - Timestamps for request creation, customer request submission, seller response, record creation, updates, and soft deletion
    *
-   * Authorization is required to ensure only the customer who made the request or the seller involved can access this data.
+   * Security considerations:
+   * - Access should be limited to authorized actors (customers, sellers, administrators) with appropriate read permissions on refund request records.
    *
-   * The refund request maps to the shopping_mall_refund_requests table, which records reasons, status, timestamps, and user references.
+   * Related API operations:
+   * - POST /customers/orders/{orderId}/items/{orderItemId}/refund for creating new refund requests
    *
-   * This operation enables customers and sellers to track refund progress and review past refund requests.
+   * Expected behavior:
+   * - Return 404 if refundRequestId does not exist
+   * - Return full refund request details if found
+   * - Returns null for non-applicable optional fields
    *
-   * Validation ensures refundRequestId follows UUID format and must correspond to an existing refund request.
-   *
-   * Errors are returned if the refund request does not exist or if unauthorized access occurs.
-   *
-   * Related operations include POST /orders/{orderItemId}/refund for creating new refund requests and GET /orders/{orderId} for order overview.
+   * No soft delete recovery is supported through this operation.
    *
    * @param connection
-   * @param refundRequestId The unique identifier of the refund request (UUID).
+   * @param refundRequestId Unique identifier of the refund request (UUID format).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification This operation queries the shopping_mall_refund_requests by primary key refundRequestId.
-   *
-   * - Validate refundRequestId is UUID.
-   * - Fetch full refund request details including status, request reason, seller response reason, timestamps.
-   * - Join with related order item, customer, and seller entities for reference.
-   * - Check authorization: customer must match the refund request customer_id, or seller must match refund request seller_id.
-   * - Return 404 if not found, 403 if unauthorized.
-   * - Response payload corresponds to IShoppingMallRefundRequest, referencing detailed refund request information.
-   * - No request body needed.
-   * - Use GET method.
+   * @x-autobe-specification Fetch the refund request from the shopping_mall_refund_requests table by 'id'.
+   * Normalize all UUID parameters to lowercase.
+   * Validate refundRequestId exists and return 404 error if not found.
+   * Include joined details of associated customer, seller, and order item where relevant.
+   * Return all standard fields including reasons, status, and timestamps.
+   * No modifications are made by this operation.
+   * Handle authorization by verifying that the caller has read permissions.
+   * No pagination or filtering as this is a single resource retrieval.
+   * Respond with full refund request detail as response body of type IShoppingMallRefundRequest.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":refundRequestId")
@@ -176,89 +165,41 @@ export class ShoppingmallCustomerRefund_requestsController {
   }
 
   /**
-   * Update an existing refund request identified by refundRequestId UUID.
+   * Permanently removes a refund request record from the system by its unique identifier.
    *
-   * This API allows customers or authorized sellers to update the refund request status, seller response reason, and related timestamps.
+   * This operation deletes the resource identified by refundRequestId from the shopping_mall_refund_requests table. It enforces security constraints ensuring only authorized actors such as administrators or sellers can perform this removal to maintain data integrity and prevent unauthorized deletion.
    *
-   * The refund request entity tracks customer refund requests on order items, including the reasons for request and for seller response, status, and audit timestamps.
+   * The refund request records customer refund requests per delivered order item and tracks status, reasons, and timestamps. Deleting such a record is irreversible and reflects real-world business decisions to clear resolved or invalid refund cases.
    *
-   * The refund request is linked to order items, customers, and sellers, ensuring authorization checks.
-   *
-   * Validation ensures valid UUID path parameter and body payload adherence to update schema.
+   * If the refund request specified by refundRequestId does not exist, the operation should fail with an appropriate not found error.
    *
    * Related operations:
-   * - POST /refund-requests: create a new refund request
-   * - GET /refund-requests/{refundRequestId}: retrieve the refund request details
+   * - GET /refund-requests/{refundRequestId} to fetch refund request details.
+   * - PATCH /refund-requests/{refundRequestId} to update refund request status and seller response.
    *
-   * This operation requires authentication and appropriate permission to modify the refund request.
-   *
-   * @param connection
-   * @param refundRequestId Refund request ID (UUID) path parameter
-   * @param body Fields for updating a refund request such as status, seller response reason, and responded timestamp
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification The implementation should:
-   * - Validate refundRequestId as UUID
-   * - Verify the refund request exists
-   * - Validate and parse the request body as IShoppingMallRefundRequest.IUpdate
-   * - Update fields such as status, seller_response_reason, responded_at
-   * - Ensure only authorized customers or sellers can perform updates
-   * - Update updated_at timestamp to current server time
-   * - Return the updated refund request entity in the response
-   * - Handle error cases with appropriate HTTP status codes and messages
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":refundRequestId")
-  public async update(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("refundRequestId")
-    refundRequestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallRefundRequest.IUpdate,
-  ): Promise<IShoppingMallRefundRequest> {
-    try {
-      return await putShoppingMallCustomerRefundRequestsRefundRequestId({
-        customer,
-        refundRequestId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Soft delete a refund request resource identified by its unique refundRequestId by setting the `deleted_at` timestamp.
-   *
-   * This operation allows authorized users, such as administrators or the customer who created the request, to mark refund requests as deleted without permanently removing them from the system, preserving data for audit and compliance purposes.
-   *
-   * The refund request entity corresponds to the `shopping_mall_refund_requests` table, which captures refund reasons, statuses, responses, timestamps, and relations to order items, customers, and sellers.
-   *
-   * Attempting to delete a refund request that does not exist or is already marked as deleted will result in a 404 error.
-   *
-   * Related operations include `GET /shoppingMall/customers/refundRequests/{refundRequestId}` for fetching details and `POST /shoppingMall/customers/refundRequests` for creation.
-   *
+   * Reactive UI workflows that refresh list views upon successful deletion are recommended.
    *
    * @param connection
-   * @param refundRequestId Unique identifier of the refund request to delete (UUID).
+   * @param refundRequestId Refund request unique identifier (UUID).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification This DELETE operation requires a valid refundRequestId UUID as a path parameter.
+   * @x-autobe-specification Delete the refund request identified by the refundRequestId path parameter from the shopping_mall_refund_requests table.
    *
-   * Check authorization for the requesting user to ensure they have permission to erase the refund request.
+   * Check authorization for the requestor to ensure only authorized roles (administrator or seller) perform deletion.
    *
-   * Perform database deletion on shopping_mall_refund_requests by matching id = refundRequestId.
+   * Perform deletion via a Prisma client delete operation by primary key id matching refundRequestId.
    *
-   * Return 204 No Content on successful deletion.
-   * Return 404 Not Found if refund request does not exist.
+   * Return HTTP 204 No Content upon success with no response body.
    *
-   * Handle database constraints and cascading deletes as per schema relations.
-   * Ensure transaction safety and consistent state.
+   * Respond with HTTP 404 Not Found if the refund request does not exist.
    *
-   * Log deletion event for audit purposes.
+   * Prevent cascading data removal unless specified by business rules; only the refund request record is deleted.
    *
+   * Log the deletion action for audit purposes with user ID and timestamp.
+   *
+   * Handle and report database errors gracefully to the client with appropriate HTTP status codes.
+   *
+   * Ensure no request body is expected or processed for this operation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":refundRequestId")

@@ -1,898 +1,717 @@
-# Product Management Requirements Specification
-
-## 1. Product Overview and Business Context
-
-### 1.1 Product Definition
-
-Products are the core items that sellers list for sale on the e-commerce platform. Each product represents a tangible or digital item that customers can purchase, complete with variants for different options (size, color, etc.) and inventory management for stock tracking.
-
-### 1.2 Business Model Integration
-
-This product management system supports the platform's mission to connect sellers and customers in a secure, transparent marketplace. Every product modification must be recorded through snapshots to ensure legal compliance, dispute resolution capabilities, and transparent business practices.
-
-### 1.3 Key Business Principles
-
-- **Snapshots are mandatory** for all product and variant modifications
-- **Inventory must be tracked** through history records, not direct stock assignment
-- **Seller ownership** is fundamental - sellers control their own products
-- **Customer experience** drives search, filtering, and product display
-- **Legal compliance** requires preservation of order history and product state
-
-## 2. Product Creation and Management
-
-### 2.1 Product Creation Workflow
-
-#### Product Creation Requirements
-
-WHEN a seller attempts to create a product, THE system SHALL validate the following fields:
-- Product name: Required, must be non-empty string, maximum 200 characters
-- Description: Required, must be non-empty string, minimum 100 characters
-- Category: Required, must reference existing valid category (including subcategories)
-- Base price: Required, must be positive number (minimum $0.01)
-- Initial inventory: At least one variant must have stock quantity ≥ 0
-
-WHEN product name is empty or exceeds character limit, THE system SHALL return error "PRODUCT_NAME_INVALID"
-
-WHEN description is empty or below minimum length, THE system SHALL return error "PRODUCT_DESCRIPTION_INVALID"
-
-WHEN category does not exist or is deleted, THE system SHALL return error "CATEGORY_NOT_FOUND"
-
-WHEN base price is zero, negative, or exceeds maximum allowed value ($1,000,000), THE system SHALL return error "PRODUCT_PRICE_INVALID"
-
-#### Product Creation Process
-
-WHEN a seller creates a product, THE system SHALL:
-
-1. Navigate to "Create Product" page in seller dashboard
-2. Fill in product details (name, description, category, base price)
-3. Upload at least one product image ( thumbnail required)
-4. Create initial variant(s) with SKU, options, and stock quantity
-5. Review and submit product for creation
-6. Validate all required fields and business rules
-7. IF validation passes, CREATE product record with "draft" status
-8. IF validation fails, RETURN specific error codes and messages
-9. Show product in seller's product list but not in public search
-10. Require seller to publish product to make it available to customers
-
-### 2.2 Product Editing Process
-
-#### Product Editing Workflow
-
-- Sellers can edit their own products at any time
-- All edits trigger a snapshot of the previous product state
-- Product updates must maintain all existing variants and images
-- Category cannot be changed after initial product creation
-- Product status changes from "draft" to "published" when made public
-
-#### Product Editing Validation
-
-WHEN a seller attempts to edit a product, THE system SHALL validate:
-- Product name: Must be non-empty string, maximum 200 characters
-- Description: Must be non-empty string, minimum 100 characters
-- Base price: Must be positive number, maximum $1,000,000
-- At least one variant must exist and be valid
-- At least one image must exist if product was previously published
-
-WHILE product has published status, THE system SHALL prevent:
-- Changing the product category
-- Removing all variants (at least one must remain)
-- Removing all images if product is visible to customers
-
-WHEN edit would cause validation failure for existing variants, THE system SHALL return error "PRODUCT_EDIT_INVALID"
-
-WHEN seller attempts to change category on published product, THE system SHALL return error "CATEGORY_CHANGE_NOT_ALLOWED"
-
-#### Product Editing Process
-
-WHEN a seller edits a product, THE system SHALL:
-
-1. Load current product state and display existing data
-2. Modify any editable fields and settings
-3. Review changes before submitting
-4. Create snapshot of current product state (before changes)
-5. Apply the requested changes to the product
-6. IF changes are valid, SAVE updated product record
-7. IF changes are invalid, REVERT and return error codes
-8. Continue to display current state to customers until changes are saved
-9. Apply changes immediately for new customers if product is published
-
-### 2.3 Product Deletion Process
-
-#### Product Deletion Conditions
-
-- Sellers can delete their own products
-- Products can only be deleted if no pending orders exist for any variant
-- Products can only be deleted if no pending cancellations or refunds exist
-- Once deleted, product no longer appears in search or category listings
-- All variant records are deleted with the product
-- All inventory records remain for historical tracking
-
-#### Product Deletion Validation
-
-WHEN product has any order items with status "paid" or "shipped" for any variant, THE system SHALL prevent deletion and return error "PRODUCT_HAS_ACTIVE_ORDERS"
-
-WHEN product has any pending cancellation requests, THE system SHALL prevent deletion and return error "PRODUCT_HAS_PENDING_CANCELLATION"
-
-WHEN product has any pending refund requests, THE system SHALL prevent deletion and return error "PRODUCT_HAS_PENDING_REFUND"
-
-#### Product Deletion Process
-
-WHEN a seller deletes a product, THE system SHALL:
-
-1. Initiate product deletion through seller dashboard
-2. Check all variants for active orders, cancellations, and refunds
-3. IF any blocking conditions exist, RETURN appropriate error and abort
-4. Create final snapshot of product state before deletion
-5. Delete all product records and associated variants
-6. Remove product from search indexes and category listings
-7. Update product references in existing orders to "product deleted"
-8. Automatically remove customer wishlist entries for this product
-9. Preserve inventory history records for audit trail
-10. Log product deletion in seller activity log
-
-## 3. Product Variants (SKU) Management
-
-### 3.1 Variant Creation and Structure
-
-#### Variant Definition
-
-A variant represents a specific combination of product options (e.g., "Red / Large", "Blue / Small"). Each variant has a unique SKU code and can have its own price and stock quantity.
-
-#### Variant Creation Requirements
-
-WHEN a seller creates a product, THE system SHALL require:
-- At least one variant must be created with the product
-- Each variant must have a unique SKU code (maximum 50 characters)
-- Each variant must have at least one option value defined
-- Each variant must have initial stock quantity ≥ 0
-
-WHEN duplicate SKU code exists for same seller's products, THE system SHALL return error "SKU_DUPLICATE"
-
-WHEN variant options are empty or invalid, THE system SHALL return error "VARIANT_OPTIONS_INVALID"
-
-#### Variant Option Structure
-
-- Options are defined as key-value pairs (e.g., {"color": "Red", "size": "Large"})
-- Option keys must be consistent across all variants of same product
-- Option values can be any string, maximum 100 characters each
-- All variants of a product must have same option keys defined
-
-### 3.2 Variant Editing Process
-
-#### Variant Editing Workflow
-
-- Sellers can edit SKU code, option values, and price for existing variants
-- All edits trigger a snapshot of the previous variant state
-- Stock quantity cannot be edited directly (must use inventory adjustment)
-- SKU code changes must maintain uniqueness across seller's products
-
-#### Variant Editing Validation
-
-WHEN a seller attempts to edit a variant, THE system SHALL validate:
-- SKU code: Must be non-empty, maximum 50 characters, unique for seller
-- Option values: Must match expected option keys for product, valid strings
-- Price: Must be non-negative number, maximum $1,000,000
-- Product must have at least one valid variant after edit
-
-WHEN edit would cause SKU duplication, THE system SHALL return error "SKU_DUPLICATE"
-
-WHEN edit would make variant incompatible with product options, THE system SHALL return error "VARIANT_INCOMPATIBLE"
-
-WHEN variant has active orders, cancellations, or refunds, THE system SHALL return error "VARIANT_HAS_ACTIVE_ORDERS"
-
-#### Variant Editing Process
-
-WHEN a seller edits a variant, THE system SHALL:
-
-1. Load current variant state and display existing data
-2. Modify editable fields (SKU, options, price)
-3. Validate new values against business rules
-4. Create snapshot of current variant state (before changes)
-5. Apply the requested changes to the variant
-6. IF changes are valid, SAVE updated variant record
-7. IF changes are invalid, RETURN appropriate error codes
-8. Maintain original variant state in existing order items
-9. Use updated variant information for new orders
-
-### 3.3 Variant Deletion Process
-
-#### Variant Deletion Conditions
-
-- Sellers can delete variants from their products
-- Variants can only be deleted if no pending orders exist
-- Variants can only be deleted if no pending cancellations or refunds exist
-- Product must have at least one variant remaining after deletion
-
-#### Variant Deletion Validation
-
-WHEN variant has any order items with status "paid" or "shipped", THE system SHALL prevent deletion and return error "VARIANT_HAS_ACTIVE_ORDERS"
-
-WHEN variant has any pending cancellation requests, THE system SHALL prevent deletion and return error "VARIANT_HAS_PENDING_CANCELLATION"
-
-WHEN variant has any pending refund requests, THE system SHALL prevent deletion and return error "VARIANT_HAS_PENDING_REFUND"
-
-WHEN product would have zero variants after deletion, THE system SHALL prevent deletion and return error "PRODUCT_NEEDS_AT_LEAST_ONE_VARIANT"
-
-#### Variant Deletion Process
-
-WHEN a seller deletes a variant, THE system SHALL:
-
-1. Initiate variant deletion through product management interface
-2. Check variant for active orders, cancellations, and refunds
-3. IF any blocking conditions exist, RETURN appropriate error and abort
-4. Validate that product will have at least one variant remaining
-5. IF product would have zero variants, RETURN error "PRODUCT_NEEDS_AT_LEAST_ONE_VARIANT"
-6. Create snapshot of current variant state before deletion
-7. Delete variant record and associated inventory records
-8. Remove variant from product's available variants list
-9. Make customer cart entries with deleted variant unavailable
-10. Preserve wishlist entries (product remains in wishlist)
-
-### 3.4 Variant Inventory Integration
-
-#### Stock Quantity Management
-
-- Current stock quantity is calculated by summing all inventory records
-- Stock starts at 0 when variant is created
-- Inventory records track all quantity changes with reasons
-- Order placement automatically creates negative inventory record
-- Order cancellation/refund automatically creates positive inventory record
-
-WHEN variant stock reaches 0, THE system SHALL:
-- Mark variant as "out of stock" in all user interfaces
-- Prevent variant from being added to customer carts
-- Display "Out of Stock" message instead of price
-- Allow customers to view variant details but not purchase
-
-WHEN variant stock increases from 0, THE system SHALL:
-- Automatically mark variant as "in stock"
-- Allow variant to be added to customer carts
-- Display normal price and purchase options
-- Remove "Out of Stock" restrictions
-
-## 4. Product Images Management
-
-### 4.1 Image Upload and Structure
-
-#### Image Upload Requirements
-
-WHEN a seller uploads product images, THE system SHALL:
-- Accept image files in JPG, PNG, or WebP format
-- Validate image file size (maximum 5MB per image)
-- Validate image dimensions (minimum 800x800 pixels recommended)
-- Store original images with optimized thumbnails
-- Generate image URLs for product pages and listings
-
-WHEN image format is not supported, THE system SHALL return error "IMAGE_FORMAT_INVALID"
-
-WHEN image file size exceeds 5MB, THE system SHALL return error "IMAGE_SIZE_EXCEEDED"
-
-WHEN image dimensions are below 400x400 pixels, THE system SHALL return error "IMAGE_RESOLUTION_INVALID"
-
-#### Image Upload Process
-
-WHEN a seller uploads product images, THE system SHALL:
-
-1. Select images for upload through product management interface
-2. Validate each image format, size, and dimensions
-3. IF any image fails validation, RETURN specific error codes
-4. Store original images and generate optimized versions
-5. Create image records with metadata (original URL, thumbnail URL, order index)
-6. Save image associations with the product
-7. Display uploaded images in preview mode
-8. Allow seller to reorder images before final submission
-9. Make first uploaded image main thumbnail by default
-10. Save final image order when product is published
-
-### 4.2 Image Reordering Process
-
-#### Image Reordering Workflow
-
-- Sellers can reorder product images after upload
-- First image in order is used as product thumbnail
-- Reordering can be done for any product state (draft or published)
-- Reordering triggers no snapshot (only structural change)
-
-#### Image Reordering Validation
-
-WHEN a seller attempts to reorder images, THE system SHALL:
-- Verify all image IDs exist for this product
-- Verify no duplicate positions in reordering
-- Validate position values are sequential integers starting from 0
-
-WHEN duplicate image IDs are detected, THE system SHALL return error "IMAGE_DUPLICATE_POSITION"
-
-WHEN position values are invalid (negative or non-sequential), THE system SHALL return error "IMAGE_POSITION_INVALID"
-
-#### Image Reordering Process
-
+# Product Management Requirements
+
+## Overview
+
+This document provides comprehensive requirements for product management functionality in the e-commerce shopping mall platform. It covers product creation, editing, categorization, variant management, inventory tracking, and visibility controls.
+
+## Product Creation and Editing
+
+### Product Information Requirements
+
+#### Product Creation Workflow
+WHEN a seller creates a new product, THE system SHALL require the following information:
+- Product name (required, minimum 3 characters, maximum 200 characters)
+- Product description (required, minimum 20 characters, maximum 10,000 characters)
+- Category selection (required, must be an existing category with any level of nesting)
+- Base price (required, positive decimal number with maximum 2 decimal places)
+- At least one product image (required, uploaded by the seller)
+
+#### Product Ownership and Association
+WHEN a product is created, THE system SHALL:
+- Automatically associate the product with the creating seller's account
+- Store the creation timestamp and last modification timestamp
+- Generate a unique product identifier for internal system use
+- Set initial product visibility status to "active"
+
+#### Product Editing Capabilities
+WHEN a seller edits an existing product, THE system SHALL:
+- Allow modification of product name, description, category, and base price
+- Permit image reordering and deletion during editing
+- Permit variant addition, editing, and deletion during editing
+- Create a complete product snapshot when any edit is saved
+- Store the previous product state in the snapshot before applying changes
+
+#### Product Editing Restrictions
+IF a product has pending order items with status "paid" or "shipped", THEN THE system SHALL:
+- Prevent deletion of the product and all its variants
+- Prevent editing of the product base price and category
+- Allow editing of description and product images
+- Display appropriate warning messages to the seller
+
+IF any variant of a product has pending order items with status "paid" or "shipped", THEN THE system SHALL:
+- Prevent deletion of that specific variant
+- Prevent editing of that variant's price and SKU code
+- Allow editing of other variant properties
+- Display appropriate warning messages to the seller
+
+WHILE a product has no variants with available stock, THEN THE system SHALL:
+- Display the product as "unavailable" in search and category listings
+- Allow the product to remain visible with clear out-of-stock indication
+- Prevent customers from adding any variants to their shopping carts
+
+## Product Images
+
+### Image Upload Requirements
+
+#### Multiple Image Support
+WHEN a seller uploads images for a product, THE system SHALL:
+- Allow uploading of multiple images in a single batch operation
+- Accept common image formats (JPEG, PNG, GIF, WebP)
+- Enforce maximum file size limits per image
+- Store images with unique filenames to prevent conflicts
+
+#### Image Organization and Reordering
 WHEN a seller reorders product images, THE system SHALL:
-
-1. Access image reorder interface for product
-2. Display current image order with drag-and-drop interface
-3. Drag and drop images to desired positions
-4. Validate new order structure
-5. IF validation fails, RETURN appropriate error codes
-6. Save new image order to database
-7. Update thumbnail reference (first image becomes thumbnail)
-8. IF product is published, update public image display
-9. Log image reordering in product edit history
-10. Apply changes immediately to both seller preview and customer view
-
-### 4.3 Image Deletion Process
-
-#### Image Deletion Workflow
-
-- Sellers can delete images from their products
-- At least one image must remain after deletion (if product has been published)
-- Deleted images are removed from all displays immediately
-- Image deletion does not create a snapshot (only structural change)
-
-#### Image Deletion Validation
-
-WHEN deletion would leave product with zero images AND product has been published, THE system SHALL prevent deletion and return error "PRODUCT_NEEDS_AT_LEAST_ONE_IMAGE"
-
-WHEN image ID does not exist for this product, THE system SHALL return error "IMAGE_NOT_FOUND"
+- Update the display order for the product image gallery
+- Set the first image in the reordered list as the main thumbnail
+- Save the new ordering as part of product snapshots
+- Apply the ordering change to all existing product variants
 
 #### Image Deletion Process
+WHEN a seller deletes an image from a product, THE system SHALL:
+- Remove the image from the product's image collection
+- Update the main thumbnail if the deleted image was the primary image
+- Create a product snapshot documenting the image removal
+- Delete the physical image file from storage
 
-WHEN a seller deletes product images, THE system SHALL:
+#### Image Display Requirements
+WHEN displaying product images, THE system SHALL:
+- Show the main thumbnail in list views and search results
+- Display all images in the configured order on the product detail page
+- Enable image zoom and lightbox functionality for customers
+- Handle missing images gracefully with placeholder graphics
 
-1. Select image(s) for deletion through product management interface
-2. Validate that at least one image will remain
-3. IF product would have zero images, RETURN error "PRODUCT_NEEDS_AT_LEAST_ONE_IMAGE"
-4. Delete image records and remove image files from storage
-5. Update product's image list and thumbnail reference
-6. Immediately remove images from all display contexts
-7. IF product is published, update public image display
-8. Log image deletion in product edit history
-9. Preserve original image references in order items
-10. Update customer views immediately to reflect new image structure
+## Categories and Subcategories
 
-## 5. Inventory Tracking System
+### Category Structure Requirements
 
-### 5.1 Inventory Record Structure
+#### Category Hierarchy Rules
+WHILE creating or editing categories, THE system SHALL:
+- Allow categories to have at most one parent category (one level of nesting only)
+- Prevent creation of circular category relationships
+- Enforce unique category names within each parent category
+- Allow categories to exist without subcategories
 
-#### Inventory Record Requirements
+#### Category Management Workflow
+WHEN an administrator creates a category, THE system SHALL:
+- Assign a unique identifier to the category
+- Store the category name and description
+- Associate the category with its parent (if any)
+- Record the creation timestamp and the administrator who created it
 
-WHEN inventory changes occur, THE system SHALL create an inventory record with:
-- Reference to specific product variant (not just product)
-- Quantity change amount (positive for restocking, negative for sales)
-- Transaction type (enum: "order", "restock", "adjustment", "cancellation", "refund")
-- Transaction reference ID (e.g., order ID, restock order number)
-- Timestamp of transaction
-- Reason/description for the transaction
-- User ID of actor who initiated the transaction (if applicable)
+WHEN an administrator edits a category, THE system SHALL:
+- Update the category name and description
+- Preserve the category hierarchy and relationships
+- Create a category snapshot documenting the changes
+- Update the last modification timestamp
 
-#### Inventory Record Validation
+WHEN an administrator deletes a category, THE system SHALL:
+- Check if any products are assigned to the category
+- If products exist, reassign them to a null/uncategorized state
+- Remove all subcategories from the hierarchy
+- Delete the category record from the system
+- Preserve the category name and description for historical reference
 
-WHEN inventory record would cause negative stock quantity, THE system SHALL:
-- FOR order transactions: Prevent order creation (already handled by cart validation)
-- FOR adjustment transactions: Return error "INVENTORY_ADJUSTMENT_INVALID"
-- Allow the adjustment if business logic specifically permits negative stock
+### Category Navigation Requirements
 
-### 5.2 Stock Quantity Calculation
+#### Customer Category Browsing
+WHEN a customer views the category listing, THE system SHALL:
+- Display all top-level categories in a structured hierarchy
+- Allow expansion and collapse of category subgroups
+- Show product counts for each category
+- Enable navigation to category detail pages
 
-#### Current Stock Calculation
+#### Category Product Filtering
+WHEN a customer selects a category for browsing, THE system SHALL:
+- Display all products in that category
+- Include products in subcategories if applicable
+- Allow navigation up and down the category hierarchy
+- Show breadcrumb navigation indicating current category path
 
-THE system SHALL calculate current stock quantity for each variant as:
-- Start with base quantity of 0 when variant is created
-- Add all positive inventory records (restocks, refunds, cancellations)
-- Subtract all negative inventory records (orders, adjustments)
-- Formula: `current_stock = Σ(inventory_records.quantity)`
+## Product Variants
 
-#### Real-time Stock Display
+### Variant Creation and Management
 
-WHILE customer views product with variants, THE system SHALL:
-- Calculate and display current stock quantity for each variant
-- Show "In Stock" message when stock > 0
-- Show "Out of Stock" message when stock = 0
-- Show specific stock quantity for informational purposes
-- Disable out-of-stock variants in cart and checkout flows
+#### SKU Requirements
+WHEN a seller creates a product variant, THE system SHALL:
+- Assign a unique SKU code to each variant (alphanumeric, maximum 50 characters)
+- Validate that SKU codes are unique across all products in the system
+- Store the SKU code as a required field
 
-### 5.3 Inventory Adjustment Process
+#### Option Value Requirements
+WHEN a seller defines variant options, THE system SHALL:
+- Allow flexible option types (color, size, material, etc.)
+- Require at least one option value per variant
+- Store option values as key-value pairs (e.g., "color": "red")
+- Enforce unique combinations of option values across variants
 
-#### Seller Inventory Adjustment Workflow
+#### Price Configuration
+WHEN a seller sets variant pricing, THE system SHALL:
+- Allow the base price to be overridden by variant-specific pricing
+- Store the variant price as an optional field (if not specified, use product base price)
+- Validate that prices are positive decimal numbers with maximum 2 decimal places
+- Store the price as part of product snapshots when variants are edited
 
-- Sellers can add inventory (restock) for any variant
-- Sellers can subtract inventory (adjustment/loss) for any variant
-- All adjustments require a reason (text description)
-- Adjustments create inventory history records
-- Adjustments do not affect existing order items
+#### Stock Quantity Management
+WHEN a seller creates a new variant, THE system SHALL:
+- Initialize the stock quantity to zero
+- Create an initial inventory record documenting the starting stock
+- Store the stock quantity as a required field
 
-#### Inventory Adjustment Validation
+WHEN a seller edits variant stock quantity, THE system SHALL:
+- Create an inventory history record documenting the quantity change
+- Update the current stock quantity by summing all inventory records
+- Store the change timestamp and reason for adjustment
 
-WHEN a seller attempts inventory adjustment, THE system SHALL:
-- Validate adjustment reason is non-empty, maximum 500 characters
-- Validate quantity is non-zero integer
-- Validate quantity is not negative for restock operations
-- Validate quantity is not positive for adjustment operations
-- Verify variant belongs to seller's product
+### Variant Availability Rules
 
-WHEN adjustment reason is empty, THE system SHALL return error "INVENTORY_REASON_REQUIRED"
+#### Variant Deletion Restrictions
+IF a variant has pending order items with status "paid" or "shipped", THEN THE system SHALL:
+- Prevent deletion of the variant
+- Display appropriate error message to the seller
+- Allow the seller to view the pending order details
 
-WHEN adjustment quantity is zero, THE system SHALL return error "INVENTORY_QUANTITY_REQUIRED"
+IF a variant has pending cancellation or refund requests, THEN THE system SHALL:
+- Prevent deletion of the variant until requests are resolved
+- Display appropriate warning message to the seller
+- Allow the seller to view the pending request details
 
-WHEN adjustment quantity exceeds logical limits (e.g., negative restock), THE system SHALL return error "INVENTORY_QUANTITY_INVALID"
+WHILE a variant has stock quantity of zero, THEN THE system SHALL:
+- Display the variant as "out of stock" to customers
+- Prevent customers from selecting the variant for purchase
+- Allow customers to view the variant information for reference
 
-#### Inventory Adjustment Process
+#### Minimum Variant Requirements
+WHILE editing a product, THE system SHALL:
+- Require at least one variant to exist for the product to be purchasable
+- Allow the seller to add variants before removing existing ones
+- Prevent deletion of the last variant if no new variants are added
 
-WHEN a seller performs inventory adjustment, THE system SHALL:
+## Inventory Management
 
-1. Navigate to inventory management for specific product variant
-2. Display current stock quantity and inventory history
-3. Select adjustment type (restock or adjustment/loss)
-4. Enter quantity and reason for adjustment
-5. Validate input values and business rules
-6. IF validation fails, RETURN appropriate error codes
-7. Create inventory record with:
-   - Variant reference
-   - Quantity change (positive for restock, negative for adjustment)
-   - Transaction type ("restock" or "adjustment")
-   - Reason and timestamp
-8. Update current stock calculation
-9. Display updated stock quantity to seller
-10. Log adjustment in seller activity log
+### Stock Tracking Requirements
 
-## 6. Product Search and Filtering
+#### Inventory History Records
+WHEN stock quantities change, THE system SHALL:
+- Create an inventory history record with:
+  - Current timestamp
+  - Quantity change amount (positive for restocking, negative for deductions)
+  - Reason for the change (e.g., "order", "restock", "adjustment")
+  - Reference to the related order or adjustment record
+- Calculate current stock by summing all inventory history records for the variant
+- Store inventory history permanently (never delete records)
 
-### 6.1 Search Functionality
+#### Inventory Adjustment Workflow
+WHEN a seller performs an inventory adjustment, THE system SHALL:
+- Require the seller to specify a reason for the adjustment
+- Allow both positive (restock) and negative (loss/deduction) adjustments
+- Create an inventory history record for the adjustment
+- Update the current stock quantity after the adjustment
+- Display the updated stock quantity to the seller
 
-#### Product Search Requirements
+#### Stock Level Display Requirements
+WHEN displaying stock information, THE system SHALL:
+- Show current stock quantity for each variant
+- Display "in stock" when stock is greater than zero
+- Display "out of stock" when stock is zero or negative
+- Show warning messages when stock is low (configurable threshold)
 
+### Stock Deduction and Restoration
+
+#### Order Processing Stock Deduction
+WHEN an order is successfully placed and payment is confirmed, THE system SHALL:
+- Reduce stock quantity by the purchased quantity for each variant
+- Create inventory history records with reason "order"
+- Include the order reference in each inventory history record
+- Update current stock quantities immediately
+
+#### Order Cancellation Stock Restoration
+WHEN an order item is cancelled, THE system SHALL:
+- Restore stock quantity by the cancelled quantity for each variant
+- Create inventory history records with reason "cancellation"
+- Include the order reference in each inventory history record
+- Update current stock quantities immediately
+
+#### Order Refund Stock Restoration
+WHEN an order item is refunded, THE system SHALL:
+- Restore stock quantity by the refunded quantity for each variant
+- Create inventory history records with reason "refund"
+- Include the order reference in each inventory history record
+- Update current stock quantities immediately
+
+#### Inventory History Display
+WHEN a seller views inventory history, THE system SHALL:
+- Display a chronological list of all inventory records for the variant
+- Show the date, quantity change, reason, and reference information
+- Allow filtering and sorting by date and reason
+- Enable viewing of related order details
+
+## Product Visibility and Display
+
+### Search and Filtering Requirements
+
+#### Product Search Functionality
 WHEN a customer searches for products, THE system SHALL:
-- Search product names using partial matching
-- Include products from all sellers in search results
-- Support case-insensitive search matching
-- Return results paginated (20 products per page default)
-- Sort by newest first by default
+- Search product names and descriptions for matching terms
+- Support partial matching and case-insensitive search
+- Return paginated results with configurable page size
+- Sort results by relevance, newest, or price as configured
 
-WHEN search query is empty, THE system SHALL return popular or trending products
-
-WHEN search query exceeds maximum length (100 characters), THE system SHALL return error "SEARCH_QUERY_TOO_LONG"
-
-#### Search Query Processing
-
-- Search queries are trimmed of whitespace before processing
-- Search supports multi-word queries (space-separated)
-- Search matches any part of product name
-- Search includes category names as implicit filters
-- Search results include all relevant product information
-
-### 6.2 Filtering Capabilities
-
-#### Category Filtering
-
-WHEN customer filters by category, THE system SHALL:
-- Include products from selected category
-- Include products from all subcategories of selected category
-- Display category hierarchy information
-- Support filtering by multiple categories
+#### Category-Based Filtering
+WHEN a customer filters products by category, THE system SHALL:
+- Include products in the selected category and subcategories
+- Support filtering across multiple categories
+- Display product counts for each filter option
+- Update results immediately when filter changes
 
 #### Price Range Filtering
-
-WHEN customer specifies price range, THE system SHALL:
-- Filter products by base price or variant price range
+WHEN a customer filters products by price range, THE system SHALL:
+- Filter products based on their effective price (variant price or base price)
 - Support minimum and maximum price constraints
-- Handle currency formatting (USD default)
-- Include products within specified price range
-
-#### In-Stock Filtering
-
-WHEN customer enables "in-stock only" filter, THE system SHALL:
-- Exclude products where all variants have stock quantity = 0
-- Include products where at least one variant has stock quantity > 0
-- Show "Out of Stock" variants with appropriate status
-
-### 6.3 Sorting Options
-
-#### Sorting Requirements
-
-WHEN customer selects sorting option, THE system SHALL:
-- Support "newest first" sorting by creation timestamp
-- Support "price low to high" sorting by minimum variant price
-- Support "price high to low" sorting by maximum variant price
-- Maintain consistent sorting for all paginated results
-
-#### Sort Implementation
-
-- Newest first: `ORDER BY created_at DESC`
-- Price low to high: `ORDER BY MIN(variant.price) ASC`
-- Price high to low: `ORDER BY MAX(variant.price) ASC`
-- Default sorting: newest first (creation timestamp descending)
-
-### 6.4 Search Result Display
-
-#### Product Listing Information
-
-WHEN displaying search results, THE system SHALL show for each product:
-- Main thumbnail image (from first product image)
-- Product name
-- Price information (base price or price range)
-- Seller shop name (linked to seller profile)
-- Average rating (if reviews exist)
-- Stock status indicator
-
-#### Price Display Logic
-
-WHEN product has one variant, THE system SHALL display that variant's price
-
-WHEN product has multiple variants with same price, THE system SHALL display single price
-
-WHEN product has multiple variants with different prices, THE system SHALL display price range (e.g., "$19.99 - $29.99")
-
-WHEN all variants are out of stock, THE system SHALL display "Out of Stock" instead of price
-
-## 7. Snapshot Principle and Implementation
-
-### 7.1 Snapshot Requirements Overview
-
-#### Snapshot Mandate
-
-WHEN editable data is modified, THE system SHALL create a snapshot to preserve the previous state. This is a mandatory requirement for all e-commerce operations.
-
-#### Snapshot Preservation
-
-- Snapshots are immutable and cannot be deleted
-- Snapshots record: when the change was made, what was changed, and the values before and after
-- Snapshots can be viewed by relevant parties (owners, administrators) for dispute resolution
-- Snapshots are preserved indefinitely for legal and business purposes
-
-### 7.2 Product Snapshot Structure
-
-#### Product Snapshot Requirements
-
-WHEN a product is edited, THE system SHALL create a product snapshot that includes:
-- All product fields at time of snapshot (name, description, category, base price, status)
-- Timestamp of snapshot creation
-- User ID of actor who made the change
-- Reference to original product ID
-
-#### Product-Snapshot to Product-Snapshot-SKU Relationship
-
-WHEN a product is snapshotted, THE system SHALL also:
-- Create product-snapshot records for each variant at that moment
-- Include variant SKU codes, option values, and prices
-- Link each product-snapshot-SKU to its parent product-snapshot
-- Preserve complete variant state for historical accuracy
-
-#### Snapshot Content Preservation
-
-- Product snapshots include all images associated at time of snapshot
-- Product snapshots include category information at time of snapshot
-- Product snapshots include seller information at time of snapshot
-- Product snapshots include all variant details at time of snapshot
-
-### 7.3 Variant Snapshot Structure
-
-#### Variant Snapshot Requirements
-
-WHEN a variant is edited, THE system SHALL create a variant snapshot that includes:
-- All variant fields at time of snapshot (SKU, options, price, stock level)
-- Timestamp of snapshot creation
-- User ID of actor who made the change
-- Reference to original variant ID
-- Reference to product-snapshot for consistency
-
-#### Variant Snapshot Business Logic
-
-- Each variant edit creates a new snapshot
-- Variant snapshots preserve option values exactly as defined
-- Variant snapshots capture price overrides from base price
-- Variant snapshots maintain relationship to product snapshots
-
-### 7.4 Snapshot Access and Review
-
-#### Seller Snapshot Access
-
-WHEN a seller views product snapshots, THE system SHALL:
-- Show list of all snapshots for their products
-- Allow viewing snapshot details and changes
-- Display timestamp and actor information for each snapshot
-- Enable comparison between different snapshots
-
-#### Administrator Snapshot Access
-
-WHEN an administrator views product snapshots, THE system SHALL:
-- Allow viewing snapshots of any product on platform
-- Show all historical changes regardless of ownership
-- Enable audit of product modifications for policy compliance
-- Support investigation of seller activities
-
-#### Snapshot Display Requirements
-
-- Snapshots are displayed in chronological order (newest first)
-- Each snapshot shows date, time, and change summary
-- Full variant details are available for each snapshot
-- Comparison view highlights differences between snapshots
-
-## 8. Seller-Specific Product Workflows
-
-### 8.1 Seller Account Integration
-
-#### Seller Product Ownership
-
-- Products belong to the seller who creates them
-- Sellers can only edit products they own
-- Sellers can only delete products they own
-- Product visibility is tied to seller account status
-
-#### Seller Account Status Integration
-
-WHEN seller account is suspended, THE system SHALL:
-- Hide all seller's products from search and category listings
-- Block new purchases of seller's products
-- Allow seller to process existing orders
-- Prevent new product creation and existing product editing
-- Maintain visibility of products in past orders
-
-WHEN seller account is unsuspended, THE system SHALL:
-- Restore visibility of seller's products
-- Enable new purchases of seller's products
-- Allow seller to create new products and edit existing products
-- Resume normal product management workflows
-
-### 8.2 Seller Dashboard Integration
-
-#### Product Summary Metrics
-
-THE seller dashboard SHALL display:
-- Total number of products (all statuses)
-- Number of active products (published, not deleted)
-- Number of products with stock issues
-- Number of products with no variants
-- Number of products with no images
-
-#### Product Status Overview
-
-- Active products: Published and available for purchase
-- Draft products: Created but not yet published
-- Deleted products: Removed from catalog but in database
-- Unavailable products: No in-stock variants available
-
-### 8.3 Seller Approval Integration
-
-#### Seller Approval Status Integration
-
-WHEN seller account is pending approval, THE system SHALL:
-- Allow seller to create products but not publish them
-- Prevent products from appearing in public search
-- Allow seller to complete product setup in draft mode
-- Show approval status prominently in seller dashboard
-
-WHEN seller account is approved, THE system SHALL:
-- Allow seller to publish products
-- Enable products to appear in public search
-- Allow normal product management workflows
-- Remove draft-only restrictions
-
-WHEN seller account is rejected, THE system SHALL:
-- Prevent all product creation and editing
-- Hide all seller's products from public view
-- Allow seller to submit new registration request
-- Provide clear rejection reason display
-
-## 9. Business Rules and Validation
-
-### 9.1 Product Business Rules
-
-#### Product Creation Rules
-
-WHEN a product is created, THE system SHALL enforce:
-- Product must have at least one variant
-- Product must have at least one image
-- Product category must be valid and not deleted
-- Product name must be unique within seller's portfolio (for clarity)
-- Product description must meet minimum length requirements
-
-#### Product Publication Rules
-
-WHEN a product is published, THE system SHALL verify:
-- At least one variant exists with stock quantity > 0 OR allows "out of stock" visibility
-- At least one image is uploaded and valid
-- All required fields are filled and valid
-- Seller account is in good standing (not suspended or rejected)
-
-WHEN product fails validation for publication, THE system SHALL:
-- Prevent publication and return specific error codes
-- Display detailed requirements to seller for correction
-- Allow seller to save as draft while addressing issues
-
-### 9.2 Inventory Business Rules
-
-#### Stock Management Rules
-
-WHILE customer adds items to cart, THE system SHALL:
-- Verify variant stock quantity >= requested quantity
-- Show warning if stock is low (less than 10 units)
-- Block addition if stock < requested quantity
-- Update cart display with current stock status
-
-WHEN customer completes purchase, THE system SHALL:
-- Create negative inventory record for each purchased variant
-- Reduce current stock calculation accordingly
-- Remove items from customer's cart
-- Update order item status to "paid"
-
-### 9.3 Variant Business Rules
-
-#### Variant Compatibility Rules
-
-WHEN a seller creates or edits a product, THE system SHALL:
-- Ensure all variants have same option keys defined
-- Prevent option value conflicts between variants
-- Validate SKU codes are unique across seller's products
-- Ensure at least one variant remains after any edit or deletion
-
-#### Price Consistency Rules
-
-WHEN variant prices are set, THE system SHALL:
-- Validate prices are non-negative numbers
-- Validate prices don't exceed maximum allowed value
-- Allow price overrides from base product price
-- Calculate price range for display purposes
-
-## 10. Error Handling Scenarios
-
-### 10.1 Product Creation Errors
-
-#### Product Creation Error Matrix
-
-| Error Code | Condition | User Message | Resolution Action |
-|------------|-----------|--------------|-------------------|
-| PRODUCT_NAME_INVALID | Empty name or exceeds 200 chars | "Product name must be between 1 and 200 characters" | Edit product name |
-| PRODUCT_DESCRIPTION_INVALID | Empty description or below 100 chars | "Description must be at least 100 characters" | Expand product description |
-| CATEGORY_NOT_FOUND | Invalid or deleted category reference | "Selected category is not available" | Choose a different category |
-| PRODUCT_PRICE_INVALID | Price is zero, negative, or exceeds limit | "Price must be between $0.01 and $1,000,000" | Enter valid price |
-| SKU_DUPLICATE | Duplicate SKU code for same seller | "SKU code must be unique across your products" | Use a different SKU code |
-| VARIANT_OPTIONS_INVALID | Missing or invalid variant options | "Variant options must be properly defined" | Review variant option structure |
-| IMAGE_FORMAT_INVALID | Unsupported image format | "Images must be in JPG, PNG, or WebP format" | Convert image format |
-| IMAGE_SIZE_EXCEEDED | Image exceeds 5MB limit | "Image file size must not exceed 5MB" | Compress or resize image |
-| IMAGE_RESOLUTION_INVALID | Image too small (below 400x400) | "Image resolution must be at least 400x400 pixels" | Use higher resolution image |
-
-### 10.2 Product Modification Errors
-
-#### Product Edit Error Matrix
-
-| Error Code | Condition | User Message | Resolution Action |
-|------------|-----------|--------------|-------------------|
-| PRODUCT_EDIT_INVALID | Invalid edit combination | "Some changes are not compatible" | Review and modify edits |
-| CATEGORY_CHANGE_NOT_ALLOWED | Attempting to change category | "Category cannot be changed after product creation" | Cannot modify category |
-| PRODUCT_HAS_ACTIVE_ORDERS | Blocking orders exist for deletion | "Product cannot be deleted due to active orders" | Wait for order completion |
-| PRODUCT_HAS_PENDING_CANCELLATION | Pending cancellations exist | "Product cannot be deleted with pending cancellations" | Wait for cancellation resolution |
-| PRODUCT_HAS_PENDING_REFUND | Pending refunds exist | "Product cannot be deleted with pending refunds" | Wait for refund resolution |
-| VARIANT_HAS_ACTIVE_ORDERS | Variant has active orders | "Variant cannot be deleted due to active orders" | Wait for order completion |
-| VARIANT_HAS_PENDING_CANCELLATION | Pending variant cancellations | "Variant cannot be deleted with pending cancellations" | Wait for cancellation resolution |
-| VARIANT_HAS_PENDING_REFUND | Pending variant refunds | "Variant cannot be deleted with pending refunds" | Wait for refund resolution |
-| PRODUCT_NEEDS_AT_LEAST_ONE_VARIANT | Deletion would remove all variants | "Product must have at least one variant" | Create additional variant first |
-| PRODUCT_NEEDS_AT_LEAST_ONE_IMAGE | Deletion would remove all images | "Product must have at least one image" | Upload additional image first |
-
-### 10.3 Inventory Error Scenarios
-
-#### Inventory Error Matrix
-
-| Error Code | Condition | User Message | Resolution Action |
-|------------|-----------|--------------|-------------------|
-| INVENTORY_REASON_REQUIRED | Empty adjustment reason | "Reason for adjustment is required" | Provide adjustment reason |
-| INVENTORY_QUANTITY_REQUIRED | Zero quantity adjustment | "Adjustment quantity must be specified" | Enter valid quantity |
-| INVENTORY_QUANTITY_INVALID | Logical quantity error | "Quantity must be positive for restock, negative for adjustment" | Correct quantity direction |
-| INVENTORY_ADJUSTMENT_INVALID | Would cause negative stock | "Adjustment would result in invalid stock level" | Adjust quantity or add stock first |
-| VARIANT_NOT_FOUND | Invalid variant reference | "Specified variant does not exist" | Verify variant selection |
-| IMAGE_POSITION_INVALID | Invalid image reordering | "Image positions must be valid and sequential" | Reorder images correctly |
-| IMAGE_DUPLICATE_POSITION | Duplicate image positions | "Each image must have a unique position" | Fix duplicate positions |
-| IMAGE_NOT_FOUND | Invalid image reference | "Specified image does not exist" | Verify image selection |
-
-### 10.4 Search and Filter Errors
-
-#### Search Error Matrix
-
-| Error Code | Condition | User Message | Resolution Action |
-|------------|-----------|--------------|-------------------|
-| SEARCH_QUERY_TOO_LONG | Query exceeds 100 characters | "Search query must be 100 characters or less" | Shorten search query |
-
-## 11. Business Process Diagrams
-
-### 11.1 Product Creation Workflow
-
-```mermaid
-graph TD
-    A["Start Product Creation"] --> B["Fill Product Details"]
-    B --> C["Upload Product Images"]
-    C --> D["Create Product Variants"]
-    D --> E["Validate Required Fields"]
-    E --> F{"Validation Passes?"}
-    F -->|Yes| G["Create Product Record (Draft)"]
-    F -->|No| H["Return Error Codes"]
-    G --> I["Display in Seller Dashboard"]
-    H --> J["Allow Seller Correction"]
-    J --> B
-```
-
-### 11.2 Product Editing Workflow
-
-```mermaid
-graph TD
-    A["Start Product Edit"] --> B["Load Current Product State"]
-    B --> C["Display Existing Data for Review"]
-    C --> D["Modify Editable Fields"]
-    D --> E["Create Product Snapshot (Before Changes)"]
-    E --> F["Apply Requested Changes"]
-    F --> G["Validate Changes"]
-    G --> H{"Changes Valid?"}
-    H -->|Yes| I["Save Updated Product Record"]
-    H -->|No| J["Revert Changes and Return Error"]
-    I --> K["Update Product Display"]
-    J --> L["Notify Seller of Error"]
-```
-
-### 11.3 Inventory Adjustment Workflow
-
-```mermaid
-graph TD
-    A["Start Inventory Adjustment"] --> B["Navigate to Variant Inventory"]
-    B --> C["Select Adjustment Type (Restock or Loss)"]
-    C --> D["Enter Quantity and Reason"]
-    D --> E["Validate Input Values"]
-    E --> F{"Validation Passes?"}
-    F -->|Yes| G["Create Inventory Record"]
-    F -->|No| H["Return Error Codes"]
-    G --> I["Update Current Stock Calculation"]
-    I --> J["Display Updated Stock Quantity"]
-    H --> K["Allow Seller Correction"]
-    K --> D
-```
-
-### 11.4 Product Search and Filter Workflow
-
-```mermaid
-graph TD
-    A["Customer Search Request"] --> B["Receive Search Query"]
-    B --> C["Validate Query Length"]
-    C --> D{"Query Valid?"}
-    D -->|Yes| E["Apply Filters (Category, Price, In-Stock)"]
-    D -->|No| F["Return Error: Query Too Long"]
-    E --> G["Apply Sorting (Newest, Price Low-High, Price High-Low)"]
-    G --> H["Paginate Results (20 items per page)"]
-    H --> I["Display Product List with Thumbnail, Name, Price, Seller, Rating"]
-```
-
-## 12. Implementation Notes
-
-### 12.1 Key Database Relationships
-
-- Products have many variants (one-to-many)
-- Products have many images (one-to-many)
-- Variants have many inventory records (one-to-many)
-- Products belong to sellers (many-to-one)
-- Products belong to categories (many-to-one)
-- Snapshots preserve complete product states at modification time
-
-### 12.2 Business Logic Highlights
-
-- Product deletion blocked if any variant has active orders
-- Category cannot be changed after product creation
-- Stock calculation is sum of all inventory records
-- Snapshots created for all product and variant modifications
-- Out-of-stock variants cannot be purchased but can be viewed
-
-### 12.3 Performance Considerations
-
-- Stock calculations should use cached totals for real-time display
-- Search should use full-text indexing for product names
-- Category filtering should support recursive queries for subcategories
-- Product snapshots should be stored efficiently for quick retrieval
-
-### 12.4 Security Considerations
-
-- Sellers can only edit their own products
-- Inventory adjustments require authentication
-- Snapshot access follows ownership rules
-- Product deletion requires validation of all blocking conditions
-
-### 12.5 Audit Requirements
-
-- All inventory changes create history records
-- All product modifications create snapshots
-- Seller approval status changes are logged
-- Error conditions and validation failures are recorded
-- All business rule violations should generate audit trails
+- Display price range selector with suggested ranges
+- Update results immediately when price range changes
+
+#### Stock Status Filtering
+WHEN a customer filters products by stock status, THE system SHALL:
+- Filter products based on whether they have in-stock variants
+- Include products with at least one variant that has stock > 0
+- Support filtering for in-stock only or all products
+- Update results immediately when stock filter changes
+
+### Product Listing Display Requirements
+
+#### Search Results Display
+WHEN displaying search results, THE system SHALL:
+- Show product thumbnail image (main image from product)
+- Display product name and description preview
+- Show base price or price range for variants
+- Display seller shop name and link to seller profile
+- Show average rating and review count if available
+- Display stock status indicator
+
+#### Category Page Display
+WHEN displaying a category page, THE system SHALL:
+- Show all products assigned to that category
+- Include products from subcategories if configured
+- Display category description and hierarchy
+- Enable sorting and filtering options
+- Show product count and pagination controls
+
+### Product Detail Page Requirements
+
+#### Basic Information Display
+WHEN displaying a product detail page, THE system SHALL:
+- Show all product images in a gallery
+- Display product name and description
+- Show category hierarchy with navigation links
+- Display seller shop name and profile link
+- Show average rating and total review count
+
+#### Variant Selection Display
+WHEN displaying product variants, THE system SHALL:
+- Show all available variants with their option values
+- Display variant-specific pricing and stock status
+- Enable variant selection with clear visual indicators
+- Show warning messages when stock is insufficient
+- Display "out of stock" or "unavailable" indicators appropriately
+
+#### Review Display Requirements
+WHEN displaying reviews, THE system SHALL:
+- Show all non-deleted reviews for the product
+- Display review rating (1-5 stars) and review text
+- Show reviewer display name and review date
+- Sort reviews by newest first
+- Calculate and display average rating from all reviews
+
+### Product Visibility Controls
+
+#### Seller Product Management
+WHEN a seller views their products, THE system SHALL:
+- Display all products created by that seller
+- Show product status (active, inactive, deleted)
+- Display inventory levels and stock status
+- Enable quick access to product editing
+- Show order statistics for each product
+
+#### Search Result Visibility
+WHILE a product has no in-stock variants, THEN THE system SHALL:
+- Include the product in search results when searching by name
+- Display the product as "unavailable" or "out of stock"
+- Prevent the product from being added to customer wishlists
+- Allow administrators to override visibility settings
+
+#### Category Listing Visibility
+WHEN displaying category listings, THE system SHALL:
+- Show all products assigned to the category
+- Include products from subcategories
+- Display stock status indicators for each product
+- Allow administrators to temporarily hide products
+
+## Business Rules and Constraints
+
+### Product Creation Constraints
+IF a seller attempts to create a product with invalid data, THEN THE system SHALL:
+- Validate product name (minimum 3 characters, maximum 200 characters)
+- Validate description (minimum 20 characters, maximum 10,000 characters)
+- Validate category selection (must be an existing category)
+- Validate base price (must be positive decimal with maximum 2 decimal places)
+- Validate image uploads (format and size constraints)
+- Display specific error messages for each validation failure
+- Prevent product creation until all validation errors are resolved
+
+### Product Editing Constraints
+WHILE a product has pending order items, THEN THE system SHALL:
+- Prevent editing of base price and category
+- Allow editing of description and images
+- Prevent deletion of products and variants with pending orders
+- Display clear warning messages about editing restrictions
+- Allow sellers to view pending order details
+
+### Inventory Constraints
+IF stock quantity reaches zero or below, THEN THE system SHALL:
+- Mark the variant as "out of stock" for customer display
+- Prevent customers from selecting out-of-stock variants
+- Allow sellers to add inventory to restore stock
+- Maintain complete inventory history for auditing
+
+### Snapshot Requirements
+WHEN any editable data is modified, THE system SHALL:
+- Create a complete snapshot of the previous state
+- Store the snapshot timestamp and modifier information
+- Preserve snapshots permanently (never delete snapshots)
+- Allow relevant parties to view snapshots for dispute resolution
+- Include snapshots in order items to preserve historical product state
+
+## Snapshot and History Requirements
+
+### Product Snapshots
+WHEN a product is edited, THE system SHALL:
+- Create a complete product snapshot with all current product fields
+- Include snapshots of all variants at the time of editing
+- Store the snapshot with timestamp and modifier information
+- Preserve the snapshot permanently for audit and dispute resolution
+- Reference the snapshot from the order item when the product is purchased
+
+### Variant Snapshots
+WHEN a variant is edited, THE system SHALL:
+- Create a complete variant snapshot with all current variant fields
+- Include SKU code, option values, price, and stock quantity
+- Store the snapshot with timestamp and modifier information
+- Preserve the snapshot permanently for audit and dispute resolution
+- Reference the snapshot from the order item when the variant is purchased
+
+### Seller Profile Snapshots
+WHEN an order is placed, THE system SHALL:
+- Create a snapshot of the seller's profile at the time of purchase
+- Store shop name, description, and logo as they appeared at purchase time
+- Preserve the snapshot permanently for audit and dispute resolution
+- Reference the snapshot from each order item for that seller
+
+### Order Item Snapshots
+WHEN an order item is created, THE system SHALL:
+- Create a snapshot of the product state at purchase time
+- Create a snapshot of the variant state at purchase time
+- Create a snapshot of the seller profile at purchase time
+- Store all snapshots permanently and reference them from the order item
+
+### Review Snapshots
+WHEN a review is edited or deleted, THE system SHALL:
+- Create a snapshot of the review state at the time of editing
+- Preserve the snapshot permanently for audit and dispute resolution
+- Maintain the review content in the snapshot even after deletion
+- Store the snapshot with timestamp and modifier information
+
+### Cancellation and Refund Snapshots
+WHEN cancellation or refund requests are made, THE system SHALL:
+- Create snapshots of request state when status changes
+- Preserve snapshots permanently for dispute resolution
+- Store reason, status, and timestamp information
+- Reference snapshots from related order items
+
+## Business Logic and Workflows
+
+### Product Creation Workflow
+1. Seller selects category from available categories
+2. Seller uploads product images (minimum one required)
+3. Seller enters product name, description, and base price
+4. System validates all required fields and constraints
+5. System creates the product with unique identifier
+6. System sets initial product visibility to "active"
+7. System records creation timestamp and seller association
+8. Product is added to seller's product inventory
+
+### Product Editing Workflow
+1. Seller accesses product editing interface
+2. Seller modifies product fields (name, description, category, price)
+3. Seller can reorder, add, or delete product images
+4. Seller can add, edit, or delete product variants
+5. System validates all changes and constraints
+6. System creates complete product snapshot before applying changes
+7. System updates product with new values
+8. System records modification timestamp
+9. System updates related order item snapshots if product is purchased
+
+### Category Management Workflow
+1. Administrator accesses category management interface
+2. Administrator creates new category or edits existing category
+3. System validates category hierarchy (one level of nesting only)
+4. System checks for circular category relationships
+5. System enforces unique category names within parent category
+6. System creates category record with unique identifier
+7. System stores creation timestamp and administrator information
+8. System updates category hierarchy if needed
+
+### Variant Management Workflow
+1. Seller accesses product variant management interface
+2. Seller adds new variant with required fields (SKU, option values)
+3. System validates SKU uniqueness across all products
+4. System validates unique option value combinations
+5. System initializes stock quantity to zero
+6. System creates initial inventory history record
+7. System creates variant snapshot if existing product
+8. System updates product to include new variant
+
+### Inventory Adjustment Workflow
+1. Seller accesses inventory management interface
+2. Seller selects product variant for adjustment
+3. Seller enters adjustment quantity and reason
+4. System validates quantity (can be positive or negative)
+5. System creates inventory history record
+6. System updates current stock quantity
+7. System records timestamp and reason for adjustment
+8. System displays updated stock information
+
+### Order Processing Workflow
+1. Customer completes checkout and payment
+2. System validates customer payment success
+3. System creates order record with customer information
+4. System creates order items for each purchased variant
+5. System creates snapshots of products, variants, and seller profiles
+6. System reduces stock quantities by purchased amounts
+7. System creates inventory history records with reason "order"
+8. System clears customer's shopping cart items
+9. System marks order items as "paid"
+10. System generates order confirmation for customer
+
+### Product Deletion Workflow
+1. Seller accesses product deletion interface
+2. System checks for pending order items (paid or shipped status)
+3. System checks for pending cancellation or refund requests
+4. IF pending items exist, THEN system displays error and prevents deletion
+5. IF no pending items, THEN system proceeds with deletion
+6. System deletes product and all associated variants
+7. System deletes product images from storage
+8. System removes product from search indexes
+9. System clears product from customer wishlists
+10. System records deletion timestamp and reason
+
+### Seller Account Deletion Workflow
+1. Seller initiates account deletion
+2. System checks for pending orders (paid or shipped status)
+3. System checks for pending cancellation or refund requests
+4. IF pending items exist, THEN system displays error and prevents deletion
+5. IF no pending items, THEN system proceeds with deletion
+6. System deletes seller's products and variants
+7. System preserves order history and snapshots for records
+8. System preserves shop name in past orders for records
+9. System updates seller status to "deleted"
+10. System permanently deletes seller account after retention period
+
+### Review Submission Workflow
+1. Customer accesses product detail page
+2. System validates that customer has purchased the product
+3. System validates that purchased item status is "delivered"
+4. Customer enters rating (1-5 stars) and optional text content
+5. System validates rating range and text length
+6. System creates review record with customer and product references
+7. System calculates and updates product's average rating
+8. System displays review on product detail page
+9. System allows customer to edit or delete their review later
+
+### Cancellation Request Workflow
+1. Customer selects item for cancellation
+2. System validates item status is "paid" (not yet shipped)
+3. Customer enters cancellation reason
+4. System creates cancellation request with status "pending"
+5. Seller receives notification of pending cancellation request
+6. Seller can approve or reject the cancellation request
+7. IF approved, THEN system:
+   - Cancels the order item
+   - Restores stock quantity
+   - Creates inventory history record with reason "cancellation"
+   - Creates refund transaction
+8. IF rejected, THEN system:
+   - Marks request as "rejected"
+   - Notifies customer of rejection reason
+   - Item continues normal processing
+
+### Refund Request Workflow
+1. Customer selects delivered item for refund
+2. System validates item status is "delivered"
+3. System validates refund request is within 7 days of delivery
+4. Customer enters refund reason
+5. System creates refund request with status "pending"
+6. Seller receives notification of pending refund request
+7. Seller can approve or reject the refund request
+8. IF approved, THEN system:
+   - Marks item as "refunded"
+   - Restores stock quantity
+   - Creates inventory history record with reason "refund"
+   - Creates refund transaction
+9. IF rejected, THEN system:
+   - Marks request as "rejected"
+   - Notifies customer of rejection reason
+   - Item remains as "delivered"
+
+## User Experience Requirements
+
+### Error Handling and Validation
+IF a user attempts an invalid action, THEN THE system SHALL:
+- Display clear, user-friendly error messages
+- Indicate which fields or actions caused the error
+- Provide suggestions for resolving the error
+- Preserve user input when possible for correction
+- Allow users to retry invalid actions without losing context
+
+### Performance Requirements
+WHEN loading product lists or detail pages, THE system SHALL:
+- Display initial product information within 2 seconds
+- Load full product details and images within 5 seconds
+- Handle large product catalogs with pagination
+- Support concurrent users without performance degradation
+- Cache frequently accessed data for improved response times
+
+### Accessibility Requirements
+WHEN displaying product information, THE system SHALL:
+- Provide alt text for all product images
+- Support keyboard navigation for all interactive elements
+- Use appropriate color contrast for readability
+- Support screen readers for all product information
+- Enable zoom and text resizing for accessibility
+
+### Mobile Responsiveness
+WHEN accessing the platform on mobile devices, THE system SHALL:
+- Display product information in mobile-friendly formats
+- Support touch interactions for variant selection
+- Optimize product images for mobile loading
+- Enable easy navigation through product lists
+- Support mobile payment processing
+
+## Integration Requirements
+
+### External Payment Gateway Integration
+WHEN processing payments, THE system SHALL:
+- Integrate with external payment gateway services
+- Support multiple payment methods (credit cards, digital wallets, bank transfers)
+- Handle payment success and failure responses
+- Store payment transaction references for audit purposes
+- Implement secure payment data handling and storage
+- Support partial refunds and full refunds
+
+### External Shipping Integration
+WHEN processing shipments, THE system SHALL:
+- Integrate with external shipping carrier APIs
+- Support tracking number generation and validation
+- Fetch real-time shipping rates for different carriers
+- Support multiple shipping options at checkout
+- Enable automatic status updates from shipping carriers
+
+### Image Storage and CDN Integration
+WHEN handling product images, THE system SHALL:
+- Store images in a scalable image storage system
+- Support image optimization and compression
+- Implement image CDN for fast global delivery
+- Support image resizing and format conversion
+- Enable secure image access and hotlink protection
+
+## Future Considerations
+
+### Product Recommendations
+WHILE product management is established, THE system SHALL:
+- Track customer viewing and purchase patterns
+- Enable personalized product recommendations
+- Support related product suggestions
+- Implement collaborative filtering for recommendations
+- Allow sellers to promote specific products
+
+### Advanced Inventory Features
+WHILE inventory management is established, THE system SHALL:
+- Support multi-location inventory tracking
+- Enable inventory forecasting and demand planning
+- Support batch processing for bulk inventory adjustments
+- Implement low stock alerts and automated restocking
+- Support inventory reservation for pending orders
+
+### Product Analytics
+WHILE product visibility is established, THE system SHALL:
+- Track product views and conversion rates
+- Enable seller analytics for product performance
+- Support A/B testing for product pages
+- Implement customer sentiment analysis from reviews
+- Provide competitive pricing analysis tools
+
+## Compliance and Legal Requirements
+
+### Data Retention Requirements
+THE system SHALL:
+- Preserve all order history for legal and audit purposes
+- Maintain product snapshots indefinitely for dispute resolution
+- Store inventory history for financial auditing
+- Retain customer reviews for product history
+- Comply with data retention regulations in all operating jurisdictions
+
+### Privacy and Security Requirements
+THE system SHALL:
+- Encrypt all sensitive customer and seller data
+- Implement role-based access control for administrative functions
+- Audit all access to customer and seller data
+- Comply with data protection regulations (GDPR, CCPA, etc.)
+- Implement secure password storage and authentication
+
+### Tax and Regulatory Compliance
+THE system SHALL:
+- Support tax calculation and collection based on jurisdiction
+- Generate required tax documentation for sellers
+- Enable compliance with product safety and labeling regulations
+- Support product certification and compliance tracking
+- Enable reporting for sales tax and business license requirements
+
+## Success Criteria and Metrics
+
+### Functional Success Metrics
+THE system SHALL achieve:
+- 99% uptime for product browsing and search functionality
+- Product search results displayed within 2 seconds
+- Product creation completed within 30 seconds for typical products
+- Product editing completed within 60 seconds for typical updates
+- Support for 10,000+ concurrent product searches
+
+### Business Success Metrics
+THE system SHALL support:
+- Product catalog growth of 100,000+ products
+- Support for 1,000+ active sellers
+- 95% customer satisfaction with product information accuracy
+- 90% reduction in product-related customer service issues
+- 50% increase in conversion rate from product pages
+
+## Appendix: Requirements Traceability
+
+### Related Documentation References
+- [Authentication Requirements](./04-authentication.md) - For user authentication and authorization
+- [Order Processing Requirements](./07-order-processing.md) - For order creation and management
+- [Inventory Requirements](./06-inventory.md) - For stock tracking and management
+- [Shipping Requirements](./08-shipping.md) - For shipment creation and tracking
+
+### Requirements Validation Checklist
+- [ ] All product creation requirements implemented
+- [ ] All product editing requirements implemented
+- [ ] All variant management requirements implemented
+- [ ] All inventory management requirements implemented
+- [ ] All category management requirements implemented
+- [ ] All snapshot and history requirements implemented
+- [ ] All product visibility requirements implemented
+- [ ] All business logic and workflows validated
+- [ ] All error handling and validation implemented
+- [ ] All integration requirements implemented
+
+*Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

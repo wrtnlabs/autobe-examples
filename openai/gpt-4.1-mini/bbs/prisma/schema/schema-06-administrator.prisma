@@ -32,10 +32,14 @@ model discussion_board_administrator_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([registered_user_id])
   @@index([status, created_at])
 }
@@ -72,13 +76,17 @@ model discussion_board_administrator_grades {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   administrators discussion_board_administrators[]
   gradeChanges discussion_board_administrator_grade_changes[]
   oldGradePromotions discussion_board_administrator_promotions[] @relation("discussion_board_administrator_promotions_of_old_grade_id")
   newGradePromotions discussion_board_administrator_promotions[] @relation("discussion_board_administrator_promotions_of_new_grade_id")
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
   @@index([level])
 }
@@ -118,12 +126,16 @@ model discussion_board_administrator_promotions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
   oldGrade discussion_board_administrator_grades @relation("discussion_board_administrator_promotions_of_old_grade_id", fields: [old_grade_id], references: [id], onDelete: Cascade)
   newGrade discussion_board_administrator_grades @relation("discussion_board_administrator_promotions_of_new_grade_id", fields: [new_grade_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_administrator_id, created_at], map: "discussion_board_administrator_promotions_discussion_b_3163659b")
   @@index([old_grade_id])
@@ -167,13 +179,21 @@ model discussion_board_user_bans {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   registeredUser discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
   administrator discussion_board_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   userUnbans discussion_board_user_unbans[]
   
+  //----
+  // INDEXES
+  //----
   @@index([registered_user_id])
   @@index([administrator_id])
   @@index([banned_at])
@@ -214,11 +234,15 @@ model discussion_board_user_unbans {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   userBan discussion_board_user_bans @relation(fields: [user_ban_id], references: [id], onDelete: Cascade)
   administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([user_ban_id, created_at])
   @@index([administrator_id, created_at])
 }

@@ -6,8 +6,21 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_sale_unit(
-  input?: DeepPartial<IShoppingMallSaleUnit.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSaleUnit.ICreate>,
 ): IShoppingMallSaleUnit.ICreate {
-  input;
-  return {};
+  return {
+    sku_code: input?.sku_code ?? RandomGenerator.alphaNumeric(12),
+    option_values:
+      input?.option_values ??
+      JSON.stringify({
+        color: RandomGenerator.name(1),
+        size: RandomGenerator.pick(["S", "M", "L", "XL"]),
+        material: RandomGenerator.name(1),
+      }),
+    price_override:
+      input?.price_override ??
+      (RandomGenerator.pick([true, false])
+        ? typia.random<number & tags.Type<"double"> & tags.Minimum<0>>()
+        : null),
+  };
 }

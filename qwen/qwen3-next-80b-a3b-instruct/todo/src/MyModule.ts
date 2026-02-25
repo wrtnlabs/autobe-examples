@@ -1,18 +1,20 @@
 import { Module } from "@nestjs/common";
 
-import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
+import { TodoappAuthController } from "./controllers/todoApp/auth/TodoappAuthController";
 import { TodoappUserProfileController } from "./controllers/todoApp/user/profile/TodoappUserProfileController";
-import { TodoappUserProfileEditsController } from "./controllers/todoApp/user/profile/edits/TodoappUserProfileEditsController";
 import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
+import { TodoappUserTodosHistoriesController } from "./controllers/todoApp/user/todos/histories/TodoappUserTodosHistoriesController";
+import { TodoappUserTodosHistoryController } from "./controllers/todoApp/user/todos/history/TodoappUserTodosHistoryController";
 import { TodoappUserTrashController } from "./controllers/todoApp/user/trash/TodoappUserTrashController";
 
 @Module({
   controllers: [
-    TodoappAuthUserController,
+    TodoappAuthController,
     TodoappUserProfileController,
-    TodoappUserProfileEditsController,
     TodoappUserTodosController,
     TodoappUserTrashController,
+    TodoappUserTodosHistoriesController,
+    TodoappUserTodosHistoryController,
   ],
 })
 export class MyModule {}

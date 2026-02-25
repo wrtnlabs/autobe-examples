@@ -12,69 +12,95 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postRedditCommunityAuthCommunityOwnerJoin(props: {
   body: IRedditCommunityCommunityOwner.IJoin;
 }): Promise<IRedditCommunityCommunityOwner.IAuthorized> {
-  // 1. Check if email already exists
-  const existingOwner =
+  const existing =
     await MyGlobal.prisma.reddit_community_community_owners.findFirst({
       where: { email: props.body.email },
     });
-  if (existingOwner) throw new HttpException("Email already registered", 409);
-  // 2. Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Generate UUID for owner
+  if (existing) throw new HttpException("Email already registered", 409);
   const ownerId = v4();
-  const now = toISOStringSafe(new Date());
-  // 4. Create community owner
+  const createdNow = new Date();
   const owner = await MyGlobal.prisma.reddit_community_community_owners.create({
     data: {
       id: ownerId,
       email: props.body.email,
-      password_hash: passwordHash,
-      display_name: props.body.display_name ?? props.body.email.split("@")[0],
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      username: props.body.email.toLowerCase().split("@")[0],
+      display_name: props.body.displayName,
+      created_at: createdNow.toISOString(),
+      updated_at: createdNow.toISOString(),
+      karma_score: 0,
+      is_deleted: false,
     },
   });
-  // 5. Generate verification token
-  const verificationToken = v4();
-  const expiresAt = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  // 6. Create email verification record
-  const verificationData = {
-    reddit_community_community_owner_id: owner.id,
-    token: verificationToken,
-    expires_at: expiresAt,
-    created_at: now,
-    id: v4(),
+  const accessExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const session =
+    await MyGlobal.prisma.reddit_community_community_owner_sessions.create({
+      data: {
+        id: v4(),
+        created_at: createdNow.toISOString(),
+        expired_at: accessExpires.toISOString(),
+        communityOwner: { connect: { id: owner.id } },
+        ip: "", // default value since not provided in IJoin
+        href: "", // default value since not provided in IJoin
+      } satisfies Prisma.reddit_community_community_owner_sessionsCreateInput,
+    });
+  const token = {
+    access: jwt.sign(
+      {
+        type: "communityOwner",
+        id: owner.id,
+        session_id: session.id,
+        created_at: createdNow.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "communityOwner",
+        id: owner.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: createdNow.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "30d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
+  const verificationToken = v4();
   await MyGlobal.prisma.reddit_community_community_owner_email_verifications.create(
     {
-      data: verificationData,
+      data: {
+        id: verificationToken,
+        communityOwner: { connect: { id: owner.id } },
+        token: verificationToken,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        created_at: createdNow.toISOString(),
+        updated_at: createdNow.toISOString(),
+        is_used: false,
+      } satisfies Prisma.reddit_community_community_owner_email_verificationsCreateInput,
     },
   );
-  // 7. Generate refresh token (no access token yet — account unverified)
-  const refresh = jwt.sign(
-    {
-      type: "communityOwner" as const,
-      id: owner.id,
-      session_id: "" as string & tags.Format<"uuid">,
-      tokenType: "refresh" as const,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 8. Return IAuthorized with refresh token only
-  return {
-    token: {
-      access: null as never,
-      refresh,
-      expired_at: null as never,
-      refreshable_until: expiresAt,
-    },
+  const transformedOwner = {
+    id: owner.id,
+    email: owner.email,
+    username: owner.username,
+    display_name: owner.display_name,
+    bio: owner.bio ?? null,
+    avatar_url: owner.avatar_url ?? null,
+    karma_score: owner.karma_score,
+    is_deleted: owner.is_deleted,
+    created_at: owner.created_at.toISOString(),
+    updated_at: owner.updated_at.toISOString(),
+    token,
   } satisfies IRedditCommunityCommunityOwner.IAuthorized;
+  return transformedOwner;
 }

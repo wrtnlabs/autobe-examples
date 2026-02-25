@@ -1,7 +1,8 @@
-import { IDiscussionBoardApiRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardApiRateLimit";
+import { IDiscussionBoardCommentRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardCommentRateLimit";
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardApiRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardApiRateLimit";
+import { IPageIDiscussionBoardCommentRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardCommentRateLimit";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,63 +17,75 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdminCommentRateLimits(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardApiRateLimit.IRequest;
-}): Promise<IPageIDiscussionBoardApiRateLimit.ISummary> {
+  body: IDiscussionBoardCommentRateLimit.IRequest;
+}): Promise<IPageIDiscussionBoardCommentRateLimit.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = Math.min(props.body.limit ?? 50, 100);
   const skip = (page - 1) * limit;
-  // Parse ISO string dates properly
+  // Build WHERE conditions with proper timestamp handling
   const whereInput = {
-    ...(props.body.created_at_after && {
-      submitted_at: { gt: new Date(props.body.created_at_after) },
+    ...(props.body.discussion_board_user_id && {
+      discussion_board_user_id: props.body.discussion_board_user_id,
     }),
-    ...(props.body.updated_at_after && {
-      created_at: { gt: new Date(props.body.updated_at_after) },
+    ...(props.body.submitted_at_start && {
+      submitted_at: {
+        gte: new Date(props.body.submitted_at_start),
+      },
+    }),
+    ...(props.body.submitted_at_end && {
+      submitted_at: {
+        lte: new Date(props.body.submitted_at_end),
+      },
     }),
   } satisfies Prisma.discussion_board_comment_rate_limitsWhereInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_comment_rate_limits.findMany({
+  // Sequential execution for better performance with large datasets
+  const data =
+    await MyGlobal.prisma.discussion_board_comment_rate_limits.findMany({
       where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { submitted_at: "desc" },
       include: {
         user: {
           select: {
             id: true,
             display_name: true,
-            email: true,
+            bio: true,
+            created_at: true,
           },
-        },
-      },
-    }),
-    MyGlobal.prisma.discussion_board_comment_rate_limits.count({
+        } satisfies Prisma.discussion_board_usersFindManyArgs,
+      } satisfies Prisma.discussion_board_comment_rate_limitsInclude,
+      orderBy: {
+        submitted_at: "desc",
+      } satisfies Prisma.discussion_board_comment_rate_limitsOrderByWithRelationInput,
+      skip,
+      take: limit,
+    });
+  const total =
+    await MyGlobal.prisma.discussion_board_comment_rate_limits.count({
       where: whereInput,
-    }),
-  ]);
-  // Transform with proper typing
-  const transformedData: IDiscussionBoardApiRateLimit.ISummary[] = data.map(
-    () => ({
-      id: v4(),
-      endpoint_path: `/api/comments`,
-      http_method: "POST",
-      rate_limit_type: "user_based",
-      requests_per_interval: 10,
-      interval_seconds: 60,
-      burst_limit: null,
-      enforcement_count: 0,
-      enforced_at: null,
-      is_active: true,
-      enforcement_action: "block",
-    }),
+    });
+  // Transform results safely
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    async (record) =>
+      ({
+        id: record.id as string & tags.Format<"uuid">,
+        submitted_at: toISOStringSafe(record.submitted_at) as string &
+          tags.Format<"date-time">,
+        user: {
+          id: record.user.id as string & tags.Format<"uuid">,
+          display_name: record.user.display_name,
+          bio: record.user.bio ?? null,
+          created_at: toISOStringSafe(record.user.created_at) as string &
+            tags.Format<"date-time">,
+        } satisfies IDiscussionBoardUser.ISummary,
+      }) satisfies IDiscussionBoardCommentRateLimit.ISummary,
   );
   return {
-    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-  };
+    } satisfies IPage.IPagination,
+    data: transformedData,
+  } satisfies IPageIDiscussionBoardCommentRateLimit.ISummary;
 }

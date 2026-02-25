@@ -13,17 +13,15 @@ export namespace DiscussionBoardBanAppealCollector {
     discussionBoardBanRecords: IEntity;
     discussionBoardUsers: IEntity;
   }) {
-    const id: string = v4();
-    const now = new Date();
     return {
-      id,
+      id: v4(),
       appeal_reason: props.body.appeal_reason,
       status: "pending",
       decision_reason: null,
-      appealed_at: now,
+      appealed_at: new Date(),
       reviewed_at: null,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       banRecord: { connect: { id: props.discussionBoardBanRecords.id } },
       user: { connect: { id: props.discussionBoardUsers.id } },

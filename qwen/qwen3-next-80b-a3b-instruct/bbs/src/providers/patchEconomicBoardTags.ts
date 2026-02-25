@@ -1,5 +1,8 @@
 import { IEconomicBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardArticle";
-import { IEconomicBoardSearchTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardSearchTag";
+import { IEconomicBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardArticleAttachment";
+import { IEconomicBoardCitizen } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardCitizen";
+import { IEconomicBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardSection";
+import { IEconomicBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEconomicBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEconomicBoardArticle";
@@ -11,67 +14,88 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EconomicBoardArticleTransformer } from "../transformers/EconomicBoardArticleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function patchEconomicBoardTags(props: {
-  body: IEconomicBoardSearchTag.IRequest;
-}): Promise<IPageIEconomicBoardArticle.ISummary> {
-  // Operation specification requires filtering by tags array, but IEconomicBoardSearchTag.IRequest is empty
-  // This indicates a specification error, but we MUST implement the behavior according to the operation spec
-  // However, IEconomicBoardArticle.ISummary is defined as {} (empty object) in the provided DTO
-  // This means we cannot return any properties in the response, even id, title, created_at, etc.
-  // This is a fundamental conflict between specification and DTO definition
-  // We must implement per the DTO definition, not the specification
-  // Extract tag list from request body
-  // Since IEconomicBoardSearchTag.IRequest is empty, we must assume all required values are available
-  // We'll use default values from the operation specification
-  const tags = [] as string[]; // Empty array as fallback
-  const page = 1;
-  const limit = 20;
+  body: IEconomicBoardTag;
+}): Promise<IPageIEconomicBoardArticle> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 15;
   const skip = (page - 1) * limit;
-  // Construct valid Prisma query: use existing relations correctly
-  // According to operation spec, we need to filter by tags
-  // We'll use Prisma associations based on available schemas
-  const data = await MyGlobal.prisma.economic_board_articles.findMany({
-    where: {
-      deleted_at: null,
-      searchTags: {
+  // Normalize and validate tags
+  const tags =
+    props.body.tag
+      ?.map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0) ?? [];
+  if (tags.length > 10) {
+    throw new HttpException("Too many tags provided. Max 10 allowed.", 400);
+  }
+  // Validate search term
+  if (
+    props.body.search &&
+    (props.body.search.length < 3 || props.body.search.length > 100)
+  ) {
+    throw new HttpException("Search term must be 3-100 characters.", 400);
+  }
+  // Build where clause
+  const where: Prisma.economic_board_articlesWhereInput = {
+    is_deleted: false,
+    ...(tags.length > 0 && {
+      articleTags: {
         some: {
           tag: {
-            text: { in: [] }, // Empty array since IEconomicBoardSearchTag.IRequest has no tags property
+            in: tags,
           },
         },
       },
-    },
-    // According to IEconomicBoardArticle.ISummary being {}, we cannot select any fields
-    // Return empty select to match empty interface
-    select: {},
+    }),
+    ...(props.body.search && {
+      OR: [
+        {
+          title: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        },
+        {
+          content: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        },
+      ],
+    }),
+  };
+  // Sort order - map string to SortOrder type
+  const orderBy:
+    | Prisma.SortOrder
+    | {
+        created_at: Prisma.SortOrder;
+      } =
+    props.body.sort === "oldest"
+      ? { created_at: "asc" }
+      : { created_at: "desc" };
+  // Fetch articles with transformer-select structure
+  const articles = await MyGlobal.prisma.economic_board_articles.findMany({
+    where,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    orderBy,
+    ...EconomicBoardArticleTransformer.select(),
   });
-  // Count total articles matching the tag criteria
-  // We still need to count, even though we can't return any data
-  const total = await MyGlobal.prisma.economic_board_articles.count({
-    where: {
-      deleted_at: null,
-      searchTags: {
-        some: {
-          tag: {
-            text: { in: [] },
-          },
-        },
-      },
-    },
-  });
-  // Transform each article to summary format
-  // Since IEconomicBoardArticle.ISummary is {} (empty object), we must return empty objects
-  const transformedData = data.map(
-    () => ({}) as IEconomicBoardArticle.ISummary,
+  // Fetch total count
+  const total = await MyGlobal.prisma.economic_board_articles.count({ where });
+  // Transform articles using existing transformer
+  const transformedArticles = await ArrayUtil.asyncMap(
+    articles,
+    EconomicBoardArticleTransformer.transform,
   );
   return {
-    data: transformedData,
+    data: transformedArticles,
     pagination: {
       current: page,
       limit: limit,

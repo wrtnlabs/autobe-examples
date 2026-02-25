@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { MultiUserTodoUserTransformer } from "../transformers/MultiUserTodoUserTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,27 +17,39 @@ export async function putMultiUserTodoUserProfile(props: {
   user: UserPayload;
   body: IMultiUserTodoUser.IUpdate;
 }): Promise<IMultiUserTodoUser> {
-  const existingUser = await MyGlobal.prisma.multi_user_todo_users.findUnique({
+  // Load current user record including deleted_at for soft delete check
+  const user = await MyGlobal.prisma.multi_user_todo_users.findUnique({
     where: { id: props.user.id },
-  });
-  if (!existingUser) throw new HttpException("User not found", 404);
-  // Since the only update is displayName which is not in the empty DTO, safely update if provided
-  const updatedUser = await MyGlobal.prisma.multi_user_todo_users.update({
-    where: { id: props.user.id },
-    data: {
-      // If displayName present in body, update display_name, else keep existing
-      display_name:
-        props.body &&
-        Object.prototype.hasOwnProperty.call(props.body, "displayName")
-          ? (props.body as any).displayName
-          : existingUser.display_name,
-    },
     select: {
       id: true,
       display_name: true,
-      email: true,
-      // Exclude sensitive fields like password_hash
+      deleted_at: true,
     },
   });
-  return updatedUser;
+  if (!user || user.deleted_at !== null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Prepare updated fields
+  const nowPlusString = toISOStringSafe(new Date());
+  const updateData: {
+    display_name?: string;
+    updated_at: string & tags.Format<"date-time">;
+  } = {
+    updated_at: nowPlusString,
+  };
+  if (typeof props.body.displayName === "string") {
+    updateData.display_name = props.body.displayName;
+  }
+  // Update user
+  await MyGlobal.prisma.multi_user_todo_users.update({
+    where: { id: props.user.id },
+    data: updateData,
+  });
+  // Retrieve updated user with transformer select
+  const updatedUser =
+    await MyGlobal.prisma.multi_user_todo_users.findUniqueOrThrow({
+      where: { id: props.user.id },
+      ...MultiUserTodoUserTransformer.select(),
+    });
+  return await MultiUserTodoUserTransformer.transform(updatedUser);
 }

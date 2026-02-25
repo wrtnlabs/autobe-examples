@@ -49,10 +49,15 @@ model todo_app_todos {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   completions todo_app_todo_completions[]
   descriptionField todo_app_todo_description_fields?
   startDateField todo_app_todo_start_date_fields?
@@ -62,6 +67,9 @@ model todo_app_todos {
   trashItems todo_app_trash_items[]
   permanentDeletions todo_app_permanent_deletions[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_user_id, title])
   @@index([todo_app_user_id, created_at])
   @@index([todo_app_user_id, updated_at])
@@ -106,12 +114,20 @@ model todo_app_todo_completions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   completionStatuses todo_app_todo_completion_statuses[]
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_todo_id, created_at])
 }
 
@@ -154,10 +170,14 @@ model todo_app_todo_completion_statuses {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   completion todo_app_todo_completions @relation(fields: [todo_app_todo_completion_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([todo_app_todo_completion_id, changed_at], map: "todo_app_todo_completion_statuses_todo_app_todo_comple_24b573ca")
 }
@@ -197,10 +217,14 @@ model todo_app_todo_description_fields {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_todo_id])
   @@index([created_at])
 }
@@ -245,10 +269,14 @@ model todo_app_todo_start_date_fields {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_todo_id])
   @@index([start_date])
 }
@@ -286,10 +314,14 @@ model todo_app_todo_due_date_fields {
   due_date DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_todo_id])
   @@index([due_date])
 }

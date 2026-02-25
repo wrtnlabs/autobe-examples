@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,10 +12,14 @@ import typia, { tags } from "typia";
 export async function authorize_administrator_join(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallAdministrator.IJoin;
+    body?: DeepPartial<IShoppingMallAdministrator.IJoin>;
   },
 ): Promise<IShoppingMallAdministrator.IAuthorized> {
+  const joinInput: IShoppingMallAdministrator.IJoin = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+  };
   return await api.functional.shoppingMall.auth.administrator.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

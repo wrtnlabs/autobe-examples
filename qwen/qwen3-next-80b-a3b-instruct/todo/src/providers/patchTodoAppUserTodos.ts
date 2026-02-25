@@ -11,86 +11,77 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { TodoAppTodoAtSummaryTransformer } from "../transformers/TodoAppTodoAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchTodoAppUserTodos(props: {
   user: UserPayload;
   body: ITodoAppTodo.IRequest;
-}): Promise<IPageITodoAppTodo.ISum> {
-  // Default pagination values
-  const page = 1;
-  const limit = 100;
-  // Validate pagination values
-  if (page < 1) throw new HttpException("Page must be at least 1", 400);
-  if (limit < 1 || limit > 1000)
-    throw new HttpException("Limit must be between 1 and 1000", 400);
-  const skip = (page - 1) * limit;
-  // Define allowed sort fields and directions
-  const allowedSortBy = ["created_at", "start_date", "due_date"] as const;
-  const allowedSortDir = ["asc", "desc"] as const;
-  const sortBy = allowedSortBy[0]; // Use default sort field since IRequest has no sortBy
-  const sortDir = allowedSortDir[1]; // Use default sort direction since IRequest has no sortDir
-  // Apply filter conditions - completed not available on IRequest
-  const completedFilter = undefined;
-  // Base where clause
+}): Promise<IPageITodoAppTodo.ISummary> {
+  const page = props.body.page ?? 1;
+  const perPage = props.body.perPage ?? 10;
+  const skip = (page - 1) * perPage;
+  // Build where clause based on status
   const where: Prisma.todo_app_todosWhereInput = {
     todo_app_user_id: props.user.id,
     deleted_at: null,
-  };
-  // Apply completion filter - no completed field on IRequest, so skip
-  // if (completedFilter !== undefined) {
-  //   where.completed = completedFilter;
-  // }
-  // Build ORDER BY clause - use direct Prisma.SortOrder values, not object wrappers
-  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = {};
-  if (sortBy === "created_at") {
-    orderBy.created_at = sortDir;
-  } else if (sortBy === "start_date") {
-    // Use standard Prisma.SortOrder values, no _nulls_last/_nulls_first suffixes
-    orderBy.start_date = sortDir;
-  } else if (sortBy === "due_date") {
-    // Use standard Prisma.SortOrder values, no _nulls_last/_nulls_first suffixes
-    orderBy.due_date = sortDir;
+  } satisfies Prisma.todo_app_todosWhereInput;
+  if (props.body.status === "completed") {
+    where.is_completed = true;
+  } else if (props.body.status === "incomplete") {
+    where.is_completed = false;
   }
+  // Build order by clause
+  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = (
+    props.body.sortBy === "createdAt"
+      ? {
+          created_at:
+            props.body.sortDirection === "asc"
+              ? ("asc" as const)
+              : ("desc" as const),
+        }
+      : props.body.sortBy === "startDate"
+        ? {
+            start_date:
+              props.body.sortDirection === "asc"
+                ? ("asc" as const)
+                : ("desc" as const),
+          }
+        : props.body.sortBy === "dueDate"
+          ? {
+              due_date:
+                props.body.sortDirection === "asc"
+                  ? ("asc" as const)
+                  : ("desc" as const),
+            }
+          : { created_at: "desc" as const }
+  ) satisfies Prisma.todo_app_todosOrderByWithRelationInput;
   // Fetch data
   const data = await MyGlobal.prisma.todo_app_todos.findMany({
     where,
     skip,
-    take: limit,
+    take: perPage,
     orderBy,
-    select: {
-      title: true,
-      completed: true,
-      start_date: true,
-      due_date: true,
-      created_at: true,
-    },
+    ...TodoAppTodoAtSummaryTransformer.select(),
   });
-  // Transform dates to correct string type for ITodoAppTodo.ISum
-  const transformedData = data.map(
-    (todo) =>
-      ({
-        title: todo.title,
-        completed: todo.completed,
-        start_date: todo.start_date ? toISOStringSafe(todo.start_date) : null,
-        due_date: todo.due_date ? toISOStringSafe(todo.due_date) : null,
-        created_at: toISOStringSafe(todo.created_at),
-      }) as ITodoAppTodo.ISum,
-  );
   // Count total records
   const total = await MyGlobal.prisma.todo_app_todos.count({
     where,
   });
+  // Transform data using the reusable transformer
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    TodoAppTodoAtSummaryTransformer.transform,
+  );
+  // Return paginated result
   return {
     data: transformedData,
     pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(total / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+      current: page,
+      limit: perPage,
+      records: total,
+      pages: Math.ceil(total / perPage),
     } satisfies IPage.IPagination,
   };
 }

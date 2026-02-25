@@ -1,10 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ITodoAppTodoHistorySnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistorySnapshot";
 import { ITodoAppTodoHistorySnapshotItem } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistorySnapshotItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { TodoAppTodoHistorySnapshotAtSummaryTransformer } from "./TodoAppTodoHistorySnapshotAtSummaryTransformer";
 
 export namespace TodoAppTodoHistorySnapshotItemAtSummaryTransformer {
   export type Payload = Prisma.todo_app_todo_history_snapshot_itemsGetPayload<
@@ -19,8 +21,8 @@ export namespace TodoAppTodoHistorySnapshotItemAtSummaryTransformer {
         start_date: true,
         due_date: true,
         is_completed: true,
-        snapshot: false,
-        todo: false,
+        snapshot: TodoAppTodoHistorySnapshotAtSummaryTransformer.select(),
+        todo: true,
       },
     } satisfies Prisma.todo_app_todo_history_snapshot_itemsFindManyArgs;
   }
@@ -30,10 +32,12 @@ export namespace TodoAppTodoHistorySnapshotItemAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
+      start_date: input.start_date?.toISOString() ?? null,
+      due_date: input.due_date?.toISOString() ?? null,
       is_completed: input.is_completed,
-      start_date: input.start_date ? input.start_date.toISOString() : null,
-      due_date: input.due_date ? input.due_date.toISOString() : null,
-      description: input.description ?? null,
+      snapshot: await TodoAppTodoHistorySnapshotAtSummaryTransformer.transform(
+        input.snapshot,
+      ),
     };
   }
 }

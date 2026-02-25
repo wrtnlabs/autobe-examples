@@ -1,3 +1,4 @@
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { ICommunityPlatformUserEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUserEmailVerification";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -18,60 +19,106 @@ export async function patchCommunityPlatformUserEmailVerifications(props: {
   user: UserPayload;
   body: ICommunityPlatformUserEmailVerification.IRequest;
 }): Promise<IPageICommunityPlatformUserEmailVerification.ISummary> {
-  if (props.user.type !== "user") {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Because page and limit are not properties of IRequest, but we want to support pagination with default values
-  // we safely extract them from body with unknown cast
-  const body = props.body as unknown as {
-    page?: number;
-    limit?: number;
+  const {
+    userId,
+    token,
+    isVerified,
+    expiresAtBefore,
+    expiresAtAfter,
+    createdAtBefore,
+    createdAtAfter,
+    updatedAtBefore,
+    updatedAtAfter,
+    page = 1,
+    limit = 20,
+  } = props.body;
+  const normalizedLimit = Math.min(Math.max(limit, 1), 100);
+  const normalizedPage = Math.max(page, 1);
+  const where: Prisma.community_platform_user_email_verificationsWhereInput = {
+    deleted_at: null,
+    ...(userId ? { user_id: userId } : {}),
+    ...(token ? { token } : {}),
+    ...(typeof isVerified === "boolean" ? { is_verified: isVerified } : {}),
+    ...(expiresAtBefore
+      ? { expires_at: { lt: new Date(expiresAtBefore) } }
+      : {}),
+    ...(expiresAtAfter ? { expires_at: { gt: new Date(expiresAtAfter) } } : {}),
+    ...(createdAtBefore
+      ? { created_at: { lt: new Date(createdAtBefore) } }
+      : {}),
+    ...(createdAtAfter ? { created_at: { gt: new Date(createdAtAfter) } } : {}),
+    ...(updatedAtBefore
+      ? { updated_at: { lt: new Date(updatedAtBefore) } }
+      : {}),
+    ...(updatedAtAfter ? { updated_at: { gt: new Date(updatedAtAfter) } } : {}),
   };
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const where: Prisma.community_platform_user_email_verificationsWhereInput =
-    {};
-  const orderBy: Prisma.community_platform_user_email_verificationsOrderByWithRelationInput =
-    {
-      created_at: "desc",
-    };
+  const skip = (normalizedPage - 1) * normalizedLimit;
   const total =
     await MyGlobal.prisma.community_platform_user_email_verifications.count({
       where,
     });
-  const rawData =
+  const records =
     await MyGlobal.prisma.community_platform_user_email_verifications.findMany({
       where,
-      orderBy,
       skip,
-      take: limit,
+      take: normalizedLimit,
+      orderBy: { created_at: "desc" },
       select: {
         id: true,
         token: true,
-        user_id: true,
         is_verified: true,
         expires_at: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            display_name: true,
+            bio: true,
+            avatar_url: true,
+            karma: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
       },
     });
-  const data = rawData.map((item) => ({
-    id: item.id,
-    token: item.token,
-    user_id: item.user_id,
-    is_verified: item.is_verified,
-    expires_at: toISOStringSafe(item.expires_at),
-    created_at: toISOStringSafe(item.created_at),
-    updated_at: toISOStringSafe(item.updated_at),
-  }));
   return {
-    data,
     pagination: {
-      current: page,
-      limit: limit,
+      current: normalizedPage,
+      limit: normalizedLimit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / normalizedLimit),
     },
-  };
+    data: records.map((record) => ({
+      id: record.id,
+      token: record.token,
+      isVerified: record.is_verified,
+      expiresAt: toISOStringSafe(record.expires_at),
+      createdAt: toISOStringSafe(record.created_at),
+      updatedAt: toISOStringSafe(record.updated_at),
+      deletedAt:
+        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+      user: {
+        id: record.user.id,
+        email: record.user.email,
+        username: record.user.username,
+        displayName: record.user.display_name,
+        bio: record.user.bio === null ? undefined : record.user.bio,
+        avatarUrl:
+          record.user.avatar_url === null ? undefined : record.user.avatar_url,
+        karma: record.user.karma,
+        createdAt: toISOStringSafe(record.user.created_at),
+        updatedAt: toISOStringSafe(record.user.updated_at),
+        deletedAt:
+          record.user.deleted_at === null
+            ? null
+            : toISOStringSafe(record.user.deleted_at),
+      } satisfies ICommunityPlatformUser.ISummary,
+    })),
+  } satisfies IPageICommunityPlatformUserEmailVerification.ISummary;
 }

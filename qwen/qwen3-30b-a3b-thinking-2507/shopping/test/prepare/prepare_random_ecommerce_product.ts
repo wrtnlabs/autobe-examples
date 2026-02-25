@@ -9,11 +9,12 @@ export function prepare_random_ecommerce_product(
   input?: DeepPartial<IEcommerceProduct.ICreate> | undefined,
 ): IEcommerceProduct.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(),
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 3 }),
     description:
-      input?.description ?? RandomGenerator.content({ paragraphs: 3 }),
-    basePrice: input?.basePrice ?? typia.random<number & tags.Minimum<0.01>>(),
-    categoriesId:
-      input?.categoriesId ?? typia.random<string & tags.Format<"uuid">>(),
+      input?.description ?? RandomGenerator.content({ paragraphs: 2 }),
+    category_id:
+      input?.category_id ?? typia.random<string & tags.Format<"uuid">>(),
+    base_price:
+      input?.base_price ?? typia.random<number & tags.Minimum<0.01>>(),
   };
 }

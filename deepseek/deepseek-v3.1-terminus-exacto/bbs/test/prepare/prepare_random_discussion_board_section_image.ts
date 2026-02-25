@@ -9,10 +9,15 @@ export function prepare_random_discussion_board_section_image(
   input?: DeepPartial<IDiscussionBoardSectionImage.ICreate>,
 ): IDiscussionBoardSectionImage.ICreate {
   return {
-    filename: input?.filename ?? RandomGenerator.alphabets(10) + ".png",
+    filename: input?.filename ?? RandomGenerator.alphaNumeric(12) + ".jpg",
     mime_type:
       input?.mime_type ??
-      RandomGenerator.pick(["image/png", "image/jpeg", "image/gif"]),
+      RandomGenerator.pick([
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ] as const),
     file_size:
       input?.file_size ??
       typia.random<
@@ -38,7 +43,11 @@ export function prepare_random_discussion_board_section_image(
       ] as const),
     storage_path:
       input?.storage_path ??
-      "/uploads/sections/" + RandomGenerator.alphabets(8) + ".png",
-    alt_text: input?.alt_text ?? RandomGenerator.paragraph({ sentences: 1 }),
+      "/uploads/" +
+        RandomGenerator.alphaNumeric(8) +
+        "/" +
+        RandomGenerator.alphaNumeric(16) +
+        ".jpg",
+    alt_text: input?.alt_text ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

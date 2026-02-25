@@ -18,34 +18,60 @@ export async function patchShoppingMallAdministratorAdministratorRequests(props:
   administrator: AdministratorPayload;
   body: IShoppingMallAdministratorRequest.IRequest;
 }): Promise<IPageIShoppingMallAdministratorRequest.ISummary> {
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page && props.body.page >= 1 ? props.body.page : 1;
+  const limit =
+    props.body.limit && props.body.limit >= 1 ? props.body.limit : 100;
   const skip = (page - 1) * limit;
-  const where = {};
-  const records =
-    await MyGlobal.prisma.shopping_mall_administrator_requests.count({ where });
-  const data =
-    await MyGlobal.prisma.shopping_mall_administrator_requests.findMany({
+  const where: Prisma.shopping_mall_administrator_requestsWhereInput = {
+    deleted_at: null,
+    ...(props.body.actorType ? { actor_type: props.body.actorType } : {}),
+    ...(props.body.status ? { status: props.body.status } : {}),
+    ...(props.body.createdAfter || props.body.createdBefore
+      ? {
+          created_at: {
+            ...(props.body.createdAfter
+              ? { gte: props.body.createdAfter }
+              : {}),
+            ...(props.body.createdBefore
+              ? { lte: props.body.createdBefore }
+              : {}),
+          },
+        }
+      : {}),
+  };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_administrator_requests.findMany({
       where,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
-    });
+      select: {
+        id: true,
+        actor_type: true,
+        reason: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    }),
+    MyGlobal.prisma.shopping_mall_administrator_requests.count({ where }),
+  ]);
   return {
     pagination: {
       current: page,
       limit,
-      records,
-      pages: records === 0 ? 0 : Math.ceil(records / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
     data: data.map((record) => ({
       id: record.id,
-      actor_type: record.actor_type,
+      actorType: record.actor_type,
       reason: record.reason,
-      status: record.status,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-      deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
+      status: typia.assert<"pending" | "approved" | "rejected">(record.status),
+      createdAt: toISOStringSafe(record.created_at),
+      updatedAt: toISOStringSafe(record.updated_at),
+      deletedAt: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
     })),
   };
 }

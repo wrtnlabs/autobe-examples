@@ -15,28 +15,32 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 export async function test_api_admin_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create admin account
+  // 1. Create admin-specific connection
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminAccount: IEcommerceAdmin.IAuthorized = await authorize_admin_join(
-    adminConnection,
-    {
-      body: {
-        email: typia.random<string & tags.Format<"email">>(),
-        password: "Password123!",
-      } satisfies IEcommerceAdmin.IJoin,
-    },
+  // 2. Create new admin account using utility
+  const password = RandomGenerator.alphaNumeric(12);
+  const joinResponse = await authorize_admin_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: password,
+    } satisfies IEcommerceAdmin.IJoin,
+  });
+  typia.assert(joinResponse);
+  // 3. Login with the newly created admin account
+  const loginResponse = await authorize_admin_login(adminConnection, {
+    body: {
+      email: joinResponse.email,
+      password: password,
+    } satisfies IEcommerceAdmin.ILogin,
+  });
+  typia.assert(loginResponse);
+  // 4. Validate token expiration (30 minutes) and authorization structure
+  const thirtyMinutes = 30 * 60 * 1000;
+  const tokenExpiration = new Date(loginResponse.token.expired_at).getTime();
+  const currentTime = new Date().getTime();
+  const timeDifference = tokenExpiration - currentTime;
+  TestValidator.predicate(
+    "Token expiration is approximately 30 minutes",
+    timeDifference >= 28 * 60 * 1000 && timeDifference <= 32 * 60 * 1000,
   );
-  // Authenticate as admin
-  const loginConnection: api.IConnection = { host: connection.host };
-  const authResponse: IEcommerceAdmin.IAuthorized = await authorize_admin_login(
-    loginConnection,
-    {
-      body: {
-        email: adminAccount.email,
-        password: "Password123!",
-      } satisfies IEcommerceAdmin.ILogin,
-    },
-  );
-  // Validate response
-  typia.assert(authResponse);
 }

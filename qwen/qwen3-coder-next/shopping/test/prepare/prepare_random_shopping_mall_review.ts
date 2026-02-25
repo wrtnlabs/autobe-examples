@@ -6,8 +6,15 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_review(
-  input?: DeepPartial<IShoppingMallReview.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallReview.ICreate>,
 ): IShoppingMallReview.ICreate {
-  input;
-  return {};
+  return {
+    rating:
+      input?.rating ??
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>
+      >(),
+    textContent:
+      input?.textContent ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

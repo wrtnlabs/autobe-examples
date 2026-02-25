@@ -20,9 +20,7 @@ export async function generate_random_discussion_board_super_administrator_featu
   const result: IDiscussionBoardFeatureFlag =
     await api.functional.discussionBoard.superAdministrator.featureFlags.create(
       connection,
-      {
-        body: prepared,
-      },
+      { body: prepared },
     );
   return result;
 }

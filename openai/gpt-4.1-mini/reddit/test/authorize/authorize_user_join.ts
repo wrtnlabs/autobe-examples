@@ -14,8 +14,16 @@ export async function authorize_user_join(
     body?: Partial<ICommunityPlatformUser.IJoin>;
   },
 ): Promise<ICommunityPlatformUser.IAuthorized> {
-  // Since IJoin is an empty type, pass an empty object if undefined
-  const joinInput = props.body ?? {};
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    username: props.body?.username ?? RandomGenerator.name(1),
+    displayName: props.body?.displayName ?? RandomGenerator.name(1),
+    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
+    ip: props.body?.ip ?? null,
+  } satisfies ICommunityPlatformUser.IJoin;
   return await api.functional.communityPlatform.auth.user.join(connection, {
     body: joinInput,
   });

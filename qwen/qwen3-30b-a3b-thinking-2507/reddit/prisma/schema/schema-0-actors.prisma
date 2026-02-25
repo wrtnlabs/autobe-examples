@@ -1,0 +1,298 @@
+/// Temporary guest accounts identified by device ID for anonymous content
+/// access. Guests do not require authentication but can interact with public
+/// content. Device ID provides a persistent identifier for anonymous user
+/// sessions across device usage.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique identifier for the device used by the guest. Allows tracking
+  /// anonymous interactions across sessions within the same device.
+  device_id String
+  
+  /// Record of when the guest account was created.
+  created_at DateTime
+  
+  /// Record of when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Record of when the guest account was marked for deletion (soft delete).
+  /// Null indicates active account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_id])
+}
+
+/// Session tokens with 30-minute expiration for guest temporary access.
+///
+/// Stores temporary session tokens for unauthenticated guests with 30-minute
+/// expiration, tracking connection metadata for audit and security purposes.
+///
+/// - IP address origin
+/// - Current URL and referrer tracking
+/// - Automatic session expiration (30 minutes)
+/// - Linked to reddit_guests for guest identity
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link reddit_guests.id}.
+  reddit_guest_id String
+  
+  /// IP address of session origin.
+  ip String
+  
+  /// Current URL where session was accessed.
+  href String
+  
+  /// Previous URL the user came from.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest reddit_guests @relation(fields: [reddit_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_guest_id])
+}
+
+/// Registered member accounts with email/password credentials and profile
+/// data. Includes authentication credentials and account lifecycle fields
+/// for logged-in users with full platform access as per requirement
+/// specification.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for account login; must match registration email for
+  /// authentication.
+  email String
+  
+  /// Bcrypt-hashed password stored securely for authentication; never stored
+  /// in plaintext.
+  password_hash String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last account modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating account deactivation (null for active
+  /// accounts).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_member_sessions[]
+  passwordResets reddit_member_password_resets[]
+  emailVerifications reddit_member_email_verifications[]
+  profile reddit_profiles?
+  communities reddit_communities[]
+  subscriptions reddit_community_subscriptions[]
+  posts reddit_posts[]
+  postVotes reddit_post_votes[]
+  commentVotes reddit_comment_votes[]
+  reports reddit_reports[]
+  resolutions reddit_report_resolutions[]
+  feedPreferences reddit_feed_preferences[]
+  viewStats reddit_feed_view_stats[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT tokens with access/refresh management for member authentication
+/// sessions. Stores session tokens with connection metadata and temporal
+/// fields for security auditing and session lifecycle management.
+///
+/// Key features:
+/// - Tracks all active member sessions with unique session IDs
+/// - Stores connection context including IP, href, and referrer for security
+/// analysis
+/// - Enforces 30-minute session expiration standard from requirements
+/// - Maintains session history in reverse chronological order for logout
+/// tracking
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to member's {@link reddit_members.id}.
+  reddit_member_id String
+  
+  /// Client IP address used for session tracking.
+  ip String
+  
+  /// Navigation reference URI used for this session.
+  href String
+  
+  /// Previous page URL that originated this session.
+  referrer String
+  
+  /// Timestamp when session was created (UTC).
+  created_at DateTime
+  
+  /// Timestamp when session expires (UTC).
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_member_id, created_at])
+}
+
+/// Password reset tokens with expiration and usage tracking. Each token is
+/// valid for a single reset operation and expires within time window. Tokens
+/// are automatically invalidated after use for security.
+///
+/// The table enables secure password recovery while maintaining audit trail
+/// through timestamp tracking and soft deletion.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who requested the password reset. {@link reddit_members.id}.
+  reddit_members_id String
+  
+  /// Unique password reset token string for security.
+  token String
+  
+  /// Token expiration timestamp (15-minute validity by default).
+  expires_at DateTime
+  
+  /// Timestamp when token was first used for password reset.
+  used_at DateTime?
+  
+  /// Token creation timestamp.
+  created_at DateTime
+  
+  /// Last updated timestamp for the token.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp when token is no longer usable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_members @relation(fields: [reddit_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_members_id])
+  @@unique([token])
+  @@index([expires_at])
+}
+
+/// Email verification tokens with expiration dates for member account
+/// activation.
+///
+/// Each token is associated with a specific member account and expires after
+/// a set period. Tokens are single-use for security and validity.
+///
+/// Key business rules:
+/// - Single token per member (active only)
+/// - Tokens expire after 24 hours
+/// - Verification tokens are deleted after use or expiration
+/// - No user interaction required - tokens are system-generated
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated member account. {@link reddit_members.id}
+  reddit_member_id String
+  
+  /// Unique verification token string (system-generated, 64-character random)
+  token String
+  
+  /// Token expiration timestamp (24-hour validity)
+  expires_at DateTime
+  
+  /// Timestamp when token was generated
+  created_at DateTime
+  
+  /// Timestamp when token was last updated
+  updated_at DateTime
+  
+  /// Timestamp when token was deactivated (soft delete)
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_members @relation(fields: [reddit_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_member_id])
+  @@unique([token])
+}

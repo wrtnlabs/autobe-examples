@@ -19,23 +19,15 @@ export async function postDiscussionBoardAdminBackupRecords(props: {
   admin: AdminPayload;
   body: IDiscussionBoardBackupRecord.ICreate;
 }): Promise<IDiscussionBoardBackupRecord> {
-  try {
-    const created =
-      await MyGlobal.prisma.discussion_board_backup_records.create({
-        data: await DiscussionBoardBackupRecordCollector.collect({
+  const backupRecord =
+    await MyGlobal.prisma.discussion_board_backup_records.create({
+      data: {
+        ...(await DiscussionBoardBackupRecordCollector.collect({
           body: props.body,
-        }),
-        ...DiscussionBoardBackupRecordTransformer.select(),
-      });
-    return await DiscussionBoardBackupRecordTransformer.transform(created);
-  } catch (error) {
-    // Handle foreign key constraint violations
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2003"
-    ) {
-      throw new HttpException("Referenced admin not found", 404);
-    }
-    throw error;
-  }
+        })),
+        initiatedByAdmin: { connect: { id: props.admin.id } },
+      },
+      ...DiscussionBoardBackupRecordTransformer.select(),
+    });
+  return await DiscussionBoardBackupRecordTransformer.transform(backupRecord);
 }

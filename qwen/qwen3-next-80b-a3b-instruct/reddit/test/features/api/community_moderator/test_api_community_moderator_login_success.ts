@@ -1,7 +1,9 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
 import type { IRedditCommunityCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityModerator";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,82 +17,96 @@ import { authorize_community_moderator_refresh } from "../../../authorize/author
 export async function test_api_community_moderator_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create a new moderator account first
+  // 1. Create a community moderator account for testing
   const joinConnection: api.IConnection = { host: connection.host };
-  const email = typia.random<string & tags.Format<"email">>();
-  const plainPassword = RandomGenerator.alphaNumeric(16);
-  const password_hash = RandomGenerator.alphaNumeric(16); // Simulated hash
-  const moder = await authorize_community_moderator_join(joinConnection, {
+  const moderator = await authorize_community_moderator_join(joinConnection, {
     body: {
-      email,
-      password_hash,
-      display_name: RandomGenerator.name(),
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "TestPassword123!",
+      username: RandomGenerator.name(1),
     } satisfies IRedditCommunityCommunityModerator.IJoin,
   });
-  typia.assert(moder);
-  // Use the same email and corresponding plain password for login
+  typia.assert(moderator);
+  // 2. Use the newly created moderator account to login
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginResponse = await authorize_community_moderator_login(
+  const loginResult = await authorize_community_moderator_login(
     loginConnection,
     {
       body: {
-        email,
-        password: plainPassword,
+        email: moderator.email,
+        password: "TestPassword123!",
       } satisfies IRedditCommunityCommunityModerator.ILogin,
     },
   );
-  typia.assert(loginResponse);
-  // Validate entire IAuthorized structure
+  typia.assert(loginResult);
+  // 3. Validate the login response matches expected structure
+  TestValidator.equals("moderator id matches", loginResult.id, moderator.id);
   TestValidator.equals(
-    "access_token exists",
-    typeof loginResponse.access_token,
-    "string",
-  );
-  TestValidator.equals(
-    "refresh_token exists",
-    typeof loginResponse.refresh_token,
-    "string",
+    "moderator email matches",
+    loginResult.email,
+    moderator.email,
   );
   TestValidator.equals(
-    "expires_in is 900 seconds",
-    loginResponse.expires_in,
-    900,
+    "moderator username matches",
+    loginResult.username,
+    moderator.username,
   );
   TestValidator.equals(
-    "token.access exists",
-    typeof loginResponse.token.access,
-    "string",
+    "moderator display_name matches",
+    loginResult.display_name,
+    moderator.display_name,
   );
   TestValidator.equals(
-    "token.refresh exists",
-    typeof loginResponse.token.refresh,
-    "string",
+    "moderator avatar_url matches",
+    loginResult.avatar_url,
+    moderator.avatar_url,
   );
   TestValidator.equals(
-    "token.expired_at format",
-    typeof loginResponse.token.expired_at,
-    "string",
+    "moderator karma_score matches",
+    loginResult.karma_score,
+    moderator.karma_score,
   );
   TestValidator.equals(
-    "token.refreshable_until format",
-    typeof loginResponse.token.refreshable_until,
-    "string",
+    "moderator created_at matches",
+    loginResult.created_at,
+    moderator.created_at,
   );
-  // Validate token properties are ISO 8601 date-time format
-  const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-  TestValidator.predicate("token.expired_at is ISO 8601 date-time", () =>
-    iso8601Regex.test(loginResponse.token.expired_at),
+  TestValidator.equals(
+    "moderator updated_at matches",
+    loginResult.updated_at,
+    moderator.updated_at,
   );
-  TestValidator.predicate("token.refreshable_until is ISO 8601 date-time", () =>
-    iso8601Regex.test(loginResponse.token.refreshable_until),
+  TestValidator.equals(
+    "moderator community_id matches",
+    loginResult.community_id,
+    moderator.community_id,
   );
-  // Ensure expiration is 900 seconds (15 minutes)
+  TestValidator.equals(
+    "user summary matches",
+    loginResult.user,
+    moderator.user,
+  );
+  TestValidator.equals(
+    "community summary matches",
+    loginResult.community,
+    moderator.community,
+  );
   TestValidator.predicate(
-    "expires_in is 900 seconds",
-    () => loginResponse.expires_in === 900,
+    "access_token exists",
+    () => loginResult.access_token.length > 0,
   );
-  // Validate session creation implicitly - successful login with correct credentials and valid response implies session creation
-  // We can't directly check the database, but the server's response proving authentication is sufficient
-  // This matches the specification which states "a session record is created in reddit_community_community_moderator_sessions"
-  // The return of valid tokens confirms session creation
+  TestValidator.predicate(
+    "token exists",
+    () =>
+      loginResult.token.access.length > 0 &&
+      loginResult.token.refresh.length > 0,
+  );
+  TestValidator.predicate("expired_at is valid date-time", () => {
+    const date = new Date(loginResult.token.expired_at);
+    return !isNaN(date.getTime());
+  });
+  TestValidator.predicate("refreshable_until is valid date-time", () => {
+    const date = new Date(loginResult.token.refreshable_until);
+    return !isNaN(date.getTime());
+  });
 }

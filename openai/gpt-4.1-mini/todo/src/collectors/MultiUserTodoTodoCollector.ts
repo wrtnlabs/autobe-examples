@@ -12,19 +12,19 @@ export namespace MultiUserTodoTodoCollector {
     body: IMultiUserTodoTodo.ICreate;
     user: IEntity;
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
-      title: "",
-      description: null,
-      start_date: null,
-      due_date: null,
+      title: props.body.title,
+      description: props.body.description ?? null,
+      start_date: props.body.startDate ? new Date(props.body.startDate) : null,
+      due_date: props.body.dueDate ? new Date(props.body.dueDate) : null,
       completed: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       user: { connect: { id: props.user.id } },
-      // multi_user_todo_todo_edit_histories is not created here
+      // editHistories: not applicable on create
     } satisfies Prisma.multi_user_todo_todosCreateInput;
   }
 }

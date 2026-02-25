@@ -9,10 +9,10 @@ export async function memberAuthorize(request: {
   const payload: MemberPayload = jwtAuthorize({ request }) as MemberPayload;
 
   if (payload.type !== "member") {
-    throw new ForbiddenException(`You're not a member`);
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.community_members.findFirst({
+  const member = await MyGlobal.prisma.reddit_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -20,7 +20,8 @@ export async function memberAuthorize(request: {
   });
 
   if (member === null) {
-    throw new ForbiddenException("User not found");
+    throw new ForbiddenException("Account not found");
   }
 
   return payload;
+}

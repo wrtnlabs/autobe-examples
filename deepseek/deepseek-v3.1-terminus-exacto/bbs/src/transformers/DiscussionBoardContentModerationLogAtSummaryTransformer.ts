@@ -35,11 +35,10 @@ export namespace DiscussionBoardContentModerationLogAtSummaryTransformer {
       action_type: input.action_type,
       target_content_type: input.target_content_type,
       target_content_id: input.target_content_id,
-      reason: input.reason ?? null,
-      created_at: input.created_at.toISOString(),
       admin: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.admin,
       ),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

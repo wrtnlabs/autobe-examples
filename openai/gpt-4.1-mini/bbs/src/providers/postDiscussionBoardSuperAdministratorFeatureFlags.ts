@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardFeatureFlagCollector } from "../collectors/DiscussionBoardFeatureFlagCollector";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardFeatureFlagTransformer } from "../transformers/DiscussionBoardFeatureFlagTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,21 +18,26 @@ export async function postDiscussionBoardSuperAdministratorFeatureFlags(props: {
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardFeatureFlag.ICreate;
 }): Promise<IDiscussionBoardFeatureFlag> {
-  // Removed uniqueness check due to 'code' property not existing on ICreate
+  // Check uniqueness of code
+  const existing =
+    await MyGlobal.prisma.discussion_board_feature_flags.findUnique({
+      where: { code: props.body.code },
+    });
+  if (existing !== null) {
+    throw new HttpException(
+      `Feature flag code '${props.body.code}' already exists.`,
+      409,
+    );
+  }
+  // Prepare the data object via collector
   const data = await DiscussionBoardFeatureFlagCollector.collect({
     body: props.body,
   });
+  // Create new feature flag
   const created = await MyGlobal.prisma.discussion_board_feature_flags.create({
     data,
+    ...DiscussionBoardFeatureFlagTransformer.select(),
   });
-  return {
-    id: created.id,
-    code: created.code,
-    name: created.name,
-    description: created.description,
-    enabled: created.enabled,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
-  };
+  // Transform to API DTO
+  return await DiscussionBoardFeatureFlagTransformer.transform(created);
 }

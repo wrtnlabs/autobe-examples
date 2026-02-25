@@ -3,58 +3,56 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardArticleFile } from "../../../../../api/structures/IDiscussionBoardArticleFile";
-import { IPageIDiscussionBoardArticleFile } from "../../../../../api/structures/IPageIDiscussionBoardArticleFile";
 import { AdministratorAuth } from "../../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../../decorators/payload/AdministratorPayload";
-import { deleteDiscussionBoardAdministratorArticlesArticleIdFilesFileId } from "../../../../../providers/deleteDiscussionBoardAdministratorArticlesArticleIdFilesFileId";
 import { getDiscussionBoardAdministratorArticlesArticleIdFilesFileId } from "../../../../../providers/getDiscussionBoardAdministratorArticlesArticleIdFilesFileId";
 import { patchDiscussionBoardAdministratorArticlesArticleIdFiles } from "../../../../../providers/patchDiscussionBoardAdministratorArticlesArticleIdFiles";
 
 @Controller("/discussionBoard/administrator/articles/:articleId/files")
 export class DiscussionboardAdministratorArticlesFilesController {
   /**
-   * Manage files attached to a specific article identified by the articleId parameter.
+   * Update the files attached to a specific article identified by the articleId path parameter.
    *
-   * This operation allows updating metadata such as display order, file details, and managing files attached to an article. It supports flexible filtering, sorting, and pagination within the file collection.
+   * This operation allows updating metadata such as the display order of files attached to an article to manage file presentation in the discussion board. The underlying database entity is discussion_board_article_files which ensures file and article association.
    *
-   * Authorization is restricted to the article author or administrators who have permissions to manage article attachments.
+   * Authorization must ensure that only the article owner or administrators can perform this update to prevent unauthorized modifications.
    *
-   * Files correspond to the "discussion_board_article_files" table with the following important fields: "id" (primary key), "article_id" (foreign key), "file_name", "file_type", "file_size", "download_url", "display_order", and "deleted_at" for soft deletion marking.
+   * Validation includes ensuring the article exists, the files belong to the article, and the file update payload respects constraints such as field sizes and formats.
    *
-   * The operation uses PATCH method to enable partial updates and complex querying capabilities suitable for file collection management.
+   * Related operations include POST /articles for creating articles with attachments and GET /articles/{articleId} for retrieving full article details with files.
    *
-   * This API is typically used together with related article management endpoints to handle article attachments comprehensively.
+   * The operation responds with the updated list of attached files with proper metadata including file names, types, sizes, download URLs, and display order.
+   *
+   * The system supports soft deletion as indicated by the deleted_at field, but this operation specifically updates live attachments only and does not delete files.
+   *
+   * Errors include 404 if article or files not found, 403 if unauthorized, and validation errors for malformed request data.
    *
    * @param connection
-   * @param articleId UUID string identifying the target article
-   * @param body Request criteria for filtering and updating article files
+   * @param articleId UUID of the target article to which files are attached.
+   * @param body Update details for files attached to the article, including display order and metadata.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification This operation performs partial updates and queries on the files attached to a specific article identified by the path parameter articleId (UUID).
+   * @x-autobe-specification Implement service method to update file attachment records for the specified article.
    *
-   * Implementation Details:
-   * - Validate articleId as UUID
-   * - Validate user authorization: author of the article or admin
-   * - Request body is IDiscussionBoardArticleFile.IRequest containing update or filter fields
-   * - Query existing files by article_id
-   * - Support filtering, sorting, and pagination in response
-   * - Update file metadata such as display_order and file properties if provided
-   * - Soft deletion handling allowed if deleted_at is updated
-   * - Maintain consistency with article's attachments
-   * - Return paginated summary list of attached files
-   *
-   * Use ORM transaction where multiple updates to files occur to maintain integrity.
+   * Validate existence of the article by articleId.
+   * Load all associated files and verify ownership or admin role.
+   * Perform update of each file's metadata including display order and other editable fields.
+   * Persist changes within a transaction to ensure consistency.
+   * Return the updated list of article files.
+   * Handle error cases such as non-existent article or unauthorized access.
+   * Ensure concurrency controls if multiple simultaneous update requests arrive.
+   * Implement necessary DTO validations against database schema constraints.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async index(
+  public async updateFiles(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardArticleFile.IRequest,
-  ): Promise<IPageIDiscussionBoardArticleFile.ISummary> {
+    body: IDiscussionBoardArticleFile.IUpdate,
+  ): Promise<IDiscussionBoardArticleFile.ISummary> {
     try {
       return await patchDiscussionBoardAdministratorArticlesArticleIdFiles({
         administrator,
@@ -68,50 +66,32 @@ export class DiscussionboardAdministratorArticlesFilesController {
   }
 
   /**
-   * Retrieve detailed metadata for a specific file attached to an article.
+   * Retrieve metadata and download information for a specific file attached to an article in the discussion board system.
    *
-   * This endpoint allows clients to fetch information about an article's attached file including its name, type, size, and download URL.
+   * This operation provides detailed file information including file name, type, size, download URL, display order, and audit timestamps. It enables users to download files linked to articles by obtaining the required URI.
    *
-   * It supports secure access to file details related to articles published on the discussion board.
+   * Path parameters include articleId and fileId which correspond to the file's article and unique ID respectively. Input validation ensures these parameters follow UUID format.
    *
-   * Authorization is open to all user actors including guests, registered users, and administrators, as article files are part of public content.
+   * The response includes comprehensive file details useful for frontend display and download features.
    *
-   * The operation fetches the record based on two identifiers: the articleId referencing the article and the fileId referencing the specific file attachment.
+   * No request body is used because this is a read-only retrieval operation.
    *
-   * If the file or article does not exist, the system will respond with an appropriate error.
-   *
-   * This complements other article operations such as creating, listing, and deleting attached files.
-   *
-   * Related operations:
-   * - POST /articles/{articleId}/files (create a new file attachment)
-   * - DELETE /articles/{articleId}/files/{fileId} (remove a specific file attachment)
+   * Access may be restricted based on user authentication and authorization policies (not covered here).
    *
    * @param connection
-   * @param articleId UUID of the target article.
-   * @param fileId UUID of the article file attachment.
+   * @param articleId UUID of the article to which this file is attached
+   * @param fileId UUID of the file attached to the article
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification This operation queries discussion_board_article_files by primary key fileId and ensures the file's article_id matches the articleId parameter for resource integrity.
+   * @x-autobe-specification Query the discussion_board_article_files table filtering by article_id = articleId and id = fileId. Validate UUID format for parameters. Ensure the file belongs to the specified article. Return all file metadata fields including download_url for client use. Handle not found error if no matching file found.
    *
-   * Primary keys and foreign keys are UUIDs.
+   * No requestBody is used as this is a simple GET operation.
    *
-   * The service layer should validate the existence of the article referenced by articleId before querying the file.
-   *
-   * Return HTTP 404 if the article or file does not exist.
-   *
-   * The operation is read-only with no request body.
-   *
-   * Returned data should include file metadata: fileName, fileType, fileSize, downloadUrl, createdAt, updatedAt.
-   *
-   * No authentication is strictly required as this is public data, but implement authorization according to system policy if needed.
-   *
-   * Ensure that the returned DTO matches IDiscussionBoardArticleFile schema.
-   *
-   * Errors must be handled gracefully and reported as per API standards.
+   * Access control to be enforced at service or controller level based on user roles, not detailed here.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":fileId")
-  public async at(
+  public async atFile(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("articleId")
@@ -125,57 +105,6 @@ export class DiscussionboardAdministratorArticlesFilesController {
         articleId,
         fileId,
       });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a specific file attached to an article by its unique identifier.
-   *
-   * This operation permanently removes the file record from the discussion_board_article_files table corresponding to the given fileId and ensuring it belongs to the specified articleId to prevent unauthorized deletions.
-   *
-   * Authorization should ensure that only the article author or administrators can perform this operation.
-   *
-   * The operation relates to the discussion_board_article_files table which stores metadata about each attached file including filename, type, size, and download URL.
-   *
-   * There is no request body since all necessary information is in the path parameters.
-   *
-   * The response does not include a body upon successful deletion, following RESTful conventions.
-   *
-   * This operation corresponds to content management features described in the business requirements where registered users can manage their article attachments.
-   *
-   * @param connection
-   * @param articleId UUID of the target article to which the file is attached.
-   * @param fileId UUID of the file to delete attached to the article.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Validate the articleId and fileId as UUIDs.
-   * Check the existence of the file with fileId and ensure it belongs to the article with articleId.
-   * Verify that the requestor is authorized (article author or administrator) to delete the file.
-   * Perform the deletion operation in the database, cascading if necessary.
-   * Handle errors if the file does not exist or belongs to another article.
-   * Return HTTP 204 No Content on successful deletion.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":fileId")
-  public async erase(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedParam("fileId")
-    fileId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteDiscussionBoardAdministratorArticlesArticleIdFilesFileId(
-        {
-          administrator,
-          articleId,
-          fileId,
-        },
-      );
     } catch (error) {
       console.log(error);
       throw error;

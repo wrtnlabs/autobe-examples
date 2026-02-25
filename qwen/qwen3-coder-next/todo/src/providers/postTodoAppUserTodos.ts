@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPrincipal } from "@ORGANIZATION/PROJECT-api/lib/structures/IPrincipal";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -8,7 +9,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { TodoAppTodoCollector } from "../collectors/TodoAppTodoCollector";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { TodoAppTodoTransformer } from "../transformers/TodoAppTodoTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,27 +19,13 @@ export async function postTodoAppUserTodos(props: {
   user: UserPayload;
   body: ITodoAppTodo.ICreate;
 }): Promise<ITodoAppTodo> {
-  const now = new Date();
   const created = await MyGlobal.prisma.todo_app_todos.create({
-    data: {
-      id: v4(),
-      todo_app_user_id: props.user.id,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-      title: "Untitled Todo",
-      description: null,
-      start_date: null,
-      due_date: null,
-      is_completed: false,
-    },
+    data: await TodoAppTodoCollector.collect({
+      body: props.body,
+      todoAppUsers: { id: props.user.id },
+      todoAppUserSessions: { id: props.user.session_id },
+    }),
+    ...TodoAppTodoTransformer.select(),
   });
-  return {
-    id: created.id,
-    created_at: created.created_at,
-    updated_at: created.updated_at,
-    deleted_at: created.deleted_at,
-    title: created.title,
-    is_completed: created.is_completed,
-  };
+  return await TodoAppTodoTransformer.transform(created);
 }

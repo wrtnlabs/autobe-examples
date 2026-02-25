@@ -17,66 +17,38 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchTodoAppUsers(props: {
   body: ITodoAppUser.IRequest;
 }): Promise<IPageITodoAppUser.ISummary> {
-  // Validate and set pagination parameters with proper constraints
-  const page = Math.max(1, props.body.page ?? 1) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1>;
-  const limit = Math.max(1, Math.min(100, props.body.limit ?? 100)) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> &
-    tags.Maximum<100>;
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.max(1, Math.min(100, props.body.limit ?? 100));
   const skip = (page - 1) * limit;
-  // Build WHERE clause with search and status filtering
   const whereInput = {
-    ...(props.body.search &&
-      props.body.search.trim() !== "" && {
-        OR: [
-          {
-            email: {
-              contains: props.body.search.trim(),
-              mode: "insensitive" as const,
-            },
-          },
-          {
-            display_name: {
-              contains: props.body.search.trim(),
-              mode: "insensitive" as const,
-            },
-          },
-        ],
-      }),
-    ...(props.body.active !== undefined &&
-      props.body.active !== null && {
-        deleted_at: props.body.active ? null : { not: null },
-      }),
+    deleted_at: null,
+    ...(props.body.email && { email: props.body.email }),
+    ...(props.body.display_name && {
+      display_name: { contains: props.body.display_name },
+    }),
   } satisfies Prisma.todo_app_usersWhereInput;
-  // Execute queries in parallel for performance
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.todo_app_users.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" as const },
-      ...TodoAppUserAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.todo_app_users.count({
-      where: whereInput,
-    }),
-  ]);
-  // Transform data using the transformer
+  const data = await MyGlobal.prisma.todo_app_users.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" as const },
+    ...TodoAppUserAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.todo_app_users.count({
+    where: whereInput,
+  });
+  const pages = total === 0 ? 0 : Math.ceil(total / limit);
   const transformedData = await ArrayUtil.asyncMap(
     data,
     TodoAppUserAtSummaryTransformer.transform,
   );
-  // Calculate pagination metadata
-  const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
   return {
     data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: totalPages,
+      pages: pages,
     } satisfies IPage.IPagination,
   };
 }

@@ -6,8 +6,15 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_article_image(
-  input?: DeepPartial<IDiscussionBoardArticleImage.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardArticleImage.ICreate>,
 ): IDiscussionBoardArticleImage.ICreate {
-  input;
-  return {};
+  return {
+    imageUrl: input?.imageUrl ?? typia.random<string & tags.Format<"url">>(),
+    description:
+      input?.description !== undefined
+        ? input.description
+        : RandomGenerator.paragraph({ sentences: 2 }),
+    displayOrder:
+      input?.displayOrder ?? typia.random<number & tags.Type<"int32">>(),
+  };
 }

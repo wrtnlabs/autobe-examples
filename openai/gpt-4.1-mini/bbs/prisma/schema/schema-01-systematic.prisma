@@ -32,7 +32,7 @@ model discussion_board_system_settings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([key])
   @@index([created_at])
@@ -74,10 +74,14 @@ model discussion_board_audit_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   actor discussion_board_registered_users? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([actor_id, created_at])
 }
 
@@ -117,7 +121,7 @@ model discussion_board_scheduled_tasks {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([task_name])
   @@index([status])
@@ -160,7 +164,7 @@ model discussion_board_feature_flags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([code])
   @@index([enabled])
@@ -197,7 +201,7 @@ model discussion_board_system_messages {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([code])
   @@index([message_type])
@@ -235,7 +239,7 @@ model discussion_board_health_checks {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@index([checked_at, status])
 }

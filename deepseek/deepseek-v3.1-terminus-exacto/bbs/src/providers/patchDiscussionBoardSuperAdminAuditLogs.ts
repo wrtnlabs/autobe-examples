@@ -1,7 +1,13 @@
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuditLog";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import { IPageIDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAuditLog";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,125 +16,143 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardSuperAdminAuditLogs(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardAuditLog.IRequest;
 }): Promise<IPageIDiscussionBoardAuditLog.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  // Parse pagination parameters with type-safe defaults
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(100, Math.max(1, props.body.limit ?? 25));
   const skip = (page - 1) * limit;
-  // Build WHERE conditions based on filters
-  const whereInput: Prisma.discussion_board_audit_logsWhereInput = {
-    created_at: {
-      gte: new Date(props.body.start_date),
-      lte: new Date(props.body.end_date),
-    },
+  // Build comprehensive filter conditions for where clause
+  const whereFilter: Prisma.discussion_board_audit_logsWhereInput = {
+    // Basic filters
+    ...(props.body.action_type !== undefined && {
+      action_type: props.body.action_type,
+    }),
+    ...(props.body.actor_type !== undefined && {
+      actor_type: props.body.actor_type,
+    }),
+    ...(props.body.success !== undefined && { success: props.body.success }),
+    // Target entity ID filters (handle null values properly)
+    ...(props.body.target_user_id !== undefined &&
+      props.body.target_user_id !== null && {
+        target_user_id: props.body.target_user_id,
+      }),
+    ...(props.body.target_admin_id !== undefined &&
+      props.body.target_admin_id !== null && {
+        target_admin_id: props.body.target_admin_id,
+      }),
+    ...(props.body.target_super_admin_id !== undefined &&
+      props.body.target_super_admin_id !== null && {
+        target_super_admin_id: props.body.target_super_admin_id,
+      }),
+    ...(props.body.target_article_id !== undefined &&
+      props.body.target_article_id !== null && {
+        target_article_id: props.body.target_article_id,
+      }),
+    ...(props.body.target_comment_id !== undefined &&
+      props.body.target_comment_id !== null && {
+        target_comment_id: props.body.target_comment_id,
+      }),
+    ...(props.body.target_section_id !== undefined &&
+      props.body.target_section_id !== null && {
+        target_section_id: props.body.target_section_id,
+      }),
+    // Date range filtering for created_at using proper datetime handling
+    ...((props.body.created_at_start !== undefined ||
+      props.body.created_at_end !== undefined) && {
+      created_at: {
+        ...(props.body.created_at_start !== undefined && {
+          gte: new Date(props.body.created_at_start),
+        }),
+        ...(props.body.created_at_end !== undefined && {
+          lte: new Date(props.body.created_at_end),
+        }),
+      },
+    }),
+    // Date range filtering for updated_at using proper datetime handling
+    ...((props.body.updated_at_start !== undefined ||
+      props.body.updated_at_end !== undefined) && {
+      updated_at: {
+        ...(props.body.updated_at_start !== undefined && {
+          gte: new Date(props.body.updated_at_start),
+        }),
+        ...(props.body.updated_at_end !== undefined && {
+          lte: new Date(props.body.updated_at_end),
+        }),
+      },
+    }),
+    // Text search on description field with validation
+    ...(props.body.search_term !== undefined &&
+      props.body.search_term.trim().length > 0 && {
+        description: {
+          contains: props.body.search_term,
+          mode: "insensitive" as const,
+        },
+      }),
   };
-  if (props.body.actor_type !== null && props.body.actor_type !== undefined) {
-    whereInput.actor_type = props.body.actor_type;
-  }
-  if (props.body.action_type !== null && props.body.action_type !== undefined) {
-    whereInput.action_type = props.body.action_type;
-  }
-  if (props.body.success !== null && props.body.success !== undefined) {
-    whereInput.success = props.body.success;
-  }
-  // For analytics aggregation, we need to use raw SQL with GROUP BY
-  // This is complex aggregation that Prisma doesn't support natively
-  const timeBucketClause = getTimeBucketSQL(props.body.time_bucket);
-  const rawQuery = `
-    SELECT 
-      ${timeBucketClause} as time_bucket,
-      actor_type,
-      action_type,
-      COUNT(*) as total_count,
-      SUM(CASE WHEN success THEN 1 ELSE 0 END) as success_count,
-      SUM(CASE WHEN NOT success THEN 1 ELSE 0 END) as failure_count,
-      (SUM(CASE WHEN success THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as success_rate
-    FROM discussion_board_audit_logs
-    WHERE created_at >= $1 AND created_at <= $2
-      ${props.body.actor_type ? "AND actor_type = $3" : ""}
-      ${props.body.action_type ? "AND action_type = $4" : ""}
-      ${props.body.success !== undefined ? "AND success = $5" : ""}
-    GROUP BY time_bucket, actor_type, action_type
-    ORDER BY time_bucket DESC
-    LIMIT $6 OFFSET $7
-  `;
-  const params = [
-    props.body.start_date,
-    props.body.end_date,
-    ...(props.body.actor_type ? [props.body.actor_type] : []),
-    ...(props.body.action_type ? [props.body.action_type] : []),
-    ...(props.body.success !== undefined ? [props.body.success] : []),
-    limit,
+  // Execute paginated query
+  const data = await MyGlobal.prisma.discussion_board_audit_logs.findMany({
+    where: whereFilter,
+    orderBy: { created_at: "desc" as const },
     skip,
-  ];
-  const aggregatedData = (await MyGlobal.prisma.$queryRawUnsafe(
-    rawQuery,
-    ...params,
-  )) as Array<{
-    time_bucket: string;
-    actor_type: string;
-    action_type: string;
-    total_count: string | number;
-    success_count: string | number;
-    failure_count: string | number;
-    success_rate: string | number;
-  }>;
-  // Get total count for pagination
-  const totalQuery = `
-    SELECT COUNT(DISTINCT CONCAT(${timeBucketClause}, actor_type, action_type)) as total
-    FROM discussion_board_audit_logs
-    WHERE created_at >= $1 AND created_at <= $2
-      ${props.body.actor_type ? "AND actor_type = $3" : ""}
-      ${props.body.action_type ? "AND action_type = $4" : ""}
-      ${props.body.success !== undefined ? "AND success = $5" : ""}
-  `;
-  const totalResult = (await MyGlobal.prisma.$queryRawUnsafe(
-    totalQuery,
-    ...params.slice(0, -2),
-  )) as Array<{
-    total: string | number;
-  }>;
-  const total = Number(totalResult[0]?.total || 0);
-  // Transform aggregated data to match ISummary DTO
-  const transformedData = aggregatedData.map((row) => ({
-    timeBucket: toISOStringSafe(new Date(row.time_bucket)),
-    actorType: row.actor_type as "user" | "admin" | "super_admin" | "system",
-    actionType: row.action_type,
-    totalCount: Number(row.total_count),
-    successCount: Number(row.success_count),
-    failureCount: Number(row.failure_count),
-    successRate: Number(row.success_rate),
-    trendIndicator: undefined, // Complex calculation requiring historical comparison
-  }));
-  return {
-    data: transformedData,
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    take: limit,
+    select: {
+      id: true,
+      action_type: true,
+      action_subtype: true,
+      description: true,
+      success: true,
+      created_at: true,
+      actor_type: true,
+      target_user_id: true,
+      target_admin_id: true,
+      target_super_admin_id: true,
+      target_article_id: true,
+      target_comment_id: true,
+      target_section_id: true,
+    } satisfies Prisma.discussion_board_audit_logsSelect,
+  });
+  // Get total count for pagination metadata
+  const total = await MyGlobal.prisma.discussion_board_audit_logs.count({
+    where: whereFilter,
+  });
+  // Transform database records to DTO format with proper datetime handling
+  const transformedData = data.map(
+    (log): IDiscussionBoardAuditLog.ISummary => ({
+      id: log.id,
+      action_type: log.action_type,
+      action_subtype:
+        log.action_subtype === null ? undefined : log.action_subtype,
+      description: log.description,
+      success: log.success,
+      created_at: toISOStringSafe(log.created_at),
+      actor_type: log.actor_type,
+      target_user_id: log.target_user_id,
+      target_admin_id: log.target_admin_id,
+      target_super_admin_id: log.target_super_admin_id,
+      target_article_id: log.target_article_id,
+      target_comment_id: log.target_comment_id,
+      target_section_id: log.target_section_id,
+    }),
+  );
+  // Create proper pagination structure based on loaded DTO types
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit: limit,
+    records: total,
+    pages: Math.ceil(total / limit),
   };
-}
-function getTimeBucketSQL(
-  timeBucket?: "hourly" | "daily" | "weekly" | "monthly" | null,
-): string {
-  switch (timeBucket) {
-    case "hourly":
-      return "DATE_TRUNC('hour', created_at)";
-    case "daily":
-      return "DATE_TRUNC('day', created_at)";
-    case "weekly":
-      return "DATE_TRUNC('week', created_at)";
-    case "monthly":
-      return "DATE_TRUNC('month', created_at)";
-    default:
-      return "DATE_TRUNC('hour', created_at)"; // Default to hourly
-  }
+  // Return paginated response with proper type structure
+  // Use typia.assert for type safety without asserting on Prisma types
+  const result = {
+    data: transformedData,
+    pagination: pagination,
+  };
+  return typia.assert<IPageIDiscussionBoardAuditLog.ISummary>(result);
 }

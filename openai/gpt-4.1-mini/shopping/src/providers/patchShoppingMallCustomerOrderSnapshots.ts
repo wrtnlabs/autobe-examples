@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrderSnapshot";
+import { IPaginationInfo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPaginationInfo";
 import { IShoppingMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,92 +19,67 @@ export async function patchShoppingMallCustomerOrderSnapshots(props: {
   customer: CustomerPayload;
   body: IShoppingMallOrderSnapshot.IRequest;
 }): Promise<IPageIShoppingMallOrderSnapshot.ISummary> {
-  const {
-    page = 1,
-    limit = 100,
-    shopping_mall_order_id,
-    customer_name,
-    status,
-    snapshot_at_from,
-    snapshot_at_to,
-    total_price_from,
-    total_price_to,
-  } = props.body as unknown as {
-    page?: number;
-    limit?: number;
-    shopping_mall_order_id?: string;
-    customer_name?: string;
-    status?: string;
-    snapshot_at_from?: string & tags.Format<"date-time">;
-    snapshot_at_to?: string & tags.Format<"date-time">;
-    total_price_from?: number;
-    total_price_to?: number;
-  };
-  if (page <= 0 || limit <= 0) {
-    throw new HttpException("Page and limit must be positive integers", 400);
+  const { body } = props;
+  const where: Prisma.shopping_mall_order_snapshotsWhereInput = {};
+  if (body.shoppingMallOrderId) {
+    where.shopping_mall_order_id = body.shoppingMallOrderId;
   }
-  const skip = (page - 1) * limit;
-  const where: Prisma.shopping_mall_order_snapshotsWhereInput = {
-    deleted_at: null,
-    order: { customer: { id: props.customer.id } },
-  };
-  if (shopping_mall_order_id !== undefined) {
-    where.shopping_mall_order_id = shopping_mall_order_id;
+  if (body.status) {
+    where.status = body.status;
   }
-  if (customer_name !== undefined) {
-    where.customer_name = { contains: customer_name, mode: "insensitive" };
+  if (body.customerName) {
+    where.customer_name = { contains: body.customerName };
   }
-  if (status !== undefined) {
-    where.status = status;
+  if (body.customerEmail) {
+    where.customer_email = { contains: body.customerEmail };
   }
-  if (snapshot_at_from !== undefined || snapshot_at_to !== undefined) {
+  if (body.snapshotAt) {
     where.snapshot_at = {};
-    if (snapshot_at_from !== undefined) {
-      where.snapshot_at.gte = snapshot_at_from;
+    if (body.snapshotAt.start) {
+      where.snapshot_at.gte = body.snapshotAt.start;
     }
-    if (snapshot_at_to !== undefined) {
-      where.snapshot_at.lte = snapshot_at_to;
-    }
-  }
-  if (total_price_from !== undefined || total_price_to !== undefined) {
-    where.total_price = {};
-    if (total_price_from !== undefined) {
-      where.total_price.gte = total_price_from;
-    }
-    if (total_price_to !== undefined) {
-      where.total_price.lte = total_price_to;
+    if (body.snapshotAt.end) {
+      where.snapshot_at.lte = body.snapshotAt.end;
     }
   }
+  // Pagination defaults
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 50;
+  const skip = (page - 1) * limit;
+  // Fetch data
   const data = await MyGlobal.prisma.shopping_mall_order_snapshots.findMany({
     where,
+    orderBy: { snapshot_at: "desc" },
     skip,
     take: limit,
-    orderBy: { snapshot_at: "desc" },
   });
+  // Count total matching records
   const total = await MyGlobal.prisma.shopping_mall_order_snapshots.count({
     where,
   });
-  // Use toISOStringSafe to convert Date fields to string & tags.Format<'date-time'>
-  const formattedData = data.map((record) => ({
+  // Map database records to ISummary output with date fields formatted
+  const resultData = data.map((record) => ({
     id: record.id,
-    shopping_mall_order_id: record.shopping_mall_order_id,
-    snapshot_at: toISOStringSafe(record.snapshot_at),
+    shoppingMallOrderId: record.shopping_mall_order_id,
+    snapshotAt: toISOStringSafe(record.snapshot_at),
     status: record.status,
-    total_price: record.total_price,
-    customer_name: record.customer_name,
-    customer_email: record.customer_email,
-    shipping_address: record.shipping_address,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
+    totalPrice: record.total_price,
+    customerName: record.customer_name,
+    customerEmail: record.customer_email,
+    shippingAddress: record.shipping_address,
+    createdAt: toISOStringSafe(record.created_at),
+    updatedAt: toISOStringSafe(record.updated_at),
+    deletedAt: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
   }));
+  // Prepare pagination info
+  const pages = Math.ceil(total / limit);
   return {
-    data: formattedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     },
+    data: resultData,
   };
 }

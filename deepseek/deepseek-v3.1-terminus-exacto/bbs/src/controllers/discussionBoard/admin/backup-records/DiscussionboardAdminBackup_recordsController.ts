@@ -6,29 +6,62 @@ import { IDiscussionBoardBackupRecord } from "../../../../api/structures/IDiscus
 import { IPageIDiscussionBoardBackupRecord } from "../../../../api/structures/IPageIDiscussionBoardBackupRecord";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminBackupRecordsRecordId } from "../../../../providers/getDiscussionBoardAdminBackupRecordsRecordId";
+import { deleteDiscussionBoardAdminBackupRecordsBackupRecordId } from "../../../../providers/deleteDiscussionBoardAdminBackupRecordsBackupRecordId";
+import { getDiscussionBoardAdminBackupRecordsBackupRecordId } from "../../../../providers/getDiscussionBoardAdminBackupRecordsBackupRecordId";
 import { patchDiscussionBoardAdminBackupRecords } from "../../../../providers/patchDiscussionBoardAdminBackupRecords";
 import { postDiscussionBoardAdminBackupRecords } from "../../../../providers/postDiscussionBoardAdminBackupRecords";
-import { putDiscussionBoardAdminBackupRecordsRecordId } from "../../../../providers/putDiscussionBoardAdminBackupRecordsRecordId";
+import { putDiscussionBoardAdminBackupRecordsBackupRecordId } from "../../../../providers/putDiscussionBoardAdminBackupRecordsBackupRecordId";
 
 @Controller("/discussionBoard/admin/backup-records")
 export class DiscussionboardAdminBackup_recordsController {
   /**
-   * Initiate a new backup operation for the discussion board platform.
+   * Create a new backup operation record to track system backup activities for the discussion board platform.
    *
-   * This API operation allows administrators to start backup processes for system data protection and disaster recovery planning. The operation creates a record that tracks the backup type, status, file location, and administrator who initiated the operation.
+   * This API endpoint allows administrators to initiate and track backup operations. Each backup record captures essential information about the backup type, status, file location, and initiating administrator. The system automatically generates unique identifiers and timestamps for comprehensive audit trail purposes.
    *
-   * Backup operations can be of various types including full system backups, incremental backups, database-only backups, or file-only backups. The system automatically sets the initial status to 'in_progress' and records the start timestamp. Administrators can monitor backup progress through subsequent status updates.
+   * Backup operations can be initiated manually by administrators with appropriate privileges or triggered by automated processes. The record tracks the operation from initiation through completion or failure, providing complete visibility into data protection activities for compliance monitoring and disaster recovery planning.
    *
-   * This operation requires administrator privileges and validates that the initiating administrator exists in the system. Backup records serve as an audit trail for compliance and recovery planning purposes and support soft deletion via the deleted_at timestamp.
+   * Administrators can monitor backup progress and troubleshoot failures using the detailed information captured in these records. The backup records properly integrate with the discussion_board_admins table through the initiated_by_admin_id field to ensure accountability for data protection activities.
    *
-   * Related operations include viewing backup records through GET /backup-records and updating backup status through PUT /backup-records/{id}.
+   * This operation requires administrator privileges to ensure only authorized personnel can initiate backup operations that affect system data protection and recovery capabilities. Complete audit trails are maintained for all backup activities in accordance with data protection requirements.
    *
    * @param connection
    * @param body Backup operation creation parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new backup record in the discussion_board_backup_records table. Validate that the backup_type is one of the supported types ('full', 'incremental', 'database_only', 'files_only'). Verify that the initiated_by_admin_id references an existing administrator. Set default status to 'in_progress' and started_at to current timestamp. Generate a unique UUID for the record ID. Handle file path validation and size calculation for completed backups.
+   * @x-autobe-specification Create a new backup operation record in the system.
+   *
+   * ## Authentication & Authorization
+   * - Requires administrator authentication
+   * - Validate that the requesting user has administrator privileges
+   * - Capture the authenticated administrator's ID as the initiator
+   *
+   * ## Business Logic
+   * - Generate a unique UUID for the backup record
+   * - Set default status to 'in_progress' if not specified
+   * - Validate backup_type against allowed values (full, incremental, database_only, files_only)
+   * - Set started_at timestamp to current time
+   * - Initialize completed_at as null
+   * - Validate file_path format if provided
+   * - Ensure size_bytes is only set for completed backups
+   *
+   * ## Validation Rules
+   * - backup_type: required, must be one of predefined values
+   * - status: defaults to 'in_progress', must be valid status
+   * - file_path: optional, must be valid path format if provided
+   * - size_bytes: only allowed when status is 'completed'
+   * - error_message: only allowed when status is 'failed'
+   *
+   * ## Database Operations
+   * - Insert new record into discussion_board_backup_records table
+   * - Include all provided fields with system-generated values
+   * - Return the complete new record including system-generated fields
+   *
+   * ## Error Handling
+   * - Return 401 if user is not authenticated as administrator
+   * - Return 403 if authenticated user does not have admin privileges
+   * - Return 400 for validation errors in request data
+   * - Return 500 for database or system errors
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -50,27 +83,29 @@ export class DiscussionboardAdminBackup_recordsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of system backup operation records from the discussion_board_backup_records table.
+   * Retrieve a filtered and paginated list of system backup records.
    *
-   * This operation provides comprehensive search capabilities for backup management, allowing administrators to filter by backup type (full, incremental, database_only, files_only as defined in the backup_type field), operation status (in_progress, completed, failed, cancelled as defined in the status field), initiating administrator (via initiated_by_admin_id), and date ranges (started_at, completed_at). The search supports complex criteria combinations for detailed backup operation monitoring and audit trail analysis.
+   * This operation provides comprehensive search capabilities for monitoring backup operations across the discussion board platform. Administrators can filter by backup type, operation status, date ranges, and initiating administrator to track data protection activities.
    *
-   * Response includes essential backup record information optimized for list displays, including backup type, status, file size, operation duration, and initiating administrator details from the discussion_board_admins table. Pagination ensures efficient handling of large backup history datasets while maintaining performance standards.
+   * The response includes summary information for each backup record including operation type, current status, file size, timestamps, and administrator details. This enables administrators to monitor backup success rates, identify failed operations, and maintain compliance with data protection requirements.
    *
-   * Security considerations require administrator-level access to view backup records, as this operation exposes sensitive system operation information and audit trail data. Related operations include individual backup record retrieval for detailed inspection and backup configuration management for system settings.
+   * Backup records are essential for disaster recovery planning and system maintenance tracking. This API supports both automated monitoring tools and manual administrative oversight of backup operations.
+   *
+   * Related operations include viewing detailed backup information and initiating new backup operations through administrative interfaces.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for backup records, supporting filtering by backup_type, status, date ranges, and administrator
+   * @param body Search criteria and pagination parameters for backup records
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query discussion_board_backup_records table with pagination and filtering capabilities.
-   * Apply search filters on backup_type, status, initiated_by_admin_id, and date ranges (started_at, completed_at).
-   * Support partial matching on error_message for failed backup searches.
-   * Implement cursor-based pagination for large result sets.
-   * Join with discussion_board_admins table to include administrator information in summary.
-   * Filter out soft-deleted records (deleted_at IS NULL).
-   * Return backup records sorted by started_at descending by default.
-   * Include file size and operation duration calculations in response.
-   * Handle empty search criteria by returning all non-deleted records with pagination.
+   * @x-autobe-specification Query discussion_board_backup_records table with comprehensive filtering options.
+   *
+   * Filter by backup_type (full, incremental, database_only, files_only), status (in_progress, completed, failed, cancelled), date ranges (started_at, completed_at), and initiated_by_admin_id.
+   *
+   * Apply pagination with cursor-based or offset-based approach. Include sorting options by started_at (descending for newest first).
+   *
+   * Join with discussion_board_admins table to include administrator information in the response. Handle soft-deleted records by filtering out deleted_at IS NULL.
+   *
+   * Return summary information optimized for list displays including backup type, status, size, timestamps, and administrator details.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -92,32 +127,38 @@ export class DiscussionboardAdminBackup_recordsController {
   }
 
   /**
-   * Retrieve detailed information about a specific backup record by its unique identifier.
+   * Retrieve detailed information about a specific backup record from the discussion board platform's backup tracking system.
    *
-   * This operation provides comprehensive access to backup operation details, including the backup type, current status, file storage location, size information, and timestamps. Administrators can use this endpoint to monitor backup operations, verify completion status, and access backup files for recovery purposes.
+   * This operation provides comprehensive backup operation details including the backup type, current status, file storage location, size information, and timestamps for when the operation started and completed. Administrators can use this endpoint to monitor backup progress, verify successful completion, or investigate failed backup attempts.
    *
-   * The response includes all relevant backup metadata required for audit compliance and operational monitoring. Backup records serve as an essential audit trail for data protection activities, documenting both successful and failed backup attempts for comprehensive system oversight.
+   * The response includes all fields from the discussion_board_backup_records table, providing complete visibility into backup operations for audit and compliance purposes. Backup records are essential for data protection monitoring and disaster recovery planning.
    *
-   * Access to backup records is restricted to authorized administrators due to the sensitive nature of backup file locations and system operation details. This endpoint supports disaster recovery planning and compliance reporting by providing complete visibility into data protection activities.
+   * Access to this operation is restricted to administrators only, as backup information contains sensitive system details and file path information that should not be exposed to regular users.
+   *
+   * Related operations include PATCH /backup-records for listing/searching backup records and POST /backup-records for initiating new backup operations.
    *
    * @param connection
-   * @param recordId Unique identifier of the backup record to retrieve
+   * @param backupRecordId Unique identifier of the backup record to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_backup_records table using the provided recordId parameter. Validate that the record exists and has not been soft deleted (deleted_at is null). Include the relationship with the initiating administrator to provide comprehensive audit information. Return the complete backup record details for operational monitoring and compliance reporting.
+   * @x-autobe-specification Query the discussion_board_backup_records table by the provided backupRecordId (UUID). Return the complete backup record including all fields: id, initiated_by_admin_id, backup_type, status, file_path, size_bytes, started_at, completed_at, error_message, created_at, updated_at, and deleted_at.
+   *
+   * Validate that the backup record exists and return appropriate error responses if not found. Include the soft-deleted_at field in the response for audit trail completeness.
+   *
+   * Ensure proper authorization checks to verify that the requesting user has administrator privileges before returning backup record details.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":recordId")
+  @TypedRoute.Get(":backupRecordId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("recordId")
-    recordId: string & tags.Format<"uuid">,
+    @TypedParam("backupRecordId")
+    backupRecordId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardBackupRecord> {
     try {
-      return await getDiscussionBoardAdminBackupRecordsRecordId({
+      return await getDiscussionBoardAdminBackupRecordsBackupRecordId({
         admin,
-        recordId,
+        backupRecordId,
       });
     } catch (error) {
       console.log(error);
@@ -126,36 +167,82 @@ export class DiscussionboardAdminBackup_recordsController {
   }
 
   /**
-   * Update an existing backup record with new information.
+   * Update an existing backup record with new status, file information, or error details.
    *
-   * This operation allows administrators to modify backup record details such as operation status, file storage location, backup size, completion timestamp, and error messages. It is typically used to update records when backup operations complete, fail, or when additional information becomes available.
+   * This operation allows authorized administrators to modify backup record information after the backup process has been initiated. Common use cases include updating the status from 'in_progress' to 'completed', adding file path and size information after successful backup completion, or recording error messages when backups fail.
    *
-   * The operation validates backup status transitions to ensure data consistency and prevents invalid state changes. Only administrators with appropriate permissions can modify backup records, ensuring system integrity and audit trail accuracy.
+   * The operation validates that the backup record exists and that the administrator has appropriate permissions to modify backup records. The system supports soft deletion through the deleted_at field, allowing backup records to be marked as deleted while preserving audit trail data.
    *
-   * Changes to backup records are tracked with automatic timestamp updates, providing a comprehensive audit trail of all backup operation modifications for compliance and monitoring purposes.
+   * Security considerations require that only authorized administrators can modify backup records. The system validates administrator permissions based on backup initiation scope before allowing any updates to ensure data integrity and prevent unauthorized modifications to backup audit trails.
+   *
+   * Related operations include GET /backup-records/{backupRecordId} for retrieving backup details and PATCH /backup-records for searching backup records with filtering criteria.
    *
    * @param connection
-   * @param recordId UUID identifier of the backup record to update
-   * @param body Backup record update parameters including status, file information, and completion details
+   * @param backupRecordId Unique identifier of the backup record to update
+   * @param body Backup record update information including status, file details, and completion information
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update an existing backup record by ID. Validate that the record exists and belongs to the authenticated administrator. Only allow updating fields that can be modified post-creation: status, file_path, size_bytes, completed_at, error_message. Validate status transitions (e.g., cannot move from completed back to in_progress). Validate file path format if provided. Update the updated_at timestamp automatically. Return the complete updated backup record with all fields.
+   * @x-autobe-specification Query the discussion_board_backup_records table using the provided backupRecordId to locate the existing record. Validate that the record exists and that the authenticated administrator has permission to update backup records.
+   *
+   * Apply updates to the allowed fields: status, file_path, size_bytes, completed_at, and error_message. Validate that status transitions follow logical progression (e.g., cannot revert from 'completed' to 'in_progress').
+   *
+   * If file_path is provided, validate that it follows expected backup file naming conventions. If size_bytes is provided, ensure it's a positive integer representing valid file size. If completed_at is provided, it must be after the record's started_at timestamp.
+   *
+   * Update the updated_at timestamp to reflect the modification time. Return the complete updated backup record with all current field values.
+   *
+   * Handle edge cases: non-existent backup records return 404, unauthorized administrator access returns 403, invalid field updates return 400 with specific validation errors.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":recordId")
+  @TypedRoute.Put(":backupRecordId")
   public async update(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("recordId")
-    recordId: string & tags.Format<"uuid">,
+    @TypedParam("backupRecordId")
+    backupRecordId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardBackupRecord.IUpdate,
   ): Promise<IDiscussionBoardBackupRecord> {
     try {
-      return await putDiscussionBoardAdminBackupRecordsRecordId({
+      return await putDiscussionBoardAdminBackupRecordsBackupRecordId({
         admin,
-        recordId,
+        backupRecordId,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently delete a backup record from the discussion board system by marking it as soft-deleted.
+   *
+   * This operation allows administrators to remove backup records that are no longer needed or were created erroneously. The operation performs a soft delete by setting the deleted_at timestamp on the backup record, rather than performing a hard delete that permanently removes the record from the database. This preserves audit trails and allows for potential recovery if needed.
+   *
+   * Administrators must have appropriate permissions to delete backup records. The system verifies that the backup record exists and belongs to the authenticated administrator before performing the deletion. This operation is typically used for cleanup purposes when backup files have been successfully transferred to long-term storage or when backup operations need to be removed from the audit trail.
+   *
+   * Security considerations include verifying administrator authentication and authorization before allowing the deletion operation. The operation logs the deletion action for audit compliance and data protection tracking.
+   *
+   * The discussion_board_backup_records table includes a deleted_at field that tracks when records are soft-deleted, providing comprehensive audit trails while maintaining data integrity.
+   *
+   * @param connection
+   * @param backupRecordId UUID of the backup record to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Verify the backup record exists by ID and belongs to the authenticated administrator before deletion. Perform a hard delete operation (not soft delete) to permanently remove the backup record from the database. Log the deletion action for audit purposes. Return appropriate HTTP status codes: 204 for successful deletion, 404 if backup record not found, 403 if administrator doesn't have permission.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":backupRecordId")
+  public async erase(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("backupRecordId")
+    backupRecordId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardAdminBackupRecordsBackupRecordId({
+        admin,
+        backupRecordId,
       });
     } catch (error) {
       console.log(error);

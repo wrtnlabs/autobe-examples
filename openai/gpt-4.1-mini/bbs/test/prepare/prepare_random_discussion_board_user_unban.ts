@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_user_unban(
-  input?: DeepPartial<IDiscussionBoardUserUnban.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardUserUnban.ICreate>,
 ): IDiscussionBoardUserUnban.ICreate {
-  input;
-  return {};
+  return {
+    userBanId: input?.userBanId ?? typia.random<string & tags.Format<"uuid">>(),
+    administratorId:
+      input?.administratorId ?? typia.random<string & tags.Format<"uuid">>(),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+  };
 }

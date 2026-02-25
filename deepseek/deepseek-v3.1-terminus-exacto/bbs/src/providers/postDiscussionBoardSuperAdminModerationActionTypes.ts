@@ -9,34 +9,38 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardModerationActionTypeCollector } from "../collectors/DiscussionBoardModerationActionTypeCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardModerationActionTypeTransformer } from "../transformers/DiscussionBoardModerationActionTypeTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminModerationActionTypes(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardModerationActionType.ICreate;
 }): Promise<IDiscussionBoardModerationActionType> {
-  // Check if code already exists
+  // Check for duplicate code (without soft-delete consideration)
   const existing =
     await MyGlobal.prisma.discussion_board_moderation_action_types.findFirst({
       where: { code: props.body.code },
     });
   if (existing) {
     throw new HttpException(
-      "Moderation action type with this code already exists",
+      `Moderation action type with code '${props.body.code}' already exists`,
       400,
     );
   }
+  // Use collector to prepare create data
+  const createData = await DiscussionBoardModerationActionTypeCollector.collect(
+    {
+      body: props.body,
+    },
+  );
+  // Create the record with transformer select
   const created =
     await MyGlobal.prisma.discussion_board_moderation_action_types.create({
-      data: await DiscussionBoardModerationActionTypeCollector.collect({
-        body: props.body,
-      }),
+      data: createData,
       ...DiscussionBoardModerationActionTypeTransformer.select(),
     });
-  return await DiscussionBoardModerationActionTypeTransformer.transform(
-    created,
-  );
+  // Transform and return
+  return DiscussionBoardModerationActionTypeTransformer.transform(created);
 }

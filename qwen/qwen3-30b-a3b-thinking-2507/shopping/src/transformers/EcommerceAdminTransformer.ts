@@ -19,6 +19,15 @@ export namespace EcommerceAdminTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        adminSessions: {
+          select: {},
+        } satisfies Prisma.ecommerce_admin_sessionsFindManyArgs,
+        passwordResets: {
+          select: {},
+        } satisfies Prisma.ecommerce_admin_password_resetsFindManyArgs,
+        auditLogs: {
+          select: {},
+        } satisfies Prisma.ecommerce_admin_audit_logsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_adminsFindManyArgs;
   }
@@ -26,9 +35,9 @@ export namespace EcommerceAdminTransformer {
     return {
       id: input.id,
       email: input.email,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

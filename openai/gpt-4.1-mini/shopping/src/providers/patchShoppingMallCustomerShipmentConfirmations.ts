@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIShoppingMallShipmentConfirmation } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallShipmentConfirmation";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { IShoppingMallShipmentConfirmation } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentConfirmation";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -11,57 +11,70 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallShipmentConfirmationTransformer } from "../transformers/ShoppingMallShipmentConfirmationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallCustomerShipmentConfirmations(props: {
   customer: CustomerPayload;
-  body: IShoppingMallShipmentConfirmation.IRequest;
-}): Promise<IPageIShoppingMallShipmentConfirmation.ISummary> {
-  // Use pagination parameters from request body, default to 1 and 100
-  const page =
-    "page" in props.body &&
-    typeof props.body.page === "number" &&
-    props.body.page > 0
-      ? props.body.page
-      : 1;
-  const limit =
-    "limit" in props.body &&
-    typeof props.body.limit === "number" &&
-    props.body.limit > 0
-      ? props.body.limit
-      : 100;
-  const skip = (page - 1) * limit;
-  // Count total shipment confirmations with deleted_at null
-  const total =
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.count({
-      where: { deleted_at: null },
+  body: IShoppingMallShipmentConfirmation.IUpdate;
+}): Promise<IShoppingMallShipmentConfirmation> {
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const confirmation =
+      await tx.shopping_mall_shipment_confirmations.findFirst({
+        where: {
+          deleted_at: null,
+          shipment: {
+            shipmentItems: {
+              some: {
+                orderItem: {
+                  shopping_customer_id: props.customer.id,
+                } as any,
+              },
+            },
+          },
+        },
+        ...ShoppingMallShipmentConfirmationTransformer.select(),
+      });
+    if (!confirmation)
+      throw new HttpException(
+        "Shipment confirmation not found or forbidden",
+        403,
+      );
+    const currentTimestampISO = toISOStringSafe(new Date()) as string &
+      tags.Format<"date-time">;
+    await tx.shopping_mall_shipment_confirmations.update({
+      where: { id: confirmation.id },
+      data: {
+        confirmed_at: props.body.confirmed_at,
+        updated_at: currentTimestampISO,
+      },
     });
-  // Get paginated shipment confirmation records
-  const records =
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findMany({
-      where: { deleted_at: null },
-      orderBy: { created_at: "desc" },
-      skip,
-      take: limit,
+    await tx.$executeRawUnsafe(
+      `UPDATE shopping_mall_shipment_items SET status = 'delivered', updated_at = ? WHERE shopping_mall_shipment_id = ?`,
+      currentTimestampISO,
+      confirmation.shopping_mall_shipment_id,
+    );
+    await tx.shopping_mall_order_items.updateMany({
+      where: {
+        shipmentItems: {
+          some: {
+            shopping_mall_shipment_id: confirmation.shopping_mall_shipment_id,
+          } as any,
+        },
+      },
+      data: {
+        status: "delivered" as any,
+        updated_at: currentTimestampISO,
+      },
     });
-  // Map records to ISummary format
-  const data = records.map((record) => ({
-    id: record.id,
-    shipment_id: record.shopping_mall_shipment_id,
-    confirmed_at: toISOStringSafe(record.confirmed_at),
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  }));
-  return {
-    data,
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
-  };
+    const updatedConfirmation =
+      await tx.shopping_mall_shipment_confirmations.findUniqueOrThrow({
+        where: { id: confirmation.id },
+        ...ShoppingMallShipmentConfirmationTransformer.select(),
+      });
+    return await ShoppingMallShipmentConfirmationTransformer.transform(
+      updatedConfirmation,
+    );
+  });
 }

@@ -6,8 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_multi_user_todo_user_password_reset(
-  input?: DeepPartial<IMultiUserTodoUserPasswordReset.ICreate> | undefined,
+  input?: DeepPartial<IMultiUserTodoUserPasswordReset.ICreate>,
 ): IMultiUserTodoUserPasswordReset.ICreate {
-  input;
-  return {};
+  return {
+    email: input?.email ?? typia.random<string & tags.Format<"email">>(),
+  };
 }

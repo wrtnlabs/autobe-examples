@@ -11,16 +11,15 @@ export namespace DiscussionBoardModerationActionTypeCollector {
   export async function collect(props: {
     body: IDiscussionBoardModerationActionType.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       code: props.body.code,
       name: props.body.name,
       description: props.body.description,
       category: props.body.category ?? null,
       severity_level: props.body.severity_level ?? null,
       requires_reason: props.body.requires_reason,
-      is_active: props.body.is_active,
+      is_active: props.body.is_active ?? true,
       created_at: new Date(),
       updated_at: new Date(),
     } satisfies Prisma.discussion_board_moderation_action_typesCreateInput;

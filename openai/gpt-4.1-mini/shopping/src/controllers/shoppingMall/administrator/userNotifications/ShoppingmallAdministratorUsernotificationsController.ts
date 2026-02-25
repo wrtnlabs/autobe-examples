@@ -6,45 +6,50 @@ import { IPageIShoppingMallUserNotification } from "../../../../api/structures/I
 import { IShoppingMallUserNotification } from "../../../../api/structures/IShoppingMallUserNotification";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
-import { deleteShoppingMallAdministratorUserNotificationsUserNotificationId } from "../../../../providers/deleteShoppingMallAdministratorUserNotificationsUserNotificationId";
-import { getShoppingMallAdministratorUserNotificationsUserNotificationId } from "../../../../providers/getShoppingMallAdministratorUserNotificationsUserNotificationId";
+import { deleteShoppingMallAdministratorUserNotificationsNotificationId } from "../../../../providers/deleteShoppingMallAdministratorUserNotificationsNotificationId";
+import { getShoppingMallAdministratorUserNotificationsNotificationId } from "../../../../providers/getShoppingMallAdministratorUserNotificationsNotificationId";
 import { patchShoppingMallAdministratorUserNotifications } from "../../../../providers/patchShoppingMallAdministratorUserNotifications";
 import { postShoppingMallAdministratorUserNotifications } from "../../../../providers/postShoppingMallAdministratorUserNotifications";
-import { putShoppingMallAdministratorUserNotificationsUserNotificationId } from "../../../../providers/putShoppingMallAdministratorUserNotificationsUserNotificationId";
+import { putShoppingMallAdministratorUserNotificationsNotificationId } from "../../../../providers/putShoppingMallAdministratorUserNotificationsNotificationId";
 
 @Controller("/shoppingMall/administrator/userNotifications")
 export class ShoppingmallAdministratorUsernotificationsController {
   /**
-   * This API endpoint creates a new user notification in the shopping mall platform. It requires the client to provide the notification template ID, owner ID and type, notification title and body, and optionally a URL and image URL. The notification is initially marked as unread and without delivery/read timestamps.
+   * Creates a user notification record within the shopping mall platform.
    *
-   * This operation is critical for delivering real-time or batch notifications to users including customers, sellers, and administrators. Notification content can include rich data with URLs and images.
+   * This operation accepts a notification creation request, including details such as the recipient user ID, notification type, message content, and delivery preferences. Upon successful validation and processing, the notification record is stored and returned.
    *
-   * Authorization should ensure only trusted system actors or administrators invoke this endpoint to prevent unauthorized notification insertion.
+   * The shopping_mall_user_notifications table stores all user notifications, linking them to notification templates and owners (customers, sellers, administrators) for traceability and effective notification management.
    *
-   * The operation relates closely to GET operations that fetch and mark notifications as read.
+   * Security measures enforce that only authorized actors (such as system components or administrators) can create notifications. Unauthorized access attempts result in error responses.
    *
-   * Validation rules:
-   * - notification_template_id, owner_id are UUIDs
-   * - owner_type must be one of 'customer', 'seller', 'administrator'
-   * - title and body are required text fields
-   * - url and image_url are optional text fields
+   * This operation is commonly used for sending real-time alerts, marketing messages, system updates, or transactional notifications, enhancing user engagement and communication.
    *
-   * Errors must be handled gracefully for missing required fields or invalid UUIDs.
+   * Clients should reference notification template IDs or supply custom message content as needed.
+   *
+   * Related operations include GET /userNotifications to list notifications and DELETE /userNotifications/{notificationId} to remove notifications.
+   *
+   * Errors due to invalid input or lack of authorization return standard HTTP error codes with descriptive messages.
    *
    * @param connection
-   * @param body Data needed to create a new user notification.
+   * @param body New user notification creation payload
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Insert a new record into shopping_mall_user_notifications with provided fields.
-   * Set is_read to false by default.
-   * Set delivered_at and read_at to null on creation.
-   * Generate id as UUID on creation in the database layer.
-   * Enforce owner_type enum constraint with allowed values: ['customer', 'seller', 'administrator'].
-   * Validate UUID formats for notification_template_id and owner_id.
-   * Ensure title and body are non-empty strings.
-   * Handle database errors such as foreign key violations gracefully.
+   * @x-autobe-specification Implement POST /userNotifications to accept a JSON body of type IShoppingMallUserNotification.ICreate. Validate all required fields including recipient user identifier, notification type, and content.
    *
-   * This operation requires authorization allowing only system or admin roles to create notifications.
+   * Insert a new record in the shopping_mall_user_notifications table using the provided data.
+   *
+   * Return the complete created notification record matching the IShoppingMallUserNotification interface.
+   *
+   * Perform authorization checks to ensure only authorized roles can create notifications.
+   *
+   * Handle errors gracefully with appropriate HTTP error codes and messages.
+   *
+   * Establish logging for audit purposes.
+   *
+   * This operation integrates with notification delivery services asynchronously but does not delay response.
+   *
+   * Ensure idempotency keys if supported by business logic (not shown here).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -66,35 +71,31 @@ export class ShoppingmallAdministratorUsernotificationsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of user notifications relevant to the authenticated user.
+   * Retrieve a paginated list of user notifications filtered by various criteria such as owner type, read status, and date.
    *
-   * This operation enables users to query their notifications based on multiple criteria including notification type, read/unread status, delivery timestamps, and channels.
+   * This operation returns notification summaries including title, body snippet, read flags, delivery and read timestamps, and links for user action.
    *
-   * Security constraints ensure that only notifications belonging to the authenticated user, identified by owner_id and owner_type, are returned.
+   * The notifications are linked to shopping_mall_user_notifications entity, which stores user-specific notification records with fields for tracking delivery and read status, titles, URLs, and rich content.
    *
-   * The implementation queries the shopping_mall_user_notifications table, applying filters from the request body, sorting by delivery or creation timestamps, and returning a paginated summary list.
+   * The operation requires the user to be authenticated and authorized as a customer, seller, or administrator to access their notifications.
    *
-   * The response includes notification title, body, status, and metadata sufficient for display in notification centers or alert systems.
+   * This endpoint supports complex filtering, pagination, and sorting passed in the request body, providing flexible retrieval of notifications.
    *
-   * Related operations might include endpoints to mark notifications as read, or to delete notifications.
+   * No path parameters are used; filtering and paging are done entirely via request body.
+   *
+   * Related operations: Viewing notification details uses GET /userNotifications/{id}.
    *
    * @param connection
-   * @param body Filter criteria and pagination parameters for listing user notifications
+   * @param body Search criteria and pagination parameters for user notifications
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a PATCH /userNotifications endpoint allowing authenticated users to search their notifications.
-   *
-   * - Validate the user identity and inject owner_id and owner_type in the query.
-   * - Use the request body DTO IShoppingMallUserNotification.IRequest to accept filter criteria such as isRead, notificationType, date ranges (deliveredAt, createdAt).
-   * - Query the shopping_mall_user_notifications table with applied filters.
-   * - Support pagination using cursor-based or offset-based pagination as defined in DTO.
-   * - Return paginated notification summaries using IPageIShoppingMallUserNotification.ISummary DTO.
-   * - Ensure authorization enforcement so users access only their own notifications.
-   * - Handle edge cases like empty result sets gracefully.
-   * - Optimize database indexes and queries according to schema indices for performance.
-   * - Related API endpoints include GET /userNotifications/{id} for detail, PATCH /userNotifications/{id}/read to mark read.
-   *
-   * This detailed specification guides Realize Agent to implement service, repository, and controller layers accordingly.
+   * @x-autobe-specification Implement service method to query shopping_mall_user_notifications table applying filters from request body such as ownerType, isRead, date ranges.
+   * Use pagination parameters for page size and cursor or offset.
+   * Return results as paginated list with summary fields.
+   * Validate authorization based on owner id and type matching authenticated user.
+   * Handle performance optimizations using indexed columns.
+   * Support full-text search on title and body.
+   * Log all access events for audit compliance.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -116,60 +117,49 @@ export class ShoppingmallAdministratorUsernotificationsController {
   }
 
   /**
-   * Retrieve detailed information about a user notification by its unique identifier.
+   * Retrieve detailed information of a user notification specified by notificationId.
    *
-   * This endpoint allows an authenticated user to fetch the full details of a notification sent to them. It includes metadata such as the notification template reference, owner information, read/delivery status, timestamps, and optional URLs or images attached to the notification.
+   * This operation provides the notification's title, body, optional URL and image, delivery status, read status, and timestamps including creation, update, delivery, and read times.
    *
-   * Security Considerations:
-   * - Only the owner of the notification or authorized administrators can access this resource.
-   * - Proper authorization must be enforced to prevent unauthorized access.
+   * It is intended for the notification's owner, who can be of types customer, seller, or administrator.
    *
-   * Relationship to Database Entities:
-   * - Maps directly to the `shopping_mall_user_notifications` table.
-   * - The owner_id field identifies the notification recipient user.
-   * - The notification_template_id links to the notification content template.
+   * Authorization checks must ensure that the requesting user matches the ownerId and ownerType of the notification record.
    *
-   * Validation and Business Logic:
-   * - The notification must exist and belong to the requesting user.
-   * - Response includes all relevant fields as per the database schema.
+   * The response data is based on the shopping_mall_user_notifications table schema, which includes polymorphic ownership references.
    *
-   * Error Handling:
-   * - Returns 404 if notification not found or unauthorized.
-   * - Returns 401 if authentication is missing or invalid.
+   * Usage of this API allows clients to present detailed notification contents and audit delivery/read status accurately.
    *
-   * Related API Operations:
-   * - List notifications endpoint for notification summaries.
-   * - Mark notification as read endpoint.
+   * Related operations might include listing notifications for the owner and marking notifications as read.
    *
    * @param connection
-   * @param userNotificationId Unique identifier of the user notification (UUID)
+   * @param notificationId UUID of the notification to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Service layer loads notification by userNotificationId with user ownership verification. Join notification template data for enriched content if needed. Return 404 if not found or unauthorized. Return full notification record as IShoppingMallUserNotification.
+   * @x-autobe-specification 1. Validate the notificationId parameter format as UUID.
+   * 2. Query the shopping_mall_user_notifications table by primary key id = notificationId.
+   * 3. Ensure the requesting user is authorized by matching owner_id and owner_type.
+   * 4. Retrieve notification fields: title, body, url, image_url, is_read, delivered_at, read_at, created_at, updated_at, deleted_at.
+   * 5. Return the notification data as the response.
+   * 6. Handle not found or unauthorized access with appropriate HTTP error responses.
+   * 7. No request body required as this is a GET operation.
+   * 8. Log access for auditing.
+   * 9. Cache results if applicable for performance.
+   * 10. Maintain data integrity by excluding records marked as deleted (deleted_at IS NULL).
    *
-   * Business rules enforce ownership validation ensuring data privacy.
-   *
-   * No request body needed.
-   *
-   * Only read operation; no data modification.
-   *
-   * Typical errors include 404 Not Found and 401 Unauthorized.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":userNotificationId")
-  public async atUserNotification(
+  @TypedRoute.Get(":notificationId")
+  public async at(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationId")
-    userNotificationId: string & tags.Format<"uuid">,
+    @TypedParam("notificationId")
+    notificationId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallUserNotification> {
     try {
-      return await getShoppingMallAdministratorUserNotificationsUserNotificationId(
-        {
-          administrator,
-          userNotificationId,
-        },
-      );
+      return await getShoppingMallAdministratorUserNotificationsNotificationId({
+        administrator,
+        notificationId,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -177,33 +167,48 @@ export class ShoppingmallAdministratorUsernotificationsController {
   }
 
   /**
-   * Update user notification identified by userNotificationId. This operation allows modification of the notification's title, body text, optional URL and image URL, and read status. It records read and delivered timestamps reflecting the user's interaction with the notification. Only the notification owner (customer, seller, or administrator) can perform this update. The notification is linked to a notification template and the polymorphic owner entity. The mutable fields include title, body, url, imageUrl, isRead, deliveredAt, and readAt. Attempts to change ownership or the notification template are disallowed. This endpoint guarantees precise control over the notification's display and read state, reinforcing user engagement tracking. Errors occur if the notification ID does not exist or the user lacks authorization.
+   * Update a user notification resource identified by notificationId.
+   *
+   * This API endpoint enables administrators to modify notification details such as title, body, URL, image URL, read status, and timestamps for delivery and read events. The updates are persisted in the shopping_mall_user_notifications table, which stores comprehensive data about each user notification, including links to notification templates and owners (customers, sellers, administrators).
+   *
+   * Security controls ensure that only authorized administrators can perform this update operation, maintaining the integrity and confidentiality of user notifications.
+   *
+   * This operation is part of the notification management API. It complements other endpoints like GET /shoppingMall/administrator/userNotifications/{notificationId} for fetching notification details and DELETE /shoppingMall/administrator/userNotifications/{notificationId} for deleting notifications.
+   *
+   * Clients should handle error cases including non-existent notifications or invalid input with proper responses.
    *
    * @param connection
-   * @param userNotificationId Target user notification's unique identifier (UUID)
-   * @param body Notification update information
+   * @param notificationId Unique identifier of the user notification to update
+   * @param body Payload containing user notification update data
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Fetch the notification by userNotificationId UUID from the shopping_mall_user_notifications table. Verify the actor is authorized to update this notification (ownership check). Accept updatable fields in the request body: title, body, url, imageUrl, isRead, deliveredAt, readAt. Validate field formats and types. Update the notification record in a single transaction. Return the fully updated notification entity with all details. Handle cases of non-existent ID with 404 error and unauthorized access with 403 error.
+   * @x-autobe-specification 1. Validate notificationId as UUID and verify existence in shopping_mall_user_notifications table.
+   * 2. Authorize calling actor to ensure permission to update notification.
+   * 3. Accept request body conforming to IShoppingMallUserNotification.IUpdate DTO.
+   * 4. Perform database update of all mutable fields: title, body, url, image_url, is_read, delivered_at, read_at, updated_at.
+   * 5. Apply updated_at timestamp automatically.
+   * 6. Return fully updated notification entity as response.
+   * 7. Handle errors including not found and validation failures appropriately.
+   * 8. Do not allow changes to id, notification_template_id, owner_id, or owner_type.
+   * 9. Enforce soft delete semantics by preserving deleted_at which cannot be cleared here.
+   * 10. Ensure the operation logs changes for audit purposes if needed.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":userNotificationId")
-  public async updateUserNotification(
+  @TypedRoute.Put(":notificationId")
+  public async update(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationId")
-    userNotificationId: string & tags.Format<"uuid">,
+    @TypedParam("notificationId")
+    notificationId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallUserNotification.IUpdate,
   ): Promise<IShoppingMallUserNotification> {
     try {
-      return await putShoppingMallAdministratorUserNotificationsUserNotificationId(
-        {
-          administrator,
-          userNotificationId,
-          body,
-        },
-      );
+      return await putShoppingMallAdministratorUserNotificationsNotificationId({
+        administrator,
+        notificationId,
+        body,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -211,47 +216,40 @@ export class ShoppingmallAdministratorUsernotificationsController {
   }
 
   /**
-   * Permanently removes a user notification identified by the unique userNotificationId.
+   * This operation permanently deletes a user notification identified by the notificationId path parameter.
    *
-   * This operation deletes the notification record from the shopping_mall_user_notifications table. The notification contains details such as title, body, and delivery status, linked to the owner user (customer, seller, or administrator) and the notification template.
+   * This API supports authenticated users to remove specific notifications from their notification list, ensuring users can manage their notifications effectively.
    *
-   * Only the owner of the notification or authorized administrators can perform this deletion.
+   * The database entity shopping_mall_user_notifications represents the notifications with detailed data fields and ownership information.
    *
-   * The deletion is a permanent action that removes the notification record and cannot be undone.
+   * Path parameter notificationId uniquely identifies the notification to delete. Upon successful deletion, no response body is returned.
    *
-   * Related operations include fetching notifications (GET /userNotifications) and marking notifications as read (PATCH /userNotifications/{userNotificationId}/read).
-   *
-   * Errors will be returned if the notification does not exist or if the user lacks authorization.
+   * This operation complies with RESTful API design principles and integrates with the authentication and authorization system to ensure only permitted users can delete their notifications.
    *
    * @param connection
-   * @param userNotificationId Unique identifier of the user notification to be deleted.
+   * @param notificationId Unique identifier of the user notification to delete (UUID format).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification The service layer must validate that the requesting actor is the owner of the notification or an administrator before deletion.
-   *
-   * Perform a database delete operation on the shopping_mall_user_notifications table where the id matches the userNotificationId path parameter.
-   *
-   * Ensure cascading deletes or orphan cleanup are handled according to database foreign key constraints.
-   *
-   * Return HTTP 204 No Content on success.
-   *
-   * Return HTTP 404 if the notification does not exist.
-   *
-   * Return HTTP 403 if the user is unauthorized.
+   * @x-autobe-specification 1. Validate the notificationId path parameter as a valid UUID.
+   * 2. Check existence of the notification for the current authenticated user.
+   * 3. Perform database delete operation on shopping_mall_user_notifications where id = notificationId.
+   * 4. Handle errors if notificationId does not exist or user unauthorized.
+   * 5. Return HTTP 204 No Content upon successful deletion, with no response body.
+   * 6. Log the deletion action for auditing purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":userNotificationId")
+  @TypedRoute.Delete(":notificationId")
   public async erase(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationId")
-    userNotificationId: string & tags.Format<"uuid">,
+    @TypedParam("notificationId")
+    notificationId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteShoppingMallAdministratorUserNotificationsUserNotificationId(
+      return await deleteShoppingMallAdministratorUserNotificationsNotificationId(
         {
           administrator,
-          userNotificationId,
+          notificationId,
         },
       );
     } catch (error) {

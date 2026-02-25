@@ -1,4 +1,8 @@
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -8,7 +12,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { DiscussionBoardCommentCollector } from "../collectors/DiscussionBoardCommentCollector";
 import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
+import { DiscussionBoardCommentTransformer } from "../transformers/DiscussionBoardCommentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,9 +22,22 @@ export async function postDiscussionBoardRegisteredUserComments(props: {
   registeredUser: RegistereduserPayload;
   body: IDiscussionBoardComment.ICreate;
 }): Promise<IDiscussionBoardComment> {
-  // Cannot use props.body.discussion_board_article_id because it does not exist on ICreate
-  // Reject repair due to incomplete information about article id in body
-  throw new Error(
-    "Property 'discussion_board_article_id' does not exist on type 'ICreate'. Fix cannot proceed without correct property or user input.",
-  );
+  // Validation: Comment content must not be empty
+  if (props.body.content.trim().length === 0) {
+    throw new HttpException("Comment content must not be empty", 400);
+  }
+  // Collect data ready for Prisma create operation
+  const data = await DiscussionBoardCommentCollector.collect({
+    body: props.body,
+    author: {
+      id: props.registeredUser.id,
+    },
+  });
+  // Create comment record including relation joins
+  const created = await MyGlobal.prisma.discussion_board_comments.create({
+    data,
+    ...DiscussionBoardCommentTransformer.select(),
+  });
+  // Transform raw DB record to API DTO
+  return await DiscussionBoardCommentTransformer.transform(created);
 }

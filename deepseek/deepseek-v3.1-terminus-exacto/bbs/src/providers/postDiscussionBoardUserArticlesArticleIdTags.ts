@@ -22,38 +22,47 @@ export async function postDiscussionBoardUserArticlesArticleIdTags(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleTag.ICreate;
 }): Promise<IDiscussionBoardArticleTag> {
-  // Verify article exists and belongs to the user
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: {
-      id: props.articleId,
-      discussion_board_user_id: props.user.id,
-      deleted_at: null,
-    },
-  });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
+  // Validate article exists and belongs to user
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findFirstOrThrow({
+      where: {
+        id: props.articleId,
+        discussion_board_user_id: props.user.id,
+        deleted_at: null,
+      },
+    });
+  // Check maximum 10 tags per article
+  const existingTagCount =
+    await MyGlobal.prisma.discussion_board_article_tags.count({
+      where: {
+        discussion_board_article_id: props.articleId,
+        deleted_at: null,
+      },
+    });
+  if (existingTagCount >= 10) {
+    throw new HttpException("Maximum of 10 tags per article reached", 400);
   }
-  // Check for existing tag with same name for this article
+  // Normalize tag name
+  const normalizedTagName = props.body.tag_name.trim().toLowerCase();
+  // Check for duplicate tag
   const existingTag =
     await MyGlobal.prisma.discussion_board_article_tags.findFirst({
       where: {
         discussion_board_article_id: props.articleId,
-        tag_name: props.body.tag_name,
+        tag_name: normalizedTagName,
         deleted_at: null,
       },
     });
   if (existingTag) {
     throw new HttpException("Tag already exists for this article", 409);
   }
-  // Create proper entity object for collector
-  const articleEntity: IEntity = { id: props.articleId };
-  // Create the tag association using collector
-  const created = await MyGlobal.prisma.discussion_board_article_tags.create({
+  // Create new tag using collector
+  const tag = await MyGlobal.prisma.discussion_board_article_tags.create({
     data: await DiscussionBoardArticleTagCollector.collect({
-      body: props.body,
-      discussionBoardArticles: articleEntity,
+      body: { tag_name: normalizedTagName },
+      article: { id: props.articleId },
     }),
     ...DiscussionBoardArticleTagTransformer.select(),
   });
-  return await DiscussionBoardArticleTagTransformer.transform(created);
+  return await DiscussionBoardArticleTagTransformer.transform(tag);
 }

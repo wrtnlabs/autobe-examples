@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMultiUserTodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUser";
 import { IMultiUserTodoUserPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUserPasswordReset";
-import { IMultiUserTodoUserPasswordResetResponse } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUserPasswordResetResponse";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,38 +10,49 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { MultiUserTodoUserPasswordResetTransformer } from "../transformers/MultiUserTodoUserPasswordResetTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchMultiUserTodoUserPasswordResets(props: {
   user: UserPayload;
-  body: IMultiUserTodoUserPasswordReset.ICreate;
-}): Promise<IMultiUserTodoUserPasswordResetResponse> {
-  const userId = props.user.id;
-  // This DTO has no fields, so the token and new password must be from props.body or user context.
-  // But the schema shows ICreate is an empty object. This likely means the token and new password come from elsewhere.
-  // Since no additional parameters are passed, the function cannot obtain token or new password from props.body.
-  // This seems to be a contradiction in the specification.
-  // However, following provided specification, implement as transaction:
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    // Search for active reset token record
-    const resetRecord = await tx.multi_user_todo_user_password_resets.findFirst(
+  body: IMultiUserTodoUserPasswordReset.IUpdate;
+}): Promise<IMultiUserTodoUserPasswordReset> {
+  const now = toISOStringSafe(new Date());
+  const tokenRecord =
+    await MyGlobal.prisma.multi_user_todo_user_password_resets.findUniqueOrThrow(
       {
-        where: {
-          multi_user_todo_user_id: userId,
-          deleted_at: null,
-          expired_at: {
-            gt: new Date(),
-          },
-        },
+        where: { token: props.body.token },
+        include: { user: true },
       },
     );
-    if (!resetRecord) {
-      throw new HttpException("Invalid or expired token", 404);
-    }
-    // Hash the new password - but new password is missing from input?
-    // Since ICreate is empty and no new password param, cannot proceed correctly.
-    // Throw error or leave as incomplete?
-    throw new HttpException("New password is required for reset", 400);
+  if (tokenRecord.deleted_at !== null) {
+    throw new HttpException("Token is no longer valid.", 400);
+  }
+  const expiredAt = toISOStringSafe(tokenRecord.expired_at);
+  if (expiredAt < now) {
+    throw new HttpException("Token has expired.", 400);
+  }
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.multi_user_todo_users.update({
+      where: { id: tokenRecord.multi_user_todo_user_id },
+      data: {
+        updated_at: toISOStringSafe(new Date()),
+      },
+    });
+    await prisma.multi_user_todo_user_password_resets.delete({
+      where: { id: tokenRecord.id },
+    });
   });
+  const updatedRecord =
+    await MyGlobal.prisma.multi_user_todo_user_password_resets.findUniqueOrThrow(
+      {
+        where: { id: tokenRecord.id },
+        ...MultiUserTodoUserPasswordResetTransformer.select(),
+      },
+    );
+  return await MultiUserTodoUserPasswordResetTransformer.transform(
+    updatedRecord,
+  );
 }

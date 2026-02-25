@@ -10,11 +10,11 @@ import typia, { tags } from "typia";
 import { prepare_random_shopping_mall_cancellation_request } from "../prepare/prepare_random_shopping_mall_cancellation_request";
 
 export async function generate_random_shopping_mall_customer_cancellation_requests_create(
-  connection: api.IConnection,
+  connection: IConnection,
   props: {
     body?: DeepPartial<IShoppingMallCancellationRequest.ICreate> | undefined;
   },
-): Promise<void> {
+): Promise<IShoppingMallCancellationRequest> {
   const prepared: IShoppingMallCancellationRequest.ICreate =
     prepare_random_shopping_mall_cancellation_request(props.body);
   return await api.functional.shoppingMall.customer.cancellation_requests.create(

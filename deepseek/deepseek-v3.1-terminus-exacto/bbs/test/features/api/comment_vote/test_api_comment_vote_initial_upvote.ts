@@ -23,99 +23,69 @@ import { prepare_random_discussion_board_comment } from "../../../prepare/prepar
 export async function test_api_comment_vote_initial_upvote(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user connection and register user
+  // 1. Create and authenticate user
   const userConnection: api.IConnection = { host: connection.host };
   const user = await authorize_user_join(userConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       display_name: RandomGenerator.name(),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
     } satisfies IDiscussionBoardUser.IJoin,
   });
   typia.assert(user);
-  // Create article
+  // 2. Create article
   const article = await generate_random_discussion_board_user_articles_create(
     userConnection,
     {
       body: {
-        title: RandomGenerator.paragraph({
-          sentences: 2,
-          wordMin: 5,
-          wordMax: 10,
-        }),
-        content: RandomGenerator.content({
-          paragraphs: 1,
-          sentenceMin: 5,
-          sentenceMax: 10,
-        }),
-        section_id: typia.random<string & tags.Format<"uuid">>(),
-        status: "published" as const,
+        title: RandomGenerator.paragraph({ sentences: 2 }),
+        content: RandomGenerator.content({ paragraphs: 3 }),
+        discussion_board_section_id: typia.random<
+          string & tags.Format<"uuid">
+        >(),
       } satisfies IDiscussionBoardArticle.ICreate,
     },
   );
   typia.assert(article);
-  // Create comment
+  // 3. Create comment
   const comment =
     await generate_random_discussion_board_user_articles_comments_create(
       userConnection,
       {
+        params: { articleId: article.id },
         body: {
-          content: RandomGenerator.paragraph({
-            sentences: 3,
-            wordMin: 5,
-            wordMax: 15,
-          }),
+          content: RandomGenerator.paragraph({ sentences: 3 }),
         } satisfies IDiscussionBoardComment.ICreate,
-        params: {
-          articleId: article.id,
-        },
       },
     );
   typia.assert(comment);
-  // Cast initial upvote
+  // 4. Cast initial upvote
   const vote =
-    await api.functional.discussionBoard.articles.comments.votes.update(
+    await api.functional.discussionBoard.user.articles.comments.votes.update(
       userConnection,
       {
         articleId: article.id,
         commentId: comment.id,
         body: {
-          vote_type: "upvote" as const,
+          vote_type: "upvote",
         } satisfies IDiscussionBoardCommentVote.IUpdate,
       },
     );
   typia.assert(vote);
-  // Validate vote properties
-  TestValidator.equals("vote type should be upvote", vote.vote_type, "upvote");
-  TestValidator.predicate("created_at should be valid timestamp", () => {
-    const createdAt = new Date(vote.created_at);
-    return !isNaN(createdAt.getTime());
-  });
-  TestValidator.predicate("updated_at should be valid timestamp", () => {
-    const updatedAt = new Date(vote.updated_at);
-    return !isNaN(updatedAt.getTime());
-  });
-  // Validate user relationship
+  // 5. Validate vote metadata
+  TestValidator.equals("vote type is upvote", vote.vote_type, "upvote");
+  TestValidator.equals("vote user matches voting user", vote.user.id, user.id);
   TestValidator.equals(
-    "voting user should match authenticated user",
-    vote.user.id,
-    user.id,
-  );
-  TestValidator.equals(
-    "user display_name should match",
-    vote.user.display_name,
-    user.display_name,
-  );
-  // Validate comment relationship
-  TestValidator.equals(
-    "voted comment should match created comment",
+    "vote comment matches target comment",
     vote.comment.id,
     comment.id,
   );
-  TestValidator.equals(
-    "comment content should match",
-    vote.comment.content,
-    comment.content,
+  TestValidator.predicate(
+    "vote has creation timestamp",
+    vote.created_at !== undefined,
+  );
+  TestValidator.predicate(
+    "vote has update timestamp",
+    vote.updated_at !== undefined,
   );
 }

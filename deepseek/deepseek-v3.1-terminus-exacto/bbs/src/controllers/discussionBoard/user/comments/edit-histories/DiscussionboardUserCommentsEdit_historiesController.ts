@@ -1,60 +1,88 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IDiscussionBoardCommentEditHistory } from "../../../../../api/structures/IDiscussionBoardCommentEditHistory";
 import { IPageIDiscussionBoardCommentEditHistory } from "../../../../../api/structures/IPageIDiscussionBoardCommentEditHistory";
 import { UserAuth } from "../../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../../decorators/payload/UserPayload";
-import { patchDiscussionBoardUserCommentsEditHistories } from "../../../../../providers/patchDiscussionBoardUserCommentsEditHistories";
+import { getDiscussionBoardUserCommentsCommentIdEditHistoriesEditHistoryId } from "../../../../../providers/getDiscussionBoardUserCommentsCommentIdEditHistoriesEditHistoryId";
+import { patchDiscussionBoardUserCommentsCommentIdEditHistories } from "../../../../../providers/patchDiscussionBoardUserCommentsCommentIdEditHistories";
 
-@Controller("/discussionBoard/user/comments/edit-histories")
+@Controller("/discussionBoard/user/comments/:commentId/edit-histories")
 export class DiscussionboardUserCommentsEdit_historiesController {
   /**
-   * Search and retrieve paginated lists of comment edit history records with advanced filtering capabilities.
+   * Retrieve the complete edit history for a specific comment with advanced filtering and pagination capabilities.
    *
-   * This operation provides comprehensive access to the comment edit audit trail, allowing administrators and authorized users to review the complete history of comment modifications. Users can filter by specific comments, date ranges, edit sequences, and content patterns to locate specific edit events.
+   * This operation provides access to the audit trail of all edits made to a comment, showing the progression of content changes over time. Each edit record includes the original content before the edit, the edited content after the change, the timestamp of the edit, the editor information, and any reason provided for the edit.
    *
-   * The response includes summary information optimized for list displays, showing edit sequence numbers, timestamps, editor attribution, and content previews. This supports compliance auditing, moderation workflows, and content quality assessment.
+   * Users can filter the edit history by date ranges, edit sequence numbers, and search for specific content changes. The system supports comprehensive pagination for comments with extensive edit histories, allowing efficient loading of historical data.
    *
-   * Security considerations: Access to edit history records should be restricted based on user permissions. Regular users may only see their own comment edit histories, while administrators can access broader edit history data for moderation purposes.
-   *
-   * Related operations include GET /comments/{commentId}/edit-histories/{editSequence} for detailed edit history viewing and PATCH /comments for comment search functionality.
+   * This operation is essential for transparency in content modification and supports moderation workflows by providing a complete record of comment evolution. Administrators can review edit history for compliance purposes, while regular users can track the progression of their own comment edits.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for comment edit histories
+   * @param commentId UUID identifier of the parent comment whose edit history is being retrieved
+   * @param body Search criteria and pagination parameters for filtering comment edit history
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query discussion_board_comment_edit_histories table with pagination and filtering capabilities.
-   *
-   * Apply filters based on request criteria:
-   * - Filter by discussion_board_comment_id to show edit history for specific comments
-   * - Filter by date range using created_at for audit trail searches
-   * - Filter by edit sequence numbers for specific version ranges
-   * - Search content patterns in original_content and edited_content fields
-   * - Support pagination with cursor-based or page-based approaches
-   *
-   * Join with subtype tables (discussion_board_comment_edit_history_of_users, discussion_board_comment_edit_history_of_admins, discussion_board_comment_edit_history_of_super_admins) to determine editor type and include editor information in response.
-   *
-   * Return summary information including edit sequence, timestamps, editor type, and content previews. Full content should be available through detail endpoints.
-   *
-   * Handle soft-delete considerations - only include active records unless specifically requested.
-   *
-   * Performance considerations: Use appropriate indexes on discussion_board_comment_id, created_at, and content fields for efficient searching.
+   * @x-autobe-specification Query the discussion_board_comment_edit_histories table filtered by comment ID. Implement pagination with cursor-based or offset-based pagination. Allow filtering by edit sequence range, date ranges, and editor information. Sort results by edit sequence (ascending) by default to show chronological edit history. Include relationship joins to fetch editor details if needed. Validate that the parent comment exists before querying its edit history. Return appropriate error responses for invalid comment IDs or unauthorized access.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
     @UserAuth()
     user: UserPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardCommentEditHistory.IRequest,
-  ): Promise<IPageIDiscussionBoardCommentEditHistory.ISummary> {
+  ): Promise<IPageIDiscussionBoardCommentEditHistory> {
     try {
-      return await patchDiscussionBoardUserCommentsEditHistories({
+      return await patchDiscussionBoardUserCommentsCommentIdEditHistories({
         user,
+        commentId,
         body,
       });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific comment edit history record with complete edit details and attribution information.
+   *
+   * This operation provides access to the detailed edit history of a comment, showing how the comment content has evolved over time through successive edits. Each edit history record captures the original content before the edit, the edited content after the change, the sequential edit number, and the timestamp when the edit was recorded.
+   *
+   * The response includes comprehensive edit information suitable for audit trails and transparency purposes. Users can see the progression of comment modifications and understand how comment content has changed through various editing cycles. The operation supports the platform's commitment to content transparency and edit tracking.
+   *
+   * Edit history records are scoped to specific comments, ensuring that users can only access edit histories for comments they have permission to view. The operation validates that the requested edit history record belongs to the specified comment before returning the data.
+   *
+   * @param connection
+   * @param commentId UUID identifier of the parent comment that owns this edit history
+   * @param editHistoryId UUID identifier of the specific edit history record to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification Query the discussion_board_comment_edit_histories table using the provided editHistoryId UUID. Validate that the edit history record belongs to the specified commentId by checking the discussion_board_comment_id foreign key. Return the complete edit history record including original content, edited content, edit sequence, edit reason, and creation timestamp. Include editor attribution information by joining with the appropriate subtype tables (users, admins, or super admins) based on which subtype relationship exists for this edit history record.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":editHistoryId")
+  public async at(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedParam("editHistoryId")
+    editHistoryId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardCommentEditHistory> {
+    try {
+      return await getDiscussionBoardUserCommentsCommentIdEditHistoriesEditHistoryId(
+        {
+          user,
+          commentId,
+          editHistoryId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

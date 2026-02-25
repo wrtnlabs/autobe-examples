@@ -1,5 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -15,22 +16,95 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthAdminRefresh(props: {
   body: IDiscussionBoardAdmin.IRefresh;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  // The IDiscussionBoardAdmin.IRefresh type is defined as {}
-  // This means the refresh token must come from somewhere else
-  // Common patterns include Authorization header or query parameters
-  // However, with the current structure, we cannot access a refresh token
-  // This appears to be a schema mismatch that needs to be fixed at the DTO level
-  // Since the function must compile and work, I'll need to assume
-  // the refresh token is accessible through some other means
-  // For now, this implementation is a placeholder to demonstrate the fix
+  // 1. Verify refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: "admin";
+  };
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // 2. Validate type
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  // 3. Validate session
+  const session =
+    await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
+      where: {
+        id: decoded.session_id,
+        discussion_board_admin_id: decoded.id,
+      },
+    });
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  // 4. Validate admin not deleted
+  const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
+    {
+      where: { id: decoded.id },
+    },
+  );
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  // 5. Generate new tokens (same session_id)
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(now),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(now),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+  // 6. Update session expiration
+  await MyGlobal.prisma.discussion_board_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpires },
+  });
+  // 7. Build response
   return {
+    id: admin.id,
+    display_name: admin.display_name,
+    email: admin.email,
+    is_super_admin: admin.is_super_admin,
+    is_active: admin.is_active,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    promoted_by_id: admin.promoted_by_id ?? null,
     token: {
-      access: "placeholder-access-token",
-      refresh: "placeholder-refresh-token",
-      expired_at: toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000)),
-      refreshable_until: toISOStringSafe(
-        new Date(Date.now() + 24 * 60 * 60 * 1000),
-      ),
+      access: token.access,
+      refresh: token.refresh,
+      expired_at: token.expired_at,
+      refreshable_until: token.refreshable_until,
     },
   };
 }

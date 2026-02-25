@@ -37,15 +37,23 @@ model shopping_mall_orders {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   orderItemSnapshots shopping_mall_order_item_snapshots[]
   orderItems shopping_mall_order_items[]
   orderSnapshots shopping_mall_order_snapshots[]
   reviews shopping_mall_reviews[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([order_number])
   @@index([shopping_mall_customer_id, created_at])
 }
@@ -89,11 +97,16 @@ model shopping_mall_order_items {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots shopping_mall_order_item_snapshots[]
   shipmentItems shopping_mall_shipment_items[]
   cancellationRequests shopping_mall_cancellation_requests[]
@@ -103,6 +116,9 @@ model shopping_mall_order_items {
   productReviews shopping_mall_product_reviews[]
   productReviewSnapshots shopping_mall_product_review_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_order_id, shopping_mall_product_variant_id], map: "shopping_mall_order_items_shopping_mall_order_id_shopp_d221d815")
   @@index([shopping_mall_order_id, status])
@@ -141,13 +157,16 @@ model shopping_mall_shipment_items {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([order_item_id])
-  
   @@unique([shipment_id, order_item_id])
 }
 
@@ -199,13 +218,21 @@ model shopping_mall_cancellation_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots shopping_mall_cancellation_request_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, requested_at], map: "shopping_mall_cancellation_requests_shopping_mall_cust_0a7fe2d2")
   // spellchecker: ignore-next-line
@@ -259,16 +286,23 @@ model shopping_mall_refund_requests {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   refundRequestSnapshots shopping_mall_refund_request_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_order_item_id])
-  
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, requested_at], map: "shopping_mall_refund_requests_shopping_mall_customer_i_3ac0a313")
   // spellchecker: ignore-next-line
@@ -321,10 +355,14 @@ model shopping_mall_order_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_order_id])
 }
 
@@ -368,12 +406,16 @@ model shopping_mall_reviews {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([customer_id, created_at])
   @@index([order_id])
   @@index([order_item_id])

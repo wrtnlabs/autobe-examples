@@ -6,8 +6,43 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_shipment(
-  input?: DeepPartial<IShoppingMallShipment.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallShipment.ICreate>,
 ): IShoppingMallShipment.ICreate {
-  input;
-  return {};
+  return {
+    order_id: input?.order_id ?? typia.random<string & tags.Format<"uuid">>(),
+    tracking_number: input?.tracking_number ?? RandomGenerator.alphaNumeric(20),
+    tracking_carrier:
+      input?.tracking_carrier ??
+      RandomGenerator.pick([
+        "FedEx",
+        "DHL",
+        "Korea Express",
+        "UPS",
+        "USPS",
+      ] as const),
+    items: input?.items
+      ? input.items.map((item) => ({
+          item_ids:
+            item.item_ids ??
+            ArrayUtil.repeat(
+              typia.random<
+                number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+              >(),
+              () => typia.random<string & tags.Format<"uuid">>(),
+            ),
+        }))
+      : ArrayUtil.repeat(
+          typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
+          >(),
+          () => ({
+            item_ids: ArrayUtil.repeat(
+              typia.random<
+                number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+              >(),
+              () => typia.random<string & tags.Format<"uuid">>(),
+            ),
+          }),
+        ),
+  };
 }

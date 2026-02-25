@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardScheduledTaskTransformer } from "../transformers/DiscussionBoardScheduledTaskTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,22 +18,9 @@ export async function getDiscussionBoardAdministratorScheduledTasksId(props: {
   id: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardScheduledTask> {
   const record =
-    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUniqueOrThrow({
       where: { id: props.id },
+      ...DiscussionBoardScheduledTaskTransformer.select(),
     });
-  if (record === null) {
-    throw new HttpException("Scheduled task not found", 404);
-  }
-  return {
-    id: record.id,
-    task_name: record.task_name,
-    schedule_pattern: record.schedule_pattern,
-    last_run_at:
-      record.last_run_at === null ? null : toISOStringSafe(record.last_run_at),
-    status: record.status,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  };
+  return await DiscussionBoardScheduledTaskTransformer.transform(record);
 }

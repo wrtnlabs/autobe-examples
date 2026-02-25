@@ -17,12 +17,16 @@ export namespace DiscussionBoardSectionFileAtSummaryTransformer {
         filename: true,
         file_type: true,
         file_size: true,
-        description: true,
         file_path: true,
+        description: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        section: false,
+        section: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_sectionsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_section_filesFindManyArgs;
   }
@@ -34,6 +38,7 @@ export namespace DiscussionBoardSectionFileAtSummaryTransformer {
       filename: input.filename,
       file_type: input.file_type,
       file_size: input.file_size,
+      created_at: input.created_at.toISOString(),
       description: input.description ?? undefined,
     };
   }

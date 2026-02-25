@@ -1,4 +1,3 @@
-import { IDiscussionBoardScheduledTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardScheduledTask";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -15,16 +14,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteDiscussionBoardSuperAdministratorScheduledTasksId(props: {
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardScheduledTask> {
-  const found =
-    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
-      where: { id: props.id },
-    });
-  if (found === null) throw new HttpException("Scheduled task not found", 404);
-  const deleted = await MyGlobal.prisma.discussion_board_scheduled_tasks.delete(
-    {
-      where: { id: props.id },
-    },
-  );
-  return deleted;
+}): Promise<void> {
+  await MyGlobal.prisma.discussion_board_scheduled_tasks.findUniqueOrThrow({
+    where: { id: props.id },
+  });
+  await MyGlobal.prisma.discussion_board_scheduled_tasks.delete({
+    where: { id: props.id },
+  });
 }

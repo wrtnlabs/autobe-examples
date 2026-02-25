@@ -31,12 +31,20 @@ model shopping_mall_categories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   parentCategory shopping_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   subcategories shopping_mall_categories[] @relation("recursive")
   
+  //----
+  // INDEXES
+  //----
   @@unique([parent_category_id, name])
   @@index([parent_category_id])
 }
@@ -80,15 +88,23 @@ model shopping_mall_products {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   productSubcategory shopping_mall_product_subcategories @relation(fields: [product_subcategory_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   productImages shopping_mall_product_images[]
   productVariants shopping_mall_product_variants[]
   snapshots shopping_mall_product_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([seller_id, name])
   @@index([seller_id, created_at])
   @@index([product_subcategory_id])
@@ -128,10 +144,14 @@ model shopping_mall_product_images {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__5e0eacb7")
   @@index([shopping_mall_product_id])
@@ -176,16 +196,24 @@ model shopping_mall_product_variants {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshots shopping_mall_product_variant_snapshots[]
   orderItems shopping_mall_order_items[]
   productReviews shopping_mall_product_reviews[]
   productReviewSnapshots shopping_mall_product_review_snapshots[]
   inventoryHistories shopping_mall_inventory_histories[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_product_id, sku_code], map: "shopping_mall_product_variants_shopping_mall_product_i_275bf3f1")
   // spellchecker: ignore-next-line
@@ -234,10 +262,14 @@ model shopping_mall_product_snapshots {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_product_id, created_at], map: "shopping_mall_product_snapshots_shopping_mall_product__cc038f1c")
 }
@@ -275,10 +307,14 @@ model shopping_mall_product_variant_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_product_variant_snapshots_shopping_mall__1342da62")
 }

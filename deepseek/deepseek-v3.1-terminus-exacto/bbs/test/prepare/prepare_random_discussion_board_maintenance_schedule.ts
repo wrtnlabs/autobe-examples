@@ -8,50 +8,58 @@ import typia, { tags } from "typia";
 export function prepare_random_discussion_board_maintenance_schedule(
   input?: DeepPartial<IDiscussionBoardMaintenanceSchedule.ICreate>,
 ): IDiscussionBoardMaintenanceSchedule.ICreate {
-  const startTime =
-    input?.scheduled_start_time ??
-    RandomGenerator.date(
-      new Date(Date.now() + 86400000),
-      604800000,
-    ).toISOString();
-  const durationMinutes =
-    input?.estimated_duration_minutes ??
-    typia.random<
-      number & tags.Type<"int32"> & tags.Minimum<60> & tags.Maximum<360>
-    >();
-  const endTime =
-    input?.scheduled_end_time ??
-    new Date(
-      new Date(startTime).getTime() + durationMinutes * 60000,
-    ).toISOString();
   return {
     maintenance_type:
       input?.maintenance_type ??
       RandomGenerator.pick([
-        "system update",
-        "database backup",
-        "security patch",
-        "infrastructure maintenance",
-        "performance optimization",
+        "System Update",
+        "Database Backup",
+        "Security Patch",
+        "Performance Optimization",
+        "Hardware Maintenance",
+        "Software Upgrade",
       ] as const),
     description:
       input?.description ??
       RandomGenerator.content({
         paragraphs: 2,
         sentenceMin: 3,
-        sentenceMax: 6,
+        sentenceMax: 8,
       }),
-    scheduled_start_time: startTime,
-    scheduled_end_time: endTime,
-    estimated_duration_minutes: durationMinutes,
+    scheduled_start_time:
+      input?.scheduled_start_time ??
+      typia.random<string & tags.Format<"date-time">>(),
+    scheduled_end_time:
+      input?.scheduled_end_time ??
+      (() => {
+        const start = new Date(
+          input?.scheduled_start_time ??
+            typia.random<string & tags.Format<"date-time">>(),
+        );
+        const duration =
+          input?.estimated_duration_minutes ??
+          typia.random<
+            number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<480>
+          >();
+        start.setMinutes(start.getMinutes() + duration);
+        return start.toISOString();
+      })(),
+    estimated_duration_minutes:
+      input?.estimated_duration_minutes ??
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<480>
+      >(),
     impact_level:
       input?.impact_level ??
       RandomGenerator.pick(["low", "medium", "high", "critical"] as const),
-    notes:
-      input?.notes ??
+    status:
+      input?.status ??
       RandomGenerator.pick([
-        RandomGenerator.paragraph({ sentences: 2 }),
-        null,
+        "scheduled",
+        "in-progress",
+        "completed",
+        "cancelled",
       ] as const),
+    notes: input?.notes ?? RandomGenerator.paragraph({ sentences: 3 }),
   };
 }

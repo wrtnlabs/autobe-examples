@@ -4,8 +4,8 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardAdministratorCapability } from "../../../../../api/structures/IDiscussionBoardAdministratorCapability";
 import { IPageIDiscussionBoardAdministratorCapability } from "../../../../../api/structures/IPageIDiscussionBoardAdministratorCapability";
-import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminAuth } from "../../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../../decorators/payload/SuperAdminPayload";
 import { deleteDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCapabilityId } from "../../../../../providers/deleteDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCapabilityId";
 import { getDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCapabilityId } from "../../../../../providers/getDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCapabilityId";
 import { patchDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilities } from "../../../../../providers/patchDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilities";
@@ -17,28 +17,36 @@ import { putDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCa
 )
 export class DiscussionboardSuperadminAdministratorsCapabilitiesController {
   /**
-   * Create a new capability assignment for a specific administrator.
+   * Create a new capability assignment for an administrator with specific permission levels.
    *
-   * This operation allows authorized administrators to assign specific capabilities to other administrators with defined permission levels. Capabilities represent granular permissions that enable administrators to perform specific administrative functions such as content moderation, user management, section administration, or system configuration.
+   * This operation allows authorized administrators to assign new capabilities to other administrators, enabling granular permission management across the discussion board platform. Each capability assignment includes the capability type, permission level, and audit information about who assigned the capability.
    *
-   * When creating a capability assignment, the system validates that the target administrator exists and is currently active. The operation prevents duplicate capability assignments by checking if the administrator already possesses the specified capability type. The assigned_by field is automatically populated with the ID of the administrator performing the assignment.
+   * The capability system supports various administrative functions such as content moderation, user management, section administration, and system configuration. Permission levels determine the scope of access for each capability, ranging from read-only access to full administrative privileges.
    *
-   * Capability assignments support different permission levels including read-only access, full administrative access, or limited scope permissions depending on the specific capability type. Each assignment is timestamped for automatic tracking of assignment history.
+   * When creating a capability assignment, the system validates that the target administrator exists and is active, ensures the capability type and permission level are valid, and records audit information for compliance tracking. Duplicate capability assignments for the same administrator are prevented through unique constraints.
    *
-   * This operation is typically used by super administrators when configuring administrator permissions or when promoting administrators with specific functional responsibilities.
+   * Related operations include viewing existing capabilities via PATCH /administrators/{administratorId}/capabilities and removing capabilities via DELETE /administrators/{administratorId}/capabilities/{capabilityId}.
    *
    * @param connection
    * @param administratorId Unique identifier of the administrator receiving the capability assignment
-   * @param body Capability assignment details including capability type and permission level
+   * @param body Capability assignment details including type and permission level
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate that the administrator exists and is active. Check if the administrator already has the specified capability type to prevent duplicates. Create a new capability assignment record with the provided capability type and permission level. Set the assigned_by field to the current authenticated administrator's ID. Return the newly created capability record with all fields populated.
+   * @x-autobe-specification Create a new capability assignment for the specified administrator in the discussion_board_administrator_capabilities table.
+   *
+   * Validate that the administrator exists and is active before creating the capability assignment.
+   * Ensure the capability_type and permission_level values are valid according to system constraints.
+   * Set the assigned_by field to the ID of the administrator performing this operation.
+   * Generate a unique UUID for the new capability record and set creation/update timestamps.
+   * Perform database insert operation with proper transaction handling.
+   * Return the complete capability record including system-generated fields.
+   * Handle validation errors for duplicate capability assignments (unique constraint violation).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -59,50 +67,33 @@ export class DiscussionboardSuperadminAdministratorsCapabilitiesController {
   }
 
   /**
-   * Update the capabilities assigned to a specific administrator.
+   * Update administrator capability assignments and permission levels.
    *
-   * This operation allows super administrators to modify the capabilities and permission levels assigned to regular administrators. Capabilities represent specific administrative functions such as content moderation, user management, section administration, and system configuration. Each capability can be assigned with different permission levels including read-only access, full access, or limited scope permissions.
+   * This operation allows authorized administrators to modify the capabilities assigned to other administrators. Capabilities represent specific administrative privileges such as content moderation, user management, section administration, and system configuration. Each capability can be assigned with different permission levels including read-only, full access, or limited scope permissions.
    *
-   * When updating capabilities, the system validates that the requesting user has super administrator privileges and maintains comprehensive audit trails of all capability modifications. The operation supports adding new capabilities, updating existing permission levels, and removing capabilities through soft deletion using the deleted_at field.
+   * When updating capabilities, the system validates that the target administrator exists and is currently active. New capabilities can be assigned, existing capabilities can have their permission levels modified, and capabilities can be revoked through soft deletion. All changes are timestamped and tracked for audit purposes.
    *
-   * The response includes the complete updated set of capabilities for the administrator, reflecting all changes made in the request. This ensures administrators have a clear view of their current permissions and capabilities after modification.
+   * The operation supports granular permission management while maintaining security through validation checks and transaction integrity. Administrators can only modify capabilities for administrators at or below their own privilege level, preventing unauthorized elevation of permissions.
    *
-   * Security considerations: Only super administrators can modify administrator capabilities. All capability changes are logged for audit purposes in the assigned_by and updated_at fields. The system prevents unauthorized privilege escalation and maintains the integrity of the administrator hierarchy by validating administrator status through the discussion_board_administrators table.
-   *
-   * Related operations: Use GET /administrators/{administratorId}/capabilities to view current capabilities before making modifications. Super administrators can also use promotion/demotion operations for broader administrator grade changes.
+   * Related operations include viewing administrator capabilities through GET /administrators/{administratorId}/capabilities and creating new capability assignments through POST /administrators/{administratorId}/capabilities.
    *
    * @param connection
-   * @param administratorId Unique identifier of the administrator whose capabilities are being updated
-   * @param body Capability updates including additions, modifications, and removals
+   * @param administratorId Unique identifier of the target administrator whose capabilities are being updated
+   * @param body Capability updates including new assignments, permission level changes, and capability revocations
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update administrator capabilities with validation and audit tracking.
-   *
-   * Query the discussion_board_administrator_capabilities table for existing capabilities matching the administrator ID.
-   * Validate that the requesting user is a super administrator with permission to modify capabilities.
-   * For each capability update in the request:
-   * - If capability exists: update permission_level and audit information
-   * - If capability doesn't exist: create new capability assignment
-   * - If capability marked for deletion: set deleted_at timestamp (soft delete)
-   *
-   * Maintain audit trail by recording who performed the update and when.
-   * Validate capability_type and permission_level against allowed values.
-   * Ensure the administrator exists and is active before proceeding.
-   * Return the updated capability records with current state.
-   *
-   * Transaction safety: Use database transactions to ensure all capability updates succeed or fail together.
-   * Error handling: Provide clear error messages for invalid administrator IDs, capability types, or permission levels.
+   * @x-autobe-specification Update administrator capability assignments in the discussion_board_administrator_capabilities table. Validate that the target administrator exists and is active. For each capability in the request, check if it already exists for this administrator. If updating an existing capability, modify the permission_level and update timestamps. If adding a new capability, create a new record with the assigned_by field set to the current administrator performing the update. Support soft deletion by setting deleted_at timestamp when revoking capabilities. Ensure all operations are performed within a transaction to maintain data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async updateCapabilities(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+  public async patchByAdministratorid(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardAdministratorCapability.IUpdate,
-  ): Promise<IPageIDiscussionBoardAdministratorCapability> {
+  ): Promise<IPageIDiscussionBoardAdministratorCapability.ISummary> {
     try {
       return await patchDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilities(
         {
@@ -118,26 +109,26 @@ export class DiscussionboardSuperadminAdministratorsCapabilitiesController {
   }
 
   /**
-   * Retrieve detailed information about a specific capability assignment for an administrator.
+   * Retrieve detailed information about a specific capability assigned to an administrator.
    *
-   * This operation provides comprehensive access to individual capability records, allowing administrators to review specific permission assignments and their metadata. The response includes the capability type, permission level, assignment details, and audit timestamps.
+   * This operation returns comprehensive details about an individual capability assignment, including the capability type, permission level, assignment metadata, and audit timestamps. The capability must belong to the specified administrator, and both the administrator and capability must exist in the system.
    *
-   * Security considerations require validating that the requested capability belongs to the specified administrator. Only authorized administrators should have access to capability management operations. The operation supports audit trails and permission verification workflows.
+   * The response includes all fields from the capability assignment record, providing administrators with complete visibility into permission assignments and their historical context. This operation is essential for auditing administrator capabilities and understanding permission assignments within the system.
    *
-   * Related operations include listing all capabilities for an administrator and modifying capability assignments. This individual retrieval operation complements bulk capability management by providing detailed inspection of specific permission assignments.
+   * Security considerations require that the requesting user has appropriate permissions to view administrator capability information. The operation validates that both the administrator and capability exist before returning data, ensuring data integrity and preventing information disclosure about non-existent records.
    *
    * @param connection
    * @param administratorId Unique identifier of the administrator whose capability is being retrieved
    * @param capabilityId Unique identifier of the specific capability assignment to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_administrator_capabilities table by primary key ID to retrieve a specific capability assignment. Validate that the capability belongs to the specified administrator by checking the discussion_board_administrator_id foreign key relationship. Return the complete capability record including capability_type, permission_level, assigned_by, and timestamps. Handle cases where the capability ID doesn't exist or doesn't belong to the specified administrator with appropriate error responses.
+   * @x-autobe-specification Retrieve a single capability assignment record from the discussion_board_administrator_capabilities table by its ID, ensuring it belongs to the specified administrator. Validate that both the administrator and capability exist before returning the data. Return the complete capability record including capability_type, permission_level, assigned_by, and timestamps. Handle cases where the capability doesn't exist or doesn't belong to the specified administrator with appropriate error responses.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":capabilityId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedParam("capabilityId")
@@ -158,29 +149,27 @@ export class DiscussionboardSuperadminAdministratorsCapabilitiesController {
   }
 
   /**
-   * Update a specific capability assignment for an administrator.
+   * Update an administrator's capability assignment with new permission levels or other modifiable attributes.
    *
-   * This operation allows administrators with appropriate privileges to modify existing capability assignments for other administrators. The operation supports updating the capability type and permission level for a previously assigned capability.
+   * This operation allows authorized users (typically super administrators) to modify the permission levels of existing capability assignments for administrators. The operation validates that the capability exists and belongs to the specified administrator before applying updates.
    *
-   * The system validates that the target administrator exists and has the specified capability assignment before allowing modifications. Updates maintain referential integrity and enforce business rules regarding capability assignments.
+   * Only modifiable fields such as permission_level can be updated through this endpoint. Core attributes like capability_type and assigned_by are immutable once set. The operation maintains audit trails by tracking modification timestamps.
    *
-   * Administrators can use this operation to adjust permission levels or change capability types as organizational needs evolve. All modifications are logged for audit purposes and maintain the historical record of capability assignments.
-   *
-   * This operation requires appropriate authorization privileges and follows strict validation rules to ensure system integrity. The response includes comprehensive information about the updated capability assignment.
+   * Security considerations include verifying that the requesting user has appropriate permissions to modify administrator capabilities and ensuring that capability modifications follow the platform's authorization policies.
    *
    * @param connection
    * @param administratorId Unique identifier of the administrator whose capability is being updated
    * @param capabilityId Unique identifier of the capability assignment to update
-   * @param body Fields to update for the capability assignment
+   * @param body Updated capability assignment information
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update an existing capability assignment for an administrator. Validate that the administrator exists and has the specified capability assignment. Update the capability_type and/or permission_level fields if provided. Ensure the updated capability assignment maintains uniqueness constraints. Return the updated capability assignment with current timestamp.
+   * @x-autobe-specification Update an existing administrator capability assignment. Validate that the capability ID exists and belongs to the specified administrator. Update the permission_level field if provided. Ensure the updating user has appropriate permissions to modify administrator capabilities. Return the updated capability record with refreshed timestamps.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":capabilityId")
-  public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+  public async putByAdministratoridAndCapabilityid(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedParam("capabilityId")
@@ -204,26 +193,26 @@ export class DiscussionboardSuperadminAdministratorsCapabilitiesController {
   }
 
   /**
-   * Remove a specific capability assignment from an administrator.
+   * DELETE /discussionBoard/superAdmin/administrators/{administratorId}/capabilities/{capabilityId} - Revoke specified capability assignment from an administrator using soft deletion.
    *
-   * This operation allows administrators to revoke specific capabilities from other administrators. The capability is identified by its unique ID and must belong to the specified administrator. The operation performs a soft delete by setting the deletion timestamp, allowing for potential audit trail and recovery if needed.
+   * This operation enables super administrators to revoke specific capability assignments from other administrators, implementing the hierarchical permission management system described in the database schema. The operation targets individual capability assignments identified by both the administrator ID and capability ID parameters, ensuring precise permission revocation within the granular capability management structure of the discussion_board_administrator_capabilities table.
    *
-   * Security considerations: Only super administrators should have permission to modify administrator capabilities. The operation validates that the target capability exists and belongs to the specified administrator before proceeding with deletion.
+   * Authorization is strictly limited to super administrators (as indicated by the authorizationActor field), supporting the platform's security model where only elevated administrators can manage administrator capabilities. This aligns with the database schema's design where capability assignments store critical permission information with comprehensive audit trails, including timestamps, permission levels, and assignment records. The operation respects the unique constraint on discussion_board_administrator_id and capability_type to prevent duplicate capability assignments.
    *
-   * This is part of the comprehensive administrator management system that enables granular permission control and administrative privilege management across the discussion board platform.
+   * The operation implements a soft delete approach by setting the deleted_at timestamp field in the discussion_board_administrator_capabilities table, preserving historical records for audit and compliance purposes. This soft deletion strategy maintains referential integrity and supports potential capability restoration while preventing further use of the revoked capability. The system validates that both the administrator and specific capability assignment exist before proceeding with the revocation.
    *
    * @param connection
-   * @param administratorId Unique identifier of the administrator whose capability is being removed
-   * @param capabilityId Unique identifier of the capability assignment to be removed
+   * @param administratorId ID of the administrator whose capability is being revoked
+   * @param capabilityId ID of the specific capability assignment to be revoked
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Delete a specific capability assignment from an administrator. First validate that the capability with the given ID exists and belongs to the specified administrator. If validation passes, perform a soft delete by setting the deleted_at timestamp. If the capability doesn't exist or doesn't belong to the administrator, return an appropriate error. This operation should use a database transaction to ensure atomicity.
+   * @x-autobe-specification Delete a specific capability assignment from an administrator. Query the discussion_board_administrator_capabilities table using both the administratorId and capabilityId parameters to identify the specific capability assignment. Verify that the requesting administrator has permission to manage administrator capabilities (super administrators can manage all capabilities, regular administrators may have limited permissions). Perform a soft delete by setting the deleted_at timestamp to the current time rather than hard deletion. Return the deleted capability record for confirmation and audit trail purposes. Validate that both the administrator and capability exist before attempting deletion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":capabilityId")
   public async erase(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedParam("capabilityId")

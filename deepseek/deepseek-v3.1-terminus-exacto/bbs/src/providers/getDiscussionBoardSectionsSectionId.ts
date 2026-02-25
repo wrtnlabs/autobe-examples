@@ -16,12 +16,13 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getDiscussionBoardSectionsSectionId(props: {
   sectionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSection> {
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
-    where: { id: props.sectionId },
-    ...DiscussionBoardSectionTransformer.select(),
-  });
-  if (!section) {
-    throw new HttpException("Section not found", 404);
-  }
+  const section =
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: {
+        id: props.sectionId,
+        status: "active",
+      },
+      ...DiscussionBoardSectionTransformer.select(),
+    });
   return await DiscussionBoardSectionTransformer.transform(section);
 }

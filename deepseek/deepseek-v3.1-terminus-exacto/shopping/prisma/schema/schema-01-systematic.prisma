@@ -59,10 +59,14 @@ model ecommerce_system_settings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   metadataRegistries ecommerce_metadata_registries[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([setting_key])
   @@index([value_type, is_active])
   @@index([created_at])
@@ -136,7 +140,7 @@ model ecommerce_email_templates {
   version Int
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([code])
   @@index([category, is_active])
@@ -231,15 +235,23 @@ model ecommerce_audit_logs {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   superAdministrator ecommerce_super_administrators? @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistries ecommerce_metadata_registries[]
   
+  //----
+  // INDEXES
+  //----
   @@index([event_type, created_at])
   @@index([severity, created_at])
   @@index([customer_id, created_at])
@@ -316,7 +328,7 @@ model ecommerce_system_metrics {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   // spellchecker: ignore-next-line
   @@unique([metric_name, measurement_timestamp, source_component, environment], map: "ecommerce_system_metrics_metric_name_measurement_times_191faa92")
@@ -388,20 +400,27 @@ model ecommerce_metadata_registries {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemSetting ecommerce_system_settings? @relation(fields: [system_setting_id], references: [id], onDelete: Cascade)
   auditLog ecommerce_audit_logs? @relation(fields: [audit_log_id], references: [id], onDelete: Cascade)
   dbMigration ecommerce_db_migrations? @relation(fields: [db_migration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   fieldDefinitions ecommerce_metadata_registry_field_definitions[]
   relationships ecommerce_metadata_registry_relationships[]
   categoryRelationships ecommerce_metadata_registry_relationship_of_categories[]
   
+  //----
+  // INDEXES
+  //----
   @@index([system_setting_id])
   @@index([audit_log_id])
   @@index([db_migration_id])
-  
   @@unique([schema_name, schema_version])
   @@index([created_at])
   @@index([is_active])
@@ -475,13 +494,17 @@ model ecommerce_data_snapshots {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   createdByCustomer ecommerce_customers? @relation(fields: [created_by_customer_id], references: [id], onDelete: Cascade)
   createdBySeller ecommerce_sellers? @relation(fields: [created_by_seller_id], references: [id], onDelete: Cascade)
   createdByAdministrator ecommerce_administrators? @relation(fields: [created_by_administrator_id], references: [id], onDelete: Cascade)
   createdBySuperAdministrator ecommerce_super_administrators? @relation(fields: [created_by_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([entity_type, entity_id, created_at])
   @@index([entity_type, created_at])
   @@index([created_by_customer_id, created_at])
@@ -557,7 +580,7 @@ model ecommerce_business_rules {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([rule_code])
   @@index([rule_type, is_active])
@@ -626,13 +649,17 @@ model ecommerce_platform_events {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   customerInitiators ecommerce_platform_event_of_customers[]
   sellerInitiators ecommerce_platform_event_of_sellers[]
   administratorEvent ecommerce_platform_event_of_administrators?
   superAdministratorInitiators ecommerce_platform_event_of_super_administrators[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([correlation_id])
   @@index([event_type, created_at])
   @@index([event_severity, created_at])
@@ -718,10 +745,14 @@ model ecommerce_db_migrations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   metadataRegistries ecommerce_metadata_registries[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([migration_name])
   @@unique([version])
   @@index([executed_at])
@@ -792,11 +823,15 @@ model ecommerce_cache_configurations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   snapshots ecommerce_cache_configuration_snapshots[]
   parameterValues ecommerce_cache_configuration_parameters[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([cache_key])
   @@index([cache_type, is_active])
   @@index([priority])
@@ -859,10 +894,14 @@ model ecommerce_metadata_registry_field_definitions {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistry ecommerce_metadata_registries @relation(fields: [ecommerce_metadata_registry_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_id, field_name], map: "ecommerce_metadata_registry_field_definitions_ecommerc_a5560b53")
   @@index([field_type])
@@ -936,10 +975,15 @@ model ecommerce_metadata_registry_relationships {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistry ecommerce_metadata_registries @relation(fields: [metadata_registry_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   productRelationships ecommerce_metadata_registry_relationship_of_products[]
   variantRelationships ecommerce_metadata_registry_relationship_of_variants[]
   orderSubtype ecommerce_metadata_registry_relationship_of_orders?
@@ -951,6 +995,9 @@ model ecommerce_metadata_registry_relationships {
   shipmentMappings ecommerce_metadata_registry_relationship_of_shipments[]
   variantConfigParameters ecommerce_metadata_registry_relationship_of_variant_configs[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([metadata_registry_id, relationship_type], map: "ecommerce_metadata_registry_relationships_metadata_reg_7f1fb72e")
   // spellchecker: ignore-next-line
@@ -996,11 +1043,15 @@ model ecommerce_platform_event_of_customers {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   platformEvent ecommerce_platform_events @relation(fields: [ecommerce_platform_event_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_platform_event_id, ecommerce_customer_id], map: "ecommerce_platform_event_of_customers_ecommerce_platfo_8ccd8f30")
   // spellchecker: ignore-next-line
@@ -1054,15 +1105,18 @@ model ecommerce_platform_event_of_sellers {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   platformEvent ecommerce_platform_events @relation(fields: [ecommerce_platform_event_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   sellerSession ecommerce_seller_sessions? @relation(fields: [ecommerce_seller_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_seller_session_id], map: "ecommerce_platform_event_of_sellers_ecommerce_seller_s_3cfaf783")
-  
   // spellchecker: ignore-next-line
   @@unique([ecommerce_platform_event_id, ecommerce_seller_id], map: "ecommerce_platform_event_of_sellers_ecommerce_platform_9b6d9004")
   // spellchecker: ignore-next-line
@@ -1117,12 +1171,16 @@ model ecommerce_platform_event_of_administrators {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   platformEvent ecommerce_platform_events @relation(fields: [platform_event_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   administratorSession ecommerce_administrator_sessions? @relation(fields: [administrator_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([platform_event_id], map: "ecommerce_platform_event_of_administrators_platform_ev_f39c5053")
   // spellchecker: ignore-next-line
@@ -1166,11 +1224,15 @@ model ecommerce_platform_event_of_super_administrators {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   platformEvent ecommerce_platform_events @relation(fields: [ecommerce_platform_event_id], references: [id], onDelete: Cascade)
   superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_platform_event_id, ecommerce_super_administrator_id], map: "ecommerce_platform_event_of_super_administrators_ecomm_95b73ba2")
   // spellchecker: ignore-next-line
@@ -1228,10 +1290,14 @@ model ecommerce_cache_configuration_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cacheConfiguration ecommerce_cache_configurations @relation(fields: [ecommerce_cache_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_cache_configuration_id, created_at], map: "ecommerce_cache_configuration_snapshots_ecommerce_cach_cb78613f")
   // spellchecker: ignore-next-line
@@ -1291,11 +1357,15 @@ model ecommerce_cache_configuration_parameters {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cacheConfiguration ecommerce_cache_configurations @relation(fields: [ecommerce_cache_configuration_id], references: [id], onDelete: Cascade)
   parameterDefinition ecommerce_cache_configuration_parameter_definitions @relation(fields: [ecommerce_cache_configuration_parameter_definition_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_cache_configuration_id, ecommerce_cache_configuration_parameter_definition_id], map: "ecommerce_cache_configuration_parameters_ecommerce_cac_90bc4b37")
   // spellchecker: ignore-next-line
@@ -1336,11 +1406,15 @@ model ecommerce_metadata_registry_relationship_of_products {
   ecommerce_product_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   parentRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_product_id], map: "ecommerce_metadata_registry_relationship_of_products_e_3cf41a3d")
   // spellchecker: ignore-next-line
@@ -1389,11 +1463,15 @@ model ecommerce_metadata_registry_relationship_of_variants {
   priority Int
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   productVariant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_product_variant_id], map: "ecommerce_metadata_registry_relationship_of_variants_e_939cc687")
   // spellchecker: ignore-next-line
@@ -1443,11 +1521,15 @@ model ecommerce_metadata_registry_relationship_of_orders {
   ecommerce_order_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   order ecommerce_orders @relation(fields: [ecommerce_order_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id], map: "ecommerce_metadata_registry_relationship_of_orders_eco_c2a9ebe4")
   // spellchecker: ignore-next-line
@@ -1485,11 +1567,15 @@ model ecommerce_metadata_registry_relationship_of_customers {
   ecommerce_customer_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_customer_id], map: "ecommerce_metadata_registry_relationship_of_customers__881164cd")
   // spellchecker: ignore-next-line
@@ -1521,11 +1607,15 @@ model ecommerce_metadata_registry_relationship_of_sellers {
   ecommerce_seller_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_seller_id], map: "ecommerce_metadata_registry_relationship_of_sellers_ec_e9f4f600")
   // spellchecker: ignore-next-line
@@ -1575,14 +1665,17 @@ model ecommerce_metadata_registry_relationship_of_administrators {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([metadata_registry_relationship_id], map: "ecommerce_metadata_registry_relationship_of_administra_a6b3b210")
-  
   // spellchecker: ignore-next-line
   @@unique([metadata_registry_relationship_id, administrator_id], map: "ecommerce_metadata_registry_relationship_of_administra_987b96bd")
   // spellchecker: ignore-next-line
@@ -1627,11 +1720,15 @@ model ecommerce_metadata_registry_relationship_of_super_administrators {
   ecommerce_super_administrator_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   relationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_super_administrator_id], map: "ecommerce_metadata_registry_relationship_of_super_admi_a540e0aa")
   // spellchecker: ignore-next-line
@@ -1684,11 +1781,15 @@ model ecommerce_metadata_registry_relationship_of_categories {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistry ecommerce_metadata_registries @relation(fields: [ecommerce_metadata_registry_id], references: [id], onDelete: Cascade)
   category ecommerce_categories @relation(fields: [ecommerce_category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_id, ecommerce_category_id, relationship_type], map: "ecommerce_metadata_registry_relationship_of_categories_51e366da")
   // spellchecker: ignore-next-line
@@ -1730,11 +1831,15 @@ model ecommerce_metadata_registry_relationship_of_shipping_carts {
   ecommerce_shopping_cart_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   shoppingCart ecommerce_shopping_carts @relation(fields: [ecommerce_shopping_cart_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_shopping_cart_id], map: "ecommerce_metadata_registry_relationship_of_shipping_c_c8b28d96")
   // spellchecker: ignore-next-line
@@ -1781,11 +1886,15 @@ model ecommerce_metadata_registry_relationship_of_shipments {
   ecommerce_shipment_id String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   shipment ecommerce_shipments @relation(fields: [ecommerce_shipment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, ecommerce_shipment_id], map: "ecommerce_metadata_registry_relationship_of_shipments__c77bcc00")
   // spellchecker: ignore-next-line
@@ -1855,10 +1964,14 @@ model ecommerce_cache_configuration_parameter_definitions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   parameterValues ecommerce_cache_configuration_parameters[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([parameter_name], map: "ecommerce_cache_configuration_parameter_definitions_pa_03fc8409")
   // spellchecker: ignore-next-line
@@ -1932,10 +2045,14 @@ model ecommerce_metadata_registry_relationship_of_variant_configs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   metadataRegistryRelationship ecommerce_metadata_registry_relationships @relation(fields: [ecommerce_metadata_registry_relationship_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_metadata_registry_relationship_id, parameter_name], map: "ecommerce_metadata_registry_relationship_of_variant_co_ddf5ab5a")
   // spellchecker: ignore-next-line

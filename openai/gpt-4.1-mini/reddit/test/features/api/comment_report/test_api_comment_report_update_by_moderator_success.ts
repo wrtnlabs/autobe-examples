@@ -3,6 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
 import type { ICommunityPlatformCommentReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommentReport";
 import type { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
+import type { ICommunityPlatformReportReason } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportReason";
 import type { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -17,74 +18,126 @@ import { authorize_moderator_refresh } from "../../../authorize/authorize_modera
 import { authorize_user_join } from "../../../authorize/authorize_user_join";
 import { authorize_user_login } from "../../../authorize/authorize_user_login";
 import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
-import { generate_random_community_platform_user_comment_reports_create_comment_report } from "../../../generate/generate_random_community_platform_user_comment_reports_create_comment_report";
-import { generate_random_community_platform_user_comments_create } from "../../../generate/generate_random_community_platform_user_comments_create";
-import { prepare_random_community_platform_comment } from "../../../prepare/prepare_random_community_platform_comment";
+import { generate_random_community_platform_user_comment_reports_create } from "../../../generate/generate_random_community_platform_user_comment_reports_create";
 import { prepare_random_community_platform_comment_report } from "../../../prepare/prepare_random_community_platform_comment_report";
 
 export async function test_api_comment_report_update_by_moderator_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // This scenario tests successful update of a comment report by a moderator.
-  // Actor connections
+  // Scenario: Successful update of a comment report status and description by a registered moderator.
+  // 1. Register and authenticate a new moderator
   const moderatorConnection: api.IConnection = { host: connection.host };
-  const userConnection: api.IConnection = { host: connection.host };
-  // 1. Moderator join & login
-  const moderatorJoinPayload: ICommunityPlatformModerator.IJoin = {};
-  const moderatorAuth = await authorize_moderator_join(moderatorConnection, {
-    body: moderatorJoinPayload,
-  });
-  typia.assert(moderatorAuth);
-  const moderatorLoginPayload: ICommunityPlatformModerator.ILogin = {};
-  const moderatorLoginAuth = await authorize_moderator_login(
+  const moderatorJoinOutput = await authorize_moderator_join(
     moderatorConnection,
-    { body: moderatorLoginPayload },
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        username: typia.random<string>(),
+        displayName: RandomGenerator.name(),
+        bio: RandomGenerator.paragraph({ sentences: 2 }),
+        avatarUrl: null,
+      },
+    },
   );
-  typia.assert(moderatorLoginAuth);
-  // Authorization header updated inside authorize_moderator_login
-  // 2. User join & login
-  const userJoinPayload: ICommunityPlatformUser.IJoin = {};
-  const userAuth = await authorize_user_join(userConnection, {
-    body: userJoinPayload,
+  typia.assert(moderatorJoinOutput);
+  moderatorConnection.headers = {
+    Authorization: moderatorJoinOutput.token.access,
+  };
+  // 2. Register and authenticate a new normal user
+  const userConnection: api.IConnection = { host: connection.host };
+  const userAuthorized = await authorize_user_join(userConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "secret",
+      username: RandomGenerator.name(1),
+      displayName: RandomGenerator.name(1),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: null,
+    },
   });
-  typia.assert(userAuth);
-  const userLoginPayload: ICommunityPlatformUser.ILogin = {};
-  const userLoginAuth = await authorize_user_login(userConnection, {
-    body: userLoginPayload,
-  });
-  typia.assert(userLoginAuth);
-  // Authorization header updated inside authorize_user_login
-  // 3. User creates a comment
-  const commentRaw =
-    await generate_random_community_platform_user_comments_create(
+  typia.assert(userAuthorized);
+  userConnection.headers = { Authorization: userAuthorized.token.access };
+  // 3. User creates a comment report
+  const commentReport =
+    await generate_random_community_platform_user_comment_reports_create(
       userConnection,
-      { body: {} },
+      {},
     );
-  typia.assert(commentRaw);
-  // 4. User creates a comment report
-  const commentReportRaw =
-    await generate_random_community_platform_user_comment_reports_create_comment_report(
-      userConnection,
-      { body: {} },
-    );
-  typia.assert(commentReportRaw);
-  // 5. Moderator updates the comment report
-  // Since IUpdate and ICommunityPlatformCommentReport have no properties,
-  // use empty body object, and pick a synthetically valid uuid for commentReportId
-  // For commentReportId, we cannot get id from commentReportRaw (property doesn't exist),
-  // so we will generate a random uuid to satisfy the required parameter
-  const commentReportId: string = typia.random<string & tags.Format<"uuid">>();
-  const updateBody: ICommunityPlatformCommentReport.IUpdate = {};
-  const updatedReportRaw =
-    await api.functional.communityPlatform.moderator.comment_reports.update(
+  typia.assert(commentReport);
+  // 4. The moderator updates the comment report
+  const updatedDescription = RandomGenerator.paragraph({ sentences: 3 });
+  const updateBody: ICommunityPlatformCommentReport.IUpdate = {
+    status: "approved",
+    description: updatedDescription,
+  };
+  const updatedCommentReport =
+    await api.functional.communityPlatform.moderator.commentReports.update(
       moderatorConnection,
       {
-        commentReportId: commentReportId,
+        commentReportId: commentReport.id,
         body: updateBody,
       },
     );
-  typia.assert(updatedReportRaw);
-  // 6. Validation
-  // Cannot validate any specific property due to missing DTO properties
-  // Just assert that update call did not fail and returned a valid object
+  typia.assert(updatedCommentReport);
+  // 5. Validate updated fields
+  TestValidator.equals(
+    "status updated",
+    updatedCommentReport.status,
+    updateBody.status,
+  );
+  TestValidator.equals(
+    "description updated",
+    updatedCommentReport.description,
+    updateBody.description,
+  );
+  // 6. Check that timestamps are updated
+  TestValidator.predicate(
+    "updatedAt timestamp updated",
+    new Date(updatedCommentReport.updatedAt).getTime() >
+      new Date(commentReport.updatedAt).getTime(),
+  );
+  // 7. Ensure immutable fields remain unchanged
+  TestValidator.equals(
+    "id unchanged",
+    updatedCommentReport.id,
+    commentReport.id,
+  );
+  TestValidator.equals(
+    "createdAt unchanged",
+    updatedCommentReport.createdAt,
+    commentReport.createdAt,
+  );
+  TestValidator.equals(
+    "deletedAt unchanged",
+    updatedCommentReport.deletedAt,
+    commentReport.deletedAt,
+  );
+  TestValidator.equals(
+    "comment unchanged",
+    updatedCommentReport.comment,
+    commentReport.comment,
+  );
+  TestValidator.equals(
+    "reporterUser unchanged",
+    updatedCommentReport.reporterUser,
+    commentReport.reporterUser,
+  );
+  TestValidator.equals(
+    "reportReason unchanged",
+    updatedCommentReport.reportReason,
+    commentReport.reportReason,
+  );
+  // 8. Validate unauthorized update attempt by a user
+  await TestValidator.error("unauthorized update rejected", async () => {
+    await api.functional.communityPlatform.moderator.commentReports.update(
+      userConnection,
+      {
+        commentReportId: commentReport.id,
+        body: {
+          status: "dismissed",
+        } satisfies ICommunityPlatformCommentReport.IUpdate,
+      },
+    );
+  });
 }

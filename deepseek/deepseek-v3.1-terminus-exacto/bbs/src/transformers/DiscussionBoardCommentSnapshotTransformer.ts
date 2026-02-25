@@ -11,9 +11,11 @@ import { DiscussionBoardCommentAtSummaryTransformer } from "./DiscussionBoardCom
 import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardCommentSnapshotTransformer {
+  // 1. Payload type first
   export type Payload = Prisma.discussion_board_comment_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
+  // 2. select() function second
   export function select() {
     return {
       select: {
@@ -30,18 +32,19 @@ export namespace DiscussionBoardCommentSnapshotTransformer {
       },
     } satisfies Prisma.discussion_board_comment_snapshotsFindManyArgs;
   }
+  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardCommentSnapshot> {
     return {
       id: input.id,
-      version_number: input.version_number,
-      snapshot_reason: input.snapshot_reason ?? null,
-      created_at: input.created_at.toISOString(),
-      comment_content: input.comment_content,
-      comment_created_at: input.comment_created_at.toISOString(),
-      comment_updated_at: input.comment_updated_at.toISOString(),
-      comment_deleted_at: input.comment_deleted_at?.toISOString() ?? null,
+      versionNumber: input.version_number,
+      snapshotReason: input.snapshot_reason ?? undefined,
+      createdAt: input.created_at.toISOString(),
+      commentContent: input.comment_content,
+      commentCreatedAt: input.comment_created_at.toISOString(),
+      commentUpdatedAt: input.comment_updated_at.toISOString(),
+      commentDeletedAt: input.comment_deleted_at?.toISOString() ?? null,
       comment: await DiscussionBoardCommentAtSummaryTransformer.transform(
         input.comment,
       ),

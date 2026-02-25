@@ -1,4 +1,8 @@
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
+import { IDiscussionBoardAttachmentFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAttachmentFile";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,55 +23,37 @@ export async function putDiscussionBoardUserArticlesArticleIdFilesFileId(props: 
   fileId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleFile.IUpdate;
 }): Promise<IDiscussionBoardArticleFile> {
-  // First verify the article exists
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId, deleted_at: null },
-  });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
+  // Validate article exists and belongs to user
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId },
+      select: { id: true, discussion_board_user_id: true },
+    });
+  if (article.discussion_board_user_id !== props.user.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Verify the file exists and belongs to the article
-  const file = await MyGlobal.prisma.discussion_board_article_files.findUnique({
-    where: {
-      id: props.fileId,
-      discussion_board_article_id: props.articleId,
-      deleted_at: null,
-    },
-    ...DiscussionBoardArticleFileTransformer.select(),
-  });
-  if (!file) {
-    throw new HttpException(
-      "File not found or does not belong to the specified article",
-      404,
-    );
-  }
-  // Authorization check: user must be the uploader or an administrator
-  const isUploader = file.uploaded_by && file.uploaded_by === props.user.id;
-  if (!isUploader) {
-    // Check if user is administrator
-    const adminRecord = await MyGlobal.prisma.discussion_board_admins.findFirst(
-      {
-        where: {
-          id: props.user.id,
-          deleted_at: null,
-        },
+  // Validate file exists and belongs to article
+  const file =
+    await MyGlobal.prisma.discussion_board_article_images.findUniqueOrThrow({
+      where: {
+        id: props.fileId,
+        discussion_board_article_id: props.articleId,
       },
-    );
-    if (!adminRecord) {
-      throw new HttpException(
-        "You do not have permission to update this file",
-        403,
-      );
-    }
-  }
-  // Update the file metadata
-  const updated = await MyGlobal.prisma.discussion_board_article_files.update({
+    });
+  // Update file metadata
+  await MyGlobal.prisma.discussion_board_article_images.update({
     where: { id: props.fileId },
     data: {
-      description: props.body.description ?? null,
-      updated_at: toISOStringSafe(new Date(Date.now())),
+      display_order: props.body.display_order,
+      alt_text: props.body.alt_text ?? null,
+      caption: props.body.caption ?? null,
     },
-    ...DiscussionBoardArticleFileTransformer.select(),
   });
-  return await DiscussionBoardArticleFileTransformer.transform(updated);
+  // Fetch updated file with full relations
+  const updatedFile =
+    await MyGlobal.prisma.discussion_board_article_images.findUniqueOrThrow({
+      where: { id: props.fileId },
+      ...DiscussionBoardArticleFileTransformer.select(),
+    });
+  return await DiscussionBoardArticleFileTransformer.transform(updatedFile);
 }

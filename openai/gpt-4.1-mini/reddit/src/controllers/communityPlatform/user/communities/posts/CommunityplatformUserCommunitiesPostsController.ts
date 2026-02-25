@@ -1,59 +1,108 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { ICommunityPlatformPost } from "../../../../../api/structures/ICommunityPlatformPost";
 import { IPageICommunityPlatformPost } from "../../../../../api/structures/IPageICommunityPlatformPost";
 import { UserAuth } from "../../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../../decorators/payload/UserPayload";
-import { getCommunityPlatformUserCommunitiesCommunityIdPosts } from "../../../../../providers/getCommunityPlatformUserCommunitiesCommunityIdPosts";
+import { patchCommunityPlatformUserCommunitiesCommunityIdPosts } from "../../../../../providers/patchCommunityPlatformUserCommunitiesCommunityIdPosts";
+import { postCommunityPlatformUserCommunitiesCommunityIdPosts } from "../../../../../providers/postCommunityPlatformUserCommunitiesCommunityIdPosts";
 
 @Controller("/communityPlatform/user/communities/:communityId/posts")
 export class CommunityplatformUserCommunitiesPostsController {
   /**
-   * Retrieve a paginated list of posts within a specified community.
+   * Create a new post within the specified community identified by communityId. This operation supports three post types: text, link, and image, each requiring specific content fields.
    *
-   * This endpoint allows any user (including guests) to browse posts in a community feed.
+   * Users must be subscribed to the community to create posts. The request requires a title and the type of post. Depending on the post type, additional fields are required:
+   * - For text posts, a content field with the post text.
+   * - For link posts, a url field with a valid URL.
+   * - For image posts, one or more image URLs representing uploaded images.
    *
-   * The posts returned include summarized information such as post title, author username, type, vote score, comment count, and creation date.
+   * The created post links to the author (user or moderator) and the community. System timestamps are managed automatically. Soft deletion is supported but not performed by this operation.
    *
-   * Filtering and sorting capabilities can be extended but currently focus on pagination.
+   * This operation requires authenticated user authorization and respects community subscription constraints.
    *
-   * Path parameter communityId identifies the community using UUID format.
-   *
-   * The response returns paginated data including post summaries with essential details.
-   *
-   * No request body is used since this is a simple list retrieval.
-   *
-   * Related operations include POST to create a post, and GET to fetch individual post details by post id.
-   *
-   * This design follows RESTful principles providing clean and predictable access to community posts.
+   * Related operations include listing posts in a community (GET /communities/{communityId}/posts) and editing or deleting posts (PATCH/DELETE /posts/{postId}).
    *
    * @param connection
-   * @param communityId UUID of the community whose posts are to be listed
+   * @param communityId The UUID of the community where the post will be created
+   * @param body Post creation request body containing title, postType, and related content fields depending on the type of post
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the community_platform_posts table filtering by community_id = communityId and deleted_at is null.
-   * Return a paginated list of posts including summary fields such as id, title, post_type, authorUser.username (or authorModerator.username), vote score, comment count, and created_at.
-   * Join with author user or moderator to get author's username.
-   * Use cursor-based pagination for efficient large result sets.
-   * No request body is expected for this GET method.
-   * Authorization is not required because community posts are public.
-   * Handle filtering, sorting, and pagination parameters if extended in the future.
-   * Fail gracefully if communityId does not exist (return empty list).
-   * No side effects.
+   * @x-autobe-specification Implement the POST /communities/{communityId}/posts endpoint by validating the communityId path parameter as UUID. Validate the request body matching ICommunityPlatformPost.ICreate including title, postType, and content fields depending on postType.
+   *
+   * Perform authorization checks to ensure the user is subscribed to the community.
+   *
+   * Insert a new record into the community_platform_posts table with the provided communityId, author id (from authenticated user context), title, and postType.
+   *
+   * Depending on postType, insert related content into community_platform_post_texts (text content), community_platform_post_links (URL), or community_platform_post_images (multiple images).
+   *
+   * Return the created post data as ICommunityPlatformPost including related content data.
+   *
+   * Handle errors such as invalid community, unauthorized access, or validation failures with appropriate HTTP error responses.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
+  @TypedRoute.Post()
+  public async create(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformPost.ICreate,
+  ): Promise<ICommunityPlatformPost> {
+    try {
+      return await postCommunityPlatformUserCommunitiesCommunityIdPosts({
+        user,
+        communityId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a filtered and paginated list of posts belonging to a specific community identified by the path parameter `communityId` (UUID).
+   *
+   * This operation queries the `community_platform_posts` table, applying filtering based on post type (such as text, link, image), sorting mode (hot, new, top) including time range filters, and supports pagination for efficient browsing.
+   *
+   * Authorization is enforced according to user subscription status to the community as described in the business rules. Only subscribed users may create posts and view restricted content.
+   *
+   * This operation supports user scenarios such as browsing community feeds and is related to creating posts (`POST /communityPlatform/user/communities/{communityId}/posts`) and retrieving detailed post information (`GET /posts/{postId}`).
+   *
+   * Error handling includes validation of filtering criteria and authorization checks.
+   *
+   * @param connection
+   * @param communityId Unique identifier of the community (UUID)
+   * @param body Filtering criteria and pagination parameters for posts within a community.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification Implement database query to fetch posts filtered by communityId.
+   * Apply filters specified in the request body (e.g., post type, sorting, time range).
+   * Join with related tables to fetch author information and post type details.
+   * Apply pagination logic with limits and offsets or cursor-based pagination.
+   * Return paginated post summary DTOs.
+   * Handle authorization by checking user subscription or membership status.
+   * Validate input filters and return appropriate errors for invalid values.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
   public async index(
     @UserAuth()
     user: UserPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformPost.IRequest,
   ): Promise<IPageICommunityPlatformPost.ISummary> {
     try {
-      return await getCommunityPlatformUserCommunitiesCommunityIdPosts({
+      return await patchCommunityPlatformUserCommunitiesCommunityIdPosts({
         user,
         communityId,
+        body,
       });
     } catch (error) {
       console.log(error);

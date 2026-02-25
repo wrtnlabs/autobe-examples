@@ -115,9 +115,9 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
 ✅ analyze | actors: 3, documents: 11 | 100.00 % | 682,780 | 825 sec
 ✅ database | namespaces: 7, models: 76 | 93.14 % | 10,123,748 | 1705 sec
-✅ interface | operations: 388, schemas: 323 | 76.81 % | 397,354,357 | 27635 sec
-✅ test | functions: 1,171 | 96.56 % | 156,955,801 | 12709 sec
-❌ realize | functions: 536, errors: 6 | 83.12 % | 52,288,905 | 5180 sec
+✅ interface | operations: 438, schemas: 323 | 85.51 % | 255,693,570 | 49060 sec
+✅ test | functions: 1,195 | 92.89 % | 232,704,769 | 12103 sec
+❌ realize | functions: 585, errors: 75 | 73.07 % | 155,491,531 | 20408 sec
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
@@ -133,7 +133,7 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 9,163 | 1,392 | 32 | 7,750 | 84.58 %
+total | 10,700 | 1,566 | 79 | 9,080 | 84.86 %
 analyzeScenario | 1 | 0 | 0 | 1 | 100.00 %
 analyzeWrite | 11 | 0 | 0 | 11 | 100.00 %
 analyzeReview | 15 | 0 | 0 | 15 | 100.00 %
@@ -147,26 +147,26 @@ databaseSchema | 79 | 1 | 0 | 78 | 98.73 %
 databaseSchemaReview | 81 | 5 | 0 | 76 | 93.83 %
 databaseCorrect | 1 | 0 | 0 | 1 | 100.00 %
 interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
-interfaceAuthorization | 10 | 3 | 0 | 7 | 70.00 %
-interfaceEndpoint | 14 | 0 | 0 | 14 | 100.00 %
-interfaceEndpointReview | 30 | 2 | 0 | 28 | 93.33 %
-interfaceOperation | 839 | 133 | 3 | 706 | 84.15 %
-interfaceOperationReview | 865 | 59 | 14 | 787 | 90.98 %
-interfaceSchemaRename | 102 | 0 | 0 | 102 | 100.00 %
-interfaceSchema | 396 | 106 | 2 | 290 | 73.23 %
-interfaceSchemaRefine | 339 | 165 | 2 | 174 | 51.33 %
-interfaceSchemaReview | 1,393 | 505 | 0 | 888 | 63.75 %
-interfaceSchemaComplement | 29 | 4 | 0 | 25 | 86.21 %
-interfacePrerequisite | 454 | 41 | 0 | 413 | 90.97 %
-testScenario | 428 | 40 | 2 | 388 | 90.65 %
-testScenarioReview | 1,145 | 10 | 1 | 1,135 | 99.13 %
-testWrite | 1,215 | 48 | 3 | 1,167 | 96.05 %
-testCorrect | 120 | 2 | 0 | 118 | 98.33 %
+interfaceAuthorization | 9 | 3 | 0 | 6 | 66.67 %
+interfaceEndpoint | 16 | 0 | 0 | 16 | 100.00 %
+interfaceEndpointReview | 26 | 2 | 0 | 24 | 92.31 %
+interfaceOperation | 687 | 70 | 7 | 617 | 89.81 %
+interfaceOperationReview | 905 | 68 | 10 | 828 | 91.49 %
+interfaceSchemaRename | 151 | 3 | 0 | 148 | 98.01 %
+interfaceSchema | 291 | 37 | 7 | 254 | 87.29 %
+interfaceSchemaRefine | 132 | 53 | 0 | 79 | 59.85 %
+interfaceSchemaReview | 755 | 199 | 1 | 556 | 73.64 %
+interfaceSchemaComplement | 97 | 28 | 0 | 69 | 71.13 %
+interfacePrerequisite | 409 | 32 | 1 | 377 | 92.18 %
+testScenario | 552 | 94 | 10 | 457 | 82.79 %
+testScenarioReview | 1,275 | 46 | 5 | 1,223 | 95.92 %
+testWrite | 1,341 | 118 | 5 | 1,223 | 91.20 %
+testCorrect | 770 | 15 | 3 | 755 | 98.05 %
 realizeAuthorizationWrite | 6 | 0 | 0 | 6 | 100.00 %
-realizeAuthorizationCorrect | 13 | 1 | 0 | 12 | 92.31 %
-realizePlan | 181 | 8 | 0 | 173 | 95.58 %
-realizeWrite | 970 | 189 | 5 | 779 | 80.31 %
-realizeCorrect | 382 | 62 | 0 | 320 | 83.77 %
+realizeAuthorizationCorrect | 17 | 2 | 0 | 15 | 88.24 %
+realizePlan | 179 | 8 | 0 | 170 | 94.97 %
+realizeWrite | 1,305 | 429 | 17 | 844 | 64.67 %
+realizeCorrect | 1,545 | 345 | 13 | 1,195 | 77.35 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

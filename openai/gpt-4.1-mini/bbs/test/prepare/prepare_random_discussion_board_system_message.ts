@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_system_message(
-  input?: DeepPartial<IDiscussionBoardSystemMessage.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardSystemMessage.ICreate>,
 ): IDiscussionBoardSystemMessage.ICreate {
-  input;
-  return {};
+  return {
+    code: input?.code ?? RandomGenerator.alphabets(12),
+    messageText:
+      input?.messageText ?? RandomGenerator.paragraph({ sentences: 3 }),
+    messageType: input?.messageType ?? RandomGenerator.alphabets(10),
+  };
 }

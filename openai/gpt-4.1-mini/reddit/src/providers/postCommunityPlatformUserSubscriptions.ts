@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { CommunityPlatformCommunitySubscriptionCollector } from "../collectors/CommunityPlatformCommunitySubscriptionCollector";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { CommunityPlatformCommunitySubscriptionTransformer } from "../transformers/CommunityPlatformCommunitySubscriptionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,47 +18,44 @@ export async function postCommunityPlatformUserSubscriptions(props: {
   user: UserPayload;
   body: ICommunityPlatformCommunitySubscription.ICreate;
 }): Promise<ICommunityPlatformCommunitySubscription> {
-  const user = await MyGlobal.prisma.community_platform_users.findUnique({
-    where: { id: props.user.id },
-  });
-  if (user === null) throw new HttpException("User not found", 404);
-  const communityId = (props.body as any).community_id;
-  if (typeof communityId !== "string")
-    throw new HttpException("Invalid community ID", 400);
-  const community =
-    await MyGlobal.prisma.community_platform_communities.findUnique({
-      where: { id: communityId },
+  const userEntity =
+    await MyGlobal.prisma.community_platform_users.findUniqueOrThrow({
+      where: { id: props.user.id, deleted_at: null },
     });
-  if (community === null) throw new HttpException("Community not found", 404);
+  const community =
+    await MyGlobal.prisma.community_platform_communities.findFirst({
+      where: { name: props.body.communityCode },
+    });
+  if (!community) {
+    throw new HttpException("Community not found", 404);
+  }
   const existingSubscription =
-    await MyGlobal.prisma.community_platform_community_subscriptions.findUnique(
-      {
-        where: {
-          community_id_user_id: {
-            community_id: communityId,
-            user_id: props.user.id,
-          },
-        },
+    await MyGlobal.prisma.community_platform_community_subscriptions.findFirst({
+      where: {
+        community_id: community.id,
+        user_id: props.user.id,
+        deleted_at: null,
       },
-    );
-  if (existingSubscription !== null)
-    throw new HttpException("Subscription already exists", 409);
+    });
+  if (existingSubscription) {
+    throw new HttpException("Already subscribed", 409);
+  }
   const data = await CommunityPlatformCommunitySubscriptionCollector.collect({
     body: props.body,
-    community,
-    user,
+    communityPlatformUsers: userEntity,
   });
   const created =
     await MyGlobal.prisma.community_platform_community_subscriptions.create({
       data,
     });
-  return {
-    id: created.id,
-    community_id: created.community_id,
-    user_id: created.user_id,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at:
-      created.deleted_at === null ? null : toISOStringSafe(created.deleted_at),
-  };
+  const subscription =
+    await MyGlobal.prisma.community_platform_community_subscriptions.findUniqueOrThrow(
+      {
+        where: { id: created.id },
+        ...CommunityPlatformCommunitySubscriptionTransformer.select(),
+      },
+    );
+  return await CommunityPlatformCommunitySubscriptionTransformer.transform(
+    subscription,
+  );
 }

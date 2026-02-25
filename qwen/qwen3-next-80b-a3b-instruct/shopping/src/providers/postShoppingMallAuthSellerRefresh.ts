@@ -15,16 +15,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthSellerRefresh(props: {
   body: IShoppingMallSeller.IRefresh;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // 1. Verify refresh token - body is now a string, not an object with refreshToken property
+  // 1. Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: "seller";
   };
   try {
-    decoded = jwt.verify(props.body as string, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -44,49 +46,56 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate seller is active
+  // 4. Validate seller account
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id: decoded.id },
   });
   if (seller.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens with same session_id and string dates
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 30 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 24 * 60 * 60 * 1000 * 30),
-  );
-  const accessToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30m", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30d", issuer: "autobe" },
-  );
+  // 5. Generate new tokens (SAME session_id)
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "30m", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "30d", issuer: "autobe" },
+    ),
+  };
   // 6. Update session expiration
   await MyGlobal.prisma.shopping_mall_seller_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
   return {
+    id: decoded.id,
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      access: token.access,
+      refresh: token.refresh,
+      refreshable_until: refreshExpires.toISOString() as string &
+        tags.Format<"date-time">,
+      expired_at: accessExpires.toISOString() as string &
+        tags.Format<"date-time">,
     },
   };
 }

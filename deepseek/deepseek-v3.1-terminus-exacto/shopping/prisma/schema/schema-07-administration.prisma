@@ -46,16 +46,24 @@ model ecommerce_administrative_actions {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   superAdministrator ecommerce_super_administrators? @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   orderAction ecommerce_administrative_action_of_orders?
   productActions ecommerce_administrative_action_of_products[]
   customerTargets ecommerce_administrative_action_of_customers[]
   sellerTargets ecommerce_administrative_action_of_sellers[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "ecommerce_administrative_actions_administrator_id_crea_0d3c5649")
   // spellchecker: ignore-next-line
@@ -126,10 +134,14 @@ model ecommerce_platform_oversights {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([administrator_id, created_at])
   @@index([oversight_type, created_at])
   @@index([severity_level, created_at])
@@ -192,13 +204,21 @@ model ecommerce_administrator_promotions {
   rejected_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   requestingUser ecommerce_customers @relation(fields: [requesting_user_id], references: [id], onDelete: Cascade)
   approvingSuperAdministrator ecommerce_super_administrators? @relation(fields: [approving_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   promotionRequest ecommerce_administrator_promotion_requests?
   
+  //----
+  // INDEXES
+  //----
   @@index([status, created_at])
   // spellchecker: ignore-next-line
   @@index([requesting_user_id, created_at], map: "ecommerce_administrator_promotions_requesting_user_id__338da080")
@@ -268,13 +288,21 @@ model ecommerce_seller_approval_queues {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators? @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   approvalResponses ecommerce_seller_approval_responses[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_seller_id])
   @@index([status, submission_date])
   // spellchecker: ignore-next-line
@@ -331,11 +359,15 @@ model ecommerce_seller_approval_responses {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   sellerApprovalQueue ecommerce_seller_approval_queues @relation(fields: [seller_approval_queue_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([seller_approval_queue_id], map: "ecommerce_seller_approval_responses_seller_approval_qu_097a08bc")
   // spellchecker: ignore-next-line
@@ -410,11 +442,15 @@ model ecommerce_admin_category_operations {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   category ecommerce_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "ecommerce_admin_category_operations_administrator_id_c_0fa92181")
   @@index([category_id, created_at])
@@ -459,10 +495,14 @@ model ecommerce_administrator_promotion_requests {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administratorPromotion ecommerce_administrator_promotions @relation(fields: [ecommerce_administrator_promotion_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_administrator_promotion_id], map: "ecommerce_administrator_promotion_requests_ecommerce_a_d51eb665")
   @@index([created_at])
@@ -535,17 +575,24 @@ model ecommerce_admin_user_bans {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation("ecommerce_admin_user_bans_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
   appealReviewer ecommerce_administrators? @relation("ecommerce_admin_user_bans_of_appeal_reviewer_id", fields: [appeal_reviewer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   customerBans ecommerce_admin_user_ban_of_customers[]
   bannedSellers ecommerce_admin_user_ban_of_sellers[]
   administratorBans ecommerce_admin_user_ban_of_administrators[]
   
+  //----
+  // INDEXES
+  //----
   @@index([appeal_reviewer_id])
-  
   @@index([administrator_id, created_at])
   @@index([user_type, created_at])
   @@index([appeal_status, created_at])
@@ -621,11 +668,15 @@ model ecommerce_admin_seller_suspensions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([seller_id, suspension_start_date], map: "ecommerce_admin_seller_suspensions_seller_id_suspensio_c6d74cc8")
   // spellchecker: ignore-next-line
@@ -700,7 +751,7 @@ model ecommerce_platform_monitoring_metrics {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   // spellchecker: ignore-next-line
   @@unique([metric_name, collection_timestamp], map: "ecommerce_platform_monitoring_metrics_metric_name_coll_d9e70a6c")
@@ -758,11 +809,15 @@ model ecommerce_administrative_action_of_orders {
   order_specific_reason String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
   order ecommerce_orders @relation(fields: [ecommerce_order_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_administrative_action_id], map: "ecommerce_administrative_action_of_orders_ecommerce_ad_699432ae")
   // spellchecker: ignore-next-line
@@ -815,11 +870,15 @@ model ecommerce_administrative_action_of_products {
   new_state String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrativeAction ecommerce_administrative_actions @relation(fields: [administrative_action_id], references: [id], onDelete: Cascade)
   product ecommerce_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrative_action_id], map: "ecommerce_administrative_action_of_products_administra_11ba3218")
   @@index([product_id])
@@ -864,11 +923,15 @@ model ecommerce_administrative_action_of_customers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_administrative_action_id, ecommerce_customer_id], map: "ecommerce_administrative_action_of_customers_ecommerce_7294946d")
   // spellchecker: ignore-next-line
@@ -929,11 +992,15 @@ model ecommerce_administrative_action_of_sellers {
   effective_until DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrativeAction ecommerce_administrative_actions @relation(fields: [ecommerce_administrative_action_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_administrative_action_id, ecommerce_seller_id], map: "ecommerce_administrative_action_of_sellers_ecommerce_a_1660483a")
   // spellchecker: ignore-next-line
@@ -989,11 +1056,15 @@ model ecommerce_admin_user_ban_of_customers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   userBan ecommerce_admin_user_bans @relation(fields: [ecommerce_admin_user_ban_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_admin_user_ban_id, ecommerce_customer_id], map: "ecommerce_admin_user_ban_of_customers_ecommerce_admin__b2601ecb")
   // spellchecker: ignore-next-line
@@ -1041,11 +1112,15 @@ model ecommerce_admin_user_ban_of_sellers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   userBan ecommerce_admin_user_bans @relation(fields: [ecommerce_admin_user_ban_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_admin_user_ban_id, ecommerce_seller_id], map: "ecommerce_admin_user_ban_of_sellers_ecommerce_admin_us_1dcb10e7")
   // spellchecker: ignore-next-line
@@ -1085,11 +1160,15 @@ model ecommerce_admin_user_ban_of_administrators {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   adminUserBan ecommerce_admin_user_bans @relation(fields: [admin_user_ban_id], references: [id], onDelete: Cascade)
   administrator ecommerce_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([admin_user_ban_id, administrator_id], map: "ecommerce_admin_user_ban_of_administrators_admin_user__4ce6ec84")
   // spellchecker: ignore-next-line

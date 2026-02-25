@@ -4,34 +4,35 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardSecurityEvent } from "../../../../api/structures/IDiscussionBoardSecurityEvent";
 import { IPageIDiscussionBoardSecurityEvent } from "../../../../api/structures/IPageIDiscussionBoardSecurityEvent";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
-import { getDiscussionBoardSuperAdminSecurityEventsEventId } from "../../../../providers/getDiscussionBoardSuperAdminSecurityEventsEventId";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
+import { getDiscussionBoardSuperAdminSecurityEventsSecurityEventId } from "../../../../providers/getDiscussionBoardSuperAdminSecurityEventsSecurityEventId";
 import { patchDiscussionBoardSuperAdminSecurityEvents } from "../../../../providers/patchDiscussionBoardSuperAdminSecurityEvents";
-import { patchDiscussionBoardSuperAdminSecurityEventsAnalytics } from "../../../../providers/patchDiscussionBoardSuperAdminSecurityEventsAnalytics";
 
 @Controller("/discussionBoard/superAdmin/security-events")
 export class DiscussionboardSuperadminSecurity_eventsController {
   /**
-   * Retrieve a filtered and paginated list of security events for comprehensive security monitoring and incident response.
+   * Search and filter security events across the discussion board platform with comprehensive query capabilities.
    *
-   * This operation provides advanced search capabilities for security administrators to monitor platform security. It supports filtering by event type, severity level, affected user accounts, date ranges, and resolution status. Security events include failed login attempts, suspicious activities, threat detections, and policy violations recorded by the system.
+   * This operation provides administrators with powerful tools to monitor security incidents, investigate threats, and maintain security compliance. Security events include failed login attempts, suspicious activities, threat detections, and policy violations captured by the platform's security monitoring system.
    *
-   * The response includes comprehensive security event metadata suitable for forensic analysis and compliance reporting. Administrators can use this endpoint to identify security patterns, investigate potential breaches, and maintain security incident audit trails. The paginated design ensures efficient handling of large volumes of security event data.
+   * Administrators can filter events by type (failed_login, suspicious_activity, threat_detected, policy_violation), severity level (low, medium, high, critical), resolution status, and specific actors involved. The operation supports date range filtering for forensic analysis and text search within event descriptions for pattern detection.
    *
-   * Access to this operation is restricted to administrators only, as it contains sensitive security event information that should not be exposed to regular users.
+   * Security considerations require that only authorized administrators with appropriate privileges can access this sensitive security data. All access attempts are logged for audit trail compliance. The operation returns paginated results suitable for security dashboards and incident response workflows.
+   *
+   * Related operations include viewing detailed security event information through individual event retrieval endpoints and managing event resolution status through update operations.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for security events
+   * @param body Search criteria and filtering parameters for security events
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query discussion_board_security_events table with comprehensive filtering capabilities for security incident monitoring. Support filtering by event_type (failed_login, suspicious_activity, threat_detected, policy_violation), severity (low, medium, high, critical), user/admin/super_admin IDs, resolved status, and date ranges. Implement boolean filtering for resolved events. Support full-text search on description field using trigram indexing. Return paginated results with configurable page sizes and proper metadata.
+   * @x-autobe-specification Query the discussion_board_security_events table with comprehensive filtering capabilities. Implement pagination using cursor-based or offset-based approach. Support filtering by event_type, severity, resolved status, actor IDs (user_id, admin_id, super_admin_id), date ranges (created_at), and text search on description field. Join with related actor tables when filtering by specific actors. Apply security checks to ensure only authorized administrators can access this sensitive security data. Return paginated results with summary information optimized for security event monitoring dashboards.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardSecurityEvent.IRequest,
   ): Promise<IPageIDiscussionBoardSecurityEvent.ISummary> {
@@ -47,68 +48,36 @@ export class DiscussionboardSuperadminSecurity_eventsController {
   }
 
   /**
-   * Retrieve detailed information for a specific security event record.
+   * Retrieve detailed information about a specific security event for investigation and audit purposes.
    *
-   * This operation provides comprehensive security event data including event classification, severity assessment, detailed description, and resolution status. Security events capture security-related activities such as failed login attempts, suspicious activities, threat detections, and policy violations.
+   * This operation provides comprehensive access to security event records stored in the discussion_board_security_events table. Each security event contains detailed metadata including event type, severity level, description, source IP address, user agent information, and resolution status. The response includes the complete event record with all associated forensic data.
    *
-   * The response includes complete forensic metadata including source IP address, user agent information, and detailed event-specific data for investigative purposes. Security events are linked to specific actors when applicable, enabling correlation between user actions and security incidents.
+   * Security events are categorized by type (failed_login, suspicious_activity, threat_detected, policy_violation) and severity levels (low, medium, high, critical) to facilitate efficient security monitoring and incident response. Administrators can use this operation to investigate specific security incidents, review threat patterns, and maintain compliance with security standards.
    *
-   * Super administrators can use this operation to investigate specific security incidents and assess their impact on platform security through comprehensive security monitoring and compliance reporting.
+   * The operation requires proper authorization as security event data contains sensitive information about platform security incidents. Only authorized administrators should have access to view detailed security event records for forensic analysis and compliance reporting purposes.
    *
    * @param connection
-   * @param eventId Unique identifier of the security event to retrieve
+   * @param securityEventId Unique identifier of the security event to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Retrieve a specific security event by its unique identifier. Query the discussion_board_security_events table using the provided eventId. Validate that the event exists before returning the complete event data including event type, severity level, description, source IP, user agent, resolved status, and timestamps. Include error handling for non-existent events with appropriate 404 responses.
+   * @x-autobe-specification Query the discussion_board_security_events table by the provided securityEventId UUID parameter. Include all related user, admin, and super admin information through the defined foreign key relationships. Return the complete security event record with all fields including event_type, severity, description, source_ip, user_agent, event_data, resolution status, and timestamps.
+   *
+   * Validate that the securityEventId exists in the database and return appropriate error if not found. Ensure proper authorization checks to verify the requesting user has administrator privileges to view security event details. The response should include the complete event data structure for forensic analysis purposes.
+   *
+   * Handle cases where related user/admin records may have been deleted by maintaining referential integrity through the foreign key constraints. The operation should provide administrators with all necessary information to investigate security incidents and maintain platform security standards.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":eventId")
+  @TypedRoute.Get(":securityEventId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("eventId")
-    eventId: string & tags.Format<"uuid">,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("securityEventId")
+    securityEventId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardSecurityEvent> {
     try {
-      return await getDiscussionBoardSuperAdminSecurityEventsEventId({
+      return await getDiscussionBoardSuperAdminSecurityEventsSecurityEventId({
         superAdmin,
-        eventId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve comprehensive analytics and statistical insights for security events across the discussion board platform.
-   *
-   * This operation provides aggregated security metrics and trend analysis to help administrators monitor security patterns, detect anomalies, and assess platform security health. The analytics include event type distribution, severity level breakdowns, temporal trends, and actor-specific security activity patterns.
-   *
-   * Security analysts can filter analytics by date ranges, event types, severity levels, and actor types (users, administrators, super administrators) to focus on specific security concerns. The response includes statistical summaries that help identify emerging threats, monitor policy compliance, and track security incident resolution rates.
-   *
-   * The analytics data supports security incident response by providing visibility into security event patterns, enabling proactive threat detection and informed security decision-making. Administrators can use this information to adjust security policies, allocate monitoring resources, and improve overall platform security posture.
-   *
-   * Related security operations include GET /security-events/{id} for detailed event inspection and PATCH /security-events for listing individual security events with filtering capabilities.
-   *
-   * @param connection
-   * @param body Security analytics query parameters including date ranges, event filters, and aggregation preferences
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_security_events table with aggregation and statistical functions. Apply filters based on date ranges, event types, severity levels, and actor types. Calculate statistics including event counts by type and severity, trends over time, resolution rates, and actor-specific activity patterns. Generate comprehensive analytics reports with metrics suitable for security monitoring dashboards.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch("analytics")
-  public async analytics(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedBody()
-    body: IDiscussionBoardSecurityEvent.IAnalyticsRequest,
-  ): Promise<IDiscussionBoardSecurityEvent.IAnalytic> {
-    try {
-      return await patchDiscussionBoardSuperAdminSecurityEventsAnalytics({
-        superAdmin,
-        body,
+        securityEventId,
       });
     } catch (error) {
       console.log(error);

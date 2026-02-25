@@ -16,14 +16,20 @@ export async function deleteDiscussionBoardRegisteredUserArticlesArticleIdTagMap
   articleId: string & tags.Format<"uuid">;
   tagMappingId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Check article ownership or admin role
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
     select: { id: true, registered_user_id: true },
   });
-  if (!article) throw new HttpException("Article not found", 404);
-  if (article.registered_user_id !== props.registeredUser.id) {
+  if (!article) {
+    throw new HttpException("Not Found", 404);
+  }
+  const isOwner = article.registered_user_id === props.registeredUser.id;
+  // Assuming admin privileges excluded as actor is registeredUser only
+  if (!isOwner) {
     throw new HttpException("Forbidden", 403);
   }
+  // Verify the tag mapping exists and linked to the article
   const tagMapping =
     await MyGlobal.prisma.discussion_board_article_tag_mappings.findUnique({
       where: { id: props.tagMappingId },
@@ -33,21 +39,9 @@ export async function deleteDiscussionBoardRegisteredUserArticlesArticleIdTagMap
     !tagMapping ||
     tagMapping.discussion_board_article_id !== props.articleId
   ) {
-    throw new HttpException("Tag mapping not found", 404);
+    throw new HttpException("Not Found", 404);
   }
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.discussion_board_article_tag_mappings.delete({
-      where: { id: props.tagMappingId },
-    });
-    await tx.discussion_board_audit_logs.create({
-      data: {
-        id: v4(),
-        actor_id: props.registeredUser.id,
-        event_type: "tag_mapping_deletion",
-        event_description: `Deleted tag mapping ${props.tagMappingId} from article ${props.articleId}`,
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
-      },
-    });
+  await MyGlobal.prisma.discussion_board_article_tag_mappings.delete({
+    where: { id: props.tagMappingId },
   });
 }

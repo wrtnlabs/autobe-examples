@@ -14,7 +14,7 @@ export async function authorize_platform_admin_refresh(
     body: IRedditCommunityPlatformAdmin.IRefresh;
   },
 ): Promise<IRedditCommunityPlatformAdmin.IAuthorized> {
-  return await api.functional.redditCommunity.auth.platformadmin.refresh(
+  return await api.functional.redditCommunity.auth.platformAdmin.refresh(
     connection,
     {
       body: props.body,

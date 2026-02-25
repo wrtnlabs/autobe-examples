@@ -7,26 +7,24 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-function toISOStringSafe(input: Date | null): string | null {
-  if (input === null) return null;
-  if (input instanceof Date) return input.toISOString();
-  return null;
-}
 export namespace CommunityPlatformCommentReportCollector {
   export async function collect(props: {
     body: ICommunityPlatformCommentReport.ICreate;
-    comment: IEntity;
     reporterUser: IEntity;
   }) {
-    const id: string = v4();
+    const id: string = (await import("uuid")).v4();
     return {
       id,
       status: "pending",
-      created_at: toISOStringSafe(new Date())!,
-      updated_at: toISOStringSafe(new Date())!,
+      description: props.body.description ?? null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      comment: { connect: { id: props.comment.id } },
+      comment: { connect: { id: props.body.comment_id } },
       reporterUser: { connect: { id: props.reporterUser.id } },
+      reportReason: props.body.report_reason_id
+        ? { connect: { id: props.body.report_reason_id } }
+        : undefined,
     } satisfies Prisma.community_platform_comment_reportsCreateInput;
   }
 }

@@ -1,5 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import type { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
@@ -11,95 +12,108 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_user_join } from "../../../authorize/authorize_user_join";
-import { authorize_user_login } from "../../../authorize/authorize_user_login";
-import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
-import { generate_random_discussion_board_user_articles_create } from "../../../generate/generate_random_discussion_board_user_articles_create";
-import { generate_random_discussion_board_user_articles_tags_create } from "../../../generate/generate_random_discussion_board_user_articles_tags_create";
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { generate_random_discussion_board_admin_articles_create } from "../../../generate/generate_random_discussion_board_admin_articles_create";
+import { generate_random_discussion_board_admin_articles_tags_create } from "../../../generate/generate_random_discussion_board_admin_articles_tags_create";
 import { prepare_random_discussion_board_article } from "../../../prepare/prepare_random_discussion_board_article";
 import { prepare_random_discussion_board_article_tag } from "../../../prepare/prepare_random_discussion_board_article_tag";
 
+/**
+ * Test successful creation of a new tag on an article.
+ * Authenticate as admin via join, create an article, then add a descriptive tag.
+ * Verify tag is returned with correct properties including normalized tag_name (lowercase, trimmed),
+ * article relationship, and server-generated timestamps.
+ * Ensure tag_name matches IDiscussionBoardArticleTag.ICreate schema with 1-50 characters.
+ */
 export async function test_api_article_tag_creation_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user connection and authenticate
-  const userConnection: api.IConnection = { host: connection.host };
-  const authorizedUser = await authorize_user_join(userConnection, {
+  // Create admin connection and authenticate
+  const adminConnection: api.IConnection = { host: connection.host };
+  const admin = await authorize_admin_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       display_name: RandomGenerator.name(),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
-    } satisfies IDiscussionBoardUser.IJoin,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    },
   });
-  typia.assert(authorizedUser);
-  // Create an article first using the utility function
-  const article = await generate_random_discussion_board_user_articles_create(
-    userConnection,
+  // Create article first
+  const article = await generate_random_discussion_board_admin_articles_create(
+    adminConnection,
     {
       body: {
         title: RandomGenerator.paragraph({ sentences: 2 }),
-        content: RandomGenerator.content({ paragraphs: 3 }),
-        section_id: typia.random<string & tags.Format<"uuid">>(),
-        status: "published" as const,
-      } satisfies IDiscussionBoardArticle.ICreate,
+        content: RandomGenerator.content({ paragraphs: 1 }),
+        discussion_board_section_id: typia.random<
+          string & tags.Format<"uuid">
+        >(),
+      },
     },
   );
   typia.assert(article);
-  // Create multiple tags for the article using utility function
-  const tagsToCreate = ArrayUtil.repeat(3, () => ({
-    tag_name: RandomGenerator.name(1),
-  }));
-  const createdTags: IDiscussionBoardArticleTag[] = [];
-  for (const tagData of tagsToCreate) {
-    const tag =
-      await generate_random_discussion_board_user_articles_tags_create(
-        userConnection,
-        {
-          body: tagData satisfies IDiscussionBoardArticleTag.ICreate,
-          params: { articleId: article.id },
-        },
-      );
-    typia.assert(tag);
-    createdTags.push(tag);
-  }
-  // Validate that tags are properly associated with the article
-  for (const tag of createdTags) {
-    TestValidator.equals(
-      "tag name matches input",
-      tag.tag_name,
-      tagsToCreate.find((t) => t.tag_name === tag.tag_name)?.tag_name,
-    );
-    TestValidator.equals("article id matches", tag.article.id, article.id);
-    TestValidator.predicate("created_at is set", tag.created_at !== null);
-    TestValidator.predicate("updated_at is set", tag.updated_at !== null);
-    TestValidator.equals(
-      "deleted_at is null for active tags",
-      tag.deleted_at,
-      null,
-    );
-  }
-  // Verify uniqueness - try to create duplicate tag
-  await TestValidator.error("duplicate tag creation should fail", async () => {
-    await generate_random_discussion_board_user_articles_tags_create(
-      userConnection,
-      {
-        body: {
-          tag_name: tagsToCreate[0].tag_name,
-        } satisfies IDiscussionBoardArticleTag.ICreate,
-        params: { articleId: article.id },
+  // Create tag using utility function
+  const tag = await generate_random_discussion_board_admin_articles_tags_create(
+    adminConnection,
+    {
+      body: {
+        tag_name: RandomGenerator.name(),
       },
-    );
-  });
-  // Validate author information in tag response
+      params: {
+        articleId: article.id,
+      },
+    },
+  );
+  typia.assert(tag);
+  // Verify tag properties
+  TestValidator.equals("tag ID is string", typeof tag.id, "string");
+  // Verify tag_name is normalized (lowercase, trimmed)
+  TestValidator.predicate(
+    "tag_name is normalized",
+    () => tag.tag_name === tag.tag_name.toLowerCase().trim(),
+  );
+  // Verify article relationship
   TestValidator.equals(
-    "author id matches",
-    createdTags[0].article.author.id,
-    authorizedUser.id,
+    "article ID matches",
+    tag.discussion_board_article_id,
+    article.id,
+  );
+  // Verify server-generated timestamps
+  TestValidator.predicate(
+    "created_at is valid timestamp",
+    () => !isNaN(new Date(tag.created_at).getTime()),
+  );
+  TestValidator.predicate(
+    "updated_at is valid timestamp",
+    () => !isNaN(new Date(tag.updated_at).getTime()),
   );
   TestValidator.equals(
-    "author display name matches",
-    createdTags[0].article.author.display_name,
-    authorizedUser.display_name,
+    "deleted_at is null for active tag",
+    tag.deleted_at,
+    null,
+  );
+  // Verify article summary relationship
+  TestValidator.equals(
+    "article summary ID matches",
+    tag.article.id,
+    article.id,
+  );
+  TestValidator.equals(
+    "article summary title matches",
+    tag.article.title,
+    article.title,
+  );
+  TestValidator.equals(
+    "article summary status matches",
+    tag.article.status,
+    article.status,
+  );
+  TestValidator.predicate(
+    "article summary created_at is valid",
+    () => !isNaN(new Date(tag.article.created_at).getTime()),
   );
 }

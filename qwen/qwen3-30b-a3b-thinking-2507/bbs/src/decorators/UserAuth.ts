@@ -1,7 +1,14 @@
-import { SwaggerCustomizer } from '@nestia/core';
-import { ExecutionContext, createParamDecorator } from '@nestjs/common';
-import { Singleton } from 'tstl';
-import { userAuthorize } from '../providers/authorize/userAuthorize';
+import { SwaggerCustomizer  from "@nestia/core";
+import { ExecutionContext, createParamDecorator  from "@nestjs/common";
+import { Singleton  from "tstl";
+import { userAuthorize  from "../providers/authorize/userAuthorize";
+
+const singleton = new Singleton(() =>
+  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return userAuthorize(request);
+  })(),
+);
 
 export const UserAuth =
   (): ParameterDecorator =>
@@ -15,11 +22,4 @@ export const UserAuth =
       props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
-  };
-
-const singleton = new Singleton(() =>
-  createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return userAuthorize(request);
-  })(),
-);
+  ;

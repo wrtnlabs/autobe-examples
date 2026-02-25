@@ -1,5 +1,4 @@
 import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
-import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -27,11 +26,21 @@ export namespace DiscussionBoardAdministratorPromotionRequestAtSummaryTransforme
         created_at: true,
         updated_at: true,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
-        administrator: { select: { id: true } },
-        discussion_board_administrator_promotion_approvals: {
-          select: { id: true },
-        },
-        discussion_board_promotion_request_workflows: { select: { id: true } },
+        administrator: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_administratorsFindManyArgs,
+        approvals: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_administrator_promotion_approvalsFindManyArgs,
+        workflowTransitions: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_promotion_request_workflowsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_administrator_promotion_requestsFindManyArgs;
   }
@@ -40,18 +49,13 @@ export namespace DiscussionBoardAdministratorPromotionRequestAtSummaryTransforme
   ): Promise<IDiscussionBoardAdministratorPromotionRequest.ISummary> {
     return {
       id: input.id,
-      reason: input.reason,
-      status: input.status as "pending" | "approved" | "rejected",
+      reason:
+        input.reason.length > 100
+          ? input.reason.substring(0, 97) + "..."
+          : input.reason,
+      status: input.status,
+      created_at: input.created_at.toISOString(),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
-      reviewer: null, // Cannot transform reviewer without proper relation data
-      approved_at: input.approved_at
-        ? toISOStringSafe(input.approved_at)
-        : null,
-      rejected_at: input.rejected_at
-        ? toISOStringSafe(input.rejected_at)
-        : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
     };
   }
 }

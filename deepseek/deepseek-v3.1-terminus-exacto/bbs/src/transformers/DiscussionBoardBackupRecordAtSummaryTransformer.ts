@@ -18,12 +18,12 @@ export namespace DiscussionBoardBackupRecordAtSummaryTransformer {
         id: true,
         backup_type: true,
         status: true,
+        file_path: true,
         size_bytes: true,
         started_at: true,
         completed_at: true,
-        created_at: true,
-        file_path: true,
         error_message: true,
+        created_at: true,
         updated_at: true,
         deleted_at: true,
         initiatedByAdmin: DiscussionBoardAdminAtSummaryTransformer.select(),
@@ -33,29 +33,18 @@ export namespace DiscussionBoardBackupRecordAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardBackupRecord.ISummary> {
-    return typia.assert<IDiscussionBoardBackupRecord.ISummary>({
-      id: typia.assert<string & tags.Format<"uuid">>(input.id),
-      backup_type: typia.assert<"full" | "incremental">(input.backup_type),
-      status: typia.assert<"pending" | "running" | "completed" | "failed">(
-        input.status,
-      ),
-      size_bytes:
-        input.size_bytes !== null
-          ? typia.assert<number & tags.Type<"int32">>(input.size_bytes)
-          : null,
-      started_at:
-        input.started_at !== null ? toISOStringSafe(input.started_at) : null,
-      completed_at:
-        input.completed_at !== null
-          ? toISOStringSafe(input.completed_at)
-          : null,
-      created_at: toISOStringSafe(input.created_at),
-      initiatedByAdmin:
-        input.initiatedByAdmin !== null
-          ? await DiscussionBoardAdminAtSummaryTransformer.transform(
-              input.initiatedByAdmin,
-            )
-          : null,
-    });
+    return {
+      id: input.id,
+      backup_type: input.backup_type,
+      status: input.status,
+      size_bytes: input.size_bytes ?? undefined,
+      started_at: input.started_at.toISOString(),
+      completed_at: input.completed_at?.toISOString() ?? undefined,
+      initiated_by_admin: input.initiatedByAdmin
+        ? await DiscussionBoardAdminAtSummaryTransformer.transform(
+            input.initiatedByAdmin,
+          )
+        : null,
+    };
   }
 }

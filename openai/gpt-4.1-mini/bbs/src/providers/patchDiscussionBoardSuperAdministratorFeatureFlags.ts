@@ -18,35 +18,61 @@ export async function patchDiscussionBoardSuperAdministratorFeatureFlags(props: 
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardFeatureFlag.IRequest;
 }): Promise<IPageIDiscussionBoardFeatureFlag.ISummary> {
-  const pageRaw = (
-    props.body as {
-      page?: number | undefined;
-      limit?: number | undefined;
-    }
-  ).page;
-  const limitRaw = (
-    props.body as {
-      page?: number | undefined;
-      limit?: number | undefined;
-    }
-  ).limit;
-  const page = pageRaw === undefined || pageRaw === null ? 1 : pageRaw;
-  const limit = limitRaw === undefined || limitRaw === null ? 100 : limitRaw;
-  if (!Number.isInteger(page) || page < 1) {
-    throw new HttpException("Page number must be an integer >= 1", 400);
+  const {
+    code,
+    enabled,
+    createdAtFrom,
+    createdAtTo,
+    updatedAtFrom,
+    updatedAtTo,
+    page = 1,
+    limit = 20,
+    sort = "created_at",
+    batchUpdate,
+  } = props.body;
+  const pageNumber = Math.max(1, page);
+  const pageSize = Math.min(Math.max(1, limit), 100);
+  const sortField = sort === "updated_at" ? "updated_at" : "created_at";
+  if (batchUpdate && batchUpdate.length > 0) {
+    await MyGlobal.prisma.$transaction(async (tx) => {
+      for (const update of batchUpdate) {
+        const updateTyped = update as {
+          code: string;
+          enabled: boolean;
+        };
+        if (
+          typeof updateTyped.code !== "string" ||
+          updateTyped.code.trim() === ""
+        ) {
+          throw new HttpException("Invalid code in batchUpdate", 400);
+        }
+        if (typeof updateTyped.enabled !== "boolean") {
+          throw new HttpException("Invalid enabled flag in batchUpdate", 400);
+        }
+        await tx.discussion_board_feature_flags.updateMany({
+          where: { code: updateTyped.code },
+          data: {
+            enabled: updateTyped.enabled,
+            updated_at: toISOStringSafe(new Date()),
+          },
+        });
+      }
+    });
   }
-  if (!Number.isInteger(limit) || limit < 1) {
-    throw new HttpException("Limit must be an integer >= 1", 400);
-  }
-  const skip = (page - 1) * limit;
-  const where = {
-    deleted_at: null,
-  } satisfies Prisma.discussion_board_feature_flagsWhereInput;
+  const where: Prisma.discussion_board_feature_flagsWhereInput = {
+    ...(code ? { code } : {}),
+    ...(enabled !== undefined ? { enabled } : {}),
+    ...(createdAtFrom ? { created_at: { gte: new Date(createdAtFrom) } } : {}),
+    ...(createdAtTo ? { created_at: { lte: new Date(createdAtTo) } } : {}),
+    ...(updatedAtFrom ? { updated_at: { gte: new Date(updatedAtFrom) } } : {}),
+    ...(updatedAtTo ? { updated_at: { lte: new Date(updatedAtTo) } } : {}),
+  };
+  const skip = (pageNumber - 1) * pageSize;
   const data = await MyGlobal.prisma.discussion_board_feature_flags.findMany({
     where,
-    take: limit,
+    orderBy: { [sortField]: "desc" },
     skip,
-    orderBy: { created_at: "desc" },
+    take: pageSize,
     select: {
       id: true,
       code: true,
@@ -62,22 +88,21 @@ export async function patchDiscussionBoardSuperAdministratorFeatureFlags(props: 
     where,
   });
   return {
-    data: data.map((record) => ({
-      id: record.id,
-      code: record.code,
-      name: record.name,
-      description: record.description,
-      enabled: record.enabled,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-      deleted_at:
-        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+    data: data.map((flag) => ({
+      id: flag.id,
+      code: flag.code,
+      name: flag.name,
+      description: flag.description,
+      enabled: flag.enabled,
+      createdAt: toISOStringSafe(flag.created_at),
+      updatedAt: toISOStringSafe(flag.updated_at),
+      deletedAt: flag.deleted_at ? toISOStringSafe(flag.deleted_at) : null,
     })),
     pagination: {
-      current: page,
-      limit,
+      current: pageNumber,
+      limit: pageSize,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / pageSize),
     },
   };
 }

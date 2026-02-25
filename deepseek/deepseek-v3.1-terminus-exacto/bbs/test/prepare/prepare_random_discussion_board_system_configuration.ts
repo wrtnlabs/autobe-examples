@@ -10,40 +10,38 @@ export function prepare_random_discussion_board_system_configuration(
 ): IDiscussionBoardSystemConfiguration.ICreate {
   const data_type =
     input?.data_type ??
-    RandomGenerator.pick(["string", "integer", "boolean", "json"] as const);
+    RandomGenerator.pick([
+      "string",
+      "integer",
+      "boolean",
+      "number",
+      "json",
+    ] as const);
+  const generateConfigValue = () => {
+    switch (data_type) {
+      case "string":
+        return RandomGenerator.paragraph({ sentences: 1 });
+      case "integer":
+        return typia.random<number & tags.Type<"int32">>().toString();
+      case "boolean":
+        return RandomGenerator.pick(["true", "false"] as const);
+      case "number":
+        return typia.random<number & tags.Type<"double">>().toString();
+      case "json":
+        return JSON.stringify({
+          value: RandomGenerator.alphabets(5),
+          enabled: RandomGenerator.pick([true, false] as const),
+        });
+      default:
+        return "default";
+    }
+  };
   return {
-    config_key:
-      input?.config_key ??
-      RandomGenerator.alphabets(10) + "." + RandomGenerator.alphabets(8),
-    config_value:
-      input?.config_value ??
-      (() => {
-        const effectiveDataType = input?.data_type ?? data_type;
-        switch (effectiveDataType) {
-          case "boolean":
-            return typia.random<boolean>() ? "true" : "false";
-          case "integer":
-            return typia
-              .random<
-                number &
-                  tags.Type<"uint32"> &
-                  tags.Minimum<0> &
-                  tags.Maximum<1000>
-              >()
-              .toString();
-          case "json":
-            return JSON.stringify({
-              value: RandomGenerator.alphabets(5),
-              enabled: typia.random<boolean>(),
-            });
-          default: // string
-            return RandomGenerator.alphabets(15);
-        }
-      })(),
+    config_key: input?.config_key ?? RandomGenerator.alphabets(10),
+    config_value: input?.config_value ?? generateConfigValue(),
     data_type: data_type,
     description:
-      input?.description ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
     category:
       input?.category ??
       RandomGenerator.pick([
@@ -54,6 +52,6 @@ export function prepare_random_discussion_board_system_configuration(
         "ui",
         "api",
       ] as const),
-    is_sensitive: input?.is_sensitive ?? typia.random<boolean>(),
+    is_sensitive: input?.is_sensitive ?? false,
   };
 }

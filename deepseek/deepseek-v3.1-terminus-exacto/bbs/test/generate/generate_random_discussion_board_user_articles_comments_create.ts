@@ -16,7 +16,7 @@ export async function generate_random_discussion_board_user_articles_comments_cr
   connection: api.IConnection,
   props: {
     body?: DeepPartial<IDiscussionBoardComment.ICreate>;
-    params?: {
+    params: {
       articleId: string;
     };
   },
@@ -27,7 +27,7 @@ export async function generate_random_discussion_board_user_articles_comments_cr
     await api.functional.discussionBoard.user.articles.comments.create(
       connection,
       {
-        articleId: typia.assert<string & tags.Format<"uuid">>(props.params?.articleId ?? "00000000-0000-0000-0000-000000000000"),
+        articleId: props.params.articleId,
         body: prepared,
       },
     );

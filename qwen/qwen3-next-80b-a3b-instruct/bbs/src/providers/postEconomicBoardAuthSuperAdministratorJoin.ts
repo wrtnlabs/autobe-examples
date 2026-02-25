@@ -12,67 +12,85 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postEconomicBoardAuthSuperAdministratorJoin(props: {
+  ip: string;
   body: IEconomicBoardSuperAdministrator.IJoin;
 }): Promise<IEconomicBoardSuperAdministrator.IAuthorized> {
-  // 1. Check duplicate email - handled by Auth Service before function invocation
-  // No client data available in body as IJoin is empty
-  // 2. Create superAdministrator record with system-generated values for required fields
-  // All fields except id, created_at, updated_at, status are provided by Auth Service upstream
-  const superAdmin =
+  // CRITICAL: Registering superAdministrator requires validating email + password through credential store
+  // economic_board_super_administrators has no email field — email is stored in economic_board_super_administrator_password_resets
+  // So we must validate uniqueness against economic_board_super_administrator_password_resets
+  // 1. Validate email uniqueness in password reset table
+  const existingCred =
+    await MyGlobal.prisma.economic_board_super_administrator_password_resets.findFirst(
+      {
+        where: { email: props.body.email } as any,
+      },
+    );
+  if (existingCred) throw new HttpException("Email already registered", 409);
+  // 2. Create superAdministrator identity record in placeholder table
+  const admin =
     await MyGlobal.prisma.economic_board_super_administrators.create({
       data: {
         id: v4(),
-        status: "active",
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
       },
     });
-  // 3. Create session record with all required fields
-  // Only props.ip is available from outer scope; href and referrer are provided by Auth Service upstream
+  // 3. Create session record with access and refresh tokens
   const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session =
     await MyGlobal.prisma.economic_board_super_administrator_sessions.create({
       data: {
         id: v4(),
-        super_administrator_id: superAdmin.id,
-        ip: props.ip,
-        created_at: toISOStringSafe(new Date()),
-        expired_at: toISOStringSafe(accessExpires),
-        href: "", // Provided by Auth Service upstream
-        referrer: "", // Provided by Auth Service upstream
+        administrator_id: admin.id,
+        access_token: "",
+        refresh_token: "",
+        created_at: toISOStringSafe(new Date()) as string &
+          tags.Format<"date-time">,
+        expired_at: toISOStringSafe(accessExpires) as string &
+          tags.Format<"date-time">,
+        ip_address: props.ip ?? "",
       },
     });
   // 4. Generate JWT tokens
-  const access = jwt.sign(
-    {
-      type: "superadministrator",
-      id: superAdmin.id,
-      session_id: session.id,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "15m", issuer: "autobe" },
-  );
-  const refresh = jwt.sign(
-    {
-      type: "superadministrator",
-      id: superAdmin.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "14d", issuer: "autobe" },
-  );
-  // 5. Return IAuthorized with token
+  const token = {
+    access: jwt.sign(
+      {
+        type: "superAdministrator",
+        id: admin.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()) as string &
+          tags.Format<"date-time">,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "15m", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "superAdministrator",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()) as string &
+          tags.Format<"date-time">,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
+  };
+  // 5. Return IAuthorized
   return {
+    id: admin.id as string & tags.Format<"uuid">,
     token: {
-      access,
-      refresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+      access: token.access,
+      refresh: token.refresh,
+      expired_at: token.expired_at,
+      refreshable_until: token.refreshable_until,
+    } satisfies IEconomicBoardSuperAdministrator.IAuthorized["token"],
   } satisfies IEconomicBoardSuperAdministrator.IAuthorized;
 }

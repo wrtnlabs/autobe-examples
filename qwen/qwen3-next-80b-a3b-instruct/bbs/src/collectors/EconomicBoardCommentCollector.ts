@@ -16,12 +16,10 @@ export namespace EconomicBoardCommentCollector {
     const id: string = v4();
     return {
       id,
-      content: "", // Fallback for empty DTO - required non-nullable string
+      content: props.body.content,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      deleted_by_admin: false,
-      deletion_reason: null,
       article: { connect: { id: props.economicBoardArticles.id } },
       author: { connect: { id: props.economicBoardCitizens.id } },
     } satisfies Prisma.economic_board_commentsCreateInput;

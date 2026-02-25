@@ -2,298 +2,78 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIShoppingMallSellerSuspension } from "../../../../api/structures/IPageIShoppingMallSellerSuspension";
-import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSeller";
 import { IShoppingMallSellerSuspension } from "../../../../api/structures/IShoppingMallSellerSuspension";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
-import { deleteShoppingMallAdministratorSellerSuspensionsSuspensionId } from "../../../../providers/deleteShoppingMallAdministratorSellerSuspensionsSuspensionId";
-import { getShoppingMallAdministratorSellerSuspensionsSuspensionId } from "../../../../providers/getShoppingMallAdministratorSellerSuspensionsSuspensionId";
-import { patchShoppingMallAdministratorSellerSuspensions } from "../../../../providers/patchShoppingMallAdministratorSellerSuspensions";
-import { postShoppingMallAdministratorSellerSuspensions } from "../../../../providers/postShoppingMallAdministratorSellerSuspensions";
+import { postShoppingMallAdministratorSellerSuspensionsSellerIdSuspend } from "../../../../providers/postShoppingMallAdministratorSellerSuspensionsSellerIdSuspend";
 import { postShoppingMallAdministratorSellerSuspensionsSellerIdUnsuspend } from "../../../../providers/postShoppingMallAdministratorSellerSuspensionsSellerIdUnsuspend";
-import { putShoppingMallAdministratorSellerSuspensionsSuspensionId } from "../../../../providers/putShoppingMallAdministratorSellerSuspensionsSuspensionId";
 
-@Controller("/shoppingMall/administrator/seller-suspensions")
+@Controller("/shoppingMall/administrator/seller-suspensions/:sellerId")
 export class ShoppingmallAdministratorSeller_suspensionsController {
   /**
-   * Create a new seller suspension record.
+   * Suspend a seller account by creating a new suspension record.
    *
-   * This API operation allows an administrator to suspend a seller account by creating a suspension record in the shopping_mall_seller_suspensions table.
+   * This operation is used by administrators to suspend a seller. Suspending a seller hides their products, disables product creation and editing, but allows processing existing orders.
    *
-   * The suspension record includes the seller's unique ID, the reason for suspension, and the timestamp when the suspension occurred.
+   * The seller is identified by the path parameter sellerId which corresponds to a valid seller account.
    *
-   * This operation is critical for administrative management of seller accounts and must be restricted to authorized administrative users only.
+   * The request body must contain a suspensionReason explaining the cause for suspension for audit trails.
    *
-   * The suspension record tracks the suspension event but does not automatically unsuspend the seller; separate operations manage unsuspension.
+   * Upon success, the system creates a suspension record in shopping_mall_seller_suspensions containing the reason and suspended timestamp.
    *
-   * The suspension record will include creation and update timestamps and supports soft deletion.
-   *
-   * Access to this operation should be limited to administrators to prevent unauthorized suspensions.
+   * This operation requires administrator authorization.
    *
    * Related operations:
-   * - GET /admin/sellers/pending
-   * - POST /admin/sellers/{sellerId}/approve
-   * - POST /admin/sellers/{sellerId}/reject
-   * - POST /admin/sellers/{sellerId}/suspend
-   * - POST /admin/sellers/{sellerId}/unsuspend
+   * - GET /admins/sellers to view sellers
+   * - PUT /admins/sellers/{sellerId}/ban to ban/unban sellers
    *
-   * Error handling:
-   * - Attempting to suspend a non-existent seller must return a suitable error.
-   * - Attempts to duplicate an active suspension for the same seller should be handled gracefully with an error or idempotent behavior.
+   * Error cases include validation failure if sellerId not found, or missing suspensionReason in body.
    *
-   * The system uses cascading deletes so if a seller is removed, suspension records are automatically deleted.
-   *
+   * Note: This is a hard action creating a suspension record. There is no soft delete implemented here.
    *
    * @param connection
-   * @param body Information needed to create a new seller suspension record.
+   * @param sellerId UUID of the seller to be suspended
+   * @param body Details of suspension reason
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification This operation inserts a new record into the shopping_mall_seller_suspensions table with the provided seller ID, suspension reason, and suspension timestamp.
+   * @x-autobe-specification Service layer logic:
+   * - Validate if sellerId exists and is active.
+   * - Parse suspensionReason from requestBody.
+   * - Create new record in shopping_mall_seller_suspensions with seller_id, suspension_reason, suspended_at (current timestamp), created_at, updated_at.
+   * - Return the created suspension record in response.
    *
-   * Validate that the seller ID exists and is active before inserting.
+   * Database queries:
+   * - SELECT to validate seller existence.
+   * - INSERT into shopping_mall_seller_suspensions.
    *
-   * The created_at and updated_at fields should be set to current timestamp automatically by the database.
+   * Business rules:
+   * - Only administrators can perform this. Authorization enforced externally.
+   * - Multiple suspension records for same seller allowed to track history.
+   * - Suspension disables product creation and editing but permits existing order fulfillment.
    *
-   * The deleted_at field is initially null.
+   * Edge cases:
+   * - If sellerId does not exist, return error.
+   * - If suspensionReason missing, return validation error.
    *
-   * Handle unique constraints to avoid duplicate active suspensions.
-   *
-   * Return the full suspension record including generated UUID id.
-   *
-   * Only accessible to authorized administrators.
-   *
+   * Integration:
+   * - May trigger notification to seller (outside scope here).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
+  @TypedRoute.Post("suspend")
+  public async suspend(
     @AdministratorAuth()
     administrator: AdministratorPayload,
+    @TypedParam("sellerId")
+    sellerId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallSellerSuspension.ICreate,
   ): Promise<IShoppingMallSellerSuspension> {
     try {
-      return await postShoppingMallAdministratorSellerSuspensions({
-        administrator,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a paginated and filtered list of seller suspension records.
-   *
-   * This endpoint supports advanced search criteria including filtering by seller identifier, suspension reason keyword matching, and suspended date range.
-   *
-   * Results include high-level suspension summary data such as seller ID, suspension reason, and active suspension dates.
-   *
-   * Only authorized administrators can access this data due to the sensitive nature of seller suspensions and potential privacy concerns.
-   *
-   * This operation depends on the shopping_mall_seller_suspensions database schema which manages suspension records with timestamps for creation and updates.
-   *
-   * Clients can use this API to perform administrative oversight, reporting, and audit functions concerning seller suspensions.
-   *
-   * Note: Soft deletion is supported by the presence of a 'deleted_at' timestamp column which excludes logically deleted records from search results.
-   *
-   * @param connection
-   * @param body Search criteria and pagination parameters for seller suspensions
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a paginated query on shopping_mall_seller_suspensions table.
-   * Apply optional filters on seller_id, suspension_reason (text partial match), suspended_at date range.
-   * Exclude records with non-null deleted_at (soft deleted).
-   * Return paginated suspension summaries with fields: id, seller_id, suspension_reason, suspended_at, created_at.
-   * Support sorting by suspended_at descending by default.
-   * Use request DTO IShoppingMallSellerSuspension.IRequest for search filters and pagination.
-   * Return results in IPageIShoppingMallSellerSuspension.ISummary format.
-   * Ensure only administrators can call this API with proper authentication and authorization checks.
-   * Handle edge cases like empty results and invalid query parameters gracefully.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedBody()
-    body: IShoppingMallSellerSuspension.IRequest,
-  ): Promise<IPageIShoppingMallSellerSuspension.ISummary> {
-    try {
-      return await patchShoppingMallAdministratorSellerSuspensions({
-        administrator,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a specific seller suspension record by its unique identifier.
-   *
-   * This operation returns detailed information about the seller suspension, including the suspension reason, dates of suspension, creation and update timestamps, and the associated seller.
-   *
-   * Access to this endpoint is restricted to administrators who require auditing and management capabilities over suspended seller accounts.
-   *
-   * This interface maps directly to the shopping_mall_seller_suspensions database entity, ensuring accurate and up-to-date data retrieval.
-   *
-   * Validation ensures the suspensionId path parameter is a valid UUID corresponding to an existing record.
-   *
-   * Related operations include creating new suspensions, listing all suspensions, and managing seller approvals.
-   *
-   * No request body is required as this is a read-only retrieval operation.
-   *
-   * Errors include 404 Not Found if the suspensionId does not exist.
-   *
-   * @param connection
-   * @param suspensionId Unique identifier for the seller suspension record in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the shopping_mall_seller_suspensions table by primary key 'id' matching the path parameter 'suspensionId'.
-   * Return all columns of the matched record.
-   * Ensure authorization check for administrator actor.
-   * Handle 404 error if no record found.
-   * No request body is expected.
-   * Response returns IShoppingMallSellerSuspension DTO with all fields.
-   *
-   * Implementation details:
-   * - Use ORM findUnique with where id = suspensionId
-   * - Return not found error if null
-   * - Perform permission check before query
-   * - No updates or side effects
-   * - Return the entire record faithfully
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":suspensionId")
-  public async at(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("suspensionId")
-    suspensionId: string & tags.Format<"uuid">,
-  ): Promise<IShoppingMallSellerSuspension> {
-    try {
-      return await getShoppingMallAdministratorSellerSuspensionsSuspensionId({
-        administrator,
-        suspensionId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update a seller suspension record by its unique ID.
-   *
-   * This operation allows administrators to modify the reason and timestamp for suspending a seller account within the shopping mall platform.
-   *
-   * The shopping_mall_seller_suspensions table stores suspension records with linkages to sellers. Modifying a suspension record affects seller account status and administrative audits.
-   *
-   * Security: Only authorized administrators should be able to perform this update operation.
-   *
-   * Primary keys and foreign keys are immutable and cannot be changed via this endpoint.
-   *
-   * Validation: Valid UUID format is required for suspensionId path parameter.
-   *
-   * Any changes to suspension_reason and suspended_at fields trigger updates to updated_at timestamp automatically.
-   *
-   * Related Operations:
-   * - GET /seller-suspensions/{suspensionId} to retrieve suspension details
-   * - DELETE /seller-suspensions/{suspensionId} to erase a suspension record
-   *
-   * Errors:
-   * - 404 Not Found if suspensionId does not exist
-   * - 400 Bad Request for invalid input
-   *
-   * This endpoint requires the administrator to identify the suspension record by its UUID and submit updated suspension details for processing.
-   *
-   * @param connection
-   * @param suspensionId Unique UUID of the suspension record to update
-   * @param body Updated information for the seller suspension record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Service layer should validate that the suspensionId exists and the caller is authorized as administrator.
-   * Fetch the suspension record by UUID suspensionId.
-   * Update only mutable fields: suspension_reason, suspended_at.
-   * Automatically update updated_at timestamp.
-   * Reject attempts to modify immutable fields: id, seller_id, created_at, deleted_at.
-   * Persist changes in a transaction.
-   * Return updated suspension record.
-   * Handle not found errors and validation errors gracefully.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":suspensionId")
-  public async update(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("suspensionId")
-    suspensionId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallSellerSuspension.IUpdate,
-  ): Promise<IShoppingMallSellerSuspension> {
-    try {
-      return await putShoppingMallAdministratorSellerSuspensionsSuspensionId({
-        administrator,
-        suspensionId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Remove a suspension record for a seller, identified by its unique suspensionId.
-   *
-   * This operation allows administrators to revoke suspension records that restrict sellers due to various reasons. By deleting the suspension record, the seller may regain access previously restricted.
-   *
-   * Authorization is required; only administrators have permission to execute this operation.
-   *
-   * The suspension record is identified by the `suspensionId` path parameter, which corresponds to the UUID primary key in the `shopping_mall_seller_suspensions` database table.
-   *
-   * No request body is required.
-   *
-   * Successful completion results in the suspension record being permanently deleted from the system database.
-   *
-   * If the specified suspensionId does not exist, the system should respond with an appropriate error indicating the resource was not found.
-   *
-   * Related administrative operations include creating new suspensions and fetching suspension lists for monitoring.
-   *
-   * @param connection
-   * @param suspensionId Unique UUID identifier of the seller suspension record to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation requires validating the requesting user's administrator privileges.
-   *
-   * Upon receiving the suspensionId parameter, the system should locate the corresponding suspension record in the `shopping_mall_seller_suspensions` table by its UUID primary key.
-   *
-   * If the record exists, perform a permanent deletion of this suspension entry from the database.
-   *
-   * Handle edge cases where the suspensionId is invalid or not found by returning a 404 Not Found response.
-   *
-   * Ensure that deletion cascades or relational integrity is maintained according to database constraints.
-   *
-   * Log the deletion event for audit purposes via administrative audit logs.
-   *
-   * Return HTTP 204 No Content status on success with no response body.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":suspensionId")
-  public async erase(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("suspensionId")
-    suspensionId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteShoppingMallAdministratorSellerSuspensionsSuspensionId(
+      return await postShoppingMallAdministratorSellerSuspensionsSellerIdSuspend(
         {
           administrator,
-          suspensionId,
+          sellerId,
+          body,
         },
       );
     } catch (error) {
@@ -303,51 +83,47 @@ export class ShoppingmallAdministratorSeller_suspensionsController {
   }
 
   /**
-   * Unsuspend a suspended seller by administrative action. This operation removes or marks as inactive the suspension records for the given sellerId, effectively reinstating their selling privileges on the platform.
+   * This operation allows an administrator to unsuspend a suspended seller account by removing or marking the suspension as lifted for the targeted seller identified by the sellerId path parameter.
    *
-   * This operation affects records in the shopping_mall_seller_suspensions table linked by seller_id. The suspended_at timestamp and suspension_reason are cleared or appropriately archived to indicate the seller is no longer suspended.
+   * Suspensions are stored in the shopping_mall_seller_suspensions table, linked to the shopping_mall_sellers table by sellerId. Unsuspending a seller restores their ability to create and edit products, and makes their products visible to customers again.
    *
-   * Only users with administrator privileges are authorized to perform this operation to ensure platform security and compliance. Authentication and authorization checks are mandatory.
+   * Security:
+   * Only authorized administrators with seller management permissions should access this operation.
    *
-   * The operation returns the updated seller record from shopping_mall_sellers reflecting the current active status and suspension clearance.
+   * Database Interaction:
+   * This operation deletes or deactivates the current suspension record for the seller and updates the seller record accordingly.
    *
-   * Related operations include suspension management endpoints for viewing and creating suspension records, and seller account management endpoints for approval workflow handling.
+   * Validation:
+   * It ensures the seller exists and is currently suspended. If not suspended, returns an appropriate error status.
    *
-   * Validation ensures the sellerId path parameter corresponds to an existing suspended seller; otherwise, an error is returned.
+   * Related Operations:
+   * Admins may also suspend sellers via a corresponding suspend operation.
    *
-   * This endpoint supports the administrative workflows to maintain platform seller integrity and user trust.
-   *
-   * **WARNING**: This operation does not soft delete any records; it explicitly lifts suspensions by clearing suspension flags or records.
-   *
+   * Error Handling:
+   * Returns 404 if the sellerId does not exist or is not currently suspended.
+   * Returns 403 if the caller lacks sufficient permissions.
    *
    * @param connection
-   * @param sellerId Unique identifier of the seller to unsuspend (UUID format).
+   * @param sellerId UUID of the seller to unsuspend (admin scope).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a service method to locate active suspension records by seller_id matching the given sellerId. Remove or neutralize these suspension entries, e.g., delete records or set deleted_at timestamp to mark as inactive.
-   *
-   * Update relevant fields in the shopping_mall_sellers record if needed to reflect unsuspended status (e.g., approval_status remains unchanged but suspension effect is lifted).
-   *
-   * Ensure transactional integrity: the suspension removal and any seller record updates must occur within a single transaction to maintain consistency.
-   *
-   * Validate the sellerId exists and has active suspensions before proceeding; if no active suspension, return a suitable 404 or 400 error.
-   *
-   * Audit logs might capture this administrative action for traceability.
-   *
-   * Return the complete updated seller record as response body for client confirmation.
-   *
-   * Strictly restrict access to admin users with appropriate permissions.
-   *
-   * The API does not accept a request body. The sole parameter is the path parameter sellerId of UUID format indicating the target suspended seller to unsuspend.
+   * @x-autobe-specification The service implementation should perform the following steps:
+   * 1. Validate that the sellerId exists in the shopping_mall_sellers table.
+   * 2. Check the shopping_mall_seller_suspensions table for any active suspension linked to this sellerId.
+   * 3. If an active suspension exists, either delete the suspension record or mark it as lifted (soft-delete).
+   * 4. Update shopping_mall_sellers table to reflect the unsuspension status if applicable.
+   * 5. Return the updated suspension or seller entity to confirm unsuspension.
+   * 6. Enforce admin-level authorization checks before performing these actions.
+   * 7. Handle errors for non-existing sellerId or no active suspension with appropriate HTTP status codes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":sellerId/unsuspend")
+  @TypedRoute.Post("unsuspend")
   public async unsuspend(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("sellerId")
     sellerId: string & tags.Format<"uuid">,
-  ): Promise<IShoppingMallSeller> {
+  ): Promise<IShoppingMallSellerSuspension> {
     try {
       return await postShoppingMallAdministratorSellerSuspensionsSellerIdUnsuspend(
         {

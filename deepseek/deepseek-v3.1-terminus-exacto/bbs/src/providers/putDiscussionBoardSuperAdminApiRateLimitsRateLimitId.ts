@@ -11,52 +11,73 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardApiRateLimitTransformer } from "../transformers/DiscussionBoardApiRateLimitTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardSuperAdminApiRateLimitsRateLimitId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   rateLimitId: string & tags.Format<"uuid">;
   body: IDiscussionBoardApiRateLimit.IUpdate;
 }): Promise<IDiscussionBoardApiRateLimit> {
-  // Check if the rate limit configuration exists
-  const existing =
-    await MyGlobal.prisma.discussion_board_api_rate_limits.findUnique({
-      where: { id: props.rateLimitId },
-    });
-  if (!existing) {
-    throw new HttpException("Rate limit configuration not found", 404);
-  }
-  // Build update data with proper null handling
+  // Verify the rate limit configuration exists and is not deleted
+  await MyGlobal.prisma.discussion_board_api_rate_limits.findUniqueOrThrow({
+    where: {
+      id: props.rateLimitId,
+      deleted_at: null,
+    },
+  });
+  // Prepare update data with conditional field updates and proper null handling
   const updateData: Prisma.discussion_board_api_rate_limitsUpdateInput = {
-    endpoint_path: props.body.endpoint_path ?? existing.endpoint_path,
-    http_method: props.body.http_method ?? existing.http_method,
-    rate_limit_type: props.body.rate_limit_type ?? existing.rate_limit_type,
-    requests_per_interval:
-      props.body.requests_per_interval ?? existing.requests_per_interval,
-    interval_seconds: props.body.interval_seconds ?? existing.interval_seconds,
-    burst_limit:
-      props.body.burst_limit !== undefined
-        ? props.body.burst_limit
-        : existing.burst_limit,
-    enforcement_action:
-      props.body.enforcement_action ?? existing.enforcement_action,
-    is_active: props.body.is_active ?? existing.is_active,
-    description:
-      props.body.description !== undefined
-        ? props.body.description
-        : existing.description,
-    updated_at: toISOStringSafe(new Date()),
+    updated_at: new Date(),
   };
-  // Update the rate limit configuration
-  const updated = await MyGlobal.prisma.discussion_board_api_rate_limits.update(
-    {
+  if (props.body.endpoint_path !== undefined) {
+    updateData.endpoint_path = props.body.endpoint_path;
+  }
+  if (props.body.http_method !== undefined) {
+    updateData.http_method = props.body.http_method;
+  }
+  if (props.body.rate_limit_type !== undefined) {
+    updateData.rate_limit_type = props.body.rate_limit_type;
+  }
+  if (props.body.requests_per_interval !== undefined) {
+    updateData.requests_per_interval = props.body.requests_per_interval;
+  }
+  if (props.body.interval_seconds !== undefined) {
+    updateData.interval_seconds = props.body.interval_seconds;
+  }
+  if (props.body.burst_limit !== undefined) {
+    updateData.burst_limit =
+      props.body.burst_limit === null ? null : props.body.burst_limit;
+  }
+  if (props.body.enforcement_action !== undefined) {
+    updateData.enforcement_action = props.body.enforcement_action;
+  }
+  if (props.body.is_active !== undefined) {
+    updateData.is_active = props.body.is_active;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description =
+      props.body.description === null ? null : props.body.description;
+  }
+  // Reset enforcement counters/timestamps if rate parameters change
+  const rateParamsChanged =
+    props.body.requests_per_interval !== undefined ||
+    props.body.interval_seconds !== undefined ||
+    props.body.enforcement_action !== undefined;
+  if (rateParamsChanged) {
+    updateData.enforced_at = null;
+    updateData.enforcement_count = 0;
+  }
+  // Perform the update and return the complete updated record
+  const updatedRateLimit =
+    await MyGlobal.prisma.discussion_board_api_rate_limits.update({
       where: { id: props.rateLimitId },
       data: updateData,
       ...DiscussionBoardApiRateLimitTransformer.select(),
-    },
+    });
+  return await DiscussionBoardApiRateLimitTransformer.transform(
+    updatedRateLimit,
   );
-  return await DiscussionBoardApiRateLimitTransformer.transform(updated);
 }

@@ -47,15 +47,23 @@ model todo_app_system_configurations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemMetadata todo_app_system_metadata @relation(fields: [system_metadata_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   stringValues todo_app_system_configuration_strings[]
   booleanConfiguration todo_app_system_configuration_booleans?
   configurationNumber todo_app_system_configuration_numbers?
   jsonConfigurations todo_app_system_configuration_jsons[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([config_key])
   @@index([value_type, config_key])
   // spellchecker: ignore-next-line
@@ -130,10 +138,14 @@ model todo_app_audit_logs {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([event_type, created_at])
   @@index([user_id, created_at])
   @@index([severity, created_at])
@@ -194,10 +206,14 @@ model todo_app_system_metadata {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   systemConfigurations todo_app_system_configurations[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([operation_type, operation_version])
   @@index([operation_type, status])
   @@index([status, created_at])
@@ -274,16 +290,23 @@ model todo_app_error_logs {
   resolved_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
   userSession todo_app_user_sessions? @relation(fields: [user_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   errorLogDetail todo_app_error_log_details?
   errorLogContext todo_app_error_log_contexts?
   
+  //----
+  // INDEXES
+  //----
   @@index([user_session_id])
-  
   @@unique([error_type, component, created_at])
   @@index([created_at])
   @@index([severity, created_at])
@@ -354,7 +377,7 @@ model todo_app_feature_flags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([name])
   @@index([enabled, created_at])
@@ -418,7 +441,7 @@ model todo_app_api_rate_limits {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([rate_limit_type, scope_identifier])
   // spellchecker: ignore-next-line
@@ -483,7 +506,7 @@ model todo_app_system_health_checks {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   // spellchecker: ignore-next-line
   @@unique([check_type, check_name, check_timestamp], map: "todo_app_system_health_checks_check_type_check_name_ch_409ba75e")
@@ -563,12 +586,15 @@ model todo_app_background_jobs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_user_id])
-  
   @@unique([name, scheduled_at])
   @@index([status, scheduled_at])
   @@index([scheduled_at, status])
@@ -629,7 +655,7 @@ model todo_app_data_migrations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([migration_name, version])
   @@index([status, created_at])
@@ -720,10 +746,14 @@ model todo_app_system_notifications {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_user_id, created_at])
   @@index([delivery_status, next_retry_at])
   @@index([notification_type, priority])
@@ -813,7 +843,7 @@ model todo_app_cache_managements {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([cache_key_pattern])
   @@index([cache_strategy, enabled])
@@ -891,7 +921,7 @@ model todo_app_maintenance_windows {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   // spellchecker: ignore-next-line
   @@unique([scheduled_start_at, scheduled_end_at], map: "todo_app_maintenance_windows_scheduled_start_at_schedu_d13e23ee")
@@ -943,10 +973,14 @@ model todo_app_system_configuration_strings {
   min_length Int?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   stringConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_system_configuration_id, configuration_value], map: "todo_app_system_configuration_strings_todo_app_system__359f7af5")
 }
@@ -987,10 +1021,14 @@ model todo_app_system_configuration_booleans {
   value Boolean
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_system_configuration_id], map: "todo_app_system_configuration_booleans_todo_app_system_091ba630")
   @@index([value])
@@ -1031,12 +1069,20 @@ model todo_app_system_configuration_numbers {
   value Float
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   validation todo_app_system_configuration_number_validations?
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_system_configuration_id], map: "todo_app_system_configuration_numbers_todo_app_system__2d7d14af")
 }
@@ -1092,10 +1138,14 @@ model todo_app_system_configuration_jsons {
   is_active Boolean
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemConfiguration todo_app_system_configurations @relation(fields: [todo_app_system_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_system_configuration_id, configuration_key], map: "todo_app_system_configuration_jsons_todo_app_system_co_e4409e48")
   @@index([is_active])
@@ -1133,15 +1183,23 @@ model todo_app_error_log_details {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLog todo_app_error_logs @relation(fields: [todo_app_error_log_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   requestContexts todo_app_error_log_detail_request_contexts[]
   responseContext todo_app_error_log_detail_response_contexts?
   environmentContexts todo_app_error_log_detail_environment_contexts[]
   userContexts todo_app_error_log_detail_user_contexts[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_error_log_id])
   @@index([created_at])
 }
@@ -1207,10 +1265,14 @@ model todo_app_error_log_contexts {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLog todo_app_error_logs @relation(fields: [todo_app_error_log_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_error_log_id])
   // spellchecker: ignore-next-line
   @@index([business_operation_type, created_at], map: "todo_app_error_log_contexts_business_operation_type_cr_e432cd9a")
@@ -1283,10 +1345,14 @@ model todo_app_system_configuration_number_validations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   configurationNumber todo_app_system_configuration_numbers @relation(fields: [todo_app_system_configuration_number_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_system_configuration_number_id], map: "todo_app_system_configuration_number_validations_todo__8477c709")
   @@index([created_at])
@@ -1351,10 +1417,14 @@ model todo_app_error_log_detail_request_contexts {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_request_contexts_todo_app_er_d18ed1c9")
   // spellchecker: ignore-next-line
@@ -1420,10 +1490,14 @@ model todo_app_error_log_detail_response_contexts {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_error_log_detail_id], map: "todo_app_error_log_detail_response_contexts_todo_app_e_23efecd2")
   // spellchecker: ignore-next-line
@@ -1478,10 +1552,14 @@ model todo_app_error_log_detail_environment_contexts {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_environment_contexts_todo_ap_5cc819a4")
 }
@@ -1546,12 +1624,16 @@ model todo_app_error_log_detail_user_contexts {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   errorLogDetail todo_app_error_log_details @relation(fields: [todo_app_error_log_detail_id], references: [id], onDelete: Cascade)
   user todo_app_users? @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   userSession todo_app_user_sessions? @relation(fields: [todo_app_user_session_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([todo_app_error_log_detail_id, created_at], map: "todo_app_error_log_detail_user_contexts_todo_app_error_3a4f634b")
   // spellchecker: ignore-next-line

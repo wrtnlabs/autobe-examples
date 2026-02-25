@@ -41,12 +41,20 @@ model multi_user_todo_todos {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   editHistories multi_user_todo_todo_edit_histories[]
   
+  //----
+  // INDEXES
+  //----
   @@index([multi_user_todo_user_id, completed])
   @@index([multi_user_todo_user_id, created_at])
   @@index([multi_user_todo_user_id, start_date])
@@ -91,10 +99,14 @@ model multi_user_todo_todo_edit_histories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_todo_edit_histories_multi_user_todo_to_e9d2e4ac")
 }

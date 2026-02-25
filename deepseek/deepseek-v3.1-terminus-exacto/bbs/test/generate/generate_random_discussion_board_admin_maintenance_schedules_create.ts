@@ -13,15 +13,17 @@ import { prepare_random_discussion_board_maintenance_schedule } from "../prepare
 export async function generate_random_discussion_board_admin_maintenance_schedules_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardMaintenanceSchedule.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardMaintenanceSchedule.ICreate>;
   },
 ): Promise<IDiscussionBoardMaintenanceSchedule> {
   const prepared: IDiscussionBoardMaintenanceSchedule.ICreate =
     prepare_random_discussion_board_maintenance_schedule(props.body);
-  return await api.functional.discussionBoard.admin.maintenance_schedules.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
+  const result: IDiscussionBoardMaintenanceSchedule =
+    await api.functional.discussionBoard.admin.maintenance_schedules.create(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
 }

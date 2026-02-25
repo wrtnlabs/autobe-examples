@@ -12,14 +12,12 @@ export namespace ShoppingMallSaleQuestionAnswerCollector {
     body: IShoppingMallSaleQuestionAnswer.ICreate;
     saleQuestion: IEntity;
     seller: IEntity;
-    title: string;
-    bodyText: string;
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
-      title: props.title,
-      body: props.bodyText,
+      title: props.body.title,
+      body: props.body.body,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

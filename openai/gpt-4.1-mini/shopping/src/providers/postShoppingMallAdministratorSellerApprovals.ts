@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApproval";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,6 +11,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { ShoppingMallSellerApprovalCollector } from "../collectors/ShoppingMallSellerApprovalCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { ShoppingMallSellerApprovalTransformer } from "../transformers/ShoppingMallSellerApprovalTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,44 +19,49 @@ export async function postShoppingMallAdministratorSellerApprovals(props: {
   administrator: AdministratorPayload;
   body: IShoppingMallSellerApproval.ICreate;
 }): Promise<IShoppingMallSellerApproval> {
-  // Verify that the seller exists
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
-    where: { id: (props.body as any).shopping_mall_seller_id as string },
-  });
-  if (!seller) throw new HttpException("Seller not found", 404);
-  // Check if an approval record already exists for this seller and is not deleted
-  const existing =
-    await MyGlobal.prisma.shopping_mall_seller_approvals.findFirst({
-      where: {
-        shopping_mall_seller_id: (props.body as any)
-          .shopping_mall_seller_id as string,
-        deleted_at: null,
-      },
+  const existingApproval =
+    await MyGlobal.prisma.shopping_mall_seller_approvals.findUnique({
+      where: { shopping_mall_seller_id: props.body.shoppingMallSellerId },
     });
-  if (existing)
-    throw new HttpException(
-      "Approval record already exists for this seller",
-      409,
+  if (!existingApproval) {
+    const data = await ShoppingMallSellerApprovalCollector.collect({
+      body: props.body,
+    });
+    const created = await MyGlobal.prisma.shopping_mall_seller_approvals.create(
+      {
+        data,
+        ...ShoppingMallSellerApprovalTransformer.select(),
+      },
     );
-  // Prepare the createInput using the collector
-  const createInput = await ShoppingMallSellerApprovalCollector.collect({
-    body: props.body,
-    seller,
+    return await ShoppingMallSellerApprovalTransformer.transform(created);
+  }
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const updatedApproval = await tx.shopping_mall_seller_approvals.update({
+      where: { shopping_mall_seller_id: props.body.shoppingMallSellerId },
+      data: {
+        status: props.body.status,
+        rejection_reason: props.body.rejectionReason ?? null,
+        updated_at: new Date().toISOString() as string &
+          import("typia").tags.Format<"date-time">,
+      },
+      ...ShoppingMallSellerApprovalTransformer.select(),
+    });
+    if (props.body.status === "approved") {
+      await tx.shopping_mall_sellers.update({
+        where: { id: props.body.shoppingMallSellerId },
+        data: { approval_status: "approved" },
+      });
+    } else if (props.body.status === "rejected") {
+      await tx.shopping_mall_sellers.update({
+        where: { id: props.body.shoppingMallSellerId },
+        data: {
+          approval_status: "rejected",
+          rejection_reason: props.body.rejectionReason ?? null,
+        },
+      });
+    }
+    return await ShoppingMallSellerApprovalTransformer.transform(
+      updatedApproval,
+    );
   });
-  // Create a new seller approval record
-  const created = await MyGlobal.prisma.shopping_mall_seller_approvals.create({
-    data: createInput,
-  });
-  // Return the created record with all dates converted to string with date-time format
-  return {
-    id: created.id,
-    shopping_mall_seller_id: created.shopping_mall_seller_id,
-    status: created.status,
-    rejection_reason:
-      created.rejection_reason === null ? null : created.rejection_reason,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at:
-      created.deleted_at === null ? null : toISOStringSafe(created.deleted_at),
-  };
 }

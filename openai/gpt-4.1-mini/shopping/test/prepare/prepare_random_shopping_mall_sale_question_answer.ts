@@ -6,8 +6,13 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_sale_question_answer(
-  input?: DeepPartial<IShoppingMallSaleQuestionAnswer.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSaleQuestionAnswer.ICreate>,
 ): IShoppingMallSaleQuestionAnswer.ICreate {
-  input;
-  return {};
+  return {
+    shopping_mall_sale_question_id:
+      input?.shopping_mall_sale_question_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
+    body: input?.body ?? RandomGenerator.content({ paragraphs: 2 }),
+  };
 }

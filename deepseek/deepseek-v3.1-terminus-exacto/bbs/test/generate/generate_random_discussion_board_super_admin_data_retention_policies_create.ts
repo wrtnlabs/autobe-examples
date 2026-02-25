@@ -12,7 +12,7 @@ import { prepare_random_discussion_board_data_retention_policy } from "../prepar
 export async function generate_random_discussion_board_super_admin_data_retention_policies_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardDataRetentionPolicy.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardDataRetentionPolicy.ICreate>;
   },
 ): Promise<IDiscussionBoardDataRetentionPolicy> {
   const prepared: IDiscussionBoardDataRetentionPolicy.ICreate =

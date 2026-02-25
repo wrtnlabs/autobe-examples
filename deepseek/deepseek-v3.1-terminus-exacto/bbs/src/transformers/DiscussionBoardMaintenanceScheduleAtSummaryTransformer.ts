@@ -45,10 +45,16 @@ export namespace DiscussionBoardMaintenanceScheduleAtSummaryTransformer {
       scheduled_start_time: input.scheduled_start_time.toISOString(),
       scheduled_end_time: input.scheduled_end_time.toISOString(),
       impact_level: input.impact_level,
+      estimated_duration_minutes: input.estimated_duration_minutes,
       scheduledByAdmin:
         await DiscussionBoardAdminAtSummaryTransformer.transform(
           input.scheduledByAdmin,
         ),
+      performedByAdmin: input.performedByAdmin
+        ? await DiscussionBoardAdminAtSummaryTransformer.transform(
+            input.performedByAdmin,
+          )
+        : null,
     };
   }
 }

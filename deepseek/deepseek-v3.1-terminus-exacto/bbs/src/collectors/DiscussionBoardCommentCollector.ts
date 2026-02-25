@@ -10,11 +10,11 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardCommentCollector {
   export async function collect(props: {
     body: IDiscussionBoardComment.ICreate;
-    discussionBoardArticles: IEntity;
     discussionBoardUsers: IEntity;
     discussionBoardUserSessions: IEntity;
+    discussionBoardArticles: IEntity;
   }) {
-    const id: string = v4();
+    const id = v4();
     return {
       id,
       content: props.body.content,

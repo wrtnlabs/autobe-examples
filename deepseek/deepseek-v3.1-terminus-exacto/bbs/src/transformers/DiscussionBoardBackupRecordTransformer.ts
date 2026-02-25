@@ -44,8 +44,7 @@ export namespace DiscussionBoardBackupRecordTransformer {
       error_message: input.error_message ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      initiatedByAdmin: input.initiatedByAdmin
+      initiated_by_admin: input.initiatedByAdmin
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.initiatedByAdmin,
           )

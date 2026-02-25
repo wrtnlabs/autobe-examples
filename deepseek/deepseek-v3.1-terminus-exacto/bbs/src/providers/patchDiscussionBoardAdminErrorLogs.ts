@@ -1,7 +1,13 @@
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardErrorLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardErrorLog";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import { IPageIDiscussionBoardErrorLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardErrorLog";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,87 +24,91 @@ export async function patchDiscussionBoardAdminErrorLogs(props: {
   admin: AdminPayload;
   body: IDiscussionBoardErrorLog.IRequest;
 }): Promise<IPageIDiscussionBoardErrorLog.ISummary> {
-  const page = 1; // Default page since it's not in IRequest
-  const limit = 100; // Default limit since it's not in IRequest
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build WHERE conditions using string comparisons (no Date conversion)
-  const whereInput: Prisma.discussion_board_error_logsWhereInput = {
+  const whereInput = {
     deleted_at: null,
-    ...(props.body.start_date && {
-      occurred_at: { gte: props.body.start_date },
+    ...(props.body.error_type && { error_type: props.body.error_type }),
+    ...(props.body.severity && { severity: props.body.severity }),
+    ...(props.body.environment && { environment: props.body.environment }),
+    ...(props.body.component && { component: props.body.component }),
+    ...(props.body.request_path && { request_path: props.body.request_path }),
+    ...(props.body.occurred_at_from && {
+      occurred_at: {
+        gte: new Date(props.body.occurred_at_from),
+      },
     }),
-    ...(props.body.end_date && {
-      occurred_at: { lte: props.body.end_date },
+    ...(props.body.occurred_at_to && {
+      occurred_at: {
+        lte: new Date(props.body.occurred_at_to),
+      },
     }),
-    ...(props.body.error_types &&
-      props.body.error_types.length > 0 && {
-        error_type: { in: props.body.error_types },
-      }),
-    ...(props.body.severities &&
-      props.body.severities.length > 0 && {
-        severity: { in: props.body.severities },
-      }),
-    ...(props.body.components &&
-      props.body.components.length > 0 && {
-        component: { in: props.body.components },
-      }),
-    ...(props.body.environments &&
-      props.body.environments.length > 0 && {
-        environment: { in: props.body.environments },
-      }),
-  };
-  // Get aggregated error log groups with proper orderBy
-  const groupedData = await MyGlobal.prisma.discussion_board_error_logs.groupBy(
-    {
-      by: ["error_type", "severity", "component", "environment"],
+    ...(props.body.search && {
+      OR: [
+        {
+          error_message: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          error_type: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
+  } satisfies Prisma.discussion_board_error_logsWhereInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.discussion_board_error_logs.findMany({
       where: whereInput,
-      _count: { id: true },
-      _min: { occurred_at: true },
-      _max: { occurred_at: true },
       skip,
       take: limit,
-      orderBy: {
-        _count: {
-          id: "desc",
-        },
+      orderBy: { occurred_at: "desc" as const },
+      select: {
+        id: true,
+        error_type: true,
+        severity: true,
+        environment: true,
+        component: true,
+        occurred_at: true,
       },
-    },
-  );
-  // Get total count of distinct groups for pagination
-  const distinctGroups =
-    await MyGlobal.prisma.discussion_board_error_logs.groupBy({
-      by: ["error_type", "severity", "component", "environment"],
+    }),
+    MyGlobal.prisma.discussion_board_error_logs.count({
       where: whereInput,
-      _count: { id: true },
-    });
-  // Transform grouped data to response format with proper null handling
-  const data: IDiscussionBoardErrorLog.ISummary[] = groupedData.map(
-    (group: any) => {
-      const firstOccurred = group._min.occurred_at;
-      const lastOccurred = group._max.occurred_at;
-      if (!firstOccurred || !lastOccurred) {
-        throw new HttpException("Invalid error log aggregation data", 500);
-      }
-      return {
-        error_type: group.error_type,
-        severity: group.severity,
-        component: group.component ?? undefined,
-        environment: group.environment,
-        error_count: group._count.id as number & tags.Type<"int32">,
-        first_occurred_at: toISOStringSafe(firstOccurred) as string &
-          tags.Format<"date-time">,
-        last_occurred_at: toISOStringSafe(lastOccurred) as string &
-          tags.Format<"date-time">,
-      };
-    },
-  );
+    }),
+  ]);
   return {
-    data,
+    data: data.map(
+      (record) =>
+        ({
+          id: record.id,
+          error_type: record.error_type,
+          severity: record.severity,
+          environment: record.environment,
+          component: record.component ?? null,
+          occurred_at: toISOStringSafe(record.occurred_at),
+        }) satisfies IDiscussionBoardErrorLog.ISummary,
+    ),
     pagination: {
-      current: page,
-      limit: limit,
-      records: distinctGroups.length,
-      pages: Math.ceil(distinctGroups.length / limit),
-    } satisfies IPage.IPagination,
-  };
+      pagination: {
+        pagination: {
+          pagination: {
+            pagination: {
+              current: page satisfies number as number,
+              limit: limit satisfies number as number,
+              records: total satisfies number as number,
+              pages: Math.ceil(total / limit) satisfies number as number,
+            } satisfies IPage.IPagination,
+            data: [],
+          } satisfies IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination,
+          data: [],
+        } satisfies IPageIDiscussionBoardAdministratorPromotionRequest.IPagination,
+        data: [],
+      } satisfies IPageIDiscussionBoardSection.IPagination,
+      data: [],
+    } satisfies IPageIDiscussionBoardErrorLog.ISummary["pagination"],
+  } satisfies IPageIDiscussionBoardErrorLog.ISummary;
 }

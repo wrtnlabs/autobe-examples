@@ -8,25 +8,24 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardDataRetentionPolicyTransformer } from "../transformers/DiscussionBoardDataRetentionPolicyTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminDataRetentionPoliciesPolicyId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   policyId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardDataRetentionPolicy> {
   const policy =
-    await MyGlobal.prisma.discussion_board_data_retention_policies.findUnique({
-      where: {
-        id: props.policyId,
-        deleted_at: null, // Exclude soft-deleted records
+    await MyGlobal.prisma.discussion_board_data_retention_policies.findUniqueOrThrow(
+      {
+        where: {
+          id: props.policyId,
+          deleted_at: null,
+        },
+        ...DiscussionBoardDataRetentionPolicyTransformer.select(),
       },
-      ...DiscussionBoardDataRetentionPolicyTransformer.select(),
-    });
-  if (!policy) {
-    throw new HttpException("Data retention policy not found", 404);
-  }
+    );
   return await DiscussionBoardDataRetentionPolicyTransformer.transform(policy);
 }

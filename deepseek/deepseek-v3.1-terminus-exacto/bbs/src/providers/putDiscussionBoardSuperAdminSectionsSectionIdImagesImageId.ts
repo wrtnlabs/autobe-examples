@@ -9,49 +9,49 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardSectionImageTransformer } from "../transformers/DiscussionBoardSectionImageTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardSectionAtmageTransformer } from "../transformers/DiscussionBoardSectionAtmageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function putDiscussionBoardSuperAdminSectionsSectionIdImagesImageId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   sectionId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSectionImage.IUpdate;
-}): Promise<IDiscussionBoardSectionImage> {
-  // Verify section exists
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
-    where: { id: props.sectionId },
-  });
-  if (!section) {
-    throw new HttpException("Section not found", 404);
-  }
-  // Verify image exists and belongs to the section
-  const existingImage =
-    await MyGlobal.prisma.discussion_board_section_images.findUnique({
-      where: { id: props.imageId },
-    });
-  if (!existingImage) {
-    throw new HttpException("Image not found", 404);
-  }
-  if (existingImage.discussion_board_section_id !== props.sectionId) {
-    throw new HttpException(
-      "Image does not belong to the specified section",
-      400,
+}): Promise<IDiscussionBoardSection.Image> {
+  // 1. Check if any fields are provided for update
+  const hasUpdates =
+    props.body.filename !== undefined ||
+    props.body.mime_type !== undefined ||
+    props.body.image_type !== undefined ||
+    props.body.alt_text !== undefined;
+  if (!hasUpdates) {
+    // No updates requested, return current image
+    const currentImage =
+      await MyGlobal.prisma.discussion_board_section_images.findUniqueOrThrow({
+        where: { id: props.imageId },
+        ...DiscussionBoardSectionAtmageTransformer.select(),
+      });
+    return await DiscussionBoardSectionAtmageTransformer.transform(
+      currentImage,
     );
   }
-  // Validate image_type if provided
-  if (props.body.image_type) {
-    const allowedTypes = ["banner", "icon", "promotional", "thumbnail"];
-    if (!allowedTypes.includes(props.body.image_type)) {
-      throw new HttpException(
-        `Invalid image type. Allowed values: ${allowedTypes.join(", ")}`,
-        400,
-      );
-    }
-  }
-  // Prepare update data
+  // 2. Verify the section exists
+  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+    where: { id: props.sectionId },
+  });
+  // 3. Verify the image exists and belongs to the specified section
+  const existingImage =
+    await MyGlobal.prisma.discussion_board_section_images.findFirstOrThrow({
+      where: {
+        id: props.imageId,
+        discussion_board_section_id: props.sectionId,
+      },
+    });
+  // 4. Prepare update data with only provided fields
   const updateData: Prisma.discussion_board_section_imagesUpdateInput = {};
   if (props.body.filename !== undefined) {
     updateData.filename = props.body.filename;
@@ -60,17 +60,41 @@ export async function putDiscussionBoardSuperAdminSectionsSectionIdImagesImageId
     updateData.mime_type = props.body.mime_type;
   }
   if (props.body.image_type !== undefined) {
+    // Check unique constraint if image_type changes
+    if (props.body.image_type !== existingImage.image_type) {
+      const conflictingImage =
+        await MyGlobal.prisma.discussion_board_section_images.findUnique({
+          where: {
+            discussion_board_section_id_image_type: {
+              discussion_board_section_id: props.sectionId,
+              image_type: props.body.image_type,
+            },
+          },
+        });
+      if (conflictingImage && conflictingImage.id !== props.imageId) {
+        throw new HttpException(
+          `Another image with type '${props.body.image_type}' already exists for this section`,
+          409,
+        );
+      }
+    }
     updateData.image_type = props.body.image_type;
   }
   if (props.body.alt_text !== undefined) {
-    updateData.alt_text =
-      props.body.alt_text === null ? null : props.body.alt_text;
+    // For nullable field, pass null directly
+    updateData.alt_text = props.body.alt_text;
   }
-  // Update the image metadata
-  const updated = await MyGlobal.prisma.discussion_board_section_images.update({
+  // 5. Update the image
+  await MyGlobal.prisma.discussion_board_section_images.update({
     where: { id: props.imageId },
     data: updateData,
-    ...DiscussionBoardSectionImageTransformer.select(),
   });
-  return await DiscussionBoardSectionImageTransformer.transform(updated);
+  // 6. Retrieve the updated image with transformer select
+  const updatedImage =
+    await MyGlobal.prisma.discussion_board_section_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      ...DiscussionBoardSectionAtmageTransformer.select(),
+    });
+  // 7. Transform and return
+  return await DiscussionBoardSectionAtmageTransformer.transform(updatedImage);
 }

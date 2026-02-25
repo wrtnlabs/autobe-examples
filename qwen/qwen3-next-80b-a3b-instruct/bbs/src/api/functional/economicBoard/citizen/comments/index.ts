@@ -4,24 +4,253 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
 import { IEconomicBoardComment } from "../../../../structures/IEconomicBoardComment";
+import { IPageIEconomicBoardComment } from "../../../../structures/IPageIEconomicBoardComment";
 
 /**
- * Update an existing comment authored by the authenticated user.
+ * Retrieve a paginated and filtered list of comments associated with articles on the economic board.
  *
- * This operation allows a user to edit the content of their own comment, provided the edit is made within one hour of the comment's original creation time. After this one-hour window, the comment becomes immutable to prevent manipulation of discussion context. The user must provide the updated comment content in the request body; the operation does not allow changes to the comment's author, parent article, or timestamps.
+ * This operation enables advanced searching and filtering of user comments. Users can filter by article_id to retrieve all comments on a specific article, by author_id to view all comments by a particular citizen, or use full-text search on comment content using the 'q' parameter. The operation supports sorting by creation timestamp (oldest first or newest first) and pagination with configurable page size.
  *
- * The comment is identified by its unique ID in the path parameter. The system validates that the authenticated user is the original author of the comment. If the user attempts to edit a comment they do not own, the system returns a 403 Forbidden error. If the comment was created more than one hour ago, the system returns a 400 Bad Request with error code COMMENT_EDIT_WINDOW_EXPIRED.
+ * The response includes comment content, creation and update timestamps, and the citizen's display name, but excludes content if the comment has been deleted by an administrator. Edit metadata (updated_at) is included to support the 15-minute edit window requirement.
  *
- * After successful update, the comment's updated_at timestamp is modified to the current server time in Asia/Seoul timezone, and the comment's content is replaced with the new value. The original created_at timestamp is preserved for audit purposes. This operation supports the requirement that users can edit their own comments, but limits the ability to modify comments after a short time window to maintain logical flow in discussions.
+ * This endpoint is used by the article detail page to display comments and by administrators for moderation and auditing purposes. All results are restricted to active (non-deleted) comments. This operation complements GET /articles/{articleId}/comments, which is a simplified endpoint for article-specific comment viewing with fewer filters.
  *
- * Related operations: GET /comments/{commentId} for retrieving comment details, DELETE /comments/{commentId} for removing a comment.
+ * Permissions: Accessible to all authenticated users. Admins may filter by any author_id; regular users may only filter by their own author_id unless they have elevated permission via administrator role.
  *
  * @param props.connection
- * @param props.commentId Unique identifier of the comment to update. Must reference a valid economic_board_comments.id record.
- * @param props.body The new content for the comment being updated. Must be valid text between 1 and 2500 characters.
+ * @param props.body Search criteria and pagination parameters for filtering comments.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor citizen
- * @x-autobe-specification Retrieve comment record by ID from economic_board_comments table. Verify comment exists and is not deleted. Validate that the authenticated user's ID matches the comment's economic_board_users_id. Check if created_at is within the last 60 minutes (comment edit window). If edit window expired, return HTTP 400 with error code COMMENT_EDIT_WINDOW_EXPIRED. If user is not the author, return HTTP 403 with ACCESS_DENIED_EDIT. Update comment content field with new value from request body. Set updated_at timestamp to current server time (Asia/Seoul). Return the updated comment object including all fields: id, economic_board_articles_id, economic_board_users_id, content, created_at, updated_at, deleted_at, deleted_by_admin, deletion_reason. No additional database joins or parallel actions needed.
+ * @x-autobe-specification Query economic_board_comments table with pagination and filters:
+ * - Filter by article_id (if provided)
+ * - Filter by author_id (if provided)
+ * - Filter by created_at range (if provided)
+ * - Full-text search on content using GIN index if q parameter exists
+ * - Sort by created_at ASC (oldest) or DESC (newest) based on sort parameter
+ * - Apply pagination: page (default 1), limit (default 10)
+ * - Join with economic_board_citizens to include author display_name
+ * - Exclude deleted comments (deleted_at IS NULL)
+ * - Do NOT return content if comment is deleted by admin (per requirement)
+ * - Validate edit window: if comment was edited, show updated_at timestamp (per 05-system-behaviors.md and 09-file-management.md)
+ * - Use GIN index for efficient full-text search on content
+ * - Return 400 if page < 1 or limit > 100
+ * @path /economicBoard/citizen/comments
+ * @accessor api.functional.economicBoard.citizen.comments.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria and pagination parameters for filtering comments.
+     */
+    body: IEconomicBoardComment.IRequest;
+  };
+  export type Body = IEconomicBoardComment.IRequest;
+  export type Response = IPageIEconomicBoardComment.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/economicBoard/citizen/comments",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/economicBoard/citizen/comments";
+  export const random = (): IPageIEconomicBoardComment.ISummary =>
+    typia.random<IPageIEconomicBoardComment.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a single comment by its unique identifier.
+ *
+ * This operation returns the full details of a comment, including its content, author information, creation and update timestamps, and deletion status. Comments may be returned in deleted state, with content replaced by status indicators as defined by business rules.
+ *
+ * When a comment is active, the full content is displayed along with the author's display name. When the comment has been deleted by its author, the system displays "[Deleted Comment]" as the content, while preserving the creation timestamp and author identity. When the comment has been deleted by an administrator, the system displays "[Deleted by admin]" as the content, along with the administrator's display name and deletion reason if provided. If the comment's author has been deleted or banned, the system displays "[Deleted User]" or "[Banned User]" respectively in place of the author's display name, while preserving the comment content and timestamps.
+ *
+ * This operation requires the comment ID as a path parameter. Authentication is required to retrieve deleted comments; unauthenticated users can only view active comments. Admin users can see additional metadata including deletion reason and admin identity when applicable.
+ *
+ * Related operations: GET /articles/{articleId}/comments (lists all comments for an article), PATCH /comments/{commentId} (edits a comment), DELETE /comments/{commentId} (deletes a comment).
+ *
+ * @param props.connection
+ * @param props.commentId The unique identifier of the comment to retrieve.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor citizen
+ * @x-autobe-specification Query economic_board_comments table by id. Join with economic_board_citizens to retrieve author display_name. Check if deleted_at is null to determine comment status. If comment is deleted, include deletion timestamp and check if the deletion was performed by a user (author) or administrator (via audit log). If author's account is deleted or banned, use appropriate placeholder text for display_name. Return full comment record including content, created_at, updated_at, deleted_at, author_id, and article_id.
+ * @path /economicBoard/citizen/comments/:commentId
+ * @accessor api.functional.economicBoard.citizen.comments.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * The unique identifier of the comment to retrieve.
+     */
+    commentId: string;
+  };
+  export type Response = IEconomicBoardComment;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/economicBoard/citizen/comments/:commentId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/economicBoard/citizen/comments/${encodeURIComponent(props.commentId ?? "null")}`;
+  export const random = (): IEconomicBoardComment =>
+    typia.random<IEconomicBoardComment>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("commentId")(() => typia.assert(props.commentId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update an existing comment's content.
+ *
+ * This operation allows the original author of a comment or an administrator to modify the comment's content after it has been posted. The edit is subject to a 60-minute window from the comment's creation timestamp, as determined by comparing created_at and updated_at fields. Administrators can edit any comment regardless of time limits.
+ *
+ * When a comment is edited, the updated_at field is automatically set to the current timestamp, and the system logs the edit event for moderation purposes.
+ *
+ * Following the business rule, the content is trimmed of leading/trailing whitespace before saving. The endpoint does not allow changes to the author, article association, creation timestamp, or deletion status. Any attempt to modify these fields will be ignored.
+ *
+ * This operation is secured by requiring a valid JWT bearer token in the Authorization header. Access is controlled based on ownership: the caller's user ID must match the comment's author_id, or the caller must hold an administrator role as defined in the permission matrix.
+ *
+ * The returned response includes the full updated comment object with current timestamps. Editors can see the updated_at timestamp in the response to confirm the edit was processed.
+ *
+ * DEPRECATED: This operation replaces the original concept of DELETE to "soft delete". Users must rely on the comment's deleted_at field for moderation, not the edit endpoint to "remove" content. Editing instead "corrects" the content while preserving integrity.
+ *
+ * Related operations:
+ *
+ * - GET /comments/{commentId} — retrieve the current comment state
+ * - DELETE /comments/{commentId} — permanently mark comment as deleted
+ *
+ * For audit purposes, all edit operations are logged to the economic_board_administrator_audit_logs table when performed by administrators.
+ *
+ * @param props.connection
+ * @param props.commentId The unique identifier of the comment to update.
+ *
+ *                  Must be a valid UUID.
+ *
+ *                  This identifier links to the economic_board_comments table record.
+ * @param props.body The new content for the comment.
+ *
+ *             Must be a non-empty string not exceeding 1000 characters.
+ *
+ *             Only the 'content' field may be updated. Other fields (author, article, timestamps) are system-managed.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor citizen
+ * @x-autobe-specification Update comment content in economic_board_comments table based on commentId.
+ *
+ * 1. Extract commentId from path parameter and validate as valid UUID.
+ * 2. Authenticate user via JWT token and resolve userId.
+ * 3. Query economic_board_comments table by id = commentId with select: article_id, author_id, created_at, updated_at, content, deleted_at.
+ * 4. If comment not found, return 404.
+ * 5. If deleted_at is not null, return 410 (Gone).
+ * 6. If author_id !== userId AND user is not administrator, return 403.
+ * 7. If author_id === userId AND (updated_at - created_at) > 3600000 (60 minutes), return 403 (edit window expired).
+ * 8. Validate request body: content must be string and length <= 1000.
+ * 9. Trim whitespace from content.
+ * 10. Update comment: set content = new content, updated_at = now().
+ * 11. Return updated comment object with id, content, created_at, updated_at, author_id, article_id.
+ * 12. Use Prisma transaction for safety (though single field update).
+ *
+ * Edge case: If content is empty after trimming, return 400 (Invalid content).
  * @path /economicBoard/citizen/comments/:commentId
  * @accessor api.functional.economicBoard.citizen.comments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -51,12 +280,20 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the comment to update. Must reference a valid economic_board_comments.id record.
+     * The unique identifier of the comment to update.
+     *
+     * Must be a valid UUID.
+     *
+     * This identifier links to the economic_board_comments table record.
      */
     commentId: string;
 
     /**
-     * The new content for the comment being updated. Must be valid text between 1 and 2500 characters.
+     * The new content for the comment.
+     *
+     * Must be a non-empty string not exceeding 1000 characters.
+     *
+     * Only the 'content' field may be updated. Other fields (author, article, timestamps) are system-managed.
      */
     body: IEconomicBoardComment.IUpdate;
   };
@@ -64,7 +301,7 @@ export namespace update {
   export type Response = IEconomicBoardComment;
 
   export const METADATA = {
-    method: "PUT",
+    method: "PATCH",
     path: "/economicBoard/citizen/comments/:commentId",
     request: {
       type: "application/json",
@@ -107,19 +344,21 @@ export namespace update {
 }
 
 /**
- * Delete a specific comment identified by its UUID from the system. This operation permanently removes the comment from active display while maintaining a record in the audit trail for moderation purposes. The comment's content will no longer be visible to users, but the deletion event is logged with the administrator or user who initiated the deletion. This functionality enables users to remove their own comments they no longer wish to display, and administrators to moderate inappropriate or violating content across the platform.
+ * Delete a comment authored by the authenticated user.
  *
- * When a user deletes their own comment, the system marks the comment with a deleted_at timestamp and sets deleted_by_admin to false. When an administrator deletes a comment, the system marks it with a deleted_at timestamp and sets deleted_by_admin to true, while optionally recording a deletion_reason. This distinction supports audit capabilities where the system can differentiate between author-initiated deletions and moderation actions.
+ * This operation permanently removes a comment from public view by setting its status to 'deleted' in the database. The original comment content is preserved for audit purposes. The article's comment_count is decremented by one. This operation is subject to a seven-day time limit; users may only delete comments posted within the last seven days.
  *
- * This operation is restricted by user permissions: only the comment's original author or an administrator can initiate a deletion. The system validates the authenticated user's identity against the comment's author relationship before processing the deletion. Unauthorized deletion attempts result in HTTP 403 Forbidden responses.
+ * Deleted comments are not physically removed from the database, ensuring data integrity for audit trails and content moderation. The comment will display as 'This comment has been deleted by the author.' when viewed by other users.
  *
- * Note that this is a soft-delete operation; the comment record persists in the database for audit purposes, but is filtered out from normal query results. The deletion does not affect the parent article's comment count until the deletion is processed by the system's background service, which performs the count decrement asynchronously to maintain performance during high-concurrency periods.
+ * Authenticated citizens can only delete their own comments. Attempts to delete comments authored by others result in a PERMISSION_DENIED error. Administrators and super administrators must use the /admin/comments/{commentId} endpoint to delete any comment, which sets status to 'deleted_by_admin' and logs the administrative reason.
+ *
+ * This operation does not affect article content, attachments, or other comments. Deletion is irreversible. Users attempting to delete an already-deleted comment receive an 'already deleted' error message.
  *
  * @param props.connection
- * @param props.commentId Unique identifier of the comment to be deleted.
+ * @param props.commentId The unique identifier of the comment to be deleted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor citizen
- * @x-autobe-specification Query the economic_board_comments table using the commentId parameter to find the target comment. Verify that the authenticated user is either the comment's author (economic_board_users_id matches current userId) or has administrator permissions. If verification fails, return HTTP 403 Forbidden. If verification succeeds, update the comment with a current timestamp in deleted_at field and set deleted_by_admin to true if the requestor has admin privileges, or false if the requester is the author. For admin deletions, if a deletion_reason was provided in the request (though none is specified in endpoint contract), update that field accordingly. Return HTTP 204 No Content upon successful deletion.
+ * @x-autobe-specification Query economic_board_comments table for comment with matching id and author_id = authenticated user. Validate comment status is 'active'. Validate comment created_at is within last 7 days. If validation fails, return appropriate error (PERMISSION_DENIED or TOO_OLD). If valid, update comment status to 'deleted'. Set deleted_at to current timestamp. Decrement the associated article's comment_count by 1 using UPDATE statement with WHERE article_id = the comment's article_id. Log deletion event in economic_board_administrator_audit_logs table with actor_id = user_id, action = 'COMMENT_DELETED', details = { comment_id, article_id, reason: 'user_deleted' }. Return 204 No Content.
  * @path /economicBoard/citizen/comments/:commentId
  * @accessor api.functional.economicBoard.citizen.comments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -148,7 +387,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the comment to be deleted.
+     * The unique identifier of the comment to be deleted.
      */
     commentId: string;
   };

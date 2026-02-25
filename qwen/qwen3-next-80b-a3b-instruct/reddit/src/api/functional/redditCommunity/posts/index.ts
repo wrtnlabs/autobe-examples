@@ -5,38 +5,83 @@ import typia, { tags } from "typia";
 
 import { IPageIRedditCommunityPost } from "../../../structures/IPageIRedditCommunityPost";
 import { IRedditCommunityPost } from "../../../structures/IRedditCommunityPost";
+import { IRedditCommunityPostWithComment } from "../../../structures/IRedditCommunityPostWithComment";
+
+export * as comments from "./comments/index";
 
 /**
- * Retrieve filtered and paginated lists of posts across the platform.
+ * Retrieve a filtered and paginated list of posts based on search criteria.
  *
- * This endpoint supports three distinct feed types: Home, Popular, and Community, each with specific access rules and content filtering. The Home Feed displays posts from communities the authenticated user is subscribed to. The Popular Feed shows public posts from all communities and is accessible to both authenticated and guest users. The Community Feed returns all posts from a single specified community.
+ * This operation provides advanced search and sorting capabilities for posts. Unlike simple GET requests, it accepts a request body that defines complex filtering, sorting, and pagination parameters. This design supports algorithms that require multi-dimensional calculation, such as the 'Hot' ranking which considers recency, vote volume, and comment count.
  *
- * The response includes pagination metadata and supports multiple sorting algorithms: 'hot' (recency-weighted popularity), 'new' (chronological), 'top' (vote-based, with time filters), and 'controversial' (high engagement with near-zero net score). For security, Home Feed requires valid JWT authentication while other feeds are publicly accessible.
+ * Users may search across all communities or within a specific community by providing the community_id in the request body. The response returns a paginated list of post summaries optimized for feed displays.
  *
- * Each post in the result set displays only essential summary data: title (truncated), author username, community name, vote score, comment count, time since creation, and media preview (image thumbnail or domain name for links). Full post content, author avatar, and karma scores are deliberately excluded to maintain API efficiency and prevent data overload.
+ * Sorting algorithms:
+ * - 'new': Order by created_at descending (most recent first)
+ * - 'top': Order by vote_score descending (highest score first)
+ * - 'hot': Weighted algorithm: (upvotes * 10) / ((hours since posted + 2) ^ 1.2)
+ * - 'controversial': High total votes (>10) with low absolute difference between upvotes and downvotes (|upvotes - downvotes| < 5)
  *
- * This operation is central to the user experience and must comply exactly with the business logic defined in '10-feed-and-sorting.md' and '05-post-management.md'.
+ * Time filters restrict results to posts created within a time window:
+ * - 'today': last 24 hours
+ * - 'week': last 7 days
+ * - 'month': last 30 days
+ * - 'year': last 365 days
+ * - 'all': no time restriction
+ *
+ * Authorization:
+ * - Must be an authenticated user (token required) for /feed/home and /feed/popular
+ * - Public access allowed for community feed endpoints
+ *
+ * Parameters:
+ * - community_id (optional): Filter only posts from this community
+ * - sort: 'new', 'top', 'hot', 'controversial' (required)
+ * - timeFilter: 'today', 'week', 'month', 'year', 'all' (optional, defaults to 'all')
+ * - page: Natural number, default 1
+ * - limit: Natural number, default 20, maximum 100
+ *
+ * Related operations:
+ * - POST /posts to create a new post
+ * - GET /posts/{postId} to retrieve a single post detail
+ * - GET /communities/{communityId}/posts to view posts in a community page
+ *
+ * Failure cases:
+ * - 400 Bad Request: Invalid sort type, invalid timeFilter, invalid page/limit values
+ * - 403 Forbidden: User attempts to query /feed/home without authentication
+ * - 404 Not Found: If community_id is provided but does not exist
  *
  * @param props.connection
- * @param props.body Search criteria including feed type, sorting method, time filter (for top), and pagination parameters.
+ * @param props.body Search criteria and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_community_posts table with pagination and sorting by specified criteria.
- * - For Home Feed: Filter by subscription of authenticated user via reddit_community_user_communities table
- * - For Popular Feed: Include all posts where deleted_at IS NULL
- * - For Community Feed: Filter by community_id from path parameter
- * - Apply sorting:
- *   - 'hot': log10(vote_score + 1) + (created_at / 3600000)
+ * @x-autobe-specification Query reddit_community_posts table with:
+ * - Conditional WHERE clause:
+ *   - If community_id provided: community_id = request.community_id
+ *   - If timeFilter provided: created_at >= now() - [correct time interval]
+ * - ORDER BY clause based on sort parameter:
  *   - 'new': created_at DESC
- *   - 'top': vote_score DESC + time filter
- *   - 'controversial': abs(upvotes - downvotes) / (upvotes + downvotes + 1)
- * - Use offset-based pagination with limit = 20
- * - Join with reddit_community_communities for community name
- * - Join with reddit_community_members for author username
- * - Join with reddit_community_post_comment_counts for comment_count
- * - Do not include full body content or URL in summary
- * - Do not include avatar or karma in summary
- * - Exclude all posts with deleted_at NOT NULL
+ *   - 'top': vote_score DESC
+ *   - 'hot': (upvotes * 10) / ((hours_since_created + 2) ^ 1.2) DESC
+ *   - 'controversial': (
+ *     SUM(upvotes + downvotes) > 10 AND
+ *     ABS(upvotes - downvotes) < 5 AND
+ *     ABS(vote_score) < 5
+ *   ) ORDER BY (upvotes + downvotes) DESC
+ * - Limit and offset based on page and limit parameters
+ * - Return only necessary fields:
+ *   - id, title, author_id, community_id, vote_score, comment_count, created_at, updated_at, type, image_url, url
+ * - Calculate upvotes and downvotes using reddit_community_post_votes table with the user_ids
+ * - Join with reddit_community_communities to get community name for response
+ * - Page results using cursor-based or offset-based pagination (offset preferred due to smaller data volume)
+ * - Return total count for pagination controls
+ *
+ * Return 400 if sort/timeFilter/page/limit are invalid
+ * Return 403 if /feed/home called without auth
+ * Return 404 if community_id not found
+ *
+ * Result must be shaped as IPageIRedditCommunityPost.ISummary
+ *
+ * Typical use: /feed/home, /feed/popular, /communities/{communityId}/posts
  * @path /redditCommunity/posts
  * @accessor api.functional.redditCommunity.posts.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,12 +111,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria including feed type, sorting method, time filter (for top), and pagination parameters.
+     * Search criteria and pagination parameters
      */
     body: IRedditCommunityPost.IRequest;
   };
   export type Body = IRedditCommunityPost.IRequest;
-  export type Response = IPageIRedditCommunityPost.ISummary;
+  export type Response = IPageIRedditCommunityPost.ISum;
 
   export const METADATA = {
     method: "PATCH",
@@ -87,8 +132,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/redditCommunity/posts";
-  export const random = (): IPageIRedditCommunityPost.ISummary =>
-    typia.random<IPageIRedditCommunityPost.ISummary>();
+  export const random = (): IPageIRedditCommunityPost.ISum =>
+    typia.random<IPageIRedditCommunityPost.ISum>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -115,21 +160,30 @@ export namespace index {
 }
 
 /**
- * Retrieve the full details of a single post by its unique identifier.
+ * Retrieve a single post by its unique identifier.
  *
- * This endpoint provides complete information about a specific post, including its title, content (text, link, or image), author, community, vote score, comment count, creation and update timestamps, and current status. It is used for deep linking to individual posts from feed lists, notifications, or external references.
+ * This endpoint returns the complete details of a specific post, including its title, content, media links, author information, community affiliation, and current vote score. It also provides the complete hierarchical structure of all comments under this post, enabling full threaded discussion rendering.
  *
- * Access to the post is subject to visibility rules: only active posts from active communities are shown to guests and non-subscribers. Deleted or archived posts are hidden from public view but remain accessible to the post's author, the community's owner, or a moderator. Banned posts are hidden from regular users but visible to moderators and owners.
+ * The post data includes all fields necessary to display the post in detail: title (up to 300 characters), optional text content (up to 10,000 characters), URL and image links (if applicable), creation and update timestamps, and the calculated vote score. The author and community are returned as embedded objects with minimal identifying information (id and username for author, id and name for community).
  *
- * The comment count is obtained from the precomputed reddit_community_post_comment_counts table to ensure fast response times, even for posts with thousands of comments. The author's karma score is included to provide context on the author's reputation within the community.
+ * Comments are returned as a recursively structured tree where each comment contains its own child replies. This structure allows the client to render nested discussions without additional round-trips. Only active, non-deleted comments are included in the tree. Comment vote scores and creation timestamps are preserved to support sorting and ranking.
  *
- * This API endpoint must be called before any comment thread is rendered, ensuring complete post context is available for the UI. It has no relationship with the user's subscription status unless the post or community is marked deleted or archived, in which case subscription is irrelevant to access determination.
+ * Access to this endpoint does not require authentication for posts marked as publicly visible, but authenticated users can view their own deleted or hidden posts. Moderators and owners of the containing community can view all posts regardless of status.
+ *
+ * Note: This endpoint should not be confused with search or list endpoints. It returns exactly one resource and does not support filtering, sorting, or pagination as all content is requested explicitly by ID.
  *
  * @param props.connection
- * @param props.postId The unique UUID identifier of the post to retrieve.
+ * @param props.postId The unique global identifier of the target post. Must be a UUID, as defined by the postgres UUID type in the reddit_community_posts table.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_community_posts by id. Join with reddit_community_users to get author display name. Join with reddit_community_communities to get community name and visibility status. Join with reddit_community_post_comment_counts to get total_comments. Verify that post and community are not deleted or archived. Return null if post or community is deleted. Return status: 'deleted' if post is marked deleted but user is author/moderator/owner. Return status: 'banned' if content has been moderator-banned but user is moderator/owner. Return all visible fields: title, createdAt, updatedAt, author: { id, displayName }, community: { id, name, iconUrl }, type: 'text'|'link'|'image', content: { textContent | url | imageUrl }, voteScore, commentCount, status, karmaScore (author's karma).
+ * @x-autobe-specification Query reddit_community_posts table by id to fetch post details.
+ * Join with reddit_community_members to get author username.
+ * Join with reddit_community_communities to get community name.
+ * Count active, non-deleted comments from reddit_community_comments where parent_comment_id is null or linked to the post.
+ * Query reddit_community_comments table recursively with parent-child hierarchy to build full tree.
+ * Return single post object with integrated comment tree array.
+ * Filter hidden or deleted posts (is_deleted = true) unless user is author/moderator.
+ * Cache result for 1 minute using Redis for performance.
  * @path /redditCommunity/posts/:postId
  * @accessor api.functional.redditCommunity.posts.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -158,11 +212,11 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique UUID identifier of the post to retrieve.
+     * The unique global identifier of the target post. Must be a UUID, as defined by the postgres UUID type in the reddit_community_posts table.
      */
     postId: string & tags.Format<"uuid">;
   };
-  export type Response = IRedditCommunityPost;
+  export type Response = IRedditCommunityPostWithComment;
 
   export const METADATA = {
     method: "GET",
@@ -176,8 +230,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/redditCommunity/posts/${encodeURIComponent(props.postId ?? "null")}`;
-  export const random = (): IRedditCommunityPost =>
-    typia.random<IRedditCommunityPost>();
+  export const random = (): IRedditCommunityPostWithComment =>
+    typia.random<IRedditCommunityPostWithComment>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,

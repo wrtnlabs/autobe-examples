@@ -7,34 +7,27 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardSuperAdminApiRateLimitsRateLimitId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   rateLimitId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Check if the rate limit exists and is not already deleted
-  const existingRateLimit =
-    await MyGlobal.prisma.discussion_board_api_rate_limits.findUnique({
-      where: { id: props.rateLimitId },
+  // Verify the rate limit configuration exists and is active
+  const rateLimit =
+    await MyGlobal.prisma.discussion_board_api_rate_limits.findUniqueOrThrow({
+      where: {
+        id: props.rateLimitId,
+        deleted_at: null, // Only consider active records
+      },
     });
-  if (!existingRateLimit) {
-    throw new HttpException("API rate limit configuration not found", 404);
-  }
-  if (existingRateLimit.deleted_at !== null) {
-    throw new HttpException(
-      "API rate limit configuration already deleted",
-      400,
-    );
-  }
-  // Perform soft deletion by setting deleted_at timestamp
+  // Perform soft deletion with current timestamp
   await MyGlobal.prisma.discussion_board_api_rate_limits.update({
     where: { id: props.rateLimitId },
     data: {
-      deleted_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      deleted_at: new Date().toISOString(), // Store as ISO string format
     },
   });
 }

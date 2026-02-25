@@ -16,20 +16,28 @@ export async function getDiscussionBoardAdministratorAdministratorGradesGradeId(
   administrator: AdministratorPayload;
   gradeId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardAdministratorGrade> {
-  const grade =
-    await MyGlobal.prisma.discussion_board_administrator_grades.findUnique({
-      where: { id: props.gradeId },
-    });
-  if (grade === null)
-    throw new HttpException("Administrator grade not found", 404);
+  const record =
+    await MyGlobal.prisma.discussion_board_administrator_grades.findUniqueOrThrow(
+      {
+        where: { id: props.gradeId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          level: true,
+          created_at: true,
+          updated_at: true,
+        },
+      },
+    );
   return {
-    id: grade.id,
-    name: grade.name,
-    description: grade.description,
-    level: grade.level,
-    created_at: toISOStringSafe(grade.created_at),
-    updated_at: toISOStringSafe(grade.updated_at),
-    deleted_at:
-      grade.deleted_at !== null ? toISOStringSafe(grade.deleted_at) : null,
+    id: record.id,
+    name: record.name,
+    description: record.description,
+    level: record.level,
+    created_at: record.created_at.toISOString() as unknown as string &
+      tags.Format<"date-time">,
+    updated_at: record.updated_at.toISOString() as unknown as string &
+      tags.Format<"date-time">,
   };
 }

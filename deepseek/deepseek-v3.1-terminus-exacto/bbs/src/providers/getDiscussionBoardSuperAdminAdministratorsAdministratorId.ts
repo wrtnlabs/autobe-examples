@@ -1,7 +1,6 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -11,29 +10,24 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardAdministratorPromotionApprovalTransformer } from "../transformers/DiscussionBoardAdministratorPromotionApprovalTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardSuperAdminTransformer } from "../transformers/DiscussionBoardSuperAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminAdministratorsAdministratorId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   administratorId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardAdministratorPromotionApproval> {
-  setTimeout(() => {});
+}): Promise<IDiscussionBoardSuperAdmin> {
   const administrator =
-    await MyGlobal.prisma.discussion_board_administrators.findUnique({
-      where: {
-        id: props.administratorId,
-        is_active: true,
-        deleted_at: null,
+    await MyGlobal.prisma.discussion_board_section_administrators.findUniqueOrThrow(
+      {
+        where: {
+          id: props.administratorId,
+          deleted_at: null,
+        },
+        ...DiscussionBoardSuperAdminTransformer.select(),
       },
-      ...DiscussionBoardAdministratorPromotionApprovalTransformer.select(),
-    });
-  if (!administrator) {
-    throw new HttpException("Administrator not found", 404);
-  }
-  return await DiscussionBoardAdministratorPromotionApprovalTransformer.transform(
-    administrator,
-  );
+    );
+  return await DiscussionBoardSuperAdminTransformer.transform(administrator);
 }

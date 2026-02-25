@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_economic_board_comment(
-  input?: DeepPartial<IEconomicBoardComment.ICreate> | undefined,
+  input?: DeepPartial<IEconomicBoardComment.ICreate>,
 ): IEconomicBoardComment.ICreate {
-  input;
-  return {};
+  return {
+    content:
+      input?.content ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 10 }),
+  };
 }

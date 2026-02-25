@@ -3,38 +3,33 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IDiscussionBoardAdministratorPromotionRequest } from "../../../../structures/IDiscussionBoardAdministratorPromotionRequest";
-import { IPageIDiscussionBoardAdministratorPromotionRequest } from "../../../../structures/IPageIDiscussionBoardAdministratorPromotionRequest";
+import { IDiscussionBoardAdministratorPromotionApproval } from "../../../../structures/IDiscussionBoardAdministratorPromotionApproval";
+import { IPageIDiscussionBoardAdministratorPromotionApproval } from "../../../../structures/IPageIDiscussionBoardAdministratorPromotionApproval";
+
+export * as workflows from "./workflows/index";
 
 /**
- * Search and filter administrator promotion requests for review by super administrators.
+ * Retrieve a filtered and paginated list of administrator promotion requests for super administrator review.
  *
- * This operation provides comprehensive search capabilities for the administrator promotion request workflow. Super administrators can filter requests by status (pending, approved, rejected), date ranges, user information, and reviewer details. The search supports text-based filtering on promotion reason text and reviewer notes using advanced trigram search functionality.
+ * This operation provides comprehensive search capabilities for the administrator promotion workflow. Super administrators can filter requests by status ('pending', 'approved', 'rejected'), date ranges, and perform text searches on the request reason field using full-text search capabilities. The response includes essential summary information for each request to facilitate efficient review and decision-making.
  *
- * The response provides paginated results with summarized information suitable for administrative review interfaces. Each result includes essential request details, user information, and current workflow status. This operation is essential for managing the administrator promotion process and ensuring proper governance of platform privileges.
+ * The operation supports the hierarchical administrator system where super administrators manage the promotion process. Response data includes user display names, request timestamps, and current status to provide complete context for promotion decisions. Pagination ensures efficient handling of large numbers of promotion requests while maintaining performance.
  *
- * Access to this operation is restricted to super administrators only, as it involves sensitive administrative data and privilege management functions. The search functionality supports the hierarchical administrator system by enabling efficient review and processing of promotion requests according to platform governance policies.
+ * Security considerations require that only authenticated super administrators can access this operation. The system validates administrator privileges before returning any promotion request data to maintain the integrity of the promotion review process.
  *
  * @param props.connection
- * @param props.body Search criteria for filtering administrator promotion requests
+ * @param props.body Search criteria and pagination parameters for promotion requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query discussion_board_administrator_promotion_requests table with comprehensive filtering capabilities.
+ * @x-autobe-specification Query discussion_board_administrator_promotion_requests table with pagination and filtering capabilities.
  *
- * Apply filters based on:
- * - Status: pending, approved, rejected
- * - Date ranges: created_at, approved_at, rejected_at
- * - User information: display name, email
- * - Reviewer information: super admin details
- * - Reason text search using trigram search
+ * Apply filters based on request status ('pending', 'approved', 'rejected'), date ranges (created_at, approved_at, rejected_at), and user information. Support text search on reason field using full-text search capabilities.
  *
- * Implement pagination with cursor-based or offset-based approach.
- * Join with user table for user display names and reviewer table for reviewer information.
- * Return summarized information suitable for administrative review lists.
+ * Join with discussion_board_users table to include user display names and email information in the summary response. Implement cursor-based pagination for efficient large result sets.
  *
- * Security: Verify requester is super administrator before processing.
- * Performance: Use appropriate indexes for search performance.
- * Validation: Ensure all search parameters are properly validated and sanitized.
+ * Only super administrators should have access to this operation. Validate that the requesting user has super administrator privileges before processing the request.
+ *
+ * Return summary information optimized for list displays, including request status, user details, and timestamps without exposing sensitive authentication information.
  * @path /discussionBoard/superAdmin/promotion-requests
  * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -64,13 +59,13 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria for filtering administrator promotion requests
+     * Search criteria and pagination parameters for promotion requests
      */
-    body: IDiscussionBoardAdministratorPromotionRequest.IRequest;
+    body: IDiscussionBoardAdministratorPromotionApproval.IRequest;
   };
-  export type Body = IDiscussionBoardAdministratorPromotionRequest.IRequest;
+  export type Body = IDiscussionBoardAdministratorPromotionApproval.IRequest;
   export type Response =
-    IPageIDiscussionBoardAdministratorPromotionRequest.ISummary;
+    IPageIDiscussionBoardAdministratorPromotionApproval.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -87,8 +82,8 @@ export namespace index {
 
   export const path = () => "/discussionBoard/superAdmin/promotion-requests";
   export const random =
-    (): IPageIDiscussionBoardAdministratorPromotionRequest.ISummary =>
-      typia.random<IPageIDiscussionBoardAdministratorPromotionRequest.ISummary>();
+    (): IPageIDiscussionBoardAdministratorPromotionApproval.ISummary =>
+      typia.random<IPageIDiscussionBoardAdministratorPromotionApproval.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -117,23 +112,19 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific administrator promotion request.
  *
- * This operation provides comprehensive access to administrator promotion request details, including the requesting user's information, justification text, current workflow status, and review history. Super administrators use this endpoint to examine individual promotion requests during the review process, enabling informed decision-making about administrator appointments.
+ * This operation provides comprehensive details for a single promotion request from the `discussion_board_administrator_promotion_requests` table, including the user's justification (reason column), current workflow state (status column), timestamps for submission (created_at) and decision processing (approved_at, rejected_at), and reviewer notes (reviewer_notes) when available. The response includes both the request metadata and information about the user who submitted the request by joining with the `discussion_board_users` table.
  *
- * The response includes the complete promotion request record with associated user data, status tracking, and reviewer information when applicable. This detailed view supports the hierarchical administrator system by providing super administrators with all necessary information to evaluate promotion requests according to platform governance policies.
+ * Super administrators use this endpoint during the review process to evaluate promotion requests. The detailed information helps assess the user's suitability for administrator privileges based on their provided justification and platform activity history. Security validation ensures only super administrators (via `discussion_board_super_admins` actor type) can access this privileged operation.
  *
- * Security considerations require that only super administrators can access this endpoint, as promotion request review is a privileged administrative function. The operation validates that the requesting user has appropriate permissions before returning sensitive promotion request data.
+ * Related operations include listing all pending requests via PATCH /discussionBoard/promotionRequests (named 'index') and making approval/rejection decisions via PUT /discussionBoard/superAdmin/promotion-requests/{requestId} (named 'update'). This operation supports the administrator promotion workflow documented in the administrator-system.md analysis file.
  *
- * Related operations include PATCH /promotion-requests for listing all promotion requests and PUT /promotion-requests/{requestId} for updating request status through approval or rejection workflows.
+ * Access to this operation requires super administrator authorization. The system validates that the requesting user has super administrator privileges by checking their actor type before returning any promotion request data. If the promotion request doesn't exist, returns HTTP 404 Not Found.
  *
  * @param props.connection
  * @param props.requestId Unique identifier of the promotion request to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the discussion_board_administrator_promotion_requests table by the provided requestId parameter to retrieve the specific promotion request. Include related user information from discussion_board_users table to provide complete request context. Validate that the requesting user has super administrator privileges before returning the data.
- *
- * Return all fields from the promotion request record including id, user_id, reason, status, approved_at, rejected_at, reviewer information, and timestamps. Handle cases where the requestId does not exist by returning appropriate 404 error response.
- *
- * Ensure the response includes the complete promotion request object with all relevant details needed for super administrator review and decision-making.
+ * @x-autobe-specification Query the discussion_board_administrator_promotion_requests table by the provided requestId UUID. Include all relevant fields: id, discussion_board_user_id, reason, status, approved_at, rejected_at, reviewer_notes, created_at, updated_at. Retrieve associated user information from discussion_board_users table to provide display name and email of the requester. Return 404 if no request found with the given ID. Ensure proper authorization - only super administrators should be able to access this endpoint for review purposes.
  * @path /discussionBoard/superAdmin/promotion-requests/:requestId
  * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -166,7 +157,7 @@ export namespace at {
      */
     requestId: string & tags.Format<"uuid">;
   };
-  export type Response = IDiscussionBoardAdministratorPromotionRequest;
+  export type Response = IDiscussionBoardAdministratorPromotionApproval;
 
   export const METADATA = {
     method: "GET",
@@ -180,8 +171,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/discussionBoard/superAdmin/promotion-requests/${encodeURIComponent(props.requestId ?? "null")}`;
-  export const random = (): IDiscussionBoardAdministratorPromotionRequest =>
-    typia.random<IDiscussionBoardAdministratorPromotionRequest>();
+  export const random = (): IDiscussionBoardAdministratorPromotionApproval =>
+    typia.random<IDiscussionBoardAdministratorPromotionApproval>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -208,41 +199,32 @@ export namespace at {
 }
 
 /**
- * Update an administrator promotion request with approval or rejection decision.
+ * Update the status and review details of an administrator promotion request.
  *
- * This operation allows super administrators to review and decide on pending promotion requests submitted by regular users seeking administrator status. The operation requires the request ID as a path parameter and expects decision information including approval status and optional reviewer notes.
+ * This API operation allows super administrators to review and decide on pending promotion requests submitted by users seeking administrator privileges. The operation supports both approval and rejection workflows, recording the decision timestamp, reviewer identity, and optional explanation notes.
  *
- * When approving a request, the system creates a new administrator record for the user, updates the request status to 'approved', records the approval timestamp and reviewer information, and sends notification to the promoted user. The user gains administrator privileges immediately upon approval.
+ * When a promotion request is approved, the system automatically creates an administrator assignment record linking the user to the appropriate administrator grade. The request status transitions from 'pending' to 'approved', and the user gains administrator privileges according to the platform's governance policies.
  *
- * When rejecting a request, the system updates the request status to 'rejected', records the rejection timestamp and reviewer information, and sends notification to the user with the rejection reason. Promotion requests follow standard moderation workflow processes.
+ * When a promotion request is rejected, the status transitions to 'rejected' and the user receives notification of the decision. Rejection records are maintained for audit purposes and to prevent immediate re-submission attempts.
  *
- * This operation requires super administrator privileges and can only be performed on requests that are currently in 'pending' status. Each request can only be processed once, preventing duplicate approvals or rejections. Authorization is enforced at the API gateway level, requiring valid super administrator authentication tokens for access.
+ * Security considerations require that only super administrators can access this operation. The system validates that the requesting user has super administrator privileges and that the target promotion request exists and is in a pending state before processing the update.
+ *
+ * The operation integrates with the administrator promotion workflow defined in the discussion_board_administrator_promotion_requests table, ensuring proper audit trail maintenance and compliance with platform governance requirements.
  *
  * @param props.connection
  * @param props.requestId Unique identifier of the promotion request to update
- * @param props.body Approval or rejection decision for the promotion request
+ * @param props.body Approval decision and reviewer notes for the promotion request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Update an existing administrator promotion request with approval or rejection decision.
+ * @x-autobe-specification Update the promotion request status and reviewer information in the discussion_board_administrator_promotion_requests table.
  *
- * Validate that the authenticated user is a super administrator with permission to review promotion requests.
+ * First, validate that the authenticated user is a super administrator with privileges to review promotion requests. Verify that the target promotion request exists and has a 'pending' status.
  *
- * Check that the promotion request exists and is in 'pending' status before processing.
+ * If the request body indicates approval (approved: true), update the status to 'approved', set approved_at to current timestamp, store reviewer_discussion_board_super_admin_id, and optionally save reviewer_notes. Create a corresponding administrator assignment record in discussion_board_administrators table with 'regular' grade.
  *
- * If approving the request:
- * - Create a new administrator record for the user
- * - Update the promotion request status to 'approved'
- * - Set approved_at timestamp and reviewer information
- * - Send notification to the promoted user
+ * If the request body indicates rejection (approved: false), update the status to 'rejected', set rejected_at to current timestamp, store reviewer_discussion_board_super_admin_id, and optionally save reviewer_notes.
  *
- * If rejecting the request:
- * - Update the promotion request status to 'rejected'
- * - Set rejected_at timestamp and reviewer information
- * - Send notification to the user with rejection reason
- *
- * Ensure that only one decision can be made per request and prevent duplicate approvals/rejections.
- *
- * Return the updated promotion request with complete status information.
+ * Return the complete updated promotion request record including all relationships. Handle edge cases such as already processed requests, invalid request IDs, and insufficient privileges with appropriate error responses.
  * @path /discussionBoard/superAdmin/promotion-requests/:requestId
  * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -277,12 +259,12 @@ export namespace update {
     requestId: string & tags.Format<"uuid">;
 
     /**
-     * Approval or rejection decision for the promotion request
+     * Approval decision and reviewer notes for the promotion request
      */
-    body: IDiscussionBoardAdministratorPromotionRequest.IUpdate;
+    body: IDiscussionBoardAdministratorPromotionApproval.IUpdate;
   };
-  export type Body = IDiscussionBoardAdministratorPromotionRequest.IUpdate;
-  export type Response = IDiscussionBoardAdministratorPromotionRequest;
+  export type Body = IDiscussionBoardAdministratorPromotionApproval.IUpdate;
+  export type Response = IDiscussionBoardAdministratorPromotionApproval;
 
   export const METADATA = {
     method: "PUT",
@@ -299,8 +281,8 @@ export namespace update {
 
   export const path = (props: Omit<Props, "body">) =>
     `/discussionBoard/superAdmin/promotion-requests/${encodeURIComponent(props.requestId ?? "null")}`;
-  export const random = (): IDiscussionBoardAdministratorPromotionRequest =>
-    typia.random<IDiscussionBoardAdministratorPromotionRequest>();
+  export const random = (): IDiscussionBoardAdministratorPromotionApproval =>
+    typia.random<IDiscussionBoardAdministratorPromotionApproval>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -328,19 +310,27 @@ export namespace update {
 }
 
 /**
- * Permanently removes a pending administrator promotion request from the system.
+ * Permanently delete an administrator promotion request from the system.
  *
- * This operation allows authorized super administrators to delete promotion requests that are still in pending status. Only requests with 'pending' status can be deleted - approved or rejected requests represent completed workflow states and cannot be removed.
+ * This operation removes a specific promotion request record identified by the request ID parameter. When a promotion request is deleted, all associated approval records and workflow tracking information are also removed through cascading deletion. This operation is typically used by super administrators to clean up invalid or obsolete promotion requests.
  *
- * Authorization is strictly limited to super administrators to ensure proper governance of the promotion process. The operation validates the existence and current status of the promotion request before proceeding with deletion. Upon successful deletion, the complete promotion request record is returned for audit trail purposes.
+ * The deletion is permanent and irreversible. Once executed, the promotion request and its complete history cannot be recovered. This operation should be used with caution as it removes the entire audit trail associated with the promotion request.
  *
- * This operation is typically used for cleaning up duplicate pending requests, removing requests that violate platform policies before approval, or handling administrative corrections during the review process. Deletion should be performed with caution as it permanently removes the request history.
+ * Security considerations: Only authorized administrators with appropriate privileges should have access to this operation. The system should verify that the requesting administrator has super administrator privileges before allowing the deletion to proceed.
+ *
+ * Related operations: GET /promotion-requests/{requestId} can be used to retrieve promotion request details before deletion, and PATCH /promotion-requests can be used to search for promotion requests that might need to be deleted.
  *
  * @param props.connection
  * @param props.requestId Unique identifier of the promotion request to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Delete a specific administrator promotion request by its ID. Validate that the requesting user has super administrator privileges. Check if the promotion request exists before deletion. If the request is already approved or rejected, consider whether deletion should be allowed (business decision). Return the deleted promotion request record for audit purposes.
+ * @x-autobe-specification Query the discussion_board_administrator_promotion_requests table by the provided requestId parameter. Verify that the promotion request exists before attempting deletion. If the promotion request does not exist, return a 404 Not Found error.
+ *
+ * Perform a hard delete operation that permanently removes the promotion request record from the database. Due to the cascading delete constraints defined in the database schema, all related approval records in discussion_board_administrator_promotion_approvals will also be automatically deleted.
+ *
+ * Validate that the requesting administrator has super administrator privileges to perform this operation. Log the deletion action for audit purposes, including the administrator who performed the deletion and the timestamp.
+ *
+ * Return a 204 No Content response upon successful deletion to indicate that the operation completed successfully but no response body is returned.
  * @path /discussionBoard/superAdmin/promotion-requests/:requestId
  * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -348,7 +338,7 @@ export namespace update {
 export async function erase(
   connection: IConnection,
   props: erase.Props,
-): Promise<erase.Response> {
+): Promise<void> {
   return true === connection.simulate
     ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
@@ -373,7 +363,6 @@ export namespace erase {
      */
     requestId: string & tags.Format<"uuid">;
   };
-  export type Response = IDiscussionBoardAdministratorPromotionRequest;
 
   export const METADATA = {
     method: "DELETE",
@@ -387,12 +376,11 @@ export namespace erase {
 
   export const path = (props: Props) =>
     `/discussionBoard/superAdmin/promotion-requests/${encodeURIComponent(props.requestId ?? "null")}`;
-  export const random = (): IDiscussionBoardAdministratorPromotionRequest =>
-    typia.random<IDiscussionBoardAdministratorPromotionRequest>();
+  export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
     props: erase.Props,
-  ): Response => {
+  ): void => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
@@ -401,6 +389,206 @@ export namespace erase {
     });
     try {
       assert.param("requestId")(() => typia.assert(props.requestId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Approves a pending administrator promotion request, transitioning the user to administrator status.
+ *
+ * This operation is restricted to super administrators only and allows them to grant administrator privileges to regular users who have submitted promotion requests. The approval process validates the request exists, is in pending status, and creates an audit trail of the approval decision.
+ *
+ * Upon successful approval, the system creates an administrator promotion approval record, updates the promotion request status to 'approved', and sets the approval timestamp and reviewer information. If this is the first successful promotion for the user, a new administrator assignment is created in the discussion_board_administrators table with 'regular' grade level.
+ *
+ * The operation includes comprehensive validation to ensure only valid promotion requests can be approved and prevents duplicate approvals. All approval activities are logged for audit and compliance purposes, maintaining transparency in the administrator promotion process.
+ *
+ * @param props.connection
+ * @param props.requestId Unique identifier of the promotion request to approve
+ * @param props.body Approval details including optional decision rationale
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor superAdmin
+ * @x-autobe-specification Process administrator promotion request approval. Verify the request exists and is in 'pending' status. Validate that the approving user is a super administrator. Create a new discussion_board_administrator_promotion_approvals record with approval decision. Update the promotion request status to 'approved' and set approval timestamp. If this is the user's first promotion request approval, create a corresponding discussion_board_administrators record with 'regular' grade. Handle concurrent approval attempts gracefully. Return the updated promotion request with approval details.
+ * @path /discussionBoard/superAdmin/promotion-requests/:requestId/approve
+ * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.approve
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function approve(
+  connection: IConnection,
+  props: approve.Props,
+): Promise<approve.Response> {
+  return true === connection.simulate
+    ? approve.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...approve.METADATA,
+          path: approve.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace approve {
+  export type Props = {
+    /**
+     * Unique identifier of the promotion request to approve
+     */
+    requestId: string & tags.Format<"uuid">;
+
+    /**
+     * Approval details including optional decision rationale
+     */
+    body: IDiscussionBoardAdministratorPromotionApproval.IApprove;
+  };
+  export type Body = IDiscussionBoardAdministratorPromotionApproval.IApprove;
+  export type Response = IDiscussionBoardAdministratorPromotionApproval;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/discussionBoard/superAdmin/promotion-requests/:requestId/approve",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/discussionBoard/superAdmin/promotion-requests/${encodeURIComponent(props.requestId ?? "null")}/approve`;
+  export const random = (): IDiscussionBoardAdministratorPromotionApproval =>
+    typia.random<IDiscussionBoardAdministratorPromotionApproval>();
+  export const simulate = (
+    connection: IConnection,
+    props: approve.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: approve.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("requestId")(() => typia.assert(props.requestId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Reject an administrator promotion request.
+ *
+ * This operation allows super administrators to review and reject pending promotion requests from regular users seeking administrator status. When a promotion request is rejected, the request status is updated to 'rejected', the rejection timestamp is recorded in the `rejected_at` field, and the reviewer can provide explanatory notes in the `reviewer_notes` field.
+ *
+ * The operation ensures that only super administrators can perform this action and that requests can only be rejected if they are currently in 'pending' status. Rejected requests maintain their historical record but cannot be approved later without submitting a new request. Users must wait 30 days after rejection before submitting new promotion requests according to platform governance policies.
+ *
+ * After rejection, the user remains a regular user and can continue participating in the platform normally. The rejection decision and rationale are recorded in the `discussion_board_administrator_promotion_requests` table for audit purposes and future reference. The operation validates that the requesting super administrator has appropriate privileges and that the promotion request exists and is eligible for rejection.
+ *
+ * This operation integrates with the administrator promotion workflow defined in the `discussion_board_administrator_promotion_requests` database schema, updating the `status`, `rejected_at`, `reviewer_notes`, and `reviewer_discussion_board_super_admin_id` fields accordingly.
+ *
+ * @param props.connection
+ * @param props.requestId Unique identifier of the promotion request to reject
+ * @param props.body Rejection details including optional notes explaining the decision
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor superAdmin
+ * @x-autobe-specification Update the promotion request status to 'rejected', set the rejected_at timestamp to current time, and store the reviewer notes. Validate that the request exists and is currently in 'pending' status. Ensure the authenticated user is a super administrator with permission to review promotion requests. Return the updated promotion request object with rejection details.
+ * @path /discussionBoard/superAdmin/promotion-requests/:requestId/reject
+ * @accessor api.functional.discussionBoard.superAdmin.promotion_requests.reject
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function reject(
+  connection: IConnection,
+  props: reject.Props,
+): Promise<reject.Response> {
+  return true === connection.simulate
+    ? reject.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...reject.METADATA,
+          path: reject.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace reject {
+  export type Props = {
+    /**
+     * Unique identifier of the promotion request to reject
+     */
+    requestId: string & tags.Format<"uuid">;
+
+    /**
+     * Rejection details including optional notes explaining the decision
+     */
+    body: IDiscussionBoardAdministratorPromotionApproval.IReject;
+  };
+  export type Body = IDiscussionBoardAdministratorPromotionApproval.IReject;
+  export type Response = IDiscussionBoardAdministratorPromotionApproval;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/discussionBoard/superAdmin/promotion-requests/:requestId/reject",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/discussionBoard/superAdmin/promotion-requests/${encodeURIComponent(props.requestId ?? "null")}/reject`;
+  export const random = (): IDiscussionBoardAdministratorPromotionApproval =>
+    typia.random<IDiscussionBoardAdministratorPromotionApproval>();
+  export const simulate = (
+    connection: IConnection,
+    props: reject.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: reject.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("requestId")(() => typia.assert(props.requestId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

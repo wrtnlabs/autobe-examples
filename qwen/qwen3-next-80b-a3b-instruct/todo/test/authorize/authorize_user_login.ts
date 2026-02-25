@@ -14,7 +14,7 @@ export async function authorize_user_login(
     body: ITodoAppUser.ILogin;
   },
 ): Promise<ITodoAppUser.IAuthorized> {
-  return await api.functional.todoApp.auth.user.login(connection, {
+  return await api.functional.todoApp.auth.login(connection, {
     body: props.body,
   });
 }

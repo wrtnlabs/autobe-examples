@@ -1,5 +1,5 @@
 import { IDiscussionBoardAdministratorPromotionRequest } from "./IDiscussionBoardAdministratorPromotionRequest";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "./IPageIDiscussionBoardAdministratorDistributionStatistic";
 
 export namespace IPageIDiscussionBoardAdministratorPromotionRequest {
   /**
@@ -7,19 +7,19 @@ export namespace IPageIDiscussionBoardAdministratorPromotionRequest {
    *
    * Collection of records with pagination information.
    */
-  export type ISummary = {
+  export type IPagination = {
     /**
      * Page information.
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IDiscussionBoardAdministratorPromotionRequest.ISummary.
+     * @x-autobe-specification List of records of type IDiscussionBoardAdministratorPromotionRequest.IPagination.
      */
-    data: IDiscussionBoardAdministratorPromotionRequest.ISummary[];
+    data: IDiscussionBoardAdministratorPromotionRequest.IPagination[];
   };
 }

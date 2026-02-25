@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardScheduledTaskCollector } from "../collectors/DiscussionBoardScheduledTaskCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardScheduledTaskTransformer } from "../transformers/DiscussionBoardScheduledTaskTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,48 +18,41 @@ export async function postDiscussionBoardAdministratorScheduledTasks(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardScheduledTask.ICreate;
 }): Promise<IDiscussionBoardScheduledTask> {
-  const taskName = (props.body as any).task_name as string;
-  const schedulePattern = (props.body as any).schedule_pattern as string;
-  const cronPattern = schedulePattern;
-  const cronRegex = /^([\d\*\/\-,]{1,5})(\s+([\d\*\/\-,]{1,5})){4}$/;
-  if (!cronRegex.test(cronPattern)) {
-    throw new HttpException("Invalid cron schedule_pattern format", 400);
+  // Check for uniqueness of taskName to prevent duplicates
+  const existing =
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
+      where: { task_name: props.body.taskName },
+    });
+  if (existing !== null) {
+    throw new HttpException(
+      `Task with name '${props.body.taskName}' already exists.`,
+      409,
+    );
   }
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    const existing = await tx.discussion_board_scheduled_tasks.findUnique({
-      where: { task_name: taskName },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new HttpException("Task name must be unique", 409);
-    }
-    // Provide complete create input including required properties
-    const createInput = await DiscussionBoardScheduledTaskCollector.collect({
-      body: {
-        task_name: taskName,
-        schedule_pattern: schedulePattern,
-        last_run_at: null,
-        status: "pending",
-      },
-    });
-    const created = await tx.discussion_board_scheduled_tasks.create({
-      data: createInput,
-    });
-    return {
-      id: created.id as string & tags.Format<"uuid">,
-      task_name: created.task_name,
-      schedule_pattern: created.schedule_pattern,
-      last_run_at:
-        created.last_run_at === null
-          ? null
-          : toISOStringSafe(created.last_run_at),
-      status: created.status,
-      created_at: toISOStringSafe(created.created_at),
-      updated_at: toISOStringSafe(created.updated_at),
-      deleted_at:
-        created.deleted_at === null
-          ? null
-          : toISOStringSafe(created.deleted_at),
-    };
+  // Validate cron schedule pattern format - simple inline regex validation for cron
+  // Cron pattern typically has 5 or 6 space-separated fields: minute, hour, day of month, month, day of week, year(optional)
+  const cronPattern = props.body.schedulePattern.trim();
+  const cronRegex = /^([*\/0-9,-]+\s+){4,5}[*\/0-9,-]+$/;
+  if (!cronRegex.test(cronPattern)) {
+    throw new HttpException(
+      `Invalid cron schedule pattern: '${props.body.schedulePattern}'.`,
+      400,
+    );
+  }
+  // Use the collector to prepare the creation data object
+  const data = await DiscussionBoardScheduledTaskCollector.collect({
+    body: props.body,
   });
+  // Insert new scheduled task into the database
+  const created = await MyGlobal.prisma.discussion_board_scheduled_tasks.create(
+    { data },
+  );
+  // Retrieve the newly created record with selected fields
+  const record =
+    await MyGlobal.prisma.discussion_board_scheduled_tasks.findUniqueOrThrow({
+      where: { id: created.id },
+      ...DiscussionBoardScheduledTaskTransformer.select(),
+    });
+  // Transform to API response DTO and return
+  return await DiscussionBoardScheduledTaskTransformer.transform(record);
 }

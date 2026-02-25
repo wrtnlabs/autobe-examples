@@ -8,6 +8,13 @@ import typia, { tags } from "typia";
 export function prepare_random_shopping_mall_category(
   input?: DeepPartial<IShoppingMallCategory.ICreate> | undefined,
 ): IShoppingMallCategory.ICreate {
-  input;
-  return {};
+  return {
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 1 }),
+    description:
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }) ?? null,
+    parent_category_id:
+      input?.parent_category_id ??
+      typia.random<string & tags.Format<"uuid">>() ??
+      null,
+  };
 }

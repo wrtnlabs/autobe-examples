@@ -12,10 +12,8 @@ export namespace DiscussionBoardSectionImageCollector {
     body: IDiscussionBoardSectionImage.ICreate;
     discussionBoardSections: IEntity;
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       filename: props.body.filename,
       mime_type: props.body.mime_type,
       file_size: props.body.file_size,
@@ -24,7 +22,6 @@ export namespace DiscussionBoardSectionImageCollector {
       image_type: props.body.image_type,
       storage_path: props.body.storage_path,
       alt_text: props.body.alt_text ?? null,
-      // BelongsTo relation
       section: { connect: { id: props.discussionBoardSections.id } },
     } satisfies Prisma.discussion_board_section_imagesCreateInput;
   }

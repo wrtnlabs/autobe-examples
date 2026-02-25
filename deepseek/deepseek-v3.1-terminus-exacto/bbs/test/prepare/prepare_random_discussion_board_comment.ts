@@ -9,14 +9,6 @@ export function prepare_random_discussion_board_comment(
   input?: DeepPartial<IDiscussionBoardComment.ICreate>,
 ): IDiscussionBoardComment.ICreate {
   return {
-    content:
-      input?.content ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 2,
-        sentenceMax: 5,
-        wordMin: 3,
-        wordMax: 12,
-      }),
+    content: input?.content ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

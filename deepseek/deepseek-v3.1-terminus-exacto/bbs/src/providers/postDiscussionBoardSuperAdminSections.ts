@@ -10,16 +10,16 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardSectionCollector } from "../collectors/DiscussionBoardSectionCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardSectionTransformer } from "../transformers/DiscussionBoardSectionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminSections(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardSection.ICreate;
 }): Promise<IDiscussionBoardSection> {
-  // Check for existing section with same name
+  // Check for existing section with the same name
   const existingSection =
     await MyGlobal.prisma.discussion_board_sections.findFirst({
       where: {
@@ -29,31 +29,17 @@ export async function postDiscussionBoardSuperAdminSections(props: {
     });
   if (existingSection) {
     throw new HttpException(
-      `Section with name "${props.body.name}" already exists`,
-      409,
+      `Section name "${props.body.name}" already exists`,
+      400,
     );
   }
-  // Get the full admin entity for collector reference
-  const adminEntity =
-    await MyGlobal.prisma.discussion_board_super_admins.findUnique({
-      where: { id: props.superAdmin.id },
-    });
-  if (!adminEntity) {
-    throw new HttpException("Administrator not found", 404);
-  }
-  // Use collector to prepare data
-  const collectedData = await DiscussionBoardSectionCollector.collect({
-    body: props.body,
-    discussionBoardAdmins: {
-      id: adminEntity.id,
-      type: "super_admin",
-    } as IEntity,
-  });
-  // Create the section with transformer select
-  const created = await MyGlobal.prisma.discussion_board_sections.create({
-    data: collectedData,
+  // Create the section using collector and transformer
+  const section = await MyGlobal.prisma.discussion_board_sections.create({
+    data: await DiscussionBoardSectionCollector.collect({
+      body: props.body,
+      discussionBoardAdmins: { id: props.superAdmin.id },
+    }),
     ...DiscussionBoardSectionTransformer.select(),
   });
-  // Transform to response DTO
-  return await DiscussionBoardSectionTransformer.transform(created);
+  return await DiscussionBoardSectionTransformer.transform(section);
 }

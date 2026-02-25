@@ -42,16 +42,24 @@ model shopping_mall_product_reviews {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   reviewSnapshots shopping_mall_review_snapshots[]
   saleReviewVotes shopping_mall_sale_review_votes[]
   productReviewSnapshots shopping_mall_product_review_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_product_reviews_shopping_mall_customer_i_71cc7be0")
   // spellchecker: ignore-next-line
@@ -101,15 +109,18 @@ model shopping_mall_product_review_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   productReview shopping_mall_product_reviews @relation(fields: [product_review_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
   productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([order_item_id])
   @@index([product_variant_id])
-  
   // spellchecker: ignore-next-line
   @@index([product_review_id, created_at], map: "shopping_mall_product_review_snapshots_product_review__56889806")
 }

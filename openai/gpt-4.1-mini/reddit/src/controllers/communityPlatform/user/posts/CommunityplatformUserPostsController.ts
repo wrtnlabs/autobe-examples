@@ -3,177 +3,39 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPlatformPost";
-import { IPageICommunityPlatformPost } from "../../../../api/structures/IPageICommunityPlatformPost";
 import { UserAuth } from "../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../decorators/payload/UserPayload";
 import { deleteCommunityPlatformUserPostsPostId } from "../../../../providers/deleteCommunityPlatformUserPostsPostId";
 import { getCommunityPlatformUserPostsPostId } from "../../../../providers/getCommunityPlatformUserPostsPostId";
-import { patchCommunityPlatformUserPosts } from "../../../../providers/patchCommunityPlatformUserPosts";
-import { postCommunityPlatformUserPosts } from "../../../../providers/postCommunityPlatformUserPosts";
 import { putCommunityPlatformUserPostsPostId } from "../../../../providers/putCommunityPlatformUserPostsPostId";
 
-@Controller("/communityPlatform/user/posts")
+@Controller("/communityPlatform/user/posts/:postId")
 export class CommunityplatformUserPostsController {
   /**
-   * Create a new post in a subscribed community. This operation allows authenticated users with roles 'user' or 'moderator' to create posts of type text, link, or image, each requiring specific content stored in related child tables.
+   * Retrieve detailed information about a specific post by its unique ID.
    *
-   * The operation enforces that post creation occurs only if the author is subscribed and not banned from the target community. It transactional manages inserting data into the main community_platform_posts table alongside the respective post type content in community_platform_post_texts, community_platform_post_links, or community_platform_post_images.
+   * This operation fetches the post metadata from the community_platform_posts table along with the author's user details and the community it belongs to. It also includes the content details specific to the post type: text content from community_platform_post_texts, image URLs from community_platform_post_images, or link URLs and metadata from community_platform_post_links.
    *
-   * Security and permissions: Only authenticated users who are subscribed to the community and are not banned can perform this operation.
+   * Authorization is assumed public for reading posts, with no special permissions required.
    *
-   * Database entities involved:
-   * - community_platform_posts (main post metadata, author_user_id or author_moderator_id, community_id, title, post_type, timestamps, and soft deletion)
-   * - community_platform_post_texts (content for text posts)
-   * - community_platform_post_links (content for link posts, one-to-one relation)
-   * - community_platform_post_images (multiple images for image posts)
+   * Related operations include creating new posts in communities, updating or deleting posts by authors, voting on posts, and viewing post comments.
    *
-   * Request validation ensures required fields are present depending on post_type, and appropriate error responses are returned for invalid input or unauthorized access.
-   *
-   * Related operations:
-   * - GET /communityPlatform/user/posts/{postId} to retrieve post details
-   * - PATCH /communityPlatform/user/posts/{postId} to update post
-   * - DELETE /communityPlatform/user/posts/{postId} to delete post
-   *
+   * Error handling includes returning 404 if the post ID does not exist, and standard HTTP error codes for invalid requests.
    *
    * @param connection
-   * @param body Post creation data with mandatory post_type and corresponding content fields.
+   * @param postId Unique identifier of the target post
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Implement a transactional service method that:
-   * - Validates user authentication and subscription to target community.
-   * - Validates required post fields: title, post_type.
-   * - Depending on post_type, inserts related content in post_texts, post_links, or post_images.
-   * - Supports multiple images for 'image' post_type.
-   * - Commits all insertions transactionally to ensure consistency.
-   * - Returns the created post with full relations.
-   * - Handles error cases with proper HTTP status codes.
-   *
-   * Database queries:
-   * - Insert into community_platform_posts with community_id, author_user_id/author_moderator_id, title, post_type, timestamps.
-   * - Insert into one of community_platform_post_texts, community_platform_post_links, or community_platform_post_images depending on post_type.
-   *
-   * Edge cases:
-   * - Reject creation if post_type is invalid.
-   * - Reject creation if user is not subscribed or banned.
-   * - Allow multiple insertions for image URLs.
-   * - Soft delete strategy is applied at database layer but not manipulated directly here.
-   *
-   * Integration:
-   * - Check user subscription via separate API or DB relation.
-   * - Use authentication middleware to identify user role and id.
+   * @x-autobe-specification Query the community_platform_posts table by primary key postId.
+   * Join with community_platform_users to fetch author details.
+   * Join with community_platform_communities to fetch community details.
+   * Depending on post type, join with community_platform_post_texts, community_platform_post_images, or community_platform_post_links to fetch content.
+   * Return a 404 error if the postId does not exist.
+   * No request body since it is a GET operation.
+   * Ensure authorization allows all users to view posts publicly.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
-    @UserAuth()
-    user: UserPayload,
-    @TypedBody()
-    body: ICommunityPlatformPost.ICreate,
-  ): Promise<ICommunityPlatformPost> {
-    try {
-      return await postCommunityPlatformUserPosts({
-        user,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a filtered and paginated list of posts in the community platform.
-   *
-   * This operation supports multiple types of feeds:
-   *
-   * - Home Feed: Posts from communities the user is subscribed to (authenticated users only)
-   * - Popular Feed: Posts from all communities (public)
-   * - Community Feed: Posts from a specific community (public)
-   *
-   * Filtering options in the request body allow searching by community ID, author ID (user or moderator), post type (text/link/image), date ranges, and full-text title search.
-   *
-   * Sorting options include Hot (weighted by recent activity and votes), New (by creation date), Top (by vote score with time filter), and Controversial (posts with many votes but neutral score).
-   *
-   * Pagination is cursor-based or offset-based to support large datasets efficiently.
-   *
-   * Vote scores are calculated from community_platform_post_votes counting upvotes and downvotes.
-   *
-   * Response provides paginated post summaries including post ID, title, post type, author info, community info, vote score, comment count, and timestamps.
-   *
-   * Authorization: Guests can access popular and community feeds; authenticated users can access all feeds and have additional filter options.
-   *
-   * @param connection
-   * @param body The request body containing filtering, sorting, and pagination parameters for posts retrieval.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor user
-   * @x-autobe-specification 1. Validate request body for filters, pagination, sorting.
-   * 2. Determine feed type based on filter presence (home feed, popular feed, or community feed).
-   * 3. Query community_platform_posts with joins to authors (users or moderators), communities, and votes.
-   * 4. Apply pagination with cursor or offset.
-   * 5. Compute vote score by counting upvotes and downvotes from community_platform_post_votes.
-   * 6. Include related content previews: text snippet for text posts, thumbnail URL for image posts, domain for link posts.
-   * 7. Return paginated response with post summaries.
-   * 8. Handle permissions: restrict home feed to authenticated users.
-   * 9. Log query and handle potential errors.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @UserAuth()
-    user: UserPayload,
-    @TypedBody()
-    body: ICommunityPlatformPost.IRequest,
-  ): Promise<IPageICommunityPlatformPost.ISummary> {
-    try {
-      return await patchCommunityPlatformUserPosts({
-        user,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information for a specific post identified by its postId.
-   *
-   * This operation returns all core post data including the title, post type (text, link, or image), creation and update timestamps, and deletion status.
-   *
-   * The author may be either a user or a moderator; caller receives the author identifier accordingly.
-   *
-   * The community to which the post belongs is identified to enable context for the post.
-   *
-   * Authorization requirements allow public access as posts are viewable by all users, guests and members.
-   *
-   * This endpoint supports clients displaying posts with full content and metadata for post detail pages.
-   *
-   * The response schema reflects the community_platform_posts table structure and related authorship.
-   *
-   * No request body is needed as this is a simple retrieval by postId.
-   *
-   * Note: Related entities such as comments, votes, and associated content tables are accessed via separate endpoints and are not included in this response.
-   *
-   * @param connection
-   * @param postId Unique identifier of the post to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the community_platform_posts table filtering by the primary key postId.
-   *
-   * Include relations for community (community_platform_communities) and author (community_platform_users or community_platform_moderators).
-   *
-   * Return all post fields including id, title, post_type, created_at, updated_at, deleted_at.
-   *
-   * Verify that the author is either user or moderator and include the corresponding author identifier.
-   *
-   * No request body is sent for this GET operation.
-   *
-   * Ensure proper error handling for not found or invalid UUID.
-   *
-   * This operation is public and requires no special permissions.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":postId")
+  @TypedRoute.Get()
   public async at(
     @UserAuth()
     user: UserPayload,
@@ -192,36 +54,40 @@ export class CommunityplatformUserPostsController {
   }
 
   /**
-   * Update an existing post identified by its unique postId. This operation allows modification of the post's title and type, and depending on the post type, updates to the related content stored in specialized tables (text content in community_platform_post_texts, URL in community_platform_post_links, and images in community_platform_post_images).
+   * Update an existing post identified by the UUID postId.
    *
-   * The post belongs to a specific community and is authored by either a user or a moderator. The post type distinguishes between text, link, and image posts, and must be validated accordingly.
+   * This operation modifies the post metadata in the community_platform_posts table, including fields such as title and postType. It does not directly update the post content stored in child tables for text, link, or image content, which are managed in separate operations.
    *
-   * Security: Only the post's author (user or moderator) or community moderators with appropriate permissions can update the post.
+   * Only the original author or authorized admin/moderators can perform this update. Appropriate authorization checks should be implemented at the service layer.
    *
-   * Related Operations: Retrieve post details with GET /posts/{postId}, create posts with POST /posts, delete posts with DELETE /posts/{postId}.
+   * The post is identified by postId UUID path parameter.
    *
-   * Validation Rules: The post id must be a valid UUID. The post type must be one of the predefined types ('text', 'link', 'image'). Content updates must respect the corresponding child table constraints.
+   * Request body must conform to ICommunityPlatformPost.IUpdate schema allowing title and postType updates.
    *
-   * Error Handling: Invalid postId or unauthorized access returns appropriate errors.
+   * The response returns the updated post entity data reflecting current state post-update.
    *
-   * Concurrency: Updates should handle concurrent modifications gracefully.
+   * This operation supports full replacement semantics typical of HTTP PUT.
+   *
+   * Related operations include GET /posts/{postId} for detail retrieval and PATCH /posts/{postId} for partial updates.
    *
    * @param connection
-   * @param postId Unique identifier of the post to update (UUID format)
-   * @param body Data to update the post, including title, type, and content depending on type.
+   * @param postId UUID of the post to update.
+   * @param body Post update payload containing fields to modify.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Perform authorization check to ensure the current user is the author or a moderator with update rights.
-   * Validate the postId as UUID.
-   * Update the community_platform_posts record with new title and post_type.
-   * Depending on post_type, update or replace associated content in one of: community_platform_post_texts (for text posts), community_platform_post_links (for link posts), community_platform_post_images (for image posts).
-   * In the case of image posts, handle multiple images updates atomically.
-   * Ensure database transactions maintain data integrity.
-   * Return the updated post entity as response, including updated content relations.
-   * Handle validation errors and unauthorized access with standard HTTP error responses.
+   * @x-autobe-specification Implement service layer logic to handle PUT /posts/{postId}.
+   * - Validate postId path parameter as UUID.
+   * - Verify author or admin/moderator authorization before update.
+   * - Parse request body conforming to ICommunityPlatformPost.IUpdate.
+   * - Update title and postType in community_platform_posts table.
+   * - Do not update post content in child tables during this operation.
+   * - Return full updated post entity as response.
+   * - Handle errors for not found or unauthorized access.
+   * - Ensure database transactions as necessary to preserve data integrity.
+   * - Log update action for audit if applicable.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":postId")
+  @TypedRoute.Put()
   public async update(
     @UserAuth()
     user: UserPayload,
@@ -243,32 +109,36 @@ export class CommunityplatformUserPostsController {
   }
 
   /**
-   * Permanently removes the specified post identified by postId from the community platform.
+   * This operation permanently removes the specified post identified by the unique postId. It deletes the post and cascades deletion to all its votes and comments to maintain data integrity, following the requirements from the community platform.
    *
-   * Only the original author (user or moderator) or community moderators with appropriate permissions can delete the post.
+   * Only the authenticated user who authored the post or authorized moderators may perform this action, ensuring access control and respecting ownership.
    *
-   * The operation strictly enforces access control to prevent unauthorized deletions.
+   * This endpoint interacts directly with the community_platform_posts table, verifying ownership and existence before deletion. It also coordinates with related tables such as community_platform_post_votes and community_platform_post_comments to perform cascade removal.
    *
-   * The removal is permanent and deletes all related content (text/link/image) and votes associated with the post.
+   * In case of failure, appropriate error responses reflect authentication issues, authorization denials, or non-existent posts.
    *
-   * In case of failure (e.g., post not found or unauthorized access), relevant error responses are returned.
-   *
-   * Related operations include creating posts (POST /posts) and retrieving posts (GET /posts/{postId}).
+   * This operation complements the post creation, updating, and voting endpoints to manage the post lifecycle in the system.
    *
    * @param connection
-   * @param postId Unique identifier of the post to delete, UUID format.
+   * @param postId Unique identifier of the post to be deleted (UUID).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification 1. Verify the caller is authenticated as either the post author (user or moderator) or a community moderator with delete permissions.
-   * 2. Perform a soft existence check to confirm the post with the given postId exists.
-   * 3. Execute the deletion transaction to permanently remove the post record along with all associated post content (texts, links, images) and votes.
-   * 4. Ensure the operation cascades deletions and maintains referential integrity.
-   * 5. Log the deletion event for auditing and moderation logs.
-   * 6. Return HTTP 204 No Content to indicate successful deletion.
-   * 7. On failure, return appropriate HTTP error codes (404 Not Found, 403 Forbidden, 500 Internal Server Error).
+   * @x-autobe-specification Implement a service method that validates the authenticated user is the author of the post or a moderator with proper permissions.
+   *
+   * Use a database transaction to:
+   * 1. Verify the post exists by postId in community_platform_posts.
+   * 2. Delete all associated post votes from community_platform_post_votes.
+   * 3. Delete all comments related to the post from community_platform_post_comments.
+   * 4. Delete the post itself from community_platform_posts.
+   *
+   * Return a 204 No Content on success.
+   *
+   * On failure, return 401 Unauthorized if the user is not authenticated, 403 Forbidden if not the owner or moderator, 404 Not Found if the post does not exist.
+   *
+   * Ensure cascade deletion respects integrity and audit requirements.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":postId")
+  @TypedRoute.Delete()
   public async erase(
     @UserAuth()
     user: UserPayload,

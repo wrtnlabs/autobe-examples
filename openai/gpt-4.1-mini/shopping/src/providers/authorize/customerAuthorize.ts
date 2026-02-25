@@ -13,7 +13,7 @@ export async function customerAuthorize(request: { headers: { authorization?: st
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null
     },
   });
 

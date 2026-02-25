@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ITodoAppTrashItem } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTrashItem";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
@@ -22,7 +21,17 @@ export namespace TodoAppTrashItemAtSummaryTransformer {
         permanently_deleted_at: true,
         created_at: true,
         updated_at: true,
+        user: true,
         todo: TodoAppTodoAtSummaryTransformer.select(),
+        restoration: {
+          select: { id: true },
+        } satisfies Prisma.todo_app_trash_restorationsFindManyArgs,
+        cleanupLogs: {
+          select: { id: true },
+        } satisfies Prisma.todo_app_trash_cleanup_logsFindManyArgs,
+        metadatum: {
+          select: { id: true },
+        } satisfies Prisma.todo_app_trash_item_metadataFindManyArgs,
       },
     } satisfies Prisma.todo_app_trash_itemsFindManyArgs;
   }
@@ -36,8 +45,6 @@ export namespace TodoAppTrashItemAtSummaryTransformer {
       permanently_deleted_at: input.permanently_deleted_at
         ? input.permanently_deleted_at.toISOString()
         : null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
       todo: await TodoAppTodoAtSummaryTransformer.transform(input.todo),
     };
   }

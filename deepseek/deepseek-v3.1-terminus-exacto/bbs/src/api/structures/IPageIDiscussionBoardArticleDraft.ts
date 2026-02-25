@@ -1,5 +1,5 @@
 import { IDiscussionBoardArticleDraft } from "./IDiscussionBoardArticleDraft";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
 
 export namespace IPageIDiscussionBoardArticleDraft {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardArticleDraft {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardSection.IPagination;
 
     /**
      * List of records.

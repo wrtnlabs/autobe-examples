@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_sale_question(
-  input?: DeepPartial<IShoppingMallSaleQuestion.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSaleQuestion.ICreate>,
 ): IShoppingMallSaleQuestion.ICreate {
-  input;
-  return {};
+  return {
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 2 }),
+    body:
+      input?.body ??
+      RandomGenerator.paragraph({ sentences: 5, wordMin: 5, wordMax: 10 }),
+  };
 }

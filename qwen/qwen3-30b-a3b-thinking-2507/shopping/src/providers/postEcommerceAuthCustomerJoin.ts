@@ -1,20 +1,5 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import { IEcommerceAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceAddress";
-import { IEcommerceCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCancellationRequest";
-import { IEcommerceCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCart";
-import { IEcommerceCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCartItem";
 import { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
-import { IEcommerceCustomerEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerEmailVerification";
-import { IEcommerceCustomerPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerPasswordReset";
-import { IEcommerceCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomerSession";
-import { IEcommerceDefaultAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceDefaultAddress";
-import { IEcommerceOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrder";
-import { IEcommerceOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrderItem";
-import { IEcommerceProductReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductReview";
-import { IEcommerceProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductVariant";
-import { IEcommerceRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceRefundRequest";
-import { IEcommerceShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceShipment";
-import { IEcommerceWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,49 +9,47 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EcommerceCustomerCollector } from "../collectors/EcommerceCustomerCollector";
+import { EcommerceCustomerSessionCollector } from "../collectors/EcommerceCustomerSessionCollector";
+import { EcommerceCustomerSessionTransformer } from "../transformers/EcommerceCustomerSessionTransformer";
+import { EcommerceCustomerTransformer } from "../transformers/EcommerceCustomerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceAuthCustomerJoin(props: {
   body: IEcommerceCustomer.IJoin;
 }): Promise<IEcommerceCustomer.IAuthorized> {
+  // 1. Check for existing email
   const existing = await MyGlobal.prisma.ecommerce_customers.findFirst({
     where: { email: props.body.email },
   });
   if (existing) throw new HttpException("Email already registered", 409);
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  // 2. Create customer (Collector handles password hashing)
   const customer = await MyGlobal.prisma.ecommerce_customers.create({
-    data: {
-      id: v4(),
-      email: props.body.email,
-      password_hash: hashedPassword,
-      display_name: props.body.display_name,
-      phone: null,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-      deleted_at: null,
-    },
+    data: await EcommerceCustomerCollector.collect({
+      body: props.body,
+    }),
+    ...EcommerceCustomerTransformer.select(),
   });
+  // 3. Create session
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_customer_sessions.create({
-    data: {
-      id: v4(),
-      customer: { connect: { id: customer.id } },
-      ip: props.body.ip ?? "0.0.0.0",
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
-    },
+    data: await EcommerceCustomerSessionCollector.collect({
+      body: props.body,
+      ecommerceCustomer: { id: customer.id },
+      ip: props.body.ip,
+    }),
+    ...EcommerceCustomerSessionTransformer.select(),
   });
+  // 4. Generate JWT tokens
   const token = {
     access: jwt.sign(
       {
         type: "customer",
         id: customer.id,
         session_id: session.id,
-        created_at: toISOStringSafe(new Date()),
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -77,30 +60,17 @@ export async function postEcommerceAuthCustomerJoin(props: {
         id: customer.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
+  // 5. Return IAuthorized
   return {
-    id: customer.id,
-    email: customer.email,
-    display_name: customer.display_name,
-    phone: customer.phone,
-    created_at: toISOStringSafe(customer.created_at),
-    updated_at: toISOStringSafe(customer.updated_at),
-    deleted_at: customer.deleted_at
-      ? toISOStringSafe(customer.deleted_at)
-      : null,
-    defaultAddress: {
-      id: "",
-      createdAt: toISOStringSafe(new Date()),
-      updatedAt: toISOStringSafe(new Date()),
-      deletedAt: null,
-    },
+    ...(await EcommerceCustomerTransformer.transform(customer)),
     token,
   } satisfies IEcommerceCustomer.IAuthorized;
 }

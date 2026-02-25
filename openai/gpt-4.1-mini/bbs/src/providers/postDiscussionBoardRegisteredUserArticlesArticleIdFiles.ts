@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardArticleFileCollector } from "../collectors/DiscussionBoardArticleFileCollector";
 import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
+import { DiscussionBoardArticleFileTransformer } from "../transformers/DiscussionBoardArticleFileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,41 +19,17 @@ export async function postDiscussionBoardRegisteredUserArticlesArticleIdFiles(pr
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticleFile.ICreate;
 }): Promise<IDiscussionBoardArticleFile> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
     where: { id: props.articleId },
+    select: { id: true },
   });
-  if (!article) throw new HttpException("Article not found", 404);
-  if (article.registered_user_id !== props.registeredUser.id)
-    throw new HttpException("Unauthorized", 403);
   const data = await DiscussionBoardArticleFileCollector.collect({
     body: props.body,
-    discussionBoardArticles: article,
+    discussionBoardArticles: { id: props.articleId },
   });
-  const created = await MyGlobal.prisma.discussion_board_article_files.create({
+  const inserted = await MyGlobal.prisma.discussion_board_article_files.create({
     data,
+    ...DiscussionBoardArticleFileTransformer.select(),
   });
-  function toISOStringSafe(date: Date): string & tags.Format<"date-time"> {
-    return date.toISOString() as string & tags.Format<"date-time">;
-  }
-  return {
-    id: created.id as string & tags.Format<"uuid">,
-    article_id: created.article_id as string & tags.Format<"uuid">,
-    file_name: created.file_name,
-    file_type: created.file_type,
-    file_size: created.file_size,
-    download_url: created.download_url,
-    display_order: created.display_order,
-    created_at:
-      created.created_at instanceof Date
-        ? toISOStringSafe(created.created_at)
-        : created.created_at,
-    updated_at:
-      created.updated_at instanceof Date
-        ? toISOStringSafe(created.updated_at)
-        : created.updated_at,
-    deleted_at:
-      created.deleted_at instanceof Date
-        ? toISOStringSafe(created.deleted_at)
-        : created.deleted_at,
-  };
+  return DiscussionBoardArticleFileTransformer.transform(inserted);
 }

@@ -6,8 +6,16 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_product_variant(
-  input?: DeepPartial<IShoppingMallProductVariant.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallProductVariant.ICreate>,
 ): IShoppingMallProductVariant.ICreate {
-  input;
-  return {};
+  return {
+    skuCode: input?.skuCode ?? RandomGenerator.alphaNumeric(12),
+    priceOverride:
+      input?.priceOverride ??
+      (Math.random() < 0.3
+        ? null
+        : typia.random<number & tags.Type<"uint32">>()),
+    stockQuantity:
+      input?.stockQuantity ?? typia.random<number & tags.Type<"int32">>(),
+  };
 }

@@ -1,10 +1,12 @@
 import { IDiscussionBoardPerformanceMetric } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardPerformanceMetric";
+import { IDiscussionBoardSystemConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSystemConfiguration";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { DiscussionBoardSystemConfigurationAtSummaryTransformer } from "./DiscussionBoardSystemConfigurationAtSummaryTransformer";
 
 export namespace DiscussionBoardPerformanceMetricTransformer {
   export type Payload = Prisma.discussion_board_performance_metricsGetPayload<
@@ -23,7 +25,8 @@ export namespace DiscussionBoardPerformanceMetricTransformer {
         metadata: true,
         created_at: true,
         updated_at: true,
-        systemConfiguration: true,
+        systemConfiguration:
+          DiscussionBoardSystemConfigurationAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_performance_metricsFindManyArgs;
   }
@@ -41,6 +44,11 @@ export namespace DiscussionBoardPerformanceMetricTransformer {
       metadata: input.metadata ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      systemConfiguration: input.systemConfiguration
+        ? await DiscussionBoardSystemConfigurationAtSummaryTransformer.transform(
+            input.systemConfiguration,
+          )
+        : null,
     };
   }
 }

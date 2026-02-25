@@ -18,34 +18,45 @@ export async function patchEcommerceAdminAdmins(props: {
   admin: AdminPayload;
   body: IEcommerceAdmin.IRequest;
 }): Promise<IPageIEcommerceAdmin.ISummary> {
-  const page = 1;
-  const limit = 10;
-  const skip = (page - 1) * limit;
-  const data = await MyGlobal.prisma.ecommerce_admins.findMany({
-    where: { deleted_at: null },
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-  });
-  const total = await MyGlobal.prisma.ecommerce_admins.count({
-    where: { deleted_at: null },
-  });
-  const transformedData = await ArrayUtil.asyncMap(data, async (admin) => {
-    return {
-      id: admin.id,
-      email: admin.email,
-      created_at: toISOStringSafe(admin.created_at),
-      updated_at: toISOStringSafe(admin.updated_at),
-      deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+  // Extract parameters with defaults for pagination
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 100, 100);
+  // Build dynamic where conditions from filters
+  const whereCondition: Prisma.ecommerce_adminsWhereInput = {};
+  if (props.body.email) {
+    whereCondition.email = {
+      contains: props.body.email,
+      mode: "insensitive",
     };
+  }
+  // Get total count for pagination
+  const total = await MyGlobal.prisma.ecommerce_admins.count({
+    where: whereCondition,
   });
+  // Retrieve paginated results with proper select for summary data
+  const data = await MyGlobal.prisma.ecommerce_admins.findMany({
+    where: whereCondition,
+    skip: (page - 1) * limit,
+    take: limit,
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+  // Convert to proper DTO format
+  const formattedData = data.map((item) => ({
+    id: item.id as string & tags.Format<"uuid">,
+    email: item.email as string & tags.Format<"email">,
+  }));
+  // Calculate total pages
+  const pages = Math.ceil(total / limit);
   return {
-    data: transformedData,
+    data: formattedData as IEcommerceAdmin.ISummary[],
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
-    },
-  };
+      pages: pages,
+    } as IPage.IPagination,
+  } as IPageIEcommerceAdmin.ISummary;
 }

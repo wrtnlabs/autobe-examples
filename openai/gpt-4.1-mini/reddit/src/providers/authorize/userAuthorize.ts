@@ -10,7 +10,7 @@ export async function userAuthorize(request: { headers: { authorization?: string
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const user = await MyGlobal.prisma.community_platform_users.findFirst({
+  const user = await MyGlobal.prisma.users.findFirst({
     where: {
       id: payload.id,
       deleted_at: null

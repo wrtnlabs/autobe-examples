@@ -1,110 +1,80 @@
 import { Module } from "@nestjs/common";
 
 import { EcommerceAdminAdminsController } from "./controllers/ecommerce/admin/admins/EcommerceAdminAdminsController";
-import { EcommerceAdminAnalyticsSalesController } from "./controllers/ecommerce/admin/analytics/sales/EcommerceAdminAnalyticsSalesController";
-import { EcommerceAdminConfigsAnalyticsController } from "./controllers/ecommerce/admin/configs/analytics/EcommerceAdminConfigsAnalyticsController";
-import { EcommerceAdminDashboardsController } from "./controllers/ecommerce/admin/dashboards/EcommerceAdminDashboardsController";
-import { EcommerceAdminOrdersCancellation_requestsController } from "./controllers/ecommerce/admin/orders/cancellation-requests/EcommerceAdminOrdersCancellation_requestsController";
-import { EcommerceAdminOrdersItemsController } from "./controllers/ecommerce/admin/orders/items/EcommerceAdminOrdersItemsController";
-import { EcommerceAdminOrdersRefund_requestsController } from "./controllers/ecommerce/admin/orders/refund-requests/EcommerceAdminOrdersRefund_requestsController";
-import { EcommerceAdminOrdersShipmentsController } from "./controllers/ecommerce/admin/orders/shipments/EcommerceAdminOrdersShipmentsController";
-import { EcommerceAdminSnapshotsController } from "./controllers/ecommerce/admin/snapshots/EcommerceAdminSnapshotsController";
-import { EcommerceAdminController } from "./controllers/ecommerce/admin/statistics/EcommerceAdminController";
-import { EcommerceAdminStatus_distributionController } from "./controllers/ecommerce/admin/status-distribution/EcommerceAdminStatus_distributionController";
-import { EcommerceAdminStatusesDashboardController } from "./controllers/ecommerce/admin/statuses/dashboard/EcommerceAdminStatusesDashboardController";
-import { EcommerceAdminSystem_configsController } from "./controllers/ecommerce/admin/system-configs/EcommerceAdminSystem_configsController";
-import { EcommerceAdminSystem_statusesController } from "./controllers/ecommerce/admin/system-statuses/EcommerceAdminSystem_statusesController";
+import { EcommerceAdminAudit_logsController } from "./controllers/ecommerce/admin/audit-logs/EcommerceAdminAudit_logsController";
+import { EcommerceAdminCustomersController } from "./controllers/ecommerce/admin/customers/EcommerceAdminCustomersController";
+import { EcommerceAdminOrdersSnapshotsController } from "./controllers/ecommerce/admin/orders/snapshots/EcommerceAdminOrdersSnapshotsController";
+import { EcommerceAdminSellersController } from "./controllers/ecommerce/admin/sellers/EcommerceAdminSellersController";
 import { EcommerceAuthAdminController } from "./controllers/ecommerce/auth/admin/EcommerceAuthAdminController";
 import { EcommerceAuthCustomerController } from "./controllers/ecommerce/auth/customer/EcommerceAuthCustomerController";
 import { EcommerceAuthSellerController } from "./controllers/ecommerce/auth/seller/EcommerceAuthSellerController";
-import { EcommerceCategoriesController } from "./controllers/ecommerce/categories/EcommerceCategoriesController";
 import { EcommerceCustomerAddressesController } from "./controllers/ecommerce/customer/addresses/EcommerceCustomerAddressesController";
+import { EcommerceCustomerAnalyticsTop_productsController } from "./controllers/ecommerce/customer/analytics/top-products/EcommerceCustomerAnalyticsTop_productsController";
 import { EcommerceCustomerCartsController } from "./controllers/ecommerce/customer/carts/EcommerceCustomerCartsController";
-import { EcommerceCustomerCartsItemsController } from "./controllers/ecommerce/customer/carts/items/EcommerceCustomerCartsItemsController";
-import { EcommerceCustomerCartsSnapshotsController } from "./controllers/ecommerce/customer/carts/snapshots/EcommerceCustomerCartsSnapshotsController";
-import { EcommerceCustomerDefault_addressesController } from "./controllers/ecommerce/customer/default-addresses/EcommerceCustomerDefault_addressesController";
-import { EcommerceCustomerEmail_verificationsController } from "./controllers/ecommerce/customer/email-verifications/EcommerceCustomerEmail_verificationsController";
+import { EcommerceCustomerMeAddressesController } from "./controllers/ecommerce/customer/me/addresses/EcommerceCustomerMeAddressesController";
+import { EcommerceCustomerMeAddresses_defaultController } from "./controllers/ecommerce/customer/me/addresses/default/EcommerceCustomerMeAddresses_defaultController";
+import { EcommerceCustomerMeProfileController } from "./controllers/ecommerce/customer/me/profile/EcommerceCustomerMeProfileController";
 import { EcommerceCustomerOrdersController } from "./controllers/ecommerce/customer/orders/EcommerceCustomerOrdersController";
 import { EcommerceCustomerOrdersCancellation_requestsController } from "./controllers/ecommerce/customer/orders/cancellation-requests/EcommerceCustomerOrdersCancellation_requestsController";
 import { EcommerceCustomerOrdersItemsController } from "./controllers/ecommerce/customer/orders/items/EcommerceCustomerOrdersItemsController";
 import { EcommerceCustomerOrdersRefund_requestsController } from "./controllers/ecommerce/customer/orders/refund-requests/EcommerceCustomerOrdersRefund_requestsController";
 import { EcommerceCustomerOrdersShipmentsController } from "./controllers/ecommerce/customer/orders/shipments/EcommerceCustomerOrdersShipmentsController";
-import { EcommerceCustomerPassword_resetsController } from "./controllers/ecommerce/customer/password-resets/EcommerceCustomerPassword_resetsController";
-import { EcommerceCustomerProductsController } from "./controllers/ecommerce/customer/products/EcommerceCustomerProductsController";
-import { EcommerceCustomerProductsReviewsController } from "./controllers/ecommerce/customer/products/reviews/EcommerceCustomerProductsReviewsController";
-import { EcommerceCustomerProductsReviewsSnapshotsController } from "./controllers/ecommerce/customer/products/reviews/snapshots/EcommerceCustomerProductsReviewsSnapshotsController";
-import { EcommerceCustomerProductsSearchController } from "./controllers/ecommerce/customer/products/search/EcommerceCustomerProductsSearchController";
+import { EcommerceCustomerOrdersSnapshotsController } from "./controllers/ecommerce/customer/orders/snapshots/EcommerceCustomerOrdersSnapshotsController";
 import { EcommerceCustomerProfileController } from "./controllers/ecommerce/customer/profile/EcommerceCustomerProfileController";
 import { EcommerceCustomerSessionsController } from "./controllers/ecommerce/customer/sessions/EcommerceCustomerSessionsController";
-import { EcommerceCustomerWishlist_itemsController } from "./controllers/ecommerce/customer/wishlist-items/EcommerceCustomerWishlist_itemsController";
-import { EcommerceCustomersController } from "./controllers/ecommerce/customers/EcommerceCustomersController";
-import { EcommerceProductsController } from "./controllers/ecommerce/products/EcommerceProductsController";
-import { EcommerceProductsImagesController } from "./controllers/ecommerce/products/images/EcommerceProductsImagesController";
-import { EcommerceProductsVariantsController } from "./controllers/ecommerce/products/variants/EcommerceProductsVariantsController";
-import { EcommerceProductsVariantsInventoriesController } from "./controllers/ecommerce/products/variants/inventories/EcommerceProductsVariantsInventoriesController";
-import { EcommerceProductsVariantsOptionsController } from "./controllers/ecommerce/products/variants/options/EcommerceProductsVariantsOptionsController";
-import { EcommerceSeller_profilesController } from "./controllers/ecommerce/seller-profiles/EcommerceSeller_profilesController";
-import { EcommerceSellerDashboardController } from "./controllers/ecommerce/seller/dashboard/EcommerceSellerDashboardController";
-import { EcommerceSellerSeller_email_verificationsController } from "./controllers/ecommerce/seller/seller-email-verifications/EcommerceSellerSeller_email_verificationsController";
-import { EcommerceSellerSeller_password_resetsController } from "./controllers/ecommerce/seller/seller-password-resets/EcommerceSellerSeller_password_resetsController";
-import { EcommerceSellerSeller_sessionsController } from "./controllers/ecommerce/seller/seller-sessions/EcommerceSellerSeller_sessionsController";
-import { EcommerceSellersController } from "./controllers/ecommerce/sellers/EcommerceSellersController";
-import { EcommerceSellersProfileController } from "./controllers/ecommerce/sellers/profile/EcommerceSellersProfileController";
-import { EcommerceSellersSeller_profile_snapshotsController } from "./controllers/ecommerce/sellers/seller-profile-snapshots/EcommerceSellersSeller_profile_snapshotsController";
+import { EcommerceController } from "./controllers/ecommerce/noop/EcommerceController";
+import { EcommerceProductsCategoriesController } from "./controllers/ecommerce/products/categories/EcommerceProductsCategoriesController";
+import { EcommerceProductsSnapshotsController } from "./controllers/ecommerce/products/snapshots/EcommerceProductsSnapshotsController";
+import { EcommerceSellerAnalyticsInventoriesController } from "./controllers/ecommerce/seller/analytics/inventories/EcommerceSellerAnalyticsInventoriesController";
+import { EcommerceSellerOrdersCancellation_requestsController } from "./controllers/ecommerce/seller/orders/cancellation-requests/EcommerceSellerOrdersCancellation_requestsController";
+import { EcommerceSellerOrdersItemsController } from "./controllers/ecommerce/seller/orders/items/EcommerceSellerOrdersItemsController";
+import { EcommerceSellerOrdersRefund_requestsController } from "./controllers/ecommerce/seller/orders/refund-requests/EcommerceSellerOrdersRefund_requestsController";
+import { EcommerceSellerOrdersShipmentsController } from "./controllers/ecommerce/seller/orders/shipments/EcommerceSellerOrdersShipmentsController";
+import { EcommerceSellerOrdersSnapshotsController } from "./controllers/ecommerce/seller/orders/snapshots/EcommerceSellerOrdersSnapshotsController";
+import { EcommerceSellerProductsController } from "./controllers/ecommerce/seller/products/EcommerceSellerProductsController";
+import { EcommerceSellerProductsImagesController } from "./controllers/ecommerce/seller/products/images/EcommerceSellerProductsImagesController";
+import { EcommerceSellerProductsVariantsController } from "./controllers/ecommerce/seller/products/variants/EcommerceSellerProductsVariantsController";
+import { EcommerceSellerProfileController } from "./controllers/ecommerce/seller/profile/EcommerceSellerProfileController";
+import { EcommerceSellerProfileSnapshotsController } from "./controllers/ecommerce/seller/profile/snapshots/EcommerceSellerProfileSnapshotsController";
 
 @Module({
   controllers: [
     EcommerceAuthCustomerController,
     EcommerceAuthSellerController,
     EcommerceAuthAdminController,
-    EcommerceCustomersController,
-    EcommerceCustomerProfileController,
-    EcommerceCustomerSessionsController,
-    EcommerceCustomerPassword_resetsController,
-    EcommerceCustomerEmail_verificationsController,
-    EcommerceCustomerAddressesController,
-    EcommerceCustomerDefault_addressesController,
-    EcommerceSellersController,
-    EcommerceSeller_profilesController,
-    EcommerceSellersProfileController,
-    EcommerceSellerSeller_sessionsController,
-    EcommerceSellerSeller_password_resetsController,
-    EcommerceSellerSeller_email_verificationsController,
-    EcommerceSellersSeller_profile_snapshotsController,
+    EcommerceAdminCustomersController,
+    EcommerceAdminSellersController,
     EcommerceAdminAdminsController,
-    EcommerceCategoriesController,
-    EcommerceProductsController,
-    EcommerceProductsImagesController,
-    EcommerceProductsVariantsController,
-    EcommerceProductsVariantsInventoriesController,
-    EcommerceProductsVariantsOptionsController,
-    EcommerceCustomerOrdersController,
+    EcommerceCustomerMeProfileController,
+    EcommerceCustomerSessionsController,
+    EcommerceAdminAudit_logsController,
+    EcommerceCustomerProfileController,
+    EcommerceCustomerAddressesController,
+    EcommerceCustomerMeAddressesController,
+    EcommerceCustomerMeAddresses_defaultController,
+    EcommerceSellerProfileController,
+    EcommerceSellerProfileSnapshotsController,
+    EcommerceSellerProductsController,
+    EcommerceSellerProductsVariantsController,
+    EcommerceSellerProductsImagesController,
+    EcommerceProductsSnapshotsController,
+    EcommerceProductsCategoriesController,
     EcommerceCustomerOrdersItemsController,
-    EcommerceAdminOrdersItemsController,
+    EcommerceSellerOrdersItemsController,
     EcommerceCustomerOrdersShipmentsController,
-    EcommerceAdminOrdersShipmentsController,
-    EcommerceAdminOrdersCancellation_requestsController,
+    EcommerceSellerOrdersShipmentsController,
+    EcommerceCustomerOrdersSnapshotsController,
+    EcommerceSellerOrdersSnapshotsController,
+    EcommerceAdminOrdersSnapshotsController,
     EcommerceCustomerOrdersCancellation_requestsController,
-    EcommerceAdminOrdersRefund_requestsController,
+    EcommerceSellerOrdersCancellation_requestsController,
     EcommerceCustomerOrdersRefund_requestsController,
+    EcommerceSellerOrdersRefund_requestsController,
+    EcommerceCustomerOrdersController,
     EcommerceCustomerCartsController,
-    EcommerceCustomerCartsItemsController,
-    EcommerceCustomerCartsSnapshotsController,
-    EcommerceCustomerWishlist_itemsController,
-    EcommerceCustomerProductsController,
-    EcommerceCustomerProductsReviewsController,
-    EcommerceCustomerProductsReviewsSnapshotsController,
-    EcommerceAdminSystem_configsController,
-    EcommerceAdminSystem_statusesController,
-    EcommerceAdminSnapshotsController,
-    EcommerceAdminDashboardsController,
-    EcommerceCustomerProductsSearchController,
-    EcommerceAdminAnalyticsSalesController,
-    EcommerceSellerDashboardController,
-    EcommerceAdminController,
-    EcommerceAdminStatus_distributionController,
-    EcommerceAdminStatusesDashboardController,
-    EcommerceAdminConfigsAnalyticsController,
+    EcommerceCustomerAnalyticsTop_productsController,
+    EcommerceSellerAnalyticsInventoriesController,
+    EcommerceController,
   ],
 })
 export class MyModule {}

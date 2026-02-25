@@ -12,15 +12,17 @@ export namespace EcommerceProductImageCollector {
     body: IEcommerceProductImage.ICreate;
     ecommerceProducts: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       image_url: props.body.image_url,
-      caption: props.body.caption ?? null,
-      is_primary: props.body.is_primary ?? false,
+      is_main: props.body.is_main ?? false,
+      position: props.body.position,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       product: { connect: { id: props.ecommerceProducts.id } },
+      snapshots: undefined,
     } satisfies Prisma.ecommerce_product_imagesCreateInput;
   }
 }

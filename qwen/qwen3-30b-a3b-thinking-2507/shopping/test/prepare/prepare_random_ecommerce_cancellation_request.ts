@@ -6,8 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_cancellation_request(
-  input?: DeepPartial<IEcommerceCancellationRequest.ICreate> | undefined,
+  input?: DeepPartial<IEcommerceCancellationRequest.ICreate>,
 ): IEcommerceCancellationRequest.ICreate {
-  input;
-  return {};
+  return {
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

@@ -15,13 +15,24 @@ export async function deleteShoppingMallSellerShipmentsShipmentId(props: {
   seller: SellerPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const shipment = await MyGlobal.prisma.shopping_mall_shipments.findUnique({
-    where: { id: props.shipmentId },
-  });
-  if (!shipment || shipment.seller_id !== props.seller.id) {
-    throw new HttpException("Shipment not found", 404);
+  // Verify ownership
+  const shipment =
+    await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
+      where: { id: props.shipmentId },
+      select: { seller_id: true },
+    });
+  if (shipment.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  await MyGlobal.prisma.shopping_mall_shipments.delete({
-    where: { id: props.shipmentId },
+  // Delete shipment with transaction
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // delete shipment order items (cascade handled by DB but explicit for clarity and potential audit)
+    await tx.shopping_mall_shipment_order_items.deleteMany({
+      where: { shopping_mall_shipment_id: props.shipmentId },
+    });
+    // delete the shipment
+    await tx.shopping_mall_shipments.delete({
+      where: { id: props.shipmentId },
+    });
   });
 }

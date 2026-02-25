@@ -10,7 +10,12 @@ export function prepare_random_discussion_board_comment_flag(
 ): IDiscussionBoardCommentFlag.ICreate {
   return {
     flag_reason:
-      input?.flag_reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+      input?.flag_reason ??
+      RandomGenerator.content({
+        paragraphs: 1,
+        sentenceMin: 2,
+        sentenceMax: 5,
+      }),
     flag_type:
       input?.flag_type ??
       RandomGenerator.pick([
@@ -19,6 +24,12 @@ export function prepare_random_discussion_board_comment_flag(
         "inappropriate",
         "hate_speech",
         "misinformation",
+        "copyright",
       ] as const),
+    resolution_notes:
+      input?.resolution_notes ??
+      (Math.random() > 0.5
+        ? RandomGenerator.paragraph({ sentences: 2 })
+        : null),
   };
 }

@@ -2,48 +2,99 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIRedditCommunityBanOfMember } from "../../../../../api/structures/IPageIRedditCommunityBanOfMember";
-import { IRedditCommunityBanOfMember } from "../../../../../api/structures/IRedditCommunityBanOfMember";
+import { IRedditCommunityBan } from "../../../../../api/structures/IRedditCommunityBan";
 import { CommunitymoderatorAuth } from "../../../../../decorators/CommunitymoderatorAuth";
 import { CommunitymoderatorPayload } from "../../../../../decorators/payload/CommunitymoderatorPayload";
-import { patchRedditCommunityCommunityModeratorCommunitiesCommunityIdBans } from "../../../../../providers/patchRedditCommunityCommunityModeratorCommunitiesCommunityIdBans";
+import { deleteRedditCommunityCommunityModeratorCommunitiesCommunityIdBansUserId } from "../../../../../providers/deleteRedditCommunityCommunityModeratorCommunitiesCommunityIdBansUserId";
+import { postRedditCommunityCommunityModeratorCommunitiesCommunityIdBans } from "../../../../../providers/postRedditCommunityCommunityModeratorCommunitiesCommunityIdBans";
 
 @Controller("/redditCommunity/communityModerator/communities/:communityId/bans")
 export class RedditcommunityCommunitymoderatorCommunitiesBansController {
   /**
-   * Retrieve a paginated list of all active bans within a specific community.
+   * Create a ban record that prevents a user from interacting within a specific community.
    *
-   * This operation returns a filtered and paginated list of users who have been banned from the specified community. The bans include actors from three categories: community members, moderators, and owners. Each result entry contains the reason for the ban, the moderator who imposed it, and the affected user's display name.
+   * This operation allows community owners and moderators to ban users from participating in the community. The ban prevents the user from posting, commenting, or voting within the community, while still allowing them to view content. Banned users may be subject to temporary or permanent restrictions.
    *
-   * Bans are filtered to show only active entries — those with a null deleted_at timestamp. Soft-deleted bans are excluded from response to maintain data consistency and prevent display of revoked bans.
+   * The ban record is tied to a specific community and includes an option to set an expiration date. Reason for ban may be provided for audit purposes. This operation does not affect the user's access to other communities. All ban events are recorded for moderation accountability.
    *
-   * Access is restricted to community owners and moderators only. Unauthorized users receive a 403 Forbidden response. This endpoint is critical for moderation workflows, allowing administrators to audit previous bans and manage community safety.
-   *
-   * The returned payload is designed for efficient loading of ban lists in UI tables, minimizing unnecessary data transfer by excluding nested post or comment data. All displayed user identifiers come from the canonical actor tables (reddit_community_members, reddit_community_community_owners, reddit_community_community_moderators) to ensure name consistency across the platform.
+   * Related operations: GET /communities/{communityId}/bans (list banned users), DELETE /communities/{communityId}/bans/{userId} (unban).
    *
    * @param connection
-   * @param communityId The unique identifier of the community whose banned users are being listed. Must be a valid UUID corresponding to a community in reddit_community_communities.
-   * @param body Filtering and pagination parameters for the ban list.
+   * @param communityId Unique identifier of the community from which the user is being banned. Must be a valid community UUID.
+   * @param body Details of the ban to create.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor communityModerator
-   * @x-autobe-specification Query reddit_community_bans table with pagination and filtering conditions. Join with reddit_community_community_owners, reddit_community_community_moderators, and reddit_community_members to resolve banned actor display names. Filter by: 1) community_id = ${communityId}, 2) deleted_at IS NULL (active bans only). Return cursor-based pagination with page and limit parameters. Include only bans where banned_member_id, banned_owner_id, or banned_moderator_id is not null. Sort by created_at DESC. Ensure only community owners or moderators can access — enforce through authorization middleware using moderator_id or owner_id from JWT.
+   * @x-autobe-specification Create a new ban record in reddit_community_bans table. Validate that requesting user is community owner or moderator. Validate user is not already banned in this community. Insert record with communityId, userId, current timestamp, is_active: true, and optional expires_at and reason from request body. Return full ban object with generated id and created_at.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Post()
+  public async create(
     @CommunitymoderatorAuth()
     communityModerator: CommunitymoderatorPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IRedditCommunityBanOfMember.IRequest,
-  ): Promise<IPageIRedditCommunityBanOfMember.ISummary> {
+    body: IRedditCommunityBan.ICreate,
+  ): Promise<IRedditCommunityBan> {
     try {
-      return await patchRedditCommunityCommunityModeratorCommunitiesCommunityIdBans(
+      return await postRedditCommunityCommunityModeratorCommunitiesCommunityIdBans(
         {
           communityModerator,
           communityId,
           body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unban a user from a specific community.
+   *
+   * This operation removes a user's ban status from the specified community, restoring their ability to post, comment, and vote within that community.
+   *
+   * The operation requires a community context because a user may be banned from multiple communities independently. This endpoint specifically targets the ban record linking the given user to the given community.
+   *
+   * Only community owners or moderators can perform this operation. The system preserves the full history of bans for auditing purposes by setting is_active to false instead of deleting the record permanently.
+   *
+   * This endpoint is the counterpart to POST /communities/{communityId}/bans. It does not restore any content created or deleted by the user during the ban period.
+   *
+   * Error conditions:
+   * - If no active ban record exists for the specified user and community, return 404 Not Found.
+   * - If the requester is not an owner or moderator of the community, return 403 Forbidden.
+   *
+   * @param connection
+   * @param communityId The unique identifier of the community from which the user is being unbanned. Must be a valid UUID.
+   * @param userId The unique identifier of the user to be unbanned. Must be a valid UUID.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor communityModerator
+   * @x-autobe-specification Delete a ban record from reddit_community_bans table by matching both user_id and community_id.
+   *
+   * - Accept path parameters: communityId (UUID) and userId (UUID)
+   * - Query database for active ban record where community_id = communityId AND user_id = userId AND is_active = true
+   * - If record exists and is active, update is_active to false (soft-delete) and set updated_at to current timestamp
+   * - Do NOT delete record physically to preserve audit history
+   * - Return 200 OK if successful, 404 if no active ban found for given pair
+   * - Verify user is authenticated and authorized as owner or moderator of the community
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":userId")
+  public async erase(
+    @CommunitymoderatorAuth()
+    communityModerator: CommunitymoderatorPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteRedditCommunityCommunityModeratorCommunitiesCommunityIdBansUserId(
+        {
+          communityModerator,
+          communityId,
+          userId,
         },
       );
     } catch (error) {

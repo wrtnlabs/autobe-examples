@@ -14,7 +14,7 @@ export async function authorize_super_admin_refresh(
     body: IDiscussionBoardSuperAdmin.IRefresh;
   },
 ): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  return await api.functional.discussionBoard.auth.super_admin.refresh(
+  return await api.functional.discussionBoard.auth.superAdmin.refresh(
     connection,
     {
       body: props.body,

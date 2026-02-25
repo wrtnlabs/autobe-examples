@@ -1,4 +1,4 @@
-import { IEconomicBoardCitizen } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardCitizen";
+import { IEconomicBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -12,80 +12,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEconomicBoardArticlesArticleId(props: {
-  articleId: string;
-}): Promise<IEconomicBoardCitizen> {
-  const article = await MyGlobal.prisma.economic_board_articles.findUnique({
-    where: { id: props.articleId, deleted_at: null },
-    include: {
-      author: {
-        select: { display_name: true, email: true },
-      },
-      section: {
-        select: { name: true },
-      },
-      fileAttachments: {
-        select: {
-          id: true,
-          original_filename: true,
-          size_bytes: true,
-          mime_type: true,
-          storage_path: true,
-          created_at: true,
-          updated_at: true,
+  articleId: string & tags.Format<"uuid">;
+}): Promise<IEconomicBoardSection> {
+  const article =
+    await MyGlobal.prisma.economic_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId, is_deleted: false },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        created_at: true,
+        updated_at: true,
+        section: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+        author: {
+          select: { id: true, display_name: true },
+        },
+        articleTags: {
+          select: { tag: true },
+        },
+        attachments: {
+          select: {
+            id: true,
+            file_url: true,
+            file_name: true,
+            file_type: true,
+            file_size: true,
+            created_at: true,
+          },
         },
       },
-      images: {
-        select: {
-          id: true,
-          original_filename: true,
-          width: true,
-          height: true,
-          mime_type: true,
-          original_path: true,
-          thumbnail_path: true,
-          medium_path: true,
-          uploaded_at: true,
-        },
-      },
-    },
-  });
-  if (!article) throw new HttpException("Article not found", 404);
+    });
+  const section = article.section;
+  // Return only the section object as required by the function signature
   return {
-    id: article.id,
-    title: article.title,
-    content: article.content,
-    created_at: toISOStringSafe(article.created_at),
-    updated_at: toISOStringSafe(article.updated_at),
-    author: {
-      id: article.economic_board_citizen_id,
-      display_name: article.author?.display_name || "",
-      email: article.author?.email || "",
-    },
-    section: {
-      id: article.economic_board_section_id,
-      name: article.section?.name || "",
-    },
-    files:
-      article.fileAttachments?.map((file) => ({
-        id: file.id,
-        original_filename: file.original_filename,
-        size_bytes: file.size_bytes,
-        mime_type: file.mime_type,
-        storage_path: file.storage_path,
-        created_at: toISOStringSafe(file.created_at),
-        updated_at: toISOStringSafe(file.updated_at),
-      })) || [],
-    images:
-      article.images?.map((image) => ({
-        id: image.id,
-        original_filename: image.original_filename,
-        width: image.width,
-        height: image.height,
-        mime_type: image.mime_type,
-        original_path: image.original_path,
-        thumbnail_path: image.thumbnail_path,
-        medium_path: image.medium_path,
-        uploaded_at: toISOStringSafe(image.uploaded_at),
-      })) || [],
-  } as IEconomicBoardCitizen;
+    id: section.id,
+    name: section.name,
+    description: section.description,
+    created_at: toISOStringSafe(section.created_at),
+    updated_at: toISOStringSafe(section.updated_at),
+    deleted_at: section.deleted_at ? toISOStringSafe(section.deleted_at) : null,
+  } satisfies IEconomicBoardSection;
 }

@@ -4,8 +4,9 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardBanDuration } from "../../../../api/structures/IDiscussionBoardBanDuration";
 import { IPageIDiscussionBoardBanDuration } from "../../../../api/structures/IPageIDiscussionBoardBanDuration";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
+import { deleteDiscussionBoardSuperAdminBanDurationsDurationId } from "../../../../providers/deleteDiscussionBoardSuperAdminBanDurationsDurationId";
 import { getDiscussionBoardSuperAdminBanDurationsDurationId } from "../../../../providers/getDiscussionBoardSuperAdminBanDurationsDurationId";
 import { patchDiscussionBoardSuperAdminBanDurations } from "../../../../providers/patchDiscussionBoardSuperAdminBanDurations";
 import { postDiscussionBoardSuperAdminBanDurations } from "../../../../providers/postDiscussionBoardSuperAdminBanDurations";
@@ -14,27 +15,27 @@ import { putDiscussionBoardSuperAdminBanDurationsDurationId } from "../../../../
 @Controller("/discussionBoard/superAdmin/ban-durations")
 export class DiscussionboardSuperadminBan_durationsController {
   /**
-   * Create a new predefined ban duration option for the moderation system.
+   * Create a new ban duration option for the discussion board moderation system.
    *
-   * This operation allows super administrators to define standardized ban duration options that can be selected when banning users. Each ban duration includes a descriptive name, detailed explanation, duration in hours, and whether it represents a permanent ban. These predefined options ensure consistent ban enforcement across the platform and simplify the banning process for administrators.
+   * This operation allows super administrators to define standardized ban duration options that can be selected when banning users. Each ban duration includes a descriptive name (name field), detailed explanation (description field), duration in hours (duration_hours field), and permanent ban indicator (is_permanent field). The system uses these predefined durations to ensure consistency across all ban enforcement actions.
    *
-   * The ban duration options support the discussion board's moderation system by providing standardized choices that administrators can reference when issuing bans. This eliminates ambiguity and ensures all bans follow consistent duration patterns. The system validates that ban duration names are unique and that duration values are appropriate for the specified ban type.
+   * Super administrators can create temporary ban durations (e.g., 1 day = 24 hours, 7 days = 168 hours) as well as permanent ban options. The duration_hours field specifies the ban length in hours, with permanent bans indicated by the is_permanent flag. The name field provides a human-readable description of the ban duration for administrative reference and must be unique across all ban duration options.
    *
-   * Super administrators can create both temporary bans (with specific hour durations) and permanent bans (marked as permanent). The system automatically generates UUID identifiers and timestamps for each created ban duration option. All ban duration creations are logged for audit purposes and can be referenced by the ban records table when users are banned.
+   * This operation supports the comprehensive moderation workflow by providing standardized ban duration choices that administrators can consistently apply across user banning actions. Created ban durations become available for selection in the banning interface and help maintain consistent enforcement policies.
    *
-   * This operation is part of the platform's comprehensive moderation toolkit, enabling super administrators to maintain consistent enforcement standards while providing flexibility in ban duration selection. Authorization is restricted to super administrators only to ensure proper control over moderation standards.
+   * Security considerations: Only super administrators have permission to create ban duration options. The operation validates all input fields and ensures name uniqueness to prevent duplicate ban duration definitions.
    *
    * @param connection
-   * @param body Ban duration creation parameters including name, description, duration, and permanence flag
+   * @param body Ban duration creation data including name, description, duration, and permanent flag
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate incoming ban duration creation request against schema constraints. Generate UUID for the new ban duration record. Set created_at and updated_at timestamps to current time. Check for unique name constraint violation. Insert the new ban duration record into the discussion_board_ban_durations table. Return the complete created entity with all fields populated.
+   * @x-autobe-specification Validate the request body fields including name uniqueness, duration_hours validation, and required field checks. Create a new ban_durations record with the provided data, generating a UUID for the id field and setting created_at/updated_at timestamps. Ensure the name is unique across existing ban durations. Return the complete created entity including system-generated fields.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardBanDuration.ICreate,
   ): Promise<IDiscussionBoardBanDuration> {
@@ -50,25 +51,25 @@ export class DiscussionboardSuperadminBan_durationsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of predefined ban duration configurations available for use when banning users.
+   * Retrieve a paginated and filtered list of predefined ban duration options for administrative use.
    *
-   * This operation provides administrators with access to the standardized ban duration options that can be selected when implementing user bans. The ban durations include both temporary options (such as 1-day, 7-day, or 30-day bans) and permanent ban configurations, each with descriptive names and duration specifications. Administrators can use this endpoint to browse available options while preparing ban actions, ensuring consistent ban enforcement across the moderation system.
+   * This operation provides search and filtering capabilities for browsing standardized ban durations that administrators can select when banning users. The search functionality allows filtering by name, description, duration ranges, and permanent/temporary status.
    *
-   * The search functionality supports filtering by ban duration characteristics including permanent vs temporary status, specific duration ranges, and partial name matching. This allows administrators to quickly locate appropriate ban durations based on the severity of the violation and desired enforcement period. The response includes standardized ban duration information that administrators reference when issuing bans through the user banning system.
+   * Results are returned in a paginated format with comprehensive metadata support for integration with administrative interfaces. Each ban duration option includes its descriptive name, duration in hours, permanent status flag, and creation timestamp for reference.
    *
-   * All ban durations retrieved through this operation are predefined configurations that help maintain consistent moderation practices. The paginated results ensure efficient browsing of the available options while supporting the administrative workflow of selecting appropriate ban durations based on specific moderation scenarios.
+   * The operation supports advanced sorting by various criteria including duration length, alphabetical order, and creation date to facilitate efficient administrative workflow when selecting appropriate ban durations for moderation actions.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering ban duration options
+   * @param body Search criteria, pagination, and sorting parameters for ban duration listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_ban_durations table with support for filtering by name, duration_hours, and is_permanent status. Apply soft delete filtering using the deleted_at column to exclude deleted durations. Implement pagination with cursor-based or offset-based approach for efficient result retrieval. Support search by partial name matching if provided in the request criteria. Sort results by name or duration_hours for consistent ordering. Validate that all filter parameters are properly sanitized and within valid ranges before query execution. Return appropriate HTTP status codes for empty results, validation errors, and system errors.
+   * @x-autobe-specification Query the discussion_board_ban_durations table with pagination, filtering, and sorting capabilities. Apply filters based on search text (name/description), duration ranges, and permanent/temporary status. Support cursor-based pagination for efficient large result sets. Return ban duration summaries optimized for administrative selection interfaces.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardBanDuration.IRequest,
   ): Promise<IPageIDiscussionBoardBanDuration.ISummary> {
@@ -84,31 +85,31 @@ export class DiscussionboardSuperadminBan_durationsController {
   }
 
   /**
-   * Retrieve detailed information about a specific ban duration configuration.
+   * Retrieve detailed information about a specific predefined ban duration option.
    *
-   * This API operation provides administrators with access to predefined ban duration options stored in the system. Ban durations are standardized configurations that administrators can select when issuing user bans, ensuring consistent enforcement across the moderation system.
+   * This API operation provides administrators with complete details about a standardized ban duration option that can be selected when banning users. The operation returns all fields from the discussion_board_ban_durations table including the descriptive name, detailed explanation, duration in hours, permanent ban indicator, and creation/update timestamps.
    *
-   * Each ban duration record includes a descriptive name, detailed explanation of when to use the duration, the ban length in hours, and whether it represents a permanent ban. These configurations support the banning process by providing clear, standardized options that help maintain fairness and consistency in moderation actions.
+   * Administrators use this operation to review ban duration options before selecting them during the user banning process. The standardized duration options ensure consistent ban enforcement across the moderation system and simplify the banning workflow for administrators.
    *
-   * Administrators can use this operation to review ban duration settings before applying them to users, ensuring they understand the implications of each duration option. The operation returns complete ban duration information including creation and update timestamps for audit purposes.
+   * The ban duration options support the discussion_board_ban_records table by providing predefined duration choices that administrators can reference. This operation enables administrators to verify ban duration details and understand the implications of each duration option before applying them to user accounts.
    *
-   * This endpoint is primarily used by administrators during the user banning process to reference available duration options and by system administrators when managing ban duration configurations.
+   * This operation complements the ban duration listing operation which provides a paginated list of all available ban duration options. Together, these operations support comprehensive ban management functionality within the administrator interface.
    *
    * @param connection
-   * @param durationId Unique identifier of the ban duration configuration to retrieve
+   * @param durationId Unique identifier of the ban duration option to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_ban_durations table by the provided durationId parameter.
-   * Validate that the durationId exists and is a valid UUID format.
-   * Return the complete ban duration record including all fields: id, name, description, duration_hours, is_permanent, created_at, updated_at, and deleted_at.
-   * Handle cases where the ban duration record does not exist by returning appropriate 404 error.
-   * Ensure the response includes all configuration details needed for administrators to understand the ban duration option.
+   * @x-autobe-specification Query the discussion_board_ban_durations table by the provided durationId parameter. The ID should be validated as a valid UUID format before querying the database. Return a 404 error if no ban duration record exists with the specified ID.
+   *
+   * The operation should return all fields from the ban_durations table including id, name, description, duration_hours, is_permanent, created_at, updated_at, and deleted_at. The deleted_at field should be included but will typically be null for active records.
+   *
+   * Ensure the response includes comprehensive ban duration information that administrators need for making informed decisions during the banning process. The operation should handle invalid UUID formats gracefully and provide appropriate error responses for non-existent records.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":durationId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("durationId")
     durationId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardBanDuration> {
@@ -124,32 +125,26 @@ export class DiscussionboardSuperadminBan_durationsController {
   }
 
   /**
-   * Update an existing ban duration configuration used for user moderation.
+   * Update an existing ban duration configuration for the moderation system.
    *
-   * This API operation allows administrators to modify predefined ban duration options that are available for selection when banning users. The ban duration configuration includes the descriptive name, duration explanation, duration value in hours, and permanent ban indicator. These standardized duration options ensure consistent enforcement of moderation policies across the platform.
+   * This operation allows super administrators to modify the properties of predefined ban duration options that are available when banning users. Administrators can update the descriptive name, detailed explanation, duration in hours, and permanent status flag for standardized ban duration choices.
    *
-   * The update operation supports modifying ban duration metadata while maintaining data integrity and validation rules. When updating a ban duration, the system validates the new configuration to ensure it meets platform requirements for moderation consistency. The operation preserves the unique constraint on duration names to prevent duplicate configurations.
+   * The ban duration system supports the moderation workflow by providing consistent duration options that administrators can select when issuing bans. This ensures uniform enforcement of ban policies across the platform while maintaining flexibility for administrators to adjust duration settings as community standards evolve.
    *
-   * Updated ban duration configurations immediately affect future ban operations but do not retroactively modify existing bans that were issued using previous duration settings. This ensures that historical moderation actions remain consistent with the policies that were in effect at the time they were applied.
-   *
-   * Security considerations require that only authorized administrators can modify ban duration configurations. This operation supports the platform's moderation system by providing administrators with the tools to maintain and update duration options as community guidelines and moderation policies evolve over time.
+   * Security considerations require that only authorized super administrators with appropriate permissions can modify ban duration configurations. The operation validates all input parameters and maintains audit trails through automatic timestamp updates.
    *
    * @param connection
-   * @param durationId Unique identifier of the ban duration configuration to update
-   * @param body Updated ban duration configuration including name, description, and duration settings
+   * @param durationId Unique identifier of the ban duration to update
+   * @param body Updated ban duration properties
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Execute update operation on discussion_board_ban_durations table using the provided durationId path parameter. Validate that the ban duration exists and that the requesting user has administrator privileges. Update the ban duration configuration with the values provided in the request body, ensuring that the name remains unique across all ban durations. Preserve the created_at timestamp while updating the updated_at timestamp to reflect the modification time.
-   *
-   * Implement validation rules: ensure name is not empty, description provides meaningful context, duration_hours is a non-negative integer, and is_permanent is properly set. Handle constraint violations for duplicate names with appropriate error responses. Return the complete updated ban duration entity including all fields to provide the administrator with confirmation of the changes.
-   *
-   * This operation should be transactional to maintain data consistency. If the ban duration is being referenced by existing ban records, the update should proceed as the duration configuration is metadata that doesn't affect the historical application of bans.
+   * @x-autobe-specification Update an existing ban duration record in the discussion_board_ban_durations table. Validate that the ban duration ID exists before attempting update. Ensure all required fields are provided and meet validation rules. Update the updated_at timestamp automatically. Return the complete updated ban duration object with all fields. Implement proper error handling for non-existent IDs and validation failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":durationId")
   public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("durationId")
     durationId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -160,6 +155,42 @@ export class DiscussionboardSuperadminBan_durationsController {
         superAdmin,
         durationId,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes a specific ban duration configuration from the system.
+   *
+   * This administrative operation allows authorized super administrators to delete predefined ban duration options that are no longer needed or were created in error. The operation performs a permanent removal of the ban duration configuration record from the database.
+   *
+   * Super administrators should exercise caution when deleting ban durations, as existing ban records may reference the deleted duration configuration. The system will prevent references to non-existent duration options through proper exception handling and validation.
+   *
+   * This operation requires super administrator privileges and should only be performed when a ban duration option is no longer applicable or needs to be removed from the system configuration. All deletion actions are logged in the system audit trail for compliance and administrative tracking purposes.
+   *
+   * @param connection
+   * @param durationId Unique identifier of the ban duration configuration to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Query the discussion_board_ban_durations table by the provided durationId to locate the target ban duration configuration. Verify that the duration exists and has not already been soft-deleted (deleted_at is null). If the duration is found and active, perform a soft deletion by setting the deleted_at field to the current timestamp. Return HTTP 204 No Content to indicate successful deletion.
+   *
+   * Handle edge cases including: duration not found (return 404), duration already deleted (return 404), and database connection errors (return 500). Ensure proper transaction handling to maintain data consistency. Log the deletion action in the audit trail with administrator information and timestamp.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":durationId")
+  public async erase(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("durationId")
+    durationId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardSuperAdminBanDurationsDurationId({
+        superAdmin,
+        durationId,
       });
     } catch (error) {
       console.log(error);

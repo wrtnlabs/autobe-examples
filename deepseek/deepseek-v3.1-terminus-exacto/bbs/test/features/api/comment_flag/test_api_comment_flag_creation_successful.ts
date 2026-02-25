@@ -17,8 +17,8 @@ import { authorize_user_join } from "../../../authorize/authorize_user_join";
 import { authorize_user_login } from "../../../authorize/authorize_user_login";
 import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
 import { generate_random_discussion_board_user_articles_comments_create } from "../../../generate/generate_random_discussion_board_user_articles_comments_create";
-import { generate_random_discussion_board_user_articles_comments_flags_create } from "../../../generate/generate_random_discussion_board_user_articles_comments_flags_create";
 import { generate_random_discussion_board_user_articles_create } from "../../../generate/generate_random_discussion_board_user_articles_create";
+import { generate_random_discussion_board_user_comments_flags_create } from "../../../generate/generate_random_discussion_board_user_comments_flags_create";
 import { prepare_random_discussion_board_article } from "../../../prepare/prepare_random_discussion_board_article";
 import { prepare_random_discussion_board_comment } from "../../../prepare/prepare_random_discussion_board_comment";
 import { prepare_random_discussion_board_comment_flag } from "../../../prepare/prepare_random_discussion_board_comment_flag";
@@ -26,89 +26,84 @@ import { prepare_random_discussion_board_comment_flag } from "../../../prepare/p
 export async function test_api_comment_flag_creation_successful(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user connection and authenticate using utility function
-  const userConnection: api.IConnection = { host: connection.host };
-  const user = await authorize_user_join(userConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
-    } satisfies IDiscussionBoardUser.IJoin,
-  });
-  typia.assert(user);
-  // Create an article using utility function
+  // Setup first user (author of article and comment)
+  const authorConnection: api.IConnection = { host: connection.host };
+  const author = await authorize_user_join(authorConnection, {});
+  typia.assert(author);
+  // Create article as first user
   const article = await generate_random_discussion_board_user_articles_create(
-    userConnection,
-    {
-      body: {
-        title: RandomGenerator.paragraph({
-          sentences: 2,
-          wordMin: 5,
-          wordMax: 10,
-        }),
-        content: RandomGenerator.content({
-          paragraphs: 3,
-          sentenceMin: 5,
-          sentenceMax: 10,
-        }),
-        section_id: typia.random<string & tags.Format<"uuid">>(),
-        status: "published" as const,
-      } satisfies IDiscussionBoardArticle.ICreate,
-    },
+    authorConnection,
+    {},
   );
   typia.assert(article);
-  // Create a comment on the article using utility function
+  // Create comment as first user
   const comment =
     await generate_random_discussion_board_user_articles_comments_create(
-      userConnection,
+      authorConnection,
       {
         params: { articleId: article.id },
-        body: {
-          content: RandomGenerator.paragraph({
-            sentences: 3,
-            wordMin: 5,
-            wordMax: 15,
-          }),
-        } satisfies IDiscussionBoardComment.ICreate,
       },
     );
   typia.assert(comment);
-  // Create a flag on the comment using utility function
+  // Setup second user (flag submitter)
+  const flaggerConnection: api.IConnection = { host: connection.host };
+  const flagger = await authorize_user_join(flaggerConnection, {});
+  typia.assert(flagger);
+  // Submit flag as second user
+  const flagData = {
+    flag_reason: RandomGenerator.paragraph({ sentences: 1 }),
+    flag_type: "inappropriate",
+  } satisfies IDiscussionBoardCommentFlag.ICreate;
   const flag =
-    await generate_random_discussion_board_user_articles_comments_flags_create(
-      userConnection,
+    await generate_random_discussion_board_user_comments_flags_create(
+      flaggerConnection,
       {
-        params: { articleId: article.id, commentId: comment.id },
-        body: {
-          flag_reason: RandomGenerator.paragraph({
-            sentences: 2,
-            wordMin: 10,
-            wordMax: 20,
-          }),
-          flag_type: "inappropriate",
-        } satisfies IDiscussionBoardCommentFlag.ICreate,
+        params: { commentId: comment.id },
+        body: flagData,
       },
     );
   typia.assert(flag);
   // Validate flag properties
-  TestValidator.equals("flag has correct status", flag.status, "pending");
   TestValidator.equals(
-    "flag references correct comment",
-    flag.comment.id,
-    comment.id,
+    "flag reason matches input",
+    flag.flag_reason,
+    flagData.flag_reason,
   );
-  TestValidator.equals("flag references correct user", flag.user.id, user.id);
+  TestValidator.equals(
+    "flag type matches input",
+    flag.flag_type,
+    flagData.flag_type,
+  );
+  TestValidator.equals("flag status should be pending", flag.status, "pending");
+  TestValidator.equals("flagging user id matches", flag.user.id, flagger.id);
+  TestValidator.equals("comment id matches", flag.comment.id, comment.id);
   TestValidator.predicate(
     "flag has creation timestamp",
-    flag.created_at !== null,
+    flag.created_at !== undefined,
   );
-  TestValidator.predicate(
-    "flag reason is not empty",
-    flag.flag_reason.length > 0,
+  TestValidator.equals(
+    "reviewer should be null initially",
+    flag.reviewer,
+    null,
   );
-  TestValidator.predicate("flag type is not empty", flag.flag_type.length > 0);
-  TestValidator.equals("reviewer is null initially", flag.reviewer, null);
-  TestValidator.equals("reviewed_at is null initially", flag.reviewed_at, null);
-  TestValidator.equals("resolved_at is null initially", flag.resolved_at, null);
+  TestValidator.equals(
+    "reviewed_at should be null initially",
+    flag.reviewed_at,
+    null,
+  );
+  TestValidator.equals(
+    "resolved_at should be null initially",
+    flag.resolved_at,
+    null,
+  );
+  // Test duplicate flag prevention
+  await TestValidator.error("duplicate flag should be rejected", async () => {
+    await generate_random_discussion_board_user_comments_flags_create(
+      flaggerConnection,
+      {
+        params: { commentId: comment.id },
+        body: flagData,
+      },
+    );
+  });
 }

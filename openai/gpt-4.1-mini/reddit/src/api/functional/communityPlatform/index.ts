@@ -1,14 +1,12 @@
 export * as auth from "./auth/index";
 export * as guest from "./guest/index";
+export * as guests from "./guests/index";
 export * as users from "./users/index";
 export * as user from "./user/index";
 export * as moderators from "./moderators/index";
 export * as admins from "./admins/index";
-export * as communities from "./communities/index";
 export * as moderator from "./moderator/index";
 export * as admin from "./admin/index";
-export * as reports from "./reports/index";
+export * as commentVotes from "./commentVotes/index";
+export * as commentSortOrders from "./commentSortOrders/index";
 export * as reportReasons from "./reportReasons/index";
-export * as activityLogs from "./activityLogs/index";
-export * as postSnapshots from "./postSnapshots/index";
-export * as reportedContents from "./reportedContents/index";

@@ -1,7 +1,12 @@
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionImage";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { IPageIDiscussionBoardSectionImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSectionImage";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,113 +24,88 @@ export async function patchDiscussionBoardAdminSectionsSectionIdImages(props: {
   admin: AdminPayload;
   sectionId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSectionImage.IRequest;
-}): Promise<IPageIDiscussionBoardSectionImage> {
-  const page = props.body.page;
-  const limit = props.body.limit;
-  const skip = (page - 1) * limit;
-  // Build WHERE clause
-  const whereInput: Prisma.discussion_board_section_imagesWhereInput = {
+}): Promise<IPageIDiscussionBoardSectionImage.ISummary> {
+  // Verify section exists and is active
+  const section =
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: {
+        id: props.sectionId,
+        status: "active",
+        deleted_at: null,
+      },
+    });
+  // Check if admin has permissions for this section
+  const sectionAdmin =
+    await MyGlobal.prisma.discussion_board_section_administrators.findFirst({
+      where: {
+        discussion_board_section_id: props.sectionId,
+        discussion_board_admin_id: props.admin.id,
+      },
+    });
+  if (!sectionAdmin) {
+    throw new HttpException(
+      "Admin does not have permission to access this section",
+      403,
+    );
+  }
+  // Build WHERE clause with filtering
+  const whereInput = {
     discussion_board_section_id: props.sectionId,
-  };
-  // Apply filters
-  if (props.body.image_type) {
-    whereInput.image_type = props.body.image_type;
-  }
-  if (props.body.filename) {
-    whereInput.filename = {
-      contains: props.body.filename,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.mime_type) {
-    whereInput.mime_type = props.body.mime_type;
-  }
-  if (
-    props.body.file_size_min !== undefined ||
-    props.body.file_size_max !== undefined
-  ) {
-    whereInput.file_size = {};
-    if (props.body.file_size_min !== undefined) {
-      whereInput.file_size.gte = props.body.file_size_min;
-    }
-    if (props.body.file_size_max !== undefined) {
-      whereInput.file_size.lte = props.body.file_size_max;
-    }
-  }
-  if (
-    props.body.width_min !== undefined ||
-    props.body.width_max !== undefined
-  ) {
-    whereInput.width = {};
-    if (props.body.width_min !== undefined) {
-      whereInput.width.gte = props.body.width_min;
-    }
-    if (props.body.width_max !== undefined) {
-      whereInput.width.lte = props.body.width_max;
-    }
-  }
-  if (
-    props.body.height_min !== undefined ||
-    props.body.height_max !== undefined
-  ) {
-    whereInput.height = {};
-    if (props.body.height_min !== undefined) {
-      whereInput.height.gte = props.body.height_min;
-    }
-    if (props.body.height_max !== undefined) {
-      whereInput.height.lte = props.body.height_max;
-    }
-  }
-  if (props.body.alt_text) {
-    whereInput.alt_text = {
-      contains: props.body.alt_text,
-      mode: "insensitive",
-    };
-  }
-  // Execute queries sequentially (not Promise.all to avoid race conditions)
+    ...(props.body.image_type && { image_type: props.body.image_type }),
+    ...(props.body.search && {
+      OR: [
+        { filename: { contains: props.body.search, mode: "insensitive" } },
+        { alt_text: { contains: props.body.search, mode: "insensitive" } },
+      ],
+    }),
+  } satisfies Prisma.discussion_board_section_imagesWhereInput;
+  // Pagination parameters with validation
+  const currentPage = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(Math.max(1, props.body.limit ?? 100), 100);
+  const skip = (currentPage - 1) * limit;
+  // Fetch paginated images
   const data = await MyGlobal.prisma.discussion_board_section_images.findMany({
     where: whereInput,
     skip,
     take: limit,
-    include: {
-      section: {
-        select: {
-          id: true,
-          name: true,
-          status: true,
-          display_order: true,
-        },
-      },
-    },
+    orderBy: { filename: "asc" },
   });
+  // Total count for pagination
   const total = await MyGlobal.prisma.discussion_board_section_images.count({
     where: whereInput,
   });
-  // Transform data to match DTO structure
-  const transformedData: IDiscussionBoardSectionImage[] = data.map((item) => ({
-    id: item.id as string & tags.Format<"uuid">,
-    filename: item.filename,
-    mime_type: item.mime_type,
-    file_size: item.file_size,
-    width: item.width,
-    height: item.height,
-    image_type: item.image_type,
-    storage_path: item.storage_path,
-    alt_text: item.alt_text,
-    section: {
-      id: item.section.id as string & tags.Format<"uuid">,
-      name: item.section.name,
-      status: item.section.status as "active" | "inactive" | "archived",
-      display_order: item.section.display_order,
-    },
-  }));
+  // Transform to DTO following exact ISummary specification
+  const summaryData = data.map(
+    (image) =>
+      ({
+        id: image.id as string & tags.Format<"uuid">,
+        filename: image.filename,
+        mime_type: image.mime_type,
+        file_size: image.file_size as number & tags.Type<"int32">,
+        width: image.width as number & tags.Type<"int32">,
+        height: image.height as number & tags.Type<"int32">,
+        image_type: image.image_type,
+        alt_text: image.alt_text,
+      }) satisfies IDiscussionBoardSectionImage.ISummary,
+  );
+  // Fix: Use correct pagination property names according to IPage.IPagination
   return {
-    data: transformedData,
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      page: currentPage satisfies number as number satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      limit: limit satisfies number as number satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      total: total satisfies number as number satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      pages: Math.ceil(
+        total / limit,
+      ) satisfies number as number satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     } satisfies IPage.IPagination,
+    data: summaryData,
   };
 }

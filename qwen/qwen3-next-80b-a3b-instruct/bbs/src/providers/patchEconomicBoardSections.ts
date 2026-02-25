@@ -10,43 +10,71 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EconomicBoardSectionAtSummaryTransformer } from "../transformers/EconomicBoardSectionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function patchEconomicBoardSections(props: {
   body: IEconomicBoardSection.IRequest;
 }): Promise<IPageIEconomicBoardSection.ISummary> {
-  const whereInput = {
-    status: "active",
-    deleted_at: null,
-  } satisfies Prisma.economic_board_sectionsWhereInput;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 10;
+  const skip = (page - 1) * limit;
+  // Build order condition
+  const orderBy: Prisma.economic_board_sectionsOrderByWithRelationInput =
+    props.body.sort === "name_asc"
+      ? { name: "asc" }
+      : props.body.sort === "name_desc"
+        ? { name: "desc" }
+        : props.body.sort === "created_at_asc"
+          ? { created_at: "asc" }
+          : { created_at: "desc" };
+  // Query active sections with pagination
   const data = await MyGlobal.prisma.economic_board_sections.findMany({
-    where: whereInput,
-    orderBy: { created_at: "desc" as const },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      created_at: true,
+    where: {
+      deleted_at: null,
+      ...(props.body.search
+        ? {
+            name: {
+              contains: props.body.search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          }
+        : {}),
     },
+    skip,
+    take: limit,
+    orderBy,
+    ...EconomicBoardSectionAtSummaryTransformer.select(),
   });
+  // Count total active sections
   const total = await MyGlobal.prisma.economic_board_sections.count({
-    where: whereInput,
-  });
-  return {
-    data: data.map((section) => ({
-      id: section.id,
-      name: section.name,
-      description: section.description,
-      created_at: toISOStringSafe(section.created_at),
-    })),
-    pagination: {
-      current: 1 as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: 100 as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(total / 100) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+    where: {
+      deleted_at: null,
+      ...(props.body.search
+        ? {
+            name: {
+              contains: props.body.search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          }
+        : {}),
     },
-  };
+  });
+  // Transform data using transformer
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EconomicBoardSectionAtSummaryTransformer.transform,
+  );
+  return {
+    data: transformedData,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  } satisfies IPageIEconomicBoardSection.ISummary;
 }

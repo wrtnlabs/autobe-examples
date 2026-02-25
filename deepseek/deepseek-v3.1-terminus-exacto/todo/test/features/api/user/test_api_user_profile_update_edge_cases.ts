@@ -12,119 +12,127 @@ import { authorize_user_join } from "../../../authorize/authorize_user_join";
 import { authorize_user_login } from "../../../authorize/authorize_user_login";
 import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
 
-/**
- * Test profile update with various display name edge cases.
- * Create a user account via join endpoint. Test updating with minimum valid display name (1 character),
- * maximum valid display name (255 characters), and typical display names with spaces and special characters.
- * Verify all updates succeed and return correct profile information. Also test that the email field
- * remains immutable and cannot be changed through this endpoint.
- */
 export async function test_api_user_profile_update_edge_cases(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create user connection via join
-  const userConnection: api.IConnection = { host: connection.host };
-  const joinResult = await authorize_user_join(userConnection, {
+  // Setup two test users for privacy testing
+  const user1Connection: api.IConnection = { host: connection.host };
+  const user1 = await authorize_user_join(user1Connection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       display_name: RandomGenerator.name(),
+      href: "https://example.com/register",
+      referrer: "https://example.com",
     } satisfies ITodoAppUser.IJoin,
   });
-  typia.assert(joinResult);
-  // Test minimum display name (1 character)
-  const minDisplayName = "A";
-  const minUpdateResult = await api.functional.todoApp.user.profile.update(
-    userConnection,
-    {
-      body: {
-        display_name: minDisplayName,
-      } satisfies ITodoAppUser.IUpdate,
-    },
-  );
-  typia.assert(minUpdateResult);
+  typia.assert(user1);
+  const user2Connection: api.IConnection = { host: connection.host };
+  const user2 = await authorize_user_join(user2Connection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      display_name: RandomGenerator.name(),
+      href: "https://example.com/register",
+      referrer: "https://example.com",
+    } satisfies ITodoAppUser.IJoin,
+  });
+  typia.assert(user2);
+  // Test 1: Minimum length boundary (1 character)
+  const minLengthBody = {
+    display_name: "A",
+  } satisfies ITodoAppUser.IUpdate;
+  const minLengthResult =
+    await api.functional.todoApp.user.users.profile.update(user1Connection, {
+      body: minLengthBody,
+    });
+  typia.assert(minLengthResult);
   TestValidator.equals(
-    "minimum display name update",
-    minUpdateResult.display_name,
-    minDisplayName,
+    "min length should be accepted",
+    minLengthResult.display_name,
+    "A",
   );
+  // Test 2: Empty display name (null)
+  const nullBody = {
+    display_name: null,
+  } satisfies ITodoAppUser.IUpdate;
+  const nullResult = await api.functional.todoApp.user.users.profile.update(
+    user1Connection,
+    { body: nullBody },
+  );
+  typia.assert(nullResult);
   TestValidator.equals(
-    "email remains unchanged",
-    minUpdateResult.email,
-    joinResult.email,
+    "null should preserve current display name",
+    nullResult.display_name,
+    "A",
   );
-  // Test maximum display name (255 characters)
-  const maxDisplayName = RandomGenerator.alphabets(255);
-  const maxUpdateResult = await api.functional.todoApp.user.profile.update(
-    userConnection,
-    {
-      body: {
-        display_name: maxDisplayName,
-      } satisfies ITodoAppUser.IUpdate,
-    },
-  );
-  typia.assert(maxUpdateResult);
+  // Test 3: Empty display name (undefined)
+  const undefinedBody = {
+    display_name: undefined,
+  } satisfies ITodoAppUser.IUpdate;
+  const undefinedResult =
+    await api.functional.todoApp.user.users.profile.update(user1Connection, {
+      body: undefinedBody,
+    });
+  typia.assert(undefinedResult);
   TestValidator.equals(
-    "maximum display name update",
-    maxUpdateResult.display_name,
-    maxDisplayName,
+    "undefined should preserve current display name",
+    undefinedResult.display_name,
+    "A",
   );
+  // Test 4: Maximum length boundary (50 characters - valid)
+  const maxValidDisplayName = RandomGenerator.alphabets(50);
+  const maxValidBody = {
+    display_name: maxValidDisplayName,
+  } satisfies ITodoAppUser.IUpdate;
+  const maxValidResult = await api.functional.todoApp.user.users.profile.update(
+    user1Connection,
+    { body: maxValidBody },
+  );
+  typia.assert(maxValidResult);
   TestValidator.equals(
-    "email remains unchanged",
-    maxUpdateResult.email,
-    joinResult.email,
+    "max valid length should be accepted",
+    maxValidResult.display_name,
+    maxValidDisplayName,
   );
-  // Test display name with spaces
-  const spacedDisplayName = "John Doe Smith";
-  const spacedUpdateResult = await api.functional.todoApp.user.profile.update(
-    userConnection,
-    {
-      body: {
-        display_name: spacedDisplayName,
-      } satisfies ITodoAppUser.IUpdate,
-    },
-  );
-  typia.assert(spacedUpdateResult);
+  // Test 5: Beyond maximum length boundary (51 characters - should error)
+  const maxInvalidBody = {
+    display_name: RandomGenerator.alphabets(51),
+  } satisfies ITodoAppUser.IUpdate as any;
+  await TestValidator.error("display name too long should error", async () => {
+    await api.functional.todoApp.user.users.profile.update(user1Connection, {
+      body: maxInvalidBody,
+    });
+  });
+  // Test 6: Special character handling
+  const specialCharsBody = {
+    display_name: "User123!@#$%^&*()_+-=[]{}|;:,.<>?",
+  } satisfies ITodoAppUser.IUpdate;
+  const specialCharsResult =
+    await api.functional.todoApp.user.users.profile.update(user1Connection, {
+      body: specialCharsBody,
+    });
+  typia.assert(specialCharsResult);
   TestValidator.equals(
-    "spaced display name update",
-    spacedUpdateResult.display_name,
-    spacedDisplayName,
+    "special characters should be accepted",
+    specialCharsResult.display_name,
+    "User123!@#$%^&*()_+-=[]{}|;:,.<>?",
   );
+  // Test 7: Privacy enforcement - user2 cannot access user1's profile
+  await TestValidator.error("user2 cannot update user1's profile", async () => {
+    await api.functional.todoApp.user.users.profile.update(user2Connection, {
+      body: { display_name: "Attempted Hijack" } satisfies ITodoAppUser.IUpdate,
+    });
+  });
+  // Verify user1's profile remains unchanged after unauthorized attempt
+  const finalCheck = await api.functional.todoApp.user.users.profile.update(
+    user1Connection,
+    { body: {} satisfies ITodoAppUser.IUpdate },
+  );
+  typia.assert(finalCheck);
   TestValidator.equals(
-    "email remains unchanged",
-    spacedUpdateResult.email,
-    joinResult.email,
-  );
-  // Test display name with special characters
-  const specialDisplayName = "User_123-Name@Example.com";
-  const specialUpdateResult = await api.functional.todoApp.user.profile.update(
-    userConnection,
-    {
-      body: {
-        display_name: specialDisplayName,
-      } satisfies ITodoAppUser.IUpdate,
-    },
-  );
-  typia.assert(specialUpdateResult);
-  TestValidator.equals(
-    "special character display name update",
-    specialUpdateResult.display_name,
-    specialDisplayName,
-  );
-  TestValidator.equals(
-    "email remains unchanged",
-    specialUpdateResult.email,
-    joinResult.email,
-  );
-  // Verify updated_at timestamp changes
-  TestValidator.notEquals(
-    "updated_at should change after profile update",
-    joinResult.updated_at,
-    specialUpdateResult.updated_at,
-  );
-  TestValidator.equals(
-    "created_at should remain unchanged",
-    joinResult.created_at,
-    specialUpdateResult.created_at,
+    "profile should remain unchanged after unauthorized attempt",
+    finalCheck.display_name,
+    "User123!@#$%^&*()_+-=[]{}|;:,.<>?",
   );
 }

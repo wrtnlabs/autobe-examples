@@ -56,7 +56,8 @@ model discussion_board_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions discussion_board_user_sessions[]
   passwordResets discussion_board_user_password_resets[]
@@ -84,6 +85,9 @@ model discussion_board_users {
   banAppeals discussion_board_ban_appeals[]
   contentFlags discussion_board_content_flags[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
 }
@@ -143,12 +147,20 @@ model discussion_board_user_sessions {
   last_accessed_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   articleViewStatEvents discussion_board_article_view_stat_events[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([access_token])
   @@unique([refresh_token])
   // spellchecker: ignore-next-line
@@ -206,10 +218,14 @@ model discussion_board_user_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([discussion_board_user_id, created_at], map: "discussion_board_user_password_resets_discussion_board_64b31903")
@@ -264,10 +280,14 @@ model discussion_board_user_email_verifications {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([discussion_board_user_id, created_at], map: "discussion_board_user_email_verifications_discussion_b_963a8f72")
@@ -316,7 +336,8 @@ model discussion_board_admins {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions discussion_board_admin_sessions[]
   passwordResets discussion_board_admin_password_resets[]
@@ -351,6 +372,9 @@ model discussion_board_admins {
   moderationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__d7ae31e7")
   assignedModerationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__be5209ae")
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
 }
@@ -415,10 +439,14 @@ model discussion_board_admin_sessions {
   last_accessed_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([access_token])
   @@unique([refresh_token])
   // spellchecker: ignore-next-line
@@ -470,10 +498,14 @@ model discussion_board_admin_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_password_resets_discussion_boar_ba216150")
@@ -525,10 +557,14 @@ model discussion_board_admin_email_verifications {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([discussion_board_admin_id, created_at], map: "discussion_board_admin_email_verifications_discussion__207fcdbb")
@@ -590,7 +626,8 @@ model discussion_board_super_admins {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions discussion_board_super_admin_sessions[]
   passwordResets discussion_board_super_admin_password_resets[]
@@ -608,6 +645,9 @@ model discussion_board_super_admins {
   moderationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__5309fe28")
   assignedModerationQueueEscalations discussion_board_content_moderation_queue_escalations[] @relation("discussion_board_content_moderation_queue_escalations__6cd5d4e6")
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
   @@index([privilege_level, created_at])
@@ -666,10 +706,14 @@ model discussion_board_super_admin_sessions {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([access_token])
   @@unique([refresh_token])
   // spellchecker: ignore-next-line
@@ -729,10 +773,14 @@ model discussion_board_super_admin_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_super_admin_password_resets_discussio_3a6d7280")
@@ -791,10 +839,14 @@ model discussion_board_super_admin_email_verifications {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_super_admin_id], map: "discussion_board_super_admin_email_verifications_discu_8d695432")
   @@index([token_hash])

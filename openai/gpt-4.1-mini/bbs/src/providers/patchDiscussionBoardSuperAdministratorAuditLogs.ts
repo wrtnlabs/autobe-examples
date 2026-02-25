@@ -1,4 +1,5 @@
 import { IDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuditLog";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAuditLog";
@@ -18,70 +19,100 @@ export async function patchDiscussionBoardSuperAdministratorAuditLogs(props: {
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardAuditLog.IRequest;
 }): Promise<IPageIDiscussionBoardAuditLog.ISummary> {
-  const body = props.body as any;
-  const page =
-    body.page !== undefined && body.page !== null && body.page > 0
-      ? body.page
-      : 1;
-  const limit =
-    body.limit !== undefined && body.limit !== null && body.limit > 0
-      ? body.limit
-      : 100;
-  const skip = (page - 1) * limit;
-  const whereClause: Prisma.discussion_board_audit_logsWhereInput = {};
-  if (body.event_type !== undefined && body.event_type !== null) {
-    whereClause.event_type = body.event_type;
+  if (props.superAdministrator.type !== "superadministrator") {
+    throw new HttpException("Forbidden", 403);
   }
-  if (body.actor_id !== undefined && body.actor_id !== null) {
-    whereClause.actor_id = body.actor_id;
-  }
-  if (
-    (body.created_at_from !== undefined && body.created_at_from !== null) ||
-    (body.created_at_to !== undefined && body.created_at_to !== null)
-  ) {
-    whereClause.created_at = {};
-    if (body.created_at_from !== undefined && body.created_at_from !== null) {
-      whereClause.created_at.gte = toISOStringSafe(body.created_at_from);
-    }
-    if (body.created_at_to !== undefined && body.created_at_to !== null) {
-      whereClause.created_at.lte = toISOStringSafe(body.created_at_to);
-    }
-  }
-  if (
-    body.event_description !== undefined &&
-    body.event_description !== null &&
-    body.event_description.trim() !== ""
-  ) {
-    whereClause.event_description = {
-      contains: body.event_description.trim(),
-      mode: "insensitive",
-    };
-  }
-  const data = await MyGlobal.prisma.discussion_board_audit_logs.findMany({
-    where: whereClause,
-    orderBy: { created_at: "desc" },
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
+  const where = {
+    deleted_at: null,
+    ...(props.body.event_type !== undefined
+      ? { event_type: props.body.event_type }
+      : {}),
+    ...(props.body.actor_id !== undefined
+      ? { actor_id: props.body.actor_id }
+      : {}),
+    ...(props.body.created_at_from !== undefined
+      ? { created_at: { gte: props.body.created_at_from } }
+      : {}),
+    ...(props.body.created_at_to !== undefined
+      ? { created_at: { lte: props.body.created_at_to } }
+      : {}),
+  } satisfies Prisma.discussion_board_audit_logsWhereInput;
+  const records = await MyGlobal.prisma.discussion_board_audit_logs.findMany({
+    where,
     skip,
     take: limit,
+    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      event_type: true,
+      event_description: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      actor: {
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          bio: true,
+          is_banned: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      },
+    },
   });
   const total = await MyGlobal.prisma.discussion_board_audit_logs.count({
-    where: whereClause,
+    where,
   });
-  const transformedData: IDiscussionBoardAuditLog.ISummary[] = data.map(
-    (record) => ({
-      id: record.id,
-      event_type: record.event_type,
-      event_description: record.event_description,
-      actor_id: record.actor_id === null ? null : record.actor_id,
-      created_at: toISOStringSafe(record.created_at),
-    }),
-  );
+  function toDateTimeString(input: unknown): string & tags.Format<"date-time"> {
+    if (typeof input === "string") {
+      return input as string & tags.Format<"date-time">;
+    }
+    if (input instanceof Date) {
+      return input.toISOString() as string & tags.Format<"date-time">;
+    }
+    throw new HttpException("Invalid date format", 400);
+  }
+  function toNullableDateTimeString(
+    input: unknown,
+  ): (string & tags.Format<"date-time">) | null {
+    if (input === null || input === undefined) {
+      return null;
+    }
+    return toDateTimeString(input);
+  }
   return {
-    data: transformedData,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     },
+    data: records.map((record) => ({
+      id: record.id,
+      eventType: record.event_type,
+      eventDescription: record.event_description,
+      createdAt: toDateTimeString(record.created_at),
+      updatedAt: toDateTimeString(record.updated_at),
+      deletedAt: toNullableDateTimeString(record.deleted_at),
+      actor:
+        record.actor === null
+          ? null
+          : {
+              id: record.actor.id,
+              email: record.actor.email,
+              displayName: record.actor.display_name,
+              bio: record.actor.bio ?? null,
+              isBanned: record.actor.is_banned,
+              createdAt: toDateTimeString(record.actor.created_at),
+              updatedAt: toDateTimeString(record.actor.updated_at),
+              deletedAt: toNullableDateTimeString(record.actor.deleted_at),
+            },
+    })),
   };
 }

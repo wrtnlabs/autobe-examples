@@ -6,8 +6,15 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_cancellation_request(
-  input?: DeepPartial<IShoppingMallCancellationRequest.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallCancellationRequest.ICreate>,
 ): IShoppingMallCancellationRequest.ICreate {
-  input;
-  return {};
+  return {
+    shoppingMallCustomerId:
+      input?.shoppingMallCustomerId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    shoppingMallOrderItemId:
+      input?.shoppingMallOrderItemId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

@@ -2,9 +2,8 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IDiscussionBoardApiRateLimit } from "../../../../api/structures/IDiscussionBoardApiRateLimit";
 import { IDiscussionBoardCommentRateLimit } from "../../../../api/structures/IDiscussionBoardCommentRateLimit";
-import { IPageIDiscussionBoardApiRateLimit } from "../../../../api/structures/IPageIDiscussionBoardApiRateLimit";
+import { IPageIDiscussionBoardCommentRateLimit } from "../../../../api/structures/IPageIDiscussionBoardCommentRateLimit";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getDiscussionBoardAdminCommentRateLimitsRateLimitId } from "../../../../providers/getDiscussionBoardAdminCommentRateLimitsRateLimitId";
@@ -13,19 +12,27 @@ import { patchDiscussionBoardAdminCommentRateLimits } from "../../../../provider
 @Controller("/discussionBoard/admin/comment-rate-limits")
 export class DiscussionboardAdminComment_rate_limitsController {
   /**
-   * Retrieve a filtered and paginated list of comment rate limit records for administrative monitoring and moderation purposes.
+   * Search and retrieve comment rate limiting records with advanced filtering capabilities.
    *
-   * This operation provides authorized administrators with comprehensive visibility into comment submission patterns and rate limiting enforcement across the discussion board platform. The search functionality enables filtering by specific users, date ranges, and submission frequency patterns to identify potential spam behavior, system abuse, or legitimate users who may be nearing rate limits.
+   * This operation provides administrators with comprehensive access to comment submission rate limiting data for monitoring and moderation purposes. The API supports filtering by user, submission time ranges, and pagination parameters to efficiently browse rate limiting records.
    *
-   * The response includes rate limit summary information optimized for administrative dashboards, showing user association details, submission timestamps, and submission frequency patterns. Administrators can use this data to monitor platform health, investigate potential abusive behavior, and ensure fair usage policies are maintained across all users.
+   * The system tracks comment submission attempts to enforce rate limiting rules that prevent spam and abusive behavior. Each record represents a single comment submission attempt with timestamp and user association. Administrators can use this data to identify patterns of excessive comment submission, monitor user behavior, and ensure platform security.
    *
-   * Access to this operation is restricted to authenticated administrator accounts only, ensuring that sensitive rate limiting data remains confidential and is used exclusively for legitimate moderation purposes.
+   * Security considerations require that only administrators have access to this operation, as it exposes user submission patterns and rate limiting data. The operation integrates with the discussion_board_comment_rate_limits table to provide real-time access to rate limiting records while maintaining data integrity and audit trail requirements.
+   *
+   * Related operations include user management APIs for user profile access and comment moderation tools for managing comment content. This operation complements the overall moderation system by providing visibility into submission frequency patterns.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for rate limit record filtering
+   * @param body Search criteria and pagination parameters for filtering rate limiting records
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query discussion_board_comment_rate_limits table with filtering by user ID and date ranges. Apply pagination with configurable page sizes. Join with discussion_board_users to include user information in summaries. Filter by submitted_at date ranges for temporal analysis. Return cursor-based pagination for efficient large result sets.
+   * @x-autobe-specification Query the discussion_board_comment_rate_limits table with advanced filtering and pagination capabilities.
+   *
+   * Implement filtering by user ID using the discussion_board_user_id field to isolate submissions from specific users. Support date range filtering on the submitted_at field to focus on specific time periods. Apply pagination using cursor-based or offset-based approaches depending on performance requirements.
+   *
+   * Join with discussion_board_users table to include user display names in the response for easier identification. Validate that the requesting user has administrator privileges before allowing access to rate limiting data. Implement proper error handling for invalid filter parameters and database connection issues.
+   *
+   * Return results sorted by submitted_at descending to show most recent submissions first. Include total count metadata in pagination response for accurate result tracking. Cache frequently accessed queries to improve performance for administrative dashboards.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -33,8 +40,8 @@ export class DiscussionboardAdminComment_rate_limitsController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IDiscussionBoardApiRateLimit.IRequest,
-  ): Promise<IPageIDiscussionBoardApiRateLimit.ISummary> {
+    body: IDiscussionBoardCommentRateLimit.IRequest,
+  ): Promise<IPageIDiscussionBoardCommentRateLimit.ISummary> {
     try {
       return await patchDiscussionBoardAdminCommentRateLimits({
         admin,
@@ -47,19 +54,27 @@ export class DiscussionboardAdminComment_rate_limitsController {
   }
 
   /**
-   * Retrieve detailed information about a specific comment rate limit record.
+   * Retrieve a specific comment rate limit record by its unique identifier.
    *
-   * This operation provides access to individual rate limiting entries that track comment submission attempts for spam prevention. Each record contains the user reference, submission timestamp, and creation metadata for monitoring comment submission patterns.
+   * This operation returns detailed information about a single comment rate limit tracking entry from the discussion_board_comment_rate_limits table. Rate limit records are used to enforce the platform's comment submission restrictions, preventing spam and abusive behavior by tracking when users submit comments.
    *
-   * The rate limiting system uses these records to enforce the platform's spam prevention policy of limiting users to 10 comments per minute. Administrators can use this endpoint to review specific rate limit entries for troubleshooting or audit purposes.
+   * The response includes the complete rate limit record with its unique identifier, associated user reference, submission timestamp, and creation timestamp. This data is essential for administrative oversight and understanding rate limiting patterns.
    *
-   * This operation requires the rateLimitId path parameter which must be a valid UUID matching an existing rate limit record in the database. If the specified ID does not exist, the operation will return a 404 Not Found error.
+   * Administrators and system monitoring tools can use this operation to inspect individual rate limit entries for audit purposes or to investigate potential abuse patterns. The record provides visibility into the platform's spam prevention mechanisms and user behavior tracking.
+   *
+   * Rate limiting is a critical security feature that ensures fair usage of the platform by all users while maintaining system performance and preventing automated abuse. Each record represents a single comment submission attempt that contributes to the user's hourly limit calculation.
    *
    * @param connection
-   * @param rateLimitId Unique identifier of the rate limit record
+   * @param rateLimitId Unique identifier of the comment rate limit record to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_comment_rate_limits table by primary key ID. Return the complete rate limit record including user reference ID and submission timestamp. Validate that the rateLimitId exists before returning data. This operation is primarily for administrative monitoring of rate limiting patterns.
+   * @x-autobe-specification Query the discussion_board_comment_rate_limits table by the provided rateLimitId UUID parameter. Return the complete record including id, discussion_board_user_id, submitted_at, and created_at fields.
+   *
+   * Validate that the rateLimitId parameter is a valid UUID format before querying the database. If no record is found with the specified ID, return a 404 Not Found response.
+   *
+   * No authorization checks are needed since rate limit records are considered system-level data for administrative purposes. Ensure the database connection is properly managed and handle any query errors appropriately.
+   *
+   * The operation should return the raw record data without additional processing since rate limit records are read-only system tracking entries.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":rateLimitId")

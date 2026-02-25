@@ -1,4 +1,6 @@
-import { ICommunityPlatformPostVoteOfUsers } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostVoteOfUsers";
+import { ICommunityPlatformPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostVote";
+import { ICommunityPlatformPostVoteOfUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostVoteOfUser";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,37 +11,24 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { CommunityPlatformPostVoteOfUserTransformer } from "../transformers/CommunityPlatformPostVoteOfUserTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getCommunityPlatformUserPostVotesUsersPostVoteId(props: {
   user: UserPayload;
   postVoteId: string & tags.Format<"uuid">;
-}): Promise<ICommunityPlatformPostVoteOfUsers> {
-  const record =
-    await MyGlobal.prisma.community_platform_post_vote_of_users.findUnique({
-      where: { id: props.postVoteId },
-      select: {
-        id: true,
-        vote_type: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        user_id: true,
-        post_vote_id: true,
+}): Promise<ICommunityPlatformPostVoteOfUser> {
+  const voteRecord =
+    await MyGlobal.prisma.community_platform_post_vote_of_users.findFirstOrThrow(
+      {
+        where: {
+          id: props.postVoteId,
+          user_id: props.user.id,
+          deleted_at: null,
+        },
+        ...CommunityPlatformPostVoteOfUserTransformer.select(),
       },
-    });
-  if (!record) {
-    throw new HttpException("User post vote not found", 404);
-  }
-  return {
-    id: record.id,
-    vote_type: record.vote_type,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-    user_id: record.user_id,
-    post_vote_id: record.post_vote_id,
-  };
+    );
+  return await CommunityPlatformPostVoteOfUserTransformer.transform(voteRecord);
 }

@@ -11,13 +11,14 @@ export function prepare_random_discussion_board_api_rate_limit(
   return {
     endpoint_path:
       input?.endpoint_path ??
-      (RandomGenerator.pick([
+      RandomGenerator.pick([
         "/api/articles",
         "/api/comments",
         "/api/users",
         "/api/sections",
-        "/api/admin",
-      ]) as string),
+        "/api/search",
+        "/api/admin/requests",
+      ] as const),
     http_method:
       input?.http_method ??
       RandomGenerator.pick(["GET", "POST", "PUT", "DELETE", "PATCH"] as const),
@@ -31,22 +32,24 @@ export function prepare_random_discussion_board_api_rate_limit(
       ] as const),
     requests_per_interval:
       input?.requests_per_interval ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<1000>
+      >(),
     interval_seconds:
       input?.interval_seconds ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<3600>
+      >(),
     burst_limit:
       input?.burst_limit ??
-      (typia.random<boolean>()
-        ? typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>()
-        : null),
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<0> & tags.Maximum<100>
+      >(),
     enforcement_action:
       input?.enforcement_action ??
       RandomGenerator.pick(["block", "throttle", "warning"] as const),
+    is_active: input?.is_active ?? typia.random<boolean>(),
     description:
-      input?.description ??
-      (typia.random<boolean>()
-        ? RandomGenerator.paragraph({ sentences: 2 })
-        : null),
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

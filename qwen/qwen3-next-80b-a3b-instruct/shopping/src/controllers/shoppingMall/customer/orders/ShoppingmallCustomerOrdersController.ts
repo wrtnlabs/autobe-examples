@@ -1,100 +1,45 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIShoppingMallOrder } from "../../../../api/structures/IPageIShoppingMallOrder";
 import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrder";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { getShoppingMallCustomerOrdersOrderId } from "../../../../providers/getShoppingMallCustomerOrdersOrderId";
-import { patchShoppingMallCustomerOrders } from "../../../../providers/patchShoppingMallCustomerOrders";
 
-@Controller("/shoppingMall/customer/orders")
+@Controller("/shoppingMall/customer/orders/:orderId")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Retrieve a filtered, sorted, and paginated list of your order history.
+   * Retrieve complete details of a specific order including all order items with snapshot data, shipment information, and status history.
    *
-   * This operation enables customers to view their personal order history with advanced filtering options including order status (paid, shipped, delivered, cancelled, refunded), date range filtering, and total amount thresholds. The response returns paginated summary data optimized for list displays rather than full order details, improving performance for large result sets. Each summary includes essential information such as order number, total amount, status, creation date, and order item count, with full order details available via the GET /shopping_mall/customer/orders/{orderId} endpoint.
+   * This endpoint returns a full picture of an order as it existed at every point in time, respecting the immutable snapshot principle of the platform. Every product name, price, variant option, seller profile, and shipping address is presented exactly as it was at the time of the transaction, preventing any post-hoc disputes or manipulation.
    *
-   * Filtering supports complex combinations: search for all paid orders in the last 90 days, or orders with total amount greater than $50. Date ranges can be specified as start/end dates or relative periods (last 7 days, this month, etc.). Order totals can be filtered using comparison operators (greater than, less than, between). For performance reasons, only the most relevant order summary data is returned, reducing payload size and improving response times.
+   * For customers, this provides transparency into what they purchased and when. For sellers, it offers audit-proof evidence of what was sold under which conditions. For administrators, it enables full oversight and compliance investigation by preserving all contextual data regardless of subsequent edits to products or profiles.
    *
-   * This endpoint is designed to handle large datasets efficiently through offset/limit pagination, with support for sorting by any field (created_at, total_amount, status). Search filters are case-insensitive for text fields and exact matches for status codes. Results are automatically filtered to the authenticated customer's own orders only.
+   * All order item data is obtained through the shopping_mall_order_item_snapshots table, not direct product or variant records. Shipment tracking details are linked via shopping_mall_shipment_items and shopping_mall_shipments. Status changes are tracked through shopping_mall_order_status_histories to ensure full audit capability.
    *
-   * Related operations: GET /shopping_mall/customer/orders/{orderId} to retrieve full details of a specific order, GET /shopping_mall/customer/orders/{orderId}/items to list all items in a specific order.
-   *
-   * @param connection
-   * @param body Search criteria and pagination parameters for your orders
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table with pagination and comprehensive filtering.
-   *
-   * Apply filters for status (paid, shipped, delivered, cancelled, refunded), creation date range (start/end), customer_id, seller_id, and total_amount (with comparison operators: >, <, >=, <=, between).
-   *
-   * For customer requests, automatically filter by customer_id from JWT token.
-   *
-   * For admin requests, allow filtering across all customers and sellers.
-   *
-   * Support sorting by: created_at (asc/desc), total_amount (asc/desc), status (alphabetically).
-   *
-   * Implement cursor-based pagination: use offset/limit for small datasets, cursor-based for large datasets with >1000 records.
-   *
-   * Return only the summary fields: id, order_number, status, total_amount, created_at, customer_id, customer_email, order_item_count.
-   *
-   * Do not join order_items table in primary query - use subqueries or cached counts for performance.
-   *
-   * Handle empty or malformed filters gracefully by returning empty results.
-   *
-   * Log all search parameters for analytics and audit purposes.
-   *
-   * Apply rate limiting: 100 requests per minute per user.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallOrder.IRequest,
-  ): Promise<IPageIShoppingMallOrder.ISummary> {
-    try {
-      return await patchShoppingMallCustomerOrders({
-        customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve complete details of a specific order by its unique identifier.
-   *
-   * This operation returns a comprehensive view of a customer's order, including all items purchased with their exact state at the time of purchase, preserving product specifications, pricing, and seller identity as immutable snapshots for audit and dispute resolution. This table serves as the immutable audit trail for all commercial transactions, preserving pricing, product details, and seller identity even if those details change later. Required for dispute resolution, financial reporting, and legal compliance. All data is frozen at checkout and never altered.
-   *
-   * The order head record captures the immutable state of the order at time of payment confirmation, including the customer's selected shipping address and the exact order status derived from its constituent order items. This ensures complete auditability and provides irrefutable evidence for dispute resolution and legal compliance.
-   *
-   * For each order item, the response includes the exact product name, description, category, and base price as they existed when the order was placed, regardless of any subsequent changes. Variant-specific details including SKU, option values (e.g., color, size), unit price, and stock quantity are preserved in their exact historical state. Seller information including shop name, description, and logo are captured as they appeared at purchase time to maintain brand integrity and reputation context.
-   *
-   * The order header provides meta-information including order number, status, total amount, and creation/update timestamps. This operation is critical for customer self-service, enabling users to verify their purchase history with complete fidelity to the state of the marketplace at the time of transaction.
-   *
-   * This endpoint is exclusively available to the authenticated customer who placed the order, or to platform administrators with elevated privileges for dispute resolution and oversight purposes.
-   *
-   * Note: No other API operations need to be pre-executed to access this data. All information is fully contained within the order and its associated order items.
+   * Dependencies: GET /order-items/{orderItemId}/snapshots is required to retrieve individual item historical states. GET /shipments/{shipmentId} is used to retrieve full shipment context for each related shipment.
    *
    * @param connection
-   * @param orderId The unique identifier of the order to retrieve as a UUID. This parameter references the primary key of the shopping_mall_orders table.
+   * @param orderId UUID of the order to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve order from shopping_mall_orders table using the orderId path parameter. Join with shopping_mall_order_items to get all order items. Include all snapshot fields from order_items: product_name, product_description, category_name, base_price, thumbnail_image, all_product_images, variant_sku, option_values, variant_price, stock_at_time_of_purchase, shop_name, shop_description, logo_url. Filter by order_id and ensure deleted_at is null. Return order header fields: order_number, status, total_amount, created_at, updated_at. All data must reflect the state at time of purchase, not current data. No caching allowed. Use database transaction for consistency.
+   * @x-autobe-specification Retrieve order from shopping_mall_orders table by orderId (UUID).
+   * Join with shopping_mall_order_items to get all order items in this order.
+   * For each order item, join with shopping_mall_order_item_snapshots to retrieve the exact product, variant, and seller state at time of purchase.
+   * Join with shopping_mall_shipments and shopping_mall_shipment_items to gather all associated shipping records and tracked items.
+   * Join with shopping_mall_order_status_histories to obtain full timeline of status changes.
+   * Format result as single-order object with nested items, shipments, and status history.
+   * Return 404 if order does not exist.
+   * Only allow access if user is customer (order belongs to them), seller (owns at least one item), or admin.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":orderId")
+  @TypedRoute.Get()
   public async at(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
+    orderId: string,
   ): Promise<IShoppingMallOrder> {
     try {
       return await getShoppingMallCustomerOrdersOrderId({

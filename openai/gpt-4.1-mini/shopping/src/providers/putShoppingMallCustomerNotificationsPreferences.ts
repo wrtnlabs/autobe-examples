@@ -14,8 +14,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putShoppingMallCustomerNotificationsPreferences(props: {
   customer: CustomerPayload;
-  body: IShoppingMallUserNotificationPreference.IUpdateMany;
-}): Promise<IShoppingMallUserNotificationPreference[]> {
-  // Since IUpdateMany has no defined properties, no updates possible
-  return [];
+  body: IShoppingMallUserNotificationPreference.IUpdate;
+}): Promise<void> {
+  await MyGlobal.prisma.shopping_mall_user_notification_preferences.updateMany({
+    where: {
+      userId: props.customer.id,
+      channelName: props.body.channelName,
+      notificationType: props.body.notificationType,
+    },
+    data: {
+      isEnabled: props.body.isEnabled,
+    },
+  });
 }

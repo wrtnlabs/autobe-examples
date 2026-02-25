@@ -1,3 +1,4 @@
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionStatistic";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -5,6 +6,7 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
 
 export namespace DiscussionBoardSectionStatisticTransformer {
   export type Payload = Prisma.discussion_board_section_statisticsGetPayload<
@@ -20,7 +22,7 @@ export namespace DiscussionBoardSectionStatisticTransformer {
         last_activity_at: true,
         created_at: true,
         updated_at: true,
-        section: true,
+        section: DiscussionBoardSectionAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_section_statisticsFindManyArgs;
   }
@@ -35,6 +37,9 @@ export namespace DiscussionBoardSectionStatisticTransformer {
       last_activity_at: input.last_activity_at.toISOString(),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      section: await DiscussionBoardSectionAtSummaryTransformer.transform(
+        input.section,
+      ),
     };
   }
 }

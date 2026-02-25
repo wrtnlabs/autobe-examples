@@ -6,8 +6,20 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_seller_profile_snapshot(
-  input?: DeepPartial<IShoppingMallSellerProfileSnapshot.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSellerProfileSnapshot.ICreate>,
 ): IShoppingMallSellerProfileSnapshot.ICreate {
-  input;
-  return {};
+  return {
+    shoppingMallSellerId:
+      input?.shoppingMallSellerId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    shopName: input?.shopName ?? RandomGenerator.name(),
+    shopDescription:
+      input?.shopDescription ?? RandomGenerator.paragraph({ sentences: 2 }),
+    logoImageUrl:
+      input?.logoImageUrl !== undefined
+        ? input.logoImageUrl
+        : Math.random() < 0.5
+          ? null
+          : typia.random<string & tags.Format<"url">>(),
+  };
 }

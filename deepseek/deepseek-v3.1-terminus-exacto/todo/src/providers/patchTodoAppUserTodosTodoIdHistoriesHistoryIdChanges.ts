@@ -1,7 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageITodoAppTodoHistoryChange } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTodoHistoryChange";
+import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppTodoHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistory";
 import { ITodoAppTodoHistoryChange } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistoryChange";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,103 +14,74 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
-import { TodoAppTodoHistoryChangeAtSummaryTransformer } from "../transformers/TodoAppTodoHistoryChangeAtSummaryTransformer";
+import { TodoAppTodoHistoryChangeTransformer } from "../transformers/TodoAppTodoHistoryChangeTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+interface LocalUserPayload {
+  id: string & tags.Format<"uuid">;
+  session_id: string & tags.Format<"uuid">;
+  type: "user";
+}
 export async function patchTodoAppUserTodosTodoIdHistoriesHistoryIdChanges(props: {
-  user: UserPayload;
+  user: LocalUserPayload;
   todoId: string & tags.Format<"uuid">;
   historyId: string & tags.Format<"uuid">;
   body: ITodoAppTodoHistoryChange.IRequest;
-}): Promise<IPageITodoAppTodoHistoryChange.ISummary> {
-  // First verify that the history entry belongs to the user's todo
+}): Promise<IPageITodoAppTodoHistoryChange> {
+  // Validate ownership - ensure todo and history belong to user
   const history = await MyGlobal.prisma.todo_app_todo_histories.findFirst({
     where: {
       id: props.historyId,
-      todo: {
-        id: props.todoId,
-        todo_app_user_id: props.user.id,
-        deleted_at: null,
-      },
-      deleted_at: null,
+      todo_app_user_id: props.user.id,
+      todo_app_todo_id: props.todoId,
     },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
   if (!history) {
-    throw new HttpException("History entry not found", 404);
+    throw new HttpException("Forbidden", 403);
   }
-  // Validate field_name if provided
-  if (
-    props.body.field_name &&
-    !["title", "description", "start_date", "due_date"].includes(
-      props.body.field_name,
-    )
-  ) {
-    throw new HttpException("Invalid field name", 400);
-  }
-  // Build WHERE clause based on request filters
-  const whereInput: Prisma.todo_app_todo_history_changesWhereInput = {
-    todo_app_todo_history_id: props.historyId,
-  };
-  // Apply field name filter if provided
-  if (props.body.field_name) {
-    whereInput.field_name = props.body.field_name;
-  }
-  // Apply search filter if provided
-  if (props.body.search) {
-    const searchCondition = {
-      OR: [
-        {
-          previous_value: {
-            contains: props.body.search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-        {
-          new_value: {
-            contains: props.body.search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-      ],
-    };
-    // If we already have field_name filter, combine with AND
-    if (props.body.field_name) {
-      whereInput.AND = [{ field_name: props.body.field_name }, searchCondition];
-      // Remove the individual field_name filter
-      delete whereInput.field_name;
-    } else {
-      whereInput.OR = searchCondition.OR;
-    }
-  }
-  // Set pagination parameters
+  // Build pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Set sorting
-  const orderBy: Prisma.todo_app_todo_history_changesOrderByWithRelationInput =
-    props.body.sort === "created_at:asc"
-      ? { created_at: "asc" }
-      : { created_at: "desc" };
-  // Get paginated data
+  // Build WHERE clause without Date objects
+  const whereInput: Prisma.todo_app_todo_history_changesWhereInput = {
+    todo_app_todo_history_id: props.historyId,
+  };
+  // Add optional filters
+  if (props.body.field_name) {
+    whereInput.field_name = props.body.field_name;
+  }
+  if (props.body.created_at_from && props.body.created_at_to) {
+    whereInput.created_at = {
+      gte: new Date(props.body.created_at_from),
+      lte: new Date(props.body.created_at_to),
+    };
+  } else if (props.body.created_at_from) {
+    whereInput.created_at = {
+      gte: new Date(props.body.created_at_from),
+    };
+  } else if (props.body.created_at_to) {
+    whereInput.created_at = {
+      lte: new Date(props.body.created_at_to),
+    };
+  }
+  // Execute queries
   const data = await MyGlobal.prisma.todo_app_todo_history_changes.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy,
-    ...TodoAppTodoHistoryChangeAtSummaryTransformer.select(),
+    orderBy: { created_at: "desc" },
+    ...TodoAppTodoHistoryChangeTransformer.select(),
   });
-  // Get total count
   const total = await MyGlobal.prisma.todo_app_todo_history_changes.count({
     where: whereInput,
   });
-  // Transform data
+  // Transform results
   const transformedData = await ArrayUtil.asyncMap(
     data,
-    TodoAppTodoHistoryChangeAtSummaryTransformer.transform,
+    TodoAppTodoHistoryChangeTransformer.transform,
   );
   return {
     data: transformedData,
@@ -115,7 +89,7 @@ export async function patchTodoAppUserTodosTodoIdHistoriesHistoryIdChanges(props
       current: page,
       limit: limit,
       records: total,
-      pages: total > 0 ? Math.ceil(total / limit) : 0,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

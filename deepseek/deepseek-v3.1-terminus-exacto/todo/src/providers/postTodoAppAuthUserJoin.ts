@@ -13,84 +13,136 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppAuthUserJoin(props: {
+  ip: string;
   body: ITodoAppUser.IJoin;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // Check for duplicate email
-  const existing = await MyGlobal.prisma.todo_app_users.findFirst({
-    where: { email: props.body.email, deleted_at: null },
+  // Check if email already exists
+  const existingUser = await MyGlobal.prisma.todo_app_users.findFirst({
+    where: {
+      email: props.body.email,
+      deleted_at: null, // Only check active (non-deleted) users
+    },
   });
-  if (existing) throw new HttpException("Email already registered", 409);
-  // Create user record with hashed password
+  if (existingUser) {
+    throw new HttpException("Email already registered", 409);
+  }
+  // Hash password using bcrypt
+  const passwordHash = await PasswordUtil.hash(props.body.password);
   const userId = v4();
-  const currentTime = toISOStringSafe(new Date());
-  const hashedPassword = await PasswordUtil.hash(props.body.password);
+  const createdAt = new Date();
+  const updatedAt = new Date();
+  // Create user record
   const user = await MyGlobal.prisma.todo_app_users.create({
     data: {
       id: userId,
       email: props.body.email,
-      password_hash: hashedPassword,
+      password_hash: passwordHash,
       display_name: props.body.display_name,
-      created_at: currentTime,
-      updated_at: currentTime,
+      created_at: toISOStringSafe(createdAt),
+      updated_at: toISOStringSafe(updatedAt),
       deleted_at: null,
     },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
-  // Create session record - using default values since request context not available
+  // Generate session expiration timestamps
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // Generate session ID
   const sessionId = v4();
-  const accessExpiresTime = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresTime = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  // Create session
   const session = await MyGlobal.prisma.todo_app_user_sessions.create({
     data: {
       id: sessionId,
       todo_app_user_id: userId,
-      access_token: "token_placeholder", // Will be replaced
-      refresh_token: "refresh_placeholder", // Will be replaced
-      ip: "0.0.0.0", // Default IP since not in request context
-      href: "", // Default URL
-      referrer: "", // Default referrer
-      created_at: currentTime,
-      expired_at: accessExpiresTime,
+      access_token: jwt.sign(
+        {
+          userId,
+          type: "access",
+          created_at: toISOStringSafe(createdAt),
+          expired_at: toISOStringSafe(accessExpires),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh_token: jwt.sign(
+        {
+          userId,
+          type: "refresh",
+          tokenType: "refresh",
+          created_at: toISOStringSafe(createdAt),
+          expired_at: toISOStringSafe(refreshExpires),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      ip: props.ip || "", // Handle optional IP
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: toISOStringSafe(createdAt),
+      expired_at: toISOStringSafe(accessExpires),
+    },
+    select: {
+      id: true,
+      access_token: true,
+      refresh_token: true,
+      expired_at: true,
     },
   });
-  // Generate JWT tokens
-  const tokenPayload = {
-    type: "user",
-    id: userId,
-    session_id: sessionId,
-    created_at: currentTime,
-  };
-  const token = {
-    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+  // Validate JWT_SECRET_KEY availability
+  if (!MyGlobal.env.JWT_SECRET_KEY) {
+    throw new HttpException("JWT secret configuration missing", 500);
+  }
+  // Generate access JWT
+  const accessToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(createdAt),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
       expiresIn: "1h",
       issuer: "autobe",
-    }),
-    refresh: jwt.sign(
-      { ...tokenPayload, tokenType: "refresh" },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpiresTime,
-    refreshable_until: refreshExpiresTime,
-  };
-  // Update session with actual tokens
-  await MyGlobal.prisma.todo_app_user_sessions.update({
-    where: { id: sessionId },
-    data: {
-      access_token: token.access,
-      refresh_token: token.refresh,
     },
-  });
-  // Return authorized response with proper typing
+  );
+  // Generate refresh JWT
+  const refreshToken = jwt.sign(
+    {
+      type: "user",
+      id: user.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(createdAt),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+  // Return authorized response
   return {
     id: user.id as string & tags.Format<"uuid">,
     email: user.email as string & tags.Format<"email">,
     display_name: user.display_name,
-    created_at: toISOStringSafe(user.created_at),
-    updated_at: toISOStringSafe(user.updated_at),
-    token,
+    created_at: toISOStringSafe(user.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(user.updated_at) as string &
+      tags.Format<"date-time">,
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    } satisfies IAuthorizationToken,
   } satisfies ITodoAppUser.IAuthorized;
 }

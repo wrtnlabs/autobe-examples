@@ -6,48 +6,45 @@ import { IPageIShoppingMallUserNotificationPreference } from "../../../../api/st
 import { IShoppingMallUserNotificationPreference } from "../../../../api/structures/IShoppingMallUserNotificationPreference";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
-import { deleteShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId } from "../../../../providers/deleteShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId";
-import { getShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId } from "../../../../providers/getShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId";
+import { deleteShoppingMallAdministratorUserNotificationPreferencesPreferenceId } from "../../../../providers/deleteShoppingMallAdministratorUserNotificationPreferencesPreferenceId";
+import { getShoppingMallAdministratorUserNotificationPreferencesPreferenceId } from "../../../../providers/getShoppingMallAdministratorUserNotificationPreferencesPreferenceId";
 import { patchShoppingMallAdministratorUserNotificationPreferences } from "../../../../providers/patchShoppingMallAdministratorUserNotificationPreferences";
 import { postShoppingMallAdministratorUserNotificationPreferences } from "../../../../providers/postShoppingMallAdministratorUserNotificationPreferences";
-import { putShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId } from "../../../../providers/putShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId";
+import { putShoppingMallAdministratorUserNotificationPreferencesPreferenceId } from "../../../../providers/putShoppingMallAdministratorUserNotificationPreferencesPreferenceId";
 
 @Controller("/shoppingMall/administrator/userNotificationPreferences")
 export class ShoppingmallAdministratorUsernotificationpreferencesController {
   /**
-   * Create or update user notification preferences for customers, sellers, or administrators in the shopping mall platform.
+   * Create a new user notification preference for the authenticated user.
    *
-   * This operation accepts polymorphic ownership identifiers allowing a preference to belong to a customer, seller, or administrator. It manages notification delivery preferences by specifying the notification channel (email, sms, push, etc.) and notification type (order_update, promotion, system_alert, etc.). The client sets the isEnabled flag to indicate whether a notification type is enabled for the given channel.
+   * This endpoint allows users to specify their notification preferences including channels (e.g., email, SMS, push) and message types they wish to receive. The preferences help tailor notification delivery per user.
    *
-   * The operation creates a new preference record or updates an existing preference uniquely identified by the combination of owner (customer_id, seller_id, or administrator_id), channelName, and notificationType.
+   * Only authenticated users (customers or sellers) may access this endpoint.
    *
-   * Authorization considerations require that only the owning user or administrators can create or update preferences.
+   * The data model corresponds to the shopping_mall_user_notification_preferences table which records user-specific notification settings.
    *
-   * The response returns the full created or updated notification preference record reflecting the current state.
+   * Request validation enforces structured preference data ensuring valid channels and message types.
    *
-   * Related database schema: shopping_mall_user_notification_preferences, which supports polymorphic ownership references and unique constraints on these fields.
+   * The response returns the fully created notification preference entity confirming successful creation.
+   *
+   * Related operations include GET /userNotificationPreferences for retrieval, PUT /userNotificationPreferences/{preferenceId} for updates, and DELETE /userNotificationPreferences/{preferenceId} for deletion.
+   *
+   * Error handling covers validation errors and authorization failures.
    *
    * @param connection
-   * @param body User notification preference creation or update data
+   * @param body New user notification preference creation data.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification This operation should validate that exactly one of customerId, sellerId, or administratorId is provided to identify the preference owner.
-   *
-   * It should perform an upsert operation on shopping_mall_user_notification_preferences table using the unique constraints (customer_id + channel_name + notification_type, seller_id + channel_name + notification_type, or administrator_id + channel_name + notification_type).
-   *
-   * The backend should handle created_at and updated_at timestamps.
-   *
-   * Validation on channelName and notificationType string lengths and allowed values can be enforced at the service layer.
-   *
-   * Return the full created or updated preference record in the response body.
-   *
-   * Authorization must ensure only the owning customer/seller/administrator or admins can perform this operation.
-   *
-   * Ensure the endpoint is idempotent and concurrency safe by employing database transactions.
+   * @x-autobe-specification Implement service layer logic to validate request data against allowed notification channels and message types.
+   * Persist new preference into shopping_mall_user_notification_preferences table.
+   * Ensure the operation is performed under the authenticated user's context.
+   * Return the newly created preference entity with all relevant fields.
+   * Handle database transaction errors and validation exceptions with appropriate HTTP status codes.
+   * Integrate with notification delivery subsystems to respect user preferences post-creation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
-  public async createUserNotificationPreference(
+  public async create(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedBody()
@@ -65,34 +62,31 @@ export class ShoppingmallAdministratorUsernotificationpreferencesController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of user notification preferences across customers, sellers, and administrators.
+   * Retrieve a filtered and paginated list of user notification preferences.
    *
-   * This operation allows clients to query notification preferences by specifying search criteria such as owner type (customer, seller, administrator), channel names, and notification types.
+   * This API enables clients to fetch notification preferences scoped to customers, sellers, or administrators, filtered by notification channel and type.
    *
-   * It supports pagination to efficiently manage large result sets.
+   * Preferences specify which notification types are enabled or disabled per channel, allowing users to customize how they receive alerts.
    *
-   * Authorization is required to ensure users can only access their own preferences, aligning with the polymorphic ownership model where preferences belong to customers, sellers, or administrators.
+   * Security checks ensure only authorized actors can query preferences related to users they manage.
    *
-   * The underlying database entity shopping_mall_user_notification_preferences includes notification channel and type information, enabling customized notification delivery settings per user.
+   * This operation integrates with the shopping_mall_user_notification_preferences database table which stores polymorphic ownership references and notification settings.
    *
-   * This API facilitates user-centric notification management, allowing users to tailor their notification reception through flexible filtering options.
+   * Clients can use pagination to manage large result sets and sort/filter preferences based on business criteria.
    *
-   * Related operations might include POST /shoppingMall/administrator/userNotificationPreferences for creating or updating preferences.
+   * Related operations include creating, updating, or deleting individual preferences via POST, PUT, and DELETE endpoints respectively.
    *
    * @param connection
-   * @param body Search criteria and pagination options for user notification preferences.
+   * @param body Search criteria and pagination parameters for user notification preferences
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the shopping_mall_user_notification_preferences table with filters from request body.
-   * Support filtering by customer_id, seller_id, administrator_id, channel_name, and notification_type.
-   * Apply pagination parameters: page number, page size.
-   * Enforce authorization by matching the ownership fields to the authenticated user.
-   * Return paginated list of preference summaries.
-   * Ensure unique composite keys are respected in filters.
-   * Manage null deleted_at to include only active preferences.
-   *
-   * Include sorting capabilities if needed.
-   * Handle edge cases where empty results occur by returning empty data arrays with pagination info.
+   * @x-autobe-specification Query the shopping_mall_user_notification_preferences table with filtering options by customer_id, seller_id, administrator_id, channel_name, and notification_type.
+   * Return paginated results including id, channel_name, notification_type, is_enabled, and ownership.
+   * Use offset or cursor-based pagination as supported by the underlying database.
+   * Ensure appropriate authorization checks for scoped user access.
+   * Support sorting and filtering parameters as per request body.
+   * Handle concurrency and data consistency during queries.
+   * Do not alter data in this operation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -114,53 +108,47 @@ export class ShoppingmallAdministratorUsernotificationpreferencesController {
   }
 
   /**
-   * Retrieve detailed information about a specific user notification preference by its UUID identifier.
+   * Retrieve a specific user notification preference by preference ID.
    *
-   * This API operation allows the administrator to fetch the notification preference settings (channel name, notification type, enabled status) for a given user notification preference record.
+   * This operation returns the user's customized notification preference details, including the notification channel, type, and enabled status. The preference may belong to a customer, seller, or administrator, identified by their respective IDs.
    *
-   * The user notification preference entity associates with one of the actors: customer, seller, or administrator, identified by their respective nullable foreign keys.
+   * Authorization ensures only the owning user (customer, seller, or administrator) can access their preferences.
    *
-   * This endpoint is secured and accessible only by authorized administrators who manage notification preferences.
+   * The underlying entity shopping_mall_user_notification_preferences stores preferences with channelName, notificationType, isEnabled, and timestamps for auditing.
    *
-   * No soft deletion is implemented directly in this operation; however, records marked with a non-null `deleted_at` timestamp are considered deleted and excluded from active queries.
+   * This read-only operation does not modify data.
    *
-   * Refer to related operations for creating, updating, or deleting user notification preferences.
+   * Path Parameter:
+   * - preferenceId: UUID of the notification preference to retrieve.
    *
-   * Errors include 404 Not Found if the preference record does not exist.
-   *
-   * The UUID path parameter ensures unique and precise resource identification.
+   * Related operations:
+   * - POST /userNotificationPreferences for creation
+   * - PUT /userNotificationPreferences/{preferenceId} for updates
+   * - DELETE /userNotificationPreferences/{preferenceId} for deletes
    *
    * @param connection
-   * @param userNotificationPreferenceId UUID of the user notification preference to retrieve
+   * @param preferenceId Unique identifier of the user notification preference (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement GET /userNotificationPreferences/{userNotificationPreferenceId} by querying the shopping_mall_user_notification_preferences table filtering by id matching the path parameter.
-   *
-   * Return all fields of the matched record including customer_id, seller_id, administrator_id, channel_name, notification_type, is_enabled, created_at, updated_at, and deleted_at.
-   *
-   * Verify that the requesting actor is authorized to access this preference, i.e. the customer, seller, or administrator owner or platform admin.
-   *
-   * If no record is found with the given ID, return 404 not found error.
-   *
-   * No request body is expected.
-   *
-   * The response body is the representation of the user notification preference record, including all its properties.
-   *
-   * Ensure efficient database indices using existing indexes on customer_id, seller_id, and administrator_id for ownership checks.
+   * @x-autobe-specification Query shopping_mall_user_notification_preferences table by the primary key 'id' matching 'preferenceId' path parameter.
+   * Join with shopping_mall_customers, shopping_mall_sellers, or shopping_mall_administrators tables to verify ownership and authorization.
+   * Return a JSON object conforming to IShoppingMallUserNotificationPreferences schema including channelName, notificationType, isEnabled, createdAt, updatedAt, and deletedAt.
+   * Handle errors for not found or unauthorized access appropriately.
+   * Ensure no data mutation occurs as this is a read-only GET operation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":userNotificationPreferenceId")
+  @TypedRoute.Get(":preferenceId")
   public async at(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationPreferenceId")
-    userNotificationPreferenceId: string & tags.Format<"uuid">,
+    @TypedParam("preferenceId")
+    preferenceId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallUserNotificationPreference> {
     try {
-      return await getShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId(
+      return await getShoppingMallAdministratorUserNotificationPreferencesPreferenceId(
         {
           administrator,
-          userNotificationPreferenceId,
+          preferenceId,
         },
       );
     } catch (error) {
@@ -170,51 +158,56 @@ export class ShoppingmallAdministratorUsernotificationpreferencesController {
   }
 
   /**
-   * Update an existing user notification preference identified by the UUID path parameter. This endpoint allows for enabling or disabling specific notification types for various delivery channels (e.g., email, sms, push) tailored individually for customers, sellers, or administrators.
+   * Update an existing user notification preference identified by preferenceId.
    *
-   * The shopping_mall_user_notification_preferences entity tracks unique notification settings by owner (customer, seller, or administrator) and channel and notification type combinations.
+   * This operation updates notification settings for a user (customer, seller, or administrator), customizing notification channels (e.g., email, sms, push) and types (e.g., order_update, promotion, system_alert). It adjusts whether the specified notification type is enabled for the channel.
    *
-   * This operation requires precise identification of the preference to update via path parameter. The request body contains the updatable fields. Response returns the fully updated preference record.
+   * The user notification preferences are stored in the shopping_mall_user_notification_preferences table, which uniquely associates notification channels and types per user with ownership polymorphically linked to customers, sellers, or administrators. This ensures flexible, user-specific notification control.
    *
-   * Authorization is restricted to the owning user or administrative roles. Attempts to update preferences outside of this scope should be rejected.
+   * Security and access control must restrict operation to the owning user or an authorized administrator.
    *
-   * The preference cannot be created or deleted through this endpoint, only updated.
+   * Validation includes verifying the preferenceId exists and that the request body only updates allowable fields, maintaining relational integrity.
    *
-   * Database cascades ensure proper clean-up when related users are removed.
+   * This API operation complements retrieval endpoints for getting notification preferences.
    *
-   * Related operations might include GET /userNotificationPreferences/{userNotificationPreferenceId} for retrieval and collection-based PATCH /userNotificationPreferences for listing or searching preferences.
+   * Errors include 404 if the preference is not found and 403 if unauthorized.
+   *
+   * This operation fully replaces the resource's current state with the submitted values.
    *
    * @param connection
-   * @param userNotificationPreferenceId Target notification preference's UUID
-   * @param body Updated user notification preference data
+   * @param preferenceId Unique ID of the user notification preference to update.
+   * @param body Updated fields for the user notification preference.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Perform validation on the provided UUID path parameter to ensure it matches an existing notification preference.
-   * Retrieve the notification preference from the database using the provided ID.
-   * Validate the request body against the IShoppingMallUserNotificationPreferences.IUpdate schema.
-   * Update the database record with the new values for channel_name, notification_type, and is_enabled.
-   * Ensure ownership consistency - only allow update if the authenticated user matches customer_id, seller_id, or administrator_id of the record.
-   * Handle concurrency conflicts, returning appropriate errors.
-   * Return the fully updated notification preference record as response.
-   * Log the update action for audit purposes.
+   * @x-autobe-specification This operation is a standard RESTful update endpoint for the shopping_mall_user_notification_preferences resource.
    *
-   * This endpoint must be atomic with transaction rollback on failure.
+   * - Verify 'preferenceId' path parameter as a UUID corresponding to the primary key 'id'.
+   * - Validate request body conforms to IShoppingMallUserNotificationPreference.IUpdate, including channelName, notificationType, and isEnabled.
+   * - Check that preference belongs to the authenticated user (customer, seller, or administrator), enforcing access control.
+   * - Perform database update with atomic transaction to fully replace the preference's fields except for 'id'.
+   * - Return the updated resource using IShoppingMallUserNotificationPreference as response schema.
+   * - Handle errors gracefully with appropriate HTTP status codes.
+   * - Log operation for audit and traceability.
+   *
+   * Ensure concurrency and data consistency, preventing modification of forbidden fields like polymorphic ownership IDs.
+   *
+   * This endpoint integrates with user management and notification dispatch services for consistent user experience.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":userNotificationPreferenceId")
+  @TypedRoute.Put(":preferenceId")
   public async update(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationPreferenceId")
-    userNotificationPreferenceId: string & tags.Format<"uuid">,
+    @TypedParam("preferenceId")
+    preferenceId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallUserNotificationPreference.IUpdate,
   ): Promise<IShoppingMallUserNotificationPreference> {
     try {
-      return await putShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId(
+      return await putShoppingMallAdministratorUserNotificationPreferencesPreferenceId(
         {
           administrator,
-          userNotificationPreferenceId,
+          preferenceId,
           body,
         },
       );
@@ -225,53 +218,42 @@ export class ShoppingmallAdministratorUsernotificationpreferencesController {
   }
 
   /**
-   * This operation permanently deletes a user notification preference identified by userNotificationPreferenceId.
+   * Permanently deletes the specified user notification preference identified by its unique identifier (preferenceId).
    *
-   * The user notification preferences control the notification channels and types enabled or disabled by each user (customer, seller, or administrator). This allows users to customize how they receive notifications about order updates, promotions, system alerts, and other events.
+   * This operation removes the user-specific notification preference record from the shopping_mall_user_notification_preferences table in the database, which is used to control notification channel settings and enablement of various notification types (e.g., email, sms, push).
    *
-   * Upon successful deletion, the resource is removed from the system and cannot be recovered.
+   * Security considerations require that only the owner of the preference (customer, seller, or administrator) or an administrator with appropriate permissions can perform this deletion.
    *
-   * Access to this operation requires that the requesting actor be the owner of the notification preference or have administrator privileges.
+   * The operation acts directly on the shopping_mall_user_notification_preferences table. Deletion is immediate and permanent with no undo.
    *
-   * Path Parameter:
-   * - `userNotificationPreferenceId`: The unique identifier (UUID) of the user notification preference to delete.
+   * Related operations include:
+   * - GET /userNotificationPreferences - list preferences
+   * - POST /userNotificationPreferences - create preference
+   * - PUT /userNotificationPreferences/{preferenceId} - update preference
    *
-   * There is no request body for this operation.
+   * Errors may result if the preferenceId does not exist or if authorization fails, resulting in HTTP 404 or 403 status codes respectively.
    *
-   * No response body is returned, only HTTP status codes indicate success or failure.
-   *
-   * Related operations include creation, retrieval, and update of user notification preferences.
-   *
-   * This delete operation is critical for providing users control over their notification settings and system resource management.
-   *
-   * Database Schema Reference:
-   * - shopping_mall_user_notification_preferences.id (UUID primary key)
+   * No response body is returned on success, only standard HTTP status codes.
    *
    * @param connection
-   * @param userNotificationPreferenceId The unique identifier (UUID) of the user notification preference to delete.
+   * @param preferenceId Unique identifier of the user notification preference to delete (UUID).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Execute a deletion query on shopping_mall_user_notification_preferences table filtering by the provided userNotificationPreferenceId primary key.
-   *
-   * Perform authorization check to verify the requesting actor owns the resource or is an administrator.
-   *
-   * Perform cascade delete effects according to database foreign key constraints if applicable.
-   *
-   * Return appropriate HTTP status code indicating success without content (204 No Content) or error status for unauthorized or not found.
+   * @x-autobe-specification Execute a delete query on the shopping_mall_user_notification_preferences table filtering by the primary key 'id' matching the 'preferenceId' path parameter. Validate caller authorization by confirming ownership or administrative rights. Return appropriate HTTP status codes. No request body is needed. No response body is returned upon success.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":userNotificationPreferenceId")
-  public async erase(
+  @TypedRoute.Delete(":preferenceId")
+  public async eraseUserNotificationPreference(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("userNotificationPreferenceId")
-    userNotificationPreferenceId: string & tags.Format<"uuid">,
+    @TypedParam("preferenceId")
+    preferenceId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteShoppingMallAdministratorUserNotificationPreferencesUserNotificationPreferenceId(
+      return await deleteShoppingMallAdministratorUserNotificationPreferencesPreferenceId(
         {
           administrator,
-          userNotificationPreferenceId,
+          preferenceId,
         },
       );
     } catch (error) {

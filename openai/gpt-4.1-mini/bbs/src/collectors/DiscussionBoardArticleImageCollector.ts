@@ -12,12 +12,12 @@ export namespace DiscussionBoardArticleImageCollector {
     body: IDiscussionBoardArticleImage.ICreate;
     discussionBoardArticles: IEntity;
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
-      image_url: "",
-      description: null,
-      display_order: 0,
+      image_url: props.body.imageUrl,
+      description: props.body.description ?? null,
+      display_order: props.body.displayOrder,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

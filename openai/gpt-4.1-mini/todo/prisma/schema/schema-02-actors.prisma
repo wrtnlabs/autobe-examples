@@ -33,13 +33,17 @@ model multi_user_todo_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions multi_user_todo_user_sessions[]
   userPasswordResets multi_user_todo_user_password_resets[]
   emailVerifications multi_user_todo_user_email_verifications[]
   todos multi_user_todo_todos[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
 }
@@ -83,10 +87,14 @@ model multi_user_todo_user_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_sessions_multi_user_todo_user_id__0f30f121")
 }
@@ -123,10 +131,14 @@ model multi_user_todo_user_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([multi_user_todo_user_id], map: "multi_user_todo_user_password_resets_multi_user_todo_u_49a28044")
@@ -168,10 +180,14 @@ model multi_user_todo_user_email_verifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user multi_user_todo_users @relation(fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([multi_user_todo_user_id, created_at], map: "multi_user_todo_user_email_verifications_multi_user_to_35f2802f")

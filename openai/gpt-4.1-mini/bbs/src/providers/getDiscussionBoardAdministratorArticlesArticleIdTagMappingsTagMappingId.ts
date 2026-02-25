@@ -1,4 +1,9 @@
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
 import { IDiscussionBoardArticleTagMapping } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTagMapping";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,6 +14,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { DiscussionBoardArticleTagMappingTransformer } from "../transformers/DiscussionBoardArticleTagMappingTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,22 +24,15 @@ export async function getDiscussionBoardAdministratorArticlesArticleIdTagMapping
   tagMappingId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardArticleTagMapping> {
   const record =
-    await MyGlobal.prisma.discussion_board_article_tag_mappings.findFirst({
-      where: {
-        id: props.tagMappingId,
-        discussion_board_article_id: props.articleId,
+    await MyGlobal.prisma.discussion_board_article_tag_mappings.findFirstOrThrow(
+      {
+        where: {
+          id: props.tagMappingId,
+          discussion_board_article_id: props.articleId,
+          deleted_at: null,
+        },
+        ...DiscussionBoardArticleTagMappingTransformer.select(),
       },
-    });
-  if (record === null) {
-    throw new HttpException("Tag mapping not found", 404);
-  }
-  return {
-    id: record.id,
-    discussion_board_article_id: record.discussion_board_article_id,
-    discussion_board_tag_id: record.discussion_board_tag_id,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-  };
+    );
+  return DiscussionBoardArticleTagMappingTransformer.transform(record);
 }

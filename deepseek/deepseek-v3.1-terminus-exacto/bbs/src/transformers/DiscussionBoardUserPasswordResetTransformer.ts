@@ -33,12 +33,11 @@ export namespace DiscussionBoardUserPasswordResetTransformer {
       id: input.id,
       token: input.token,
       expired_at: input.expired_at.toISOString(),
-      used_at: input.used_at?.toISOString() ?? null,
+      used_at: input.used_at ? input.used_at.toISOString() : null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
-      actor_type: "user",
     };
   }
 }

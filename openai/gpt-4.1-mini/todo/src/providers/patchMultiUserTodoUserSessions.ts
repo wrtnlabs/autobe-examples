@@ -18,39 +18,92 @@ export async function patchMultiUserTodoUserSessions(props: {
   user: UserPayload;
   body: IMultiUserTodoUserSession.IRequest;
 }): Promise<IPageIMultiUserTodoUserSession.ISummary> {
-  if (!props.user?.id) {
-    throw new HttpException("Unauthorized", 401);
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? props.body.pageSize ?? 100;
+  const nowISO = toISOStringSafe(new Date());
+  const where: Prisma.multi_user_todo_user_sessionsWhereInput = {
+    user: { id: props.user.id },
+  };
+  if (props.body.expired !== undefined) {
+    if (props.body.expired) {
+      where.expired_at = { lte: nowISO };
+    } else {
+      where.OR = [
+        { expired_at: { gt: nowISO } },
+        { expired_at: { equals: undefined } },
+      ];
+    }
   }
-  const pageRaw = (props.body as any).page;
-  const limitRaw = (props.body as any).limit;
-  const page = typeof pageRaw === "number" && pageRaw > 0 ? pageRaw : 1;
-  const limit = typeof limitRaw === "number" && limitRaw > 0 ? limitRaw : 100;
+  if (props.body.deleted !== undefined) {
+    if (props.body.deleted) {
+      where.deleted_at = { not: undefined };
+    } else {
+      where.deleted_at = { equals: undefined };
+    }
+  }
+  if (
+    props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
+  ) {
+    where.created_at = {};
+    if (props.body.createdAtFrom !== undefined) {
+      where.created_at.gte = props.body.createdAtFrom;
+    }
+    if (props.body.createdAtTo !== undefined) {
+      where.created_at.lte = props.body.createdAtTo;
+    }
+  }
+  if (
+    props.body.expiredAtFrom !== undefined ||
+    props.body.expiredAtTo !== undefined
+  ) {
+    where.expired_at = {};
+    if (props.body.expiredAtFrom !== undefined) {
+      where.expired_at.gte = props.body.expiredAtFrom;
+    }
+    if (props.body.expiredAtTo !== undefined) {
+      where.expired_at.lte = props.body.expiredAtTo;
+    }
+  }
   const skip = (page - 1) * limit;
-  const where = {
-    multi_user_todo_user_id: props.user.id,
-    deleted_at: null,
-  } as const;
-  const dataRecords =
-    await MyGlobal.prisma.multi_user_todo_user_sessions.findMany({
+  const sessions = await MyGlobal.prisma.multi_user_todo_user_sessions.findMany(
+    {
       where,
+      orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
-      select: { id: true },
-    });
+      select: {
+        id: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        expired_at: true,
+      },
+    },
+  );
   const total = await MyGlobal.prisma.multi_user_todo_user_sessions.count({
     where,
   });
-  const data = dataRecords.map(() => ({}));
+  const data: IMultiUserTodoUserSession.ISummary[] = sessions.map((s) => ({
+    id: s.id,
+    ip: s.ip,
+    href: s.href,
+    referrer: s.referrer ?? null,
+    created_at: toISOStringSafe(s.created_at),
+    updated_at: toISOStringSafe(s.updated_at),
+    deleted_at: s.deleted_at ? toISOStringSafe(s.deleted_at) : null,
+    expired_at: toISOStringSafe(s.expired_at),
+  }));
   return {
-    pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(total / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-    },
     data,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
   };
 }

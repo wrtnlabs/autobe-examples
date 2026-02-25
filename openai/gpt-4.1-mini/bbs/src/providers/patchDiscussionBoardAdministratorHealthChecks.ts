@@ -18,43 +18,59 @@ export async function patchDiscussionBoardAdministratorHealthChecks(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardHealthCheck.IRequest;
 }): Promise<IPageIDiscussionBoardHealthCheck.ISummary> {
-  const { body } = props;
-  // Since properties like page, limit, status, checked_at_start, checked_at_end, details do not exist on IDiscussionBoardHealthCheck.IRequest according to errors,
-  // we won't use them for filtering or pagination.
-  // Default pagination values
-  const page = 1 as number & tags.Type<"int32"> & tags.Minimum<0>;
-  const limit = 20 as number & tags.Type<"int32"> & tags.Minimum<0>;
-  // Build where clause with only deleted_at filter
-  const where: Prisma.discussion_board_health_checksWhereInput = {
-    deleted_at: null,
-  };
-  // Query database
-  const healthChecks =
-    await MyGlobal.prisma.discussion_board_health_checks.findMany({
-      where,
-      skip: 0,
-      take: 20,
-      orderBy: { checked_at: "desc" },
-    });
-  const total = await MyGlobal.prisma.discussion_board_health_checks.count({
+  const { status, checkedAfter, checkedBefore, page, limit } = props.body;
+  const currentPage = page ?? 1;
+  const pageSize = limit ?? 20;
+  if (currentPage < 1) {
+    throw new HttpException("Page number must be at least 1", 400);
+  }
+  if (pageSize < 1 || pageSize > 100) {
+    throw new HttpException("Limit must be between 1 and 100", 400);
+  }
+  const where: Prisma.discussion_board_health_checksWhereInput = {};
+  if (status !== undefined && status !== null) {
+    where.status = status;
+  }
+  const checkedAtFilter: Prisma.DateTimeFilter = {};
+  if (checkedAfter !== undefined && checkedAfter !== null) {
+    checkedAtFilter.gte = new Date(checkedAfter);
+  }
+  if (checkedBefore !== undefined && checkedBefore !== null) {
+    checkedAtFilter.lte = new Date(checkedBefore);
+  }
+  if (Object.keys(checkedAtFilter).length > 0) {
+    where.checked_at = checkedAtFilter;
+  }
+  // Cursor-based pagination
+  // Calculate cursor offset
+  const skipCount = (currentPage - 1) * pageSize;
+  // Fetch data
+  const items = await MyGlobal.prisma.discussion_board_health_checks.findMany({
     where,
+    orderBy: [{ checked_at: "desc" }, { id: "desc" }],
+    skip: skipCount,
+    take: pageSize,
   });
-  // Transform result set, convert Date to string using toISOStringSafe
-  const data = healthChecks.map((record) => ({
-    id: record.id,
-    status: record.status,
-    checked_at: toISOStringSafe(record.checked_at),
-    details: record.details === null ? null : record.details,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+  const totalCount = await MyGlobal.prisma.discussion_board_health_checks.count(
+    { where },
+  );
+  // Transform data
+  const data: IDiscussionBoardHealthCheck.ISummary[] = items.map((db) => ({
+    id: db.id,
+    status: db.status,
+    checkedAt: db.checked_at.toISOString() as unknown as string &
+      tags.Format<"date-time">,
+    details: db.details ?? null,
+    createdAt: db.created_at.toISOString() as unknown as string &
+      tags.Format<"date-time">,
   }));
-  const pagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  } satisfies IPage.IPagination;
-  return { pagination, data };
+  return {
+    pagination: {
+      current: currentPage,
+      limit: pageSize,
+      records: totalCount,
+      pages: totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize),
+    },
+    data,
+  };
 }

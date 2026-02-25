@@ -1,5 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
+import { IDiscussionBoardAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorGrade";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -15,61 +16,61 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthAdministratorLogin(props: {
   body: IDiscussionBoardAdministrator.ILogin;
 }): Promise<IDiscussionBoardAdministrator.IAuthorized> {
-  // 1. There is no email and password in ILogin type as per schema, so for login logic we'll consider empty login or error.
-  //    Since schema shows ILogin as empty, login operation cannot proceed normally without credentials.
-  //    But according to specification, login with credentials is expected, so we assume this is a protocol placeholder.
-  //    For implementation, login with empty fields would fail findFirst anyway, so proceed with that.
-  // For demonstration, assume email and password are passed as empty strings.
-  const email = "";
-  const password = "";
-  // 2. Find administrator
-  const admin = await MyGlobal.prisma.discussion_board_administrators.findFirst(
-    {
-      where: { email },
+  const adminRaw =
+    await MyGlobal.prisma.discussion_board_administrators.findFirst({
+      where: { email: props.body.email },
       select: {
         id: true,
-        grade_id: true,
         email: true,
-        password_hash: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        grade_id: true,
+        password_hash: true,
+        grade: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+          },
+        },
       },
-    },
+    });
+  if (!adminRaw) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    adminRaw.password_hash,
   );
-  if (!admin) throw new HttpException("Invalid credentials", 401);
-  // 3. Check password
-  const isValid = await PasswordUtil.verify(password, admin.password_hash);
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 4. Prepare timestamps
-  const now = toISOStringSafe(new Date());
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 3600000));
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const nowIso = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
   const refreshExpires = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
-  // 5. Create session
-  const sessionId: string & tags.Format<"uuid"> = v4();
+  const sessionId = v4();
   const session =
     await MyGlobal.prisma.discussion_board_administrator_sessions.create({
       data: {
         id: sessionId,
-        administrator_id: admin.id,
+        administrator_id: adminRaw.id,
         ip: "",
-        href: "",
-        referrer: "",
-        created_at: now,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: nowIso,
         expired_at: accessExpires,
-        deleted_at: null,
       },
     });
-  // 6. Generate tokens
   const token = {
     access: jwt.sign(
       {
         type: "administrator",
-        id: admin.id,
+        id: adminRaw.id,
         session_id: session.id,
-        created_at: now,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -77,10 +78,10 @@ export async function postDiscussionBoardAuthAdministratorLogin(props: {
     refresh: jwt.sign(
       {
         type: "administrator",
-        id: admin.id,
+        id: adminRaw.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
@@ -88,8 +89,22 @@ export async function postDiscussionBoardAuthAdministratorLogin(props: {
     expired_at: accessExpires,
     refreshable_until: refreshExpires,
   };
-  // 7. Return authorized
   return {
+    id: adminRaw.id,
+    email: adminRaw.email,
+    createdAt: toISOStringSafe(adminRaw.created_at),
+    updatedAt: toISOStringSafe(adminRaw.updated_at),
+    deletedAt: adminRaw.deleted_at
+      ? toISOStringSafe(adminRaw.deleted_at)
+      : null,
+    grade: adminRaw.grade
+      ? {
+          id: adminRaw.grade.id,
+          name: adminRaw.grade.name,
+          level: adminRaw.grade.level,
+        }
+      : undefined,
+    gradeId: adminRaw.grade_id,
     token,
   };
 }

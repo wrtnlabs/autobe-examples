@@ -14,7 +14,7 @@ export async function authorize_platform_admin_login(
     body: IRedditCommunityPlatformAdmin.ILogin;
   },
 ): Promise<IRedditCommunityPlatformAdmin.IAuthorized> {
-  return await api.functional.redditCommunity.auth.platformadmin.login(
+  return await api.functional.redditCommunity.auth.platformAdmin.login(
     connection,
     {
       body: props.body,

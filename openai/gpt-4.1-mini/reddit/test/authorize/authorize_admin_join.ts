@@ -11,10 +11,17 @@ import typia, { tags } from "typia";
 export async function authorize_admin_join(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformAdmin.IJoin;
+    body?: Partial<ICommunityPlatformAdmin.IJoin>;
   },
 ): Promise<ICommunityPlatformAdmin.IAuthorized> {
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    displayName: props.body?.displayName ?? RandomGenerator.name(1),
+    bio: props.body?.bio ?? null,
+    avatarUrl: props.body?.avatarUrl ?? null,
+  } satisfies ICommunityPlatformAdmin.IJoin;
   return await api.functional.communityPlatform.auth.admin.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

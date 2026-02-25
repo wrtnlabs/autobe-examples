@@ -10,11 +10,11 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardApiRateLimitCollector {
   export async function collect(props: {
     body: IDiscussionBoardApiRateLimit.ICreate;
+    discussionBoardAdmins: IEntity; // from authorized actor
+    discussionBoardAdminSessions: IEntity; // from authorized session
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       endpoint_path: props.body.endpoint_path,
       http_method: props.body.http_method,
       rate_limit_type: props.body.rate_limit_type,
@@ -24,15 +24,14 @@ export namespace DiscussionBoardApiRateLimitCollector {
       enforcement_action: props.body.enforcement_action,
       enforced_at: null,
       enforcement_count: 0,
-      is_active: true,
+      is_active: props.body.is_active,
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Optional belongsTo relations (undefined when not provided)
       user: undefined,
-      admin: undefined,
-      superAdmin: undefined,
+      admin: { connect: { id: props.discussionBoardAdmins.id } },
+      superAdmin: { connect: { id: props.discussionBoardAdminSessions.id } },
     } satisfies Prisma.discussion_board_api_rate_limitsCreateInput;
   }
 }

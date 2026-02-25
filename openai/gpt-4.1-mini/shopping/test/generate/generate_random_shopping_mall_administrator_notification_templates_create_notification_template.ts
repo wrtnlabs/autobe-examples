@@ -17,10 +17,12 @@ export async function generate_random_shopping_mall_administrator_notification_t
 ): Promise<IShoppingMallNotificationTemplate> {
   const prepared: IShoppingMallNotificationTemplate.ICreate =
     prepare_random_shopping_mall_notification_template(props.body);
-  return await api.functional.shoppingMall.administrator.notificationTemplates.createNotificationTemplate(
-    connection,
-    {
-      body: prepared,
-    },
-  );
+  const result: IShoppingMallNotificationTemplate =
+    await api.functional.shoppingMall.administrator.notificationTemplates.createNotificationTemplate(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
 }

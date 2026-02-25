@@ -2,7 +2,10 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import type { IShoppingMallBannedUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallBannedUser";
+import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,33 +19,82 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_administrator_banned_user_retrieve_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Description: Test retrieving detailed information for a banned user as an authorized administrator.
-  // 1. Authenticate as administrator using the join endpoint and obtain token.
-  // 2. Use the token to perform GET on banned user by UUID.
-  // Create admin connection and perform administrator join to get authorized token
+  // 1. Register a new administrator
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth = await authorize_administrator_join(adminConnection, {
-    body: {} satisfies IShoppingMallAdministrator.IJoin,
+  const administrator = await authorize_administrator_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "SecurePass123",
+    },
   });
-  typia.assert(adminAuth);
-  // Update adminConnection headers with the authorized token
+  typia.assert(administrator);
+  // 2. Use the obtained authorization token for adminConnection
   adminConnection.headers = {
-    Authorization: `Bearer ${adminAuth.token.access}`,
+    Authorization: `Bearer ${administrator.token.access}`,
   };
-  // Generate a random bannedUserId (UUID) for the test
-  const bannedUserId = typia.random<string & tags.Format<"uuid">>();
-  // Retrieve the banned user by ID
+  // Sanity check - administrator properties assertion
+  typia.assert(administrator.id);
+  typia.assert(administrator.token.access);
+  // 3. The scenario requires a banned user record to retrieve
+  // Since no creation API is specified, generate a random bannedUserId for positive test
+  // Usually, in e2e test env, a banned user record creation would be prerequisite,
+  // but given info, we test retrieval by calling at API with a valid UUID format
+  // Generate a random UUID for bannedUserId
+  const bannedUserIdValid = typia.random<string & tags.Format<"uuid">>();
+  // 4. Retrieve banned user by ID
   const bannedUser =
-    await api.functional.shoppingMall.administrator.banned_users.at(
+    await api.functional.shoppingMall.administrator.bannedUsers.at(
       adminConnection,
-      { bannedUserId },
+      { bannedUserId: bannedUserIdValid },
     );
   typia.assert(bannedUser);
-  // Perform assertions to verify the returned banned user information
-  // Since IShoppingMallBannedUser type is empty object {} in definition,
-  // we only typia.assert and basic predicates.
-  // Confirm at least the presence of fields (if any known) could be added if known.
-  // If there is some well-known discriminator or identification of customer/seller,
-  // TestValidator checks would be here.
-  // Just check that typia.assert passed and no runtime errors.
+  // Validate banned user basic properties
+  TestValidator.predicate(
+    "bannedUser has id",
+    typeof bannedUser.id === "string" && bannedUser.id.length > 0,
+  );
+  TestValidator.predicate(
+    "bannedUser has banReason",
+    typeof bannedUser.banReason === "string" && bannedUser.banReason.length > 0,
+  );
+  TestValidator.predicate(
+    "bannedUser has createdAt",
+    bannedUser.createdAt !== null && typeof bannedUser.createdAt === "string",
+  );
+  TestValidator.predicate(
+    "bannedUser has updatedAt",
+    bannedUser.updatedAt !== null && typeof bannedUser.updatedAt === "string",
+  );
+  // Check timestamps format by typia
+  typia.assert(bannedUser.createdAt);
+  typia.assert(bannedUser.updatedAt);
+  // deletedAt can be null
+  if (bannedUser.deletedAt !== null) typia.assert(bannedUser.deletedAt);
+  // Check for either a customer or seller summary in the banned user
+  if (bannedUser.customer !== null && bannedUser.customer !== undefined) {
+    typia.assert(bannedUser.customer);
+    TestValidator.predicate(
+      "bannedUser.customer has id",
+      typeof bannedUser.customer.id === "string",
+    );
+  } else if (bannedUser.seller !== null && bannedUser.seller !== undefined) {
+    typia.assert(bannedUser.seller);
+    TestValidator.predicate(
+      "bannedUser.seller has id",
+      typeof bannedUser.seller.id === "string",
+    );
+  }
+  // 5. Test error handling: non-existent bannedUserId
+  const bannedUserIdInvalid = "00000000-0000-0000-0000-000000000000";
+  await TestValidator.error(
+    "retrieve with non-existent bannedUserId",
+    async () => {
+      await api.functional.shoppingMall.administrator.bannedUsers.at(
+        adminConnection,
+        {
+          bannedUserId: bannedUserIdInvalid as string & tags.Format<"uuid">,
+        },
+      );
+    },
+  );
 }

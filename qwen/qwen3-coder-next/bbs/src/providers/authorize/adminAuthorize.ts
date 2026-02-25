@@ -15,6 +15,7 @@ export async function adminAuthorize(request: {
   const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
     where: {
       id: payload.id,
+      deleted_at: null,
     },
   });
 

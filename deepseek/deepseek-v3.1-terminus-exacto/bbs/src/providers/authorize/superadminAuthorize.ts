@@ -1,25 +1,26 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
-import { SuperadminPayload } from "../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../decorators/payload/SuperAdminPayload";
 
-export async function superadminAuthorize(request: {
+export async function superAdminAuthorize(request: {
   headers: { authorization?: string };
-}): Promise<SuperadminPayload> {
-  const payload: SuperadminPayload = jwtAuthorize({ request }) as SuperadminPayload;
+}): Promise<SuperAdminPayload> {
+  const payload: SuperAdminPayload = jwtAuthorize({ request }) as SuperAdminPayload;
 
   if (payload.type !== "superadmin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const superAdmin = await MyGlobal.prisma.discussion_board_super_admins.findFirst({
+  // Query super_admin table directly since it's a standalone actor
+  const superadmin = await MyGlobal.prisma.discussion_board_super_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null, // Soft-delete check
     },
   });
 
-  if (superAdmin === null) {
+  if (superadmin === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

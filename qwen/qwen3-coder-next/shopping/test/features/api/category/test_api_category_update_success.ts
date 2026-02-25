@@ -3,6 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -12,39 +13,56 @@ import typia, { tags } from "typia";
 import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { generate_random_shopping_mall_admin_categories_create } from "../../../generate/generate_random_shopping_mall_admin_categories_create";
+import { prepare_random_shopping_mall_category } from "../../../prepare/prepare_random_shopping_mall_category";
 
 export async function test_api_category_update_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin account
+  // Create admin connection and authenticate
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminCredentials = typia.random<IShoppingMallAdmin.IJoin>();
-  const admin = await authorize_admin_join(adminConnection, {
-    body: adminCredentials,
+  await authorize_admin_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "1234" satisfies string & tags.Format<"password">,
+    } satisfies IShoppingMallAdmin.IJoin,
   });
-  typia.assert(admin);
-  // 2. Get available category to update
-  // Note: Since we don't have a create category function, we'll use an existing category
-  // In real scenario, admin would create a category first, then update it
-  // For this test, we need a category ID. Since we don't have a way to list categories,
-  // we'll generate a random UUID for testing purposes.
-  const categoryId = typia.random<string & tags.Format<"uuid">>();
-  // 3. Update category with new name and description
-  const body = {
-    name: RandomGenerator.name(),
-    description: RandomGenerator.paragraph({ sentences: 3 }),
-  } satisfies IShoppingMallCategory.IUpdate;
+  // Create a new category
+  const category = await api.functional.shoppingMall.admin.categories.create(
+    adminConnection,
+    {
+      body: {
+        name: RandomGenerator.name(),
+        description: RandomGenerator.paragraph({ sentences: 2 }),
+      } satisfies IShoppingMallCategory.ICreate,
+    },
+  );
+  typia.assert(category);
+  const oldUpdatedAt = category.updated_at;
+  // Update the category
   const updatedCategory =
     await api.functional.shoppingMall.admin.categories.update(adminConnection, {
-      categoryId: categoryId,
-      body: body,
+      categoryId: category.id,
+      body: {
+        name: RandomGenerator.name(),
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+      } satisfies IShoppingMallCategory.IUpdate,
     });
   typia.assert(updatedCategory);
-  // 4. Verify update was successful
-  // Since we don't have a way to fetch the updated category in this scenario,
-  // we can only verify the update operation completed successfully
+  // Validate update results
+  TestValidator.notEquals(
+    "category name changed",
+    category.name,
+    updatedCategory.name,
+  );
+  TestValidator.notEquals(
+    "description changed",
+    category.description,
+    updatedCategory.description,
+  );
+  TestValidator.equals("ID preserved", category.id, updatedCategory.id);
   TestValidator.predicate(
-    "category updated successfully",
-    updatedCategory !== null,
+    "updated_at timestamp changed",
+    updatedCategory.updated_at > oldUpdatedAt,
   );
 }

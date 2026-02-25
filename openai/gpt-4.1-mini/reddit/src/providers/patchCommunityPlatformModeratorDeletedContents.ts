@@ -1,4 +1,6 @@
 import { ICommunityPlatformDeletedContent } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformDeletedContent";
+import { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageICommunityPlatformDeletedContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageICommunityPlatformDeletedContent";
@@ -18,31 +20,70 @@ export async function patchCommunityPlatformModeratorDeletedContents(props: {
   moderator: ModeratorPayload;
   body: ICommunityPlatformDeletedContent.IRequest;
 }): Promise<IPageICommunityPlatformDeletedContent.ISummary> {
-  const rawPage = (props.body as any)?.page;
-  const page = typeof rawPage === "number" && rawPage >= 1 ? rawPage : 1;
-  const rawLimit = (props.body as any)?.limit;
-  const limit = typeof rawLimit === "number" && rawLimit >= 1 ? rawLimit : 100;
-  const skip = (page - 1) * limit;
-  const whereInput = {};
-  const data =
+  const page =
+    props.body.page !== undefined && props.body.page >= 1 ? props.body.page : 1;
+  const limit =
+    props.body.limit !== undefined &&
+    props.body.limit >= 1 &&
+    props.body.limit <= 100
+      ? props.body.limit
+      : 20;
+  const whereInput: Prisma.community_platform_deleted_contentsWhereInput = {
+    moderator_id: props.body.moderator_id ?? undefined,
+    user_id: props.body.user_id ?? undefined,
+    post_id: props.body.post_id ?? undefined,
+    comment_id: props.body.comment_id ?? undefined,
+    created_at: {
+      ...(props.body.createdAfter !== undefined &&
+      props.body.createdAfter !== null
+        ? { gte: props.body.createdAfter }
+        : {}),
+      ...(props.body.createdBefore !== undefined &&
+      props.body.createdBefore !== null
+        ? { lte: props.body.createdBefore }
+        : {}),
+    },
+  };
+  const dataRaw =
     await MyGlobal.prisma.community_platform_deleted_contents.findMany({
       where: whereInput,
-      skip,
+      skip: (page - 1) * limit,
       take: limit,
       orderBy: { created_at: "desc" },
       select: {
         id: true,
-        moderator: {
-          select: { id: true, display_name: true },
-        },
-        user: {
-          select: { id: true, display_name: true },
-        },
-        post_id: true,
-        comment_id: true,
         reason: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        moderator_id: true,
+        user_id: true,
+        post_id: true,
+        comment_id: true,
+        moderator: {
+          select: {
+            id: true,
+            display_name: true,
+            karma: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            display_name: true,
+            bio: true,
+            avatar_url: true,
+            karma: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
       },
     });
   const total = await MyGlobal.prisma.community_platform_deleted_contents.count(
@@ -50,28 +91,91 @@ export async function patchCommunityPlatformModeratorDeletedContents(props: {
       where: whereInput,
     },
   );
+  function toDateTimeString(value: unknown): string & tags.Format<"date-time"> {
+    if (typeof value === "string")
+      return value as string & tags.Format<"date-time">;
+    return new Date(value as string | number).toISOString() as string &
+      tags.Format<"date-time">;
+  }
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
-    data: data.map((record) => ({
+    data: dataRaw.map((record) => ({
       id: record.id,
-      moderator_id: record.moderator.id,
-      moderator_display_name:
-        record.moderator.display_name !== null
-          ? record.moderator.display_name
-          : null,
-      user_id: record.user.id,
-      user_display_name:
-        record.user.display_name !== null ? record.user.display_name : null,
-      post_id: record.post_id !== null ? record.post_id : null,
-      comment_id: record.comment_id !== null ? record.comment_id : null,
-      reason: record.reason !== null ? record.reason : null,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
+      reason: record.reason,
+      createdAt:
+        typeof record.created_at === "string"
+          ? record.created_at
+          : (record.created_at.toISOString() as string &
+              tags.Format<"date-time">),
+      updatedAt:
+        typeof record.updated_at === "string"
+          ? record.updated_at
+          : (record.updated_at.toISOString() as string &
+              tags.Format<"date-time">),
+      deletedAt:
+        record.deleted_at === null
+          ? null
+          : typeof record.deleted_at === "string"
+            ? record.deleted_at
+            : (record.deleted_at.toISOString() as string &
+                tags.Format<"date-time">),
+      moderatorId: record.moderator_id,
+      userId: record.user_id,
+      postId: record.post_id,
+      commentId: record.comment_id,
+      moderator: {
+        id: record.moderator.id,
+        displayName: record.moderator.display_name,
+        karma: record.moderator.karma,
+        createdAt:
+          typeof record.moderator.created_at === "string"
+            ? record.moderator.created_at
+            : (record.moderator.created_at.toISOString() as string &
+                tags.Format<"date-time">),
+        updatedAt:
+          typeof record.moderator.updated_at === "string"
+            ? record.moderator.updated_at
+            : (record.moderator.updated_at.toISOString() as string &
+                tags.Format<"date-time">),
+        deletedAt:
+          record.moderator.deleted_at === null
+            ? null
+            : typeof record.moderator.deleted_at === "string"
+              ? record.moderator.deleted_at
+              : (record.moderator.deleted_at.toISOString() as string &
+                  tags.Format<"date-time">),
+      },
+      user: {
+        id: record.user.id,
+        email: record.user.email,
+        username: record.user.username,
+        displayName: record.user.display_name,
+        bio: record.user.bio ?? null,
+        avatarUrl: record.user.avatar_url ?? null,
+        karma: record.user.karma,
+        createdAt:
+          typeof record.user.created_at === "string"
+            ? record.user.created_at
+            : (record.user.created_at.toISOString() as string &
+                tags.Format<"date-time">),
+        updatedAt:
+          typeof record.user.updated_at === "string"
+            ? record.user.updated_at
+            : (record.user.updated_at.toISOString() as string &
+                tags.Format<"date-time">),
+        deletedAt:
+          record.user.deleted_at === null
+            ? null
+            : typeof record.user.deleted_at === "string"
+              ? record.user.deleted_at
+              : (record.user.deleted_at.toISOString() as string &
+                  tags.Format<"date-time">),
+      },
     })),
   };
 }

@@ -5,11 +5,7 @@ import { superadministratorAuthorize } from "../providers/authorize/superadminis
 
 export const SuperadministratorAuth =
   (): ParameterDecorator =>
-  (
-    target: object,
-    propertyKey: string | symbol | undefined,
-    parameterIndex: number,
-  ): void => {
+  (target: object, propertyKey: string | symbol | undefined, parameterIndex: number): void => {
     SwaggerCustomizer((props) => {
       props.route.security ??= [];
       props.route.security.push({ bearer: [] });

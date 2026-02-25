@@ -7,29 +7,28 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardSuperAdminSystemConfigurationsConfigurationId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   configurationId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Check if configuration exists and is not already deleted
-  const configuration =
-    await MyGlobal.prisma.discussion_board_system_configurations.findUnique({
-      where: { id: props.configurationId, deleted_at: null },
+  // Use updateMany with conditions to ensure atomic operation
+  const result =
+    await MyGlobal.prisma.discussion_board_system_configurations.updateMany({
+      where: {
+        id: props.configurationId,
+        deleted_at: null,
+      },
+      data: {
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
     });
-  if (!configuration) {
-    throw new HttpException("System configuration not found", 404);
+  // Check if any records were actually updated
+  if (result.count === 0) {
+    throw new HttpException("Configuration not found or already deleted", 404);
   }
-  // Perform soft deletion by setting deleted_at timestamp
-  await MyGlobal.prisma.discussion_board_system_configurations.update({
-    where: { id: props.configurationId },
-    data: {
-      deleted_at: toISOStringSafe(new Date()),
-    },
-  });
-  // Log the deletion action (could be implemented with system activity logging)
-  // This satisfies the "Log the deletion action for audit trail purposes" requirement
 }

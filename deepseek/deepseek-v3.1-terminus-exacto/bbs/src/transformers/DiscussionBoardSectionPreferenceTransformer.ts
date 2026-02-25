@@ -34,16 +34,16 @@ export namespace DiscussionBoardSectionPreferenceTransformer {
   ): Promise<IDiscussionBoardSectionPreference> {
     return {
       id: input.id,
+      displayOrder: input.display_order,
+      notifyNewArticles: input.notify_new_articles,
+      notifyNewComments: input.notify_new_comments,
+      isHidden: input.is_hidden,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
       section: await DiscussionBoardSectionAtSummaryTransformer.transform(
         input.section,
       ),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      display_order: input.display_order,
-      notify_new_articles: input.notify_new_articles,
-      notify_new_comments: input.notify_new_comments,
-      is_hidden: input.is_hidden,
     };
   }
 }

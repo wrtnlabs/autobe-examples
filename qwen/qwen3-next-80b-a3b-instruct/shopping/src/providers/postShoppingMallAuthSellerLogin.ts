@@ -13,59 +13,60 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthSellerLogin(props: {
-  body: IShoppingMallSeller.ILogin;
   ip: string;
-  href: string;
-  referrer: string;
+  body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // 1. Extract email and password from the body after type assertion
-  const body = props.body as {
-    email: string;
-    password: string;
-  };
-  // Validate presence of email and password
-  if (!body.email || !body.password) {
-    throw new HttpException("Login credentials not provided", 401);
-  }
-  // 2. Find seller with password_hash
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: {
-      email: body.email,
-      deleted_at: null,
-      approval_status: "approved",
-    },
+    where: { email: props.body.email },
     select: {
       id: true,
       email: true,
       password_hash: true,
+      is_active: true,
+      status: true,
+      suspended_at: true,
+      deleted_at: true,
       created_at: true,
-      updated_at: true,
     },
   });
-  if (!seller) throw new HttpException("Invalid credentials", 401);
-  // 3. Verify password
+  if (!seller) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  if (seller.deleted_at !== null) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  if (seller.suspended_at !== null) {
+    throw new HttpException("Your seller account is suspended", 403);
+  }
+  if (seller.status !== "approved") {
+    if (seller.status === "pending") {
+      throw new HttpException("Your seller account is pending approval", 403);
+    }
+    if (seller.status === "rejected") {
+      throw new HttpException("Your seller account has been rejected", 403);
+    }
+    throw new HttpException("Invalid credentials", 401);
+  }
   const isValid = await PasswordUtil.verify(
-    body.password,
+    props.body.password,
     seller.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 4. Create new session using props.ip, props.href, props.referrer
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 30 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-  );
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
       shopping_mall_seller_id: seller.id,
-      ip: props.ip,
-      href: props.href,
-      referrer: props.referrer,
+      ip: props.ip ?? "unknown",
+      href: "",
+      referrer: "",
       created_at: toISOStringSafe(new Date()),
-      expired_at: accessExpires,
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
-  // 5. Generate JWT tokens
   const token = {
     access: jwt.sign(
       {
@@ -88,11 +89,12 @@ export async function postShoppingMallAuthSellerLogin(props: {
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "30d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 6. Return IAuthorized
   return {
+    id: seller.id as string & tags.Format<"uuid">,
     token,
+    expired_at: toISOStringSafe(accessExpires),
   } satisfies IShoppingMallSeller.IAuthorized;
 }

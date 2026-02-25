@@ -6,8 +6,19 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_article_file(
-  input?: DeepPartial<IDiscussionBoardArticleFile.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardArticleFile.ICreate>,
 ): IDiscussionBoardArticleFile.ICreate {
-  input;
-  return {};
+  return {
+    originalFilename: input?.originalFilename ?? RandomGenerator.name(1),
+    mimeType:
+      input?.mimeType ??
+      RandomGenerator.pick([
+        "application/pdf",
+        "text/plain",
+        "image/jpeg",
+        "image/png",
+        "application/json",
+        "text/html",
+      ] as const),
+  };
 }

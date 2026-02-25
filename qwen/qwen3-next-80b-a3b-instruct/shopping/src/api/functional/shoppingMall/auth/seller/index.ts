@@ -6,15 +6,21 @@ import typia from "typia";
 import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller";
 
 /**
- * Registers a new seller account on the shoppingMall platform. This operation requires the seller to provide a valid email address and password to initiate account creation. The system validates the email format and ensures it is unique within the system. The email_verification_token and expires_at fields in the shopping_mall_seller_email_verifications table are populated with a cryptographically secure token and expiration timestamp, triggering an email verification workflow. The seller account's approval_status is set to 'pending' to prevent access until admin approval. The password_hash is generated from the submitted password using bcrypt. If the seller's email already exists with a non-deleted account, registration is denied. Subsequent actions require the seller to verify their email via the sent token, and an admin must manually approve their status to 'approved' before they can list products. This operation aligns with the requirement that sellers require admin approval before selling, and all authentication state is preserved in immutable records. Once successfully created, the response returns a JWT access token (30-minute expiration) and refresh token (30-day expiration) as defined in IShoppingMallSeller.IAuthorized. This operation is linked to the shopping_mall_sellers and shopping_mall_seller_email_verifications tables.
+ * Sellers register on the platform by submitting their email address and password to create an account. This operation validates that the email is not already registered and that the password meets minimum security requirements (minimum 12 characters, including uppercase, lowercase, numbers, and special symbols). Upon validation, a new record is created in the shopping_mall_sellers table, where the email and bcrypt-hashed password are stored. The seller's initial status is set to 'pending' to indicate the account is awaiting admin approval. The operation does not create a session—authentication is not yet complete, and login is blocked until the seller's registration is approved by an administrator. After successful registration, an email verification record is automatically created in shopping_mall_seller_email_verifications for the seller, which is used for separate email confirmation, not for authentication purposes. The response body returns an IShoppingMallSeller.IAuthorized object containing the newly generated 30-minute access token and 30-day refresh token, allowing the seller to maintain their registration state on the client side, regardless of admin approval status. This implementation ensures that registration and authentication are decoupled—a seller must be registered before they can authenticate, but registration only initiates the onboarding flow.
+ *
+ * Security considerations: The password_hash field is never returned in any response, and only bcrypt-hashed values are stored in the database, never plaintext. The operation enforces password complexity rules client-side and server-side to prevent weak passwords. A rate limit of 5 attempts per IP per hour applies to prevent brute-force registration attacks. The operation does not perform email verification during registration—this is handled as a separate workflow via the emailed verification link.
+ *
+ * Related operations: This is the first step in the seller authentication lifecycle, followed by login after approval. Admins use the /admin/sellers/pending-approvals endpoint to approve or reject registrations. No refresh or logout operation is required during registration. The IShoppingMallSeller.IJoin request body schema enforces strict typing for email and password to ensure schema compliance.
+ *
+ * The system does not store any personal identifiers beyond email and password_hash at this stage; profile data (shop name, logo, etc.) is only added after approval via the PUT /sellers/me endpoint, which triggers a seller profile snapshot. This separation ensures that authentication identity and business identity are distinct, aligning with the snapshot principle for transactional integrity.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Request payload containing seller registration information. Includes email (required, formatted as an email address) and password (required, minimum 8 characters). Does not include profile fields as profile data is managed separately after approval. This type is used exclusively for the join operation and matches the schema defined for new seller registrations.
+ * @param props.body Request body containing email and password for new seller registration.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service layer creates a new record in shopping_mall_sellers with approval_status = 'pending', generates a 64-character alphanumeric email_verification_token, stores it in shopping_mall_seller_email_verifications with a 24-hour expiration (expires_at), and encrypts the password using BCrypt before storing in password_hash. The system ensures no existing non-deleted email exists. After successful creation, generates an access token with 30m TTL and refresh token with 30d TTL using JWT. Response is sent with IShoppingMallSeller.IAuthorized schema. No session record is created at join time - sessions are only created upon login.
+ * @x-autobe-specification The join operation accepts a seller's email and password as input, validates that the email is unique and the password meets complexity requirements (min 12 chars, mixed case, special symbol, no common patterns), then creates a new shopping_mall_sellers record with is_active = true, status = 'pending', and password_hash as a bcrypt hash of the input password. The operation returns a 201 status with IShoppingMallSeller.IAuthorized containing a 30-minute access token and 30-day refresh token. No session is created yet—session creation occurs on first login after email verification. Email verification token is created separately by a service layer after this operation.
  * @path /shoppingMall/auth/seller/join
  * @accessor api.functional.shoppingMall.auth.seller.join
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -48,7 +54,7 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Request payload containing seller registration information. Includes email (required, formatted as an email address) and password (required, minimum 8 characters). Does not include profile fields as profile data is managed separately after approval. This type is used exclusively for the join operation and matches the schema defined for new seller registrations.
+     * Request body containing email and password for new seller registration.
      */
     body: IShoppingMallSeller.IJoin;
   };
@@ -97,15 +103,21 @@ export namespace join {
 }
 
 /**
- * Authenticates a seller using their email and password credentials. This operation validates that the seller's email exists and is not deleted in the shopping_mall_sellers table, that the password_hash matches the provided password using BCrypt comparison, and that their approval_status is 'approved'. If the seller is pending, rejected, or suspended, the login is denied. A new shopping_mall_seller_sessions record is created with the client's IP, referrer, href, and an expiration timestamp (determined by token policy). The system generates a JWT access token with 30-minute expiration and a refresh token with 30-day expiration as defined in IShoppingMallSeller.IAuthorized. If the seller has a pending email verification (email_verification_token exists and verified_at is null in shopping_mall_seller_email_verifications), login is still allowed since the requirement does not mandate email verification for login, only for registration activation. This operation must be called after join to begin a session and is the primary mechanism of seller authentication on the platform.
+ * Sellers authenticate their identity by providing their email and password to obtain a valid access and refresh token. This operation validates the seller's credentials against the shopping_mall_sellers table, ensuring the email exists, the password hash matches, and the account has been approved by an administrator (status = 'approved'). The account must be active (is_active = true) and not marked as deleted (deleted_at IS NULL) or temporarily suspended (suspended_at IS NULL). Upon successful authentication, the system generates a 30-minute access token and a 30-day refresh token, both JWT-encoded with RS256 signing. A corresponding session record is created in the shopping_mall_seller_sessions table, capturing the client's IP address, referrer URL, and creation timestamp, enabling security auditing and device tracking. The response body returns an IShoppingMallSeller.IAuthorized object containing the two tokens. If the seller's registration status is 'pending' or 'rejected', or if the account is suspended or deleted, a 403 Forbidden error is returned, preventing login. This ensures that only approved sellers can access the API endpoints.
+ *
+ * Security considerations: Passwords are never transmitted or stored in plaintext—bcrypt hashing is used for storage and comparison. The operation enforces rate limiting at 10 failed attempts per IP per 10 minutes to prevent brute-force attacks. All tokens are signed and encrypted and include claims for issuer, audience, expiration, subject (seller_id), and issued-at time. The refresh token can be revoked by deleting the session record in shopping_mall_seller_sessions or by setting a seller's suspended_at or deleted_at field, which invalidates all active sessions.
+ *
+ * Related operations: After login, sellers may use the refresh token to renew their access token without re-entering credentials. This operation has no prerequisite other than correct credentials and approved status. It does not trigger profile data modification or session cleanup—those are handled by separate endpoints. The IShoppingMallSeller.ILogin request body schema strictly requires email and password fields to enforce schema compliance.
+ *
+ * The platform follows the principle of separation of concerns: registration creates a pending account, login activates the account if approved, and refresh maintains the session without re-authentication. Logout is not implemented, as token revocation is handled server-side by session invalidation.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Request payload containing seller login credentials. Includes email (required, must be a valid email format) and password (required, unencrypted). The password is verified against the stored password_hash in shopping_mall_sellers. This type is exclusively used for the login operation and contains only authentication fields without user profile or token data.
+ * @param props.body Request body containing email and password for seller authentication.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service queries shopping_mall_sellers by email for non-deleted records. Performs BCrypt password hash comparison. Verifies approval_status === 'approved'. Creates a record in shopping_mall_seller_sessions with IP, referrer, href, and expiration (e.g., 30 minutes from now). Generates access token (30m TTL) and refresh token (30d TTL) using JWT. Returns IShoppingMallSeller.IAuthorized response. Does not clear or modify any existing pending reset or verification records.
+ * @x-autobe-specification The login operation validates a seller's email and password against the shopping_mall_sellers table. It checks that the account is active (is_active = true), not deleted (deleted_at is null), and approved (status = 'approved'). If valid, it generates a 30-minute access token and a 30-day refresh token, and creates a corresponding session record in shopping_mall_seller_sessions with the client's IP and referrer. The operation returns an IShoppingMallSeller.IAuthorized token object. If the seller is pending or rejected, a 403 error is returned. Suspended accounts (suspended_at not null) are treated as inactive and return 403.
  * @path /shoppingMall/auth/seller/login
  * @accessor api.functional.shoppingMall.auth.seller.login
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -139,7 +151,7 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Request payload containing seller login credentials. Includes email (required, must be a valid email format) and password (required, unencrypted). The password is verified against the stored password_hash in shopping_mall_sellers. This type is exclusively used for the login operation and contains only authentication fields without user profile or token data.
+     * Request body containing email and password for seller authentication.
      */
     body: IShoppingMallSeller.ILogin;
   };
@@ -188,15 +200,21 @@ export namespace login {
 }
 
 /**
- * Refreshes a seller's expired access token using a valid refresh token. Validates that the refresh_token exists in the system, has not expired (expires_at is after current time), has not been used or revoked, and is associated with a non-deleted, approved seller account. If validation succeeds, generates a new access token with 30-minute expiration and a new refresh token with 30-day expiration. The old refresh token is marked as used (via deletion from shopping_mall_seller_sessions and other session tables), and the old access token becomes invalid. This operation allows sellers to maintain authenticated sessions without requiring re-entry of credentials every 30 minutes. This is the only mechanism to extend token validity without re-authenticating with email and password. The new pair of tokens is returned in the IShoppingMallSeller.IAuthorized response. This operation does not validate email verification status or approval status since these are already guaranteed by the existence and validity of the refresh token, which is only issued upon successful login with a confirmed, approved account.
+ * Sellers refresh their access token without re-entering their credentials by submitting a valid refresh token. This operation verifies that the refresh token is valid and has not expired, and that the corresponding session in shopping_mall_seller_sessions is active (deleted_at IS NULL). If validation passes, the system generates a new 30-minute access token and a new 30-day refresh token, and updates the session record with the new refresh token value, automatically rendering the old refresh token invalid to prevent replay attacks. The operation returns an IShoppingMallSeller.IAuthorized response object with the new tokens. Refresh tokens are single-use and are automatically invalidated after one use or if the seller logs in from another device. This ensures token security and prevents session hijacking.
+ *
+ * Security considerations: The refresh token is only accepted if it matches a current and active session. Token rotation (immediate invalidation of old token) is mandatory. The operation checks the client's IP address and user-agent against the session record to detect anomalies. If there is a mismatch, a security alert is logged and the refresh request is rejected. The refresh endpoint is rate-limited to 2 requests per hour per seller to prevent abuse. The operation does not trigger authentication events or profile updates—it is purely a token maintenance mechanism.
+ *
+ * Related operations: This operation assumes a valid login has already occurred. It cannot be used if the session was deleted (e.g., after an admin suspends the seller). It does not require any authentication actor since it operates solely on the refresh token. The IShoppingMallSeller.IRefresh request body schema requires only the refresh_token field for compliance.
+ *
+ * The platform follows the zero-trust principle: every access token is short-lived, and every refresh requires explicit validation of the session state. Logout is not implemented, as session invalidation is handled by revoking the refresh token via admin action or deletion of the session record.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Request payload containing the seller's refresh token to renew access. Includes refresh_token (required, valid JWT refresh token string). This type is exclusively used for the refresh operation and contains only the refresh token information.
+ * @param props.body Request body containing the refresh token to renew the access token.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service validates refresh_token by cross-referencing the token value with the shopping_mall_seller_sessions table. Verifies session has not expired and seller account is active and approved. Creates a new session record with new refresh token and expiration. Invalidates the old session by marking it as deleted. Generates new access token (30m TTL) and new refresh token (30d TTL). Returns IShoppingMallSeller.IAuthorized response. No new email verification or approval status checks are performed as the refresh token is already tied to a verified and approved account.
+ * @x-autobe-specification The refresh operation validates a seller's refresh token against the shopping_mall_seller_sessions table. It checks that the token has not expired and the associated session is still active (deleted_at IS NULL). If valid, it generates a new 30-minute access token and a new 30-day refresh token, updates the session record with the new refresh token, and returns the updated IShoppingMallSeller.IAuthorized object. The old refresh token is rendered invalid immediately upon use.
  * @path /shoppingMall/auth/seller/refresh
  * @accessor api.functional.shoppingMall.auth.seller.refresh
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -230,7 +248,7 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Request payload containing the seller's refresh token to renew access. Includes refresh_token (required, valid JWT refresh token string). This type is exclusively used for the refresh operation and contains only the refresh token information.
+     * Request body containing the refresh token to renew the access token.
      */
     body: IShoppingMallSeller.IRefresh;
   };

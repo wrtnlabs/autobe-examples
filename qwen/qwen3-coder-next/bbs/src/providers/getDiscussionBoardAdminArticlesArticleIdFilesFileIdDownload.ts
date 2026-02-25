@@ -1,5 +1,5 @@
+import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IString } from "@ORGANIZATION/PROJECT-api/lib/structures/IString";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,16 +16,21 @@ export async function getDiscussionBoardAdminArticlesArticleIdFilesFileIdDownloa
   admin: AdminPayload;
   articleId: string;
   fileId: string;
-}): Promise<IString> {
+}): Promise<IDiscussionBoardArticleFile.IDownload> {
+  // Find the file record
   const file = await MyGlobal.prisma.discussion_board_article_files.findFirst({
     where: {
       id: props.fileId,
-      discussion_board_article_id: props.articleId,
-      deleted_at: null,
+      article_id: props.articleId,
     },
   });
   if (!file) {
     throw new HttpException("File not found", 404);
   }
-  return file.stored_path;
+  return {
+    downloadUrl: file.file_path,
+    mimeType: file.mime_type,
+    originalFilename: file.original_filename,
+    fileSize: file.file_size,
+  };
 }

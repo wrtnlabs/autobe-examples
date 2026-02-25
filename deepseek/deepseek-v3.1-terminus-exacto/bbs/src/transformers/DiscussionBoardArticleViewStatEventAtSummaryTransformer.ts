@@ -2,7 +2,6 @@ import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IDiscussionBoardArticleViewStatEvent } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleViewStatEvent";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUserSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -10,39 +9,40 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { DiscussionBoardArticleAtSummaryTransformer } from "./DiscussionBoardArticleAtSummaryTransformer";
-import { DiscussionBoardUserSessionAtSummaryTransformer } from "./DiscussionBoardUserSessionAtSummaryTransformer";
 
 export namespace DiscussionBoardArticleViewStatEventAtSummaryTransformer {
-  export type Payload =
-    Prisma.discussion_board_article_view_stat_eventsGetPayload<
-      ReturnType<typeof select>
-    >;
+  export type Payload = Prisma.discussion_board_article_view_statsGetPayload<
+    ReturnType<typeof select>
+  >;
   export function select() {
     return {
       select: {
         id: true,
+        total_view_count: true,
+        unique_viewer_count: true,
+        last_viewed_at: true,
+        average_time_spent_seconds: true,
+        total_time_spent_seconds: true,
         created_at: true,
-        view_duration_seconds: true,
+        updated_at: true,
         article: DiscussionBoardArticleAtSummaryTransformer.select(),
-        userSession: DiscussionBoardUserSessionAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.discussion_board_article_view_stat_eventsFindManyArgs;
+    } satisfies Prisma.discussion_board_article_view_statsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardArticleViewStatEvent.ISummary> {
     return {
       id: input.id,
-      created_at: input.created_at.toISOString(),
-      view_duration_seconds: input.view_duration_seconds ?? undefined,
+      total_view_count: input.total_view_count,
+      unique_viewer_count: input.unique_viewer_count,
+      last_viewed_at: input.last_viewed_at
+        ? input.last_viewed_at.toISOString()
+        : null,
+      average_time_spent_seconds: input.average_time_spent_seconds,
       article: await DiscussionBoardArticleAtSummaryTransformer.transform(
         input.article,
       ),
-      userSession: input.userSession
-        ? await DiscussionBoardUserSessionAtSummaryTransformer.transform(
-            input.userSession,
-          )
-        : null,
     };
   }
 }

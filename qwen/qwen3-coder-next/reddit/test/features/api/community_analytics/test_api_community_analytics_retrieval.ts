@@ -1,198 +1,122 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformAdmin";
-import type { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
+import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import type { IPageIRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCloneCommunity";
+import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import type { IRedditCloneGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneGuest";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_guest_join } from "../../../authorize/authorize_guest_join";
+import { authorize_guest_refresh } from "../../../authorize/authorize_guest_refresh";
 
 export async function test_api_community_analytics_retrieval(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Admin setup - register an admin user
-  const adminConnection: api.IConnection = { host: connection.host };
-  const admin = await authorize_admin_join(adminConnection, {
+  // 1. Guest authentication
+  const guestConnection: api.IConnection = { host: connection.host };
+  const guestAuthorized = await authorize_guest_join(guestConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "12345678",
-      username: RandomGenerator.name(3),
-      display_name: RandomGenerator.name(2),
-      bio: RandomGenerator.paragraph({ sentences: 2 }),
-    } satisfies IRedditPlatformAdmin.IJoin,
+      session_token: typia.random<string & tags.Format<"uuid">>(),
+      device_id: typia.random<string & tags.Format<"uuid">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+      referrer: null,
+    } satisfies IRedditCloneGuest.IJoin,
   });
-  typia.assert(admin);
-  // Step 2: Create a community as admin (using admin connection)
-  // Note: No community creation endpoint available in provided SDK
-  // This test assumes a community already exists in the test environment
-  // In a real scenario, you would need a community creation endpoint
-  const testCommunityId = "00000000-0000-0000-0000-000000000000";
-  // Step 3: Retrieve analytics for the community
-  const analytics =
-    await api.functional.redditPlatform.admin.communities.analytics.at(
-      adminConnection,
+  typia.assert(guestAuthorized);
+  // 2. Prepare analytics request with filtering and sorting options
+  const analyticsRequest: IRedditCloneCommunity.IAnalyticsRequest = {
+    search: "test",
+    minSubscribers: 10,
+    maxSubscribers: 1000,
+    minPosts: 5,
+    minComments: 20,
+    minVotes: 100,
+    timeRange: "allTime",
+    sortBy: "subscribers",
+    sortOrder: "desc",
+    page: 1,
+    limit: 20,
+  };
+  // 3. Retrieve community analytics statistics
+  const output: IPageIRedditCloneCommunity.IStatistic =
+    await api.functional.redditClone.guest.analytics.communities.statistics.index(
+      guestConnection,
       {
-        communityId: testCommunityId,
+        body: analyticsRequest,
       },
     );
-  typia.assert(analytics);
-  // Step 4: Validate analytics structure and content
-  TestValidator.equals(
-    "communityId exists",
-    typeof analytics.communityId === "string",
-    true,
-  );
-  TestValidator.equals(
-    "communityName exists",
-    typeof analytics.communityName === "string",
-    true,
-  );
-  TestValidator.equals(
-    "engagement exists",
-    analytics.engagement !== undefined,
-    true,
-  );
-  TestValidator.equals("content exists", analytics.content !== undefined, true);
-  TestValidator.equals("users exists", analytics.users !== undefined, true);
-  TestValidator.equals("growth exists", analytics.growth !== undefined, true);
-  TestValidator.equals(
-    "timeRange exists",
-    analytics.timeRange !== undefined,
-    true,
-  );
-  // Validate engagement structure
-  TestValidator.equals(
-    "engagement.viewCount exists",
-    typeof analytics.engagement.viewCount === "number",
-    true,
-  );
-  TestValidator.equals(
-    "engagement.voteCount exists",
-    typeof analytics.engagement.voteCount === "number",
-    true,
-  );
-  TestValidator.equals(
-    "engagement.commentCount exists",
-    typeof analytics.engagement.commentCount === "number",
-    true,
-  );
-  TestValidator.equals(
-    "engagement.averageVoteScore exists",
-    typeof analytics.engagement.averageVoteScore === "number",
-    true,
-  );
-  // Validate content structure
-  TestValidator.equals(
-    "content.postCount exists",
-    typeof analytics.content.postCount === "number",
-    true,
-  );
-  TestValidator.equals(
-    "content.averageKarma exists",
-    typeof analytics.content.averageKarma === "number",
-    true,
-  );
-  TestValidator.equals(
-    "content.contentTypes exists",
-    analytics.content.contentTypes !== undefined,
-    true,
-  );
-  // Validate contentTypes structure
-  TestValidator.equals(
-    "contentTypes.textPosts exists",
-    typeof analytics.content.contentTypes.textPosts === "number",
-    true,
-  );
-  TestValidator.equals(
-    "contentTypes.linkPosts exists",
-    typeof analytics.content.contentTypes.linkPosts === "number",
-    true,
-  );
-  TestValidator.equals(
-    "contentTypes.imagePosts exists",
-    typeof analytics.content.contentTypes.imagePosts === "number",
-    true,
-  );
-  // Validate users structure
-  TestValidator.equals(
-    "users.memberCount exists",
-    typeof analytics.users.memberCount === "number",
-    true,
-  );
-  TestValidator.equals(
-    "users.activeMembers exists",
-    typeof analytics.users.activeMembers === "number",
-    true,
-  );
-  TestValidator.equals(
-    "users.postingFrequency exists",
-    typeof analytics.users.postingFrequency === "number",
-    true,
-  );
-  // Validate growth structure
-  TestValidator.equals(
-    "growth.newMembers exists",
-    typeof analytics.growth.newMembers === "number",
-    true,
-  );
-  TestValidator.equals(
-    "growth.newPosts exists",
-    typeof analytics.growth.newPosts === "number",
-    true,
-  );
-  TestValidator.equals(
-    "growth.netSubscriberChange exists",
-    typeof analytics.growth.netSubscriberChange === "number",
-    true,
-  );
-  TestValidator.equals(
-    "growth.growthRate exists",
-    typeof analytics.growth.growthRate === "number",
-    true,
-  );
-  // Validate timeRange structure
-  TestValidator.equals(
-    "timeRange.startDate exists",
-    typeof analytics.timeRange.startDate === "string",
-    true,
-  );
-  TestValidator.equals(
-    "timeRange.endDate exists",
-    typeof analytics.timeRange.endDate === "string",
-    true,
-  );
-  TestValidator.equals(
-    "timeRange.period exists",
-    ["TODAY", "WEEK", "MONTH", "YEAR", "ALL_TIME"].includes(
-      analytics.timeRange.period,
-    ),
-    true,
-  );
-  // Validate data types and constraints
-  TestValidator.predicate(
-    "viewCount is uint32",
-    analytics.engagement.viewCount >= 0 &&
-      analytics.engagement.viewCount <= 4294967295,
-  );
-  TestValidator.predicate(
-    "voteCount is uint32",
-    analytics.engagement.voteCount >= 0 &&
-      analytics.engagement.voteCount <= 4294967295,
-  );
-  TestValidator.predicate(
-    "commentCount is uint32",
-    analytics.engagement.commentCount >= 0 &&
-      analytics.engagement.commentCount <= 4294967295,
-  );
-  TestValidator.predicate(
-    "postCount is uint32",
-    analytics.content.postCount >= 0 &&
-      analytics.content.postCount <= 4294967295,
-  );
+  typia.assert(output);
+  // 4. Validate response structure
+  TestValidator.equals("pagination exists", output.pagination, {
+    current: 1,
+    limit: 20,
+    records: 0,
+    pages: 0,
+  });
+  // 5. Validate data array structure if communities exist
+  TestValidator.predicate("data array exists", Array.isArray(output.data));
+  if (output.data.length > 0) {
+    const firstCommunity = output.data[0];
+    typia.assert(firstCommunity);
+    // Validate community statistics structure
+    TestValidator.equals(
+      "community has id",
+      typeof firstCommunity.community.id,
+      "string",
+    );
+    TestValidator.equals(
+      "community has name",
+      typeof firstCommunity.name,
+      "string",
+    );
+    TestValidator.equals(
+      "community has description",
+      typeof firstCommunity.description,
+      "string",
+    );
+    TestValidator.equals(
+      "community has icon_url",
+      typeof firstCommunity.icon_url,
+      "string",
+    );
+    TestValidator.equals(
+      "community has owner_id",
+      typeof firstCommunity.owner_id,
+      "string",
+    );
+    TestValidator.equals(
+      "community has owner_username",
+      typeof firstCommunity.owner_username,
+      "string",
+    );
+    TestValidator.predicate(
+      "subscriber_count is positive integer",
+      firstCommunity.subscriber_count >= 0,
+    );
+    TestValidator.predicate(
+      "post_count is positive integer",
+      firstCommunity.post_count >= 0,
+    );
+    TestValidator.predicate(
+      "comment_count is positive integer",
+      firstCommunity.comment_count >= 0,
+    );
+    TestValidator.predicate(
+      "vote_count is positive integer",
+      firstCommunity.vote_count >= 0,
+    );
+    TestValidator.predicate(
+      "engagement_rate is non-negative",
+      firstCommunity.engagement_rate >= 0,
+    );
+    TestValidator.predicate(
+      "activity_score is non-negative integer",
+      firstCommunity.activity_score >= 0,
+    );
+  }
 }

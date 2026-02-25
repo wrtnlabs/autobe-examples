@@ -12,15 +12,18 @@ export namespace EcommerceShipmentCollector {
     body: IEcommerceShipment.ICreate;
     ecommerceOrders: IEntity;
   }) {
-    const id: string = v4();
+    const id = v4();
+    const shipmentDate = new Date();
+    const expectedDeliveryDate = new Date(
+      shipmentDate.getTime() + 3 * 24 * 60 * 60 * 1000,
+    );
     return {
       id,
-      carrier: props.body.carrier,
+      carrier_name: props.body.carrier_name,
       tracking_number: props.body.tracking_number,
-      shipping_date: new Date(props.body.shipping_date),
-      estimated_delivery_date: null,
-      actual_delivery_date: null,
-      status: props.body.status,
+      status: "pending",
+      shipment_date: shipmentDate,
+      expected_delivery_date: expectedDeliveryDate,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

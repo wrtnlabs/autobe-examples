@@ -9,10 +9,9 @@ export async function customerAuthorize(request: {
   const payload: CustomerPayload = jwtAuthorize({ request }) as CustomerPayload;
 
   if (payload.type !== "customer") {
-    throw new UnauthorizedException("Invalid authentication type");
+    throw new UnauthorizedException("Invalid token type");
   }
 
-  // Check if the customer exists and is not deleted
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       id: payload.id,
@@ -21,7 +20,7 @@ export async function customerAuthorize(request: {
   });
 
   if (customer === null) {
-    throw new ForbiddenException("Customer not found or account deleted");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

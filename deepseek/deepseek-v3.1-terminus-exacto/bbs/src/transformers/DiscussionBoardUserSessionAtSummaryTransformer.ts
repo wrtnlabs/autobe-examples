@@ -21,10 +21,10 @@ export namespace DiscussionBoardUserSessionAtSummaryTransformer {
         ip: true,
         user_agent: true,
         referrer: true,
+        user: DiscussionBoardUserAtSummaryTransformer.select(),
         created_at: true,
         expired_at: true,
         last_accessed_at: true,
-        user: DiscussionBoardUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_user_sessionsFindManyArgs;
   }
@@ -33,13 +33,10 @@ export namespace DiscussionBoardUserSessionAtSummaryTransformer {
   ): Promise<IDiscussionBoardUserSession.ISummary> {
     return {
       id: input.id,
-      ip: input.ip,
-      user_agent: input.user_agent,
-      referrer: input.referrer ?? undefined,
-      created_at: toISOStringSafe(input.created_at),
-      expired_at: toISOStringSafe(input.expired_at),
-      last_accessed_at: toISOStringSafe(input.last_accessed_at),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+      last_accessed_at: input.last_accessed_at.toISOString(),
     };
   }
 }

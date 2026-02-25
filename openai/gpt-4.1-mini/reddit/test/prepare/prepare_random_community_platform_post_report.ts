@@ -6,8 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_post_report(
-  input?: DeepPartial<ICommunityPlatformPostReport.ICreate> | undefined,
+  input?: DeepPartial<ICommunityPlatformPostReport.ICreate>,
 ): ICommunityPlatformPostReport.ICreate {
-  input;
-  return {};
+  return {
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+  };
 }

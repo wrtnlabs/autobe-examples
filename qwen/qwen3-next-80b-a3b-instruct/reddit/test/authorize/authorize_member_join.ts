@@ -15,8 +15,10 @@ export async function authorize_member_join(
   },
 ): Promise<IRedditCommunityMember.IAuthorized> {
   const joinInput = {
-    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    username: props.body?.username ?? RandomGenerator.name(1),
+    displayName: props.body?.displayName ?? RandomGenerator.name(),
   } satisfies IRedditCommunityMember.IJoin;
   return await api.functional.redditCommunity.auth.member.join(connection, {
     body: joinInput,

@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleTagCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticleTag.ICreate;
-    discussionBoardArticles: IEntity;
+    article: IEntity; // from path parameter articleId
   }) {
     const id: string = v4();
     return {
@@ -21,7 +21,7 @@ export namespace DiscussionBoardArticleTagCollector {
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relation
-      article: { connect: { id: props.discussionBoardArticles.id } },
+      article: { connect: { id: props.article.id } },
     } satisfies Prisma.discussion_board_article_tagsCreateInput;
   }
 }

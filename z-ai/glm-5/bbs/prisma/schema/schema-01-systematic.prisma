@@ -1,0 +1,293 @@
+/// Citizen sequence table for generating sequential IDs for user entities.
+/// Each new user references a citizen_id from this sequence. Provides
+/// human-readable sequential identifiers for users, enabling easier
+/// reference and display compared to UUID-based primary keys.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sequential citizen ID number for user identification. Auto-incremented
+  /// for each new user, providing human-readable sequential identifiers.
+  citizen_id Int
+  
+  /// Timestamp when the citizen sequence record was created.
+  created_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  user discussion_board_users?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([citizen_id])
+}
+
+/// Citizen sequence table for generating sequential, human-readable IDs for
+/// section entities.
+///
+/// This infrastructure table provides a dedicated sequence generator for
+/// section IDs, enabling the creation of sequential identification numbers
+/// (e.g., Section #1, Section #2) that are easier for users to reference
+/// than UUIDs. Each new section entity consumes one citizen record from this
+/// sequence.
+///
+/// The sequence is maintained independently from the main section table to
+/// ensure consistent, gap-free sequential numbering for user-facing
+/// identifiers.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this sequence number was created. Used for audit trail and
+  /// ordering of sequence allocation.
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential, human-readable IDs for
+/// article entities.
+///
+/// Each time a new article is created, the system references a record from
+/// this sequence to generate a sequential citizen ID. This provides
+/// human-readable article identifiers (e.g., "Article #123") separate from
+/// the UUID primary key. The sequence ensures uniqueness and maintains
+/// chronological ordering for article identification.
+///
+/// This is a subsidiary table supporting the {@link
+/// discussion_board_articles} primary entity.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Sequential citizen ID number for human-readable article identification.
+  /// Auto-incremented to provide unique sequential identifiers (e.g., 123 for
+  /// "Article #123").
+  citizen_id Int
+  
+  /// Timestamp when the citizen ID was allocated. Used for audit trail to
+  /// track when article IDs were generated.
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([citizen_id])
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential IDs for comment
+/// entities. Each new comment references a citizen_id from this sequence,
+/// providing human-readable sequential identifiers for the discussion
+/// board's comment system. This table serves as infrastructure for the
+/// Comments component, ensuring consistent and traceable comment
+/// identification across the platform.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique citizen sequence identifier used as reference for
+  /// sequential comment IDs.
+  id String @id
+  
+  /// Timestamp when this citizen sequence entry was created. Used for auditing
+  /// and ordering the sequence generation.
+  created_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  comment discussion_board_comments?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential, human-readable IDs for
+/// administrator request entities.
+///
+/// This infrastructure table supports the ID generation system for admin
+/// requests, providing a stable sequence counter that enables sequential
+/// numeric identifiers (e.g., #1, #2, #3) for administrator request
+/// tracking. Each new admin request references a citizen_id from this
+/// sequence, ensuring consistent and auditable request numbering.
+///
+/// Part of the systematic infrastructure layer that provides foundational ID
+/// generation services across all platform entities.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_request_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for this citizen sequence entry,
+  /// referenced by administrator request records to establish their sequential
+  /// ID.
+  id String @id
+  
+  /// Timestamp when this citizen sequence entry was created. Used for auditing
+  /// the sequence generation process and tracking when new admin request IDs
+  /// were allocated.
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential IDs for ban entities.
+///
+/// This infrastructure table supports the discussion_board_bans table by
+/// providing a pool of pre-generated sequential identifiers. Each ban record
+/// references a citizen_id from this sequence to maintain human-readable
+/// sequential numbering while using UUID-based internal identifiers.
+///
+/// Citizen sequences enable the system to assign sequential, user-friendly
+/// IDs (e.g., 'Ban #123') to ban records while maintaining the security and
+/// distributed system benefits of UUID primary keys.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Timestamp when this citizen sequence record was created.
+  created_at DateTime
+}
+
+/// Citizen sequence table for generating sequential IDs for admin hierarchy
+/// action entities.
+///
+/// This infrastructure table provides the foundation for assigning
+/// human-readable sequential identifiers to admin hierarchy actions
+/// (promotions and demotions). Each time an admin hierarchy action is
+/// created, it references a citizen_id from this sequence, enabling
+/// user-friendly identification while maintaining the UUID-based primary key
+/// system.
+///
+/// The sequence supports the Administration domain's governance workflow by
+/// providing monotonically increasing IDs that are easier for administrators
+/// to reference in communications and audit logs compared to raw UUIDs.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_hierarchy_action_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for the citizen sequence entry, used as a
+  /// reference by admin hierarchy action records.
+  id String @id
+  
+  /// Timestamp when this citizen sequence entry was created. Used for audit
+  /// trail and sequence ordering verification.
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential, human-readable IDs for
+/// admin action log entities.
+///
+/// Each new admin action log entry references a citizen record from this
+/// sequence to provide a stable, sequential identifier suitable for
+/// user-facing display and audit trail correlation. This table exists solely
+/// to generate unique identifiers - no additional data is stored.
+///
+/// Referenced by: {@link discussion_board_admin_action_logs.citizen}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_action_log_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+}
+
+/// Citizen sequence table for generating sequential IDs for unban entities.
+/// Each new unban action references a citizen_id from this sequence,
+/// enabling human-readable unban identifiers. This is an append-only table
+/// that serves as the source of unique identifiers for the unban system.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_unban_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for this citizen sequence entry, used as a
+  /// human-readable reference for unban records.
+  id String @id
+  
+  /// Timestamp when this citizen sequence entry was created. Used for audit
+  /// trail of ID generation events.
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Citizen sequence table for generating sequential, human-readable IDs for
+/// ban history entities.
+///
+/// This infrastructure table provides a dedicated sequence for ban history
+/// audit trail records, ensuring each ban history entry receives a unique,
+/// sequential identifier. The citizen pattern enables friendly ID generation
+/// that can be displayed in user interfaces while maintaining the benefits
+/// of UUID primary keys for internal database operations.
+///
+/// Used by the Banning component to assign sequential IDs to {@link
+/// discussion_board_ban_histories} records.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_history_citizens {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+}

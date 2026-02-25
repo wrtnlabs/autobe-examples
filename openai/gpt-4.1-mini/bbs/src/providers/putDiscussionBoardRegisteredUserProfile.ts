@@ -1,4 +1,4 @@
-import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
+import { IDiscussionBoardRegisteredUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUserProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,42 +9,42 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RegistereduserPayload } from "../decorators/payload/RegistereduserPayload";
+import { DiscussionBoardRegisteredUserProfileTransformer } from "../transformers/DiscussionBoardRegisteredUserProfileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardRegisteredUserProfile(props: {
   registeredUser: RegistereduserPayload;
-  body: IDiscussionBoardRegisteredUser.IUpdate;
-}): Promise<IDiscussionBoardRegisteredUser> {
-  const user =
-    await MyGlobal.prisma.discussion_board_registered_users.findUnique({
-      where: { id: props.registeredUser.id },
-    });
-  if (!user) throw new HttpException("User not found", 404);
-  // To fix the error about missing display_name and bio, safely access them
-  const display_name = (props.body as any).display_name ?? null;
-  const bio = (props.body as any).bio ?? null;
+  body: IDiscussionBoardRegisteredUserProfile.IUpdate;
+}): Promise<IDiscussionBoardRegisteredUserProfile> {
+  await MyGlobal.prisma.discussion_board_registered_users.findUniqueOrThrow({
+    where: { id: props.registeredUser.id },
+    select: { id: true },
+  });
+  const data: {
+    display_name?: {
+      set: string | undefined;
+    };
+    bio?: {
+      set: string | undefined;
+    };
+  } = {};
+  if ("displayName" in props.body) {
+    data.display_name = { set: props.body.displayName ?? undefined };
+  }
+  if ("bio" in props.body) {
+    data.bio = { set: props.body.bio ?? undefined };
+  }
+  await MyGlobal.prisma.discussion_board_registered_users.update({
+    where: { id: props.registeredUser.id },
+    data,
+  });
   const updated =
-    await MyGlobal.prisma.discussion_board_registered_users.update({
+    await MyGlobal.prisma.discussion_board_registered_users.findUniqueOrThrow({
       where: { id: props.registeredUser.id },
-      data: {
-        // Only include display_name and bio if they are not null
-        ...(display_name !== null ? { display_name } : {}),
-        bio: bio === undefined ? null : bio,
-        updated_at: toISOStringSafe(new Date()),
-      },
+      ...DiscussionBoardRegisteredUserProfileTransformer.select(),
     });
-  return {
-    id: updated.id,
-    email: updated.email,
-    password_hash: updated.password_hash,
-    display_name: updated.display_name,
-    bio: updated.bio === null ? undefined : updated.bio,
-    is_banned: updated.is_banned,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at
-      ? toISOStringSafe(updated.deleted_at)
-      : undefined,
-  };
+  return await DiscussionBoardRegisteredUserProfileTransformer.transform(
+    updated,
+  );
 }

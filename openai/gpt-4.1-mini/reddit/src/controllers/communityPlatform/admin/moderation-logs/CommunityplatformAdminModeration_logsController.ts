@@ -1,97 +1,47 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { ICommunityPlatformModerationLog } from "../../../../api/structures/ICommunityPlatformModerationLog";
 import { IPageICommunityPlatformModerationLog } from "../../../../api/structures/IPageICommunityPlatformModerationLog";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getCommunityPlatformAdminModerationLogs } from "../../../../providers/getCommunityPlatformAdminModerationLogs";
-import { getCommunityPlatformAdminModerationLogsModerationLogId } from "../../../../providers/getCommunityPlatformAdminModerationLogsModerationLogId";
 import { patchCommunityPlatformAdminModerationLogs } from "../../../../providers/patchCommunityPlatformAdminModerationLogs";
 
 @Controller("/communityPlatform/admin/moderation-logs")
 export class CommunityplatformAdminModeration_logsController {
   /**
-   * Retrieve a paginated list of moderation log entries representing moderator actions on posts and comments within the community platform.
+   * Retrieve a paginated list of moderation logs recording actions taken by community moderators and administrators on posts and comments.
    *
-   * This operation returns detailed audit logs including action type, moderator identity, related post or comment IDs, timestamps, and additional action details.
+   * This operation enables authorized personnel to monitor and audit moderator activities such as deletions, bans, and report resolutions. The logs include metadata on the actor performing the action, the type of action, targeted content details, timestamps, and any comments or reasons provided during moderation.
    *
-   * Access is restricted to authorized moderators or admin roles to ensure community governance and transparency.
+   * Access to this endpoint is restricted to moderators and administrators to protect privacy and prevent misuse.
    *
-   * Each log entry corresponds to a record in the community_platform_moderation_logs table.
+   * This operation queries the community_platform_moderation_logs table, which captures detailed records of all moderation actions within communities. It supports filtering by moderator, action type, date ranges, and community context, as well as pagination for efficient browsing.
    *
-   * No path parameters are necessary as this is a collection endpoint.
+   * Typical usage includes generating audit reports, investigating user complaints, and ensuring moderation transparency and accountability.
    *
-   * The operation uses GET method and does not require a request body.
+   * The endpoint complements related administrative APIs such as user bans management, reports review, and community moderation configurations.
    *
-   * Supports optional pagination and filtering through query parameters.
-   *
-   * Related operations include managing moderators, posts, comments, bans, and reports.
-   *
-   * Pagination and filtering details are handled outside this API definition scope.
+   * Errors may occur if unauthorized users attempt access, or if invalid filter values are provided. Proper error handling must provide clear messages without exposing sensitive data.
    *
    * @param connection
+   * @param body Filtering criteria and pagination parameters for moderation logs
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement as a GET operation on /moderation-logs path.
-   * Query the community_platform_moderation_logs table to retrieve moderation action logs.
-   * Return the logs with relevant fields such as id, moderator_id, post_id, comment_id, action_type, action_details, created_at, updated_at.
-   * Apply authorization checks to ensure only moderators or admins can access this data.
-   * Support filtering and pagination as needed (not shown here).
-   * No request body is used for GET.
-   * Response includes an array or paginated list of moderation log records formatted as ICommunityPlatformModerationLog.
+   * @x-autobe-specification Query community_platform_moderation_logs table to retrieve moderation action records with applied filters for moderator ID, action type, date range, and community ID.
+   * Implement pagination with offset and limit parameters for scalable result handling.
+   * Join with community_platform_moderators and community_platform_communities for enriched data including moderator display names and community names.
+   * Return paginated summary objects as IPageICommunityPlatformModerationLog.ISummary.
+   * Enforce authorization checking ensuring only moderators and admins can access.
+   * Validate filter inputs and handle invalid parameters gracefully.
+   * Log access events for auditing.
    *
-   * Handle errors gracefully for unauthorized access.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get()
-  public async get(
-    @AdminAuth()
-    admin: AdminPayload,
-  ): Promise<IPageICommunityPlatformModerationLog> {
-    try {
-      return await getCommunityPlatformAdminModerationLogs({
-        admin,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a paginated list of moderation logs capturing all moderation actions performed by community moderators.
-   *
-   * Each log entry records the moderator who performed the action, the target post or comment if applicable, the type of action (e.g., delete_post, ban_user), additional details about the action, and timestamps for creation, updates, and soft deletion from the `community_platform_moderation_logs` table.
-   *
-   * This API is primarily for administrative and auditing purposes to enable transparency and review of moderator activities across communities. It supports filtering by moderator, action type, and date ranges, allowing precise searching of relevant records.
-   *
-   * Only system administrators or privileged moderators should have access to this data given its sensitive nature.
-   *
-   * Moderators actions include removal of content, management of banned users, and resolution of user reports.
-   *
-   * The endpoint supports pagination for efficient retrieval of large volumes of logs, with search criteria provided in the request body.
-   *
-   * Related table: `community_platform_moderation_logs` with columns such as `id`, `moderator_id`, `post_id`, `comment_id`, `action_type`, `action_details`, `created_at`, `updated_at`, and `deleted_at`.
-   *
-   *
-   * @param connection
-   * @param body Filter criteria and pagination parameters for moderation logs search.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a service layer method that accepts filter criteria such as moderator_id, action_type, post_id, comment_id, and date ranges (created_at, updated_at).
-   * Perform paginated query on the community_platform_moderation_logs table applying these filters.
-   * Use prisma client with appropriate where conditions and pagination parameters.
-   * Ensure only authorized actors (system admins) can access this endpoint.
-   * Return paginated results with fields: id, moderator_id, post_id, comment_id, action_type, action_details, created_at, updated_at, deleted_at.
-   * Optimize with proper indexes on indexed columns: moderator_id, created_at, post_id, comment_id.
-   * Handle soft deletes by excluding records where deleted_at is not null unless explicitly requested.
-   * Use transaction if multiple queries are needed to ensure consistency.
+   * This is a read-only PATCH operation on the moderation logs resource, designed for administrative audit and review functions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async patch(
+  public async index(
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
@@ -101,53 +51,6 @@ export class CommunityplatformAdminModeration_logsController {
       return await patchCommunityPlatformAdminModerationLogs({
         admin,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information for a single moderation log entry by its unique ID.
-   *
-   * This operation provides essential audit details about moderation actions performed by moderators on posts or comments. The information includes the moderator who performed the action, the target post or comment (if applicable), the type of action, additional action details, and timestamps for creation and updates.
-   *
-   * Only authorized community moderators and admins should have access to this endpoint.
-   *
-   * The underlying database entity is the community_platform_moderation_logs table which stores all fields necessary for comprehensive auditing.
-   *
-   * This operation supports accountability and transparency by allowing retrieval of historical moderation actions.
-   *
-   * Related API operations include endpoints for managing moderators, posts, comments, and reports.
-   *
-   * @param connection
-   * @param moderationLogId Unique identifier of the moderation log entry
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the community_platform_moderation_logs table filtering by primary key 'id' = moderationLogId.
-   * Include related moderator information by joining community_platform_moderators on moderator_id.
-   * Include related post or comment details if post_id or comment_id are present.
-   * Return all fields including action_type, action_details, created_at, updated_at, and deleted_at.
-   * Apply authorization to allow only moderator and admin actors.
-   * Handle errors for non-existent IDs with 404 response.
-   *
-   * The endpoint is read-only; no request body is accepted.
-   *
-   * Ensure strict input validation on the path parameter (UUID format).
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":moderationLogId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("moderationLogId")
-    moderationLogId: string & tags.Format<"uuid">,
-  ): Promise<ICommunityPlatformModerationLog> {
-    try {
-      return await getCommunityPlatformAdminModerationLogsModerationLogId({
-        admin,
-        moderationLogId,
       });
     } catch (error) {
       console.log(error);

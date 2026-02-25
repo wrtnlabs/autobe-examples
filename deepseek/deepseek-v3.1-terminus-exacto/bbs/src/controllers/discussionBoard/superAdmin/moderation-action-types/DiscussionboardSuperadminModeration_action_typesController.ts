@@ -4,45 +4,44 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardModerationActionType } from "../../../../api/structures/IDiscussionBoardModerationActionType";
 import { IPageIDiscussionBoardModerationActionType } from "../../../../api/structures/IPageIDiscussionBoardModerationActionType";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
-import { getDiscussionBoardSuperAdminModerationActionTypesActionTypeId } from "../../../../providers/getDiscussionBoardSuperAdminModerationActionTypesActionTypeId";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
+import { deleteDiscussionBoardSuperAdminModerationActionTypesTypeId } from "../../../../providers/deleteDiscussionBoardSuperAdminModerationActionTypesTypeId";
+import { getDiscussionBoardSuperAdminModerationActionTypesTypeId } from "../../../../providers/getDiscussionBoardSuperAdminModerationActionTypesTypeId";
 import { patchDiscussionBoardSuperAdminModerationActionTypes } from "../../../../providers/patchDiscussionBoardSuperAdminModerationActionTypes";
 import { postDiscussionBoardSuperAdminModerationActionTypes } from "../../../../providers/postDiscussionBoardSuperAdminModerationActionTypes";
-import { putDiscussionBoardSuperAdminModerationActionTypesActionTypeId } from "../../../../providers/putDiscussionBoardSuperAdminModerationActionTypesActionTypeId";
+import { putDiscussionBoardSuperAdminModerationActionTypesTypeId } from "../../../../providers/putDiscussionBoardSuperAdminModerationActionTypesTypeId";
 
 @Controller("/discussionBoard/superAdmin/moderation-action-types")
 export class DiscussionboardSuperadminModeration_action_typesController {
   /**
-   * Create a new moderation action type definition for categorizing administrator moderation activities.
+   * Create a new moderation action type definition for the AnsBoard discussion platform.
    *
-   * This API operation enables super administrators to define new types of moderation actions that can be performed on the platform. Each moderation action type includes a unique code, descriptive name, category classification, severity level, and configuration flags that determine how the action type should be used.
+   * This API operation allows super administrators to define standardized moderation action types that can be used across the platform for consistent moderation tracking and reporting. Each moderation action type includes a unique code, descriptive name, category classification, severity level, and detailed usage instructions.
    *
-   * Moderation action types provide standardized categorization for all moderation activities across the system, ensuring consistent tracking, reporting, and enforcement of moderation policies. When creating a new action type, administrators must specify whether the action requires a reason, its severity level, and whether it should be active for immediate use.
+   * The operation validates that the provided code is unique across all existing moderation action types and ensures all required fields are properly formatted. Created moderation action types become immediately available for use in moderation workflows and audit logging.
    *
-   * This operation validates that the provided code is unique across all existing moderation action types and ensures that all required fields meet the specified constraints. The created moderation action type becomes immediately available for use in moderation workflows and audit logging.
+   * Security considerations require that only super administrators can create new moderation action types, as these definitions impact the entire moderation system and require careful governance. All creation activities are logged in the audit trail for compliance and oversight purposes.
    *
-   * The moderation action type system supports comprehensive content moderation capabilities by providing clear categorization and standardized handling of different types of administrative actions performed on user content and accounts.
+   * Related operations include viewing existing moderation action types via GET /moderation-action-types and updating existing definitions via PUT /moderation-action-types/{actionTypeCode}.
    *
    * @param connection
-   * @param body Moderation action type creation data
+   * @param body Creation data for a new moderation action type
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate the request body against the discussion_board_moderation_action_types schema constraints.
-   * Check for uniqueness of the 'code' field across existing moderation action types.
-   * Generate a UUID for the 'id' field if not provided.
-   * Set 'created_at' and 'updated_at' timestamps to current time.
-   * Insert the new moderation action type record into the database.
-   * Handle database constraints and validation errors appropriately.
-   * Return the complete created moderation action type entity.
-   * Ensure the operation is only accessible to authorized administrators.
-   * Implement proper error handling for duplicate codes and validation failures.
+   * @x-autobe-specification Validate the request body against the discussion_board_moderation_action_types table schema constraints.
+   * Ensure the code field is unique by querying existing records before creation.
+   * Set default values: created_at and updated_at to current timestamp, is_active to true if not specified.
+   * Perform business logic validation: code format, name length, description completeness.
+   * Create the new record in the discussion_board_moderation_action_types table.
+   * Return the complete created entity with all fields populated.
+   * Log the creation activity in the audit trail for super administrator actions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardModerationActionType.ICreate,
   ): Promise<IDiscussionBoardModerationActionType> {
@@ -58,27 +57,42 @@ export class DiscussionboardSuperadminModeration_action_typesController {
   }
 
   /**
-   * Search and retrieve a paginated list of moderation action types available on the discussion board platform.
+   * Retrieve a filtered and paginated list of moderation action types used across the discussion board platform.
    *
-   * This operation provides administrators with comprehensive filtering capabilities to explore the standardized moderation action types configured in the system. Administrators can filter by action category, severity level, active status, and search for specific action types by name or description.
+   * This operation provides administrators with comprehensive search capabilities to find specific moderation action types based on category, severity level, active status, and text matching. The response includes standardized action type information essential for moderation workflow configuration and reporting. The operation queries the `discussion_board_moderation_action_types` table which maintains consistent categorization for all moderation activities.
    *
-   * The response includes paginated results with essential action type information including unique code identifiers, descriptive names, categories, and severity levels. This enables administrators to understand available moderation capabilities and select appropriate action types when performing moderation activities.
+   * Administrators can use this endpoint to:
+   * - Browse available moderation actions by category
+   * - Filter by severity level for risk assessment
+   * - Search for specific action types by name or description
+   * - Configure moderation workflows based on available actions
+   * - Export moderation action catalogs for documentation
    *
-   * Security considerations: This operation should be accessible only to administrators and super administrators, as it exposes the complete set of moderation capabilities available on the platform. Regular users should not have access to moderation action type information.
-   *
-   * Related operations: Administrators may use this information when performing actual moderation actions through the moderation logs API or when configuring content moderation workflows.
+   * The operation supports advanced pagination with customizable page sizes and sorting options, making it suitable for both administrative interfaces and automated moderation systems. This reference data operation is essential for maintaining consistent moderation standards across the platform.
    *
    * @param connection
-   * @param body Filter criteria and pagination parameters for moderation action types
+   * @param body Search criteria and pagination parameters for moderation action types
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_moderation_action_types table with filtering on category, severity_level, is_active status, and search terms for name and description. Apply pagination with configurable page sizes. Use GIN indexes on name and description for efficient text searching. Return results sorted by code alphabetically for consistent ordering. Validate that all filter parameters are within allowed ranges and formats.
+   * @x-autobe-specification Query the discussion_board_moderation_action_types table with advanced filtering capabilities.
+   *
+   * Apply filters based on:
+   * - Category classification (e.g., 'content', 'user', 'system')
+   * - Severity level thresholds
+   * - Active/inactive status
+   * - Text search on name and description fields using trigram matching
+   * - Pagination with configurable page sizes
+   *
+   * Return results sorted by creation date descending by default, with option for alphabetical sorting.
+   * Use cursor-based pagination for efficient large result sets.
+   * Join with moderation logs if statistics are requested.
+   * Validate that all filter parameters exist in the database to prevent invalid queries.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardModerationActionType.IRequest,
   ): Promise<IPageIDiscussionBoardModerationActionType.ISummary> {
@@ -96,35 +110,41 @@ export class DiscussionboardSuperadminModeration_action_typesController {
   /**
    * Retrieve detailed information about a specific moderation action type by its unique identifier.
    *
-   * This operation provides administrators with complete access to moderation action type definitions stored in the discussion_board_moderation_action_types table. The returned data includes the unique action code, descriptive name, detailed explanation of when and how the action should be used, category classification, severity level, and operational status indicators.
+   * This API operation provides administrators with complete access to moderation action type definitions stored in the system. Each moderation action type represents a standardized category of administrative actions that can be performed on the platform, such as content deletion, user banning, or section management.
    *
-   * Moderation action types serve as standardized reference data that categorize all moderation activities performed on the platform. Administrators use this information to ensure consistent application of moderation policies and to understand the specific characteristics of each available action type. The data returned by this operation is essential for administrative reporting, audit trails, and ensuring uniform moderation practices across the system.
+   * The response includes comprehensive metadata including the action type's unique code, descriptive name, detailed explanation of when and how to use the action, category classification, severity level indicator, and operational status flags. This information is essential for administrators to understand the available moderation tools and their appropriate usage.
    *
-   * Security considerations require that only authenticated administrators should have access to moderation action type definitions, as this information pertains to internal platform governance and moderation workflows. The operation provides read-only access to ensure the integrity of the reference data maintained by system administrators.
-   *
-   * Related operations include listing all moderation action types via PATCH /moderation-action-types for browsing available options, and creating new action types via POST /moderation-action-types for system administrators managing the moderation framework.
+   * Related operations include listing all moderation action types via PATCH /moderation-action-types and creating new action types via POST /moderation-action-types for system administrators with appropriate privileges.
    *
    * @param connection
-   * @param actionTypeId Unique identifier of the moderation action type to retrieve
+   * @param typeId Unique identifier of the moderation action type to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_moderation_action_types table using the provided actionTypeId parameter. Validate that the ID exists and corresponds to a valid moderation action type record. Return the complete entity with all fields including id, code, name, description, category, severity_level, requires_reason, is_active, created_at, and updated_at. Ensure the response includes proper error handling for non-existent IDs and access control for administrator-only access.
+   * @x-autobe-specification Query the discussion_board_moderation_action_types table using the provided typeId parameter to retrieve a single moderation action type record.
+   *
+   * Validate that the typeId parameter is a valid UUID format before querying the database. If the ID format is invalid, return a 400 Bad Request error.
+   *
+   * Execute a SELECT query on the moderation_action_types table where id equals the provided typeId. Include all fields: id, code, name, description, category, severity_level, requires_reason, is_active, created_at, and updated_at.
+   *
+   * If no record is found with the specified ID, return a 404 Not Found response with an appropriate error message indicating the moderation action type does not exist.
+   *
+   * Ensure the response includes all available fields from the database record to provide comprehensive information about the moderation action type. The response should be cached appropriately to reduce database load for frequently accessed action types.
+   *
+   * Implement proper error handling for database connection issues or query failures, returning appropriate HTTP status codes and error messages to the client.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":actionTypeId")
+  @TypedRoute.Get(":typeId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("actionTypeId")
-    actionTypeId: string & tags.Format<"uuid">,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("typeId")
+    typeId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardModerationActionType> {
     try {
-      return await getDiscussionBoardSuperAdminModerationActionTypesActionTypeId(
-        {
-          superAdmin,
-          actionTypeId,
-        },
-      );
+      return await getDiscussionBoardSuperAdminModerationActionTypesTypeId({
+        superAdmin,
+        typeId,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -132,39 +152,77 @@ export class DiscussionboardSuperadminModeration_action_typesController {
   }
 
   /**
-   * Update an existing moderation action type configuration in the discussion board platform's moderation system.
+   * Update an existing moderation action type with new properties.
    *
-   * This API operation allows super administrators to modify the properties of moderation action types, which are standardized categories of administrative actions that can be performed on the platform. The system supports partial updates, meaning only the fields provided in the request body will be modified while preserving existing values for omitted fields. This operation is essential for maintaining the moderation system's flexibility as community standards evolve.
+   * This operation allows administrators to modify the configuration of moderation action types used throughout the platform. Administrators can update the action type's code, display name, description, category classification, severity level, and activation status. The update requires the unique identifier of the moderation action type to be specified in the path parameter.
    *
-   * Security considerations require that only authenticated super administrators can perform this operation, as moderation action types define the scope of administrative powers available to regular administrators. The system validates that the specified moderation action type exists and maintains data integrity by enforcing the unique code constraint defined in the discussion_board_moderation_action_types table schema. Field validations ensure that updates conform to the database schema's requirements for each property.
+   * All field validations are enforced during the update process, including uniqueness constraints for the action type code. The system automatically updates the modification timestamp to track when changes were made. This operation is essential for maintaining the moderation system's configuration and ensuring action types remain relevant as platform policies evolve.
    *
-   * This operation is typically used when platform administrators need to refine moderation workflows, update action descriptions for clarity, adjust severity classifications based on evolving community standards, or activate/deactivate specific action types. The updated record reflects all current field values including the automatically updated timestamp, providing administrators with complete visibility into the modification history of each action type configuration.
+   * Security considerations require that only authorized administrators can perform this operation. The system validates user permissions before allowing any modifications to moderation action types, which are critical components of the platform's content governance framework.
    *
    * @param connection
-   * @param actionTypeId Unique identifier of the moderation action type to update
-   * @param body Partial update data for the moderation action type
+   * @param typeId Unique identifier of the moderation action type to update
+   * @param body Updated properties for the moderation action type
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update an existing moderation action type record. Validate that the actionTypeId exists in the database. Apply partial updates to the allowed fields: code, name, description, category, severity_level, requires_reason, is_active. Ensure code uniqueness constraint is maintained. Update the updated_at timestamp automatically. Return the complete updated moderation action type record.
+   * @x-autobe-specification Update an existing moderation action type in the discussion_board_moderation_action_types table. Validate that the typeId exists before attempting update. Ensure the code remains unique across all moderation action types. Update the updated_at timestamp to reflect the modification time. Apply validation rules for field constraints including required fields and data formats. Return the complete updated entity with all fields populated.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":actionTypeId")
+  @TypedRoute.Put(":typeId")
   public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("actionTypeId")
-    actionTypeId: string & tags.Format<"uuid">,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("typeId")
+    typeId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardModerationActionType.IUpdate,
   ): Promise<IDiscussionBoardModerationActionType> {
     try {
-      return await putDiscussionBoardSuperAdminModerationActionTypesActionTypeId(
-        {
-          superAdmin,
-          actionTypeId,
-          body,
-        },
-      );
+      return await putDiscussionBoardSuperAdminModerationActionTypesTypeId({
+        superAdmin,
+        typeId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a moderation action type from the system.
+   *
+   * This operation allows administrators to delete specific moderation action types that are no longer needed or have become obsolete. Moderation action types define standardized categories of administrative actions that can be performed on the platform, such as content deletion, user banning, or comment moderation.
+   *
+   * When a moderation action type is deleted, it is permanently removed from the system and cannot be recovered. This operation should be used with caution as it may affect historical moderation logs that reference the deleted action type. Administrators should ensure that the action type is no longer in use before proceeding with deletion.
+   *
+   * The operation requires administrator privileges and performs validation to ensure the specified moderation action type exists before attempting deletion. If the action type is currently referenced by existing moderation logs or content moderation queues, the deletion may be prevented to maintain data integrity.
+   *
+   * Related operations include creating new moderation action types (POST /moderation-action-types) and viewing existing action types (PATCH /moderation-action-types for listing, GET /moderation-action-types/{typeId} for individual retrieval).
+   *
+   * @param connection
+   * @param typeId Unique identifier of the moderation action type to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Query the discussion_board_moderation_action_types table to verify the specified typeId exists.
+   * Check if the moderation action type is currently referenced by any moderation logs or content moderation queues to prevent orphaned references.
+   * Perform a hard delete operation to permanently remove the moderation action type record from the database.
+   * Validate administrator permissions before allowing the deletion operation.
+   * Return appropriate error responses if the moderation action type does not exist or cannot be deleted due to referential constraints.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":typeId")
+  public async erase(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("typeId")
+    typeId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardSuperAdminModerationActionTypesTypeId({
+        superAdmin,
+        typeId,
+      });
     } catch (error) {
       console.log(error);
       throw error;

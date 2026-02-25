@@ -18,10 +18,10 @@ export async function generate_random_discussion_board_super_admin_sections_imag
       sectionId: string;
     };
   },
-): Promise<IDiscussionBoardSectionImage> {
+): Promise<IDiscussionBoardSection.Image> {
   const prepared: IDiscussionBoardSectionImage.ICreate =
     prepare_random_discussion_board_section_image(props.body);
-  const result: IDiscussionBoardSectionImage =
+  const result: IDiscussionBoardSection.Image =
     await api.functional.discussionBoard.superAdmin.sections.images.create(
       connection,
       {

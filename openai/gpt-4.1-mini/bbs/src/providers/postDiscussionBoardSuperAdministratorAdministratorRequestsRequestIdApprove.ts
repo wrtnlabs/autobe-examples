@@ -15,29 +15,34 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardSuperAdministratorAdministratorRequestsRequestIdApprove(props: {
   superAdministrator: SuperadministratorPayload;
   requestId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardAdministratorRequest> {
-  const currentTimestamp: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    const existingRequest =
-      await tx.discussion_board_administrator_requests.findUnique({
-        where: { id: props.requestId },
-      });
-    if (!existingRequest) {
-      throw new HttpException("Administrator request not found", 404);
-    }
-    if (existingRequest.status !== "pending") {
-      throw new HttpException("Administrator request not pending", 400);
-    }
-    const updatedRequest =
-      await tx.discussion_board_administrator_requests.update({
-        where: { id: props.requestId },
-        data: {
-          status: "approved",
-          updated_at: currentTimestamp,
-        },
-      });
-    return updatedRequest;
+}): Promise<IDiscussionBoardAdministratorRequest.IApproveResponse> {
+  const existingRequest =
+    await MyGlobal.prisma.discussion_board_administrator_requests.findUnique({
+      where: { id: props.requestId },
+      select: { id: true, status: true, registered_user_id: true },
+    });
+  if (!existingRequest) {
+    throw new HttpException("Administrator request not found", 404);
+  }
+  if (existingRequest.status !== "pending") {
+    throw new HttpException("Administrator request is not pending", 400);
+  }
+  const isoNow: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.discussion_board_administrator_requests.update({
+      where: { id: props.requestId },
+      data: { status: "approved" },
+    });
+    await tx.discussion_board_administrators.create({
+      data: {
+        id: v4(),
+        grade: { connect: { id: "regular" } },
+        discussion_board_registered_user_id: existingRequest.registered_user_id,
+        created_at: isoNow,
+        updated_at: isoNow,
+        deleted_at: null,
+      },
+    });
   });
+  return { success: true };
 }

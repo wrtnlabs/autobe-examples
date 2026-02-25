@@ -1,4 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { IShoppingMallShipmentConfirmation } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentConfirmation";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,6 +12,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { ShoppingMallShipmentConfirmationCollector } from "../collectors/ShoppingMallShipmentConfirmationCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallShipmentConfirmationTransformer } from "../transformers/ShoppingMallShipmentConfirmationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,54 +20,62 @@ export async function postShoppingMallCustomerShipmentConfirmations(props: {
   customer: CustomerPayload;
   body: IShoppingMallShipmentConfirmation.ICreate;
 }): Promise<IShoppingMallShipmentConfirmation> {
-  const shipmentId = (props.body as any).shopping_mall_shipment_id;
-  if (typeof shipmentId !== "string") {
-    throw new HttpException("Invalid shopping mall shipment id", 400);
-  }
   const shipment = await MyGlobal.prisma.shopping_mall_shipments.findFirst({
     where: {
-      id: shipmentId,
+      id: props.body.shoppingMallShipmentId,
       deleted_at: null,
     },
   });
   if (!shipment) {
-    throw new HttpException("Shipment not found", 404);
+    throw new HttpException(
+      "Invalid shipment ID or shipment does not exist",
+      403,
+    );
   }
-  const existingConfirmation =
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findFirst({
-      where: {
-        shopping_mall_shipment_id: shipmentId,
-        deleted_at: null,
-      },
+  const shipmentOrderItemLinks =
+    await MyGlobal.prisma.shopping_mall_shipment_order_items.findMany({
+      where: { shopping_mall_shipment_id: shipment.id },
+      select: { shopping_mall_order_item_id: true },
     });
-  if (existingConfirmation) {
-    throw new HttpException("Shipment already confirmed", 409);
+  const orderItemIds = shipmentOrderItemLinks.map(
+    (link) => link.shopping_mall_order_item_id,
+  );
+  if (orderItemIds.length === 0) {
+    throw new HttpException("No order items linked to this shipment", 403);
   }
-  const confirmationInput =
-    await ShoppingMallShipmentConfirmationCollector.collect({
-      body: props.body,
-      shipment,
-      confirmedAt: (props.body as any).confirmed_at ?? null,
-    });
-  const created = await MyGlobal.prisma.$transaction(async (tx) => {
-    return await tx.shopping_mall_shipment_confirmations.create({
-      data: confirmationInput,
-    });
+  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+    where: { id: { in: orderItemIds } },
+    select: { id: true, shopping_mall_order_id: true },
   });
-  return {
-    id: created.id as string & tags.Format<"uuid">,
-    shopping_mall_shipment_id: created.shopping_mall_shipment_id as string &
-      tags.Format<"uuid">,
-    confirmed_at: toISOStringSafe(created.confirmed_at) as string &
-      tags.Format<"date-time">,
-    created_at: toISOStringSafe(created.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(created.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at:
-      created.deleted_at === null
-        ? null
-        : (toISOStringSafe(created.deleted_at) as string &
-            tags.Format<"date-time">),
-  };
+  if (orderItems.length === 0) {
+    throw new HttpException(
+      "No valid order items found for this shipment",
+      403,
+    );
+  }
+  const orderIds = Array.from(
+    new Set(orderItems.map((item) => item.shopping_mall_order_id)),
+  );
+  const orders = await MyGlobal.prisma.shopping_mall_orders.findMany({
+    where: {
+      id: { in: orderIds },
+      shopping_mall_customer_id: props.customer.id,
+    },
+    select: { id: true },
+  });
+  if (orders.length === 0) {
+    throw new HttpException(
+      "You are not authorized to confirm this shipment",
+      403,
+    );
+  }
+  const createData = await ShoppingMallShipmentConfirmationCollector.collect({
+    body: props.body,
+  });
+  const created =
+    await MyGlobal.prisma.shopping_mall_shipment_confirmations.create({
+      data: createData,
+      ...ShoppingMallShipmentConfirmationTransformer.select(),
+    });
+  return await ShoppingMallShipmentConfirmationTransformer.transform(created);
 }

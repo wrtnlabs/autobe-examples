@@ -7,29 +7,19 @@ import { IDiscussionBoardSuperAdmin } from "../../../structures/IDiscussionBoard
 import { IPageIDiscussionBoardSuperAdmin } from "../../../structures/IPageIDiscussionBoardSuperAdmin";
 
 /**
- * Retrieve a filtered and paginated list of super administrator accounts with comprehensive search capabilities.
+ * Retrieve a paginated and filtered list of super administrator accounts with comprehensive search and filtering capabilities.
  *
- * This operation provides administrators with the ability to search and filter super administrator accounts based on various criteria including email patterns, privilege levels, and account creation date ranges. The search functionality supports partial matching, exact filtering, and date-based queries to help administrators efficiently manage super administrator accounts across the platform.
+ * This operation provides super administrators with the ability to search and filter through all super administrator accounts in the system. It supports advanced search capabilities including email pattern matching, privilege level filtering, and creation date ranges. The response provides summarized information optimized for list displays and administrative oversight.
  *
- * Super administrators have elevated privileges including the ability to promote/demote other administrators and manage system-wide settings. This operation allows authorized administrators to monitor and review the super administrator population for security and compliance purposes. The search results include essential account information while maintaining security by excluding sensitive authentication details.
+ * Security considerations require that only super administrators can access this endpoint to maintain the integrity of the administrator hierarchy. The operation includes comprehensive pagination support with configurable page sizes and sorting options to handle large datasets efficiently.
  *
- * The operation implements comprehensive pagination with configurable page sizes and sorting options to handle large result sets efficiently. Response includes summary information optimized for administrative review and account management workflows.
- *
- * Security considerations require that only authorized administrators with appropriate privileges can access this operation. The system validates user permissions before processing search requests and ensures that sensitive account information is properly protected according to platform security policies.
+ * This operation is essential for administrator management workflows, allowing super administrators to monitor account activity, identify patterns, and perform administrative oversight. It complements other administrator management operations in the system by providing the foundational search functionality needed for effective user management.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for super administrator accounts
+ * @param props.body Search criteria and pagination parameters for filtering super administrator accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the discussion_board_super_admins table with advanced filtering capabilities. Implement search functionality that supports partial email matching using LIKE operations with wildcards. Filter by privilege level using exact matching for administrative role management.
- *
- * Apply date range filtering on created_at field to support temporal queries for account creation patterns. Implement comprehensive pagination using cursor-based or offset-based approach depending on result set size. Include sorting options by creation date (newest/oldest first) and privilege level hierarchy.
- *
- * Validate all search parameters to prevent SQL injection and ensure data integrity. Implement rate limiting to prevent abuse of search functionality. Return appropriate error responses for invalid search criteria or permission violations.
- *
- * Join with related tables if needed for additional context, but focus primarily on the core super administrator account information. Ensure the response includes all necessary fields for administrative review while excluding sensitive authentication data.
- *
- * Handle edge cases such as empty result sets, invalid search parameters, and permission errors gracefully. Provide clear error messages and guidance for proper usage of the search functionality.
+ * @x-autobe-specification Query the discussion_board_super_admins table with support for multiple filter criteria including email pattern matching, privilege level filtering, and date range searches. Implement cursor-based pagination for efficient large dataset handling. Apply soft-delete filtering to exclude deleted accounts by default unless explicitly included. Validate that the requesting user has super administrator privileges before allowing access to the results. Return summarized information including email, privilege level, and creation timestamps for efficient list displays.
  * @path /discussionBoard/super-admins
  * @accessor api.functional.discussionBoard.super_admins.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -59,7 +49,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for super administrator accounts
+     * Search criteria and pagination parameters for filtering super administrator accounts
      */
     body: IDiscussionBoardSuperAdmin.IRequest;
   };
@@ -108,19 +98,19 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific super administrator account.
+ * Retrieve detailed information about a specific super administrator account.
  *
- * This operation returns the complete profile information for a super administrator identified by their unique UUID. The response includes the administrator's email address, privilege level, and account timestamps. Password hash information is excluded from the response for security reasons.
+ * This operation provides access to super administrator account details for administrative management purposes. Super administrators represent the highest privilege level in the discussion board system with capabilities to promote/demote other administrators, manage system-wide settings, and perform all administrative functions.
  *
- * Super administrators represent the highest privilege level in the system with capabilities to promote/demote other administrators, manage system-wide settings, and perform all administrative functions. This operation provides access to their account details while maintaining security by excluding sensitive authentication information.
+ * Access to this operation requires proper authentication and authorization checks. The operation performs a database lookup using the provided super administrator ID and returns the complete entity record from the discussion_board_super_admins table.
  *
- * Use this operation when you need to retrieve specific super administrator information for administrative purposes or account management workflows. The operation requires valid authentication and appropriate permissions to access super administrator records.
+ * This operation is essential for administrator management workflows where detailed account information is required for promotion/demotion decisions or system auditing. The response includes all relevant super administrator fields providing a complete view of the administrator account.
  *
  * @param props.connection
  * @param props.superAdminId Unique identifier of the super administrator to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the discussion_board_super_admins table by the provided superAdminId UUID parameter. Return all fields except password_hash for security. Include created_at, updated_at, and deleted_at timestamps. Handle cases where the super admin doesn't exist by returning appropriate error response.
+ * @x-autobe-specification Query the discussion_board_super_admins table using the provided superAdminId parameter. Perform authorization checks to ensure the requesting user has appropriate administrator privileges. Return the complete super administrator entity with all fields including email, privilege_level, and temporal metadata. Handle cases where the super administrator ID does not exist by returning appropriate error responses.
  * @path /discussionBoard/super-admins/:superAdminId
  * @accessor api.functional.discussionBoard.super_admins.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

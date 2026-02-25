@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPrincipal } from "@ORGANIZATION/PROJECT-api/lib/structures/IPrincipal";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -14,40 +15,22 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getTodoAppUserTodosTodoId(props: {
   user: UserPayload;
-  todoId: string;
+  todoId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppTodo> {
-  const todo = await MyGlobal.prisma.todo_app_todos.findUnique({
+  const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
     where: {
       id: props.todoId,
       todo_app_user_id: props.user.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      todo_app_user_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      title: true,
-      description: true,
-      start_date: true,
-      due_date: true,
-      is_completed: true,
     },
   });
-  if (!todo) {
-    throw new HttpException("Todo not found", 404);
-  }
-  return {
+  const transformed: any = {
     id: todo.id,
-    user_id: todo.todo_app_user_id,
-    created_at: todo.created_at,
-    updated_at: todo.updated_at,
-    deleted_at: todo.deleted_at ? todo.deleted_at : undefined,
     title: todo.title,
     description: todo.description,
-    start_date: todo.start_date,
-    due_date: todo.due_date,
-    is_completed: todo.is_completed,
+    completed: todo.is_complete,
+    createdAt: todo.created_at ? toISOStringSafe(todo.created_at) : null,
+    updatedAt: todo.updated_at ? toISOStringSafe(todo.updated_at) : null,
+    todoAppUserId: todo.todo_app_user_id,
   };
+  return transformed;
 }

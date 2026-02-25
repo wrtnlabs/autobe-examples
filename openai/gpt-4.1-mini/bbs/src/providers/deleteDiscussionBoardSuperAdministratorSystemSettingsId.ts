@@ -15,14 +15,10 @@ export async function deleteDiscussionBoardSuperAdministratorSystemSettingsId(pr
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const existing =
-    await MyGlobal.prisma.discussion_board_system_settings.findUnique({
-      where: { id: props.id },
-    });
-  if (!existing) throw new HttpException("System setting not found", 404);
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.discussion_board_system_settings.delete({
-      where: { id: props.id },
-    });
+  await MyGlobal.prisma.discussion_board_system_settings.findUniqueOrThrow({
+    where: { id: props.id },
+  });
+  await MyGlobal.prisma.discussion_board_system_settings.delete({
+    where: { id: props.id },
   });
 }

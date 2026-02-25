@@ -21,73 +21,64 @@ export async function patchDiscussionBoardAdminBansBanIdAppeals(props: {
   banId: string & tags.Format<"uuid">;
   body: IDiscussionBoardBanAppeal.IUpdate;
 }): Promise<IDiscussionBoardBanAppeal> {
-  // First verify the ban record exists
-  const banRecord =
-    await MyGlobal.prisma.discussion_board_ban_records.findUnique({
-      where: { id: props.banId },
-    });
-  if (!banRecord) {
-    throw new HttpException("Ban record not found", 404);
-  }
-  // Find the appeal record linked to this ban
-  const appeal = await MyGlobal.prisma.discussion_board_ban_appeals.findFirst({
-    where: {
-      discussion_board_ban_record_id: props.banId,
-      deleted_at: null,
-    },
-    ...DiscussionBoardBanAppealTransformer.select(),
+  // Verify admin exists
+  const admin = await MyGlobal.prisma.discussion_board_admins.findFirstOrThrow({
+    where: { id: props.admin.id, deleted_at: null },
   });
-  if (!appeal) {
+  // Find appeal by ban ID
+  const existingAppeal =
+    await MyGlobal.prisma.discussion_board_ban_appeals.findFirst({
+      where: {
+        discussion_board_ban_record_id: props.banId,
+        deleted_at: null,
+      },
+      select: { id: true, status: true },
+    });
+  if (!existingAppeal) {
     throw new HttpException("Ban appeal not found", 404);
   }
-  // Validate workflow state transitions
-  const currentStatus = appeal.status;
-  const newStatus = props.body.status ?? currentStatus;
-  // Valid status transitions
-  const validTransitions: Record<string, string[]> = {
-    pending: ["under_review"],
-    under_review: ["approved", "rejected"],
-    approved: [],
-    rejected: [],
-  };
-  if (props.body.status && currentStatus !== props.body.status) {
-    if (!validTransitions[currentStatus]?.includes(props.body.status)) {
-      throw new HttpException(
-        `Invalid status transition from ${currentStatus} to ${props.body.status}`,
-        400,
-      );
-    }
-  }
-  // Prepare update data with proper Prisma types
-  const updateData: Prisma.discussion_board_ban_appealsUpdateInput = {
-    status: newStatus,
-    decision_reason: props.body.decision_reason ?? appeal.decision_reason,
-    updated_at: toISOStringSafe(new Date()),
-  };
-  // If status is changing to approved or rejected, set reviewer and reviewed_at
+  // Validate status transition
   if (
-    props.body.status &&
-    ["approved", "rejected"].includes(props.body.status)
+    existingAppeal.status === "approved" ||
+    existingAppeal.status === "rejected"
   ) {
-    updateData.reviewer = { connect: { id: props.admin.id } };
-    updateData.reviewed_at = toISOStringSafe(new Date());
-    // Validate decision_reason is provided for approved/rejected status
-    if (
-      !props.body.decision_reason ||
-      props.body.decision_reason.trim().length === 0
-    ) {
-      throw new HttpException(
-        "Decision reason is required when approving or rejecting an appeal",
-        400,
-      );
-    }
+    throw new HttpException("Cannot update already decided appeal", 400);
   }
-  // Update the appeal record
-  const updatedAppeal =
-    await MyGlobal.prisma.discussion_board_ban_appeals.update({
-      where: { id: appeal.id },
-      data: updateData,
+  // Validate decision reason requirement
+  if (
+    (props.body.status === "approved" || props.body.status === "rejected") &&
+    (!props.body.decision_reason ||
+      props.body.decision_reason.trim().length === 0)
+  ) {
+    throw new HttpException(
+      "Decision reason required for approval/rejection",
+      400,
+    );
+  }
+  // Prepare update data
+  const updateData = {
+    updated_at: new Date().toISOString(),
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.decision_reason !== undefined && {
+      decision_reason: props.body.decision_reason,
+    }),
+    ...(props.body.status &&
+      props.body.status !== existingAppeal.status && {
+        reviewed_at: new Date().toISOString(),
+        discussion_board_admin_id: props.admin.id,
+      }),
+  };
+  await MyGlobal.prisma.discussion_board_ban_appeals.update({
+    where: { id: existingAppeal.id },
+    data: updateData,
+  });
+  // Get full transformed response
+  const appealWithRelations =
+    await MyGlobal.prisma.discussion_board_ban_appeals.findUniqueOrThrow({
+      where: { id: existingAppeal.id },
       ...DiscussionBoardBanAppealTransformer.select(),
     });
-  return await DiscussionBoardBanAppealTransformer.transform(updatedAppeal);
+  return await DiscussionBoardBanAppealTransformer.transform(
+    appealWithRelations,
+  );
 }

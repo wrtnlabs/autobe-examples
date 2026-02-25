@@ -15,10 +15,10 @@ export namespace TodoAppTrashCleanupLogAtSummaryTransformer {
       select: {
         id: true,
         operation_type: true,
-        operation_status: true,
         items_processed: true,
         items_deleted: true,
         cleanup_criteria: true,
+        operation_status: true,
         error_message: true,
         started_at: true,
         completed_at: true,
@@ -34,9 +34,10 @@ export namespace TodoAppTrashCleanupLogAtSummaryTransformer {
     return {
       id: input.id,
       operation_type: input.operation_type,
-      operation_status: input.operation_status,
       items_processed: input.items_processed,
       items_deleted: input.items_deleted,
+      cleanup_criteria: input.cleanup_criteria,
+      operation_status: input.operation_status,
       started_at: input.started_at.toISOString(),
       completed_at: input.completed_at
         ? input.completed_at.toISOString()

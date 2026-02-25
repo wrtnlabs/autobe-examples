@@ -1,5 +1,5 @@
 import { IDiscussionBoardBanDuration } from "./IDiscussionBoardBanDuration";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
 
 export namespace IPageIDiscussionBoardBanDuration {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardBanDuration {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardSection.IPagination;
 
     /**
      * List of records.

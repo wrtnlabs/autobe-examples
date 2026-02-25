@@ -13,67 +13,83 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthAdminJoin(props: {
+  ip: string;
   body: IShoppingMallAdmin.IJoin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  // 1. Check for duplicate admin email (collector has already processed this)
+  // 1. Check duplicate admin email
   const existing = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: { email: "" }, // We don't know the email, but collector has already created the admin record
+    where: { email: props.body.email },
   });
   if (existing) throw new HttpException("Email already registered", 409);
-  // 2. Create admin record with only schema-defined fields
-  const createdAdmin = await MyGlobal.prisma.shopping_mall_admins.create({
+  // 2. Create admin record
+  const admin = await MyGlobal.prisma.shopping_mall_admins.create({
     data: {
-      id: v4(),
-      email: "", // collector injected
-      password_hash: "", // collector injected
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      id: v4() as string & tags.Format<"uuid">,
+      email: props.body.email,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      is_active: true,
+      status: "active",
+      created_at: toISOStringSafe(new Date()) as string &
+        tags.Format<"date-time">,
+      updated_at: toISOStringSafe(new Date()) as string &
+        tags.Format<"date-time">,
+      deleted_at: null,
+      suspended_at: null,
     },
   });
-  // 3. Create session record with only schema-defined fields - NO refreshable_until
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 30 * 60 * 1000));
+  // 3. Create admin session
+  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
-      id: sessionId,
-      admin_id: createdAdmin.id,
-      ip: "",
+      id: v4() as string & tags.Format<"uuid">,
+      shopping_mall_admin_id: admin.id,
+      ip: props.ip ?? "",
       href: "",
-      referrer: "",
-      created_at: toISOStringSafe(new Date()),
-      expired_at: accessExpires,
+      referrer: null,
+      created_at: toISOStringSafe(new Date()) as string &
+        tags.Format<"date-time">,
+      expired_at: toISOStringSafe(accessExpires) as string &
+        tags.Format<"date-time">,
     },
   });
-  // 4. Generate JWT tokens - refreshable_until is part of the token response, not session table
-  const tokenPayload = {
-    type: "admin" as const,
-    id: createdAdmin.id as string & tags.Format<"uuid">,
-    session_id: sessionId,
-    created_at: toISOStringSafe(new Date()),
-  };
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  // 4. Generate JWT tokens
+  const access: string = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      created_at: toISOStringSafe(new Date()) as string &
+        tags.Format<"date-time">,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "30m", issuer: "autobe" },
   );
-  const token = {
-    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "30m",
-      issuer: "autobe",
-    }),
-    refresh: jwt.sign(
-      {
-        ...tokenPayload,
-        tokenType: "refresh" as const,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "30d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires, // This is correct in the token response, even if not in the session table
+  const refresh: string = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()) as string &
+        tags.Format<"date-time">,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "30d", issuer: "autobe" },
+  );
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
   };
-  // 5. Return IAuthorized
+  // 5. Return IAuthorized structure
   return {
-    access: token.access,
-    refresh: token.refresh,
-    token: token,
+    access_token: access,
+    refresh_token: refresh,
+    admin_id: admin.id,
+    token,
   } satisfies IShoppingMallAdmin.IAuthorized;
 }

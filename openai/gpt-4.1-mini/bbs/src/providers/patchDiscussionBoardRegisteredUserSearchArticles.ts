@@ -1,4 +1,7 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardArticle";
@@ -18,116 +21,189 @@ export async function patchDiscussionBoardRegisteredUserSearchArticles(props: {
   registeredUser: RegistereduserPayload;
   body: IDiscussionBoardArticle.IRequest;
 }): Promise<IPageIDiscussionBoardArticle.ISummary> {
-  const page =
-    typeof (props.body as any).page === "number" && (props.body as any).page > 0
-      ? (props.body as any).page
-      : 1;
-  const limit =
-    typeof (props.body as any).limit === "number" &&
-    (props.body as any).limit > 0
-      ? (props.body as any).limit
-      : 10;
-  const offset = (page - 1) * limit;
-  const prisma = MyGlobal.prisma;
-  const text =
-    typeof (props.body as any).text === "string" &&
-    (props.body as any).text.trim() !== ""
-      ? (props.body as any).text.trim()
-      : null;
-  const tags =
-    Array.isArray((props.body as any).tags) &&
-    (props.body as any).tags.length > 0
-      ? (props.body as any).tags
-      : null;
-  const textSearchCondition = text
-    ? `to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)`
-    : "true";
-  const tagsFilterCondition = tags
-    ? `exists(
-      select 1 from discussion_board_article_tag_mappings
-       join discussion_board_tags on discussion_board_article_tag_mappings.discussion_board_tag_id = discussion_board_tags.id
-      where discussion_board_article_tag_mappings.discussion_board_article_id = articles.id
-        and discussion_board_tags.name = ANY($2::text[])
-    )`
-    : "true";
-  const articlesQuery = `
-    select
-      articles.id,
-      articles.registered_user_id,
-      articles.section_id,
-      articles.title,
-      articles.content,
-      articles.created_at,
-      articles.updated_at,
-      articles.deleted_at,
-      coalesce(array(
-        select discussion_board_tags.name
-        from discussion_board_article_tag_mappings
-        join discussion_board_tags on discussion_board_article_tag_mappings.discussion_board_tag_id = discussion_board_tags.id
-        where discussion_board_article_tag_mappings.discussion_board_article_id = articles.id
-      ), '{}') as tag_names
-    from discussion_board_articles articles
-    where articles.deleted_at is null
-      and ${textSearchCondition}
-      and ${tagsFilterCondition}
-    order by articles.created_at desc
-    limit $3 offset $4
-  `;
-  const countQuery = `
-    select count(*) as count from discussion_board_articles articles
-    where articles.deleted_at is null
-      and ${textSearchCondition}
-      and ${tagsFilterCondition}
-  `;
-  const articlesRaw = (await prisma.$queryRawUnsafe(
-    articlesQuery,
-    text ?? "",
-    tags ?? [],
-    limit,
-    offset,
-  )) as {
-    id: string & tags.Format<"uuid">;
-    registered_user_id: string & tags.Format<"uuid">;
-    section_id: string & tags.Format<"uuid">;
-    title: string;
-    content: string;
-    created_at: string & tags.Format<"date-time">;
-    updated_at: string & tags.Format<"date-time">;
-    deleted_at: (string & tags.Format<"date-time">) | null;
-    tag_names: string[] | null;
-  }[];
-  const countRaw = (await prisma.$queryRawUnsafe(
-    countQuery,
-    text ?? "",
-    tags ?? [],
-  )) as {
-    count: string;
-  }[];
-  const totalRecords =
-    countRaw.length === 1 ? parseInt(countRaw[0].count, 10) : 0;
-  const data = articlesRaw.map((record) => {
-    const tagsList = record.tag_names ?? [];
-    return {
-      id: record.id,
-      registered_user_id: record.registered_user_id,
-      section_id: record.section_id,
-      title: record.title,
-      content: record.content,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-      deleted_at:
-        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-      tags: tagsList,
-    };
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const searchText = props.body.search?.trim();
+  const tagsFilter = props.body.tags;
+  const sectionFilter = props.body.sectionId;
+  const sortOrder = props.body.sort === "oldest" ? "asc" : "desc";
+  if (page < 1) {
+    throw new HttpException(`Invalid page number: ${page}`, 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw new HttpException(`Invalid limit: ${limit}`, 400);
+  }
+  const where: Prisma.discussion_board_articlesWhereInput = {
+    deleted_at: null,
+  };
+  if (searchText) {
+    where.OR = [
+      { title: { contains: searchText, mode: "insensitive" } },
+      { content: { contains: searchText, mode: "insensitive" } },
+    ];
+  }
+  if (sectionFilter) {
+    where.section_id = sectionFilter;
+  }
+  if (tagsFilter && tagsFilter.length > 0) {
+    where.AND = tagsFilter.map((tagId) => ({
+      tagMappings: {
+        some: {
+          discussion_board_tag_id: tagId,
+          deleted_at: null,
+        },
+      },
+    }));
+  }
+  const skip = (page - 1) * limit;
+  const orderBy: Prisma.discussion_board_articlesOrderByWithRelationInput = {
+    created_at: sortOrder,
+  };
+  // Remove 'description' from tag select
+  const articles = await MyGlobal.prisma.discussion_board_articles.findMany({
+    where,
+    orderBy,
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      title: true,
+      author: {
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          bio: true,
+          is_banned: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      },
+      section: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      },
+      _count: {
+        select: { articleTags: true },
+      },
+      articleTags: {
+        select: {
+          id: true,
+          discussion_board_article_id: true,
+          discussion_board_tag_id: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      created_at: true,
+    },
   });
-  const pagination = {
-    current: page,
-    limit,
-    records: totalRecords,
-    pages: totalRecords === 0 ? 0 : Math.ceil(totalRecords / limit),
-  };
+  const total = await MyGlobal.prisma.discussion_board_articles.count({
+    where,
+  });
+  const data = await Promise.all(
+    articles.map(async (article) => {
+      // Due to Prisma typing issues, locally type article
+      type Article = typeof article & {
+        author: {
+          id: string;
+          email: string;
+          display_name: string;
+          bio: string | null;
+          is_banned: boolean;
+          created_at: Date;
+          updated_at: Date;
+          deleted_at: Date | null;
+        };
+        section: {
+          id: string;
+          name: string;
+          description: string | null;
+          created_at: Date;
+          updated_at: Date;
+          deleted_at: Date | null;
+        };
+        _count: {
+          articleTags: number;
+        };
+        articleTags: {
+          id: string;
+          discussion_board_article_id: string;
+          discussion_board_tag_id: string;
+          created_at: Date;
+          updated_at: Date;
+          deleted_at: Date | null;
+          tag: {
+            id: string;
+            name: string;
+          };
+        }[];
+      };
+      const art = article as Article;
+      return {
+        id: art.id,
+        title: art.title,
+        author: {
+          id: art.author.id,
+          email: art.author.email,
+          displayName: art.author.display_name,
+          bio: art.author.bio ?? null,
+          isBanned: art.author.is_banned,
+          createdAt: toISOStringSafe(art.author.created_at),
+          updatedAt: toISOStringSafe(art.author.updated_at),
+          deletedAt: art.author.deleted_at
+            ? toISOStringSafe(art.author.deleted_at)
+            : null,
+        } satisfies IDiscussionBoardRegisteredUser.ISummary,
+        section: {
+          id: art.section.id,
+          name: art.section.name,
+          description: art.section.description,
+          createdAt: toISOStringSafe(art.section.created_at),
+          updatedAt: toISOStringSafe(art.section.updated_at),
+          deletedAt: art.section.deleted_at
+            ? toISOStringSafe(art.section.deleted_at)
+            : null,
+        } satisfies IDiscussionBoardSection.ISummary,
+        commentCount: art._count.articleTags,
+        tags: art.articleTags.map(
+          (tag) =>
+            ({
+              id: tag.tag.id,
+              discussionBoardArticleId: tag.discussion_board_article_id,
+              discussionBoardTagId: tag.discussion_board_tag_id,
+              createdAt: toISOStringSafe(tag.created_at),
+              updatedAt: toISOStringSafe(tag.updated_at),
+              deletedAt: tag.deleted_at
+                ? toISOStringSafe(tag.deleted_at)
+                : null,
+            }) satisfies IDiscussionBoardArticleTag.ISummary,
+        ),
+        createdAt: toISOStringSafe(art.created_at),
+      };
+    }),
+  );
   return {
-    pagination,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: total > 0 ? Math.ceil(total / limit) : 0,
+    },
     data,
-  };
+  } satisfies IPageIDiscussionBoardArticle.ISummary;
 }

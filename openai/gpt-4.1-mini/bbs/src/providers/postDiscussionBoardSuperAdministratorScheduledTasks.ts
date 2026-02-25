@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardScheduledTaskCollector } from "../collectors/DiscussionBoardScheduledTaskCollector";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardScheduledTaskTransformer } from "../transformers/DiscussionBoardScheduledTaskTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,56 +18,41 @@ export async function postDiscussionBoardSuperAdministratorScheduledTasks(props:
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardScheduledTask.ICreate;
 }): Promise<IDiscussionBoardScheduledTask> {
-  // Check uniqueness of task_name
+  const { body } = props;
+  // Check taskName uniqueness
   const existing =
     await MyGlobal.prisma.discussion_board_scheduled_tasks.findUnique({
-      where: { task_name: (props.body as any).task_name },
+      where: { task_name: body.taskName },
+      select: { id: true },
     });
-  if (existing) {
-    throw new HttpException("Task name already exists", 400);
+  if (existing !== null) {
+    throw new HttpException("Task name must be unique", 409);
   }
-  // Validate schedule_pattern format (cron with exactly 5 fields)
-  const schedulePattern = (props.body as any).schedule_pattern;
-  if (
-    typeof schedulePattern !== "string" ||
-    schedulePattern.trim().split(/\s+/).length !== 5
-  ) {
-    throw new HttpException(
-      "Invalid schedule pattern format: must have 5 fields",
-      400,
-    );
+  // Validate cron expression
+  const isValidCron = (function isValidCronExpression(expr: string): boolean {
+    try {
+      // Lightweight cron validation, supports 5-field crons
+      // Reject unsupported cron expressions
+      const parts = expr.trim().split(/\s+/);
+      return (
+        parts.length >= 5 &&
+        parts.length <= 7 &&
+        parts.every((p) => p.length > 0)
+      );
+    } catch {
+      return false;
+    }
+  })(body.schedulePattern);
+  if (!isValidCron) {
+    throw new HttpException("Invalid schedule pattern (cron syntax)", 400);
   }
-  // Prepare full body for collector with exact required properties
-  const createBody = {
-    task_name: (props.body as any).task_name,
-    schedule_pattern: schedulePattern,
-    last_run_at: null as Date | null, // default null as not provided
-    status: "pending" as
-      | "pending"
-      | "in_progress"
-      | "completed"
-      | "failed"
-      | "cancelled",
-  };
-  // Use collector to prepare prisma create input
-  const createData = await DiscussionBoardScheduledTaskCollector.collect({
-    body: createBody,
-  });
-  // Transactional create
-  const created = await MyGlobal.prisma.$transaction(async (tx) =>
-    tx.discussion_board_scheduled_tasks.create({ data: createData }),
+  // Collect data for insertion
+  const data = await DiscussionBoardScheduledTaskCollector.collect({ body });
+  const created = await MyGlobal.prisma.discussion_board_scheduled_tasks.create(
+    {
+      data,
+      ...DiscussionBoardScheduledTaskTransformer.select(),
+    },
   );
-  // Return converted created record
-  return {
-    id: created.id,
-    task_name: created.task_name,
-    schedule_pattern: created.schedule_pattern,
-    last_run_at: created.last_run_at
-      ? toISOStringSafe(created.last_run_at)
-      : null,
-    status: created.status,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
-  };
+  return DiscussionBoardScheduledTaskTransformer.transform(created);
 }

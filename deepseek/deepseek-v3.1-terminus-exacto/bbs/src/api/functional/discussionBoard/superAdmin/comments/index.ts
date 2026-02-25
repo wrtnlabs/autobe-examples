@@ -1,1 +1,1 @@
-export * as moderations from "./moderations/index";
+export * as analytics from "./analytics/index";

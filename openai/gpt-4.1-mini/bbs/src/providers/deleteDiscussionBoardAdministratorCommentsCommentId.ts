@@ -15,13 +15,9 @@ export async function deleteDiscussionBoardAdministratorCommentsCommentId(props:
   administrator: AdministratorPayload;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const comment = await MyGlobal.prisma.discussion_board_comments.findUnique({
+  await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
     where: { id: props.commentId },
   });
-  if (comment === null) {
-    throw new HttpException("Comment not found", 404);
-  }
-  // The administrator is authorized to delete any comment
   await MyGlobal.prisma.discussion_board_comments.delete({
     where: { id: props.commentId },
   });

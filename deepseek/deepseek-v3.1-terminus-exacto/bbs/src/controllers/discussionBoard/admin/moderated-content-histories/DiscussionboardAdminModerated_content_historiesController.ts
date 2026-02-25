@@ -1,28 +1,35 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IDiscussionBoardModeratedContentHistory } from "../../../../api/structures/IDiscussionBoardModeratedContentHistory";
 import { IPageIDiscussionBoardModeratedContentHistory } from "../../../../api/structures/IPageIDiscussionBoardModeratedContentHistory";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminModeratedContentHistoriesHistoryId } from "../../../../providers/getDiscussionBoardAdminModeratedContentHistoriesHistoryId";
 import { patchDiscussionBoardAdminModeratedContentHistories } from "../../../../providers/patchDiscussionBoardAdminModeratedContentHistories";
 
 @Controller("/discussionBoard/admin/moderated-content-histories")
 export class DiscussionboardAdminModerated_content_historiesController {
   /**
-   * Search and retrieve moderation history records with comprehensive filtering capabilities.
+   * Search and retrieve a paginated list of moderated content history records with filtering capabilities.
    *
-   * This operation provides administrators with access to the complete audit trail of moderation activities performed on the platform. It enables filtering by content type, moderator identity, date ranges, and search terms within moderation reasons and original content. The response includes paginated results with moderation event details including the type of content moderated, the action taken, the moderator responsible, and timestamps.
+   * This operation provides comprehensive search functionality for moderation audit trails, allowing administrators to review moderation actions performed on articles and comments. The search supports filtering by content type (article or comment), moderator identity, date ranges, moderation action types, and keyword searches within moderation reasons and original content.
    *
-   * Administrators can use this operation to review moderation practices, investigate specific incidents, and ensure compliance with platform guidelines. The search functionality supports complex filtering criteria to help administrators quickly locate relevant moderation events for review and analysis.
+   * The response includes paginated results with moderation summary information, enabling efficient review of moderation activities for compliance and accountability purposes. Administrators can use this operation to monitor moderation patterns, investigate specific incidents, and ensure consistent application of community standards.
+   *
+   * Security considerations require administrator-level access to view moderation history records. The operation integrates with the discussion_board_moderated_content_histories table which maintains comprehensive audit trails of all moderation activities, including references to moderated articles, comments, and the administrators who performed the actions.
    *
    * @param connection
-   * @param body Search criteria for moderation history records
+   * @param body Search criteria and pagination parameters for moderation history
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_moderated_content_histories table with comprehensive filtering options. Support filtering by content_type (article/comment), moderator_admin_id, moderator_super_admin_id, date ranges (created_at), and text search within moderation_reason and original_content fields. Implement pagination with configurable page sizes and sorting options. Join with related tables (articles, comments, admins, super_admins) to provide complete information in the response. Ensure proper authorization checks to verify the requesting user has administrator privileges.
+   * @x-autobe-specification Query the discussion_board_moderated_content_histories table with comprehensive filtering and pagination. Apply filters based on request parameters including content_type, moderator_admin_id, moderator_super_admin_id, moderation_action, date ranges, and text search in moderation_reason and original_content fields.
+   *
+   * Join with related tables (discussion_board_admins, discussion_board_super_admins, discussion_board_articles, discussion_board_comments) to include moderator and content information in the response. Implement cursor-based pagination for efficient handling of large result sets.
+   *
+   * Validate that the requesting user has administrator privileges before returning results. Ensure proper indexing is used for performance optimization, particularly for date range queries and text search operations.
+   *
+   * Return summary information including moderation action details, timestamps, and references to moderated content without exposing sensitive original content unless specifically requested.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -36,40 +43,6 @@ export class DiscussionboardAdminModerated_content_historiesController {
       return await patchDiscussionBoardAdminModeratedContentHistories({
         admin,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information about a specific moderation history record.
-   *
-   * This operation provides comprehensive access to moderation audit trail data, allowing administrators to review specific moderation actions performed on the platform. The response includes complete details about the moderated content, the moderator who performed the action, the type of moderation action taken, and the reason provided for the moderation.
-   *
-   * Administrators can use this endpoint to investigate moderation decisions, review content management practices, and ensure compliance with platform moderation policies. The operation requires administrator-level authentication to access sensitive moderation history data.
-   *
-   * The moderation history record includes both the original content (before moderation) and the moderated content (after action), providing a complete audit trail for transparency and accountability purposes.
-   *
-   * @param connection
-   * @param historyId Unique identifier of the moderation history record to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_moderated_content_histories table by the provided historyId parameter. Include all related data through proper joins to provide comprehensive moderation history information. Validate that the historyId exists and return appropriate error responses if not found. Ensure proper authorization checks to verify that the requesting user has administrator privileges to access moderation history records.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":historyId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("historyId")
-    historyId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardModeratedContentHistory> {
-    try {
-      return await getDiscussionBoardAdminModeratedContentHistoriesHistoryId({
-        admin,
-        historyId,
       });
     } catch (error) {
       console.log(error);

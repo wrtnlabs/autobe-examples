@@ -1,12 +1,5 @@
 export * as profile from "./profile/index";
-export * as email_verifications from "./email_verifications/index";
-export * as password_resets from "./password_resets/index";
-export * as sections from "./sections/index";
+export * as sessions from "./sessions/index";
+export * as member from "./member/index";
 export * as articles from "./articles/index";
-export * as tags from "./tags/index";
 export * as comments from "./comments/index";
-export * as admin from "./admin/index";
-export * as search from "./search/index";
-export * as recommendations from "./recommendations/index";
-export * as members from "./members/index";
-export * as bans from "./bans/index";

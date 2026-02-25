@@ -11,16 +11,13 @@ export namespace DiscussionBoardArticleFavoriteCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticleFavorite.ICreate;
     discussionBoardUsers: IEntity;
-    discussionBoardUserSessions: IEntity;
+    discussionBoardArticles: IEntity;
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       created_at: new Date(),
-      // BelongsTo relations
       user: { connect: { id: props.discussionBoardUsers.id } },
-      article: { connect: { id: props.body.discussion_board_article_id } },
+      article: { connect: { id: props.discussionBoardArticles.id } },
     } satisfies Prisma.discussion_board_article_favoritesCreateInput;
   }
 }

@@ -1,4 +1,6 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,12 +20,9 @@ export async function getDiscussionBoardAdminBansBanId(props: {
   banId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardBanRecord> {
   const banRecord =
-    await MyGlobal.prisma.discussion_board_ban_records.findUnique({
+    await MyGlobal.prisma.discussion_board_user_bans.findUniqueOrThrow({
       where: { id: props.banId },
       ...DiscussionBoardBanRecordTransformer.select(),
     });
-  if (!banRecord) {
-    throw new HttpException("Ban record not found", 404);
-  }
   return await DiscussionBoardBanRecordTransformer.transform(banRecord);
 }

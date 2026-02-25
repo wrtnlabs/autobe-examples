@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +10,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { TodoAppTodoTransformer } from "../transformers/TodoAppTodoTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,25 +18,13 @@ export async function getTodoAppUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string;
 }): Promise<ITodoAppTodo> {
-  const todo = await MyGlobal.prisma.todo_app_todos.findUnique({
+  const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
     where: {
       id: props.todoId,
       todo_app_user_id: props.user.id,
       deleted_at: null,
     },
+    ...TodoAppTodoTransformer.select(),
   });
-  if (!todo) {
-    throw new HttpException("Todo not found", 404);
-  }
-  return {
-    id: todo.id as string & tags.Format<"uuid">,
-    title: todo.title,
-    description: todo.description === null ? undefined : todo.description,
-    start_date:
-      todo.start_date === null ? null : toISOStringSafe(todo.start_date),
-    due_date: todo.due_date === null ? null : toISOStringSafe(todo.due_date),
-    completed: todo.completed,
-    created_at: toISOStringSafe(todo.created_at),
-    updated_at: toISOStringSafe(todo.updated_at),
-  };
+  return await TodoAppTodoTransformer.transform(todo);
 }

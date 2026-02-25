@@ -1,10 +1,15 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
 
 export async function adminAuthorize(request: { headers: { authorization?: string } }): Promise<AdminPayload> {
-  const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
+  let payload: AdminPayload;
+  try {
+    payload = jwtAuthorize({ request }) as AdminPayload;
+  } catch {
+    throw new UnauthorizedException("Invalid or missing authentication token");
+  }
 
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);

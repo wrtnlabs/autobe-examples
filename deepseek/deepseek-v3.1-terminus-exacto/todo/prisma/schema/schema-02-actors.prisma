@@ -43,7 +43,8 @@ model todo_app_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions todo_app_user_sessions[]
   passwordResets todo_app_user_password_resets[]
@@ -59,6 +60,9 @@ model todo_app_users {
   permanentDeletions todo_app_permanent_deletions[]
   trashSetting todo_app_trash_settings?
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
   @@index([updated_at])
@@ -123,13 +127,21 @@ model todo_app_user_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   errorLogs todo_app_error_logs[]
   errorLogDetailUserContexts todo_app_error_log_detail_user_contexts[]
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_user_id, created_at])
 }
 
@@ -175,10 +187,14 @@ model todo_app_user_password_resets {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([reset_token])
   @@index([todo_app_user_id, expires_at])
   @@index([expires_at])

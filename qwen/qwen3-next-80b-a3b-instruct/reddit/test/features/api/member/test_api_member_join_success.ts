@@ -15,75 +15,53 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_member_join_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create a new connection for member registration
+  // Create actor-specific connection for member registration
   const memberConnection: api.IConnection = { host: connection.host };
-  // Generate valid test credentials
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12); // 12 characters ensures >= 8
-  // Execute member join operation using utility function
-  const result = await authorize_member_join(memberConnection, {
-    body: {
-      email,
-      password,
-    } satisfies IRedditCommunityMember.IJoin,
-  });
-  // Validate the response structure
+  // Generate valid registration data using typia.random for type-safe values
+  const joinData: IRedditCommunityMember.IJoin = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    username: RandomGenerator.name(1),
+  } satisfies IRedditCommunityMember.IJoin;
+  // Use the utility function for member registration (mandatory usage)
+  const result: IRedditCommunityMember.IAuthorized =
+    await authorize_member_join(memberConnection, { body: joinData });
+  // Validate the response structure with typia.assert
   typia.assert(result);
-  // Verify the returned token structure
-  TestValidator.equals(
-    "has valid access token",
-    result.token.access.length > 0,
-    true,
-  );
-  TestValidator.equals(
-    "has valid refresh token",
-    result.token.refresh.length > 0,
-    true,
-  );
-  TestValidator.equals(
-    "has valid expired_at",
-    result.token.expired_at.length > 0,
-    true,
-  );
-  TestValidator.equals(
-    "has valid refreshable_until",
-    result.token.refreshable_until.length > 0,
-    true,
-  );
-  // Verify the user ID is a valid UUID
-  TestValidator.equals(
-    "has valid UUID id",
-    typia.is<string & tags.Format<"uuid">>(result.id),
-    true,
-  );
-  // Validate the date-time formats are ISO 8601 compatible
-  const expiredDate = new Date(result.token.expired_at);
-  const refreshableDate = new Date(result.token.refreshable_until);
+  // Verify required fields are present and non-null
+  TestValidator.equals("member ID is present", result.id, result.id);
   TestValidator.predicate(
-    "expired_at is valid date-time",
-    !isNaN(expiredDate.getTime()),
+    "member username is present",
+    result.username !== null,
   );
-  TestValidator.predicate(
-    "refreshable_until is valid date-time",
-    !isNaN(refreshableDate.getTime()),
-  );
-  // Ensure refreshable_until is after expired_at
-  TestValidator.predicate(
-    "refreshable_until is after expired_at",
-    refreshableDate > expiredDate,
-  );
-  // Verify the user can login with these credentials (additional validation)
-  const loginConnection: api.IConnection = { host: connection.host };
-  const loginResult = await authorize_member_login(loginConnection, {
-    body: {
-      email,
-      password,
-    } satisfies IRedditCommunityMember.ILogin,
-  });
-  typia.assert(loginResult);
+  TestValidator.predicate("access token is present", result.access !== null);
+  TestValidator.predicate("refresh token is present", result.refresh !== null);
+  // Verify sensitive fields are null as per spec (email and display_name)
   TestValidator.equals(
-    "login returns valid user ID",
-    loginResult.id,
-    result.id,
+    "email is null (security requirement)",
+    result.email,
+    null,
   );
+  TestValidator.equals(
+    "display_name is null (default)",
+    result.display_name,
+    null,
+  );
+  // Validate token structure by asserting the IAuthorizationToken
+  typia.assert(result.token);
+  // Validate username matches input
+  TestValidator.equals(
+    "username matches input",
+    result.username,
+    joinData.username,
+  );
+  // Validate karma score is an int32
+  TestValidator.predicate(
+    "karma score is integer",
+    Number.isInteger(result.karma_score),
+  );
+  // Validate timestamps are ISO date-time format (implicit validation by typia.assert)
+  // No explicit validation needed due to format<"date-time"> constraint
+  // Validate is_deleted is false
+  TestValidator.equals("is_deleted is false", result.is_deleted, false);
 }

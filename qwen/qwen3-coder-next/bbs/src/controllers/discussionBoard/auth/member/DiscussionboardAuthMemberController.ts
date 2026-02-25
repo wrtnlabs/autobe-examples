@@ -10,31 +10,45 @@ import { postDiscussionBoardAuthMemberRefresh } from "../../../../providers/post
 @Controller("/discussionBoard/auth/member")
 export class DiscussionboardAuthMemberController {
   /**
-   * Member registration endpoint that creates a new member account with email and password credentials.
+   * Register a new member account for the discussion board system.
    *
-   * ## Purpose
-   * This operation allows unauthenticated users to register as members of the discussion board system. Upon successful registration, the system creates a new member account with the provided email address and securely hashed password. The operation validates email uniqueness, password strength requirements, and optionally verifies the email address during registration based on the email_verified field in the database schema.
+   * This operation creates a new member account with email and password credentials. After successful registration, the system automatically logs in the user by generating access and refresh tokens.
    *
-   * ## Security Implementation
-   * The implementation uses industry-standard password hashing algorithms to ensure password security. The email field must be unique across all member accounts, and the system validates this constraint before creating new registrations. The email_verified field tracks whether the user has verified their email address, which may be set during registration or through a separate verification workflow.
+   * ## Account Creation Process
    *
-   * ## Integration Context
-   * This registration flow integrates with the member authentication system defined in the discussion_board_members table schema. The created member will have access to all standard member capabilities including creating articles, writing comments, and managing their profile according to the authorization requirements specified in the user actors documentation.
+   * 1. User submits registration form with email and password
+   * 2. System validates email format and complexity requirements
+   * 3. System checks for existing email in database
+   * 4. If validation passes, system creates new member account
+   * 5. System creates initial session record with access and refresh tokens
+   * 6. System returns success response with JWT tokens
+   * 7. User can immediately access protected endpoints with the access token
+   *
+   * ## Security Considerations
+   *
+   * - Email must be unique across all users
+   * - Password must meet complexity requirements (minimum 8 characters with mixed case, numbers, special characters)
+   * - Password confirmation is required for security
+   * - All passwords are hashed using bcrypt with cost factor 12
+   * - Initial session is created with access token (30 minutes expiration) and refresh token (30 days expiration)
+   *
+   * ## Database Integration
+   *
+   * This operation interacts with the discussion_board_members table, creating a new member record with the provided credentials. The system also creates an initial record in the discussion_board_member_sessions table to manage the authentication session.
+   *
+   * ## Related Operations
+   *
+   * - **POST /auth/member/login**: Used by existing members to authenticate
+   * - **POST /auth/member/refresh**: Used to renew access tokens when they expire
+   * - **PUT /auth/member/password**: Used to change password after registration
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Member registration information containing email address and password credentials. The email must be unique across all accounts and the password must meet strength requirements defined by the system.
+   * @param body Registration information for new member account
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement JWT-based registration flow:
-   * 1. Validate input fields (email format, password strength)
-   * 2. Check email uniqueness in discussion_board_members table
-   * 3. Hash password using bcrypt or similar algorithm
-   * 4. Create member record with email_verified field set (true if immediate verification enabled, false if email verification flow required)
-   * 5. Generate access token and refresh token
-   * 6. Store refresh token in discussion_board_member_sessions table
-   * 7. Return authorized response with tokens and member information
+   * @x-autobe-specification The join operation creates a new member account by first validating the email format and password complexity. It checks for duplicate emails in the discussion_board_members table. If validation passes, it creates a new member record with a bcrypt-hashed password (cost factor 12). The system then creates an initial session in discussion_board_member_sessions with both access token (30 min expiration) and refresh token (30 day expiration). The response includes both tokens and the member's public profile information. If email already exists, returns 409 Conflict with error code REGISTRATION_EMAIL_EXISTS.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -56,31 +70,46 @@ export class DiscussionboardAuthMemberController {
   }
 
   /**
-   * Member authentication endpoint that validates email and password credentials to establish a secure session.
+   * Authenticate an existing member and obtain access and refresh tokens.
    *
-   * ## Purpose
-   * This operation allows registered members to authenticate with their email address and password. Upon successful validation, the system generates JWT tokens that enable the member to access protected endpoints and perform authenticated actions. The login operation verifies password correctness against the hashed password stored in the discussion_board_members table.
+   * This operation validates member credentials (email and password) and issues JWT tokens for authentication. Upon successful authentication, the system creates or updates a session record.
    *
-   * ## Session Management
-   * The system implements JWT-based session management using the discussion_board_member_sessions table to track active sessions. Each successful login creates a new session record with connection context including user agent, IP address, and timestamp information. The session tracking enables security monitoring and session invalidation capabilities.
+   * ## Authentication Process
+   *
+   * 1. User submits login credentials (email and password)
+   * 2. System validates email exists in database
+   * 3. System verifies password matches stored hash using bcrypt
+   * 4. If authentication succeeds, system generates JWT tokens
+   * 5. System creates or updates session record in database
+   * 6. System returns JWT tokens and member information
+   * 7. Access token expires in 30 minutes, refresh token expires in 30 days
    *
    * ## Security Considerations
-   * The implementation includes brute force protection through rate limiting on failed login attempts. Suspicious activity triggers additional security measures including temporary account lockout and security notifications. The system logs all authentication events in the system logs for audit purposes.
+   *
+   * - Password verification uses bcrypt with cost factor 12
+   * - Account lockout after 10 consecutive failed login attempts
+   * - Rate limiting: maximum 5 failed login attempts per IP per hour
+   * - Banned users cannot authenticate and receive 403 Forbidden
+   * - Session records are created/updated to track active sessions
+   * - All sessions are invalidated when password is changed or account is banned
+   *
+   * ## Database Integration
+   *
+   * This operation reads from the discussion_board_members table to verify credentials. It interacts with the discussion_board_member_sessions table to create or update session records. If the user account is banned, the system checks the ban status and returns appropriate error.
+   *
+   * ## Related Operations
+   *
+   * - **POST /auth/member/join**: Used for new user registration
+   * - **POST /auth/member/refresh**: Used to renew access tokens when they expire
+   * - **POST /auth/member/password**: Used to change password after login
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Member login credentials containing email address and password. The system validates these against the stored hashed password in the discussion_board_members table.
+   * @param body Login credentials for member authentication
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement JWT-based authentication flow:
-   * 1. Validate input fields (email format, password presence)
-   * 2. Query discussion_board_members table by email
-   * 3. Verify password matches hashed password using bcrypt comparison
-   * 4. Generate access token and refresh token
-   * 5. Create session record in discussion_board_member_sessions table with connection context
-   * 6. Return authorized response with tokens and member information
-   * 7. Handle failed login attempts with appropriate error responses
+   * @x-autobe-specification The login operation validates member credentials by looking up the email in discussion_board_members table and verifying the password using bcrypt. If valid, it creates or updates a session record in discussion_board_member_sessions with access token (30 min expiration) and refresh token (30 day expiration). The response includes both tokens and the member's public profile. Error handling includes 401 Unauthorized for invalid credentials (code AUTH_INVALID_CREDENTIALS) and 403 Forbidden for banned accounts (code AUTH_ACCOUNT_BANNED). Rate limiting and account lockout policies are enforced at the rate limiter layer.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -102,31 +131,46 @@ export class DiscussionboardAuthMemberController {
   }
 
   /**
-   * Token refresh endpoint that renews authentication tokens using a valid refresh token.
+   * Renew the access token using a valid refresh token.
    *
-   * ## Purpose
-   * This operation allows members to obtain new access and refresh tokens without re-authenticating with their credentials. The system validates the provided refresh token against the discussion_board_member_sessions table and issues new tokens if the refresh token is valid and not expired. This enables seamless user experience across extended usage periods.
+   * This operation validates refresh tokens and issues new access tokens when the current access token expires. This allows continued access without re-authentication.
    *
-   * ## Session Continuity
-   * The refresh operation maintains session continuity by validating the existing refresh token and generating new tokens. This approach preserves the user's authenticated state while enhancing security through token rotation. The session information in discussion_board_member_sessions table is updated to reflect the token refresh.
+   * ## Token Refresh Process
    *
-   * ## Security Implementation
-   * Refresh tokens have longer expiration times than access tokens but can be invalidated through session termination. Suspicious refresh token usage triggers security alerts and may result in session invalidation. The system monitors refresh token patterns for anomaly detection.
+   * 1. User submits refresh token (typically stored in secure storage)
+   * 2. System validates refresh token is valid and not expired
+   * 3. System validates refresh token matches stored session record
+   * 4. If validation succeeds, system generates new access token
+   * 5. System may rotate refresh token for enhanced security
+   * 6. System returns new access token and optionally new refresh token
+   * 7. Access token expires in 30 minutes from issuance
+   *
+   * ## Security Considerations
+   *
+   * - Refresh tokens expire after 30 days of inactivity
+   * - Refresh tokens are rotated on each successful refresh
+   * - All refresh tokens are invalidated when password is changed
+   * - All refresh tokens are invalidated when account is banned
+   * - Session records are validated against database before issuing new tokens
+   * - Refresh token reuse detection can be implemented for enhanced security
+   *
+   * ## Database Integration
+   *
+   * This operation reads from the discussion_board_member_sessions table to validate the refresh token. It creates a new access token and may update the session record with a rotated refresh token. The system validates that the session is still active and the refresh token hasn't expired.
+   *
+   * ## Related Operations
+   *
+   * - **POST /auth/member/login**: Used for initial authentication
+   * - **POST /auth/member/join**: Registration operation that also creates tokens
+   * - **PUT /auth/member/password**: Changing password invalidates all refresh tokens
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh token request containing the current refresh token that was issued during login or previous refresh operations. The token must be valid and not expired.
+   * @param body Refresh token request for token renewal
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement token refresh flow:
-   * 1. Validate refresh token format and structure
-   * 2. Query discussion_board_member_sessions table for matching session
-   * 3. Verify refresh token is not expired
-   * 4. Validate session is still active (not terminated)
-   * 5. Generate new access token and refresh token
-   * 6. Update session record with new refresh token
-   * 7. Return authorized response with new tokens and member information
+   * @x-autobe-specification The refresh operation validates the refresh token by looking up the session in discussion_board_member_sessions table. It verifies the token hasn't expired (30 day expiration) and matches the stored session record. If valid, it generates a new access token (30 min expiration) and may rotate the refresh token for security. The response includes the new access token and optionally the new refresh token. All refresh tokens are invalidated when password changes or account is banned, preventing token reuse attacks.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

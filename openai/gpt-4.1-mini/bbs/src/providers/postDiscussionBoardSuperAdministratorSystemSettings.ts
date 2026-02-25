@@ -10,43 +10,56 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardSystemSettingCollector } from "../collectors/DiscussionBoardSystemSettingCollector";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardSystemSettingTransformer } from "../transformers/DiscussionBoardSystemSettingTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+function getCurrentIsoDateTime(): string &
+  import("typia").tags.Format<"date-time"> {
+  return new Date().toISOString();
+}
 export async function postDiscussionBoardSuperAdministratorSystemSettings(props: {
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardSystemSetting.ICreate;
 }): Promise<IDiscussionBoardSystemSetting> {
-  const key = (props.body as any).key as string;
-  const value = (props.body as any).value as string;
-  const existing =
-    await MyGlobal.prisma.discussion_board_system_settings.findFirst({
-      where: { key, deleted_at: null },
-      select: { id: true },
+  const now = getCurrentIsoDateTime();
+  const record = await MyGlobal.prisma.$transaction(async (tx) => {
+    const existing = await tx.discussion_board_system_settings.findUnique({
+      where: { key: props.body.key },
+      select: {
+        id: true,
+        key: true,
+        value: true,
+        description: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
-  if (existing !== null) {
-    throw new HttpException("Key already exists", 400);
-  }
-  const data = await DiscussionBoardSystemSettingCollector.collect({
-    body: props.body,
-    key,
-    value,
+    if (existing === null) {
+      const createInput = await DiscussionBoardSystemSettingCollector.collect({
+        body: props.body,
+      });
+      return tx.discussion_board_system_settings.create({ data: createInput });
+    } else {
+      return tx.discussion_board_system_settings.update({
+        where: { key: props.body.key },
+        data: {
+          value: props.body.value,
+          description: props.body.description ?? null,
+          updated_at: now,
+        },
+        select: {
+          id: true,
+          key: true,
+          value: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      });
+    }
   });
-  const created = await MyGlobal.prisma.discussion_board_system_settings.create(
-    {
-      data: data,
-    },
-  );
-  return {
-    id: created.id,
-    key: created.key,
-    value: created.value,
-    description: created.description === null ? undefined : created.description,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at:
-      created.deleted_at === null
-        ? undefined
-        : toISOStringSafe(created.deleted_at),
-  };
+  return await DiscussionBoardSystemSettingTransformer.transform(record);
 }

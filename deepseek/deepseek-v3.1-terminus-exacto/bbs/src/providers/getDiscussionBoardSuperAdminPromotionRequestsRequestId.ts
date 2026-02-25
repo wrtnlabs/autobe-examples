@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
-import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -11,26 +11,23 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardAdministratorPromotionRequestTransformer } from "../transformers/DiscussionBoardAdministratorPromotionRequestTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardAdministratorPromotionApprovalTransformer } from "../transformers/DiscussionBoardAdministratorPromotionApprovalTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminPromotionRequestsRequestId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   requestId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardAdministratorPromotionRequest> {
+}): Promise<IDiscussionBoardAdministratorPromotionApproval> {
   const promotionRequest =
-    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.findUnique(
+    await MyGlobal.prisma.discussion_board_administrator_promotion_requests.findUniqueOrThrow(
       {
         where: { id: props.requestId },
-        ...DiscussionBoardAdministratorPromotionRequestTransformer.select(),
+        ...DiscussionBoardAdministratorPromotionApprovalTransformer.select(),
       },
     );
-  if (!promotionRequest) {
-    throw new HttpException("Promotion request not found", 404);
-  }
-  return await DiscussionBoardAdministratorPromotionRequestTransformer.transform(
+  return await DiscussionBoardAdministratorPromotionApprovalTransformer.transform(
     promotionRequest,
   );
 }

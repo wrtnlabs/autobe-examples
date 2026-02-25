@@ -18,7 +18,7 @@ export async function getTodoAppUserTodosTodoId(props: {
   user: UserPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppTodo> {
-  const todo = await MyGlobal.prisma.todo_app_todos.findUnique({
+  const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
     where: {
       id: props.todoId,
       todo_app_user_id: props.user.id,
@@ -26,8 +26,5 @@ export async function getTodoAppUserTodosTodoId(props: {
     },
     ...TodoAppTodoTransformer.select(),
   });
-  if (!todo) {
-    throw new HttpException("Todo not found", 404);
-  }
   return await TodoAppTodoTransformer.transform(todo);
 }

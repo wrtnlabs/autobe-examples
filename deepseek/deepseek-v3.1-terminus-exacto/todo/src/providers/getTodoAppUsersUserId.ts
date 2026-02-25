@@ -15,12 +15,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getTodoAppUsersUserId(props: {
   userId: string & tags.Format<"uuid">;
 }): Promise<ITodoAppUser> {
-  const user = await MyGlobal.prisma.todo_app_users.findUnique({
-    where: { id: props.userId },
+  // This operation assumes the userId parameter represents the authenticated user
+  // In a real implementation, authentication context would be validated by middleware
+  // and the userId would be extracted from the authenticated user's token
+  const user = await MyGlobal.prisma.todo_app_users.findUniqueOrThrow({
+    where: {
+      id: props.userId,
+      deleted_at: null, // Only return active users
+    },
     ...TodoAppUserTransformer.select(),
   });
-  if (!user) {
-    throw new HttpException("User not found", 404);
-  }
   return await TodoAppUserTransformer.transform(user);
 }

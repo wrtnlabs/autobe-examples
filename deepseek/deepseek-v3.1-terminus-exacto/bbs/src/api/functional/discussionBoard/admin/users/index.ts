@@ -1,1 +1,1 @@
-export * as statistics from "./statistics/index";
+export * as search from "./search/index";

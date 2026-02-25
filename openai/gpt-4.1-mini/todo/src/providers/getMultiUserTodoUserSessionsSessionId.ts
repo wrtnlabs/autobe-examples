@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMultiUserTodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUser";
 import { IMultiUserTodoUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUserSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,6 +10,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { MultiUserTodoUserSessionTransformer } from "../transformers/MultiUserTodoUserSessionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,12 +18,11 @@ export async function getMultiUserTodoUserSessionsSessionId(props: {
   user: UserPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IMultiUserTodoUserSession> {
-  const record = await MyGlobal.prisma.multi_user_todo_user_sessions.findUnique(
-    {
+  const record =
+    await MyGlobal.prisma.multi_user_todo_user_sessions.findUniqueOrThrow({
       where: { id: props.sessionId },
       select: {
         id: true,
-        multi_user_todo_user_id: true,
         ip: true,
         href: true,
         referrer: true,
@@ -29,22 +30,15 @@ export async function getMultiUserTodoUserSessionsSessionId(props: {
         updated_at: true,
         deleted_at: true,
         expired_at: true,
+        multi_user_todo_user_id: true,
+        user: MultiUserTodoUserSessionTransformer.select().select.user,
       },
-    },
-  );
-  if (record === null || record.deleted_at !== null) {
-    throw new HttpException("Session not found", 404);
+    });
+  if (
+    record.multi_user_todo_user_id !== props.user.id ||
+    record.deleted_at !== null
+  ) {
+    throw new HttpException("Forbidden", 403);
   }
-  return {
-    id: record.id,
-    multi_user_todo_user_id: record.multi_user_todo_user_id,
-    ip: record.ip,
-    href: record.href,
-    referrer: record.referrer,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at !== null ? toISOStringSafe(record.deleted_at) : null,
-    expired_at: toISOStringSafe(record.expired_at),
-  };
+  return await MultiUserTodoUserSessionTransformer.transform(record);
 }

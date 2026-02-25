@@ -11,14 +11,15 @@ import typia, { tags } from "typia";
 export async function authorize_super_admin_join(
   connection: api.IConnection,
   props: {
-    body?: IDiscussionBoardSuperAdmin.IJoin;
+    body: IDiscussionBoardSuperAdmin.IJoin;
   },
 ): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  const joinInput = props.body ?? {};
-  return await api.functional.discussionBoard.auth.super_admin.join(
-    connection,
-    {
-      body: joinInput,
-    },
-  );
+  const joinInput = {
+    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+    name: props.body.name,
+  } satisfies IDiscussionBoardSuperAdmin.IJoin;
+  return await api.functional.discussionBoard.auth.superAdmin.join(connection, {
+    body: joinInput,
+  });
 }

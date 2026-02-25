@@ -16,32 +16,49 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchCommunityPlatformReportReasons(props: {
   body: ICommunityPlatformReportReason.IRequest;
 }): Promise<IPageICommunityPlatformReportReason.ISummary> {
-  // Pagination parameters do not exist on IRequest, so use defaults
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  if (!(Number.isInteger(page) && page >= 1)) {
+    throw new HttpException("Invalid page number", 400);
+  }
+  if (!(Number.isInteger(limit) && limit >= 1 && limit <= 100)) {
+    throw new HttpException("Invalid limit number", 400);
+  }
+  const where = props.body.search
+    ? {
+        reason_text: {
+          contains: props.body.search,
+          mode: "insensitive" as const,
+        },
+      }
+    : {};
   const skip = (page - 1) * limit;
   const data = await MyGlobal.prisma.community_platform_report_reasons.findMany(
     {
-      where: { deleted_at: null },
+      where,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
+      orderBy: { reason_text: "asc" },
     },
   );
   const total = await MyGlobal.prisma.community_platform_report_reasons.count({
-    where: { deleted_at: null },
+    where,
   });
   return {
-    data: data.map((reason) => ({
-      ...reason,
-      created_at: reason.created_at ? toISOStringSafe(reason.created_at) : null,
-      updated_at: reason.updated_at ? toISOStringSafe(reason.updated_at) : null,
+    data: data.map((r) => ({
+      id: r.id as string & tags.Format<"uuid">,
+      reasonText: r.reason_text,
+      createdAt: toISOStringSafe(r.created_at),
+      updatedAt: toISOStringSafe(r.updated_at),
+      deletedAt: r.deleted_at ? toISOStringSafe(r.deleted_at) : null,
     })),
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     },
   };
 }

@@ -10,14 +10,15 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallSaleFavoriteCollector {
   export async function collect(props: {
     body: IShoppingMallSaleFavorite.ICreate;
-    customer: IEntity;
-    sale: IEntity;
+    customer: IEntity; // injected customer identity from authorized actor
+    sale: IEntity; // injected sale identity from path parameter or context
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       id,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       customer: { connect: { id: props.customer.id } },
       sale: { connect: { id: props.sale.id } },

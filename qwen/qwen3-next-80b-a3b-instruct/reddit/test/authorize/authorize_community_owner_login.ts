@@ -14,7 +14,7 @@ export async function authorize_community_owner_login(
     body: IRedditCommunityCommunityOwner.ILogin;
   },
 ): Promise<IRedditCommunityCommunityOwner.IAuthorized> {
-  return await api.functional.redditCommunity.auth.communityOwner.login(
+  return await api.functional.redditCommunity.auth.community_owner.login(
     connection,
     {
       body: props.body,

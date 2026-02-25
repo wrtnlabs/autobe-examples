@@ -1,12 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityOwner } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityOwner";
+import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityCommunityOwnerAtSummaryTransformer } from "./RedditCommunityCommunityOwnerAtSummaryTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityCommunityTransformer {
   export type Payload = Prisma.reddit_community_communitiesGetPayload<
@@ -19,11 +19,12 @@ export namespace RedditCommunityCommunityTransformer {
         name: true,
         description: true,
         icon_url: true,
-        subscriber_count: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        owner: RedditCommunityCommunityOwnerAtSummaryTransformer.select(),
+        owner: RedditCommunityMemberAtSummaryTransformer.select(),
+        _count: {
+          select: { subscribers: true },
+        },
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
@@ -33,15 +34,14 @@ export namespace RedditCommunityCommunityTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? undefined,
-      icon_url: input.icon_url ?? undefined,
-      subscriber_count: Number(input.subscriber_count),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      owner: await RedditCommunityCommunityOwnerAtSummaryTransformer.transform(
+      description: input.description,
+      icon_url: input.icon_url,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      owner: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.owner,
       ),
+      subscriber_count: input._count.subscribers,
     };
   }
 }

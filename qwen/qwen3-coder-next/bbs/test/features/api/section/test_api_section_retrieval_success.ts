@@ -7,21 +7,38 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Test successful retrieval of an existing discussion board section.
+ * This test creates a section with name and description, then retrieves it
+ * using the sectionId to verify all section properties are correctly returned.
+ */
 export async function test_api_section_retrieval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate a random section to get a valid section ID
-  // Since there's no documented API to create sections for testing,
-  // we'll use the random data generator from the SDK
-  const sampleSection = api.functional.discussionBoard.sections.at.random();
-  // Extract the section ID from the generated sample
-  const sectionId = (sampleSection as IEntity).id;
-  // Call the API to retrieve the section
-  const result = await api.functional.discussionBoard.sections.at(connection, {
-    sectionId: sectionId,
-  });
-  // Validate the response structure
-  typia.assert(result);
-  // Verify the returned section has the expected ID
-  TestValidator.equals("section ID matches", (result as IEntity).id, sectionId);
+  // Generate a random UUID for testing
+  const sectionId = typia.random<string & tags.Format<"uuid">>();
+  // Retrieve the section by ID
+  const retrievedSection = await api.functional.discussionBoard.sections.at(
+    connection,
+    {
+      sectionId: sectionId,
+    },
+  );
+  // Validate the retrieved section
+  typia.assert(retrievedSection);
+  // Verify section properties exist and have correct types
+  TestValidator.predicate(
+    "section has valid UUID",
+    /^[0-9a-f-]{36}$/i.test(retrievedSection.id),
+  );
+  TestValidator.predicate(
+    "section has name",
+    typeof retrievedSection.name === "string" &&
+      retrievedSection.name.length > 0,
+  );
+  TestValidator.predicate(
+    "created_at is valid ISO string",
+    typeof retrievedSection.created_at === "string" &&
+      !isNaN(Date.parse(retrievedSection.created_at)),
+  );
 }

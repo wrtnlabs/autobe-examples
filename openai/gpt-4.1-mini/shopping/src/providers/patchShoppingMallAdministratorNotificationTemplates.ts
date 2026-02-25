@@ -18,46 +18,99 @@ export async function patchShoppingMallAdministratorNotificationTemplates(props:
   administrator: AdministratorPayload;
   body: IShoppingMallNotificationTemplate.IRequest;
 }): Promise<IPageIShoppingMallNotificationTemplate.ISummary> {
-  // Use fixed pagination parameters because props.body does not have page or limit
-  const page = 1;
-  const limit = 100;
-  const skip = (page - 1) * limit;
-  const where = {
+  const {
+    templateCode,
+    templateName,
+    content,
+    limit: rawLimit,
+    sortBy,
+    order,
+    page: rawPage,
+  } = props.body;
+  const limit =
+    rawLimit === undefined || rawLimit === null || rawLimit < 1 ? 20 : rawLimit;
+  const page =
+    rawPage === undefined || rawPage === null || rawPage < 1 ? 1 : rawPage;
+  const where: Prisma.shopping_mall_notification_templatesWhereInput = {
     deleted_at: null,
-  } satisfies Prisma.shopping_mall_notification_templatesWhereInput;
-  const data =
+  };
+  if (
+    templateCode !== undefined &&
+    templateCode !== null &&
+    templateCode.trim() !== ""
+  ) {
+    where.template_code = {
+      contains: templateCode.trim(),
+      mode: "insensitive",
+    };
+  }
+  if (
+    templateName !== undefined &&
+    templateName !== null &&
+    templateName.trim() !== ""
+  ) {
+    where.template_name = {
+      contains: templateName.trim(),
+      mode: "insensitive",
+    };
+  }
+  if (content !== undefined && content !== null && content.trim() !== "") {
+    where.content = {
+      contains: content.trim(),
+      mode: "insensitive",
+    };
+  }
+  const validSortFields = new Set([
+    "template_code",
+    "template_name",
+    "created_at",
+    "updated_at",
+  ]);
+  const orderBy: Prisma.shopping_mall_notification_templatesOrderByWithRelationInput =
+    sortBy && validSortFields.has(sortBy)
+      ? { [sortBy]: order === "asc" ? "asc" : "desc" }
+      : { created_at: "desc" };
+  const skip = (page - 1) * limit;
+  const total =
+    await MyGlobal.prisma.shopping_mall_notification_templates.count({ where });
+  const items =
     await MyGlobal.prisma.shopping_mall_notification_templates.findMany({
       where,
+      orderBy,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
       select: {
         id: true,
         template_code: true,
         template_name: true,
         content: true,
-        parameters: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
       },
     });
-  const total =
-    await MyGlobal.prisma.shopping_mall_notification_templates.count({ where });
+  function toDateTimeString(d: Date | null): string | null {
+    return d === null ? null : d.toISOString();
+  }
+  const data: IShoppingMallNotificationTemplate.ISummary[] = items.map(
+    (item) => ({
+      id: item.id,
+      template_code: item.template_code,
+      template_name: item.template_name,
+      content: item.content,
+      created_at: toDateTimeString(item.created_at)!,
+      updated_at: toDateTimeString(item.updated_at)!,
+      deleted_at:
+        item.deleted_at === null ? null : toDateTimeString(item.deleted_at),
+    }),
+  );
   return {
-    data: data.map((record) => ({
-      id: record.id,
-      template_code: record.template_code,
-      template_name: record.template_name,
-      content: record.content,
-      parameters: record.parameters,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-    })),
+    data,
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
+    },
   };
 }

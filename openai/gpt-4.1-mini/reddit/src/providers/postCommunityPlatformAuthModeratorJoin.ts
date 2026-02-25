@@ -13,74 +13,68 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postCommunityPlatformAuthModeratorJoin(props: {
+  ip: string;
   body: ICommunityPlatformModerator.IJoin & {
-    email: string;
-    username: string;
     password: string;
-    ip?: string;
-    href?: string;
-    referrer?: string;
   };
 }): Promise<ICommunityPlatformModerator.IAuthorized> {
-  if (!props.body.email) throw new HttpException("Email is required", 400);
-  if (!props.body.username)
-    throw new HttpException("Username is required", 400);
-  if (!props.body.password)
-    throw new HttpException("Password is required", 400);
-  const existingEmail =
+  const getNowIso = (): string & tags.Format<"date-time"> =>
+    toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
+  // 1. Check for duplicate email address
+  const existing =
     await MyGlobal.prisma.community_platform_moderators.findFirst({
       where: { email: props.body.email },
     });
-  if (existingEmail) throw new HttpException("Email already registered", 409);
-  const existingUsername =
-    await MyGlobal.prisma.community_platform_moderators.findFirst({
-      where: { username: props.body.username },
-    });
-  if (existingUsername) throw new HttpException("Username already taken", 409);
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
-  const accessExpires = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const moderatorId = v4() as string & tags.Format<"uuid">;
+  if (existing) {
+    throw new HttpException("Email already registered", 409);
+  }
+  // 2. Create new moderator record (Collector handles password hashing)
   const moderator = await MyGlobal.prisma.community_platform_moderators.create({
     data: {
-      id: moderatorId,
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
-      password_hash: passwordHash,
       username: props.body.username,
-      display_name: null,
-      bio: null,
-      avatar_url: null,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: props.body.displayName ?? null,
+      bio: props.body.bio ?? null,
+      avatar_url: props.body.avatarUrl ?? null,
       karma: 0,
-      created_at: now,
-      updated_at: now,
+      created_at: getNowIso(),
+      updated_at: getNowIso(),
       deleted_at: null,
     },
   });
-  const sessionId = v4() as string & tags.Format<"uuid">;
+  // 3. Create session record
+  const oneHourMs = 1000 * 60 * 60;
+  const oneWeekMs = oneHourMs * 24 * 7;
+  const now = new Date();
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(now.getTime() + oneHourMs),
+  ) as string & tags.Format<"date-time">;
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(now.getTime() + oneWeekMs),
+  ) as string & tags.Format<"date-time">;
   const session =
     await MyGlobal.prisma.community_platform_moderator_sessions.create({
       data: {
-        id: sessionId,
-        community_platform_moderator_id: moderatorId,
-        ip: props.body.ip ?? "",
-        href: props.body.href ?? "",
-        referrer: props.body.referrer ?? "",
-        created_at: now,
-        expired_at: refreshExpires,
+        id: v4() as string & tags.Format<"uuid">,
+        community_platform_moderator_id: moderator.id,
+        ip: props.ip,
+        expired_at: accessExpires,
+        created_at: getNowIso(),
+        href: "",
+        referrer: "",
       },
     });
+  // 4. Generate JWT tokens
+  const nowIso = getNowIso();
   const token = {
     access: jwt.sign(
       {
         type: "moderator",
         id: moderator.id,
         session_id: session.id,
-        created_at: now,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -91,7 +85,7 @@ export async function postCommunityPlatformAuthModeratorJoin(props: {
         id: moderator.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
@@ -99,7 +93,9 @@ export async function postCommunityPlatformAuthModeratorJoin(props: {
     expired_at: accessExpires,
     refreshable_until: refreshExpires,
   };
+  // 5. Return authorized response
   return {
+    id: moderator.id,
     token,
   };
 }

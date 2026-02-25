@@ -19,13 +19,15 @@ export async function postEcommerceAuthAdminJoin(props: {
     where: { email: props.body.email },
   });
   if (existing) throw new HttpException("Email already registered", 409);
-  const createdAdmin = await MyGlobal.prisma.ecommerce_admins.create({
+  const passwordHash = await PasswordUtil.hash(props.body.password);
+  const admin = await MyGlobal.prisma.ecommerce_admins.create({
     data: {
       id: v4(),
       email: props.body.email,
-      password_hash: await PasswordUtil.hash(props.body.password),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      password_hash: passwordHash,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
     },
     select: {
       id: true,
@@ -39,27 +41,17 @@ export async function postEcommerceAuthAdminJoin(props: {
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_admin_sessions.create({
     data: {
-      id: v4(),
-      admin: { connect: { id: createdAdmin.id } },
-      ip: "0.0.0.0",
-      href: "https://example.com",
-      referrer: "direct",
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      ecommerce_admin_id: admin.id,
+      created_at: new Date(),
+      expired_at: accessExpires,
     },
-    select: {
-      id: true,
-      admin: true,
-      created_at: true,
-      updated_at: true,
-      ip: true,
-    },
+    select: { id: true },
   });
   const token = {
     access: jwt.sign(
       {
         type: "admin",
-        id: createdAdmin.id,
+        id: admin.id,
         session_id: session.id,
         created_at: toISOStringSafe(new Date()),
       },
@@ -69,7 +61,7 @@ export async function postEcommerceAuthAdminJoin(props: {
     refresh: jwt.sign(
       {
         type: "admin",
-        id: createdAdmin.id,
+        id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
         created_at: toISOStringSafe(new Date()),
@@ -81,13 +73,11 @@ export async function postEcommerceAuthAdminJoin(props: {
     refreshable_until: toISOStringSafe(refreshExpires),
   };
   return {
-    id: createdAdmin.id,
-    email: createdAdmin.email,
-    created_at: toISOStringSafe(createdAdmin.created_at),
-    updated_at: toISOStringSafe(createdAdmin.updated_at),
-    deleted_at: createdAdmin.deleted_at
-      ? toISOStringSafe(createdAdmin.deleted_at)
-      : null,
+    id: admin.id,
+    email: admin.email,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
     token,
-  };
+  } satisfies IEcommerceAdmin.IAuthorized;
 }

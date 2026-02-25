@@ -1,0 +1,182 @@
+/// Main todo items belonging to users with title, optional description and
+/// dates. Each todo is owned by exactly one user and cannot be accessed by
+/// other users. Supports soft delete functionality through is_deleted flag.
+/// Deleted todos appear in the user's trash until permanently deleted or
+/// restored. The table maintains a one-to-many relationship with
+/// todo_app_todo_histories for edit history tracking.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// Todo title. Required field. Minimum 1 character, maximum 255 characters.
+  /// Trimmed of leading and trailing whitespace before storage.
+  title String
+  
+  /// Optional detailed description of the todo item.
+  description String?
+  
+  /// Optional start date for the todo item. NULL indicates no start date set.
+  /// Used for sorting - todos without start_date appear at the end when sorted
+  /// by start_date.
+  start_date DateTime?
+  
+  /// Optional due date for the todo item. NULL indicates no due date set. Used
+  /// for sorting - todos without due_date appear at the end when sorted by
+  /// due_date.
+  due_date DateTime?
+  
+  /// Completion status flag. false indicates incomplete (default), true
+  /// indicates completed.
+  is_complete Boolean
+  
+  /// Soft delete flag. false indicates active todo (appears in normal list),
+  /// true indicates deleted/todo is in trash. Deleted todos do not appear in
+  /// normal todo list views.
+  is_deleted Boolean
+  
+  /// Timestamp when the todo item was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the todo item was soft-deleted (is_deleted set to true).
+  /// NULL indicates the todo is not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  historyEntries todo_app_todo_histories[]
+  sortingIndex todo_app_todo_sorting_indexes?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_user_id, is_complete])
+  @@index([todo_app_user_id, is_deleted])
+  @@index([created_at])
+  @@index([start_date])
+  @@index([due_date])
+}
+
+/// History of edits made to todo items tracking all changes over time. Each
+/// edit creates a new history entry recording the previous and new values
+/// for all changed fields. Belongs to exactly one todo with cascade deletion
+/// when todo is permanently removed.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The todo item this history entry belongs to. {@link todo_app_todos.id}
+  todo_id String
+  
+  /// Timestamp when this edit was made.
+  edited_at DateTime
+  
+  /// Previous title value before this edit (null if title unchanged).
+  previous_title String?
+  
+  /// New title value after this edit (null if title unchanged).
+  new_title String?
+  
+  /// Previous description value before this edit (null if description
+  /// unchanged).
+  previous_description String?
+  
+  /// New description value after this edit (null if description unchanged).
+  new_description String?
+  
+  /// Previous start_date value before this edit (null if start_date unchanged).
+  previous_start_date DateTime?
+  
+  /// New start_date value after this edit (null if start_date unchanged).
+  new_start_date DateTime?
+  
+  /// Previous due_date value before this edit (null if due_date unchanged).
+  previous_due_date DateTime?
+  
+  /// New due_date value after this edit (null if due_date unchanged).
+  new_due_date DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_id, edited_at])
+  @@index([edited_at])
+}
+
+/// Indexes for efficient sorting by start_date and due_date with NULL handling.
+///
+/// This table stores computed index values that enable efficient date-based
+/// sorting
+/// while handling todos without dates appropriately. Used for performance
+/// optimization
+/// when displaying sorted todo lists.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_sorting_indexes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target todo's {@link todo_app_todos.id}.
+  todo_id String
+  
+  /// Computed sort value for start_date (0 for NULL, Unix timestamp for valid
+  /// dates).
+  start_date_sort_value Float
+  
+  /// Computed sort value for due_date (0 for NULL, Unix timestamp for valid
+  /// dates).
+  due_date_sort_value Float
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_id])
+  @@index([start_date_sort_value])
+  @@index([due_date_sort_value])
+  @@index([todo_id, start_date_sort_value])
+  @@index([todo_id, due_date_sort_value])
+}

@@ -1,8 +1,7 @@
 import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IRedditCommunityPost } from "../../../../api/structures/IRedditCommunityPost";
 import { CommunitymoderatorAuth } from "../../../../decorators/CommunitymoderatorAuth";
 import { CommunitymoderatorPayload } from "../../../../decorators/payload/CommunitymoderatorPayload";
 import { deleteRedditCommunityCommunityModeratorPostsPostId } from "../../../../providers/deleteRedditCommunityCommunityModeratorPostsPostId";
@@ -10,32 +9,25 @@ import { deleteRedditCommunityCommunityModeratorPostsPostId } from "../../../../
 @Controller("/redditCommunity/communityModerator/posts/:postId")
 export class RedditcommunityCommunitymoderatorPostsController {
   /**
-   * Permanently delete a specific post and all of its associated comments and votes.
+   * Permanently hide a post from all public view by marking it as deleted.
    *
-   * This operation completely removes a post from the database, including all comments made on it and any associated upvotes or downvotes. This is a hard delete operation - the post and its children are not archived, hidden, or marked as deleted. Once deleted, this content cannot be recovered.
+   * This operation sets the is_deleted flag to true on the specified post, causing it to be removed from public feeds, community listings, and search results. The post remains in the database for audit, moderation review, and system integrity purposes.
    *
-   * Authentication is required. Only the user who created the post or a moderator/admin for the community where the post was made can delete it. Non-authenticated users cannot access this endpoint.
+   * Only the post's author, a community moderator, or a platform administrator can execute this operation. All comments associated with the post are automatically marked as deleted via cascade relationship due to the Prisma relation configuration.
    *
-   * Upon successful deletion, the entire post object is returned in the response body, allowing the client to update its UI state immediately. This design provides immediate feedback without requiring an additional request.
-   *
-   * To preserve data integrity, the deletion cascades to all related records:
-   * - All comments on the post are deleted
-   * - All post votes are removed
-   * - All post report entries are removed
-   *
-   * This operation does not support bulk deletion or bulk actions. Only one post may be deleted per request. The target post is identified exclusively by the postId path parameter.
-   *
-   * There is an inconsistency with the database model description which mentions a moderation_action_of_posts table for audit purposes. However, the provided schema does not include a `deleted_at` column, audit log linkage, or tombstone record creation. This confirms that it is a hard delete implementation and not a soft delete system.
-   *
-   * Note: This operation does not provide a reason field or comment field for deletion because it is not a moderation action - it is an author-initiated deletion. If a moderator deletes a post, the moderation_action table will record this separately as a mod action, but the post itself is still permanently removed from the dataset on this endpoint.
+   * No data is physically removed from the database. The change is visible only to authorized users with moderator privileges or system-level access.
    *
    * @param connection
-   * @param postId The unique identifier (UUID) of the post to delete. Must match the ID of an existing post in the database.
+   * @param postId The unique identifier of the post to delete. Must match the id field in reddit_community_posts.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor communityModerator
-   * @x-autobe-specification Delete the post record from the database with CASCADE to remove associated comments and votes. Perform permission check: verify that the authenticated user is either the post author or a moderator of the post's community. If permission is denied, return 403 Forbidden. If post does not exist, return 404 Not Found. If successful, return the deleted post object with full structure before it is removed from the database. No transaction rollback needed as deletion is final and immediate.
-   *
-   * The operation uses direct deletion without soft delete columns or archive state. This is confirmed by review of the skipsoftdelete check in requirements - this is a hard delete operation.
+   * @x-autobe-specification Execute delete operation on reddit_community_posts table using postId path parameter.
+   * Identify post by id and verify user has permission: author, community moderator, or platform admin.
+   * Set is_deleted = true for the target post.
+   * Ensure deletion cascades to associated comments (prisma relation handles this).
+   * Update community post_count by decrementing by 1 (handled via trigger).
+   * Record audit event with user id, action, and timestamp.
+   * Return 200 OK if successful. Return 403 if unauthorized. Return 404 if post not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete()
@@ -43,8 +35,8 @@ export class RedditcommunityCommunitymoderatorPostsController {
     @CommunitymoderatorAuth()
     communityModerator: CommunitymoderatorPayload,
     @TypedParam("postId")
-    postId: string & tags.Format<"uuid">,
-  ): Promise<IRedditCommunityPost> {
+    postId: string,
+  ): Promise<void> {
     try {
       return await deleteRedditCommunityCommunityModeratorPostsPostId({
         communityModerator,

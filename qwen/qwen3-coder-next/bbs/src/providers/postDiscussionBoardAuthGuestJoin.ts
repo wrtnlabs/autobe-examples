@@ -15,57 +15,56 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthGuestJoin(props: {
   body: IDiscussionBoardGuest.IJoin;
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
-  const guestId = v4() as string & tags.Format<"uuid">;
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  // Create guest actor first (with all required fields based on schema)
+  const now = toISOStringSafe(new Date());
   const guest = await MyGlobal.prisma.discussion_board_guests.create({
     data: {
-      id: guestId,
-      session_id: sessionId,
-      first_seen_at: toISOStringSafe(now),
-      view_count: 0,
+      id: v4() as string & tags.Format<"uuid">,
+      ip_address: props.body.ip_address,
+      device_fingerprint: props.body.device_fingerprint,
+      created_at: now,
+      updated_at: now,
+    },
+    select: {
+      id: true,
+      ip_address: true,
+      device_fingerprint: true,
+      created_at: true,
+      updated_at: true,
     },
   });
-  // Then create session with reference to guest (with all required fields)
-  const session = await MyGlobal.prisma.discussion_board_guest_sessions.create({
-    data: {
-      id: sessionId,
-      guest_id: guest.id,
-      ip: "0.0.0.0",
-      href: "https://example.com/join",
-      created_at: toISOStringSafe(now),
-      expired_at: toISOStringSafe(accessExpires),
-    },
+  const tokenPayload = {
+    id: guest.id,
+    session_id: guest.id,
+    type: "guest" as const,
+    created_at: now,
+  };
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
   });
+  const refresh = jwt.sign(
+    { ...tokenPayload, tokenType: "refresh" },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "guest",
-        id: guest.id,
-        session_id: session.id,
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "guest",
-        id: guest.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    access,
+    refresh,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
   return {
+    id: guest.id,
+    ip_address: guest.ip_address,
+    device_fingerprint: guest.device_fingerprint,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
+    session: access,
+    expires_at: accessExpires,
     token,
-  } satisfies IDiscussionBoardGuest.IAuthorized;
+  };
 }

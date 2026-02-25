@@ -9,36 +9,22 @@ export async function guestAuthorize(request: {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
-    throw new ForbiddenException(`You're not a guest`);
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Verify session existence and validity
-  const session = await MyGlobal.prisma.community_guest_sessions.findFirst({
+  const session = await MyGlobal.prisma.reddit_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
+      reddit_guest_id: payload.id,
       expired_at: { gt: new Date() },
+      guest: {
+        deleted_at: null,
+      },
     },
   });
 
   if (!session) {
-    throw new ForbiddenException("Session expired or invalid");
-  }
-
-  // Ensure session's guest references matching payload.id (guest account)
-  if (session.community_guest_id !== payload.id) {
-    throw new ForbiddenException("Session mismatch with guest account");
-  }
-
-  // Verify guest account exists and isn't deleted
-  const guest = await MyGlobal.prisma.community_guests.findFirst({
-    where: {
-      id: payload.id,
-      deleted_at: null,
-    },
-  });
-
-  if (!guest) {
-    throw new ForbiddenException("Guest account is deleted");
+    throw new ForbiddenException("Session not found or expired");
   }
 
   return payload;

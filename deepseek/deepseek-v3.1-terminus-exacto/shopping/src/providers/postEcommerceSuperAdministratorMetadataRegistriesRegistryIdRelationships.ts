@@ -1,0 +1,48 @@
+import { IEcommerceAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceAdministrator";
+import { IEcommerceMetadataRegistryRelationship } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMetadataRegistryRelationship";
+import { IEcommerceSuperAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceSuperAdministrator";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { EcommerceMetadataRegistryRelationshipCollector } from "../collectors/EcommerceMetadataRegistryRelationshipCollector";
+import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { EcommerceMetadataRegistryRelationshipTransformer } from "../transformers/EcommerceMetadataRegistryRelationshipTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+export async function postEcommerceSuperAdministratorMetadataRegistriesRegistryIdRelationships(props: {
+  superAdministrator: SuperadministratorPayload;
+  registryId: string & tags.Format<"uuid">;
+  body: IEcommerceMetadataRegistryRelationship.ICreate;
+}): Promise<IEcommerceMetadataRegistryRelationship> {
+  // First validate the metadata registry exists
+  await MyGlobal.prisma.ecommerce_metadata_registries.findUniqueOrThrow({
+    where: { id: props.registryId },
+  });
+  // Create the administrative action using the collector pattern
+  const data = await EcommerceMetadataRegistryRelationshipCollector.collect({
+    body: props.body,
+    ecommerceAdministrators: { id: props.superAdministrator.id },
+  });
+  // Create the administrative action record
+  const action = await MyGlobal.prisma.ecommerce_administrative_actions.create({
+    data: data,
+  });
+  // Retrieve the complete administrative action with relations using transformer
+  const completeAction =
+    await MyGlobal.prisma.ecommerce_administrative_actions.findUniqueOrThrow({
+      where: { id: action.id },
+      ...EcommerceMetadataRegistryRelationshipTransformer.select(),
+    });
+  return await EcommerceMetadataRegistryRelationshipTransformer.transform(
+    completeAction,
+  );
+}

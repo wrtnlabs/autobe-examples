@@ -12,16 +12,14 @@ import { prepare_random_shopping_mall_shipment } from "../prepare/prepare_random
 export async function generate_random_shopping_mall_seller_shipments_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IShoppingMallShipment.ICreate> | undefined;
-    params: {
-      orderItemId: string;
-    };
+    body?: DeepPartial<IShoppingMallShipment.ICreate>;
   },
-): Promise<IShoppingMallShipment> {
+): Promise<void> {
   const prepared: IShoppingMallShipment.ICreate =
     prepare_random_shopping_mall_shipment(props.body);
-  return await api.functional.shoppingMall.seller.shipments.create(connection, {
-    body: prepared,
-    orderItemId: props.params.orderItemId,
-  });
+  const result: void =
+    await api.functional.shoppingMall.seller.shipments.create(connection, {
+      body: prepared,
+    });
+  return result;
 }

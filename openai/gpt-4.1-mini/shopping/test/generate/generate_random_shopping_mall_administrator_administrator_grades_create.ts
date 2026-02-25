@@ -18,7 +18,7 @@ export async function generate_random_shopping_mall_administrator_administrator_
   const prepared: IShoppingMallAdministratorGrade.ICreate =
     prepare_random_shopping_mall_administrator_grade(props.body);
   const result: IShoppingMallAdministratorGrade =
-    await api.functional.shoppingMall.administrator.administrator.grades.create(
+    await api.functional.shoppingMall.administrator.administratorGrades.create(
       connection,
       {
         body: prepared,

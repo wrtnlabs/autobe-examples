@@ -24,12 +24,16 @@ model discussion_board_tags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   articleTagMappings discussion_board_article_tag_mappings[]
   mvTagUsageStats discussion_board_mv_tag_usage_stats[]
   articleTags discussion_board_article_tags[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
 }
 
@@ -67,10 +71,14 @@ model discussion_board_article_search_indexes {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_article_search_indexes_discussion_boa_ca728809")
 }
@@ -101,10 +109,14 @@ model discussion_board_mv_tag_usage_stats {
   refreshed_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([discussion_board_tag_id])
   @@index([article_count])
 }
@@ -141,13 +153,16 @@ model discussion_board_article_tags {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([discussion_board_tag_id])
-  
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
   @@index([created_at])

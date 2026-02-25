@@ -10,25 +10,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace CommunityPlatformDeletedContentCollector {
   export async function collect(props: {
     body: ICommunityPlatformDeletedContent.ICreate;
-    communityPlatformModerators: IEntity;
-    communityPlatformUsers: IEntity;
   }) {
     const id: string = v4();
-    // Required field 'reason' is missing in DTO. Cannot complete without it
-    throw new Error(
-      "Cannot create CommunityPlatformDeletedContent without reason field in DTO.",
-    );
-    // Uncomment below if reason is provided in DTO or method signature modified
-    // return {
-    //   id,
-    //   reason: props.body.reason,
-    //   created_at: new Date(),
-    //   updated_at: new Date(),
-    //   deleted_at: null,
-    //   moderator: { connect: { id: props.communityPlatformModerators.id } },
-    //   user: { connect: { id: props.communityPlatformUsers.id } },
-    //   post: undefined,
-    //   comment: undefined,
-    // } satisfies Prisma.community_platform_deleted_contentsCreateInput;
+    return {
+      id,
+      reason: props.body.reason,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      moderator: { connect: { id: props.body.moderator_id } },
+      user: { connect: { id: props.body.user_id } },
+      post: props.body.post_id
+        ? { connect: { id: props.body.post_id } }
+        : undefined,
+      comment: props.body.comment_id
+        ? { connect: { id: props.body.comment_id } }
+        : undefined,
+    } satisfies Prisma.community_platform_deleted_contentsCreateInput;
   }
 }

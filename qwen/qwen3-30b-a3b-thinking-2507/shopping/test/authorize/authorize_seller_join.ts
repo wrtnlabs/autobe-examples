@@ -17,6 +17,9 @@ export async function authorize_seller_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    name: props.body?.name ?? RandomGenerator.name(),
+    description:
+      props.body?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
   } satisfies IEcommerceSeller.IJoin;
   return await api.functional.ecommerce.auth.seller.join(connection, {
     body: joinInput,

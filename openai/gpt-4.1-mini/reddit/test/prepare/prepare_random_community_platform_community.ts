@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_community(
-  input?: DeepPartial<ICommunityPlatformCommunity.ICreate> | undefined,
+  input?: DeepPartial<ICommunityPlatformCommunity.ICreate>,
 ): ICommunityPlatformCommunity.ICreate {
-  input;
-  return {};
+  return {
+    name: input?.name ?? RandomGenerator.alphabets(10),
+    description:
+      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
+    iconUrl: input?.iconUrl ?? typia.random<string & tags.Format<"url">>(),
+  };
 }

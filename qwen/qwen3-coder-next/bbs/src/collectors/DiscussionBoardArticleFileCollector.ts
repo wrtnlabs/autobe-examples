@@ -10,19 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleFileCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticleFile.ICreate;
-    discussionBoardArticles: IEntity;
+    discussionBoardArticle: IEntity;
+    filePath: string;
+    fileSize: number;
   }) {
-    const id: string = v4();
     return {
-      id,
-      original_name: "",
-      stored_path: "",
-      file_type: "",
-      file_size: 0,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      article: { connect: { id: props.discussionBoardArticles.id } },
+      id: v4(),
+      original_filename: props.body.originalFilename,
+      file_path: props.filePath,
+      mime_type: props.body.mimeType,
+      file_size: props.fileSize,
+      article: { connect: { id: props.discussionBoardArticle.id } },
     } satisfies Prisma.discussion_board_article_filesCreateInput;
   }
 }

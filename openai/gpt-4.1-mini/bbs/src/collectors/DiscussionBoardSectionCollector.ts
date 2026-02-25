@@ -11,15 +11,16 @@ export namespace DiscussionBoardSectionCollector {
   export async function collect(props: {
     body: IDiscussionBoardSection.ICreate;
   }) {
-    const id = v4();
-    const now = new Date();
+    const id: string = v4();
     return {
       id,
-      name: "",
-      description: "",
-      created_at: now,
-      updated_at: now,
+      name: props.body.name,
+      description: props.body.description,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
+      // HasMany relations (optional, not needed for create)
+      // adminLogs and articles are managed separately
     } satisfies Prisma.discussion_board_sectionsCreateInput;
   }
 }

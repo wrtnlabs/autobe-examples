@@ -18,69 +18,57 @@ export async function patchDiscussionBoardSuperAdministratorScheduledTasks(props
   superAdministrator: SuperadministratorPayload;
   body: IDiscussionBoardScheduledTask.IRequest;
 }): Promise<IPageIDiscussionBoardScheduledTask.ISummary> {
-  const bodyAny = props.body as any;
-  const page = bodyAny.page && bodyAny.page > 0 ? bodyAny.page : 1;
-  const limit = bodyAny.limit && bodyAny.limit > 0 ? bodyAny.limit : 100;
-  const whereInput: Prisma.discussion_board_scheduled_tasksWhereInput = {
-    deleted_at: null,
-  };
-  if (
-    typeof bodyAny.task_name === "string" &&
-    bodyAny.task_name.trim() !== ""
-  ) {
-    whereInput.task_name = { contains: bodyAny.task_name };
-  }
-  if (Array.isArray(bodyAny.status) && bodyAny.status.length > 0) {
-    whereInput.status = { in: bodyAny.status };
-  }
-  if (
-    typeof bodyAny.last_run_at_from === "string" ||
-    typeof bodyAny.last_run_at_to === "string"
-  ) {
-    whereInput.last_run_at = {};
-    if (typeof bodyAny.last_run_at_from === "string") {
-      whereInput.last_run_at.gte = bodyAny.last_run_at_from;
-    }
-    if (typeof bodyAny.last_run_at_to === "string") {
-      whereInput.last_run_at.lte = bodyAny.last_run_at_to;
-    }
-  }
-  if (
-    typeof bodyAny.created_at_from === "string" ||
-    typeof bodyAny.created_at_to === "string"
-  ) {
-    whereInput.created_at = {};
-    if (typeof bodyAny.created_at_from === "string") {
-      whereInput.created_at.gte = bodyAny.created_at_from;
-    }
-    if (typeof bodyAny.created_at_to === "string") {
-      whereInput.created_at.lte = bodyAny.created_at_to;
-    }
-  }
-  const orderByInput: Prisma.discussion_board_scheduled_tasksOrderByWithRelationInput =
-    {};
-  if (
-    bodyAny.sort_by_last_run_at === "asc" ||
-    bodyAny.sort_by_last_run_at === "desc"
-  ) {
-    orderByInput.last_run_at = bodyAny.sort_by_last_run_at;
-  }
-  if (
-    bodyAny.sort_by_created_at === "asc" ||
-    bodyAny.sort_by_created_at === "desc"
-  ) {
-    orderByInput.created_at = bodyAny.sort_by_created_at;
-  }
-  const total = await MyGlobal.prisma.discussion_board_scheduled_tasks.count({
-    where: whereInput,
-  });
+  const {
+    taskName,
+    status,
+    schedulePattern,
+    lastRunAtMin,
+    lastRunAtMax,
+    page: pageRaw,
+    limit: limitRaw,
+    sort,
+  } = props.body;
+  const page =
+    typeof pageRaw === "number" && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
+  const limit =
+    typeof limitRaw === "number" && limitRaw >= 1 && limitRaw <= 100
+      ? Math.floor(limitRaw)
+      : 20;
   const skip = (page - 1) * limit;
+  // Prepare filters without using native Date
+  const where: Prisma.discussion_board_scheduled_tasksWhereInput = {
+    deleted_at: null,
+    ...(typeof taskName === "string" && taskName !== ""
+      ? { task_name: { contains: taskName } }
+      : {}),
+    ...(typeof status === "string" && status !== "" ? { status } : {}),
+    ...(typeof schedulePattern === "string" && schedulePattern !== ""
+      ? { schedule_pattern: { contains: schedulePattern } }
+      : {}),
+    ...(typeof lastRunAtMin === "string" && lastRunAtMin !== ""
+      ? { last_run_at: { gte: lastRunAtMin } }
+      : {}),
+    ...(typeof lastRunAtMax === "string" && lastRunAtMax !== ""
+      ? { last_run_at: { lte: lastRunAtMax } }
+      : {}),
+  };
+  const total = await MyGlobal.prisma.discussion_board_scheduled_tasks.count({
+    where,
+  });
+  const orderBy: Prisma.Enumerable<Prisma.discussion_board_scheduled_tasksOrderByWithRelationInput> =
+    [];
+  if (sort === "asc" || sort === "desc") {
+    orderBy.push({ task_name: sort });
+    orderBy.push({ created_at: sort });
+  } else {
+    orderBy.push({ created_at: "desc" });
+  }
   const records =
     await MyGlobal.prisma.discussion_board_scheduled_tasks.findMany({
-      where: whereInput,
+      where,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy,
       select: {
         id: true,
         task_name: true,
@@ -92,27 +80,25 @@ export async function patchDiscussionBoardSuperAdministratorScheduledTasks(props
         deleted_at: true,
       },
     });
-  const data: IDiscussionBoardScheduledTask.ISummary[] = records.map(
-    (record) => ({
-      id: record.id,
-      task_name: record.task_name,
-      schedule_pattern: record.schedule_pattern,
-      last_run_at: record.last_run_at
-        ? toISOStringSafe(record.last_run_at)
-        : null,
-      status: record.status,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-      deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-    }),
-  );
+  const data = records.map((record) => ({
+    id: record.id,
+    taskName: record.task_name,
+    schedulePattern: record.schedule_pattern,
+    lastRunAt:
+      record.last_run_at === null ? null : toISOStringSafe(record.last_run_at),
+    status: record.status,
+    createdAt: toISOStringSafe(record.created_at),
+    updatedAt: toISOStringSafe(record.updated_at),
+    deletedAt:
+      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+  }));
   return {
-    data,
     pagination: {
       current: page,
       limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
+    data,
   };
 }

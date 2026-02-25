@@ -7,31 +7,27 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-// Define toISOStringSafe function
-function toISOStringSafe(date: Date): string {
-  return date.toISOString();
-}
 export namespace TodoAppTodoCollector {
   export async function collect(props: {
     body: ITodoAppTodo.ICreate;
     todoAppUsers: IEntity;
     todoAppUserSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      id,
+      title: props.body.title,
+      description: props.body.description ?? null,
+      start_date: props.body.startDate ? new Date(props.body.startDate) : null,
+      due_date: props.body.dueDate ? new Date(props.body.dueDate) : null,
+      is_complete: false,
+      is_deleted: false,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      title: (props.body as any).title,
-      description: (props.body as any).description ?? null,
-      start_date: (props.body as any).startDate
-        ? toISOStringSafe(new Date((props.body as any).startDate))
-        : null,
-      due_date: (props.body as any).dueDate
-        ? toISOStringSafe(new Date((props.body as any).dueDate))
-        : null,
-      is_completed: (props.body as any).isCompleted,
       user: { connect: { id: props.todoAppUsers.id } },
+      historyEntries: undefined,
+      sortingIndex: undefined,
     } satisfies Prisma.todo_app_todosCreateInput;
   }
 }

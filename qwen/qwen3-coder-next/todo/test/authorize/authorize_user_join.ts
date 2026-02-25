@@ -11,10 +11,14 @@ import typia, { tags } from "typia";
 export async function authorize_user_join(
   connection: api.IConnection,
   props: {
-    body: ITodoAppUser.IJoin;
+    body?: ITodoAppUser.IJoin;
   },
 ): Promise<ITodoAppUser.IAuthorized> {
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+  } satisfies ITodoAppUser.IJoin;
   return await api.functional.todoApp.auth.user.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

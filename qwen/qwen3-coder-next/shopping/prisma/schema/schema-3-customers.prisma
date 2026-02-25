@@ -1,0 +1,155 @@
+/// Customer shipping addresses with recipient information and default
+/// address flags
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// Recipient's full name
+  recipient_name String
+  
+  /// Contact phone number for delivery
+  phone_number String
+  
+  /// Street address including building number and apartment
+  street_address String
+  
+  /// City or municipality name
+  city String
+  
+  /// State, province, or region
+  state String
+  
+  /// Postal or ZIP code
+  postal_code String
+  
+  /// Country name
+  country String
+  
+  /// Whether this is the customer's default shipping address
+  is_default Boolean
+  
+  /// Timestamp when the address was created
+  created_at DateTime
+  
+  /// Timestamp when the address was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the address was soft-deleted (nullable for active
+  /// addresses)
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders shopping_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, is_default], map: "shopping_mall_customer_addresses_shopping_mall_custome_a5527944")
+  @@index([shopping_mall_customer_id])
+  @@index([is_default])
+}
+
+/// Customer shopping cart items tracking selected product variants and
+/// quantities.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this cart item. {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Product variant selected by customer. {@link
+  /// shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Number of units of the selected variant in the customer's cart. Must be
+  /// positive integer.
+  quantity Int
+  
+  /// Timestamp when the cart item was added to the customer's cart.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last modified (quantity changed).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_variant_id], map: "shopping_mall_shopping_carts_shopping_mall_customer_id_097a8c85")
+  @@index([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_shopping_carts_shopping_mall_product_var_f8ae9359")
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Customer wishlist items tracking products added for future purchase
+/// consideration
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who added this product to their wishlist. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Product that the customer added to their wishlist. {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// When the product was added to the customer's wishlist.
+  added_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_customer_wishlists_shopping_mall_custome_138128ea")
+}

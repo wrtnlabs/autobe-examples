@@ -58,10 +58,14 @@ model discussion_board_system_configurations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   performanceMetrics discussion_board_performance_metrics[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([config_key])
   @@index([category, created_at])
   @@index([is_sensitive])
@@ -165,7 +169,8 @@ model discussion_board_audit_logs {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   actor discussion_board_users? @relation("discussion_board_audit_logs_of_actor_id", fields: [actor_id], references: [id], onDelete: Cascade)
   targetUser discussion_board_users? @relation("discussion_board_audit_logs_of_target_user_id", fields: [target_user_id], references: [id], onDelete: Cascade)
@@ -175,10 +180,12 @@ model discussion_board_audit_logs {
   targetComment discussion_board_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
   targetSection discussion_board_sections? @relation(fields: [target_section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([target_admin_id])
   @@index([target_super_admin_id])
   @@index([target_section_id])
-  
   @@index([actor_type, created_at])
   @@index([action_type, created_at])
   @@index([actor_id, created_at])
@@ -249,12 +256,16 @@ model discussion_board_administrator_promotion_approvals {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   promotionRequest discussion_board_administrator_promotion_requests @relation(fields: [promotion_request_id], references: [id], onDelete: Cascade)
   reviewerAdmin discussion_board_admins @relation(fields: [reviewer_admin_id], references: [id], onDelete: Cascade)
   administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([promotion_request_id], map: "discussion_board_administrator_promotion_approvals_pro_def9026c")
   // spellchecker: ignore-next-line
@@ -316,10 +327,14 @@ model discussion_board_content_moderation_logs {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([admin_id, created_at], map: "discussion_board_content_moderation_logs_admin_id_crea_9f571f3d")
   // spellchecker: ignore-next-line
@@ -400,12 +415,16 @@ model discussion_board_system_activities {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([activity_type, created_at])
   @@index([user_id, created_at])
   @@index([admin_id, created_at])
@@ -480,13 +499,16 @@ model discussion_board_performance_metrics {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   systemConfiguration discussion_board_system_configurations? @relation(fields: [discussion_board_system_configuration_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_system_configuration_id], map: "discussion_board_performance_metrics_discussion_board__a8738511")
-  
   // spellchecker: ignore-next-line
   @@index([metric_type, collection_timestamp], map: "discussion_board_performance_metrics_metric_type_colle_4d0cf7f6")
   // spellchecker: ignore-next-line
@@ -567,7 +589,7 @@ model discussion_board_error_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@index([severity, occurred_at])
   @@index([error_type, occurred_at])
@@ -639,10 +661,14 @@ model discussion_board_backup_records {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   initiatedByAdmin discussion_board_admins? @relation(fields: [initiated_by_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([status, started_at])
   @@index([backup_type, started_at])
   // spellchecker: ignore-next-line
@@ -727,14 +753,17 @@ model discussion_board_maintenance_schedules {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   scheduledByAdmin discussion_board_admins @relation("discussion_board_maintenance_schedules_of_scheduled_by_admin_id", fields: [scheduled_by_admin_id], references: [id], onDelete: Cascade)
   performedByAdmin discussion_board_admins? @relation("discussion_board_maintenance_schedules_of_performed_by_admin_id", fields: [performed_by_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([performed_by_admin_id], map: "discussion_board_maintenance_schedules_performed_by_ad_8fb8f67a")
-  
   // spellchecker: ignore-next-line
   @@index([scheduled_start_time, status], map: "discussion_board_maintenance_schedules_scheduled_start_5fcd0317")
   // spellchecker: ignore-next-line
@@ -827,17 +856,20 @@ model discussion_board_api_rate_limits {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users? @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins? @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([discussion_board_user_id])
   @@index([discussion_board_admin_id])
   // spellchecker: ignore-next-line
   @@index([discussion_board_super_admin_id], map: "discussion_board_api_rate_limits_discussion_board_supe_626ba1cc")
-  
   // spellchecker: ignore-next-line
   @@unique([endpoint_path, http_method, rate_limit_type], map: "discussion_board_api_rate_limits_endpoint_path_http_me_f58d41cc")
   @@index([endpoint_path, http_method])
@@ -927,12 +959,16 @@ model discussion_board_security_events {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users? @relation(fields: [user_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins? @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([event_type, created_at])
   @@index([severity, created_at])
   @@index([user_id, created_at])
@@ -1005,10 +1041,14 @@ model discussion_board_data_retention_policies {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   dataTypeMappings discussion_board_data_retention_policy_data_types[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([policy_name])
   // spellchecker: ignore-next-line
   @@index([is_active, next_enforcement_due], map: "discussion_board_data_retention_policies_is_active_nex_59746838")
@@ -1061,10 +1101,14 @@ model discussion_board_data_retention_policy_data_types {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   retentionPolicy discussion_board_data_retention_policies @relation(fields: [discussion_board_data_retention_policy_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_data_retention_policy_id, data_type], map: "discussion_board_data_retention_policy_data_types_disc_bf1d52fb")
   // spellchecker: ignore-next-line

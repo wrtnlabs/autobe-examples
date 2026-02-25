@@ -3,22 +3,22 @@ import { Controller, Ip } from "@nestjs/common";
 import typia from "typia";
 
 import { IEconomicBoardSuperAdministrator } from "../../../../api/structures/IEconomicBoardSuperAdministrator";
+import { patchEconomicBoardAuthSuperAdministratorRefresh } from "../../../../providers/patchEconomicBoardAuthSuperAdministratorRefresh";
 import { postEconomicBoardAuthSuperAdministratorJoin } from "../../../../providers/postEconomicBoardAuthSuperAdministratorJoin";
 import { postEconomicBoardAuthSuperAdministratorLogin } from "../../../../providers/postEconomicBoardAuthSuperAdministratorLogin";
-import { postEconomicBoardAuthSuperAdministratorRefresh } from "../../../../providers/postEconomicBoardAuthSuperAdministratorRefresh";
 
 @Controller("/economicBoard/auth/superAdministrator")
 export class EconomicboardAuthSuperadministratorController {
   /**
-   * This operation allows a new user to register as a superAdministrator by providing a unique email address and a password. The system verifies the email format and ensures it is not already registered in the economic_board_super_administrators table. The submitted password is securely hashed using bcrypt with a cost factor of 12 before storage. If validations pass, a new superAdministrator record is inserted with "active" status, creation timestamp, and default bio if none provided. A refresh token is created and stored in the economic_board_super_administrator_sessions table with a 14-day expiration, while an access token is generated with a 15-minute expiration. The response includes both tokens for immediate authentication. This operation is restricted to initial sign-up of new users; it must not be reusable for dummy accounts or automated registration. The operation strictly follows the password requirements stated in the requirements: minimum 8 characters. The success response returns the IEconomicBoardSuperAdministrator.IAuthorized type with tokens. This operation cannot be used to join as citizen or administrator; the macro logic enforces that only actors with superAdministrator role can be created through this endpoint. No soft delete mechanisms apply during registration; the user is active from creation.
+   * This endpoint handles the registration (join) workflow for superAdministrator accounts. The operation creates a new superAdministrator user by validating the provided email address for uniqueness against the economic_board_super_administrators table. The password is hashed using bcrypt algorithm with cost factor 12 before storage. Although the economic_board_super_administrators table is currently a placeholder with no additional fields, the system expects it to be populated with user identity data in production. The operation then creates a corresponding session entry in economic_board_super_administrator_sessions with an access token (JWT) that expires in 15 minutes and a refresh token (stored in secure cookie) that expires in 7 days. The response body returns the IAuthorized type (IEconomicBoardSuperAdministrator.IAuthorized) containing the access token and basic user properties. This operation must not be confused with regular login - join is specifically for creating new accounts. It is critical to ensure that the email validation occurs before any database insertion to prevent duplicate registrations. The registration flow does not require email verification for superAdministrators per system policy, unlike citizen accounts. Security considerations include ensuring HTTPS is enforced and never returning error messages that distinguish between existing email and invalid password formats. This operation directly corresponds to the join row in the Authorization Operations Table with IEconomicBoardSuperAdministrator.IJoin as request body and IEconomicBoardSuperAdministrator.IAuthorized as response body.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for registering a new superAdministrator account.
+   * @param body Contains registration data for creating a superAdministrator account.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification The join operation creates a new superAdministrator account. It validates email format, checks uniqueness, hashes password using bcrypt, creates a record in economic_board_super_administrators with status 'active', and returns an authorization token set. The Auth Service handles verification of email uniqueness and password strength (minimum 8 characters). Upon success, a user session is created in economic_board_super_administrator_sessions with a refresh token (14-day expiry) and an access token (15-minute expiry).
+   * @x-autobe-specification Handles user registration for superAdministrator role. Validates that email is unique and password meets minimum security requirements. Creates new superAdministrator record and associates with session. Generates JWT access token with 15-minute expiration and refresh token with 7-day expiration. Stores refresh token in secure httpOnly cookie. Sets user status to 'active'.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -40,15 +40,15 @@ export class EconomicboardAuthSuperadministratorController {
   }
 
   /**
-   * This operation authenticates a superAdministrator by verifying their email and password against the economic_board_super_administrators table. It checks that the account exists, has a status of 'active', and is not marked as deleted (deleted_at is null). The supplied password is compared against the stored bcrypt hash. If authentication succeeds, the system invalidates any existing refresh tokens for this user in economic_board_super_administrator_sessions. A new refresh token is generated (with 14-day expiration), securely stored in an httpOnly, secure, SameSite=Strict cookie, and an access token (15-minute expiration) is returned in the response body. The JWT access token contains claims for userId, role (superAdministrator), and permissions. If authentication fails due to invalid credentials, status not active, or account deletion, the system returns HTTP 401 Unauthorized. This operation does not support token regeneration or state management; session renewal is handled by the refresh endpoint. This endpoint strictly follows the design requirement that Login Successful returns a JSON object containing the IEconomicBoardSuperAdministrator.IAuthorized schema. No additional fields beyond tokens are included in the response. This operation handles password validity within bcrypt validation—no separate password strength check is performed on login since it was already enforced on join.
+   * This endpoint handles the login workflow for superAdministrator accounts. The operation verifies the provided email and password against the system's authentication records in the economic_board_super_administrators table. The password is validated against the bcrypt hash stored in the database. If credentials are valid, a new JWT access token is generated with a 15-minute expiration and a refresh token with 7-day expiration. The refresh token is stored in an httpOnly, Secure cookie. Any existing sessions for this superAdministrator are invalidated to prevent concurrent session abuse. The response body contains the access token and basic user identity, following IEconomicBoardSuperAdministrator.IAuthorized schema. This is a stateless authentication mechanism where each request requires a valid access token in the Authorization header. Unlike citizens, superAdministrators do not require email verification to log in. The operation returns HTTP 401 Unauthorized if credentials are invalid, without specifying whether email or password was incorrect to prevent credential enumeration attacks. This operation directly corresponds to the login row in the Authorization Operations Table with IEconomicBoardSuperAdministrator.ILogin as request body and IEconomicBoardSuperAdministrator.IAuthorized as response body.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for logging in a superAdministrator using email and password credentials.
+   * @param body Contains login credentials for superAdministrator authentication.
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification The login operation authenticates a superAdministrator using email and password. It retrieves the user record from economic_board_super_administrators, verifies the password hash using bcrypt, checks that the account status is 'active', and validates that the record is not deleted (deleted_at is null). On success, it invalidates any existing sessions, generates a new refresh token (14-day expiry) stored in economic_board_super_administrator_sessions, and issues a new access token (15-minute expiry). The system uses secure cookies for refresh token delivery with HttpOnly, Secure, and SameSite=Strict flags.
+   * @x-autobe-specification Authentication operation for superAdministrator users. Validates email and password against stored records. Upon successful validation, generates a new JWT access token (15-minute expiration) and refresh token (7-day expiration). Refresh token is stored in secure httpOnly cookie. Invalidates any prior sessions for this user. Returns full user identity in response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -70,24 +70,24 @@ export class EconomicboardAuthSuperadministratorController {
   }
 
   /**
-   * This operation renews the user's access token by validating the refresh token stored in the economic_board_super_administrator_sessions table. The refresh token is submitted via an HttpOnly, Secure, SameSite=Strict cookie. It is validated for its signature, expiration, and association with a valid superAdministrator account. Upon validation, the system invalidates the old refresh token by marking it as revoked in the sessions table, then generates a new refresh token (with 14-day expiration) and a new access token (15-minute expiration). The new access token is returned in the response body within the IEconomicBoardSuperAdministrator.IAuthorized type. The new refresh token is set in an HttpOnly, Secure, SameSite=Strict cookie, replacing the old one. This operation does not allow concurrent usage or token reuse; each refresh token is single-use and immediately invalidated. There is no interaction with the economic_board_super_administrators table in this operation; user identity and role are derived from the refresh token JWT payload. The refresh mechanism aligns with the design requirement for stateless authentication. This operation does not increment counters or update timestamps in user profile; it purely handles token renewal. This endpoint must not be used to grant new permissions or change roles; those are controlled by the join and login operations.
+   * This endpoint handles token refresh for superAdministrator accounts. When the access token expires, the client sends a request to this endpoint which validates the refresh token stored in the httpOnly, Secure cookie. The refresh token is checked against the economic_board_super_administrator_sessions table for validity, expiration time, and user association. If valid, a new access token is generated (15-minute TTL) and a new refresh token is issued (7-day TTL from now). The previous refresh token is immediately marked as invalidated and cannot be reused. This flow ensures that tokens are refreshed without requiring the user to re-enter credentials. The operation maintains session continuity and security by ensuring only one active refresh token exists per user session. The response body contains the new access token and refresh token, following IEconomicBoardSuperAdministrator.IAuthorized schema. This operation is critical for user experience but must be secured against replay attacks. It corresponds exactly to the refresh row in the Authorization Operations Table with IEconomicBoardSuperAdministrator.IRefresh as request body and IEconomicBoardSuperAdministrator.IAuthorized as response body.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for refreshing a superAdministrator's access token using a valid refresh token from cookie.
+   * @param body Empty request body for token refresh endpoint, as refresh token is in secure cookie.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification The refresh operation renews a user's access token using a valid refresh token stored in the economic_board_super_administrator_sessions table. The refresh token is received as an HTTP-only secure cookie, validated for signature, expiration, and existence in the session table. Upon verification, the system generates a new access token (15-minute expiry) and a new refresh token (14-day expiry), invalidating the old refresh token. The new refresh token is written to a new secure cookie, replacing the old one. No user data or role checks are performed at this stage as they are encoded in the refresh token itself.
+   * @x-autobe-specification Refreshes expired access token for superAdministrator. Validates the refresh token from the secure cookie. If valid, generates a new access token (15-minute expiration) and refresh token (7-day expiration from current time). Invalidates old refresh token. Returns new tokens in the response body.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post("refresh")
+  @TypedRoute.Patch("refresh")
   public async refresh(
     @TypedBody()
     body: IEconomicBoardSuperAdministrator.IRefresh,
   ): Promise<IEconomicBoardSuperAdministrator.IAuthorized> {
     try {
-      return await postEconomicBoardAuthSuperAdministratorRefresh({
+      return await patchEconomicBoardAuthSuperAdministratorRefresh({
         body,
       });
     } catch (error) {

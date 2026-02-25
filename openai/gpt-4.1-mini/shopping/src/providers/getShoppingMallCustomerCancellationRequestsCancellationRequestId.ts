@@ -1,5 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallCancellationRequestTransformer } from "../transformers/ShoppingMallCancellationRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,34 +21,61 @@ export async function getShoppingMallCustomerCancellationRequestsCancellationReq
   customer: CustomerPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCancellationRequest> {
-  const record =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUnique({
-      where: { id: props.cancellationRequestId },
-    });
-  if (!record) {
-    throw new HttpException("Cancellation request not found", 404);
+  const recordRaw =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
+      {
+        where: { id: props.cancellationRequestId },
+        ...ShoppingMallCancellationRequestTransformer.select(),
+      },
+    );
+  if (recordRaw.customer.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (record.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Cancellation request not found", 404);
+  function convertDate(date: Date | null | undefined): string | null {
+    return date
+      ? (date.toISOString() as string & tags.Format<"date-time">)
+      : null;
   }
-  return {
-    id: record.id,
-    shopping_mall_customer_id: record.shopping_mall_customer_id,
-    shopping_mall_order_item_id: record.shopping_mall_order_item_id,
-    reason: record.reason,
-    seller_approval_status: record.seller_approval_status,
-    seller_approval_reason:
-      record.seller_approval_reason === null
-        ? null
-        : record.seller_approval_reason,
-    requested_at: toISOStringSafe(record.requested_at),
-    processed_at:
-      record.processed_at === null
-        ? null
-        : toISOStringSafe(record.processed_at),
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at:
-      record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+  function convertDatesInCustomer(customer: typeof recordRaw.customer) {
+    return {
+      ...customer,
+      created_at: convertDate(customer.created_at),
+      updated_at: convertDate(customer.updated_at),
+      deleted_at: convertDate(customer.deleted_at),
+    };
+  }
+  function convertDatesInOrderItem(orderItem: typeof recordRaw.orderItem) {
+    return {
+      ...orderItem,
+      created_at: convertDate(orderItem.created_at),
+      updated_at: convertDate(orderItem.updated_at),
+      deleted_at: convertDate(orderItem.deleted_at),
+      order: {
+        ...orderItem.order,
+        created_at: convertDate(orderItem.order.created_at),
+        updated_at: convertDate(orderItem.order.updated_at),
+        deleted_at: convertDate(orderItem.order.deleted_at),
+        customer: convertDatesInCustomer(orderItem.order.customer),
+      },
+      productVariant: {
+        ...orderItem.productVariant,
+        created_at: convertDate(orderItem.productVariant.created_at),
+        updated_at: convertDate(orderItem.productVariant.updated_at),
+        deleted_at: convertDate(orderItem.productVariant.deleted_at),
+      },
+    };
+  }
+  const recordForTransform = {
+    ...recordRaw,
+    requested_at: convertDate(recordRaw.requested_at),
+    processed_at: convertDate(recordRaw.processed_at),
+    created_at: convertDate(recordRaw.created_at),
+    updated_at: convertDate(recordRaw.updated_at),
+    deleted_at: convertDate(recordRaw.deleted_at),
+    customer: convertDatesInCustomer(recordRaw.customer),
+    orderItem: convertDatesInOrderItem(recordRaw.orderItem),
   };
+  return await ShoppingMallCancellationRequestTransformer.transform(
+    recordForTransform,
+  );
 }

@@ -10,15 +10,21 @@ import { postRedditCommunityAuthCommunityModeratorRefresh } from "../../../../pr
 @Controller("/redditCommunity/auth/communityModerator")
 export class RedditcommunityAuthCommunitymoderatorController {
   /**
-   * Registers a new community moderator account using email and password. The operation creates a record in the reddit_community_community_moderators table with hashed password, and initiates email verification by inserting a record into reddit_community_community_moderator_email_verifications. The system sends a verification email to the provided email address containing a cryptographically secure token. Only after the email is verified by visiting the token URL can the account become active. The display_name is optional and can be set later. The bio and avatar_url fields are not required during registration and may be updated post-verification. This process ensures only legitimate email owners can create moderator accounts, preventing spam and impersonation. The entire flow is tied to the actor-specific email verification table, ensuring that authentication integrity is maintained at the actor level. The operation does not return session tokens; only success status. Token issuance occurs after email verification is confirmed via the separate verify endpoint (not part of this authorization operation).
+   * Registers a new community moderator account using email and password credentials. This operation validates the email against RFC 5322 format, checks password strength (min 8 characters with one digit and one special character), and ensures username uniqueness (alphanumeric + underscore, 3-30 characters). Upon success, creates a new record in the reddit_community_community_moderators table with password_hash stored as bcrypt, karma_score initialized to 0, and is_deleted set to false. The response includes a JWT access token valid for 30 minutes and a refresh token stored as an httpOnly cookie. Fields referenced from schema: email (required, unique), password_hash (required, generated from input), username (required, unique), display_name (optional, optional, truncated to 100 chars), bio (optional, max 500 chars), and karma_score (defaults to 0). This operation does not issue email verification — email verification is handled separately via reddit_community_community_moderator_email_verifications table and is considered out-of-band for this auth flow.
+   *
+   * The join operation must precede any login attempt. The resulting account has full moderation privileges within its assigned community, as defined by the community_moderator role in the reddit_community_community_moderators relation. This matches the business requirement that community moderators are explicitly granted by owners but must authenticate to access the system.
+   *
+   * All authentication flows use JWT with short-lived access tokens (30 min) and long-lived refresh tokens (14 days) stored securely in httpOnly cookies. Subsequent requests must include the bearer token in the Authorization header with no session ID or state maintained server-side.
+   *
+   * The operation rejects duplicate email or username attempts with 409 Conflict and invalid email/password format with 400 Bad Request. No soft-delete patterns are applied; if an account is deactivated, it is marked is_deleted=true via a separate administrator action, not through this join endpoint.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request payload for community moderator registration. Contains mandatory email and password_hash fields. The display_name is optional, and bio and avatar_url are not included as they are not required during registration and can be updated after verification. All fields are string type with appropriate length constraints derived from the reddit_community_community_moderators schema.
+   * @param body Request body for creating a new community moderator account. Contains authentication credentials and profile metadata required for registration.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor communityModerator
-   * @x-autobe-specification The service layer validates email uniqueness against reddit_community_community_moderators table, hashes password using bcrypt, creates a moderator record with active=false, inserts a verification token into reddit_community_community_moderator_email_verifications, and returns success. No session or tokens are issued yet.
+   * @x-autobe-specification Service creates a new reddit_community_community_moderators record with email, hashed password (bcrypt), username, and optional display_name/bio. Validates email format, password strength (8+ chars, 1 digit, 1 special), username pattern (^[a-zA-Z0-9_]{3,30}$), and uniqueness of email/username. Sets karma_score = 0, created_at/updated_at to current UTC, is_deleted = false. Generates JWT access token (30 min) and refresh token (14 days). Stores refresh token in reddit_community_community_moderator_sessions with ip, href, referrer, expired_at. Returns IRedditCommunityCommunityModerator.IAuthorized with userId, email, username, display_name, avatar_url, karma_score, and access_token.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -40,15 +46,21 @@ export class RedditcommunityAuthCommunitymoderatorController {
   }
 
   /**
-   * Authenticates a community moderator using email and password. The system verifies the provided email exists in the reddit_community_community_moderators table and checks the password_hash against the stored hash using a cryptographically secure algorithm. If valid, a new JWT access_token and refresh_token are generated and stored in the reddit_community_community_moderator_sessions table along with client IP, user agent (href), and referrer data. The returned tokens are used for subsequent API requests. The session record includes an expiration timestamp (expired_at) which is currently set to 15 minutes for access_token and 7 days for refresh_token. If the provided credentials are invalid, the operation returns an error without revealing whether email or password was incorrect (security best practice). Accounts marked with a non-null deleted_at are considered inactive and cannot login. This ensures all authentication events are persisted for security auditing.
+   * Authenticates an existing community moderator using email and password. Validates provided email against reddit_community_community_moderators table and verifies bcrypt password match. If credentials are invalid or account is deactivated (is_deleted=true), returns 401 Unauthorized. If account exists and credentials are valid, issues a short-lived JWT access token (30 min) and refresh token (14 days) stored as httpOnly cookie. The response includes user profile data: id, email, username, display_name, avatar_url, and karma_score — pulled directly from the reddit_community_community_moderators table fields as defined in the schema.
+   *
+   * The login operation is the only entry point for authenticated sessions. It does not perform any email verification or account activation — those are handled during the join operation. All sessions are tracked via reddit_community_community_moderator_sessions table with IP, referrer, and expires_at for audit and security monitoring.
+   *
+   * No logout or token invalidation is performed here — invalidation occurs on refresh token expiration or user-initiated session deletion via administrator action. This design ensures statelessness and scalability.
+   *
+   * The operation rejects attempts with invalid email format, missing credentials, or matching is_deleted=true with 401. Password mismatches or malformed requests return 400.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request payload for community moderator login. Contains email (string, required) and password (string, required). The password field contains the unhashed plain text password, which will be hashed server-side before comparison. This pattern ensures secure transmission while allowing for secure server-side hashing. The schema for this type is derived from the email and password_hash fields in reddit_community_community_moderators.
+   * @param body Request body for authenticating a community moderator. Contains only email and password for credential validation.
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor communityModerator
-   * @x-autobe-specification The service layer queries reddit_community_community_moderators for email with deleted_at = null. Compares password with stored password_hash using bcrypt.compare. If valid, generates access_token (15min) and refresh_token (7days), inserts session record into reddit_community_community_moderator_sessions with IP/referrer data, and returns tokens. Invalid auth returns 401 without detail.
+   * @x-autobe-specification Service queries reddit_community_community_moderators by email. Verifies password_hash matches using bcrypt.compareAsync. If is_deleted=true, returns 401. If valid, generates JWT access token and refresh token. Creates session record in reddit_community_community_moderator_sessions with ip, href, referrer, expires_at=14 days from now. Returns IRedditCommunityCommunityModerator.IAuthorized with id, email, username, display_name, avatar_url, karma_score, and access_token.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -70,15 +82,21 @@ export class RedditcommunityAuthCommunitymoderatorController {
   }
 
   /**
-   * Refreshes an expired access token using a valid refresh token. When a user's JWT access_token expires (e.g., after 15 minutes), they can send their stored refresh_token to this endpoint to obtain a new access_token without requiring re-login. The system validates the refresh_token against the reddit_community_community_moderator_sessions table. If valid and not expired, it issues a new access_token (and optionally a new refresh_token if rotation is enabled), updates the session record's expired_at timestamp, and returns the new tokens. If the refresh_token is invalid, expired, or has been revoked (recorded in reddit_community_token_revocations), the operation fails. This mechanism allows the system to maintain long-lived user sessions while minimizing security risk through short-lived access tokens. Importantly, this operation does not require email or password and relies entirely on the cryptographic integrity of the refresh token. This maintains compliance with stateless JWT patterns and supports secure token rotation policies. The refresh token itself is not stored in plain text but as a hash or encrypted value for added security.
+   * Extends the lifetime of an active community moderator session by issuing a new access token without requiring a password. Uses the secure httpOnly refresh token stored during login or prior refresh. Validates that the refresh token exists in reddit_community_community_moderator_sessions table, has not expired, and that the associated moderator account is not deleted (is_deleted=false). If valid, generates a new JWT access token (30 min) with updated expiration and returns it in the response body. The refresh token remains unchanged, preserving session continuity.
+   *
+   * This operation is used when the access token expires, allowing seamless user experience without re-entering credentials. It does not modify session state beyond issuing a new token — no record of refresh time is stored, and the refresh token expiry (14 days) is fixed from the initial login.
+   *
+   * If the refresh token is missing, expired, revoked, or associated with a deleted account, returns 401 Unauthorized. This supports secure token rotation while maintaining simplicity and statelessness. The refresh token itself is not stored in plain text — it is validated via cryptographic signing and expiration time.
+   *
+   * The response includes only the new access_token and the same user profile data (id, email, username, display_name, avatar_url, karma_score) as in join/login, pulled directly from reddit_community_community_moderators. Refresh tokens are automatically rotated per security best practices — no session re-creation occurs.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request payload for token refresh. Contains refresh_token (string, required) which must be a valid JWT refresh token issued to the community moderator in a previous login or refresh operation. The refresh token is a separate JWT with a longer expiration (typically 7 days) and signed with a different private key. This schema strictly follows the content of the refresh_token field in the reddit_community_community_moderator_sessions table.
+   * @param body Request body for refreshing an expired access token. Contains no payload — relies entirely on the refresh token stored in the httpOnly cookie.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor communityModerator
-   * @x-autobe-specification The service layer decrypts and validates the submitted refresh_token against the reddit_community_community_moderator_sessions table. Checks that session is active (deleted_at is null) and expired_at is in the future. If valid, invalidates old token by setting deleted_at, generates new access_token (15min) and optionally new refresh_token (7days), creates new session record, and returns tokens. Fails with 401 if token is invalid, expired, or revoked.
+   * @x-autobe-specification Service validates the refresh token from the httpOnly cookie by matching it against reddit_community_community_moderator_sessions and checking expires_at > now and is_deleted=false for the associated moderator. Generates new JWT access token with 30 min expiration. Returns IRedditCommunityCommunityModerator.IAuthorized with updated access_token and user profile fields: id, email, username, display_name, avatar_url, karma_score. Does not update session record, as refresh token lifecycle remains unchanged; session expiration is only set at initial login.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

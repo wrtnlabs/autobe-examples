@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,14 +19,12 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
   let decoded: {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
-    type: "administrator";
+    type: string;
   };
   try {
-    const refreshToken: string =
-      (props.body as any).refreshToken ?? (props.body as any).token ?? "";
-    decoded = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as unknown as typeof decoded;
+    }) as any;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -36,33 +35,33 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
     await MyGlobal.prisma.shopping_mall_administrator_sessions.findFirst({
       where: {
         id: decoded.session_id,
+        shopping_mall_administrator_id: decoded.id,
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  const administrator =
+  const admin =
     await MyGlobal.prisma.shopping_mall_administrators.findUniqueOrThrow({
       where: { id: decoded.id },
     });
-  if (administrator.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Account deleted", 403);
   }
-  const createdAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  const accessExpireTime = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpireTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessExpires: string & tags.Format<"date-time"> =
-    toISOStringSafe(accessExpireTime);
-  const refreshExpires: string & tags.Format<"date-time"> =
-    toISOStringSafe(refreshExpireTime);
+  const nowIso = toISOStringSafe(new Date()) as string &
+    tags.Format<"date-time">;
+  const accessExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
+  const refreshExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
   const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: createdAt,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -73,21 +72,44 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: createdAt,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
   await MyGlobal.prisma.shopping_mall_administrator_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    data: { expired_at: refreshExpiresIso },
   });
+  const administratorGrade =
+    await MyGlobal.prisma.shopping_mall_administrator_grades.findUniqueOrThrow({
+      where: { id: admin.administrator_grade_id },
+    });
   return {
+    id: admin.id,
+    email: admin.email,
+    name: admin.name,
+    isSuperAdmin: admin.is_super_admin,
+    createdAt: toISOStringSafe(admin.created_at) as string &
+      tags.Format<"date-time">,
+    updatedAt: toISOStringSafe(admin.updated_at) as string &
+      tags.Format<"date-time">,
+    deletedAt:
+      admin.deleted_at === null
+        ? null
+        : (toISOStringSafe(admin.deleted_at) as string &
+            tags.Format<"date-time">),
+    administratorGrade: {
+      id: administratorGrade.id,
+      name: administratorGrade.name,
+      grade: administratorGrade.grade,
+      superAdministrator: administratorGrade.super_administrator,
+    },
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
   };
 }

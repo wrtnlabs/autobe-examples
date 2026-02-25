@@ -1,84 +1,59 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
+import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallCustomer";
 import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallProduct";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
 import { deleteShoppingMallSellerProductsProductId } from "../../../../providers/deleteShoppingMallSellerProductsProductId";
+import { patchShoppingMallSellerProductsProductId } from "../../../../providers/patchShoppingMallSellerProductsProductId";
 import { postShoppingMallSellerProducts } from "../../../../providers/postShoppingMallSellerProducts";
-import { putShoppingMallSellerProductsProductId } from "../../../../providers/putShoppingMallSellerProductsProductId";
 
 @Controller("/shoppingMall/seller/products")
 export class ShoppingmallSellerProductsController {
   /**
-   * Create a new product listing in the shoppingMall marketplace. This operation allows authenticated sellers to register a new product with required fields: name, description, and base_price. The product is associated with the seller's account and initialized with no variants or images, which must be added separately. Product creation triggers an immutable snapshot of the product state for audit trail purposes. The product name must be unique within the seller's catalog and contain 3-200 characters. The description must be 10-5,000 characters long and provide detailed information about the product's features, specifications, and usage instructions. The base_price must be a positive number with at most two decimal places. This operation is only allowed for sellers with 'approved' status. Once created, the product can be managed through edit, delete, and variant addition operations. Product creation is the foundational step for any seller to list merchandise on the platform.
+   * Update an existing product's details, images, and variants. This operation allows sellers to modify the product name, description, category, base price, associated images, and product variants.
    *
-   * Security considerations require the seller to be authenticated with a valid JWT token and have an approval status of 'approved'. Sellers with 'pending', 'rejected', or 'suspended' status cannot create products. The operation validates that the name and description meet length requirements and that the base_price is greater than zero. If validation fails, appropriate error messages are returned with validation codes.
+   * The system automatically creates a new product snapshot in shopping_mall_product_snapshots with the previous state before applying changes. All variant modifications trigger corresponding shopping_mall_product_variant_snapshots records. Images are updated based on position changes, and deletions are handled by marking deleted_at. Category ID must reference an existing, non-deleted category. Current product state is validated against seller ownership and active status.
    *
-   * The product entity is linked to the seller via seller_id foreign key and is subject to immutable snapshot preservation for dispute resolution. Product snapshots capture the exact state of the product at time of creation, including all fields as they were submitted. This ensures the authenticity of product information for marketplace integrity.
+   * If any variant's stock quantity is updated, inventory_logs are automatically generated to track modifications. The operation fails if the product has existing 'paid' or 'shipped' order items during variant deletion or if the seller has exceeded their product limit (1,000 active products). All updates must be atomic—for any failed sub-operation, the entire request is rolled back.
    *
-   * Related API operations include: PATCH /products to search/list products, GET /products/{id} to retrieve a specific product, PUT /products/{id} to update a product, and DELETE /products/{id} to delete a product. Product images and variants must be managed through separate endpoints.
-   *
-   * @param connection
-   * @param body Request body containing product creation details including name, description, and base_price.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new product record in schema shopping_mall_products with fields: name, description, base_price, created_at, updated_at, and seller_id (from authenticated JWT). Validate name length (3-200 chars), description length (10-5000 chars), and base_price > 0. Set default values: created_at = now(), updated_at = now(), deleted_at = null, approval_status = active. Return the complete product object with generated id. Create an immutable snapshot of the product state using the shopping_mall_snapshots mechanism. Ensure atomic transaction to prevent race conditions. Return HTTP 201 with created product object. If validation fails, return appropriate 400 error with validation codes. If seller not approved, return 403. If seller is deleted, return 404.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post()
-  public async create(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedBody()
-    body: IShoppingMallProduct.ICreate,
-  ): Promise<IShoppingMallProduct> {
-    try {
-      return await postShoppingMallSellerProducts({
-        seller,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update the core attributes of a specific product listing.
-   *
-   * This endpoint allows a registered seller to modify the name, description, or base price of a product they own. All changes are subject to audit and immutable historical preservation; every update creates a permanent snapshot of the product's previous state, ensuring transactional integrity and dispute resolution capability.
-   *
-   * Upon update, the system validates that no order items exist for any variant of this product. This restriction ensures product changes cannot occur after purchases have been made, preserving the principle that product specifications at time of purchase must remain immutable. If any order items exist (regardless of status), the update is denied to maintain consistency with the snapshot principle.
-   *
-   * The operation requires the full product object in the request body with updated values. Partial updates are not permitted; all three fields (name, description, base_price) must be provided in every request. The system automatically sets the updated_at timestamp to the current time and logs the change in the shopping_mall_snapshots table with complete before/after records.
-   *
-   * This operation does not modify product variants, images, or any other child entities. To update variants or images, use the respective endpoints for shopping_mall_product_variants or shopping_mall_product_images. This endpoint handles only the core product metadata.
-   *
-   * Access is restricted to the seller who created the product. The system enforces ownership verification through the authenticated seller's token, which is matched against the product's seller_id field. Administrative users cannot use this endpoint—admin modifications of products must use the dedicated admin override interfaces.
-   *
-   * Any previous versions of this product are preserved in the shopping_mall_snapshots table and remain accessible via audit trails for compliance, dispute resolution, and historical reference.
+   * This operation depends on GET /products/{product_id} to validate current product state before update. Product snapshots can be reviewed using GET /sellers/products/{product_id}/snapshots.
    *
    * @param connection
-   * @param productId The unique identifier of the product to update. Must be a UUID that corresponds to an existing shopping_mall_product record owned by the authenticated seller.
-   * @param body Complete representation of the product with updated fields. Must include all three mutable fields: name, description, and base_price. Partial updates are not permitted.
+   * @param productId The unique UUID identifier of the product to update. Must belong to the authenticated seller.
+   * @param body Update request containing new values for product name, description, category, base price, associated images, and variants. All fields are optional. Only provided fields are updated. Variant updates must include either id or sku_code to match existing.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update product with new name, description, and base_price. Must validate seller owns the product. Before updating, create a snapshot in shopping_mall_snapshots with before/after state of entire product record, including name, description, base_price, created_at, updated_at, deleted_at. Validate that no order items exist for any variant of this product (join shopping_mall_product_variants and shopping_mall_order_items where product_id = productId and variant_id in (select id from shopping_mall_product_variants where product_id = productId) and is not deleted). If any order items exist, return 409 Conflict. Update product fields with new values and set updated_at to current timestamp. Return the complete updated product object in response. All updates trigger snapshot generation per 12-snapshot-principle.md.
+   * @x-autobe-specification Update product state atomically using transaction.
+   * 1. Validate seller owns product and product is active (deleted_at is null)
+   * 2. Validate target category exists and is not deleted
+   * 3. Check seller has not exceeded 1,000 active products limit before update
+   * 4. For each image in request:
+   *    - If image has id: update position and mark deleted_at if missing from request
+   *    - If image has url but no id: create new image record
+   * 5. For each variant in request:
+   *    - If variant has id: update sku_code, price, options and create variant snapshot
+   *    - If variant has no id: create new variant with snapshot
+   *    - If variant id not in request: check if it has order items in 'paid' or 'shipped' status; if yes, reject deletion
+   * 6. Apply updated name, description, category_id, base_price to product
+   * 7. Generate product snapshot with current state
+   * 8. Return updated product object with all fields
+   * 9. On any failure, rollback entire transaction and return appropriate error
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":productId")
+  @TypedRoute.Patch(":productId")
   public async update(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedBody()
-    body: IShoppingMallProduct.IUpdate,
+    body: IShoppingMallProduct.IRequest,
   ): Promise<IShoppingMallProduct> {
     try {
-      return await putShoppingMallSellerProductsProductId({
+      return await patchShoppingMallSellerProductsProductId({
         seller,
         productId,
         body,
@@ -90,34 +65,38 @@ export class ShoppingmallSellerProductsController {
   }
 
   /**
-   * Permanently removes a product from being visible to customers while preserving its historical data for audit and dispute resolution.
+   * Permanently delete a product from the catalog after verifying no dependent order items, cancellations, or refunds exist. This operation is irreversible and complies with the snapshot principle by preserving all historical product state in shopping_mall_product_snapshots.
    *
-   * This operation logically deletes a product by setting its "deleted_at" timestamp, making it invisible in search results, category listings, and product detail pages. The product's name, description, category, and base price are preserved in the system's immutable snapshot archive for compliance and forensic purposes. This ensures customer orders referencing this product maintain accurate historical records, and administrators can access the product's complete state at any time for dispute resolution.
+   * This endpoint enforces strict validation to prevent data integrity violations: deletion is prohibited if any variant of the product has order items with status 'paid' or 'shipped', or if there are any pending cancellation or refund requests related to its variants. This ensures all financial transactions linked to the product remain traceable and unaltered.
    *
-   * The operation strictly validates that no order items associated with this product's variants exist with status "paid" or "shipped" before deletion proceeds. This prevents removal of products that have been purchased or shipped, preserving transactional integrity. If any such order items exist, the deletion is blocked and an appropriate error message is returned.
+   * The deletion process follows the snapshot principle: even though the product is removed from active listings and search results, all variant states, pricing details, and seller profile associations at the time of creation and modification are preserved in immutable snapshots. This allows historical order records to remain accurate and resolvable for dispute resolution.
    *
-   * All product images and product variants are also logically deleted, but their state at creation time remains accessible via their respective snapshots. Inventory history records related to variants of this product are preserved for financial and stock auditing. The seller's profile state at the time of original product creation remains attached to the product snapshot, ensuring seller accountability.
+   * The product identifier (UUID) remains referenceable in all order item snapshots even after deletion, enabling customer and administrator views of past purchases to display preserved product names, descriptions, and images exactly as they appeared during purchase. Any attempt to modify or delete product snapshots is strictly prohibited.
    *
-   * When the product is deleted, the system automatically removes it from any customer wishlist and notifies recognized customers if there are active wishlists with this product. The product is no longer available for seller modifications or inventory updates after deletion.
+   * The operation is only accessible to the product's owning seller or a system administrator. Seller-initiated deletion triggers administrative notification. Admin-initiated deletion archives the product for legal compliance purposes and logs all actions with operator and timestamp for audit trails.
    *
-   * This operation is irreversible. Once a product is deleted, it cannot be restored. Users can no longer create new products with the same name via the API if the original product name is preserved in the snapshot archive.
+   * This operation is directly related to: POST /sellers/products (product creation), POST /sellers/products/{product_id}/variants (variant creation), and GET /sellers/products/{product_id}/snapshots (viewing historical state). After successful deletion, these operations become inaccessible for this product.
    *
    * @param connection
-   * @param productId Unique identifier of the product to delete, stored as a UUID in the shopping_mall_products table. This value is used for exact record lookup and must be a valid UUID format.
+   * @param productId Unique identifier of the product to be deleted, referenced from shopping_mall_products.id.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Locate the shopping_mall_products record with the provided UUID productId. Verify that no shopping_mall_order_items exist for any variant of this product with status "paid" or "shipped" by joining with shopping_mall_variants and shopping_mall_order_items tables.
-   * If any order items with status "paid" or "shipped" are found, return HTTP 409 Conflict error with message "Cannot delete product because variants have paid or shipped order items".
-   * If validation passes, update the shopping_mall_products record by setting deleted_at to the current ISO 8601 timestamp.
-   * Ensure the following systems are triggered:
-   * - Send notification to customers who have this product on their wishlist
-   * - Archive the current product state into the shopping_mall_snapshots table as a ProductSnapshot with version timestamp and actor information
-   * - Maintain all existing relationships with shopping_mall_product_images and shopping_mall_product_variants
-   * - Preserve all inventory history and variant records for audit purposes
-   * - Do not delete any data from shopping_mall_product_images, shopping_mall_product_variants, or shopping_mall_inventory_histories tables
-   * - Mark associated variants as logically deleted by setting their deleted_at field if not already set
-   * - Publish event for product deletion to analytics system
-   * Return HTTP 204 No Content upon successful delete.
+   * @x-autobe-specification Retrieve product record by productId.
+   * Check all variants of the product.
+   * For each variant:
+   * - Count order items with status 'paid' or 'shipped'
+   * - Check pending cancellation requests
+   * - Check pending refund requests
+   * If any record exists:
+   *   - Return 409 Conflict with detailed message listing affected variants
+   * Else:
+   *   - Update product.deleted_at with current timestamp (logical delete)
+   *   - Set product.is_active to false
+   *   - Remove product from search index
+   *   - Delete all associated images (logical)
+   *   - Preserve all product snapshots as immutable records
+   *   - Log deletion with actor and timestamp
+   *   - Return 204 No Content
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":productId")
@@ -131,6 +110,50 @@ export class ShoppingmallSellerProductsController {
       return await deleteShoppingMallSellerProductsProductId({
         seller,
         productId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new product listing in the shoppingMall marketplace for sale by an approved seller.
+   *
+   * This operation allows registered sellers to add new products to their catalog. Each product must have a unique name, detailed description, assigned category, and a base price. Products must have at least one variant (SKU), with optional price overrides and customizable option values (e.g., color, size).
+   *
+   * When a product is created, the system automatically generates an immutable snapshot of the product's initial state — including its name, description, base price, category, and all variants — for future audit, dispute resolution, and historical integrity purposes. This snapshot preserves the exact state of the product at the moment of creation, even if it is later modified or deleted.
+   *
+   * Only approved sellers can create products. Pending or suspended sellers are rejected. The product is immediately visible to customers upon creation and appears in category listings and search results, unless explicitly deleted. Product images and variants can be added or modified post-creation via dedicated endpoints.
+   *
+   * This operation is fundamental to the marketplace model, enabling sellers to bring goods to market while ensuring transparency and trust through immutable record-keeping. All product data is preserved in its original form to protect consumers from misleading edits after purchase.
+   *
+   * If a product is deleted, it is permanently removed from the catalog and cannot be recovered. Unlike soft-delete systems, there is no recovery mechanism or archived state.
+   *
+   * Related operations:
+   * - GET /products: Retrieve product listings
+   * - PUT /sellers/products/{product_id}: Edit product details
+   * - DELETE /sellers/products/{product_id}: Delete product (if no paid/shipped items)
+   * - GET /sellers/products/{product_id}/snapshots: View historical versions
+   *
+   * @param connection
+   * @param body Product creation data including name, description, category, base price, and optional variants and images.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Create a new product in the shoppingMall catalog under the authenticated seller. Validate that the seller is approved and the category exists. Ensure product name is 1-100 characters, description is 50-1000 characters, and base_price is ≥ 0.01. Require at least one variant with unique SKU code (3-20 alphanumeric characters). If variants are provided, validate each has valid option values. Store the product with active status and current timestamps. Create a product snapshot capturing the entire product state including all images and variants. Associate product with seller_id from JWT token. Return 400 if validations fail, 403 if seller not approved, 409 if SKU already exists. Product must not be marked deleted at creation.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedBody()
+    body: IShoppingMallProduct.ICreate,
+  ): Promise<IShoppingMallCustomer> {
+    try {
+      return await postShoppingMallSellerProducts({
+        seller,
+        body,
       });
     } catch (error) {
       console.log(error);

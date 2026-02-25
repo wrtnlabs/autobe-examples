@@ -16,35 +16,62 @@ export async function deleteDiscussionBoardAdminSectionsSectionIdFilesFileId(pro
   sectionId: string & tags.Format<"uuid">;
   fileId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // First verify that the section exists
-  const section = await MyGlobal.prisma.discussion_board_sections.findFirst({
-    where: {
-      id: props.sectionId,
-      deleted_at: null,
-    },
-  });
-  if (!section) {
-    throw new HttpException("Section not found", 404);
+  // Verify section exists and is active
+  const section =
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: {
+        id: props.sectionId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        created_by_admin_id: true,
+      },
+    });
+  // Additional permission check: verify admin created the section or has section admin privileges
+  if (section.created_by_admin_id !== props.admin.id) {
+    // Check if admin has section administrator privileges
+    const sectionAdmin =
+      await MyGlobal.prisma.discussion_board_section_administrators.findFirst({
+        where: {
+          discussion_board_section_id: props.sectionId,
+          discussion_board_admin_id: props.admin.id,
+          deleted_at: null,
+        },
+      });
+    if (!sectionAdmin) {
+      throw new HttpException(
+        "Insufficient permissions to manage files in this section",
+        403,
+      );
+    }
   }
-  // Verify the file exists and belongs to the specified section
-  const file = await MyGlobal.prisma.discussion_board_section_files.findFirst({
+  // Verify file exists and belongs to specified section
+  const file =
+    await MyGlobal.prisma.discussion_board_section_files.findUniqueOrThrow({
+      where: {
+        id: props.fileId,
+        discussion_board_section_id: props.sectionId,
+        deleted_at: null,
+      },
+    });
+  // Perform hard deletion
+  await MyGlobal.prisma.discussion_board_section_files.delete({
     where: {
       id: props.fileId,
-      discussion_board_section_id: props.sectionId,
-      deleted_at: null,
     },
   });
-  if (!file) {
-    throw new HttpException("File not found or already deleted", 404);
-  }
-  // Get current timestamp as ISO string
-  const currentTimestamp = toISOStringSafe(new Date());
-  // Perform soft deletion by setting deleted_at timestamp
-  await MyGlobal.prisma.discussion_board_section_files.update({
-    where: { id: props.fileId },
+  // Log the deletion action for audit trail
+  await MyGlobal.prisma.discussion_board_audit_logs.create({
     data: {
-      deleted_at: currentTimestamp,
-      updated_at: currentTimestamp,
+      id: v4(),
+      actor_id: props.admin.id,
+      actor_type: "admin",
+      action_type: "FILE_DELETION",
+      description: `Admin ${props.admin.id} deleted file ${props.fileId} from section ${props.sectionId}`,
+      success: true,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
 }

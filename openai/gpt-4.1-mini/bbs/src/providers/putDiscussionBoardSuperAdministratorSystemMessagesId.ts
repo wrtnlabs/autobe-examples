@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardSystemMessageTransformer } from "../transformers/DiscussionBoardSystemMessageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,28 +18,30 @@ export async function putDiscussionBoardSuperAdministratorSystemMessagesId(props
   id: string & tags.Format<"uuid">;
   body: IDiscussionBoardSystemMessage.IUpdate;
 }): Promise<IDiscussionBoardSystemMessage> {
-  const record =
-    await MyGlobal.prisma.discussion_board_system_messages.findUnique({
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.discussion_board_system_messages.findUniqueOrThrow({
       where: { id: props.id },
-      select: {
-        id: true,
-        code: true,
-        message_text: true,
-        message_type: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+      select: { id: true },
+    });
+    await tx.discussion_board_system_messages.update({
+      where: { id: props.id },
+      data: {
+        ...(props.body.code !== undefined && { code: props.body.code }),
+        ...(props.body.message_text !== undefined && {
+          message_text: props.body.message_text,
+        }),
+        ...(props.body.message_type !== undefined && {
+          message_type: props.body.message_type,
+        }),
+        updated_at: now,
       },
     });
-  if (!record) throw new HttpException("System message not found", 404);
-  // No updatable fields in body, so no update operation.
-  return {
-    id: record.id,
-    code: record.code,
-    message_text: record.message_text,
-    message_type: record.message_type,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-  };
+  });
+  const updated =
+    await MyGlobal.prisma.discussion_board_system_messages.findUniqueOrThrow({
+      where: { id: props.id },
+      ...DiscussionBoardSystemMessageTransformer.select(),
+    });
+  return await DiscussionBoardSystemMessageTransformer.transform(updated);
 }

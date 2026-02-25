@@ -13,11 +13,26 @@ export namespace ShoppingMallSaleCollector {
     seller: IEntity;
   }) {
     const id = v4();
-    // The DTO ICreate is empty; required scalar fields are missing in the DTO.
-    // We cannot assign props.body.name or other missing fields as they don't exist.
-    // Therefore cannot produce a valid Prisma CreateInput without user input or DTO extension.
-    throw new Error(
-      "Missing required fields in IShoppingMallSale.ICreate DTO: name, description, base_price, status, categoryId",
-    );
+    return {
+      id,
+      seller: { connect: { id: props.seller.id } },
+      category: { connect: { id: props.body.category_id } },
+      name: props.body.name,
+      description: props.body.description,
+      base_price: props.body.base_price,
+      status: "pending",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      snapshots: undefined,
+      saleUnits: undefined,
+      images: undefined,
+      saleSpecifications: undefined,
+      saleReviews: undefined,
+      saleQuestions: undefined,
+      favorites: undefined,
+      promotions: undefined,
+      viewStats: undefined,
+    } satisfies Prisma.shopping_mall_salesCreateInput;
   }
 }

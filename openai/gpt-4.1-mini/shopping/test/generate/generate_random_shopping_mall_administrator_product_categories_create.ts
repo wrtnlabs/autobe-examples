@@ -18,7 +18,7 @@ export async function generate_random_shopping_mall_administrator_product_catego
   const prepared: IShoppingMallProductCategory.ICreate =
     prepare_random_shopping_mall_product_category(props.body);
   const result: IShoppingMallProductCategory =
-    await api.functional.shoppingMall.administrator.product.categories.create(
+    await api.functional.shoppingMall.administrator.productCategories.create(
       connection,
       {
         body: prepared,

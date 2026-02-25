@@ -1,0 +1,108 @@
+/// Represents a physical shipment created by a seller containing one or more
+/// order items. Captures carrier and tracking number at time of shipment
+/// creation. This is a primary business entity allowing independent tracking
+/// and management of physical deliveries. Each shipment links to a single
+/// order and seller, enabling accountability and logistical visibility. The
+/// shipment record is permanent and immutable and does not represent
+/// financial state or inventory changes — those are captured in order and
+/// inventory components.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order that this shipment is fulfilling. {@link
+  /// shopping_mall_orders.id}.
+  order_id String
+  
+  /// The seller who created and shipped this shipment. {@link
+  /// shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// The name of the carrier or courier service handling this shipment (e.g.,
+  /// FedEx, UPS, local postal).
+  carrier_name String
+  
+  /// The unique tracking number assigned by the carrier for this shipment.
+  /// Used by customers to track delivery progress.
+  tracking_number String
+  
+  /// The exact timestamp when this shipment was created and dispatched by the
+  /// seller.
+  shipped_at DateTime
+  
+  /// When this shipment record was initially created in the system. Matches
+  /// shipped_at for consistency.
+  created_at DateTime
+  
+  /// When this shipment record was last updated. Typically only updated when
+  /// tracking status is manually synced or corrected.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems shopping_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_id])
+  @@index([seller_id])
+  @@index([shipped_at])
+  @@index([carrier_name])
+  @@index([tracking_number])
+}
+
+/// Junction table that associates each order item with a specific shipment.
+/// Enforces that each order item belongs to exactly one shipment. This table
+/// does not store any business data, only foreign key relationships to
+/// maintain the 1:1 relationship between order_item_id and shipment_id as
+/// required by the shipping workflow. Every shipment item represents an
+/// order item that has been included in a physical shipment. This table is
+/// immutable after insertion.
+///
+/// @namespace Shipping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent shipment entity. This foreign key defines which
+  /// shipment this order item belongs to. {@link shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// References the order item being shipped. Unique constraint ensures one
+  /// order item is associated with only one shipment. {@link
+  /// shopping_mall_order_items.id}.
+  order_item_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@unique([shipment_id, order_item_id])
+}

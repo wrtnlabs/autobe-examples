@@ -55,7 +55,8 @@ model ecommerce_customers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions ecommerce_customer_sessions[]
   passwordResets ecommerce_customer_password_resets[]
@@ -82,6 +83,9 @@ model ecommerce_customers {
   administrativeActions ecommerce_administrative_action_of_customers[]
   userBans ecommerce_admin_user_ban_of_customers[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
 }
@@ -128,12 +132,20 @@ model ecommerce_customer_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   reviewHelpfulVotes ecommerce_review_helpful_votes[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_sessions_ecommerce_customer_id_crea_bc77c226")
 }
@@ -184,10 +196,14 @@ model ecommerce_customer_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_password_resets_ecommerce_customer__bc3110fa")
@@ -254,7 +270,8 @@ model ecommerce_sellers {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions ecommerce_seller_sessions[]
   passwordResets ecommerce_seller_password_resets[]
@@ -281,6 +298,9 @@ model ecommerce_sellers {
   administrativeActions ecommerce_administrative_action_of_sellers[]
   userBans ecommerce_admin_user_ban_of_sellers[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([account_status, created_at])
   @@index([created_at])
@@ -340,12 +360,20 @@ model ecommerce_seller_sessions {
   last_accessed_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   platformEventInitiations ecommerce_platform_event_of_sellers[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([access_token])
   @@unique([refresh_token])
   @@index([ecommerce_seller_id, created_at])
@@ -397,10 +425,14 @@ model ecommerce_seller_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_password_resets_ecommerce_seller_id_c_cbf54ec7")
@@ -451,7 +483,8 @@ model ecommerce_administrators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions ecommerce_administrator_sessions[]
   passwordResets ecommerce_administrator_password_resets[]
@@ -475,6 +508,9 @@ model ecommerce_administrators {
   sellerSuspensions ecommerce_admin_seller_suspensions[]
   adminUserBans ecommerce_admin_user_ban_of_administrators[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
   @@index([updated_at])
@@ -536,12 +572,20 @@ model ecommerce_administrator_sessions {
   last_used_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   platformEvents ecommerce_platform_event_of_administrators[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([access_token])
   @@unique([refresh_token])
   // spellchecker: ignore-next-line
@@ -589,7 +633,8 @@ model ecommerce_super_administrators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   sessions ecommerce_super_administrator_sessions[]
   passwordResets ecommerce_super_administrator_password_resets[]
@@ -600,6 +645,9 @@ model ecommerce_super_administrators {
   administrativeActions ecommerce_administrative_actions[]
   administratorPromotionApprovals ecommerce_administrator_promotions[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([email])
   @@index([created_at])
   @@index([updated_at])
@@ -649,10 +697,14 @@ model ecommerce_super_administrator_sessions {
   expired_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_super_administrator_id, created_at], map: "ecommerce_super_administrator_sessions_ecommerce_super_358324b4")
 }
@@ -700,10 +752,14 @@ model ecommerce_administrator_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator ecommerce_administrators @relation(fields: [ecommerce_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_administrator_id, created_at], map: "ecommerce_administrator_password_resets_ecommerce_admi_ef0d1c9a")
@@ -756,10 +812,14 @@ model ecommerce_super_administrator_password_resets {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   superAdministrator ecommerce_super_administrators @relation(fields: [ecommerce_super_administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_super_administrator_id, created_at], map: "ecommerce_super_administrator_password_resets_ecommerc_dd564920")
@@ -818,10 +878,14 @@ model ecommerce_customer_email_verifications {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_email_verifications_ecommerce_custo_13653349")
@@ -871,12 +935,15 @@ model ecommerce_seller_email_verifications {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_seller_id])
-  
   @@unique([token])
   // spellchecker: ignore-next-line
   @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_email_verifications_ecommerce_seller__bdb0c858")

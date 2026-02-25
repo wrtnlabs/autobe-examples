@@ -10,16 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallProductImageCollector {
   export async function collect(props: {
     body: IShoppingMallProductImage.ICreate;
-    shoppingMallProducts: IEntity;
-    display_order: number;
-    image_url: string;
+    shoppingMallSellers: IEntity;
+    shoppingMallProductImages: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      display_order: props.display_order,
-      image_url: props.image_url,
-      product: { connect: { id: props.shoppingMallProducts.id } },
+      image_url: props.body.image_url,
+      sort_order: props.body.sort_order,
+      product: { connect: { id: props.shoppingMallProductImages.id } },
+      createdBySeller: { connect: { id: props.shoppingMallSellers.id } },
     } satisfies Prisma.shopping_mall_product_imagesCreateInput;
   }
 }

@@ -15,25 +15,13 @@ export async function deleteDiscussionBoardAdministratorSectionsSectionId(props:
   administrator: AdministratorPayload;
   sectionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
+  // Verify the section exists
+  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
     where: { id: props.sectionId },
   });
-  if (section === null) {
-    throw new HttpException("Section not found", 404);
-  }
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    await prisma.discussion_board_sections.delete({
-      where: { id: props.sectionId },
-    });
-    await prisma.discussion_board_section_admin_logs.create({
-      data: {
-        id: v4(),
-        section_id: props.sectionId,
-        administrator_id: props.administrator.id,
-        action_type: "",
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
-      },
-    });
+  // Delete the section, cascade deletes related articles
+  await MyGlobal.prisma.discussion_board_sections.delete({
+    where: { id: props.sectionId },
   });
+  return;
 }

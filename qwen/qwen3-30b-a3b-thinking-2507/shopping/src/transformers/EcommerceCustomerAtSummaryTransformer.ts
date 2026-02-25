@@ -15,9 +15,21 @@ export namespace EcommerceCustomerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        display_name: true,
-        phone: true,
+        password_hash: true,
+        email_verified: true,
+        is_suspended: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        sessions: true,
+        emailVerifications: true,
+        passwordResets: true,
+        activitySnapshots: true,
+        orders: true,
+        refundRequests: true,
+        profile: true,
+        addresses: true,
+        cartItems: true,
       },
     } satisfies Prisma.ecommerce_customersFindManyArgs;
   }
@@ -27,9 +39,9 @@ export namespace EcommerceCustomerAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      display_name: input.display_name ?? null,
-      phone: input.phone ?? null,
-      created_at: toISOStringSafe(input.created_at),
+      emailVerified: input.email_verified,
+      isSuspended: input.is_suspended,
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

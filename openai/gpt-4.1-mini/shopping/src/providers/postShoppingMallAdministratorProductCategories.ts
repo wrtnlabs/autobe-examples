@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { ShoppingMallProductCategoryCollector } from "../collectors/ShoppingMallProductCategoryCollector";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
+import { ShoppingMallProductCategoryTransformer } from "../transformers/ShoppingMallProductCategoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,46 +18,29 @@ export async function postShoppingMallAdministratorProductCategories(props: {
   administrator: AdministratorPayload;
   body: IShoppingMallProductCategory.ICreate;
 }): Promise<IShoppingMallProductCategory> {
-  const exists =
-    await MyGlobal.prisma.shopping_mall_product_categories.findFirst({
-      where: { name: (props.body as any).name, deleted_at: null },
-    });
-  if (exists !== null) {
-    throw new HttpException("Category name already exists", 400);
+  try {
+    // Create raw record from DB (contains Dates)
+    const createdRaw =
+      await MyGlobal.prisma.shopping_mall_product_categories.create({
+        data: await ShoppingMallProductCategoryCollector.collect({
+          body: props.body,
+        }),
+        ...ShoppingMallProductCategoryTransformer.select(),
+      });
+    // Return transformed object (transform will handle Date to string conversion correctly)
+    return await ShoppingMallProductCategoryTransformer.transform(createdRaw);
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002" &&
+      (Array.isArray(error.meta?.target)
+        ? error.meta.target.includes("name")
+        : typeof error.meta?.target === "string"
+          ? error.meta.target.includes("name")
+          : false)
+    ) {
+      throw new HttpException("Duplicate category name", 409);
+    }
+    throw error;
   }
-  const id = v4();
-  const now = toISOStringSafe(new Date());
-  const data = await ShoppingMallProductCategoryCollector.collect({
-    body: props.body,
-  });
-  const created = await MyGlobal.prisma.shopping_mall_product_categories.create(
-    {
-      data: {
-        ...data,
-        id,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    },
-  );
-  return {
-    id: created.id as string & tags.Format<"uuid">,
-    name: created.name,
-    description: created.description ?? null,
-    created_at:
-      typeof created.created_at === "string"
-        ? created.created_at
-        : toISOStringSafe(new Date(created.created_at)),
-    updated_at:
-      typeof created.updated_at === "string"
-        ? created.updated_at
-        : toISOStringSafe(new Date(created.updated_at)),
-    deleted_at:
-      created.deleted_at === null
-        ? null
-        : typeof created.deleted_at === "string"
-          ? created.deleted_at
-          : toISOStringSafe(new Date(created.deleted_at)),
-  };
 }

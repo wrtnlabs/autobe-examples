@@ -15,48 +15,92 @@ import { authorize_super_administrator_refresh } from "../../../authorize/author
 export async function test_api_super_administrator_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // This test verifies that a super administrator can successfully log in with a valid email and password.
-  // 1. Create super administrator account with known credentials
-  const adminConnection: api.IConnection = { host: connection.host };
-  // Known credentials for super administrator join (email and password needed but schema is empty object, so simulate with empty)
-  const joinBody: IDiscussionBoardSuperAdministrator.IJoin = {};
-  const authorized = await authorize_super_administrator_join(adminConnection, {
-    body: joinBody,
+  // 1. Register a new super administrator to test login
+  const baseConnection: api.IConnection = { host: connection.host };
+  const password = RandomGenerator.alphaNumeric(16);
+  const email = typia.random<string & tags.Format<"email">>();
+  const authorized = await authorize_super_administrator_join(baseConnection, {
+    body: {
+      email,
+      password,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: null,
+    },
   });
   typia.assert(authorized);
-  // 2. Use the same credentials to log in
-  const loginBody: IDiscussionBoardSuperAdministrator.ILogin = {};
-  const loginAuthorized = await authorize_super_administrator_login(
-    adminConnection,
-    { body: loginBody },
+  // 2. Login with the registered super administrator email and password
+  const loginConnection: api.IConnection = { host: connection.host };
+  const loginResult = await authorize_super_administrator_login(
+    loginConnection,
+    {
+      body: {
+        email: authorized.email,
+        password,
+      } satisfies IDiscussionBoardSuperAdministrator.ILogin,
+    },
   );
-  typia.assert(loginAuthorized);
-  // 3. Validate the authorization token structure and expiration timestamps
-  const token = loginAuthorized.token;
-  // Assert the JWT token strings are non-empty strings
+  typia.assert(loginResult);
+  // 3. Validate login result fields
   TestValidator.predicate(
-    "access token string non-empty",
-    typeof token.access === "string" && token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token string non-empty",
-    typeof token.refresh === "string" && token.refresh.length > 0,
-  );
-  // Assert the expiration timestamps are ISO 8601 strings
-  TestValidator.predicate(
-    "expired_at is ISO 8601",
-    typeof token.expired_at === "string" &&
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(token.expired_at),
+    "valid access token format",
+    typeof loginResult.token.access === "string" &&
+      loginResult.token.access.split(".").length === 3,
   );
   TestValidator.predicate(
-    "refreshable_until is ISO 8601",
-    typeof token.refreshable_until === "string" &&
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(token.refreshable_until),
+    "valid refresh token format",
+    typeof loginResult.token.refresh === "string" &&
+      loginResult.token.refresh.split(".").length === 3,
   );
-  // Additional validation that refreshable_until is after expired_at
+  // 4. Validate token expiration data
+  const now = new Date();
+  const expiredAt = new Date(loginResult.token.expired_at);
+  const refreshableUntil = new Date(loginResult.token.refreshable_until);
   TestValidator.predicate(
-    "refreshable_until after expired_at",
-    new Date(token.refreshable_until).getTime() >
-      new Date(token.expired_at).getTime(),
+    "expired_at is ISO date string in the future",
+    !isNaN(expiredAt.getTime()) && expiredAt.getTime() > now.getTime(),
+  );
+  TestValidator.predicate(
+    "refreshable_until is ISO date string and after expired_at",
+    !isNaN(refreshableUntil.getTime()) &&
+      refreshableUntil.getTime() >= expiredAt.getTime(),
+  );
+  // 5. Validate user data
+  TestValidator.predicate(
+    "id is non-empty string",
+    typeof loginResult.id === "string" && loginResult.id.length > 0,
+  );
+  TestValidator.equals("email matches login input", loginResult.email, email);
+  TestValidator.predicate(
+    "displayName is non-empty string",
+    typeof loginResult.displayName === "string" &&
+      loginResult.displayName.length > 0,
+  );
+  TestValidator.predicate(
+    "bio is string or null",
+    loginResult.bio === null || typeof loginResult.bio === "string",
+  );
+  TestValidator.predicate(
+    "createdAt is valid ISO string",
+    !isNaN(new Date(loginResult.createdAt).getTime()),
+  );
+  TestValidator.predicate(
+    "updatedAt is valid ISO string",
+    !isNaN(new Date(loginResult.updatedAt).getTime()),
+  );
+  TestValidator.predicate(
+    "deletedAt is null or valid ISO string",
+    loginResult.deletedAt === null ||
+      !isNaN(new Date(loginResult.deletedAt!).getTime()),
+  );
+  // 6. Confirm Authorization header for follow-up requests
+  TestValidator.predicate(
+    "Authorization header is set after login",
+    !!loginConnection.headers?.Authorization,
+  );
+  TestValidator.equals(
+    "Authorization header matches access token",
+    loginConnection.headers!.Authorization,
+    loginResult.token.access,
   );
 }

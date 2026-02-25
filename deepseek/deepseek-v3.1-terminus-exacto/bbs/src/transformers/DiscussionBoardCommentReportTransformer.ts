@@ -35,7 +35,7 @@ export namespace DiscussionBoardCommentReportTransformer {
     return {
       id: input.id,
       reason: input.reason,
-      status: input.status as "pending" | "under_review" | "resolved",
+      status: input.status,
       resolution_details: input.resolution_details ?? null,
       resolved_at: input.resolved_at ? input.resolved_at.toISOString() : null,
       created_at: input.created_at.toISOString(),

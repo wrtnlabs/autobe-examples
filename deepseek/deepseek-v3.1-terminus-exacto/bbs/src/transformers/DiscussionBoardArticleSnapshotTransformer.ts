@@ -1,4 +1,3 @@
-import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardArticleSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleSnapshot";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
@@ -22,6 +21,11 @@ export namespace DiscussionBoardArticleSnapshotTransformer {
         discussion_board_section_id: true,
         discussion_board_user_id: true,
         created_at: true,
+        article: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.discussion_board_article_snapshotsFindManyArgs;
   }
@@ -34,37 +38,20 @@ export namespace DiscussionBoardArticleSnapshotTransformer {
       content: input.content,
       section: {
         id: input.discussion_board_section_id,
-        name: "Section Name",
-        status: "active",
+        name: "",
+        description: "",
+        status: "",
         display_order: 0,
-      },
+        deleted_at: undefined,
+      } satisfies IDiscussionBoardSection.ISummary,
       author: {
         id: input.discussion_board_user_id,
-        display_name: "Author Name",
-        bio: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      article: {
-        id: "",
-        title: "",
-        status: "",
-        created_at: "",
-        author: {
-          id: "",
-          display_name: "",
-          bio: null,
-          created_at: "",
-          updated_at: "",
-        },
-        section: {
-          id: "",
-          name: "",
-          status: "active",
-          display_order: 0,
-        },
-      },
-      created_at: input.created_at.toISOString(),
+        display_name: "",
+        bio: undefined,
+        created_at: toISOStringSafe(new Date()),
+      } satisfies IDiscussionBoardUser.ISummary,
+      created_at: toISOStringSafe(input.created_at),
+      article_id: input.article.id,
     };
   }
 }

@@ -16,10 +16,16 @@ export namespace EcommerceSellerTransformer {
         id: true,
         email: true,
         password_hash: true,
-        approval_status: true,
+        name: true,
+        description: true,
+        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        sessions: true,
+        emailVerifications: true,
+        passwordResets: true,
+        profiles: true,
       },
     } satisfies Prisma.ecommerce_sellersFindManyArgs;
   }
@@ -27,10 +33,12 @@ export namespace EcommerceSellerTransformer {
     return {
       id: input.id,
       email: input.email,
-      approval_status: input.approval_status,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      name: input.name,
+      description: input.description,
+      status: input.status as "pending" | "approved" | "rejected",
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

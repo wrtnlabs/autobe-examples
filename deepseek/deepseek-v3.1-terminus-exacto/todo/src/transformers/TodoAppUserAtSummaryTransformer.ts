@@ -15,11 +15,8 @@ export namespace TodoAppUserAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: false,
         display_name: true,
         created_at: true,
-        updated_at: false,
-        deleted_at: false,
       },
     } satisfies Prisma.todo_app_usersFindManyArgs;
   }
@@ -30,7 +27,7 @@ export namespace TodoAppUserAtSummaryTransformer {
       id: input.id,
       email: input.email,
       display_name: input.display_name,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

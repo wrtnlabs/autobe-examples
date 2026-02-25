@@ -11,13 +11,17 @@ import typia, { tags } from "typia";
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardMember.IJoin>;
+    body: IDiscussionBoardMember.IJoin;
   },
 ): Promise<IDiscussionBoardMember.IAuthorized> {
   const joinInput = {
-    // IDiscussionBoardMember.IJoin has no required fields currently
+    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+    displayName: props.body.displayName ?? RandomGenerator.name(),
+    passwordConfirmation:
+      props.body.password ?? RandomGenerator.alphaNumeric(16),
   } satisfies IDiscussionBoardMember.IJoin;
   return await api.functional.discussionBoard.auth.member.join(connection, {
-    body: props.body ?? joinInput,
+    body: joinInput,
   });
 }

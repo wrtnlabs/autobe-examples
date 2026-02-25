@@ -1,59 +1,57 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallShipmentConfirmation } from "../../../../../api/structures/IShoppingMallShipmentConfirmation";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { postShoppingMallCustomerShipmentsShipmentIdConfirmDelivery } from "../../../../../providers/postShoppingMallCustomerShipmentsShipmentIdConfirmDelivery";
+import { postShoppingMallCustomerShipmentsConfirmDelivery } from "../../../../../providers/postShoppingMallCustomerShipmentsConfirmDelivery";
 
-@Controller("/shoppingMall/customer/shipments/:shipmentId/confirm-delivery")
+@Controller("/shoppingMall/customer/shipments/confirm-delivery")
 export class ShoppingmallCustomerShipmentsConfirm_deliveryController {
   /**
-   * Create a new shipment delivery confirmation entry.
+   * This operation allows an authenticated customer to confirm the delivery of a shipment. Upon invocation, the system will update the shipment status and all related order items to "delivered" if they have been shipped.
    *
-   * This operation enables a customer to confirm the delivery of a shipment by creating a record in the shopping_mall_shipment_confirmations table. Each confirmation stores the shipment ID and the timestamp when the delivery was confirmed.
+   * This endpoint is critical for completing the shipment lifecycle and triggering post-delivery processes such as enabling refunds and product reviews.
    *
-   * Security:
-   * - Only authenticated customers associated with the shipment can confirm delivery.
+   * Security requirements enforce that only the customer who owns the shipment can confirm delivery. The system will validate ownership and current shipment status before processing.
    *
-   * Relationships:
-   * - References the shopping_mall_shipments table by shipmentId.
+   * The operation relates to the shipment and order items database entities. It updates the shipment confirmation record with the timestamp of confirmation.
    *
-   * Validation and Logic:
-   * - Validates that shipmentId exists and belongs to the requesting customer.
-   * - Records current timestamp as confirmation time.
-   * - Prevents duplicate confirmations by the same customer for the shipment.
+   * Validation ensures shipment exists, is assigned to the customer, and is currently shipped but not yet confirmed as delivered.
    *
-   * Related API:
-   * - GET /shipments/{shipmentId} to retrieve shipment details and statuses.
+   * Related endpoints include GET /customers/orders/{orderId} for order status inquiries and POST /customers/orders/{orderId}/items/{orderItemId}/refund for refund requests after confirmed delivery.
    *
-   * Expected Behavior:
-   * - On success, returns the created confirmation record with confirmation timestamp.
-   * - On failure, returns appropriate error (e.g., 404 if shipment not found, 403 if unauthorized).
-   *
-   * Note: Though deleted_at exists for soft deletion, this operation always records new confirmations and does not implement deletion or soft delete behavior.
-   *
+   * Errors will be returned for unauthorized access, invalid shipment ID, or incorrect shipment state preventing confirmation.
    *
    * @param connection
-   * @param shipmentId Identifier of the shipment to confirm delivery for. Corresponds to shopping_mall_shipments.id UUID.
+   * @param body Information required to confirm shipment delivery
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification The implementation must insert a new record into shopping_mall_shipment_confirmations with the shipment ID and the current timestamp as confirmed_at. Validate that the shipment ID exists and the customer is authorized to confirm it. Handle duplicate confirmation gracefully by allowing single confirmation per shipment per customer. No request body content is required; the endpoint action triggers the creation including the current timestamp. Return the full created confirmation record with all fields in the response.
+   * @x-autobe-specification This operation will:
+   * - Validate the shipment ID and customer ownership.
+   * - Verify the shipment is in the correct state (shipped, not delivered).
+   * - Create or update a shipment confirmation record with the current timestamp.
+   * - Update statuses of all included order items to 'delivered'.
+   * - Return updated shipment confirmation data including timestamp.
    *
+   * Implementation details:
+   * - Use transactional database operations to ensure consistency.
+   * - Return appropriate errors for validation failures.
+   * - Integrate with notification systems to alert sellers of delivery confirmation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async confirmDelivery(
     @CustomerAuth()
     customer: CustomerPayload,
-    @TypedParam("shipmentId")
-    shipmentId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallShipmentConfirmation.ICreate,
   ): Promise<IShoppingMallShipmentConfirmation> {
     try {
-      return await postShoppingMallCustomerShipmentsShipmentIdConfirmDelivery({
+      return await postShoppingMallCustomerShipmentsConfirmDelivery({
         customer,
-        shipmentId,
+        body,
       });
     } catch (error) {
       console.log(error);

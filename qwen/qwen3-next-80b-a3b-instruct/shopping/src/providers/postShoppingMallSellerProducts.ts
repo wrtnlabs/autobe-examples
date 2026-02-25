@@ -1,5 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantOptionItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOptionItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -8,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallProductCollector } from "../collectors/ShoppingMallProductCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -15,86 +19,119 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallSellerProducts(props: {
   seller: SellerPayload;
   body: IShoppingMallProduct.ICreate;
-}): Promise<IShoppingMallProduct> {
-  // Validate seller is approved and not deleted
+}): Promise<IShoppingMallCustomer> {
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: {
       id: props.seller.id,
-      approval_status: "approved",
       deleted_at: null,
     },
   });
-  if (!seller) {
-    throw new HttpException("You're not enrolled or not approved", 403);
+  if (!seller || seller.status !== "approved") {
+    throw new HttpException("Seller not approved", 403);
   }
-  // Since IShoppingMallProduct.ICreate is empty, we must assume the fields are required
-  // Based on the operation specification, these fields are required
-  if (!props.body) {
-    throw new HttpException("Product creation data is required", 400);
+  const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
+    where: {
+      id: props.body.category_id,
+      deleted_at: null,
+    },
+  });
+  if (!category) {
+    throw new HttpException("Category not found", 400);
   }
-  // We are not allowed to use 'as any' - so we must rely on the system-level inconsistency
-  // In real implementation, this would be corrected at the DTO level
-  // We must extract fields without assertion - since the DTO is empty, the IDE
-  // will likely complain, but the system must handle it
-  // We'll use a type-safe approach by declaring an intermediate object that we know must exist
-  // The property access must be safe - we are forced to assume the body contains these three properties
-  // This is a system limitation - the API contract is broken
-  const name = (props.body as any).name as string;
-  const description = (props.body as any).description as string;
-  const base_price = (props.body as any).base_price as number;
-  if (
-    !name ||
-    typeof name !== "string" ||
-    name.length < 3 ||
-    name.length > 200
-  ) {
-    throw new HttpException("Product name must be 3-200 characters", 400);
+  if (props.body.name.length < 1 || props.body.name.length > 100) {
+    throw new HttpException("Product name must be 1-100 characters", 400);
   }
   if (
-    !description ||
-    typeof description !== "string" ||
-    description.length < 10 ||
-    description.length > 5000
+    props.body.description.length < 50 ||
+    props.body.description.length > 1000
   ) {
     throw new HttpException(
-      "Product description must be 10-5000 characters",
+      "Product description must be 50-1000 characters",
       400,
     );
   }
-  if (
-    base_price === undefined ||
-    typeof base_price !== "number" ||
-    base_price <= 0 ||
-    !isFinite(base_price)
-  ) {
-    throw new HttpException(
-      "Product base price must be a positive number",
-      400,
-    );
+  if (props.body.base_price < 0.01) {
+    throw new HttpException("Base price must be at least 0.01", 400);
   }
-  // We are forbidden from using Date object - must generate string & tags.Format<'date-time'>
-  const now = toISOStringSafe(new Date());
-  // Create product - all values are type-safe
-  const created = await MyGlobal.prisma.shopping_mall_products.create({
+  if (
+    !props.body.variants ||
+    props.body.variants.length < 1 ||
+    props.body.variants.length > 20
+  ) {
+    throw new HttpException("Product must have 1-20 variants", 400);
+  }
+  // Check for duplicate SKUs within this product creation
+  const skuSet = new Set<string>();
+  for (const variant of props.body.variants) {
+    if (
+      variant.sku_code.length < 3 ||
+      variant.sku_code.length > 20 ||
+      !/^[a-zA-Z0-9]+$/.test(variant.sku_code)
+    ) {
+      throw new HttpException(
+        "SKU code must be 3-20 alphanumeric characters",
+        400,
+      );
+    }
+    if (skuSet.has(variant.sku_code)) {
+      throw new HttpException("Duplicate SKU code detected", 409);
+    }
+    skuSet.add(variant.sku_code);
+  }
+  // Validate SKUs don't already exist in other products
+  const existingSkus =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
+      where: {
+        sku_code: { in: props.body.variants.map((v) => v.sku_code) },
+      },
+    });
+  if (existingSkus.length > 0) {
+    throw new HttpException("SKU code already exists in another product", 409);
+  }
+  const createdProduct = await MyGlobal.prisma.shopping_mall_products.create({
+    data: await ShoppingMallProductCollector.collect({
+      body: props.body,
+      shoppingMallSellers: { id: props.seller.id },
+    }),
+  });
+  // Create product snapshot using direct field mapping
+  const productImages =
+    await MyGlobal.prisma.shopping_mall_product_images.findMany({
+      where: { product_id: createdProduct.id },
+    });
+  const productVariants =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
+      where: { product_id: createdProduct.id },
+    });
+  await MyGlobal.prisma.shopping_mall_product_snapshots.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      name,
-      description,
-      base_price,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
+      product_id: createdProduct.id,
+      category_id: createdProduct.category_id,
+      changed_by_id: createdProduct.seller_id,
+      changed_at: toISOStringSafe(createdProduct.created_at),
+      version: 1,
+      images: {
+        create: productImages.map((img) => ({
+          image_url: img.image_url,
+          position: img.position,
+          created_at: toISOStringSafe(img.created_at),
+        })),
+      },
+      variants: {
+        create: productVariants.map((variant) => ({
+          sku_code: variant.sku_code,
+          price: variant.price,
+          stock_quantity: variant.stock_quantity,
+          created_at: toISOStringSafe(variant.created_at),
+        })),
+      },
     },
   });
-  // Return fully typed IShoppingMallProduct
-  // Since IShoppingMallProduct is {} - we must return an object with all fields defined
+  // Return IShoppingMallCustomer with complete required fields - updated_at not in database, so use created_at
   return {
-    id: created.id as string & tags.Format<"uuid">,
-    name: created.name,
-    description: created.description,
-    base_price: created.base_price,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-    deleted_at: created.deleted_at ? toISOStringSafe(created.deleted_at) : null,
+    id: props.seller.id,
+    email: seller.email,
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.created_at),
   };
 }

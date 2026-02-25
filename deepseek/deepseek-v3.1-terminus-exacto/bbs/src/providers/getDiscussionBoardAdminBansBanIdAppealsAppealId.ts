@@ -21,25 +21,15 @@ export async function getDiscussionBoardAdminBansBanIdAppealsAppealId(props: {
   banId: string & tags.Format<"uuid">;
   appealId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardBanAppeal> {
-  const appeal = await MyGlobal.prisma.discussion_board_ban_appeals.findUnique({
-    where: {
-      id: props.appealId,
-    },
-    ...DiscussionBoardBanAppealTransformer.select(),
-  });
-  if (!appeal) {
-    throw new HttpException("Ban appeal not found", 404);
-  }
-  // Verify that the appeal belongs to the specified ban
-  if (appeal.banRecord.id !== props.banId) {
-    throw new HttpException(
-      "Ban appeal does not belong to the specified ban",
-      404,
-    );
-  }
-  // Check if the appeal is soft-deleted
-  if (appeal.deleted_at !== null) {
-    throw new HttpException("Ban appeal not found", 404);
-  }
+  // Fetch appeal with proper validation that it belongs to the specified ban
+  const appeal =
+    await MyGlobal.prisma.discussion_board_ban_appeals.findFirstOrThrow({
+      where: {
+        id: props.appealId,
+        discussion_board_ban_record_id: props.banId,
+        deleted_at: null,
+      },
+      ...DiscussionBoardBanAppealTransformer.select(),
+    });
   return await DiscussionBoardBanAppealTransformer.transform(appeal);
 }

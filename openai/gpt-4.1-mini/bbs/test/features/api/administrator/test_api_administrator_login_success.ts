@@ -1,6 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministrator";
+import type { IDiscussionBoardAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorGrade";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -15,46 +16,90 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_administrator_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Administrator registration
+  // Scenario: Test logging in an existing administrator with valid credentials
+  // Step 1: Prepare a random password
+  const password = RandomGenerator.alphaNumeric(16);
+  // Step 2: Register a new administrator to ensure one exists
   const adminJoinConnection: api.IConnection = { host: connection.host };
-  // Generate email and password for join
-  const email = `${RandomGenerator.alphabets(5)}@example.com`;
-  const password = RandomGenerator.alphabets(10);
-  const joinBody = {
-    email,
+  const joinInput = {
+    email: typia.random<string & tags.Format<"email">>(),
     password,
   } satisfies IDiscussionBoardAdministrator.IJoin;
-  const joinOutput = await authorize_administrator_join(adminJoinConnection, {
-    body: joinBody,
+  const joinedAdmin = await authorize_administrator_join(adminJoinConnection, {
+    body: joinInput,
   });
-  typia.assert(joinOutput);
-  // 2. Administrator login with the same credentials
+  typia.assert(joinedAdmin);
+  // Step 3: Login as the registered administrator
   const adminLoginConnection: api.IConnection = { host: connection.host };
-  const loginBody = {
-    email,
+  const loginInput = {
+    email: joinInput.email,
     password,
+    href: "http://localhost/login",
+    referrer: "http://localhost/",
   } satisfies IDiscussionBoardAdministrator.ILogin;
-  const loginOutput = await authorize_administrator_login(
+  const loggedInAdmin = await authorize_administrator_login(
     adminLoginConnection,
     {
-      body: loginBody,
+      body: loginInput,
     },
   );
-  typia.assert(loginOutput);
-  // 3. Validate access and refresh tokens presence and expiration format
-  const token = loginOutput.token;
-  TestValidator.predicate("access token has length", token.access.length > 0);
-  TestValidator.predicate("refresh token has length", token.refresh.length > 0);
-  // Validate ISO 8601 date-time strings
-  const dateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+  typia.assert(loggedInAdmin);
+  // Step 4: Validate the login response
   TestValidator.predicate(
-    "access token expired_at format",
-    dateFormat.test(token.expired_at),
+    "access token is non-empty string",
+    typeof loggedInAdmin.token.access === "string" &&
+      loggedInAdmin.token.access.length > 0,
   );
   TestValidator.predicate(
-    "refresh token refreshable_until format",
-    dateFormat.test(token.refreshable_until),
+    "refresh token is non-empty string",
+    typeof loggedInAdmin.token.refresh === "string" &&
+      loggedInAdmin.token.refresh.length > 0,
   );
-  // 4. Confirm login success for existing account
-  TestValidator.equals("login email equality", loginBody.email, email);
+  TestValidator.predicate(
+    "access token expired_at format is valid date-time string",
+    typeof loggedInAdmin.token.expired_at === "string" &&
+      !isNaN(Date.parse(loggedInAdmin.token.expired_at)),
+  );
+  TestValidator.predicate(
+    "refresh token refreshable_until format is valid date-time string",
+    typeof loggedInAdmin.token.refreshable_until === "string" &&
+      !isNaN(Date.parse(loggedInAdmin.token.refreshable_until)),
+  );
+  TestValidator.predicate(
+    "administrator id is UUID string",
+    typeof loggedInAdmin.id === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        loggedInAdmin.id,
+      ),
+  );
+  TestValidator.equals(
+    "administrator email matches login input",
+    loggedInAdmin.email,
+    loginInput.email,
+  );
+  TestValidator.predicate(
+    "createdAt is date-time string",
+    typeof loggedInAdmin.createdAt === "string" &&
+      !isNaN(Date.parse(loggedInAdmin.createdAt)),
+  );
+  TestValidator.predicate(
+    "updatedAt is date-time string",
+    typeof loggedInAdmin.updatedAt === "string" &&
+      !isNaN(Date.parse(loggedInAdmin.updatedAt)),
+  );
+  TestValidator.equals("deletedAt is null", loggedInAdmin.deletedAt, null);
+  // Grade is optional, if present check:
+  if (loggedInAdmin.grade !== undefined) {
+    TestValidator.predicate(
+      "grade is object",
+      typeof loggedInAdmin.grade === "object" && loggedInAdmin.grade !== null,
+    );
+  }
+  TestValidator.predicate(
+    "gradeId is UUID string",
+    typeof loggedInAdmin.gradeId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        loggedInAdmin.gradeId,
+      ),
+  );
 }

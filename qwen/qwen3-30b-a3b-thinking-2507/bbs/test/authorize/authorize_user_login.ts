@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconomyPoliticsBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomyPoliticsBoardUser";
+import type { IEconomicPoliticalDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,10 +11,13 @@ import typia, { tags } from "typia";
 export async function authorize_user_login(
   connection: api.IConnection,
   props: {
-    body: IEconomyPoliticsBoardUser.ILogin;
+    body: IEconomicPoliticalDiscussionBoardUser.ILogin;
   },
-): Promise<IEconomyPoliticsBoardUser.IAuthorized> {
-  return await api.functional.economyPoliticsBoard.auth.user.login(connection, {
-    body: props.body,
-  });
+): Promise<IEconomicPoliticalDiscussionBoardUser.IAuthorized> {
+  return await api.functional.economicPoliticalDiscussionBoard.auth.user.login(
+    connection,
+    {
+      body: props.body,
+    },
+  );
 }

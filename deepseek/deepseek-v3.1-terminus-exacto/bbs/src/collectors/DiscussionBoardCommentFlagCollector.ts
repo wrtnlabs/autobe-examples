@@ -10,8 +10,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardCommentFlagCollector {
   export async function collect(props: {
     body: IDiscussionBoardCommentFlag.ICreate;
-    discussionBoardUsers: IEntity;
-    discussionBoardComments: IEntity;
+    user: IEntity; // from authorized actor
+    comment: IEntity; // from path parameter commentId
   }) {
     const id: string = v4();
     return {
@@ -19,14 +19,15 @@ export namespace DiscussionBoardCommentFlagCollector {
       id,
       flag_reason: props.body.flag_reason,
       flag_type: props.body.flag_type,
-      status: "pending",
-      resolution_notes: null,
+      status: "pending", // Initial status for new flags
+      resolution_notes: props.body.resolution_notes ?? null,
       created_at: new Date(),
       reviewed_at: null,
       resolved_at: null,
-      // BelongsTo relations
-      user: { connect: { id: props.discussionBoardUsers.id } },
-      comment: { connect: { id: props.discussionBoardComments.id } },
+      // BelongsTo relations (required)
+      user: { connect: { id: props.user.id } },
+      comment: { connect: { id: props.comment.id } },
+      // Optional belongsTo relation (not set during creation)
       reviewer: undefined,
     } satisfies Prisma.discussion_board_comment_flagsCreateInput;
   }

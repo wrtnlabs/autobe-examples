@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,43 +16,51 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthAdministratorLogin(props: {
   body: IShoppingMallAdministrator.ILogin;
 }): Promise<IShoppingMallAdministrator.IAuthorized> {
-  const email = (props.body as any).email as string | undefined;
-  const password = (props.body as any).password as string | undefined;
-  if (email === undefined || password === undefined)
-    throw new HttpException("Invalid credentials", 401);
   const admin = await MyGlobal.prisma.shopping_mall_administrators.findFirst({
-    where: { email },
+    where: { email: props.body.email },
     select: {
       id: true,
-      password_hash: true,
       email: true,
       name: true,
+      is_super_admin: true,
       created_at: true,
       updated_at: true,
+      deleted_at: true,
+      administratorGrade: {
+        select: {
+          id: true,
+          name: true,
+          grade: true,
+          super_administrator: true,
+        },
+      },
+      password_hash: true,
     },
   });
   if (!admin) throw new HttpException("Invalid credentials", 401);
-  const isValid = await PasswordUtil.verify(password, admin.password_hash);
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
+    admin.password_hash,
+  );
   if (!isValid) throw new HttpException("Invalid credentials", 401);
-  const nowDate = new Date();
-  const now = toISOStringSafe(nowDate);
-  const accessExpires = toISOStringSafe(
-    new Date(nowDate.getTime() + 60 * 60 * 1000),
+  const now = new Date();
+  const createdAt = toISOStringSafe(now);
+  const accessExpiresAt = toISOStringSafe(
+    new Date(now.getTime() + 60 * 60 * 1000),
   );
-  const refreshExpires = toISOStringSafe(
-    new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+  const refreshExpiresAt = toISOStringSafe(
+    new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
   );
-  const sessionId = v4();
   const session =
     await MyGlobal.prisma.shopping_mall_administrator_sessions.create({
       data: {
-        id: sessionId,
+        id: v4(),
+        administrator: { connect: { id: admin.id } },
         ip: "",
         href: "",
         referrer: "",
-        created_at: now,
-        expired_at: accessExpires,
-        administrator: { connect: { id: admin.id } },
+        created_at: createdAt,
+        expired_at: accessExpiresAt,
       },
     });
   const token = {
@@ -60,7 +69,7 @@ export async function postShoppingMallAuthAdministratorLogin(props: {
         type: "administrator",
         id: admin.id,
         session_id: session.id,
-        created_at: now,
+        created_at: createdAt,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -71,13 +80,28 @@ export async function postShoppingMallAuthAdministratorLogin(props: {
         id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: createdAt,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: accessExpiresAt,
+    refreshable_until: refreshExpiresAt,
   };
-  return { token };
+  return {
+    id: admin.id,
+    email: admin.email,
+    name: admin.name,
+    isSuperAdmin: admin.is_super_admin,
+    createdAt: toISOStringSafe(admin.created_at),
+    updatedAt: toISOStringSafe(admin.updated_at),
+    deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    administratorGrade: {
+      id: admin.administratorGrade.id,
+      name: admin.administratorGrade.name,
+      grade: admin.administratorGrade.grade,
+      superAdministrator: admin.administratorGrade.super_administrator,
+    },
+    token,
+  };
 }

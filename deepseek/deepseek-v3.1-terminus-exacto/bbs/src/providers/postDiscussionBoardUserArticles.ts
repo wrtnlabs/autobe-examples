@@ -20,38 +20,39 @@ export async function postDiscussionBoardUserArticles(props: {
   user: UserPayload;
   body: IDiscussionBoardArticle.ICreate;
 }): Promise<IDiscussionBoardArticle> {
-  // Validate that the section exists and is active
-  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
+  // Rate limiting check (10 articles per hour)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const articleCount = await MyGlobal.prisma.discussion_board_articles.count({
     where: {
-      id: props.body.section_id,
-      status: "active",
+      discussion_board_user_id: props.user.id,
+      created_at: { gte: oneHourAgo },
+      deleted_at: null,
+    },
+  });
+  if (articleCount >= 10) {
+    throw new HttpException(
+      "Rate limit exceeded: maximum 10 articles per hour",
+      429,
+    );
+  }
+  // Validate section exists and is active
+  const section = await MyGlobal.prisma.discussion_board_sections.findFirst({
+    where: {
+      id: props.body.discussion_board_section_id,
+      deleted_at: null,
     },
   });
   if (!section) {
     throw new HttpException("Section not found or inactive", 404);
   }
-  try {
-    // Create the article using collector pattern
-    const created = await MyGlobal.prisma.discussion_board_articles.create({
-      data: await DiscussionBoardArticleCollector.collect({
-        body: props.body,
-        discussionBoardUsers: { id: props.user.id },
-      }),
-      ...DiscussionBoardArticleTransformer.select(),
-    });
-    return await DiscussionBoardArticleTransformer.transform(created);
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        throw new HttpException(
-          "Article creation failed due to constraint violation",
-          400,
-        );
-      }
-      if (error.code === "P2003") {
-        throw new HttpException("Invalid section reference", 400);
-      }
-    }
-    throw new HttpException("Failed to create article", 500);
-  }
+  // Create article
+  const created = await MyGlobal.prisma.discussion_board_articles.create({
+    data: await DiscussionBoardArticleCollector.collect({
+      body: props.body,
+      discussionBoardUsers: { id: props.user.id },
+      discussionBoardUserSessions: { id: props.user.session_id },
+    }),
+    ...DiscussionBoardArticleTransformer.select(),
+  });
+  return await DiscussionBoardArticleTransformer.transform(created);
 }

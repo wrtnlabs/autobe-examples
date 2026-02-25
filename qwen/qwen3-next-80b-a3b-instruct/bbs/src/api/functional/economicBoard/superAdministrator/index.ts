@@ -1,4 +1,4 @@
-export * as sections from "./sections/index";
-export * as admin_requests from "./admin_requests/index";
-export * as metrics from "./metrics/index";
-export * as audit from "./audit/index";
+export * as admin from "./admin/index";
+export * as requests from "./requests/index";
+export * as users from "./users/index";
+export * as banned_users from "./banned_users/index";

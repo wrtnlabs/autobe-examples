@@ -8,39 +8,25 @@ import typia, { tags } from "typia";
 export function prepare_random_discussion_board_moderation_action_type(
   input?: DeepPartial<IDiscussionBoardModerationActionType.ICreate>,
 ): IDiscussionBoardModerationActionType.ICreate {
-  const categoryOptions = ["user", "content", "system", "spam"] as const;
-  const severityOptions = ["low", "medium", "high", "critical"] as const;
-  const codeOptions = [
-    "ban_user",
-    "delete_comment",
-    "remove_article",
-    "warn_user",
-    "suspend_user",
-    "approve_admin",
-  ] as const;
   return {
-    code: input?.code ?? RandomGenerator.pick(codeOptions),
+    code: input?.code ?? RandomGenerator.alphabets(8).toUpperCase(),
     name:
       input?.name ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 1, wordMax: 3 }),
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 5 }),
     description:
       input?.description ??
       RandomGenerator.content({
         paragraphs: 1,
-        sentenceMin: 2,
-        sentenceMax: 4,
+        sentenceMin: 3,
+        sentenceMax: 6,
       }),
     category:
       input?.category ??
-      (typia.random<number>() > 0.5
-        ? RandomGenerator.pick(categoryOptions)
-        : null),
+      RandomGenerator.pick(["content", "user", "system", "security"] as const),
     severity_level:
       input?.severity_level ??
-      (typia.random<number>() > 0.5
-        ? RandomGenerator.pick(severityOptions)
-        : null),
+      RandomGenerator.pick(["low", "medium", "high", "critical"] as const),
     requires_reason: input?.requires_reason ?? typia.random<boolean>(),
-    is_active: input?.is_active ?? typia.random<boolean>(),
+    is_active: input?.is_active ?? true,
   };
 }

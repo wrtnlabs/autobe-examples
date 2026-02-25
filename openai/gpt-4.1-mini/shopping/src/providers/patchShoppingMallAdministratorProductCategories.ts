@@ -18,46 +18,65 @@ export async function patchShoppingMallAdministratorProductCategories(props: {
   administrator: AdministratorPayload;
   body: IShoppingMallProductCategory.IRequest;
 }): Promise<IPageIShoppingMallProductCategory.ISummary> {
-  const body = props.body as any;
-  if (typeof body.id !== "string" || body.id.trim() === "") {
-    throw new HttpException("Category ID is required.", 400);
+  const toDateTimeString = (
+    dt: Date | null | undefined,
+  ): string & tags.Format<"date-time"> => {
+    if (dt === null || dt === undefined) {
+      // Provide fallback default date-time string (ISO 8601 format)
+      return "1970-01-01T00:00:00.000Z" as string & tags.Format<"date-time">;
+    }
+    return toISOStringSafe(dt)!;
+  };
+  const page = props.body.page && props.body.page >= 1 ? props.body.page : 1;
+  const limit =
+    props.body.limit && props.body.limit >= 1 && props.body.limit <= 100
+      ? props.body.limit
+      : 20;
+  const skip = (page - 1) * limit;
+  const where: Prisma.shopping_mall_product_categoriesWhereInput = {
+    deleted_at: null,
+  };
+  if (
+    typeof props.body.search === "string" &&
+    props.body.search.trim() !== ""
+  ) {
+    const keyword = props.body.search.trim();
+    where.OR = [
+      { name: { contains: keyword, mode: "insensitive" } },
+      { description: { contains: keyword, mode: "insensitive" } },
+    ];
   }
-  const updateData: Prisma.shopping_mall_product_categoriesUpdateInput = {};
-  if (typeof body.name === "string") {
-    updateData.name = body.name;
+  let orderBy: Prisma.shopping_mall_product_categoriesOrderByWithRelationInput =
+    { created_at: "desc" };
+  if (props.body.sortBy === "name" || props.body.sortBy === "created_at") {
+    const sortOrder = props.body.sortOrder === "asc" ? "asc" : "desc";
+    orderBy = { [props.body.sortBy]: sortOrder };
   }
-  if (typeof body.description === "string") {
-    updateData.description = body.description;
-  }
-  await MyGlobal.prisma.shopping_mall_product_categories.update({
-    where: { id: body.id },
-    data: updateData,
+  const total = await MyGlobal.prisma.shopping_mall_product_categories.count({
+    where,
   });
-  const updatedCategory =
-    await MyGlobal.prisma.shopping_mall_product_categories.findUnique({
-      where: { id: body.id },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-      },
+  const records =
+    await MyGlobal.prisma.shopping_mall_product_categories.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
     });
-  if (!updatedCategory) {
-    throw new HttpException("Category not found after update.", 404);
-  }
+  const data = records.map((r) => ({
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    created_at: toDateTimeString(r.created_at),
+    updated_at: toDateTimeString(r.updated_at),
+    deleted_at: toDateTimeString(r.deleted_at),
+  }));
   return {
-    data: [
-      {
-        id: updatedCategory.id,
-        name: updatedCategory.name,
-        description: updatedCategory.description,
-      },
-    ],
     pagination: {
-      current: 1,
-      limit: 1,
-      records: 1,
-      pages: 1,
+      current: page,
+      limit: limit,
+      records: total,
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
+    data,
   };
 }

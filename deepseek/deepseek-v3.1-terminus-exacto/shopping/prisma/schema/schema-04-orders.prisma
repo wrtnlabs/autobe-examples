@@ -43,13 +43,21 @@ model ecommerce_shopping_carts {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationships ecommerce_metadata_registry_relationship_of_shipping_carts[]
   cartItems ecommerce_cart_items[]
   
+  //----
+  // INDEXES
+  //----
   @@index([customer_id, deleted_at])
   @@index([deleted_at])
 }
@@ -119,14 +127,17 @@ model ecommerce_cart_items {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shoppingCart ecommerce_shopping_carts @relation(fields: [shopping_cart_id], references: [id], onDelete: Cascade)
   productVariant ecommerce_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
   product ecommerce_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([product_variant_id])
-  
   @@unique([shopping_cart_id, product_variant_id])
   @@index([shopping_cart_id, created_at])
   @@index([product_id, product_variant_id])
@@ -176,16 +187,24 @@ model ecommerce_orders {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationshipSubtypes ecommerce_metadata_registry_relationship_of_orders[]
   inventoryRecords ecommerce_inventory_records[]
   items ecommerce_order_items[]
   paymentTransactions ecommerce_payment_transactions[]
   administrativeActions ecommerce_administrative_action_of_orders[]
   
+  //----
+  // INDEXES
+  //----
   @@index([customer_id, created_at])
   @@index([created_at])
 }
@@ -254,12 +273,17 @@ model ecommerce_order_items {
   status String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   order ecommerce_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   productVariant ecommerce_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   shipmentItems ecommerce_shipment_items[]
   purchaseSnapshots ecommerce_order_item_purchase_snapshots[]
   statusHistories ecommerce_order_item_status_histories[]
@@ -267,6 +291,9 @@ model ecommerce_order_items {
   refundRequests ecommerce_refund_requests[]
   review ecommerce_reviews?
   
+  //----
+  // INDEXES
+  //----
   @@index([order_id])
   @@index([seller_id, status])
   @@index([product_variant_id])
@@ -339,14 +366,22 @@ model ecommerce_shipments {
   shipping_cost Float?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   metadataRegistryRelationshipMappings ecommerce_metadata_registry_relationship_of_shipments[]
   shipmentItems ecommerce_shipment_items[]
   deliveryConfirmation ecommerce_delivery_confirmations?
   
+  //----
+  // INDEXES
+  //----
   @@unique([tracking_number])
   @@index([ecommerce_seller_id, created_at])
   @@index([shipment_status, created_at])
@@ -388,11 +423,15 @@ model ecommerce_shipment_items {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment ecommerce_shipments @relation(fields: [ecommerce_shipment_id], references: [id], onDelete: Cascade)
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([ecommerce_shipment_id, ecommerce_order_item_id], map: "ecommerce_shipment_items_ecommerce_shipment_id_ecommer_0a78db59")
   @@index([ecommerce_shipment_id])
@@ -442,11 +481,15 @@ model ecommerce_delivery_confirmations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment ecommerce_shipments @relation(fields: [ecommerce_shipment_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([ecommerce_shipment_id])
   // spellchecker: ignore-next-line
   @@index([ecommerce_customer_id, confirmed_at], map: "ecommerce_delivery_confirmations_ecommerce_customer_id_74e0ab7a")
@@ -534,11 +577,15 @@ model ecommerce_payment_transactions {
   failed_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   order ecommerce_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
   customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([gateway_transaction_id, gateway_name], map: "ecommerce_payment_transactions_gateway_transaction_id__7bc83362")
   @@index([customer_id, created_at])
@@ -649,16 +696,19 @@ model ecommerce_order_item_purchase_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   product ecommerce_products @relation(fields: [ecommerce_product_id], references: [id], onDelete: Cascade)
   variant ecommerce_product_variants @relation(fields: [ecommerce_product_variant_id], references: [id], onDelete: Cascade)
   seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_product_variant_id], map: "ecommerce_order_item_purchase_snapshots_ecommerce_prod_89637d11")
-  
   // spellchecker: ignore-next-line
   @@unique([ecommerce_order_item_id], map: "ecommerce_order_item_purchase_snapshots_ecommerce_orde_335fcdc2")
   // spellchecker: ignore-next-line
@@ -717,10 +767,14 @@ model ecommerce_order_item_status_histories {
   reason String?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   orderItem ecommerce_order_items @relation(fields: [ecommerce_order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([ecommerce_order_item_id, created_at], map: "ecommerce_order_item_status_histories_ecommerce_order__814f8520")
   @@index([new_status, created_at])

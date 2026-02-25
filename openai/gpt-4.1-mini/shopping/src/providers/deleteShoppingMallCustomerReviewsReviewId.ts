@@ -15,16 +15,16 @@ export async function deleteShoppingMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
   reviewId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUnique({
+  // Find the review to ensure it exists and get customer_id
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: { customer_id: true },
   });
-  if (review === null) {
-    throw new HttpException("Review not found", 404);
-  }
+  // Ensure customer is the owner
   if (review.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Hard delete the review
   await MyGlobal.prisma.shopping_mall_reviews.delete({
     where: { id: props.reviewId },
   });

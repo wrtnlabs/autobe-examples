@@ -12,7 +12,7 @@ import { prepare_random_discussion_board_ban_duration } from "../prepare/prepare
 export async function generate_random_discussion_board_super_admin_ban_durations_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardBanDuration.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardBanDuration.ICreate>;
   },
 ): Promise<IDiscussionBoardBanDuration> {
   const prepared: IDiscussionBoardBanDuration.ICreate =

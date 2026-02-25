@@ -45,15 +45,23 @@ model todo_app_trash_items {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   restoration todo_app_trash_restorations?
   cleanupLogs todo_app_trash_cleanup_logs[]
   metadatum todo_app_trash_item_metadata?
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_todo_id])
   @@index([todo_app_user_id, deleted_at])
   @@index([restored_at])
@@ -99,13 +107,16 @@ model todo_app_trash_restorations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_trash_item_id])
-  
   @@index([todo_app_user_id, created_at])
   @@index([todo_app_trash_item_id])
 }
@@ -153,11 +164,15 @@ model todo_app_permanent_deletions {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_user_id, deleted_at])
   @@index([todo_app_todo_id])
 }
@@ -221,10 +236,14 @@ model todo_app_trash_cleanup_logs {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_trash_item_id, started_at], map: "todo_app_trash_cleanup_logs_todo_app_trash_item_id_sta_8691b79c")
   @@index([operation_type, started_at])
@@ -286,10 +305,14 @@ model todo_app_trash_settings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_user_id])
   // spellchecker: ignore-next-line
   @@index([auto_cleanup_enabled, retention_period_days], map: "todo_app_trash_settings_auto_cleanup_enabled_retention_1ea9f6bf")
@@ -341,10 +364,14 @@ model todo_app_trash_item_metadata {
   cleanup_processed_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   trashItem todo_app_trash_items @relation(fields: [todo_app_trash_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([todo_app_trash_item_id])
   // spellchecker: ignore-next-line
   @@index([cleanup_eligible, retention_expires_at], map: "todo_app_trash_item_metadata_cleanup_eligible_retentio_1c3d7bf5")

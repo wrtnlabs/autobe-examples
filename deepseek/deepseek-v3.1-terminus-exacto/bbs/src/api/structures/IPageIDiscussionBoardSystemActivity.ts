@@ -1,5 +1,5 @@
 import { IDiscussionBoardSystemActivity } from "./IDiscussionBoardSystemActivity";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
 
 export namespace IPageIDiscussionBoardSystemActivity {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardSystemActivity {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardSection.IPagination;
 
     /**
      * List of records.

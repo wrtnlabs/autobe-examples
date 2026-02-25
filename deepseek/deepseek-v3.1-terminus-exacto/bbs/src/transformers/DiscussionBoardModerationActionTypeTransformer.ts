@@ -35,12 +35,12 @@ export namespace DiscussionBoardModerationActionTypeTransformer {
       code: input.code,
       name: input.name,
       description: input.description,
-      category: input.category ?? undefined,
-      severityLevel: input.severity_level ?? undefined,
-      requiresReason: input.requires_reason,
-      isActive: input.is_active,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+      category: input.category ?? null,
+      severity_level: input.severity_level ?? null,
+      requires_reason: input.requires_reason,
+      is_active: input.is_active,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

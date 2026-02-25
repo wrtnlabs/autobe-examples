@@ -15,37 +15,65 @@ import { authorize_super_administrator_refresh } from "../../../authorize/author
 export async function test_api_super_administrator_join_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Test positive scenario for creation of a new super administrator account with valid unique email and password.
-  // Validate that the response returns authorization tokens including access and refresh JWT tokens.
-  // Confirm that a new record is created in the super administrators table with secure password hashing and that the user is immediately authenticated.
+  // Test the registration of a new superAdministrator user with valid unique email and valid password.
+  // Create a new connection for superAdministrator join
   const superAdminConnection: api.IConnection = { host: connection.host };
-  // Compose the join request body according to IDiscussionBoardSuperAdministrator.IJoin
-  // Since IJoin type is empty, we assume no payload is required
-  const body: IDiscussionBoardSuperAdministrator.IJoin = {};
-  const output = await authorize_super_administrator_join(
-    superAdminConnection,
-    { body },
-  );
-  typia.assert(output);
-  // Validate that tokens are present and formatted
-  const token = output.token;
+  // Prepare join request body
+  const body: IDiscussionBoardSuperAdministrator.IJoin = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+    ip: null,
+  };
+  // Perform the join operation using the authorize utility function
+  const authorized: IDiscussionBoardSuperAdministrator.IAuthorized =
+    await authorize_super_administrator_join(superAdminConnection, { body });
+  // Validate returned authorized object shape
+  typia.assert(authorized);
+  // Validate authorization token shape
+  typia.assert(authorized.token);
+  // Validate essential user properties
   TestValidator.predicate(
-    "access token is a non-empty string",
-    typeof token.access === "string" && token.access.length > 0,
+    "user id is uuid format",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      authorized.id,
+    ),
+  );
+  TestValidator.equals(
+    "user email matches input",
+    authorized.email,
+    body.email,
   );
   TestValidator.predicate(
-    "refresh token is a non-empty string",
-    typeof token.refresh === "string" && token.refresh.length > 0,
-  );
-  // Validate the token expiry timestamps are ISO strings
-  TestValidator.predicate(
-    "expired_at is valid ISO date-time string",
-    !isNaN(Date.parse(token.expired_at)),
+    "displayName is non empty",
+    authorized.displayName.length > 0,
   );
   TestValidator.predicate(
-    "refreshable_until is valid ISO date-time string",
-    !isNaN(Date.parse(token.refreshable_until)),
+    "createdAt is ISO datetime",
+    !isNaN(Date.parse(authorized.createdAt)),
   );
-  // Now the superAdminConnection should be updated with the Authorization header accordingly
-  // (But per pattern, we keep using this connection for subsequent calls if needed.)
+  TestValidator.predicate(
+    "updatedAt is ISO datetime",
+    !isNaN(Date.parse(authorized.updatedAt)),
+  );
+  TestValidator.equals("deletedAt is null", authorized.deletedAt, null);
+  // Validate tokens are non-empty strings
+  TestValidator.predicate(
+    "access token is non empty",
+    authorized.token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "refresh token is non empty",
+    authorized.token.refresh.length > 0,
+  );
+  // Validate token timestamps are parseable dates
+  TestValidator.predicate(
+    "token expired_at is ISO datetime",
+    !isNaN(Date.parse(authorized.token.expired_at)),
+  );
+  TestValidator.predicate(
+    "token refreshable_until is ISO datetime",
+    !isNaN(Date.parse(authorized.token.refreshable_until)),
+  );
 }

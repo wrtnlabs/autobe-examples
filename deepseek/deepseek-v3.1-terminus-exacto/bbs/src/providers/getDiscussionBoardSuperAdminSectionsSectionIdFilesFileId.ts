@@ -8,36 +8,24 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardSectionFileTransformer } from "../transformers/DiscussionBoardSectionFileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminSectionsSectionIdFilesFileId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   sectionId: string & tags.Format<"uuid">;
   fileId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSectionFile> {
-  // Verify the section exists
-  const section = await MyGlobal.prisma.discussion_board_sections.findFirst({
-    where: {
-      id: props.sectionId,
-      deleted_at: null,
-    },
-  });
-  if (!section) {
-    throw new HttpException("Section not found", 404);
-  }
-  const file = await MyGlobal.prisma.discussion_board_section_files.findFirst({
-    where: {
-      id: props.fileId,
-      discussion_board_section_id: props.sectionId,
-      deleted_at: null,
-    },
-    ...DiscussionBoardSectionFileTransformer.select(),
-  });
-  if (!file) {
-    throw new HttpException("File not found", 404);
-  }
+  const file =
+    await MyGlobal.prisma.discussion_board_section_files.findUniqueOrThrow({
+      where: {
+        id: props.fileId,
+        discussion_board_section_id: props.sectionId,
+        deleted_at: null,
+      },
+      ...DiscussionBoardSectionFileTransformer.select(),
+    });
   return await DiscussionBoardSectionFileTransformer.transform(file);
 }

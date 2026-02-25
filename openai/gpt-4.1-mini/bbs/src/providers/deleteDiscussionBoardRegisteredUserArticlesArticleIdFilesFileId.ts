@@ -16,25 +16,37 @@ export async function deleteDiscussionBoardRegisteredUserArticlesArticleIdFilesF
   articleId: string & tags.Format<"uuid">;
   fileId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Check article existence and get its author
+  // Retrieve the article with owner id
   const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
     where: { id: props.articleId },
-    select: { registered_user_id: true },
+    select: { id: true, registered_user_id: true },
   });
-  if (!article) throw new HttpException("Article not found", 404);
-  // Authorization: only the article author can delete files
-  if (article.registered_user_id !== props.registeredUser.id) {
-    throw new HttpException("Forbidden", 403);
+  if (!article) {
+    throw new HttpException("Article not found", 404);
   }
-  // Check file existence and ownership
+  // Verify ownership or admin privileges
+  if (article.registered_user_id !== props.registeredUser.id) {
+    const admin =
+      await MyGlobal.prisma.discussion_board_administrators.findFirst({
+        where: {
+          registered_user_id: props.registeredUser.id,
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+    if (!admin) {
+      throw new HttpException("Forbidden", 403);
+    }
+  }
+  // Verify file existence and linkage to article
   const file = await MyGlobal.prisma.discussion_board_article_files.findUnique({
     where: { id: props.fileId },
-    select: { article_id: true },
+    select: { id: true, article_id: true },
   });
   if (!file || file.article_id !== props.articleId) {
     throw new HttpException("File not found", 404);
   }
-  // Delete the file
+  // Delete the file record, cascading handled by DB
   await MyGlobal.prisma.discussion_board_article_files.delete({
     where: { id: props.fileId },
   });

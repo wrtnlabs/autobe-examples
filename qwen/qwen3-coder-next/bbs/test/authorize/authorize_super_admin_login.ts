@@ -14,7 +14,7 @@ export async function authorize_super_admin_login(
     body: IDiscussionBoardSuperAdmin.ILogin;
   },
 ): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  return await api.functional.discussionBoard.auth.super_admin.login(
+  return await api.functional.discussionBoard.auth.superAdmin.login(
     connection,
     {
       body: props.body,

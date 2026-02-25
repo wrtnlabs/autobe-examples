@@ -39,14 +39,22 @@ model todo_app_todo_histories {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   fieldChanges todo_app_todo_history_changes[]
   snapshotEvents todo_app_todo_history_snapshots[]
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_todo_id, created_at])
   @@index([todo_app_user_id, created_at])
 }
@@ -91,10 +99,14 @@ model todo_app_todo_history_changes {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   history todo_app_todo_histories @relation(fields: [todo_app_todo_history_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([todo_app_todo_history_id, field_name], map: "todo_app_todo_history_changes_todo_app_todo_history_id_3112d2d1")
   // spellchecker: ignore-next-line
@@ -137,13 +149,21 @@ model todo_app_todo_history_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   history todo_app_todo_histories @relation(fields: [todo_app_todo_history_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   snapshotItems todo_app_todo_history_snapshot_items[]
   metadatum todo_app_todo_history_snapshot_metadata?
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_todo_history_id])
   @@index([snapshot_created_at])
 }
@@ -203,7 +223,7 @@ model todo_app_history_metadata {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([config_key])
   @@index([is_active, created_at])
@@ -264,13 +284,16 @@ model todo_app_todo_history_snapshot_items {
   is_completed Boolean
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   snapshot todo_app_todo_history_snapshots @relation(fields: [todo_app_todo_history_snapshot_id], references: [id], onDelete: Cascade)
   todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([todo_app_todo_id])
-  
   // spellchecker: ignore-next-line
   @@index([todo_app_todo_history_snapshot_id, todo_app_todo_id], map: "todo_app_todo_history_snapshot_items_todo_app_todo_his_0dee6d81")
 }
@@ -321,10 +344,14 @@ model todo_app_todo_history_snapshot_metadata {
   metadata_version String
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   snapshot todo_app_todo_history_snapshots @relation(fields: [todo_app_todo_history_snapshot_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([todo_app_todo_history_snapshot_id], map: "todo_app_todo_history_snapshot_metadata_todo_app_todo__a10c2f41")
   @@index([metadata_version])

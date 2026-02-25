@@ -16,11 +16,8 @@ export namespace DiscussionBoardCommentEditHistoryAtSummaryTransformer {
       select: {
         id: true,
         edit_sequence: true,
-        original_content: true,
-        edited_content: true,
         edit_reason: true,
         created_at: true,
-        comment: false,
       },
     } satisfies Prisma.discussion_board_comment_edit_historiesFindManyArgs;
   }
@@ -30,8 +27,8 @@ export namespace DiscussionBoardCommentEditHistoryAtSummaryTransformer {
     return {
       id: input.id,
       edit_sequence: input.edit_sequence,
-      edit_reason: input.edit_reason ?? null,
-      created_at: toISOStringSafe(input.created_at),
+      edit_reason: input.edit_reason ?? undefined,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

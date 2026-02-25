@@ -15,37 +15,27 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postCommunityPlatformAuthModeratorRefresh(props: {
   body: ICommunityPlatformModerator.IRefresh;
 }): Promise<ICommunityPlatformModerator.IAuthorized> {
-  const { body } = props;
-  if (!("refreshToken" in body)) {
-    throw new HttpException("Refresh token is required", 400);
-  }
-  const refreshToken = (
-    body as unknown as {
-      refreshToken: string;
-    }
-  ).refreshToken;
-  type DecodedToken = {
-    type: string;
-    id: string;
-    session_id: string;
-    iat?: number;
-    exp?: number;
+  // 1. Verify and decode the refresh token
+  let decoded: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "moderator";
   };
-  let decodedRaw: string | object | undefined = undefined;
   try {
-    decodedRaw = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    });
+    }) as {
+      id: string & tags.Format<"uuid">;
+      session_id: string & tags.Format<"uuid">;
+      type: "moderator";
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (typeof decodedRaw !== "object" || decodedRaw === null) {
-    throw new HttpException("Invalid token payload", 401);
-  }
-  const decoded = decodedRaw as DecodedToken;
   if (decoded.type !== "moderator") {
     throw new HttpException("Invalid token type", 403);
   }
+  // 2. Validate the session exists and not expired
   const session =
     await MyGlobal.prisma.community_platform_moderator_sessions.findFirst({
       where: {
@@ -56,6 +46,7 @@ export async function postCommunityPlatformAuthModeratorRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
+  // 3. Validate the moderator exists and not deleted
   const moderator =
     await MyGlobal.prisma.community_platform_moderators.findUniqueOrThrow({
       where: { id: decoded.id },
@@ -63,42 +54,50 @@ export async function postCommunityPlatformAuthModeratorRefresh(props: {
   if (moderator.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // 4. Generate new tokens with same session_id
+  const nowISOString = toISOStringSafe(new Date());
+  const accessExpiry = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpiry = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
   const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: toISOStringSafe(now),
+      created_at: nowISOString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refreshTokenNew = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: nowISOString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
+  // 5. Update session expiration
   await MyGlobal.prisma.community_platform_moderator_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    where: {
+      id: decoded.session_id,
+    },
+    data: {
+      expired_at: refreshExpiry,
+    },
   });
+  // 6. Return authorized payload
   return {
+    id: decoded.id,
     token: {
       access: accessToken,
-      refresh: refreshTokenNew,
-      expired_at: toISOStringSafe(accessExpires) as string &
-        tags.Format<"date-time">,
-      refreshable_until: toISOStringSafe(refreshExpires) as string &
-        tags.Format<"date-time">,
+      refresh: refreshToken,
+      expired_at: accessExpiry,
+      refreshable_until: refreshExpiry,
     },
   };
 }

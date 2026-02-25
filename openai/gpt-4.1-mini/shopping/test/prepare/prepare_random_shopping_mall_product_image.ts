@@ -6,8 +6,11 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_product_image(
-  input?: DeepPartial<IShoppingMallProductImage.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallProductImage.ICreate>,
 ): IShoppingMallProductImage.ICreate {
-  input;
-  return {};
+  return {
+    image_url: input?.image_url ?? typia.random<string & tags.Format<"url">>(),
+    display_order:
+      input?.display_order ?? typia.random<number & tags.Type<"int32">>(),
+  };
 }

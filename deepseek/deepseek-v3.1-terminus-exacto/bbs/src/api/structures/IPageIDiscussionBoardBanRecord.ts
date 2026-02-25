@@ -1,5 +1,5 @@
 import { IDiscussionBoardBanRecord } from "./IDiscussionBoardBanRecord";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "./IPageIDiscussionBoardAdministratorDistributionStatistic";
 
 export namespace IPageIDiscussionBoardBanRecord {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardBanRecord {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination;
 
     /**
      * List of records.

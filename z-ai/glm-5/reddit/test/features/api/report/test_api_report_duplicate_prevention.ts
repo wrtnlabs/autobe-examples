@@ -1,0 +1,89 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ICommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityCommunity";
+import type { ICommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityMember";
+import type { ICommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPost";
+import type { ICommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityReport";
+import type { ICommunityReportResolution } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityReportResolution";
+import type { ICommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunitySubscription";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_community_member_communities_create } from "../../../generate/generate_random_community_member_communities_create";
+import { generate_random_community_member_communities_posts_create } from "../../../generate/generate_random_community_member_communities_posts_create";
+import { generate_random_community_member_reports_create } from "../../../generate/generate_random_community_member_reports_create";
+import { prepare_random_community_community } from "../../../prepare/prepare_random_community_community";
+import { prepare_random_community_post } from "../../../prepare/prepare_random_community_post";
+import { prepare_random_community_report } from "../../../prepare/prepare_random_community_report";
+
+export async function test_api_report_duplicate_prevention(
+  connection: api.IConnection,
+): Promise<void> {
+  // Test duplicate report prevention - member attempts to report the same post twice.
+  // The reporter joins, creates a community, subscribes, creates a post, reports it
+  // successfully, then attempts to report the same post again with a different reason.
+  // Verify the second report request fails with 409 Conflict status, confirming the
+  // unique constraint on (reporter_id, content_type, content_id) is enforced.
+  // 1. Create reporter member account
+  const reporterConnection: api.IConnection = { host: connection.host };
+  const reporter = await authorize_member_join(reporterConnection, {});
+  typia.assert(reporter);
+  // 2. Create a community (reporter becomes owner and is auto-subscribed)
+  const community = await generate_random_community_member_communities_create(
+    reporterConnection,
+    {},
+  );
+  typia.assert(community);
+  // 3. Subscribe to the community (ensures posting permission)
+  const subscription =
+    await api.functional.community.member.communities.subscribe(
+      reporterConnection,
+      { communityName: community.name },
+    );
+  typia.assert(subscription);
+  // 4. Create a post in the community that will be reported
+  const post = await generate_random_community_member_communities_posts_create(
+    reporterConnection,
+    { params: { communityName: community.name } },
+  );
+  typia.assert(post);
+  // 5. Create first report on the post (should succeed)
+  const firstReport = await generate_random_community_member_reports_create(
+    reporterConnection,
+    {
+      body: {
+        content_type: "POST",
+        content_id: post.id,
+        reason: RandomGenerator.paragraph({ sentences: 5 }),
+      },
+    },
+  );
+  typia.assert(firstReport);
+  // Verify first report was created with PENDING status
+  TestValidator.equals(
+    "first report status should be PENDING",
+    firstReport.status,
+    "PENDING",
+  );
+  // 6. Attempt to create duplicate report on the same post (should fail with 409 Conflict)
+  await TestValidator.httpError(
+    "duplicate report should fail with 409 Conflict",
+    409,
+    async () => {
+      await api.functional.community.member.reports.create(reporterConnection, {
+        body: {
+          content_type: "POST",
+          content_id: post.id,
+          reason: RandomGenerator.paragraph({ sentences: 3 }),
+        } satisfies ICommunityReport.ICreate,
+      });
+    },
+  );
+}

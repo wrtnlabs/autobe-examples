@@ -15,13 +15,17 @@ export namespace EcommerceSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        approval_status: true,
+        password_hash: true,
+        name: true,
+        description: true,
+        status: true,
+        created_at: true,
         updated_at: true,
-        ecommerce_seller_profiles: {
-          select: {
-            shop_name: true,
-          },
-        },
+        deleted_at: true,
+        sessions: true,
+        emailVerifications: true,
+        passwordResets: true,
+        profiles: true,
       },
     } satisfies Prisma.ecommerce_sellersFindManyArgs;
   }
@@ -30,10 +34,9 @@ export namespace EcommerceSellerAtSummaryTransformer {
   ): Promise<IEcommerceSeller.ISummary> {
     return {
       id: input.id,
-      email: input.email,
-      shopName: input.ecommerce_seller_profiles[0]?.shop_name,
-      status: input.approval_status as "pending" | "approved" | "rejected",
-      lastUpdate: input.updated_at.toISOString(),
+      name: input.name ?? undefined,
+      status: input.status as IEcommerceSeller.ISummary["status"],
+      created_at: input.created_at.toISOString(),
     };
   }
 }

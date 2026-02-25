@@ -10,17 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallRefundRequestSnapshotCollector {
   export async function collect(props: {
     body: IShoppingMallRefundRequestSnapshot.ICreate;
-    refundRequest: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      status: "",
-      reason: "",
-      comment: null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      refundRequest: { connect: { id: props.refundRequest.id } },
+      id,
+      status: props.body.status,
+      reason: props.body.reason,
+      comment: props.body.comment ?? null,
+      created_at: new Date(props.body.createdAt),
+      updated_at: new Date(props.body.updatedAt),
+      deleted_at: props.body.deletedAt ? new Date(props.body.deletedAt) : null,
+      refundRequest: {
+        connect: { id: props.body.shoppingMallRefundRequestId },
+      },
     } satisfies Prisma.shopping_mall_refund_request_snapshotsCreateInput;
   }
 }

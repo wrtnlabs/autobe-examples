@@ -30,13 +30,16 @@ model community_platform_post_vote_of_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   postVote community_platform_post_votes @relation(fields: [post_vote_id], references: [id], onDelete: Cascade)
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([user_id])
-  
   @@unique([post_vote_id, user_id])
   @@index([created_at])
 }
@@ -75,11 +78,15 @@ model community_platform_post_vote_of_moderators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderator community_platform_moderators @relation(fields: [community_platform_moderator_id], references: [id], onDelete: Cascade)
   postVote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_moderator_id, created_at], map: "community_platform_post_vote_of_moderators_community_p_7b3f9ddd")
   // spellchecker: ignore-next-line
@@ -124,14 +131,22 @@ model community_platform_post_comments {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   parentComment community_platform_post_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   childComments community_platform_post_comments[] @relation("recursive")
   
+  //----
+  // INDEXES
+  //----
   @@index([post_id, created_at])
   @@index([user_id, created_at])
   @@index([parent_comment_id])
@@ -172,14 +187,17 @@ model community_platform_comment_vote_of_users {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
   user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_user_id], map: "community_platform_comment_vote_of_users_community_pla_9326aec0")
-  
   // spellchecker: ignore-next-line
   @@unique([community_platform_comment_id, community_platform_user_id], map: "community_platform_comment_vote_of_users_community_pla_5027d5c3")
 }
@@ -217,13 +235,16 @@ model community_platform_comment_vote_of_moderators {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   commentVote community_platform_comment_votes @relation(fields: [comment_vote_id], references: [id], onDelete: Cascade)
   moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([moderator_id])
-  
   // spellchecker: ignore-next-line
   @@unique([comment_vote_id, moderator_id], map: "community_platform_comment_vote_of_moderators_comment__ea0b1a1e")
 }
@@ -267,11 +288,15 @@ model community_platform_post_reports {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   reportingUser community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
   reportedPost community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_user_id, status], map: "community_platform_post_reports_community_platform_use_41edd9b3")
   // spellchecker: ignore-next-line
@@ -319,14 +344,17 @@ model community_platform_comment_reports {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
   reporterUser community_platform_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
   reportReason community_platform_report_reasons? @relation(fields: [report_reason_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([report_reason_id])
-  
   @@index([comment_id, status])
   // spellchecker: ignore-next-line
   @@index([reporter_user_id, created_at], map: "community_platform_comment_reports_reporter_user_id_cr_dc180437")
@@ -375,12 +403,16 @@ model community_platform_moderation_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   moderator community_platform_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
   post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
   comment community_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([moderator_id, created_at])
   @@index([post_id])
   @@index([comment_id])

@@ -1,3 +1,4 @@
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IDiscussionBoardUserSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUserSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -5,6 +6,7 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardUserSessionTransformer {
   export type Payload = Prisma.discussion_board_user_sessionsGetPayload<
@@ -22,7 +24,7 @@ export namespace DiscussionBoardUserSessionTransformer {
         created_at: true,
         expired_at: true,
         last_accessed_at: true,
-        user: { select: { id: true } },
+        user: DiscussionBoardUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_user_sessionsFindManyArgs;
   }
@@ -35,10 +37,11 @@ export namespace DiscussionBoardUserSessionTransformer {
       refresh_token: input.refresh_token,
       ip: input.ip,
       user_agent: input.user_agent,
-      referrer: input.referrer ?? null,
-      created_at: toISOStringSafe(input.created_at),
-      expired_at: toISOStringSafe(input.expired_at),
-      last_accessed_at: toISOStringSafe(input.last_accessed_at),
+      referrer: input.referrer ?? undefined,
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+      last_accessed_at: input.last_accessed_at.toISOString(),
+      user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
     };
   }
 }

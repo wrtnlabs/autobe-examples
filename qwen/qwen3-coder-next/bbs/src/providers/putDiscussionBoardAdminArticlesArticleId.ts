@@ -1,4 +1,6 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,43 +11,85 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { DiscussionBoardArticleTransformer } from "../transformers/DiscussionBoardArticleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardAdminArticlesArticleId(props: {
   admin: AdminPayload;
-  articleId: string;
+  articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticle.IUpdate;
 }): Promise<IDiscussionBoardArticle> {
-  // Validate article exists and user has permission
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
-  });
-  if (!article) {
-    throw new HttpException("Article not found", 404);
-  }
-  // Update the article
-  const updatedArticle = await MyGlobal.prisma.discussion_board_articles.update(
-    {
+  // Find the existing article
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
-      data: {
-        view_count: 0, // Reset view count on update or keep as is
-        updated_at: toISOStringSafe(new Date()),
-      },
-    },
-  );
-  // Return updated article
-  return {
-    id: updatedArticle.id,
-    author_id: updatedArticle.author_id,
-    section_id: updatedArticle.section_id,
-    title: updatedArticle.title,
-    content: updatedArticle.content,
-    view_count: updatedArticle.view_count,
-    created_at: toISOStringSafe(updatedArticle.created_at),
-    updated_at: toISOStringSafe(updatedArticle.updated_at),
-    deleted_at: updatedArticle.deleted_at
-      ? toISOStringSafe(updatedArticle.deleted_at)
-      : null,
+      select: { id: true, author_id: true, deleted_at: true },
+    });
+  // Authorization: author can update their own article, admin can update any
+  const isAdmin =
+    props.admin.type === "admin" || props.admin.type === "super_admin";
+  const isAuthor = article.author_id === props.admin.id;
+  if (!isAuthor && !isAdmin) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Soft deleted articles cannot be updated
+  if (article.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  // Optional section_id validation
+  if (props.body.section_id !== undefined) {
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: { id: props.body.section_id },
+    });
+  }
+  // Optional tag update (full replacement)
+  let tagUpdate: {} | undefined = undefined;
+  if (props.body.tags !== undefined) {
+    // Delete existing tag associations
+    await MyGlobal.prisma.discussion_board_article_tags.deleteMany({
+      where: { article_id: props.articleId },
+    });
+    // Create new tag associations (create tags first if not exist)
+    const tagNames = props.body.tags.filter((name) => name.trim() !== "");
+    if (tagNames.length > 0) {
+      const tagRecords = await Promise.all(
+        tagNames.map(async (name) => {
+          name = name.trim();
+          return MyGlobal.prisma.discussion_board_tags.upsert({
+            where: { tag_name: name },
+            update: {},
+            create: { id: v4(), tag_name: name, created_at: new Date() },
+          });
+        }),
+      );
+      tagUpdate = {
+        tags: {
+          create: tagRecords.map((tag) => ({
+            id: v4(),
+            article_id: props.articleId,
+            tag_id: tag.id,
+            created_at: toISOStringSafe(tag.created_at),
+          })),
+        },
+      };
+    }
+  }
+  // Build update data
+  const updateData: Prisma.discussion_board_articlesUpdateInput = {
+    ...(props.body.title !== undefined && { title: props.body.title }),
+    ...(props.body.content !== undefined && { content: props.body.content }),
+    ...(props.body.section_id !== undefined && {
+      section_id: props.body.section_id,
+    }),
+    updated_at: new Date(),
+    ...tagUpdate,
   };
+  // Update the article
+  const updated = await MyGlobal.prisma.discussion_board_articles.update({
+    where: { id: props.articleId },
+    data: updateData,
+    ...DiscussionBoardArticleTransformer.select(),
+  });
+  return await DiscussionBoardArticleTransformer.transform(updated);
 }

@@ -1,7 +1,13 @@
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
 import { IDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAuditLog";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
 import { IPageIDiscussionBoardAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAuditLog";
+import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -21,25 +27,47 @@ export async function patchDiscussionBoardAdminAuditLogs(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build WHERE conditions based on request filters
   const whereInput = {
-    ...(props.body.actor_type !== undefined &&
-      props.body.actor_type !== null && {
-        actor_type: props.body.actor_type,
-      }),
-    ...(props.body.action_type !== undefined &&
-      props.body.action_type !== null && {
-        action_type: props.body.action_type,
-      }),
-    ...(props.body.success !== undefined &&
-      props.body.success !== null && { success: props.body.success }),
-    created_at: {
-      gte: toISOStringSafe(props.body.start_date),
-      lte: toISOStringSafe(props.body.end_date),
-    },
+    ...(props.body.action_type && { action_type: props.body.action_type }),
+    ...(props.body.actor_type && { actor_type: props.body.actor_type }),
+    ...(props.body.target_user_id && {
+      target_user_id: props.body.target_user_id,
+    }),
+    ...(props.body.target_admin_id && {
+      target_admin_id: props.body.target_admin_id,
+    }),
+    ...(props.body.target_super_admin_id && {
+      target_super_admin_id: props.body.target_super_admin_id,
+    }),
+    ...(props.body.target_article_id && {
+      target_article_id: props.body.target_article_id,
+    }),
+    ...(props.body.target_comment_id && {
+      target_comment_id: props.body.target_comment_id,
+    }),
+    ...(props.body.target_section_id && {
+      target_section_id: props.body.target_section_id,
+    }),
+    ...(props.body.created_at_start && {
+      created_at: { gte: props.body.created_at_start },
+    }),
+    ...(props.body.created_at_end && {
+      created_at: { lte: props.body.created_at_end },
+    }),
+    ...(props.body.updated_at_start && {
+      updated_at: { gte: props.body.updated_at_start },
+    }),
+    ...(props.body.updated_at_end && {
+      updated_at: { lte: props.body.updated_at_end },
+    }),
+    ...(props.body.success !== undefined && { success: props.body.success }),
+    ...(props.body.search_term && {
+      description: {
+        contains: props.body.search_term,
+        mode: "insensitive" as const,
+      },
+    }),
   } satisfies Prisma.discussion_board_audit_logsWhereInput;
-  // For aggregation queries, we need to use raw SQL since Prisma doesn't support GROUP BY with time buckets
-  // This is a simplified implementation that returns individual records for now
   const data = await MyGlobal.prisma.discussion_board_audit_logs.findMany({
     where: whereInput,
     skip,
@@ -49,25 +77,31 @@ export async function patchDiscussionBoardAdminAuditLogs(props: {
   const total = await MyGlobal.prisma.discussion_board_audit_logs.count({
     where: whereInput,
   });
-  // Since we can't do proper aggregation with Prisma, return individual records
-  // Each record represents one audit log entry
-  const transformedData = data.map((log) => ({
-    timeBucket: toISOStringSafe(log.created_at),
-    actorType: log.actor_type as "user" | "admin" | "super_admin" | "system",
-    actionType: log.action_type,
-    totalCount: 1,
-    successCount: log.success ? 1 : 0,
-    failureCount: log.success ? 0 : 1,
-    successRate: log.success ? 100 : 0,
-    trendIndicator: undefined,
-  }));
+  const transformedData: IDiscussionBoardAuditLog.ISummary[] = data.map(
+    (log) => ({
+      id: log.id,
+      action_type: log.action_type,
+      action_subtype: log.action_subtype ?? null,
+      description: log.description,
+      success: log.success,
+      created_at: toISOStringSafe(log.created_at),
+      actor_type: log.actor_type,
+      target_user_id: log.target_user_id,
+      target_admin_id: log.target_admin_id,
+      target_super_admin_id: log.target_super_admin_id,
+      target_article_id: log.target_article_id,
+      target_comment_id: log.target_comment_id,
+      target_section_id: log.target_section_id,
+    }),
+  );
+  // Fix pagination to match IPage.IPagination interface correctly
   return {
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page satisfies number as number,
+      limit: limit satisfies number as number,
+      records: total satisfies number as number,
+      pages: Math.ceil(total / limit) satisfies number as number,
     } satisfies IPage.IPagination,
     data: transformedData,
-  };
+  } satisfies IPageIDiscussionBoardAuditLog.ISummary;
 }

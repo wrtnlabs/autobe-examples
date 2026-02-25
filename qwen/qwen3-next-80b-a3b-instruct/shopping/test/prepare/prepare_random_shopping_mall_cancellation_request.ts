@@ -8,6 +8,9 @@ import typia, { tags } from "typia";
 export function prepare_random_shopping_mall_cancellation_request(
   input?: DeepPartial<IShoppingMallCancellationRequest.ICreate> | undefined,
 ): IShoppingMallCancellationRequest.ICreate {
-  input;
-  return {};
+  return {
+    reason:
+      input?.reason ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 8, wordMax: 15 }),
+  };
 }

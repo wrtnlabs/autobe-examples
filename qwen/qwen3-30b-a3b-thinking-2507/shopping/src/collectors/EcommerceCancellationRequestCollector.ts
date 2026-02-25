@@ -10,18 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceCancellationRequestCollector {
   export async function collect(props: {
     body: IEcommerceCancellationRequest.ICreate;
-    ecommerceOrders: IEntity;
-    ecommerceCustomers: IEntity;
+    ecommerceOrderItems: IEntity;
   }) {
+    const id = v4();
     return {
-      id: v4(),
+      id,
+      reason: props.body.reason ?? null,
       status: "pending",
-      reason: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      order: { connect: { id: props.ecommerceOrders.id } },
-      customer: { connect: { id: props.ecommerceCustomers.id } },
+      orderItem: { connect: { id: props.ecommerceOrderItems.id } },
     } satisfies Prisma.ecommerce_cancellation_requestsCreateInput;
   }
 }

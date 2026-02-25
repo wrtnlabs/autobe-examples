@@ -2,7 +2,6 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallInventoryHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryHistory";
-import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -14,71 +13,96 @@ import typia, { tags } from "typia";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
-import { generate_random_shopping_mall_seller_products_variants_create_variant } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create_variant";
-import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
-import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
 
 export async function test_api_seller_inventory_history_retrieval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  /**
-   * Test the retrieval of a specific inventory history record for a product variant.
-   *
-   * This scenario covers the primary success path:
-   * 1. Authenticate as a new seller by registering an account.
-   * 2. Create a new product under this seller with valid product data.
-   * 3. Add a new product variant under the created product with unique SKU and valid stock quantity.
-   * 4. Retrieve the inventory history record for the created variant by its inventory history ID.
-   * 5. Verify that the response includes the correct details: quantity delta, reason, creation and update timestamps.
-   * 6. Confirm no soft-deleted records are returned.
-   *
-   * Assertions:
-   * - The inventory history record matches the created variant's inventory adjustments.
-   * - Authorization is enforced - only the owning seller can retrieve their inventory history.
-   * - Proper error responses for non-existent records are outside this test's scope as this is a success path.
-   */
-  // 1. Authenticate as seller by registering new account
+  // 1. Seller joins and authenticates
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerAuth = await authorize_seller_join(sellerConnection, {
-    body: typia.random<IShoppingMallSeller.IJoin>(),
-  });
-  typia.assert(sellerAuth);
-  sellerConnection.headers = {
-    Authorization: `Bearer ${sellerAuth.token.access}`,
-  };
-  // 2. Create a new product as the authenticated seller
-  // Since IShoppingMallProduct has no property 'id', manually generate a UUID to use as productId
-  const generatedProductId = typia.random<string & tags.Format<"uuid">>();
-  await generate_random_shopping_mall_seller_products_create(sellerConnection, {
-    body: {}, // empty body as no fields are defined
-  });
-  // 3. Add a new product variant to the created product
-  // Since IShoppingMallProductVariant has no property 'id', generate variantId separately
-  // Use the generatedProductId as productId
-  const generatedVariantId = typia.random<string & tags.Format<"uuid">>();
-  await generate_random_shopping_mall_seller_products_variants_create_variant(
-    sellerConnection,
-    {
-      params: { productId: generatedProductId },
-      body: {},
+  const joinResult = await authorize_seller_join(sellerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "securePassword123",
+      shopName: RandomGenerator.name(),
+      shopDescription: null,
+      logoUri: null,
     },
+  });
+  typia.assert(joinResult);
+  // Use token for authenticated connection
+  sellerConnection.headers = {
+    Authorization: `Bearer ${joinResult.token.access}`,
+  };
+  // 2. Create an inventory history record using valid sample data via simulation
+  // Since no utility explicitly creates inventory history, we simulate one
+  const randomInventoryHistory = typia.random<IShoppingMallInventoryHistory>();
+  // 3. Retrieve inventory history by ID for the authorized seller
+  const got = await api.functional.shoppingMall.seller.inventoryHistories.at(
+    sellerConnection,
+    { inventoryHistoryId: randomInventoryHistory.id },
   );
-  // 4. Retrieve the inventory history record for the variant
-  // Because IShoppingMallInventoryHistory has no typed properties, generate inventoryHistoryId as UUID
-  const generatedInventoryHistoryId = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  const inventoryHistory =
-    await api.functional.shoppingMall.seller.productVariants.inventoryHistories.atInventoryHistory(
-      sellerConnection,
-      {
-        variantId: generatedVariantId,
-        inventoryHistoryId: generatedInventoryHistoryId,
-      },
+  typia.assert(got);
+  // 4. Verify the response matches expected schema property keys
+  TestValidator.equals(
+    "inventory history id",
+    got.id,
+    randomInventoryHistory.id,
+  );
+  TestValidator.equals(
+    "quantity delta",
+    got.quantityDelta,
+    randomInventoryHistory.quantityDelta,
+  );
+  TestValidator.equals("reason present", typeof got.reason, "string");
+  // 5. Validate product variant summary is present and valid
+  typia.assert(got.productVariant);
+  TestValidator.equals(
+    "product variant id",
+    got.productVariant.id,
+    randomInventoryHistory.productVariant.id,
+  );
+  TestValidator.equals(
+    "product variant sku code",
+    got.productVariant.skuCode,
+    randomInventoryHistory.productVariant.skuCode,
+  );
+  // 6. Validate timestamps are ISO date-time strings and logically ordered
+  const createdAt = new Date(got.createdAt);
+  const updatedAt = new Date(got.updatedAt);
+  const deletedAt = got.deletedAt ? new Date(got.deletedAt) : null;
+  TestValidator.predicate(
+    "createdAt is valid date",
+    !isNaN(createdAt.getTime()),
+  );
+  TestValidator.predicate(
+    "updatedAt is valid date",
+    !isNaN(updatedAt.getTime()),
+  );
+  if (deletedAt !== null) {
+    TestValidator.predicate(
+      "deletedAt is valid date",
+      !isNaN(deletedAt.getTime()),
     );
-  typia.assert(inventoryHistory);
-  // 5. No property assertions since IShoppingMallInventoryHistory properties do not exist
-  // 6. Authorization enforcement test is within scope but negative tests are out of scope
-  // So just ensure the call works with correct seller
+  }
+  TestValidator.predicate(
+    "updatedAt is equal or after createdAt",
+    updatedAt >= createdAt,
+  );
+  // 7. Check no unauthorized/leaking data present (basic check)
+  const allowedKeys = new Set([
+    "id",
+    "shoppingMallProductVariantId",
+    "quantityDelta",
+    "reason",
+    "createdAt",
+    "updatedAt",
+    "deletedAt",
+    "productVariant",
+  ]);
+  for (const key of Object.keys(got)) {
+    TestValidator.predicate(
+      `no unauthorized property ${key}`,
+      allowedKeys.has(key),
+    );
+  }
 }

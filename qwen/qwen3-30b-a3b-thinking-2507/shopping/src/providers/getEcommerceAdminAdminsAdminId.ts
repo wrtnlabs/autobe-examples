@@ -17,12 +17,9 @@ export async function getEcommerceAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceAdmin> {
-  const admin = await MyGlobal.prisma.ecommerce_admins.findUnique({
+  const adminRecord = await MyGlobal.prisma.ecommerce_admins.findUniqueOrThrow({
     where: { id: props.adminId },
     ...EcommerceAdminTransformer.select(),
   });
-  if (!admin) {
-    throw new HttpException("Admin not found", 404);
-  }
-  return EcommerceAdminTransformer.transform(admin);
+  return await EcommerceAdminTransformer.transform(adminRecord);
 }

@@ -1,7 +1,9 @@
-import { ICommunityPlatformReportDecision } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportDecision";
+import { ICommunityPlatformModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformModerator";
+import { ICommunityPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReport";
+import { ICommunityPlatformReportReason } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportReason";
+import { ICommunityPlatformReportsDecision } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportsDecision";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageICommunityPlatformReportDecision } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageICommunityPlatformReportDecision";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,65 +13,81 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
+import { CommunityPlatformReportsDecisionTransformer } from "../transformers/CommunityPlatformReportsDecisionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchCommunityPlatformModeratorReportsDecisions(props: {
   moderator: ModeratorPayload;
-  body: ICommunityPlatformReportDecision.IRequest;
-}): Promise<IPageICommunityPlatformReportDecision.ISummary> {
-  const whereInput: Prisma.community_platform_reports_decisionsWhereInput = {
-    deleted_at: null,
-  };
-  const page = 1;
-  const limit = 20;
-  const skip = (page - 1) * limit;
-  const orderByInput: Prisma.community_platform_reports_decisionsOrderByWithRelationInput =
-    {
-      created_at: "desc",
-    };
-  const data =
-    await MyGlobal.prisma.community_platform_reports_decisions.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      select: {
-        id: true,
-        report_id: true,
-        moderator_id: true,
-        comments: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        decision: true,
+  body: ICommunityPlatformReportsDecision.IRequest;
+}): Promise<ICommunityPlatformReportsDecision> {
+  const reportId = props.body.reportId;
+  const { decision, comment } = props.body;
+  const validDecisions = ["approve", "dismiss"] as const;
+  if (!validDecisions.includes(decision)) {
+    throw new HttpException(`Invalid decision value: ${decision}`, 400);
+  }
+  // Fetch the existing report decision by unique id, not report_id
+  const existingDecision =
+    await MyGlobal.prisma.community_platform_reports_decisions.findUniqueOrThrow(
+      {
+        where: { id: reportId },
       },
-    });
-  const total =
-    await MyGlobal.prisma.community_platform_reports_decisions.count({
-      where: whereInput,
-    });
-  return {
-    data: data.map(
-      (record): ICommunityPlatformReportDecision.ISummary => ({
-        id: record.id,
-        report_id: record.report_id,
-        moderator_id: record.moderator_id,
-        status: record.decision,
-        comment: record.comments === null ? null : record.comments,
-        created_at: toISOStringSafe(record.created_at),
-        updated_at: toISOStringSafe(record.updated_at),
-        deleted_at:
-          record.deleted_at === null
-            ? null
-            : toISOStringSafe(record.deleted_at),
-      }),
-    ),
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+    );
+  if (existingDecision.deleted_at !== null) {
+    throw new HttpException("Report decision is deleted", 404);
+  }
+  // Use toISOStringSafe to convert current date to correct string type
+  const timestamp = toISOStringSafe(new Date()) as string &
+    tags.Format<"date-time">;
+  await MyGlobal.prisma.community_platform_reports_decisions.update({
+    where: { id: reportId },
+    data: {
+      decision: decision === "approve" ? "approved" : "dismissed",
+      comments: comment ?? null,
+      updated_at: timestamp,
     },
-  };
+  });
+  if (decision === "approve") {
+    // Delete all related reported contents permanently
+    // reported contents do not have content_type and content_id fields.
+    // We must check which IDs are set among community_platform_reported_post_id or community_platform_reported_comment_id.
+    const reportedContents =
+      await MyGlobal.prisma.community_platform_reported_contents.findMany({
+        where: { community_platform_report_id: reportId },
+        select: {
+          id: true,
+          community_platform_reported_post_id: true,
+          community_platform_reported_comment_id: true,
+        },
+      });
+    for (const rc of reportedContents) {
+      if (rc.community_platform_reported_post_id !== null) {
+        await MyGlobal.prisma.community_platform_posts.deleteMany({
+          where: { id: rc.community_platform_reported_post_id },
+        });
+      } else if (rc.community_platform_reported_comment_id !== null) {
+        await MyGlobal.prisma.community_platform_post_comments.deleteMany({
+          where: { id: rc.community_platform_reported_comment_id },
+        });
+      }
+    }
+  } else if (decision === "dismiss") {
+    // Mark the report status as dismissed
+    await MyGlobal.prisma.community_platform_reports.update({
+      where: { id: reportId },
+      data: { status: "dismissed" },
+    });
+  }
+  // Return updated decision
+  const updatedDecision =
+    await MyGlobal.prisma.community_platform_reports_decisions.findUniqueOrThrow(
+      {
+        where: { id: reportId },
+        ...CommunityPlatformReportsDecisionTransformer.select(),
+      },
+    );
+  return await CommunityPlatformReportsDecisionTransformer.transform(
+    updatedDecision,
+  );
 }

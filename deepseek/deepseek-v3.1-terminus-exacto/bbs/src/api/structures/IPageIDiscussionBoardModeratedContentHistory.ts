@@ -1,5 +1,5 @@
 import { IDiscussionBoardModeratedContentHistory } from "./IDiscussionBoardModeratedContentHistory";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "./IPageIDiscussionBoardAdministratorDistributionStatistic";
 
 export namespace IPageIDiscussionBoardModeratedContentHistory {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardModeratedContentHistory {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination;
 
     /**
      * List of records.

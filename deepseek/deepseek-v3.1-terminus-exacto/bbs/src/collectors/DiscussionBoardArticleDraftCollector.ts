@@ -11,19 +11,20 @@ export namespace DiscussionBoardArticleDraftCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticleDraft.ICreate;
   }) {
-    const id: string = v4();
     return {
       // Scalar fields
-      id,
+      id: v4(),
       draft_title: props.body.draft_title,
       draft_content: props.body.draft_content,
-      draft_status: "draft",
+      draft_status: props.body.draft_status,
       last_saved_at: new Date(),
-      recovery_data: props.body.recovery_data ?? null,
+      recovery_data: props.body.recovery_data
+        ? JSON.stringify(props.body.recovery_data)
+        : null,
       draft_created_at: new Date(),
       draft_updated_at: new Date(),
       draft_deleted_at: null,
-      // Optional belongsTo relation
+      // Optional relation - not applicable for draft creation
       article: undefined,
     } satisfies Prisma.discussion_board_article_draftsCreateInput;
   }

@@ -12,12 +12,10 @@ export namespace EcommerceProductVariantCollector {
     body: IEcommerceProductVariant.ICreate;
     ecommerceProducts: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      sku: props.body.sku,
+      id: v4(),
+      sku_code: props.body.sku_code,
       price: props.body.price ?? null,
-      stock_quantity: props.body.stock_quantity,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

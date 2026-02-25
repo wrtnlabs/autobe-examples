@@ -1,5 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallProductCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductCategory";
 import { IShoppingMallSale } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSale";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallSaleTransformer } from "../transformers/ShoppingMallSaleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,36 +20,40 @@ export async function putShoppingMallSellerSalesSaleId(props: {
   saleId: string & tags.Format<"uuid">;
   body: IShoppingMallSale.IUpdate;
 }): Promise<IShoppingMallSale> {
-  // Ensure sale exists, belongs to seller, and is not deleted
-  const sale = await MyGlobal.prisma.shopping_mall_sales.findFirst({
-    where: {
-      id: props.saleId,
-      seller_id: props.seller.id,
-      deleted_at: null,
-    },
+  // Find the sale by ID and verify existence
+  const sale = await MyGlobal.prisma.shopping_mall_sales.findUniqueOrThrow({
+    where: { id: props.saleId },
+    select: { id: true, seller_id: true },
   });
-  if (!sale) throw new HttpException("Sale not found or unauthorized", 404);
-  // Use transaction for atomic update
-  const [updated] = await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.shopping_mall_sales.update({
-      where: { id: props.saleId },
-      data: {
-        updated_at: toISOStringSafe(new Date()),
-      },
+  // Check authorization
+  if (sale.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden: You do not own this sale.", 403);
+  }
+  // Construct update data immutably
+  const updateData = {
+    ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.description !== undefined && {
+      description: props.body.description,
     }),
-  ]);
-  // Map result manually, converting Date to ISO string with safe utility
-  return {
-    id: updated.id,
-    seller_id: updated.seller_id,
-    category_id: updated.category_id,
-    name: updated.name,
-    description: updated.description,
-    base_price: updated.base_price,
-    status: updated.status,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at:
-      updated.deleted_at === null ? null : toISOStringSafe(updated.deleted_at),
+    ...(props.body.category_id !== undefined && {
+      category_id: props.body.category_id,
+    }),
+    ...(props.body.base_price !== undefined && {
+      base_price: props.body.base_price,
+    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
   };
+  // Update the sale
+  await MyGlobal.prisma.shopping_mall_sales.update({
+    where: { id: props.saleId },
+    data: updateData,
+  });
+  // Retrieve the updated record with transformer
+  const updatedRecord =
+    await MyGlobal.prisma.shopping_mall_sales.findUniqueOrThrow({
+      where: { id: props.saleId },
+      ...ShoppingMallSaleTransformer.select(),
+    });
+  return await ShoppingMallSaleTransformer.transform(updatedRecord);
 }

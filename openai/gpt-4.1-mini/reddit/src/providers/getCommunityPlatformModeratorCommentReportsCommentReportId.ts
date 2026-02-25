@@ -1,4 +1,7 @@
+import { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
 import { ICommunityPlatformCommentReport } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommentReport";
+import { ICommunityPlatformReportReason } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformReportReason";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
+import { CommunityPlatformCommentReportTransformer } from "../transformers/CommunityPlatformCommentReportTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,36 +21,9 @@ export async function getCommunityPlatformModeratorCommentReportsCommentReportId
   commentReportId: string & tags.Format<"uuid">;
 }): Promise<ICommunityPlatformCommentReport> {
   const report =
-    await MyGlobal.prisma.community_platform_comment_reports.findUnique({
+    await MyGlobal.prisma.community_platform_comment_reports.findUniqueOrThrow({
       where: { id: props.commentReportId },
-      include: {
-        comment: true,
-        reporterUser: true,
-        reportReason: true,
-      },
+      ...CommunityPlatformCommentReportTransformer.select(),
     });
-  if (report === null) {
-    throw new HttpException("Comment report not found", 404);
-  }
-  // Helper: converts possible null Date to ISO string with the format tag
-  const toDateTimeString = (
-    date: Date | null,
-  ): (string & tags.Format<"date-time">) | null => {
-    if (date === null) return null;
-    return date.toISOString();
-  };
-  return {
-    id: report.id,
-    comment_id: report.comment_id,
-    reporter_user_id: report.reporter_user_id,
-    report_reason_id: report.report_reason_id ?? null,
-    status: report.status,
-    description: report.description ?? null,
-    created_at: toDateTimeString(report.created_at),
-    updated_at: toDateTimeString(report.updated_at),
-    deleted_at: toDateTimeString(report.deleted_at),
-    comment: report.comment,
-    reporterUser: report.reporterUser,
-    reportReason: report.reportReason,
-  };
+  return await CommunityPlatformCommentReportTransformer.transform(report);
 }

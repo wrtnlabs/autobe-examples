@@ -36,11 +36,16 @@ model discussion_board_articles {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   author discussion_board_registered_users @relation(fields: [registered_user_id], references: [id], onDelete: Cascade)
   section discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   images discussion_board_article_images[]
   tagMappings discussion_board_article_tag_mappings[]
   files discussion_board_article_files[]
@@ -48,6 +53,9 @@ model discussion_board_articles {
   searchIndexes discussion_board_article_search_indexes[]
   articleTags discussion_board_article_tags[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([section_id, title])
   @@index([registered_user_id, created_at])
   @@index([section_id, created_at])
@@ -92,10 +100,14 @@ model discussion_board_article_images {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, display_order], map: "discussion_board_article_images_discussion_board_artic_ed181826")
 }
@@ -130,14 +142,17 @@ model discussion_board_article_tag_mappings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_tag_id], map: "discussion_board_article_tag_mappings_discussion_board_fdeff787")
-  
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tag_mappings_discussion_board_afdfd50a")
   @@index([created_at])
@@ -175,11 +190,15 @@ model discussion_board_administrator_grade_changes {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
   grade discussion_board_administrator_grades @relation(fields: [discussion_board_administrator_grade_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_administrator_id, created_at], map: "discussion_board_administrator_grade_changes_discussio_13b5f26a")
   // spellchecker: ignore-next-line
@@ -228,9 +247,13 @@ model discussion_board_article_files {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([article_id, display_order])
 }

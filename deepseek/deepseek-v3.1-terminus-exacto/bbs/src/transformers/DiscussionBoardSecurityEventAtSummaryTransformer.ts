@@ -1,10 +1,16 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSecurityEvent } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSecurityEvent";
+import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
+import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
+import { DiscussionBoardSuperAdminAtSummaryTransformer } from "./DiscussionBoardSuperAdminAtSummaryTransformer";
+import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardSecurityEventAtSummaryTransformer {
   export type Payload = Prisma.discussion_board_security_eventsGetPayload<
@@ -25,9 +31,9 @@ export namespace DiscussionBoardSecurityEventAtSummaryTransformer {
         resolved_by: true,
         created_at: true,
         updated_at: true,
-        user: true,
-        admin: true,
-        superAdmin: true,
+        user: DiscussionBoardUserAtSummaryTransformer.select(),
+        admin: DiscussionBoardAdminAtSummaryTransformer.select(),
+        superAdmin: DiscussionBoardSuperAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_security_eventsFindManyArgs;
   }
@@ -38,9 +44,21 @@ export namespace DiscussionBoardSecurityEventAtSummaryTransformer {
       id: input.id,
       event_type: input.event_type,
       severity: input.severity,
+      description: input.description,
+      source_ip: input.source_ip,
       resolved: input.resolved,
       created_at: input.created_at.toISOString(),
-      resolved_at: input.resolved_at?.toISOString() ?? null,
+      user: input.user
+        ? await DiscussionBoardUserAtSummaryTransformer.transform(input.user)
+        : null,
+      admin: input.admin
+        ? await DiscussionBoardAdminAtSummaryTransformer.transform(input.admin)
+        : null,
+      superAdmin: input.superAdmin
+        ? await DiscussionBoardSuperAdminAtSummaryTransformer.transform(
+            input.superAdmin,
+          )
+        : null,
     };
   }
 }

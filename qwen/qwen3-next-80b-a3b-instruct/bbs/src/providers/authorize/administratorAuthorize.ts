@@ -1,6 +1,6 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
+import { jwtAuthorize } from "./jwtAuthorize";
 import { AdministratorPayload } from "../../decorators/payload/AdministratorPayload";
 
 export async function administratorAuthorize(request: {
@@ -12,11 +12,10 @@ export async function administratorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
   const administrator = await MyGlobal.prisma.economic_board_administrators.findFirst({
     where: {
-      id: payload.id, // Standalone role - direct ID lookup
-      deleted_at: null,  // Soft-delete check
+      id: payload.id,
+      is_banned: false,
     },
   });
 

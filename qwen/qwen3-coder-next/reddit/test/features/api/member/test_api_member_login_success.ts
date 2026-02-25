@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,103 +15,59 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_member_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create member account (join)
-  const memberConnection: api.IConnection = { host: connection.host };
-  const joinData = {
+  // 1. Create a new member account first
+  const registerConnection: api.IConnection = { host: connection.host };
+  const memberData = {
     email: typia.random<string & tags.Format<"email">>(),
     password: RandomGenerator.alphaNumeric(16),
     username: RandomGenerator.name(),
-    displayName: RandomGenerator.name(2),
-  } satisfies IRedditPlatformMember.IJoin;
-  const memberProfile = await authorize_member_join(memberConnection, {
-    body: joinData,
+    displayName: null,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IRedditCloneMember.IJoin;
+  const registered = await authorize_member_join(registerConnection, {
+    body: memberData,
   });
-  typia.assert(memberProfile);
-  // Verify email is verified after join
-  TestValidator.equals(
-    "email should be verified",
-    memberProfile.email_verified,
-    true,
-  );
-  // Step 2: Login with correct credentials
-  const loginData = {
-    email: memberProfile.email,
-    password: joinData.password,
-  } satisfies IRedditPlatformMember.ILogin;
+  typia.assert(registered);
+  // 2. Login with the created member credentials
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginResult = await authorize_member_login(loginConnection, {
+  const loginData = {
+    email: memberData.email,
+    password: memberData.password,
+  } satisfies IRedditCloneMember.ILogin;
+  const logged = await authorize_member_login(loginConnection, {
     body: loginData,
   });
-  typia.assert(loginResult);
-  // Step 3: Validate login result
-  TestValidator.equals("user ID matches", loginResult.id, memberProfile.id);
-  TestValidator.equals("email matches", loginResult.email, memberProfile.email);
+  typia.assert(logged);
+  // 3. Validate login response structure
+  TestValidator.equals("member id matches", logged.id, registered.id);
+  TestValidator.equals("email matches", logged.email, memberData.email);
   TestValidator.equals(
     "username matches",
-    loginResult.username,
-    memberProfile.username,
+    logged.username,
+    memberData.username,
   );
   TestValidator.equals(
     "display name matches",
-    loginResult.display_name,
-    memberProfile.display_name,
+    logged.displayName,
+    memberData.displayName,
   );
-  TestValidator.equals("bio matches", loginResult.bio, memberProfile.bio);
-  TestValidator.equals(
-    "avatar URL matches",
-    loginResult.avatar_url,
-    memberProfile.avatar_url,
-  );
-  TestValidator.equals(
-    "karma score matches",
-    loginResult.karma_score,
-    memberProfile.karma_score,
-  );
-  TestValidator.equals(
-    "created at matches",
-    loginResult.created_at,
-    memberProfile.created_at,
-  );
-  TestValidator.equals(
-    "updated at matches",
-    loginResult.updated_at,
-    memberProfile.updated_at,
-  );
-  // Verify token structure
-  TestValidator.equals(
-    "access token exists",
-    typeof loginResult.token.access,
-    "string",
-  );
-  TestValidator.equals(
-    "refresh token exists",
-    typeof loginResult.token.refresh,
-    "string",
+  // 4. Validate token structure exists and is valid
+  TestValidator.predicate("has access token", logged.token.access.length > 0);
+  TestValidator.predicate("has refresh token", logged.token.refresh.length > 0);
+  TestValidator.predicate(
+    "has valid expiry",
+    new Date(logged.token.expired_at) > new Date(),
   );
   TestValidator.predicate(
-    "access token not empty",
-    loginResult.token.access.length > 0,
+    "has valid refreshable until",
+    new Date(logged.token.refreshable_until) > new Date(),
   );
+  // 5. Validate karma score initialization
+  TestValidator.equals("karma starts at 0", logged.karma, 0);
+  // 6. Validate createdAt timestamp
   TestValidator.predicate(
-    "refresh token not empty",
-    loginResult.token.refresh.length > 0,
+    "has valid creation date",
+    new Date(logged.createdAt) <= new Date(),
   );
-  // Verify token expiration timestamps exist and are valid date-time format
-  TestValidator.equals(
-    "expired_at exists",
-    typeof loginResult.token.expired_at,
-    "string",
-  );
-  TestValidator.equals(
-    "refreshable_until exists",
-    typeof loginResult.token.refreshable_until,
-    "string",
-  );
-  // Verify the connection headers were updated with access token
-  TestValidator.predicate("connection has authorization header", () => {
-    return (
-      loginConnection.headers !== undefined &&
-      loginConnection.headers.Authorization === loginResult.token.access
-    );
-  });
 }

@@ -6,21 +6,15 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_section(
-  input?: DeepPartial<IDiscussionBoardSection.ICreate>,
+  input?: DeepPartial<IDiscussionBoardSection.ICreate> | undefined,
 ): IDiscussionBoardSection.ICreate {
   return {
-    name:
-      input?.name ??
-      RandomGenerator.paragraph({ sentences: 3, wordMin: 1, wordMax: 3 }),
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 3 }),
     description:
-      input?.description ??
-      RandomGenerator.content({
-        paragraphs: 2,
-        sentenceMin: 3,
-        sentenceMax: 6,
-      }),
+      input?.description ?? RandomGenerator.content({ paragraphs: 2 }),
+    status:
+      input?.status ?? RandomGenerator.pick(["active", "inactive", "archived"]),
     display_order:
-      input?.display_order ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+      input?.display_order ?? typia.random<number & tags.Type<"int32">>(),
   };
 }

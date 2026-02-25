@@ -9,24 +9,20 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace DiscussionBoardUserBanCollector {
   export async function collect(props: {
-    body: IDiscussionBoardUserBan.ICreate & {
-      reason: string;
-      bannedAt: string;
-    };
-    registeredUser: IEntity;
-    administrator?: IEntity;
+    body: IDiscussionBoardUserBan.ICreate;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       reason: props.body.reason,
-      banned_at: new Date(props.body.bannedAt),
+      banned_at: new Date(),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      registeredUser: { connect: { id: props.registeredUser.id } },
-      administrator: props.administrator
-        ? { connect: { id: props.administrator.id } }
-        : undefined,
+      registeredUser: {
+        connect: { id: props.body.registeredUserId },
+      },
+      administrator: undefined,
     } satisfies Prisma.discussion_board_user_bansCreateInput;
   }
 }

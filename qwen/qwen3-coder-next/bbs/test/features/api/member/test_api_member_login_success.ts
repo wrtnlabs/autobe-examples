@@ -15,64 +15,67 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_member_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create a member account through join
+  // 1. Generate credentials once for both join and login
+  const email = typia.random<string & tags.Format<"email">>();
+  const password = RandomGenerator.alphaNumeric(16);
+  const displayName = RandomGenerator.name();
+  // 2. Join a new member account first
   const joinConnection: api.IConnection = { host: connection.host };
-  const joinOutput = await authorize_member_join(joinConnection, {
-    body: typia.random<IDiscussionBoardMember.IJoin>(),
-  });
-  typia.assert(joinOutput);
-  // Step 2: Use the created member's credentials to login
+  const joinedMember = await api.functional.discussionBoard.auth.member.join(
+    joinConnection,
+    {
+      body: {
+        email,
+        password,
+        displayName,
+        passwordConfirmation: password, // Must match password field
+      } satisfies IDiscussionBoardMember.IJoin,
+    },
+  );
+  typia.assert(joinedMember);
+  // 3. Login with the joined member credentials
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: "1234",
-  } satisfies IDiscussionBoardMember.ILogin;
-  const loginOutput = await authorize_member_login(loginConnection, {
-    body: loginBody,
-  });
-  typia.assert(loginOutput);
-  // Step 3: Validate the login response structure
-  TestValidator.predicate(
-    "has access token",
-    () =>
-      typeof loginOutput.token.access === "string" &&
-      loginOutput.token.access.length > 0,
+  const loggedMember = await api.functional.discussionBoard.auth.member.login(
+    loginConnection,
+    {
+      body: {
+        email,
+        password, // Use same password as join operation
+        href: "https://example.com/discussion",
+        referrer: "https://example.com/",
+      } satisfies IDiscussionBoardMember.ILogin,
+    },
+  );
+  typia.assert(loggedMember);
+  // 4. Validate the login response
+  TestValidator.equals(
+    "member ID matches",
+    loggedMember.member.id,
+    joinedMember.member.id,
+  );
+  TestValidator.equals(
+    "email matches",
+    loggedMember.member.email,
+    joinedMember.member.email,
+  );
+  TestValidator.equals(
+    "displayName matches",
+    loggedMember.member.display_name,
+    joinedMember.member.display_name,
   );
   TestValidator.predicate(
-    "has refresh token",
-    () =>
-      typeof loginOutput.token.refresh === "string" &&
-      loginOutput.token.refresh.length > 0,
+    "has access_token",
+    loggedMember.access_token.length > 0,
   );
   TestValidator.predicate(
-    "has valid access token format",
-    () => loginOutput.token.access.split(".").length === 3,
+    "has refresh_token",
+    loggedMember.refresh_token.length > 0,
   );
-  TestValidator.predicate(
-    "has valid refresh token format",
-    () => loginOutput.token.refresh.split(".").length === 3,
-  );
-  // Validate expiration timestamps are proper ISO 8601 date-time format
-  TestValidator.predicate("has valid expired_at format", () => {
-    try {
-      new Date(loginOutput.token.expired_at);
-      return true;
-    } catch {
-      return false;
-    }
-  });
-  TestValidator.predicate("has valid refreshable_until format", () => {
-    try {
-      new Date(loginOutput.token.refreshable_until);
-      return true;
-    } catch {
-      return false;
-    }
-  });
-  // Verify tokens are not empty and different
-  TestValidator.notEquals(
-    "access and refresh tokens are different",
-    loginOutput.token.access,
-    loginOutput.token.refresh,
+  TestValidator.equals("is_active status", loggedMember.member.is_active, true);
+  TestValidator.equals("is_admin status", loggedMember.member.is_admin, false);
+  TestValidator.equals(
+    "is_super_admin status",
+    loggedMember.member.is_super_admin,
+    false,
   );
 }

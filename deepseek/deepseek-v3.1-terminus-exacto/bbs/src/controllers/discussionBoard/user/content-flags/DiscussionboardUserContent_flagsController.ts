@@ -1,30 +1,79 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IDiscussionBoardContentFlag } from "../../../../api/structures/IDiscussionBoardContentFlag";
-import { IPageIDiscussionBoardContentFlag } from "../../../../api/structures/IPageIDiscussionBoardContentFlag";
 import { UserAuth } from "../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../decorators/payload/UserPayload";
-import { patchDiscussionBoardUserContentFlags } from "../../../../providers/patchDiscussionBoardUserContentFlags";
+import { getDiscussionBoardUserContentFlagsFlagId } from "../../../../providers/getDiscussionBoardUserContentFlagsFlagId";
 import { postDiscussionBoardUserContentFlags } from "../../../../providers/postDiscussionBoardUserContentFlags";
 
 @Controller("/discussionBoard/user/content-flags")
 export class DiscussionboardUserContent_flagsController {
   /**
-   * Create a new content flag for moderator review of inappropriate articles or comments.
+   * Retrieve detailed information about a specific content flag by its unique identifier.
    *
-   * This operation allows authenticated users to report content that violates community guidelines or requires moderator attention. Users must specify either an article or comment to flag, along with a detailed reason explaining the concern. The flag is created with a 'pending' status and enters the moderation workflow for administrator review.
+   * This operation provides comprehensive access to content flag records, which represent user-reported content requiring moderator review. Each flag contains information about the reporting user, the specific content being flagged (either an article or a comment), the current moderation status, and any resolution details provided by administrators.
    *
-   * Content flags serve as the foundation for community-driven moderation, enabling users to contribute to maintaining discussion quality while preserving administrator oversight. Flags reference specific content through article or comment identifiers and include comprehensive reporting information for effective moderation decisions.
+   * The response includes the complete flag record with all associated relationships, allowing administrators to understand the context of the reported content and make informed moderation decisions. This operation is essential for the content moderation workflow, enabling detailed review of individual flags before taking action.
    *
-   * The operation validates that the reporting user has proper authentication, the flagged content exists in the system, and the flag reason meets minimum content requirements. Successful flag creation initiates the moderation process where administrators can review and take appropriate action on the reported content.
+   * Security considerations require that only authenticated administrators should have access to this operation, as content flags contain sensitive moderation information and user reporting data. The operation supports the platform's community-driven content moderation system while maintaining appropriate access controls.
+   *
+   * Related operations include PATCH /content-flags for searching and filtering flags, and PUT /content-flags/{flagId} for updating flag status during the moderation process.
    *
    * @param connection
-   * @param body Content flag creation information including flagged content reference and reporting reason
+   * @param flagId Unique identifier of the content flag to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Create a new content flag record in the discussion_board_content_flags table. Validate that the reporter user exists and is authenticated. Ensure the flagged content (article or comment) exists and is not already deleted. Validate that the flag reason meets length requirements. Set initial status to 'pending' for moderator review. Ensure only one of flagged_article_id or flagged_comment_id is provided, not both. Return the created flag with populated fields including generated ID and timestamps.
+   * @x-autobe-specification Query the discussion_board_content_flags table using the provided flagId parameter to retrieve the specific content flag record.
+   *
+   * Include all related data through database joins: reporter user information, flagged article details (if applicable), flagged comment details (if applicable), and reviewing administrator information.
+   *
+   * Validate that the flag exists and return appropriate error responses for invalid or non-existent flag IDs. Ensure the response includes all flag fields including timestamps, status, and resolution details.
+   *
+   * Implement proper authorization checks to ensure only authenticated administrators can access this endpoint, as content flags contain sensitive moderation information.
+   *
+   * Handle edge cases such as soft-deleted flags by filtering out records where deleted_at is not null, unless specifically requested for audit purposes.
+   *
+   * Return the complete flag object with all relationships populated for comprehensive moderation review.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":flagId")
+  public async at(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("flagId")
+    flagId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardContentFlag> {
+    try {
+      return await getDiscussionBoardUserContentFlagsFlagId({
+        user,
+        flagId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit a content flag for moderator review of inappropriate articles or comments.
+   *
+   * This operation allows authenticated users to report content that violates community guidelines or requires administrator attention through the discussion_board_content_flags table. Users can flag either articles (referencing discussion_board_articles.id) or comments (referencing discussion_board_comments.id) by providing the specific content identifier along with a detailed reason for the report.
+   *
+   * When a content flag is submitted, it enters the moderation workflow with 'pending' status and becomes available for administrator review through the discussion_board_admins.id reference. The system validates that the reporter is a valid user (discussion_board_users.id) and that the flagged content exists before creating the flag record.
+   *
+   * Content flags support community-driven moderation while maintaining proper oversight through administrator review processes. Flags can reference discussion board articles or comments through their respective identifier fields, with validation ensuring exactly one content type is specified per flag submission.
+   *
+   * Security considerations require that only authenticated users can submit content flags, and users can only flag content they have access to view. The system tracks the reporter identity for accountability and audit purposes through the reporter_user_id field.
+   *
+   * This operation integrates with the platform's content moderation system described in the requirements analysis, supporting the community-driven reporting functionality while maintaining administrator oversight.
+   *
+   * @param connection
+   * @param body Content flag creation information including flagged content and reason
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification Create a new content flag record for moderator review. Validate that the reporter user exists and has permission to report content. Ensure exactly one of flaggedArticleId or flaggedCommentId is provided. Set initial status to 'pending' and record creation timestamp. Associate the flag with the authenticated reporter user. Validate flag reason meets minimum content requirements. Generate UUID for the new flag ID.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -36,42 +85,6 @@ export class DiscussionboardUserContent_flagsController {
   ): Promise<IDiscussionBoardContentFlag> {
     try {
       return await postDiscussionBoardUserContentFlags({
-        user,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a paginated list of content flags for moderation review.
-   *
-   * This operation provides administrators with comprehensive access to user-reported content flags requiring moderation attention. Content flags represent community-driven moderation reports where users flag inappropriate articles or comments for administrator review.
-   *
-   * The system supports advanced filtering capabilities including status-based filtering (pending review, under investigation, resolved, dismissed), content type filtering (article flags vs comment flags), reporter identification, and date range filtering for efficient moderation workflow management.
-   *
-   * Administrators can use this endpoint to monitor the moderation queue, track flag resolution progress, and manage community-reported content effectively. The response includes essential flag information while maintaining pagination efficiency for large flag volumes.
-   *
-   * Security considerations require administrator-level authentication for access. The system logs all flag retrieval operations for audit trail compliance and moderation workflow tracking.
-   *
-   * @param connection
-   * @param body Search criteria and pagination parameters for content flags
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query discussion_board_content_flags table with pagination and filtering capabilities. Support filtering by status (pending, under investigation, resolved, dismissed), flagged content type (article vs comment), reporter user ID, and date ranges. Join with related tables (discussion_board_users, discussion_board_articles, discussion_board_comments) to include reporter and content information. Implement cursor-based pagination for large result sets. Validate that only administrators can access this endpoint.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @UserAuth()
-    user: UserPayload,
-    @TypedBody()
-    body: IDiscussionBoardContentFlag.IRequest,
-  ): Promise<IPageIDiscussionBoardContentFlag.ISummary> {
-    try {
-      return await patchDiscussionBoardUserContentFlags({
         user,
         body,
       });

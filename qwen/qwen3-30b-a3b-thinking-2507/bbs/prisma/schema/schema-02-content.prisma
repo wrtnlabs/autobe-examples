@@ -1,0 +1,231 @@
+/// Stores user-published articles with content, title, section
+/// relationships, and metadata.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section that the article belongs to. {@link
+  /// economic_political_discussion_board_sections.id}
+  section_id String
+  
+  /// User who wrote the article. {@link
+  /// economic_political_discussion_board_users.id}
+  user_id String
+  
+  /// Article title (5-100 characters)
+  title String
+  
+  /// Article content (minimum 100 characters)
+  content String
+  
+  /// Timestamp when the article was created
+  created_at DateTime
+  
+  /// Timestamp when the article was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft-deleted (null if active)
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section economic_political_discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  user economic_political_discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  attachments economic_political_discussion_board_attachments[]
+  articleTags economic_political_discussion_board_article_tags[]
+  comments economic_political_discussion_board_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([section_id])
+  @@index([user_id])
+}
+
+/// Manages file attachments linked to articles (5 max per article). Includes
+/// URL, file type (file/image), and timestamps with soft delete capability.
+///
+/// Attachment records are directly managed through content operations. Each
+/// attachment must belong to a single article, supporting the "Article has
+/// many Attachments" relationship pattern established in content management
+/// workflows.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article this attachment belongs to. {@link
+  /// economic_political_discussion_board_articles.id}
+  article_id String
+  
+  /// File URL stored in cloud storage. URL must be valid and accessible.
+  url String
+  
+  /// File type: 'file' or 'image'. Determines processing and display.
+  type String
+  
+  /// Record creation timestamp. Automatically set on insertion.
+  created_at DateTime
+  
+  /// Record last update timestamp. Automatically updated on modifications.
+  updated_at DateTime
+  
+  /// Soft delete timestamp if record was deactivated. Nullable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([article_id, created_at], map: "economic_political_discussion_board_attachments_articl_1ef923e1")
+}
+
+/// Tracks user-defined tags for article categorization. Users can create,
+/// assign, and search tags across articles. Tags are unique and independent
+/// entities, allowing flexible categorization of content.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Tag identifier name (e.g., 'economy', 'politics'). Must be unique across
+  /// all tags.
+  name String
+  
+  /// Timestamp when the tag was created.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the tag.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  tags economic_political_discussion_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+}
+
+/// Junction table connecting articles to multiple tags, enabling
+/// many-to-many relationship between articles and tags.
+///
+/// This table allows an article to have multiple tags while ensuring each
+/// tag-article association is unique.
+///
+/// Related to: {@link economic_political_discussion_board_articles}, {@link
+/// economic_political_discussion_board_tags}
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article reference. {@link
+  /// economic_political_discussion_board_articles.id}.
+  article_id String
+  
+  /// Tag reference. {@link economic_political_discussion_board_tags.id}.
+  tag_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  tag economic_political_discussion_board_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([tag_id])
+  // spellchecker: ignore-next-line
+  @@unique([article_id, tag_id], map: "economic_political_discussion_board_article_tags_artic_a9cf8bf7")
+}
+
+/// Holds user comments on articles with content and timestamping. Each
+/// comment belongs to a single article and user, with timestamps for
+/// creation and updates. Supports independent comment moderation, searching,
+/// and management workflows.
+///
+/// @namespace Content
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated article's {@\link
+  /// economic_political_discussion_board_articles.id}.
+  article_id String
+  
+  /// User who posted the comment's {@\link
+  /// economic_political_discussion_board_users.id}.
+  user_id String
+  
+  /// Comment content with minimum 10 characters, maximum 500 characters.
+  content String
+  
+  /// Timestamp when comment was created.
+  created_at DateTime
+  
+  /// Timestamp when comment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_political_discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  user economic_political_discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id])
+  @@index([user_id])
+}

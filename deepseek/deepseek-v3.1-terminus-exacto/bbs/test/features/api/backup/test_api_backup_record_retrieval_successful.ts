@@ -2,6 +2,8 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardBackupRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBackupRecord";
+import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
+import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -9,85 +11,85 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
+import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
+import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { generate_random_discussion_board_super_admin_backup_records_create } from "../../../generate/generate_random_discussion_board_super_admin_backup_records_create";
+import { prepare_random_discussion_board_backup_record } from "../../../prepare/prepare_random_discussion_board_backup_record";
 
 export async function test_api_backup_record_retrieval_successful(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create admin connection and authenticate
-  const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth = await authorize_admin_join(adminConnection, {
+  // Create authenticated super admin connection
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  const authResult = await authorize_super_admin_join(superAdminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IDiscussionBoardAdmin.IJoin,
+    } satisfies IDiscussionBoardSuperAdmin.IJoin,
   });
-  typia.assert(adminAuth);
-  // Since there's no backup creation endpoint available, we need to test with a valid record ID
-  // that might exist in the system. We'll use typia.random to generate a valid UUID format.
-  const backupRecordId = typia.random<string & tags.Format<"uuid">>();
+  typia.assert(authResult);
+  // Create backup record
+  const backupRecord =
+    await generate_random_discussion_board_super_admin_backup_records_create(
+      superAdminConnection,
+      {
+        body: {
+          backup_type: RandomGenerator.pick([
+            "full",
+            "incremental",
+            "database_only",
+            "files_only",
+          ] as const),
+          file_path: `/backups/${RandomGenerator.alphaNumeric(10)}.db`,
+        } satisfies IDiscussionBoardBackupRecord.ICreate,
+      },
+    );
+  typia.assert(backupRecord);
   // Retrieve the backup record
   const retrievedRecord =
-    await api.functional.discussionBoard.admin.backup_records.at(
-      adminConnection,
-      { recordId: backupRecordId },
+    await api.functional.discussionBoard.superAdmin.backup_records.at(
+      superAdminConnection,
+      {
+        backupRecordId: backupRecord.id,
+      },
     );
   typia.assert(retrievedRecord);
-  // Validate business logic - the retrieved record should match the requested ID
+  // Validate retrieved data matches created data
+  TestValidator.equals("backup record ID", retrievedRecord.id, backupRecord.id);
   TestValidator.equals(
-    "record ID matches requested ID",
-    retrievedRecord.id,
-    backupRecordId,
+    "backup type",
+    retrievedRecord.backup_type,
+    backupRecord.backup_type,
   );
-  // Validate that soft-deleted records are excluded (deleted_at should be null for active records)
   TestValidator.equals(
-    "record is not soft-deleted",
-    retrievedRecord.deleted_at,
-    null,
-  );
-  // Validate that the record has valid timestamps (business logic validation)
-  TestValidator.predicate(
-    "started_at is before or equal to current time",
-    new Date(retrievedRecord.started_at) <= new Date(),
+    "file path",
+    retrievedRecord.file_path,
+    backupRecord.file_path,
   );
   TestValidator.predicate(
-    "created_at is before or equal to current time",
-    new Date(retrievedRecord.created_at) <= new Date(),
+    "has valid backup type",
+    ["full", "incremental", "database_only", "files_only"].includes(
+      retrievedRecord.backup_type,
+    ),
   );
   TestValidator.predicate(
-    "updated_at is after or equal to created_at",
-    new Date(retrievedRecord.updated_at) >=
-      new Date(retrievedRecord.created_at),
+    "has status field",
+    retrievedRecord.status !== undefined,
   );
-  // If completed_at exists, it should be after started_at
-  if (
-    retrievedRecord.completed_at !== null &&
-    retrievedRecord.completed_at !== undefined
-  ) {
-    TestValidator.predicate(
-      "completed_at is after started_at",
-      new Date(retrievedRecord.completed_at) >=
-        new Date(retrievedRecord.started_at),
-    );
-  }
-  // Validate administrator relationship when present
-  if (
-    retrievedRecord.initiatedByAdmin !== null &&
-    retrievedRecord.initiatedByAdmin !== undefined
-  ) {
-    TestValidator.predicate(
-      "admin has valid email format",
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(retrievedRecord.initiatedByAdmin.email),
-    );
-    TestValidator.predicate(
-      "admin has display name",
-      retrievedRecord.initiatedByAdmin.display_name.length > 0,
-    );
-  }
+  TestValidator.predicate(
+    "has started_at timestamp",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(retrievedRecord.started_at),
+  );
+  TestValidator.predicate(
+    "has created_at timestamp",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(retrievedRecord.created_at),
+  );
+  TestValidator.predicate(
+    "has updated_at timestamp",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(retrievedRecord.updated_at),
+  );
 }

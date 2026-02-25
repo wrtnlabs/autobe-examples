@@ -10,78 +10,63 @@ import { postShoppingMallAuthCustomerRefresh } from "../../../../providers/postS
 @Controller("/shoppingMall/auth/customer")
 export class ShoppingmallAuthCustomerController {
   /**
-   * Register a new customer account for the e-commerce shopping mall platform.
+   * Register a new customer account in the shopping mall platform. When a visitor wants to become a registered customer, they can submit their registration information through this endpoint.
    *
-   * ## Purpose
+   * ## Purpose and Functionality
    *
-   * This API operation enables new customers to create accounts by providing email address, password, display name, and optionally phone number. The registration process validates email format and uniqueness, stores password securely using bcrypt hashing, and creates initial customer records with pending email verification status.
+   * This endpoint handles the complete customer registration workflow, creating a new customer account in the system. Upon successful registration, the customer is automatically logged in and receives authentication tokens for accessing protected endpoints.
    *
-   * ## Security Implementation
+   * The registration process validates the customer's email address to ensure it is unique and not already registered. It securely hashes the provided password using bcrypt before storing it in the database. The system creates a customer account with the email address, hashed password, and optional display name and phone number.
    *
-   * The implementation follows security best practices:
+   * ## Authentication Fields and Workflow
    *
-   * - Password strength validation (minimum 8 characters, mix of letters/numbers/special characters)
-   * - Email format validation using standard email regex patterns
-   * - Unique email constraint enforcement to prevent duplicate registrations
-   * - Secure password hashing using bcrypt algorithm with appropriate cost factor
-   * - Rate limiting on registration endpoint to prevent abuse and automated attacks
-   * - Automatic email verification token generation and email delivery upon successful registration
+   * The customer database schema includes several authentication-related fields that support the registration workflow:
    *
-   * ## Database Integration
+   * - **email**: Unique identifier for the customer account (required field)
+   * - **password_hash**: Securely hashed password using bcrypt algorithm (required field)
+   * - **display_name**: Optional display name shown in reviews and communications
+   * - **phone_number**: Optional phone number for order notifications and support
+   * - **email_verified_at**: Timestamp when customer verifies their email address (initially null)
+   * - **password_reset_token** and **password_reset_expires_at**: Support password reset functionality
    *
-   * The operation creates records in the following tables:
+   * After successful registration, the endpoint returns authentication tokens that enable the customer to access protected endpoints immediately without requiring a separate login step.
    *
-   * - **shopping_mall_customers**: Creates new customer record with hashed password, displays name, and sets is_email_verified to false initially
-   * - **shopping_mall_customer_email_verifications**: Creates email verification record with generated token and 24-hour expiration
+   * ## Security Considerations
    *
-   * The database schema ensures referential integrity with CASCADE delete for email verifications when customers are deleted.
+   * The registration process implements several security measures:
    *
-   * ## Business Logic
+   * 1. **Email Uniqueness**: The system enforces email uniqueness at the database level to prevent duplicate accounts
+   * 2. **Password Security**: Passwords are securely hashed using bcrypt with appropriate cost factor
+   * 3. **Input Validation**: The endpoint validates email format, password strength requirements, and sanitizes input data
+   * 4. **Audit Logging**: Registration events are logged for security auditing and compliance purposes
    *
-   * - Email must be unique across all customer accounts
-   * - Password must meet strength requirements before hashing
-   * - Display name is required but can be updated later
-   * - Phone number is optional but validated if provided
-   * - Account status is set to "active" initially, allowing login after email verification
-   * - Email verification is required before accessing certain features
-   * - Registration IP address and user agent are logged for security auditing
+   * ## Business Workflow
+   *
+   * 1. Customer submits registration form with email, password, and optional profile information
+   * 2. System validates email format and uniqueness
+   * 3. System validates password meets security requirements
+   * 4. System creates customer record with hashed password
+   * 5. System generates JWT access and refresh tokens
+   * 6. System returns tokens to client for immediate authentication
+   * 7. Customer can immediately access protected endpoints
    *
    * ## Related Operations
    *
-   * - After successful registration, customers should use `/auth/login` to authenticate
-   * - If email verification expires, customers can request new verification email
-   * - Customers can update profile information after initial registration
+   * This operation is the first step in the customer authentication lifecycle. After registration, customers can use:
    *
-   * ## Expected Behavior
+   * - `login` operation to authenticate with existing credentials
+   * - `refresh` operation to renew expired access tokens
+   * - Password reset operations for account recovery
    *
-   * On successful registration:
-   * - Customer receives 201 Created status
-   * - Email verification email is sent to provided address
-   * - Account requires email verification before full functionality
-   *
-   * On failed registration:
-   * - Returns 400 Bad Request for validation errors
-   * - Returns 409 Conflict if email already exists
-   * - Provides descriptive error messages for each validation failure
+   * Note: Registration automatically logs in the customer, so a separate login call is not required immediately after registration.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Customer registration information including email, password, and profile details.
+   * @param body Registration data for creating a new customer account
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate registration request against IShoppingMallCustomer.IJoin schema
-   * 2. Check email format using standard email regex pattern
-   * 3. Query shopping_mall_customers table for email uniqueness
-   * 4. Validate password strength (minimum 8 characters, mixed case, numbers, special characters)
-   * 5. Hash password using bcrypt with cost factor of 12
-   * 6. Generate unique customer ID using UUID v4
-   * 7. Create customer record in shopping_mall_customers with status 'active', is_email_verified false
-   * 8. Generate email verification token (UUID v4) with 24-hour expiration
-   * 9. Create email verification record in shopping_mall_customer_email_verifications table
-   * 10. Send verification email with token link to customer email address
-   * 11. Return 201 Created response
-   * 12. Log registration event for security auditing including IP address and user agent
+   * @x-autobe-specification Handle customer registration by creating a new customer account. The service should validate email uniqueness, hash the password using bcrypt, create a customer record with the provided details, and return authentication tokens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -103,76 +88,74 @@ export class ShoppingmallAuthCustomerController {
   }
 
   /**
-   * Authenticate existing customer credentials and establish authenticated session.
+   * Authenticate an existing customer's credentials and establish a secure session. This endpoint validates the customer's email and password, generates JWT access and refresh tokens, and creates a session record for tracking authentication state.
    *
-   * ## Purpose
+   * ## Purpose and Functionality
    *
-   * This API operation validates customer login credentials against the stored password hash, generates JWT tokens for authenticated access, and creates a session record for security auditing. The system supports comprehensive session management with IP tracking and referrer information.
+   * The login endpoint is the primary authentication mechanism for registered customers. When customers return to the shopping mall platform, they submit their credentials through this endpoint to gain access to their account and protected features.
    *
-   * ## Security Implementation
+   * Upon successful authentication, the system validates the customer's email and password, verifies the account is not deleted or suspended, and generates secure authentication tokens. The system also creates a session record to track the customer's active sessions for security purposes.
    *
-   * The implementation follows security best practices:
+   * ## Authentication Fields and Schema Support
    *
-   * - Secure password verification using bcrypt compare function with constant-time comparison
-   * - Account status validation to prevent login for banned or deleted accounts
-   * - Rate limiting on login endpoint to prevent brute force attacks
-   * - JWT token generation with appropriate expiration times (30 minutes for access, 7 days for refresh)
-   * - HTTP-only cookie storage for token security
-   * - Session tracking for security auditing and incident response
+   * The customer database schema provides several fields that support the login workflow:
    *
-   * ## Database Integration
+   * - **email**: The unique identifier used for login (required field)
+   * - **password_hash**: The bcrypt-hashed password used for credential validation (required field)
+   * - **deleted_at**: Soft delete timestamp to prevent login for deleted accounts
+   * - **created_at**: Account creation timestamp for session tracking
+   * - **email_verified_at**: Verification timestamp indicating account activation
+   * - **password_reset_token**: Token for password recovery workflows
+   * - **password_reset_expires_at**: Expiration time for password reset tokens
    *
-   * The operation interacts with the following tables:
+   * ## Security Considerations
    *
-   * - **shopping_mall_customers**: Validates email and password hash, checks account status
-   * - **shopping_mall_customer_sessions**: Creates new session record with connection metadata
+   * The login process implements multiple security measures:
    *
-   * The database schema ensures proper indexing on email for fast lookups and status for account validation.
+   * 1. **Credential Validation**: The system uses bcrypt to securely compare provided password with stored hash
+   * 2. **Account Status Checks**: The system verifies the account exists and is not deleted or suspended
+   * 3. **Session Management**: Session records are created to track active authentication sessions
+   * 4. **Rate Limiting**: Login attempts are rate-limited to prevent brute-force attacks
+   * 5. **Audit Logging**: Failed login attempts are logged for security monitoring
+   * 6. **Token Security**: JWT tokens are issued with appropriate expiration times
    *
-   * ## Business Logic
+   * ## Error Handling
    *
-   * - Email must match an existing customer account
-   * - Account status must be 'active' (not 'banned' or 'deleted')
-   * - Password must match the stored hash after bcrypt comparison
-   * - Login must occur within business hours if such restrictions are configured
-   * - Multiple concurrent sessions are allowed for different devices/browsers
+   * The endpoint handles several error scenarios:
+   *
+   * - **Invalid Credentials**: Returns 401 error when email or password is incorrect
+   * - **Account Not Found**: Returns 404 error when email doesn't exist in system
+   * - **Account Deleted**: Returns 403 error when account has been deleted
+   * - **Account Suspended**: Returns 403 error when account is currently suspended
+   * - **Email Not Verified**: Returns 403 error when email verification is required
+   *
+   * ## Business Workflow
+   *
+   * 1. Customer submits login form with email and password
+   * 2. System looks up customer by email address
+   * 3. System validates password using bcrypt comparison
+   * 4. System checks account status (not deleted, not suspended)
+   * 5. System verifies email is verified if required
+   * 6. System generates JWT access token (short-lived) and refresh token
+   * 7. System creates session record for security tracking
+   * 8. System returns authentication tokens to client
+   * 9. Client stores tokens for subsequent API requests
    *
    * ## Related Operations
    *
-   * - After successful login, customers can access protected endpoints
-   * - If tokens expire, customers can use `/auth/refresh` to obtain new tokens
-   * - Customers can view their active sessions and logout from all devices
+   * After successful login, customers can access protected endpoints. Related authentication operations include:
    *
-   * ## Expected Behavior
-   *
-   * On successful login:
-   * - Customer receives 200 OK status
-   * - Access token and refresh token are returned
-   * - HTTP-only cookies are set for token storage
-   * - Session record is created in shopping_mall_customer_sessions
-   *
-   * On failed login:
-   * - Returns 401 Unauthorized for invalid credentials
-   * - Returns 403 Forbidden for banned or deleted accounts
-   * - Rate limiting may return 429 Too Many Requests
-   * - No information about whether email exists (security best practice)
+   * - `join` operation for new customer registration (includes automatic login)
+   * - `refresh` operation for renewing expired access tokens
+   * - Password reset operations for credential recovery
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Customer login credentials including email address and password.
+   * @param body Login credentials for customer authentication
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate login request data against IShoppingMallCustomer.ILogin schema
-   * 2. Query shopping_mall_customers table for email match
-   * 3. Verify account status is not banned or deleted
-   * 4. Compare provided password with stored password_hash using bcrypt.compare()
-   * 5. Generate new access token and refresh token using JWT
-   * 6. Create customer session record in shopping_mall_customer_sessions table
-   * 7. Store session metadata (IP address, user agent, accessed URL, referrer)
-   * 8. Set appropriate cookie headers for HTTP-only storage
-   * 9. Return 200 OK response with tokens and customer profile
-   * 10. Log successful login event for security auditing
+   * @x-autobe-specification Authenticate customer credentials by validating email and password, generating JWT tokens for access and refresh, and storing session information in the database.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -194,72 +177,79 @@ export class ShoppingmallAuthCustomerController {
   }
 
   /**
-   * Refresh expired authentication tokens for active customer sessions.
+   * Renew authentication tokens using a valid refresh token. This endpoint implements the token refresh workflow, allowing customers to maintain their authenticated session without re-entering credentials.
    *
-   * ## Purpose
+   * ## Purpose and Functionality
    *
-   * This API operation allows customers to obtain new access tokens when their current tokens expire, maintaining authenticated sessions without requiring re-authentication. The system supports token rotation and session validation for security.
+   * The token refresh endpoint enables seamless session management by exchanging a valid refresh token for new authentication tokens. This endpoint is used when the customer's access token expires but the refresh token is still valid, allowing the customer to continue using the application without needing to log in again.
    *
-   * ## Security Implementation
+   * The system validates the refresh token, verifies the session is still active, generates new access and refresh tokens, and updates the session record in the database. This ensures customers can maintain their session while rotating credentials for security.
    *
-   * The implementation follows security best practices:
+   * ## Authentication Fields and Schema Support
    *
-   * - Refresh token validation with expiration check
-   * - Session validation against shopping_mall_customer_sessions table
-   * - Token rotation support for enhanced security
-   * - Session invalidation tracking for logout functionality
-   * - Rate limiting on refresh endpoint to prevent abuse
+   * The customer session management relies on several database fields:
    *
-   * ## Database Integration
+   * - **customer_sessions table**: Stores active JWT sessions with:
+   * - refresh_token: Cryptographically secure refresh token
+   * - access_token: Short-lived access token (can be renewed)
+   * - expires_at: Token expiration timestamp
+   * - created_at and updated_at: Session lifecycle tracking
+   * - last_used_at: Session activity tracking
+   * - **customers table**: Customer account information including:
+   * - deleted_at: Prevents refresh for deleted accounts
+   * - suspended_at: Prevents refresh for suspended accounts
    *
-   * The operation interacts with the following tables:
+   * ## Security Considerations
    *
-   * - **shopping_mall_customer_sessions**: Validates active session and token status
+   * The token refresh process implements several security measures:
    *
-   * The database schema provides proper indexing on session expiration and customer relationships for efficient token refresh operations.
+   * 1. **Token Validation**: Refresh tokens are cryptographically validated for authenticity
+   * 2. **Session Verification**: System verifies the session exists and is not revoked
+   * 3. **Account Status**: System checks customer account is not deleted or suspended
+   * 4. **Token Rotation**: New tokens are issued to prevent token theft attacks
+   * 5. **Session Tracking**: Last used timestamp is updated for session monitoring
+   * 6. **Expiration Checking**: Expired or soon-to-expire tokens are rejected
    *
-   * ## Business Logic
+   * ## Error Handling
    *
-   * - Refresh token must be valid and not expired
-   * - Associated session must be active (not invalidated)
-   * - Session creation timestamp must be within acceptable window
-   * - Token refresh can occur multiple times during session lifetime
-   * - Customers can invalidate all sessions through logout endpoint
+   * The endpoint handles several error scenarios:
+   *
+   * - **Invalid Token**: Returns 401 error when refresh token is invalid or malformed
+   * - **Expired Token**: Returns 401 error when refresh token has expired
+   * - **Revoked Session**: Returns 401 error when session has been invalidated
+   * - **Account Deleted**: Returns 403 error when customer account has been deleted
+   * - **Account Suspended**: Returns 403 error when customer account is suspended
+   * - **Session Mismatch**: Returns 401 error when session doesn't match token
+   *
+   * ## Business Workflow
+   *
+   * 1. Customer's access token expires (typically after 15-30 minutes)
+   * 2. Client application sends refresh request with refresh token
+   * 3. System validates refresh token signature and structure
+   * 4. System looks up session record by refresh token
+   * 5. System verifies session is still active (not revoked)
+   * 6. System checks customer account status
+   * 7. System verifies refresh token hasn't expired
+   * 8. System generates new access and refresh tokens
+   * 9. System updates session record with new tokens
+   * 10. System returns new tokens to client
+   * 11. Client stores new tokens and continues authenticated session
    *
    * ## Related Operations
    *
-   * - After successful login, customers receive both access and refresh tokens
-   * - If refresh fails, customers must use `/auth/login` to re-authenticate
-   * - Customers can view their active sessions and logout from all devices
+   * This operation is part of the complete authentication lifecycle:
    *
-   * ## Expected Behavior
-   *
-   * On successful token refresh:
-   * - Customer receives 200 OK status
-   * - New access token is returned
-   * - Session record is updated with new token metadata
-   *
-   * On failed refresh:
-   * - Returns 401 Unauthorized for invalid or expired refresh token
-   * - Returns 403 Forbidden for invalidated sessions
-   * - Customers must re-authenticate using `/auth/login`
-   * - Logout from all devices invalidates all sessions
+   * - `login` operation: Initial authentication that creates session and issues refresh token
+   * - `join` operation: Registration that includes automatic login (creates session)
+   * - Logout functionality: Client discards tokens (no server-side endpoint needed due to stateless JWT)
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Customer refresh token for obtaining new authentication tokens.
+   * @param body Refresh token for authentication renewal
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate refresh request against IShoppingMallCustomer.IRefresh schema
-   * 2. Verify refresh token is valid and not expired
-   * 3. Query shopping_mall_customer_sessions table for active session
-   * 4. Validate session hasn't been invalidated (logout from all devices)
-   * 5. Generate new access token with 30-minute expiration
-   * 6. Optionally issue new refresh token (7-day expiration) if configured
-   * 7. Update session record with new token metadata
-   * 8. Return 200 OK response with new access token
-   * 9. Log token refresh event for security auditing
+   * @x-autobe-specification Renew access tokens by validating refresh tokens, issuing new access and refresh tokens, and updating session records in the database.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

@@ -1,5 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IPrincipal } from "@ORGANIZATION/PROJECT-api/lib/structures/IPrincipal";
 import type { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -12,17 +13,13 @@ import { prepare_random_todo_app_todo } from "../prepare/prepare_random_todo_app
 export async function generate_random_todo_app_user_todos_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<ITodoAppTodo.ICreate>;
+    body?: DeepPartial<ITodoAppTodo.ICreate> | undefined;
   },
 ): Promise<ITodoAppTodo> {
   const prepared: ITodoAppTodo.ICreate = prepare_random_todo_app_todo(
     props.body,
   );
-  const result: ITodoAppTodo = await api.functional.todoApp.user.todos.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
-  return result;
+  return await api.functional.todoApp.user.todos.create(connection, {
+    body: prepared,
+  });
 }

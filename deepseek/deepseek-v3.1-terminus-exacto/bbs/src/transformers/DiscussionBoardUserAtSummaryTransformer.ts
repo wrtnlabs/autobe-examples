@@ -17,7 +17,6 @@ export namespace DiscussionBoardUserAtSummaryTransformer {
         display_name: true,
         bio: true,
         created_at: true,
-        updated_at: true,
       },
     } satisfies Prisma.discussion_board_usersFindManyArgs;
   }
@@ -29,7 +28,6 @@ export namespace DiscussionBoardUserAtSummaryTransformer {
       display_name: input.display_name,
       bio: input.bio ?? null,
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
     };
   }
 }

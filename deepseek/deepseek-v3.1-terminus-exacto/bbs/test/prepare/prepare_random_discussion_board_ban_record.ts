@@ -8,19 +8,22 @@ import typia, { tags } from "typia";
 export function prepare_random_discussion_board_ban_record(
   input?: DeepPartial<IDiscussionBoardBanRecord.ICreate>,
 ): IDiscussionBoardBanRecord.ICreate {
+  const banDurationType =
+    input?.banDurationType ??
+    RandomGenerator.pick(["temporary", "permanent"] as const);
   return {
-    ban_reason:
-      input?.ban_reason ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
-    ban_duration_days:
-      input?.ban_duration_days ??
-      (typia.random<boolean>()
+    bannedUserId:
+      input?.bannedUserId ?? typia.random<string & tags.Format<"uuid">>(),
+    banReason:
+      input?.banReason ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
+    banDurationType: banDurationType,
+    banDurationDays:
+      input?.banDurationDays ??
+      (banDurationType === "temporary"
         ? typia.random<
-            number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<30>
+            number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<365>
           >()
         : null),
-    ban_status:
-      input?.ban_status ??
-      RandomGenerator.pick(["active", "expired", "revoked"] as const),
   };
 }

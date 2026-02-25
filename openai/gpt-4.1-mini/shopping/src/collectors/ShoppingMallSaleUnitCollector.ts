@@ -8,26 +8,21 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace ShoppingMallSaleUnitCollector {
-  function toISOStringSafe(date: Date): string {
-    return date.toISOString();
-  }
   export async function collect(props: {
     body: IShoppingMallSaleUnit.ICreate;
     sale: IEntity;
   }) {
-    const id: string = v4();
-    const body = props.body as any;
-    const createdAt = toISOStringSafe(new Date()) satisfies string as string;
-    const updatedAt = toISOStringSafe(new Date()) satisfies string as string;
+    const id = v4();
     return {
       id,
-      sku_code: body.sku_code,
-      option_values: body.option_values,
-      price_override: body.price_override ?? null,
-      created_at: createdAt,
-      updated_at: updatedAt,
+      sku_code: props.body.sku_code,
+      option_values: props.body.option_values,
+      price_override: props.body.price_override ?? null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       sale: { connect: { id: props.sale.id } },
+      // saleUnitSnapshots skipped (optional has-many)
     } satisfies Prisma.shopping_mall_sale_unitsCreateInput;
   }
 }

@@ -1,5 +1,5 @@
 import { IDiscussionBoardModerationActionType } from "./IDiscussionBoardModerationActionType";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
 
 export namespace IPageIDiscussionBoardModerationActionType {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardModerationActionType {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardSection.IPagination;
 
     /**
      * List of records.

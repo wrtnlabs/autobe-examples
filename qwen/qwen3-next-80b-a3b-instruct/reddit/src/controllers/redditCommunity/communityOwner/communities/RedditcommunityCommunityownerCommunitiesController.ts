@@ -2,44 +2,50 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIRedditCommunityCommunity } from "../../../../api/structures/IPageIRedditCommunityCommunity";
 import { IRedditCommunityCommunity } from "../../../../api/structures/IRedditCommunityCommunity";
 import { CommunityownerAuth } from "../../../../decorators/CommunityownerAuth";
 import { CommunityownerPayload } from "../../../../decorators/payload/CommunityownerPayload";
-import { getRedditCommunityCommunityOwnerCommunitiesId } from "../../../../providers/getRedditCommunityCommunityOwnerCommunitiesId";
-import { patchRedditCommunityCommunityOwnerCommunitiesId } from "../../../../providers/patchRedditCommunityCommunityOwnerCommunitiesId";
-import { postRedditCommunityCommunityOwnerCommunities } from "../../../../providers/postRedditCommunityCommunityOwnerCommunities";
+import { deleteRedditCommunityCommunityOwnerCommunitiesCommunityId } from "../../../../providers/deleteRedditCommunityCommunityOwnerCommunitiesCommunityId";
+import { patchRedditCommunityCommunityOwnerCommunities } from "../../../../providers/patchRedditCommunityCommunityOwnerCommunities";
 
 @Controller("/redditCommunity/communityOwner/communities")
 export class RedditcommunityCommunityownerCommunitiesController {
   /**
-   * Retrieve aggregated statistics for a specific community.
+   * Permanently remove a community and all its associated content in a soft-delete fashion.
    *
-   * This endpoint provides the current subscriber count for a community, representing the number of users currently subscribed to the community. The subscriber count is updated in real-time on subscription and unsubscription events and stored as a denormalized field in the community record for operational efficiency.
+   * This operation deletes the community, along with all posts, comments, subscriptions, moderators, and bans associated with it. All deleted records are marked with an is_deleted flag (soft-delete) and remain in the database for audit and moderation purposes but are permanently hidden from public access.
    *
-   * This data is publicly accessible and can be consumed by unauthenticated users. It appears in community feed listings, community profile pages, and discovery interfaces. The count reflects current active subscriptions and excludes deactivated or deleted users.
+   * Only users with platformAdmin or communityOwner privileges can perform this action. The deletion is atomic: if any part of the delete fails (e.g., database constraint), the entire transaction is rolled back.
    *
-   * For more detailed metrics (post count, comment count, engagement rate), use the dedicated /communities/{id}/posts and /communities/{id}/comments endpoints. This endpoint intentionally focuses on the subscriber metric alone to maintain performance and simplicity.
+   * After deletion, users attempting to access the community will receive a 404 error, even though the data remains in the database for compliance and forensic purposes. The community name cannot be reused.
    *
-   * This operation does not require authentication, allowing public discovery of community popularity.
+   * This operation does not affect user accounts or karma scores, only content associated with the community.
+   *
+   * Linked operation: This operation relies on the soft-delete behavior defined for reddit_community_posts and reddit_community_comments (see moderation system requirements).
    *
    * @param connection
-   * @param id The unique UUID identifier of the community.
+   * @param communityId The unique identifier of the community to be deleted.
+   *
+   *                    Must be a valid UUID. The community must exist and the user must have permission (platform admin or owner) to delete it.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor communityOwner
-   * @x-autobe-specification Query reddit_community_communities table by UUID ID to retrieve subscriber_count and derived metrics. Return only the subscriber_count field for this stat endpoint, as no other aggregate data (post count, comment count) is stored in this table and must be computed by separate endpoints.
+   * @x-autobe-specification Soft-delete the community and all associated entities in a single transaction. First, update all related posts to set is_deleted=true. Then delete all comments (cascade-delete via FK). Then delete all subscriptions, moderators, and bans linked to this community. Finally, set the community's is_deleted flag to true and update updated_at. All deletes must occur in one Prisma transaction with rollback on failure. Use Prisma's cascade delete for relationships when possible, otherwise use explicit delete with WHERE clauses on FKs. Log deletion event to audit trail.
+   *
+   * Access control: Verify user is either platformAdmin or communityOwner of the target community. Return 403 if not authorized.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":id")
-  public async getById(
+  @TypedRoute.Delete(":communityId")
+  public async erase(
     @CommunityownerAuth()
     communityOwner: CommunityownerPayload,
-    @TypedParam("id")
-    id: string & tags.Format<"uuid">,
-  ): Promise<IRedditCommunityCommunity.ISummary> {
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+  ): Promise<void> {
     try {
-      return await getRedditCommunityCommunityOwnerCommunitiesId({
+      return await deleteRedditCommunityCommunityOwnerCommunitiesCommunityId({
         communityOwner,
-        id,
+        communityId,
       });
     } catch (error) {
       console.log(error);
@@ -48,70 +54,37 @@ export class RedditcommunityCommunityownerCommunitiesController {
   }
 
   /**
-   * Retrieve detailed information about a specific community by its unique identifier.
+   * Retrieve a filtered and paginated list of public communities.
    *
-   * This endpoint returns the complete community object when provided with the exact community ID. It supports direct lookups by the primary key field (id: UUID). The system does not filter out soft-deleted communities (where deleted_at is not null), as this endpoint provides direct access to the exact record by its identifier.
+   * This operation provides advanced discovery capabilities for users to find communities by name search, popularity, or recency. The results include community summary information optimized for directory-style displays.
    *
-   * To retrieve the community, use the id path parameter, which must be a valid UUID. This endpoint is intended for detailed inspection or administrative access—not for public listing or feed purposes.
+   * When a search term is provided, communities are ranked by how closely their names match the search query, with exact prefix matches appearing first, followed by substring matches. When no search term is provided, communities are sorted by subscriber count in descending order by default.
    *
-   * Note: Community names are globally unique but not used as path parameters in this endpoint; the ID is required. This ensures consistent, immutable access to records regardless of name changes or soft-deletion status.
+   * Authenticated users receive an additional field indicating whether they are subscribed to each community. Unauthenticated users receive the same core information but without subscription status.
    *
-   * This operation may interact with: GET /communities (for listing) and GET /communities/search (for name-based search). However, this endpoint uses direct primary key lookup and does not require those previous operations.
-   *
-   * @param connection
-   * @param id The unique identifier (UUID) of the community to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor communityOwner
-   * @x-autobe-specification Query the reddit_community_communities table for the community entity matching the provided id path parameter. Return the full community object including id, owner_id, name, description, icon_url, subscriber_count, created_at, updated_at, and deleted_at fields. Do not join with any other tables. The operation must return the community even if it has been soft-deleted (deleted_at is not null), as this is a direct lookup by primary key and should not filter on deletion status.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch(":id")
-  public async patchById(
-    @CommunityownerAuth()
-    communityOwner: CommunityownerPayload,
-    @TypedParam("id")
-    id: string & tags.Format<"uuid">,
-  ): Promise<IRedditCommunityCommunity> {
-    try {
-      return await patchRedditCommunityCommunityOwnerCommunitiesId({
-        communityOwner,
-        id,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a new community on the platform.
-   *
-   * This endpoint enables authenticated users who have completed email verification to establish a new community space. Each community is uniquely identified by its name, which must be globally unique across the entire platform.
-   *
-   * Successful creation returns the full community record including automatically generated metadata such as the community ID and an initial subscriber count of 1.
-   *
-   * This operation is restricted to verified members only. Guests and unverified users cannot create communities.
-   *
-   * After successful creation, the user becomes the automatic owner and first subscriber. The community will appear in search results and directory listings immediately.
-   *
-   * Related operations: GET /communities (list), GET /communities/{communityName} (view), POST /communities/{communityName}/subscribe (join).
+   * This endpoint supports filtering by recency with the 'new' option, which returns communities created in the last 7 days.
    *
    * @param connection
-   * @param body Input data required to create a new community.
+   * @param body Search criteria and pagination parameters for community discovery
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor communityOwner
-   * @x-autobe-specification Insert new record into reddit_community_communities table with provided name, description, and icon_url values. The owner_id must be extracted from the authenticated user's session token. Set created_at and updated_at to current timestamp. Set subscriber_count to 1. Validate that name is unique across the table (via @@unique([name])). If name is already taken, return error code COMMUNITY_NAME_TAKEN. If description exceeds 500 characters, reject with INVALID_DESCRIPTION format. Ensure icon_url, if provided, is a valid URI. Return the full created community record including generated id, created_at, and subscriber_count.
+   * @x-autobe-specification Query reddit_community_communities table with pagination and search filters.
+   * Apply search term matching on community name (case-insensitive substring).
+   * Sort results by: 1) search relevance (exact prefix match > substring match), 2) subscriberCount descending for ties.
+   * Include subscription status (true/false) if authenticated user provided.
+   * Return cursor-based pagination with limit and offset from query parameters.
+   * Use indexed fields: name (for search), subscriberCount (for sorting), created_at (for new filter).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
+  @TypedRoute.Patch()
+  public async index(
     @CommunityownerAuth()
     communityOwner: CommunityownerPayload,
     @TypedBody()
-    body: IRedditCommunityCommunity.ICreate,
-  ): Promise<IRedditCommunityCommunity> {
+    body: IRedditCommunityCommunity.IRequest,
+  ): Promise<IPageIRedditCommunityCommunity.ISummary> {
     try {
-      return await postRedditCommunityCommunityOwnerCommunities({
+      return await patchRedditCommunityCommunityOwnerCommunities({
         communityOwner,
         body,
       });

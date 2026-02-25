@@ -11,12 +11,23 @@ export namespace ShoppingMallSystemSettingCollector {
   export async function collect(props: {
     body: IShoppingMallSystemSetting.ICreate;
   }) {
+    const id: string = (() => {
+      // UUID v4 generator function inline to avoid import statement
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+        /[xy]/g,
+        function (c) {
+          const r = (Math.random() * 16) | 0,
+            v = c === "x" ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        },
+      );
+    })();
     return {
-      id: v4(),
-      key: "example_key",
-      value: "example_value",
-      description: null,
-      data_type: "string",
+      id,
+      key: props.body.key,
+      value: props.body.value,
+      description: props.body.description ?? null,
+      data_type: props.body.data_type,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

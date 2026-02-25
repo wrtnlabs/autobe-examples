@@ -6,8 +6,21 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_shopping_mall_seller_approval(
-  input?: DeepPartial<IShoppingMallSellerApproval.ICreate> | undefined,
+  input?: DeepPartial<IShoppingMallSellerApproval.ICreate>,
 ): IShoppingMallSellerApproval.ICreate {
-  input;
-  return {};
+  const status =
+    input?.status ??
+    RandomGenerator.pick(["pending", "approved", "rejected"] as const);
+  return {
+    shoppingMallSellerId:
+      input?.shoppingMallSellerId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    status: status,
+    rejectionReason:
+      input?.rejectionReason !== undefined
+        ? input.rejectionReason
+        : status === "rejected"
+          ? RandomGenerator.paragraph({ sentences: 2 })
+          : null,
+  };
 }

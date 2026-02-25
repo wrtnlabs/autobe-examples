@@ -1,10 +1,7 @@
-export * as profile from "./profile/index";
+export * as me from "./me/index";
 export * as sessions from "./sessions/index";
-export * as password_resets from "./password_resets/index";
-export * as email_verifications from "./email_verifications/index";
+export * as profile from "./profile/index";
 export * as addresses from "./addresses/index";
-export * as default_addresses from "./default_addresses/index";
 export * as orders from "./orders/index";
 export * as carts from "./carts/index";
-export * as wishlist_items from "./wishlist_items/index";
-export * as products from "./products/index";
+export * as analytics from "./analytics/index";

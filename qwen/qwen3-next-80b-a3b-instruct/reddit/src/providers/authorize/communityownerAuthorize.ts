@@ -12,11 +12,9 @@ export async function communityownerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
   const communityOwner = await MyGlobal.prisma.reddit_community_community_owners.findFirst({
     where: {
-      id: payload.id, // Standalone schema - direct ID
-      deleted_at: null, // Soft-delete check
+      id: payload.id,
     },
   });
 

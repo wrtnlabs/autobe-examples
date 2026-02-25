@@ -26,6 +26,11 @@ export namespace DiscussionBoardDataRetentionPolicyAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        dataTypeMappings: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.discussion_board_data_retention_policiesFindManyArgs;
   }
@@ -39,14 +44,6 @@ export namespace DiscussionBoardDataRetentionPolicyAtSummaryTransformer {
       retention_action: input.retention_action,
       compliance_standard: input.compliance_standard ?? undefined,
       is_active: input.is_active,
-      last_enforced_at:
-        input.last_enforced_at !== null
-          ? toISOStringSafe(input.last_enforced_at)
-          : null,
-      next_enforcement_due:
-        input.next_enforcement_due !== null
-          ? toISOStringSafe(input.next_enforcement_due)
-          : null,
     };
   }
 }

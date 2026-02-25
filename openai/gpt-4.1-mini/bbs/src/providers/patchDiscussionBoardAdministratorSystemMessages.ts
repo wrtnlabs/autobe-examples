@@ -18,46 +18,47 @@ export async function patchDiscussionBoardAdministratorSystemMessages(props: {
   administrator: AdministratorPayload;
   body: IDiscussionBoardSystemMessage.IRequest;
 }): Promise<IPageIDiscussionBoardSystemMessage.ISummary> {
-  // Default pagination
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 10, 100);
   const skip = (page - 1) * limit;
-  // Since IRequest doesn't have code, message_type, sort, page, or limit, filters and sorting omitted
-  const where: Prisma.discussion_board_system_messagesWhereInput = {
-    deleted_at: null,
-  };
-  // Use the correct property selection for Prisma according to DB schema
-  const data = await MyGlobal.prisma.discussion_board_system_messages.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy: { code: "asc" },
-    select: {
-      id: true,
-      code: true,
-      message_text: true,
-      message_type: true,
-      created_at: true,
-      updated_at: true,
-    },
-  });
-  const total = await MyGlobal.prisma.discussion_board_system_messages.count({
-    where,
-  });
+  const where: Prisma.discussion_board_system_messagesWhereInput = {};
+  if (typeof props.body.code === "string" && props.body.code.trim() !== "") {
+    where.code = props.body.code;
+  }
+  if (
+    typeof props.body.messageType === "string" &&
+    props.body.messageType.trim() !== ""
+  ) {
+    where.message_type = props.body.messageType;
+  }
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.discussion_board_system_messages.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { code: "asc" },
+      select: {
+        id: true,
+        code: true,
+        message_text: true,
+        message_type: true,
+      },
+    }),
+    MyGlobal.prisma.discussion_board_system_messages.count({ where }),
+  ]);
+  const pageCount = total === 0 ? 0 : Math.ceil(total / limit);
   return {
-    data: data.map((record) => ({
-      id: record.id,
-      code: record.code,
-      message_text: record.message_text,
-      message_type: record.message_type,
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
+    data: data.map((item) => ({
+      id: item.id,
+      code: item.code,
+      messageText: item.message_text,
+      messageType: item.message_type,
     })),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pageCount,
     },
   };
 }

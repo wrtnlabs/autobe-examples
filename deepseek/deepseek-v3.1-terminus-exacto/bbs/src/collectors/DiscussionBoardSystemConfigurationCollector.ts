@@ -13,20 +13,16 @@ export namespace DiscussionBoardSystemConfigurationCollector {
   }) {
     const id: string = v4();
     return {
-      // Primary key
       id,
-      // Direct mappings from DTO
       config_key: props.body.config_key,
       config_value: props.body.config_value,
       data_type: props.body.data_type,
       description: props.body.description,
       category: props.body.category,
-      is_sensitive: props.body.is_sensitive,
-      // Timestamps
+      is_sensitive: props.body.is_sensitive ?? false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Reverse relation (not applicable for creation) - REMOVED INVALID PROPERTY
     } satisfies Prisma.discussion_board_system_configurationsCreateInput;
   }
 }

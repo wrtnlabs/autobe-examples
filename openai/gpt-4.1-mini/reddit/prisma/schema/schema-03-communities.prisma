@@ -34,10 +34,15 @@ model community_platform_communities {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   ownerUser community_platform_users @relation(fields: [owner_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   subscriptions community_platform_community_subscriptions[]
   posts community_platform_posts[]
   bans community_platform_community_bans[]
@@ -45,6 +50,9 @@ model community_platform_communities {
   communityModerators community_platform_community_moderators[]
   bannedUsers community_platform_banned_users[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
   @@index([owner_user_id, created_at])
 }
@@ -80,13 +88,16 @@ model community_platform_community_subscriptions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([user_id])
-  
   // spellchecker: ignore-next-line
   @@unique([community_id, user_id], map: "community_platform_community_subscriptions_community_i_dbbf772d")
   // spellchecker: ignore-next-line
@@ -139,12 +150,17 @@ model community_platform_posts {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
   authorUser community_platform_users? @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
   authorModerator community_platform_moderators? @relation(fields: [author_moderator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   reports community_platform_reported_contents[]
   postSnapshots community_platform_post_snapshots[]
   postTexts community_platform_post_texts[]
@@ -157,6 +173,9 @@ model community_platform_posts {
   comments community_platform_comments[]
   deletionRecords community_platform_deleted_contents[]
   
+  //----
+  // INDEXES
+  //----
   @@index([community_id, created_at])
   @@index([author_user_id, created_at])
   @@index([author_moderator_id, created_at])
@@ -194,10 +213,14 @@ model community_platform_post_texts {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([community_platform_post_id])
 }
 
@@ -233,10 +256,14 @@ model community_platform_post_images {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_post_id, created_at], map: "community_platform_post_images_community_platform_post_d458f595")
 }
@@ -271,13 +298,21 @@ model community_platform_post_votes {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   userVotes community_platform_post_vote_of_users[]
   postVoteOfModerators community_platform_post_vote_of_moderators[]
   
+  //----
+  // INDEXES
+  //----
   @@index([post_id, created_at])
 }
 
@@ -319,13 +354,16 @@ model community_platform_community_bans {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
   user community_platform_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([user_id])
-  
   @@unique([community_id, user_id])
   @@index([banned_at])
 }
@@ -359,11 +397,14 @@ model community_platform_post_links {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@unique([community_platform_post_id])
-  
   @@index([community_platform_post_id])
 }

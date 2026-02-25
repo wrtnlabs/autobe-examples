@@ -1,4 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { IShoppingMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,6 +15,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallShipmentItemTransformer } from "../transformers/ShoppingMallShipmentItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,57 +27,42 @@ export async function putShoppingMallSellerShipmentItemsShipmentItemId(props: {
   const shipmentItem =
     await MyGlobal.prisma.shopping_mall_shipment_items.findUnique({
       where: { id: props.shipmentItemId },
-      include: { shipment: true },
     });
   if (!shipmentItem) {
     throw new HttpException("Shipment item not found", 404);
   }
-  // Authorize: check that shipment belongs to seller
-  if ((shipmentItem.shipment as any).seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Determine if 'order_item_id' is present in the body
-  const hasOrderItemId = Object.prototype.hasOwnProperty.call(
-    props.body,
-    "order_item_id",
-  );
-  if (hasOrderItemId) {
-    const orderItemId = (props.body as any)["order_item_id"];
-    if (orderItemId !== undefined) {
-      const orderItemExists =
-        await MyGlobal.prisma.shopping_mall_order_items.findUnique({
-          where: { id: orderItemId },
-        });
-      if (!orderItemExists) {
-        throw new HttpException("Order item not found", 404);
-      }
-    }
-  }
-  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-    const now = toISOStringSafe(new Date());
-    const data: any = { updated_at: now };
-    if (hasOrderItemId) {
-      const orderItemId = (props.body as any)["order_item_id"];
-      data.order_item_id = orderItemId;
-    }
-    const updatedRecord = await tx.shopping_mall_shipment_items.update({
-      where: { id: props.shipmentItemId },
-      data,
-      include: {
-        shipment: true,
-        orderItem: true,
+  if (props.body.shipmentId) {
+    const shipment = await MyGlobal.prisma.shopping_mall_shipments.findFirst({
+      where: {
+        id: props.body.shipmentId,
+        seller_id: props.seller.id,
+        deleted_at: null,
       },
     });
-    return updatedRecord;
+    if (!shipment) {
+      throw new HttpException("Shipment not found or unauthorized", 403);
+    }
+  }
+  if (props.body.orderItemId) {
+    const orderItem =
+      await MyGlobal.prisma.shopping_mall_order_items.findUnique({
+        where: { id: props.body.orderItemId },
+      });
+    if (!orderItem) {
+      throw new HttpException("Order item not found", 404);
+    }
+  }
+  await MyGlobal.prisma.shopping_mall_shipment_items.update({
+    where: { id: props.shipmentItemId },
+    data: {
+      ...(props.body.shipmentId && { shipment_id: props.body.shipmentId }),
+      ...(props.body.orderItemId && { order_item_id: props.body.orderItemId }),
+    },
   });
-  return {
-    id: updated.id,
-    shipment_id: updated.shipment_id,
-    order_item_id: updated.order_item_id,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
-    shipment: updated.shipment,
-    orderItem: updated.orderItem,
-  };
+  const updated =
+    await MyGlobal.prisma.shopping_mall_shipment_items.findUniqueOrThrow({
+      where: { id: props.shipmentItemId },
+      ...ShoppingMallShipmentItemTransformer.select(),
+    });
+  return await ShoppingMallShipmentItemTransformer.transform(updated);
 }

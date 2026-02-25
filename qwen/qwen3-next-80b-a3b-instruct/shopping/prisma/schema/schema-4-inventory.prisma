@@ -1,0 +1,74 @@
+/// Immutable history of all inventory changes: restocks, order deductions,
+/// cancellations, refunds, and manual adjustments. Each record represents a
+/// single atomic change to variant stock quantity, with reason, timestamp,
+/// and optional reference to origin (e.g., order item). This is a pure event
+/// log, not a state table. No modification or deletion is ever allowed.
+/// Query pattern: retrieve all changes for a variant ordered by timestamp
+/// DESC. Used by application layer to calculate real-time stock levels.
+///
+/// This table enforces First Normal Form: every field is atomic. All
+/// relationships are through foreign key variant_id. Never stores product
+/// name, price, or seller info — only variant_id and change.
+///
+/// Examples:
+/// - A customer purchases 2 units → change_quantity: -2, reason: "order",
+/// reference_id: "ord_item_abc"
+/// - Seller restocks 10 units → change_quantity: +10, reason: "restock",
+/// reference_id: null
+/// - Cancellation approved → change_quantity: +1, reason: "cancellation",
+/// reference_id: "ord_item_abc"
+/// - Admin manually adjusts → change_quantity: +3, reason: "adjustment",
+/// reference_id: null
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product variant that experienced the inventory change.
+  /// {@link shopping_mall_product_variants.id}.
+  variant_id String
+  
+  /// The quantity change. Positive for restock or refund, negative for order
+  /// or depletion. Must never be zero.
+  change_quantity Int
+  
+  /// The business reason for this inventory change. Must be one of: 'restock',
+  /// 'order', 'cancellation', 'refund', 'adjustment', 'loss'. Defined by
+  /// business rules in 05-inventory-handling.md.
+  reason String
+  
+  /// Optional reference to the source that triggered this change. For example:
+  /// order_item_id for order/refund/cancellation, or adjustment_id for manual
+  /// changes. When null, change was initiated by seller or admin without a
+  /// direct order reference.
+  reference_id String?
+  
+  /// Optional descriptive notes about the change, e.g., 'Batch #A123
+  /// restocked', 'Lost in transit'. Used primarily for internal admin context.
+  /// Never used for calculation.
+  notes String?
+  
+  /// Timestamp when this inventory event was recorded. Always in UTC.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated. For audit logs, this is
+  /// typically identical to created_at since records are immutable.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([variant_id, created_at])
+  @@index([variant_id, reason, created_at])
+}

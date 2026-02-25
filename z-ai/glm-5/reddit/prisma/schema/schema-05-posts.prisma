@@ -1,0 +1,242 @@
+/// Primary content entity for the community platform, supporting three post
+/// types (TEXT, LINK, IMAGE) with unified title, community and author
+/// references, type-specific content storage, denormalized vote metrics for
+/// performance, calculated sorting scores (hot and controversy), and full
+/// lifecycle management including creation, editing, soft deletion, and feed
+/// integration.
+///
+/// Each post belongs to exactly one {@link community_communities} and is
+/// authored by one {@link community_members}. Posts receive votes through
+/// {@link community_post_votes} which update the denormalized vote metrics.
+/// Comments on posts are stored in {@link community_comments} with the
+/// comment_count tracking total replies. Historical snapshots for audit
+/// trails are preserved in {@link community_post_snapshots}.
+///
+/// The post_type field determines which content field is populated: TEXT
+/// posts use text_content, LINK posts use link_url, and IMAGE posts use
+/// image_url with optional image_thumbnail_url. Vote scores and sorting
+/// metrics are updated asynchronously as votes are cast, enabling efficient
+/// feed queries without joins.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community this post belongs to. Posts must be created within a
+  /// community context. References {@link community_communities.id}.
+  community_id String
+  
+  /// The member who authored this post. Only members with subscription to the
+  /// community can create posts. References {@link community_members.id}.
+  author_id String
+  
+  /// The post title, required for all post types. Used in feed displays and
+  /// search indexing. Maximum 300 characters.
+  title String
+  
+  /// Discriminator for post content type. Valid values: 'TEXT' (text_content),
+  /// 'LINK' (link_url), 'IMAGE' (image_url with optional thumbnail).
+  post_type String
+  
+  /// Full text content for TEXT posts. Supports markdown formatting. Maximum
+  /// 40,000 characters. Null for LINK and IMAGE posts.
+  text_content String?
+  
+  /// External URL for LINK posts. Must be valid HTTP/HTTPS URL. Null for TEXT
+  /// and IMAGE posts.
+  link_url String?
+  
+  /// Primary image URL for IMAGE posts. References uploaded file in storage
+  /// system. Null for TEXT and LINK posts.
+  image_url String?
+  
+  /// Thumbnail URL for IMAGE posts, auto-generated from uploaded image. Used
+  /// in feed previews and compact views. Null for TEXT and LINK posts.
+  image_thumbnail_url String?
+  
+  /// Net vote score calculated as upvote_count minus downvote_count. Can be
+  /// negative. Updated asynchronously as votes are cast.
+  vote_score Int
+  
+  /// Total number of upvotes received. Denormalized from community_post_votes
+  /// for performance. Updated asynchronously.
+  upvote_count Int
+  
+  /// Total number of downvotes received. Denormalized from
+  /// community_post_votes for performance. Updated asynchronously.
+  downvote_count Int
+  
+  /// Total number of comments on this post including nested replies.
+  /// Denormalized from community_comments for performance.
+  comment_count Int
+  
+  /// Calculated score for Hot sorting algorithm, combining recency and vote
+  /// engagement. Higher values indicate trending content. Updated
+  /// periodically.
+  hot_score Float
+  
+  /// Calculated score for Controversial sorting algorithm, indicating high
+  /// engagement with mixed upvote/downvote ratios. Higher values indicate more
+  /// controversial content.
+  controversy_score Float
+  
+  /// Soft delete flag. When true, post is hidden from feeds but preserved for
+  /// audit and moderation records. Deleted posts remain in snapshots.
+  is_deleted Boolean
+  
+  /// Timestamp when the post was created. Used for New sorting and feed
+  /// pagination.
+  created_at DateTime
+  
+  /// Timestamp when the post record was last modified. Updated on any field
+  /// change including vote metrics.
+  updated_at DateTime
+  
+  /// Timestamp when the post content was last edited by the author. Null if
+  /// never edited. Used to display 'edited' indicator.
+  edited_at DateTime?
+  
+  /// Timestamp when the post was soft-deleted. Null for active posts. Used for
+  /// moderation audit and content recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  moderationLogPostTargets community_moderation_log_post_targets[]
+  snapshots community_post_snapshots[]
+  comments community_comments[]
+  postVotes community_post_votes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, hot_score])
+  @@index([community_id, created_at])
+  @@index([community_id, vote_score])
+  @@index([community_id, controversy_score])
+  @@index([author_id, created_at])
+  @@index([hot_score])
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of community posts for audit trail, historical
+/// tracking, and compliance purposes.
+///
+/// Each snapshot captures the complete state of a {@link community_posts}
+/// record at a specific moment, including title, content (text, link, or
+/// image), vote metrics, sorting scores, and timestamps. Snapshots are
+/// created when posts are deleted (soft delete preservation), moderated, or
+/// edited to maintain a complete historical record.
+///
+/// The snapshot maintains references to the original post, author ({@link
+/// community_members.id}), and community ({@link community_communities.id})
+/// even if the original post is later permanently deleted, ensuring
+/// referential integrity for audit and compliance requirements.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original post this snapshot captures. References {@link
+  /// community_posts.id}.
+  community_post_id String
+  
+  /// The author of the original post at the time of snapshot. References
+  /// {@link community_members.id}.
+  author_id String
+  
+  /// The community the original post belonged to at the time of snapshot.
+  /// References {@link community_communities.id}.
+  community_id String
+  
+  /// Title of the post (maximum 300 characters).
+  title String
+  
+  /// Type of post content: TEXT, LINK, or IMAGE.
+  post_type String
+  
+  /// Text content for TEXT posts (maximum 40,000 characters). Null for LINK
+  /// and IMAGE posts.
+  text_content String?
+  
+  /// URL for LINK posts (maximum 2,048 characters). Null for TEXT and IMAGE
+  /// posts.
+  link_url String?
+  
+  /// Full-size image URL for IMAGE posts. Null for TEXT and LINK posts.
+  image_url String?
+  
+  /// Thumbnail image URL for IMAGE posts used in list displays. Null for TEXT
+  /// and LINK posts.
+  image_thumbnail_url String?
+  
+  /// Net vote score (upvotes minus downvotes) at the time of snapshot.
+  vote_score Int
+  
+  /// Total upvote count at the time of snapshot.
+  upvote_count Int
+  
+  /// Total downvote count at the time of snapshot.
+  downvote_count Int
+  
+  /// Total comment count at the time of snapshot.
+  comment_count Int
+  
+  /// Calculated hot score for Hot sorting algorithm at the time of snapshot.
+  hot_score Float
+  
+  /// Calculated controversy score for Controversial sorting algorithm at the
+  /// time of snapshot.
+  controversy_score Float
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Original creation timestamp of the post.
+  original_created_at DateTime
+  
+  /// Original last updated timestamp of the post.
+  original_updated_at DateTime
+  
+  /// Original edited timestamp if the post was edited. Null if never edited.
+  original_edited_at DateTime?
+  
+  /// Reason for creating this snapshot: 'deletion' (post deleted by author),
+  /// 'moderation' (post removed by moderator), 'edit' (pre-edit state
+  /// preservation), or 'scheduled' (automated periodic snapshot).
+  snapshot_reason String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_posts @relation(fields: [community_post_id], references: [id], onDelete: Cascade)
+  member community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_post_id, created_at])
+  @@index([author_id, created_at])
+  @@index([community_id, created_at])
+}

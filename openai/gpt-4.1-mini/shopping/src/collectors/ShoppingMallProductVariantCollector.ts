@@ -7,18 +7,26 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-function toISOStringSafe(date: Date): string {
-  return date.toISOString();
-}
 export namespace ShoppingMallProductVariantCollector {
   export async function collect(props: {
     body: IShoppingMallProductVariant.ICreate;
     product: IEntity;
   }) {
     const id: string = v4();
-    // Insufficient information about properties of ICreate to map here
-    throw new Error(
-      "Missing information: Need properties of IShoppingMallProductVariant.ICreate type to correctly assign properties.",
-    );
+    return {
+      id,
+      sku_code: props.body.skuCode,
+      price_override: props.body.priceOverride ?? null,
+      stock_quantity: props.body.stockQuantity,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      product: { connect: { id: props.product.id } },
+      snapshots: undefined,
+      orderItems: undefined,
+      productReviews: undefined,
+      productReviewSnapshots: undefined,
+      inventoryHistories: undefined,
+    } satisfies Prisma.shopping_mall_product_variantsCreateInput;
   }
 }

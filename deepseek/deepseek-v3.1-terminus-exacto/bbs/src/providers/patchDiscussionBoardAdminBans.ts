@@ -1,9 +1,11 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
+import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
 import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
-import { IDiscussionBoardUserBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUserBan";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardUserBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardUserBan";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
+import { IPageIDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardBanRecord";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,88 +20,87 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdminBans(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardUserBan.IRequest;
-}): Promise<IPageIDiscussionBoardUserBan.ISummary> {
+  body: IDiscussionBoardBanRecord.IRequest;
+}): Promise<IPageIDiscussionBoardBanRecord.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  // Build WHERE clause with all supported filters
+  const whereInput: Prisma.discussion_board_user_bansWhereInput = {
     AND: [
-      ...(props.body.ban_status ? [{ ban_status: props.body.ban_status }] : []),
-      ...(props.body.ban_duration_type
-        ? [{ ban_duration_type: props.body.ban_duration_type }]
+      ...(props.body.banStatus !== undefined && props.body.banStatus !== null
+        ? [{ ban_status: props.body.banStatus }]
         : []),
-      ...(props.body.appeal_status
-        ? [{ appeal_status: props.body.appeal_status }]
+      ...(props.body.appealStatus !== undefined &&
+      props.body.appealStatus !== null
+        ? [{ appeal_status: props.body.appealStatus }]
         : []),
-      ...(props.body.banning_administrator_id
-        ? [{ banning_administrator_id: props.body.banning_administrator_id }]
+      ...(props.body.bannedUserId !== undefined &&
+      props.body.bannedUserId !== null
+        ? [{ banned_user_id: props.body.bannedUserId }]
         : []),
-      ...(props.body.ban_started_at_from || props.body.ban_started_at_to
-        ? [
-            {
-              ban_started_at: {
-                ...(props.body.ban_started_at_from
-                  ? { gte: new Date(props.body.ban_started_at_from) }
-                  : {}),
-                ...(props.body.ban_started_at_to
-                  ? { lte: new Date(props.body.ban_started_at_to) }
-                  : {}),
-              },
-            },
-          ]
+      ...(props.body.banningAdministratorId !== undefined &&
+      props.body.banningAdministratorId !== null
+        ? [{ banning_administrator_id: props.body.banningAdministratorId }]
         : []),
-      ...(props.body.ban_ends_at_from || props.body.ban_ends_at_to
-        ? [
-            {
-              ban_ends_at: {
-                ...(props.body.ban_ends_at_from
-                  ? { gte: new Date(props.body.ban_ends_at_from) }
-                  : {}),
-                ...(props.body.ban_ends_at_to
-                  ? { lte: new Date(props.body.ban_ends_at_to) }
-                  : {}),
-              },
-            },
-          ]
+      ...(props.body.banStartedAtFrom !== undefined &&
+      props.body.banStartedAtFrom !== null
+        ? [{ ban_started_at: { gte: props.body.banStartedAtFrom } }]
         : []),
-      ...(props.body.search
+      ...(props.body.banStartedAtTo !== undefined &&
+      props.body.banStartedAtTo !== null
+        ? [{ ban_started_at: { lte: props.body.banStartedAtTo } }]
+        : []),
+      ...(props.body.banEndsAtFrom !== undefined &&
+      props.body.banEndsAtFrom !== null
+        ? [{ ban_ends_at: { gte: props.body.banEndsAtFrom } }]
+        : []),
+      ...(props.body.banEndsAtTo !== undefined &&
+      props.body.banEndsAtTo !== null
+        ? [{ ban_ends_at: { lte: props.body.banEndsAtTo } }]
+        : []),
+      ...(props.body.search !== undefined &&
+      props.body.search !== null &&
+      props.body.search.trim() !== ""
         ? [
             {
               OR: [
-                { ban_reason: { contains: props.body.search } },
                 {
-                  banningAdministrator: {
-                    display_name: { contains: props.body.search },
+                  ban_reason: {
+                    contains: props.body.search,
+                    mode: "insensitive" as const,
+                  },
+                },
+                {
+                  bannedUser: {
+                    display_name: {
+                      contains: props.body.search,
+                      mode: "insensitive" as const,
+                    },
                   },
                 },
               ],
             },
           ]
         : []),
-    ].filter(Boolean),
+    ].filter(
+      (item): item is NonNullable<typeof item> =>
+        typeof item === "object" && item !== null,
+    ),
   } satisfies Prisma.discussion_board_user_bansWhereInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_user_bans.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        ban_reason: true,
-        ban_duration_type: true,
-        ban_status: true,
-        appeal_status: true,
-        ban_started_at: true,
-        ban_ends_at: true,
+      orderBy: { ban_started_at: "desc" },
+      include: {
         bannedUser: {
           select: {
             id: true,
             display_name: true,
             bio: true,
             created_at: true,
-            updated_at: true,
           },
         },
         banningAdministrator: {
@@ -112,40 +113,49 @@ export async function patchDiscussionBoardAdminBans(props: {
         },
       },
     }),
-    MyGlobal.prisma.discussion_board_user_bans.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.discussion_board_user_bans.count({ where: whereInput }),
   ]);
-  return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: data.map((record) => ({
+  const banRecords: IDiscussionBoardBanRecord.ISummary[] = data.map(
+    (record) => ({
       id: record.id,
-      ban_reason: record.ban_reason,
-      ban_duration_type: record.ban_duration_type,
-      ban_status: record.ban_status,
-      appeal_status: record.appeal_status,
-      ban_started_at: toISOStringSafe(record.ban_started_at),
-      ban_ends_at: record.ban_ends_at
-        ? toISOStringSafe(record.ban_ends_at)
+      banReason: record.ban_reason,
+      banDurationType: record.ban_duration_type,
+      banDurationDays: record.ban_duration_days ?? null,
+      banStartedAt: toISOStringSafe(record.ban_started_at) as string &
+        tags.Format<"date-time">,
+      banEndsAt: record.ban_ends_at
+        ? (toISOStringSafe(record.ban_ends_at) as
+            | (string & tags.Format<"date-time">)
+            | null)
         : null,
+      banStatus: record.ban_status,
+      appealStatus: record.appeal_status,
       bannedUser: {
         id: record.bannedUser.id,
         display_name: record.bannedUser.display_name,
-        bio: record.bannedUser.bio,
-        created_at: toISOStringSafe(record.bannedUser.created_at),
-        updated_at: toISOStringSafe(record.bannedUser.updated_at),
-      },
+        bio: record.bannedUser.bio ?? null,
+        created_at: toISOStringSafe(record.bannedUser.created_at) as string &
+          tags.Format<"date-time">,
+      } satisfies IDiscussionBoardUser.ISummary,
       banningAdministrator: {
         id: record.banningAdministrator.id,
         email: record.banningAdministrator.email,
         display_name: record.banningAdministrator.display_name,
-        created_at: toISOStringSafe(record.banningAdministrator.created_at),
-      },
-    })),
-  };
+        created_at: toISOStringSafe(
+          record.banningAdministrator.created_at,
+        ) as string & tags.Format<"date-time">,
+      } satisfies IDiscussionBoardAdmin.ISummary,
+    }),
+  );
+  return {
+    pagination: {
+      current: page satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    } satisfies IPage.IPagination,
+    data: banRecords,
+  } satisfies IPageIDiscussionBoardBanRecord.ISummary;
 }

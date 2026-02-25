@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallCustomerEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallCustomerEmailVerification";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallCustomerEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerEmailVerification";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,88 +19,94 @@ export async function patchShoppingMallCustomerEmailVerifications(props: {
   customer: CustomerPayload;
   body: IShoppingMallCustomerEmailVerification.IRequest;
 }): Promise<IPageIShoppingMallCustomerEmailVerification.ISummary> {
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 10;
   const skip = (page - 1) * limit;
-  const customerVerifications =
+  const where = {
+    AND: [
+      { deleted_at: null },
+      props.body.token ? { token: { contains: props.body.token } } : {},
+      props.body.expiresAtBefore
+        ? { expires_at: { lte: props.body.expiresAtBefore } }
+        : {},
+      props.body.expiresAtAfter
+        ? { expires_at: { gte: props.body.expiresAtAfter } }
+        : {},
+      props.body.verified !== undefined
+        ? props.body.verified
+          ? { verified_at: { not: null } }
+          : { verified_at: null }
+        : {},
+      props.body.shoppingMallCustomerId
+        ? { shopping_mall_customer_id: props.body.shoppingMallCustomerId }
+        : {},
+    ],
+  };
+  const data =
     await MyGlobal.prisma.shopping_mall_customer_email_verifications.findMany({
-      where: { deleted_at: null },
+      where,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
+      orderBy: { expires_at: "asc" },
+      select: {
+        id: true,
+        token: true,
+        expires_at: true,
+        verified_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            display_name: true,
+            phone_number: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+      },
     });
-  const customerCount =
+  const total =
     await MyGlobal.prisma.shopping_mall_customer_email_verifications.count({
-      where: { deleted_at: null },
+      where,
     });
-  const sellerVerifications =
-    await MyGlobal.prisma.shopping_mall_seller_email_verifications.findMany({
-      where: { deleted_at: null },
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-    });
-  const sellerCount =
-    await MyGlobal.prisma.shopping_mall_seller_email_verifications.count({
-      where: { deleted_at: null },
-    });
-  function isCustomerRecord(
-    record: any,
-  ): record is (typeof customerVerifications)[number] {
-    return "shopping_mall_customer_id" in record;
+  function toSummary(
+    record: (typeof data)[number],
+  ): IShoppingMallCustomerEmailVerification.ISummary {
+    return {
+      id: record.id,
+      token: record.token,
+      expiresAt: record.expires_at.toISOString() as unknown as string &
+        tags.Format<"date-time">,
+      verifiedAt: record.verified_at?.toISOString() ?? null,
+      createdAt: record.created_at.toISOString() as unknown as string &
+        tags.Format<"date-time">,
+      updatedAt: record.updated_at.toISOString() as unknown as string &
+        tags.Format<"date-time">,
+      deletedAt: record.deleted_at?.toISOString() ?? null,
+      customer: {
+        id: record.customer.id,
+        email: record.customer.email,
+        displayName: record.customer.display_name ?? null,
+        phoneNumber: record.customer.phone_number ?? null,
+        createdAt:
+          record.customer.created_at.toISOString() as unknown as string &
+            tags.Format<"date-time">,
+        updatedAt:
+          record.customer.updated_at.toISOString() as unknown as string &
+            tags.Format<"date-time">,
+      },
+    };
   }
-  const combinedData = [...customerVerifications, ...sellerVerifications].map(
-    (record) => {
-      if (isCustomerRecord(record)) {
-        return {
-          id: record.id as string & tags.Format<"uuid">,
-          token: record.token,
-          expires_at: toISOStringSafe(record.expires_at) as string &
-            tags.Format<"date-time">,
-          verified_at: record.verified_at
-            ? (toISOStringSafe(record.verified_at) as string &
-                tags.Format<"date-time">)
-            : null,
-          customer_id: record.shopping_mall_customer_id as string &
-            tags.Format<"uuid">,
-          seller_id: null,
-          created_at: toISOStringSafe(record.created_at) as string &
-            tags.Format<"date-time">,
-          updated_at: toISOStringSafe(record.updated_at) as string &
-            tags.Format<"date-time">,
-          deleted_at: record.deleted_at
-            ? (toISOStringSafe(record.deleted_at) as string &
-                tags.Format<"date-time">)
-            : null,
-        };
-      } else {
-        return {
-          id: record.id as string & tags.Format<"uuid">,
-          token: record.token,
-          expires_at: toISOStringSafe(record.expired_at) as string &
-            tags.Format<"date-time">,
-          verified_at: null,
-          customer_id: null,
-          seller_id: record.seller_id as string & tags.Format<"uuid">,
-          created_at: toISOStringSafe(record.created_at) as string &
-            tags.Format<"date-time">,
-          updated_at: toISOStringSafe(record.updated_at) as string &
-            tags.Format<"date-time">,
-          deleted_at: record.deleted_at
-            ? (toISOStringSafe(record.deleted_at) as string &
-                tags.Format<"date-time">)
-            : null,
-        };
-      }
-    },
-  );
   return {
     pagination: {
       current: page,
       limit: limit,
-      records: customerCount + sellerCount,
-      pages: Math.ceil((customerCount + sellerCount) / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
-    data: combinedData,
+    data: data.map(toSummary),
   };
 }

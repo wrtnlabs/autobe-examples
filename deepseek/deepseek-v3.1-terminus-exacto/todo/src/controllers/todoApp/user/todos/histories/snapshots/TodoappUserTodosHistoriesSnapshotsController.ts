@@ -2,8 +2,8 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageITodoAppTodoHistorySnapshotItem } from "../../../../../../api/structures/IPageITodoAppTodoHistorySnapshotItem";
-import { ITodoAppTodoHistorySnapshotItem } from "../../../../../../api/structures/ITodoAppTodoHistorySnapshotItem";
+import { IPageITodoAppTodoHistorySnapshot } from "../../../../../../api/structures/IPageITodoAppTodoHistorySnapshot";
+import { ITodoAppTodoHistorySnapshot } from "../../../../../../api/structures/ITodoAppTodoHistorySnapshot";
 import { UserAuth } from "../../../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../../../decorators/payload/UserPayload";
 import { getTodoAppUserTodosTodoIdHistoriesHistoryIdSnapshotsSnapshotId } from "../../../../../../providers/getTodoAppUserTodosTodoIdHistoriesHistoryIdSnapshotsSnapshotId";
@@ -12,23 +12,25 @@ import { patchTodoAppUserTodosTodoIdHistoriesHistoryIdSnapshots } from "../../..
 @Controller("/todoApp/user/todos/:todoId/histories/:historyId/snapshots")
 export class TodoappUserTodosHistoriesSnapshotsController {
   /**
-   * Search and retrieve paginated snapshot items associated with a specific edit history entry.
+   * Search and retrieve paginated todo history snapshots for a specific history entry.
    *
-   * This operation allows users to browse the snapshot items that were captured as part of a particular todo edit history. Each snapshot item represents the complete state of a todo at the time the history entry was created, including title, description, dates, and completion status.
+   * This operation provides advanced search capabilities for todo history snapshots, allowing users to filter and paginate through snapshot records associated with a specific history entry. Each snapshot represents a point-in-time capture of todo state changes, providing comprehensive audit trail functionality.
    *
-   * The operation supports comprehensive pagination with configurable page sizes and cursor-based navigation for efficient browsing of large snapshot collections. Users can filter results based on snapshot content criteria such as title keywords, description content, or completion status.
+   * The operation enforces strict user-scoped data access, ensuring that users can only access snapshots belonging to their own todos. All requests are validated against ownership constraints to maintain complete data isolation between users.
    *
-   * All access is strictly controlled to ensure users can only view snapshot items from their own todos, maintaining complete data privacy and isolation between users. The operation validates that both the todo and history entry belong to the authenticated user before returning any snapshot data.
-   *
-   * The response provides snapshot item summaries optimized for list displays, including essential information for quick identification and navigation through historical todo states captured during the edit process.
+   * Response includes pagination metadata and summary information about each snapshot, optimized for efficient list displays while maintaining the integrity of the audit trail system.
    *
    * @param connection
-   * @param todoId ID of the todo containing the history entry
-   * @param historyId ID of the history entry containing the snapshots
-   * @param body Search criteria and pagination parameters for snapshot items
+   * @param todoId Target todo's ID (UUID format)
+   * @param historyId Target history entry's ID (UUID format)
+   * @param body Search criteria and pagination parameters for todo history snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query todo_app_todo_history_snapshot_items table filtered by todo_app_todo_history_snapshot_id (which links to the specific history entry). Apply pagination and any search filters on title, description, or completion status. Join with todo_app_todo_history_snapshots to verify the history entry belongs to the specified todo and user. Ensure data isolation by validating that the todo belongs to the authenticated user. Return paginated results with snapshot item summaries.
+   * @x-autobe-specification Query todo_app_todo_history_snapshots table filtered by todo_app_todo_history_id and user ownership validation. First validate that the todo belongs to the authenticated user by checking todo_app_todos.todo_app_user_id matches the current user ID. Then validate that the history entry belongs to the specified todo. Finally query snapshots with pagination support.
+   *
+   * Apply search filters on snapshot creation timestamps if provided in request body. Support cursor-based pagination for large result sets. Return snapshot summaries with pagination metadata. Ensure all queries respect user data isolation constraints.
+   *
+   * Handle edge cases: invalid todoId/historyId, unauthorized access attempts, empty result sets with proper pagination response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -40,8 +42,8 @@ export class TodoappUserTodosHistoriesSnapshotsController {
     @TypedParam("historyId")
     historyId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: ITodoAppTodoHistorySnapshotItem.IRequest,
-  ): Promise<IPageITodoAppTodoHistorySnapshotItem.ISummary> {
+    body: ITodoAppTodoHistorySnapshot.IRequest,
+  ): Promise<IPageITodoAppTodoHistorySnapshot.ISummary> {
     try {
       return await patchTodoAppUserTodosTodoIdHistoriesHistoryIdSnapshots({
         user,
@@ -56,23 +58,23 @@ export class TodoappUserTodosHistoriesSnapshotsController {
   }
 
   /**
-   * Retrieve a specific historical snapshot of a todo's state at a particular edit moment.
+   * Retrieve a specific historical snapshot of a todo's complete state captured at a particular point in time.
    *
-   * This operation provides access to the complete state of a todo as it existed at a specific point in time, captured during an edit operation. The snapshot includes all fields that were present at that moment: title, description, start date, due date, and completion status. This allows users to view exactly how their todo appeared at any point in its edit history.
+   * This operation returns the exact state of a todo as it was recorded during a specific edit history event. The snapshot includes all todo fields: title, description, start date, due date, and completion status, preserving the complete state for audit trail and historical reference purposes. This aligns with the database schema where todo_app_todo_history_snapshot_items stores denormalized point-in-time snapshots of todo states for comprehensive audit trail purposes.
    *
-   * Each snapshot is linked to a specific history entry, which records when the edit occurred and who performed it. The hierarchical path structure ensures that users can only access snapshots for their own todos, maintaining complete data privacy and isolation between users.
+   * Each snapshot represents an immutable record of the todo's state at the moment a history entry was created, allowing users to review exactly what their todo looked like at any point in its edit history. The audit trail functionality supports compliance requirements where complete historical state information is necessary, as documented in the loaded requirements analysis.
    *
-   * This operation is essential for audit trail functionality, allowing users to review historical states of their todos for compliance, debugging, or simply understanding how their tasks have evolved over time. The immutable nature of snapshots ensures that historical data remains accurate and unaltered.
+   * The operation validates that the authenticated user owns the todo, the history entry, and the snapshot before returning the data, ensuring complete data isolation and privacy between users as required by the business rules validation.
    *
-   * Related operations include viewing the complete edit history of a todo and listing all snapshots for a specific history entry.
+   * This endpoint provides access to the complete edit history tracking system that maintains comprehensive audit trail capabilities for todo modifications.
    *
    * @param connection
-   * @param todoId The unique identifier of the todo whose history snapshot is being retrieved
-   * @param historyId The unique identifier of the history entry containing the snapshot
-   * @param snapshotId The unique identifier of the specific snapshot to retrieve
+   * @param todoId Unique identifier of the todo that owns this history snapshot
+   * @param historyId Unique identifier of the history entry that triggered this snapshot
+   * @param snapshotId Unique identifier of the specific snapshot item to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the todo_app_todo_history_snapshot_items table to retrieve the specific snapshot by ID. Validate that the snapshot belongs to the specified history entry and that the history entry belongs to the specified todo. Ensure the todo belongs to the authenticated user. Return the complete snapshot data including title, description, start_date, due_date, and is_completed fields. Handle cases where the snapshot doesn't exist or the user doesn't have permission to access it.
+   * @x-autobe-specification Retrieve a specific history snapshot for a todo by its composite identifiers. Validate that all path parameters exist and belong to the authenticated user. Verify the todo ownership, then the history entry ownership, and finally the snapshot ownership. Return the complete snapshot item with all preserved field values (title, description, start date, due date, completion status) as they were recorded at the time of the snapshot. Ensure the response includes the immutable state information for audit trail purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
@@ -85,7 +87,7 @@ export class TodoappUserTodosHistoriesSnapshotsController {
     historyId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")
     snapshotId: string & tags.Format<"uuid">,
-  ): Promise<ITodoAppTodoHistorySnapshotItem> {
+  ): Promise<ITodoAppTodoHistorySnapshot.Item> {
     try {
       return await getTodoAppUserTodosTodoIdHistoriesHistoryIdSnapshotsSnapshotId(
         {

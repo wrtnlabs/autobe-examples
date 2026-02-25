@@ -1,4 +1,5 @@
 import { IDiscussionBoardPerformanceMetric } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardPerformanceMetric";
+import { IDiscussionBoardSystemConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSystemConfiguration";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,12 +19,11 @@ export async function getDiscussionBoardAdminPerformanceMetricsMetricId(props: {
   metricId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardPerformanceMetric> {
   const metric =
-    await MyGlobal.prisma.discussion_board_performance_metrics.findUnique({
-      where: { id: props.metricId },
-      ...DiscussionBoardPerformanceMetricTransformer.select(),
-    });
-  if (!metric) {
-    throw new HttpException("Performance metric not found", 404);
-  }
+    await MyGlobal.prisma.discussion_board_performance_metrics.findUniqueOrThrow(
+      {
+        where: { id: props.metricId },
+        ...DiscussionBoardPerformanceMetricTransformer.select(),
+      },
+    );
   return await DiscussionBoardPerformanceMetricTransformer.transform(metric);
 }

@@ -14,11 +14,11 @@ export namespace EcommerceProductCollector {
       id,
       name: props.body.name,
       description: props.body.description,
-      base_price: props.body.basePrice,
+      base_price: props.body.base_price,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      category: { connect: { id: props.body.categoriesId } },
+      category: { connect: { id: props.body.category_id } },
     } satisfies Prisma.ecommerce_productsCreateInput;
   }
 }

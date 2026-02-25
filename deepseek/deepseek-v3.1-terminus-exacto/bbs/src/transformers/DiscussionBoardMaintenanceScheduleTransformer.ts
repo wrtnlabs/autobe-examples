@@ -20,12 +20,12 @@ export namespace DiscussionBoardMaintenanceScheduleTransformer {
         description: true,
         scheduled_start_time: true,
         scheduled_end_time: true,
-        status: true,
-        impact_level: true,
         actual_start_time: true,
         actual_end_time: true,
+        status: true,
         estimated_duration_minutes: true,
         actual_duration_minutes: true,
+        impact_level: true,
         notes: true,
         created_at: true,
         updated_at: true,
@@ -41,20 +41,19 @@ export namespace DiscussionBoardMaintenanceScheduleTransformer {
     return {
       id: input.id,
       maintenance_type: input.maintenance_type,
-      scheduled_start_time: toISOStringSafe(input.scheduled_start_time),
-      scheduled_end_time: toISOStringSafe(input.scheduled_end_time),
-      status: input.status,
-      impact_level: input.impact_level,
       description: input.description,
-      actual_start_time: input.actual_start_time
-        ? toISOStringSafe(input.actual_start_time)
-        : null,
-      actual_end_time: input.actual_end_time
-        ? toISOStringSafe(input.actual_end_time)
-        : null,
+      scheduled_start_time: input.scheduled_start_time.toISOString(),
+      scheduled_end_time: input.scheduled_end_time.toISOString(),
+      actual_start_time: input.actual_start_time?.toISOString() ?? null,
+      actual_end_time: input.actual_end_time?.toISOString() ?? null,
+      status: input.status,
       estimated_duration_minutes: input.estimated_duration_minutes,
       actual_duration_minutes: input.actual_duration_minutes ?? null,
+      impact_level: input.impact_level,
       notes: input.notes ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       scheduled_by_admin:
         await DiscussionBoardAdminAtSummaryTransformer.transform(
           input.scheduledByAdmin,
@@ -63,10 +62,7 @@ export namespace DiscussionBoardMaintenanceScheduleTransformer {
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.performedByAdmin,
           )
-        : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+        : undefined,
     };
   }
 }

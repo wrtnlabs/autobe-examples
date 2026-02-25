@@ -7,27 +7,25 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-function toISOStringSafe(date: Date | null | undefined): string | null {
-  if (date === null || date === undefined) return null;
-  return date.toISOString();
-}
 export namespace CommunityPlatformBannedUserCollector {
   export async function collect(props: {
     body: ICommunityPlatformBannedUser.ICreate;
-    user: IEntity;
-    community: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      banned_at: toISOStringSafe(new Date())!,
-      unbanned_at: null,
-      reason: "",
-      created_at: toISOStringSafe(new Date())!,
-      updated_at: toISOStringSafe(new Date())!,
+      banned_at: new Date(props.body.banned_at),
+      unbanned_at: props.body.unbanned_at
+        ? new Date(props.body.unbanned_at)
+        : null,
+      reason: props.body.reason,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      user: { connect: { id: props.user.id } },
-      community: { connect: { id: props.community.id } },
+      user: { connect: { id: props.body.community_platform_user_id } },
+      community: {
+        connect: { id: props.body.community_platform_community_id },
+      },
     } satisfies Prisma.community_platform_banned_usersCreateInput;
   }
 }

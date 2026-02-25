@@ -2,6 +2,9 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import type { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -16,99 +19,129 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_customer_refund_requests_create_refund_request } from "../../../generate/generate_random_shopping_mall_customer_refund_requests_create_refund_request";
+import { generate_random_shopping_mall_customer_order_items_create } from "../../../generate/generate_random_shopping_mall_customer_order_items_create";
+import { generate_random_shopping_mall_customer_refund_requests_create } from "../../../generate/generate_random_shopping_mall_customer_refund_requests_create";
+import { prepare_random_shopping_mall_order_item } from "../../../prepare/prepare_random_shopping_mall_order_item";
 import { prepare_random_shopping_mall_refund_request } from "../../../prepare/prepare_random_shopping_mall_refund_request";
 
-/**
- * Test approving a refund request successfully.
- *
- * Prerequisites:
- * - Seller joins the platform.
- * - Customer creates a refund request for an order item.
- *
- * Test steps:
- * 1. Authenticate as the seller.
- * 2. Call the approve-reject refund request endpoint with a valid refundRequestId.
- * 3. Provide request body with status set to 'approved' and no seller response reason.
- * 4. Verify the refund request status updates to 'approved'.
- * 5. Verify responded_at timestamp is updated.
- * 6. Validate response returns updated refund request details.
- * 7. Check that unauthorized users cannot perform approval.
- */
 export async function test_api_seller_refund_request_approval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Seller joins
-  const sellerJoinConnection: api.IConnection = { host: connection.host };
-  const sellerJoin = await authorize_seller_join(sellerJoinConnection, {
-    body: typia.random<IShoppingMallSeller.IJoin>(),
+  // 1. Seller joins and logs in
+  const sellerJoinInput: Partial<IShoppingMallSeller.IJoin> = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    shopName: RandomGenerator.name(1),
+  };
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerAuthorized = await authorize_seller_join(sellerConnection, {
+    body: sellerJoinInput,
   });
-  typia.assert(sellerJoin);
-  // 2. Seller login
+  typia.assert(sellerAuthorized);
+
+  // Login seller to get fresh token
   const sellerLoginConnection: api.IConnection = { host: connection.host };
-  const sellerLogin = await authorize_seller_login(sellerLoginConnection, {
-    body: typia.random<IShoppingMallSeller.ILogin>(),
-  });
-  typia.assert(sellerLogin);
-  // Use sellerLoginConnection for authenticated seller API calls
-  // 3. Customer joins
-  const customerJoinConnection: api.IConnection = { host: connection.host };
-  const customerJoin = await authorize_customer_join(customerJoinConnection, {
-    body: typia.random<IShoppingMallCustomer.IJoin>(),
-  });
-  typia.assert(customerJoin);
-  // 4. Customer login
-  const customerLoginConnection: api.IConnection = { host: connection.host };
-  const customerLogin = await authorize_customer_login(
-    customerLoginConnection,
+  if (!sellerJoinInput.email) throw new Error("sellerJoinInput.email must be defined");
+  const sellerAuthorizedLogin = await authorize_seller_login(
+    sellerLoginConnection,
     {
-      body: typia.random<IShoppingMallCustomer.ILogin>(),
+      body: {
+        email: sellerJoinInput.email,
+        password: sellerJoinInput.password!,
+      },
     },
   );
-  typia.assert(customerLogin);
-  // 5. Customer creates refund request
-  const refundRequestRaw =
-    await generate_random_shopping_mall_customer_refund_requests_create_refund_request(
-      customerLoginConnection,
-      { body: {} },
-    );
-  // Cast refundRequestRaw to any to access id
-  const refundRequest = refundRequestRaw satisfies any as any;
-  typia.assert(refundRequest);
-  // 6. Seller approves refund request
-  const approveBody: IShoppingMallRefundRequest.IApproveReject = {
-    status: "approved",
-    seller_response_reason: null,
+  typia.assert(sellerAuthorizedLogin);
+
+  // 2. Customer joins and logs in
+  const customerJoinInput: Partial<IShoppingMallCustomer.IJoin> = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
   };
-  const resultRaw =
-    await api.functional.shoppingMall.seller.refund_requests.approve_reject.approveRejectRefundRequest(
+  const customerConnection: api.IConnection = { host: connection.host };
+  const customerAuthorized = await authorize_customer_join(customerConnection, {
+    body: customerJoinInput,
+  });
+  typia.assert(customerAuthorized);
+
+  // Login customer to get fresh token
+  const customerLoginConnection: api.IConnection = { host: connection.host };
+  if (!customerJoinInput.email) throw new Error("customerJoinInput.email must be defined");
+  const customerAuthorizedLogin = await authorize_customer_login(
+    customerLoginConnection,
+    {
+      body: {
+        email: customerJoinInput.email,
+        password: customerJoinInput.password!,
+      },
+    },
+  );
+  typia.assert(customerAuthorizedLogin);
+
+  // 3. Customer creates an order item with status delivered (simulate delivered by setting status)
+  const orderItem =
+    await generate_random_shopping_mall_customer_order_items_create(
+      customerLoginConnection,
+      {
+        body: {
+          shoppingMallOrderId: typia.random<string & tags.Format<"uuid">>(),
+          shoppingMallProductVariantId: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+          quantity: 1,
+          status: "delivered",
+        },
+      },
+    );
+  typia.assert(orderItem);
+
+  // 4. Customer creates a refund request for the delivered order item
+  const refundRequest =
+    await generate_random_shopping_mall_customer_refund_requests_create(
+      customerLoginConnection,
+      {
+        body: {
+          shoppingMallOrderItemId: orderItem.id,
+          requestReason: "Test refund reason",
+        },
+      },
+    );
+  typia.assert(refundRequest);
+  TestValidator.equals(
+    "refund request status initial",
+    refundRequest.status,
+    "pending",
+  );
+
+  // 5. Seller approves the refund request
+  const approvedRefundRequest =
+    await api.functional.shoppingMall.seller.refund_requests.approve.approveRefundRequest(
       sellerLoginConnection,
       {
         refundRequestId: refundRequest.id,
-        body: approveBody,
       },
     );
-  // Cast resultRaw to any to access status and responded_at
-  const result = resultRaw satisfies any as any;
-  typia.assert(result);
-  // 7. Validate the refund request status is approved and responded_at is set
+  typia.assert(approvedRefundRequest);
+
+  // 6. Verify refund request status updated to 'approved'
   TestValidator.equals(
-    "refund request status should be approved",
-    result.status,
+    "refund request status after approval",
+    approvedRefundRequest.status,
     "approved",
   );
-  TestValidator.predicate(
-    "refund request responded_at should be not null",
-    result.responded_at !== null && result.responded_at !== undefined,
+
+  // 7. Verify order item status changed to 'refunded'
+  TestValidator.equals(
+    "order item status after refund approval",
+    approvedRefundRequest.shoppingMallOrderItem.status,
+    "refunded",
   );
-  // 8. Verify unauthorized user cannot perform approval
-  await TestValidator.error("unauthorized user cannot approve", async () => {
-    await api.functional.shoppingMall.seller.refund_requests.approve_reject.approveRejectRefundRequest(
-      customerLoginConnection,
-      {
-        refundRequestId: refundRequest.id,
-        body: approveBody,
-      },
-    );
-  });
+
+  // 8. Verify stock quantity restored (stock quantity should be >= initial + refunded quantity)
+  // Since we cannot get the initial stock quantity before test, just verify stockQuantity >= orderItem.quantity
+  TestValidator.predicate(
+    "stock quantity restored",
+    approvedRefundRequest.shoppingMallOrderItem.productVariant.stockQuantity >=
+      orderItem.quantity,
+  );
 }

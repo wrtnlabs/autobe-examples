@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMultiUserTodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUser";
 import { IMultiUserTodoUserEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoUserEmailVerification";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIMultiUserTodoUserEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMultiUserTodoUserEmailVerification";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,48 +10,42 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { MultiUserTodoUserEmailVerificationTransformer } from "../transformers/MultiUserTodoUserEmailVerificationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchMultiUserTodoUserEmailVerifications(props: {
   user: UserPayload;
   body: IMultiUserTodoUserEmailVerification.IRequest;
-}): Promise<IPageIMultiUserTodoUserEmailVerification.ISummary> {
-  const userId = props.user.id;
-  const page = 1;
-  const limit = 20;
-  const skip = (page - 1) * limit;
-  const data =
-    await MyGlobal.prisma.multi_user_todo_user_email_verifications.findMany({
-      where: {
-        multi_user_todo_user_id: userId,
+}): Promise<IMultiUserTodoUserEmailVerification> {
+  if (!props.body.token) {
+    throw new HttpException("Token is required.", 400);
+  }
+  const now = toISOStringSafe(new Date());
+  const verification =
+    await MyGlobal.prisma.multi_user_todo_user_email_verifications.findFirstOrThrow(
+      {
+        where: {
+          token: props.body.token,
+          expires_at: { gte: now },
+          deleted_at: null,
+        },
+        ...MultiUserTodoUserEmailVerificationTransformer.select(),
       },
-      take: limit,
-      skip: skip,
-      orderBy: {
-        created_at: "desc",
+    );
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.multi_user_todo_users.update({
+      where: { id: verification.multi_user_todo_user_id },
+      data: {
+        updated_at: now,
       },
     });
-  const total =
-    await MyGlobal.prisma.multi_user_todo_user_email_verifications.count({
-      where: {
-        multi_user_todo_user_id: userId,
-      },
+    await tx.multi_user_todo_user_email_verifications.update({
+      where: { id: verification.id },
+      data: { deleted_at: now },
     });
-  const resultData = data.map((item) => ({
-    id: item.id,
-    token: item.token,
-    expiration: toISOStringSafe(item.expires_at),
-    verifiedAt:
-      item.verified_at !== null ? toISOStringSafe(item.verified_at) : null,
-  }));
-  return {
-    data: resultData,
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
-    },
-  };
+  });
+  return await MultiUserTodoUserEmailVerificationTransformer.transform(
+    verification,
+  );
 }

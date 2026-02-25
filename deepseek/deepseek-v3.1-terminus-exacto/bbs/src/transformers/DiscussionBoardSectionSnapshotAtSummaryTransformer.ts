@@ -17,9 +17,6 @@ export namespace DiscussionBoardSectionSnapshotAtSummaryTransformer {
         name: true,
         description: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        section: true,
       },
     } satisfies Prisma.discussion_board_section_snapshotsFindManyArgs;
   }

@@ -4,35 +4,48 @@ import typia, { tags } from "typia";
 
 import { IDiscussionBoardPerformanceMetric } from "../../../../api/structures/IDiscussionBoardPerformanceMetric";
 import { IPageIDiscussionBoardPerformanceMetric } from "../../../../api/structures/IPageIDiscussionBoardPerformanceMetric";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { getDiscussionBoardSuperAdminPerformanceMetricsMetricId } from "../../../../providers/getDiscussionBoardSuperAdminPerformanceMetricsMetricId";
 import { patchDiscussionBoardSuperAdminPerformanceMetrics } from "../../../../providers/patchDiscussionBoardSuperAdminPerformanceMetrics";
 
 @Controller("/discussionBoard/superAdmin/performance-metrics")
 export class DiscussionboardSuperadminPerformance_metricsController {
   /**
-   * Retrieve system performance metrics with advanced filtering capabilities for monitoring and analysis.
+   * Search and retrieve performance metrics data with advanced filtering capabilities.
    *
-   * This operation provides super administrators with access to platform performance monitoring data that is automatically collected by the system. Performance metrics include response times, resource utilization, error rates, and system load indicators collected from various platform components.
+   * This operation provides access to system-generated performance metrics collected from the discussion board platform. Performance metrics include response times, CPU usage, memory utilization, error rates, and request counts that are automatically recorded by monitoring systems.
    *
-   * Users can filter metrics by type (response_time, cpu_usage, memory_usage, error_rate, request_count), source component (api_gateway, database, cache, frontend), time ranges, and collection periods. The operation supports comprehensive pagination with configurable page sizes and sorting options for efficient data retrieval.
+   * Users can filter metrics by type (response_time, cpu_usage, memory_usage, error_rate, request_count), source component (api_gateway, database, cache, frontend), and time range. The operation supports pagination and sorting by collection timestamp for efficient browsing of historical performance data.
    *
-   * This functionality is designed for system monitoring and analytics purposes, allowing administrators to track platform health, identify performance bottlenecks, and ensure service level agreement compliance. The data supports capacity planning and proactive system monitoring activities.
+   * This data is read-only as it represents system-generated metrics collected automatically for monitoring purposes. The operation provides administrators with insights into platform health, performance trends, and system behavior under different load conditions.
    *
-   * Performance metrics are system-generated data collected automatically by monitoring systems and are read-only through this API operation.
+   * Security considerations: Access to performance metrics should be restricted to authorized administrators only, as this data may contain sensitive system information useful for capacity planning and performance optimization.
    *
    * @param connection
-   * @param body Search criteria for filtering performance metrics including metric types, source components, time ranges, and pagination settings
+   * @param body Search criteria and pagination parameters for performance metrics
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_performance_metrics table with advanced filtering capabilities. Support filtering by metric_type, source_component, time_range, and collection_timestamp ranges. Implement pagination with configurable page sizes and sorting options. Join with discussion_board_system_configurations if filtering by configuration is requested. Return performance metrics in a paginated format optimized for monitoring dashboards and analytics tools.
+   * @x-autobe-specification Query the discussion_board_performance_metrics table with filtering and pagination.
+   *
+   * Apply filters based on the request criteria:
+   * - Filter by metric_type if specified (response_time, cpu_usage, memory_usage, error_rate, request_count)
+   * - Filter by source_component if specified (api_gateway, database, cache, frontend)
+   * - Filter by time range using collection_timestamp
+   * - Support date range filtering with start and end timestamps
+   *
+   * Implement cursor-based pagination for efficient large result sets.
+   * Sort results by collection_timestamp descending by default to show most recent metrics first.
+   *
+   * Join with discussion_board_system_configurations table if configuration reference is needed for additional context.
+   *
+   * Validate that all filter parameters are within expected ranges and handle edge cases gracefully.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardPerformanceMetric.IRequest,
   ): Promise<IPageIDiscussionBoardPerformanceMetric.ISummary> {
@@ -48,25 +61,31 @@ export class DiscussionboardSuperadminPerformance_metricsController {
   }
 
   /**
-   * Retrieve detailed information about a specific system performance metric by its unique identifier.
+   * Retrieve detailed information about a specific performance metric record.
    *
-   * This operation provides administrators with access to individual performance metric records for detailed analysis and monitoring. Each metric record contains comprehensive information including the metric type, numerical value, measurement unit, source component, collection timestamp, and associated metadata. Performance metrics are essential for monitoring platform health, identifying performance bottlenecks, and ensuring service level agreement compliance.
+   * This operation provides access to individual performance metrics collected by the discussion board platform's monitoring system. Performance metrics include various system indicators such as response times, CPU usage, memory utilization, error rates, and request counts that help track platform health and performance optimization.
    *
-   * The response includes all relevant fields from the discussion_board_performance_metrics table, allowing administrators to understand the context and significance of each metric measurement. This data supports capacity planning, performance optimization, and proactive system monitoring by providing granular insights into system behavior under different load conditions.
+   * The response includes comprehensive metric details including the metric type, numerical value, unit of measurement, source component, collection timestamp, time range, and any additional metadata. This information supports capacity planning, performance analysis, and proactive monitoring of system behavior under different load conditions.
    *
-   * Access to performance metrics is typically restricted to administrators who need to monitor system health and performance. The detailed information returned by this operation enables informed decision-making regarding infrastructure upgrades, performance tuning, and resource allocation based on actual system performance data.
+   * Administrators can use this operation to examine specific performance measurements for troubleshooting, trend analysis, and infrastructure planning. Each metric record represents a point-in-time measurement that contributes to understanding system performance patterns and identifying optimization opportunities.
+   *
+   * Access to performance metrics is typically restricted to administrators who need visibility into system operations and health monitoring. The data helps ensure service level agreement compliance and supports data-driven decisions about platform infrastructure and optimization efforts.
    *
    * @param connection
-   * @param metricId Unique identifier of the performance metric to retrieve
+   * @param metricId Unique identifier of the performance metric record to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_performance_metrics table by the provided metricId parameter. Validate that the metricId is a valid UUID format. Return a 404 error if no metric is found with the specified ID. Include all fields from the performance metrics table in the response. Ensure the response includes timestamps in ISO 8601 format for proper client handling.
+   * @x-autobe-specification Query the discussion_board_performance_metrics table by the provided metric ID. Return the complete metric record including all fields: id, metric_type, metric_value, metric_unit, source_component, collection_timestamp, time_range, metadata, created_at, updated_at, and the optional system configuration reference.
+   *
+   * Validate that the metric ID exists in the database. If no metric is found with the given ID, return a 404 Not Found response. Ensure the response includes the full metric object with all available data for comprehensive performance analysis.
+   *
+   * This operation should be accessible to administrators who need to monitor system performance and analyze platform health metrics. The data supports capacity planning and optimization efforts by providing detailed performance measurement information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":metricId")
   public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("metricId")
     metricId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardPerformanceMetric> {

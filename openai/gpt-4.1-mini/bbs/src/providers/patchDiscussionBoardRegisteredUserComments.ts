@@ -1,4 +1,5 @@
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
+import { IDiscussionBoardRegisteredUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardRegisteredUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardComment";
@@ -18,40 +19,79 @@ export async function patchDiscussionBoardRegisteredUserComments(props: {
   registeredUser: RegistereduserPayload;
   body: IDiscussionBoardComment.IRequest;
 }): Promise<IPageIDiscussionBoardComment.ISummary> {
-  const page = 1;
-  const limit = 100;
+  const page = props.body.page && props.body.page >= 1 ? props.body.page : 1;
+  const limit =
+    props.body.limit && props.body.limit >= 1 && props.body.limit <= 100
+      ? props.body.limit
+      : 10;
   const skip = (page - 1) * limit;
-  const [comments, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_comments.findMany({
-      where: { deleted_at: null },
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        content: true,
-        author: {
-          select: { display_name: true },
+  const where: Prisma.discussion_board_commentsWhereInput = {
+    deleted_at: null,
+    ...(props.body.discussionBoardArticleId && {
+      discussion_board_article_id: props.body.discussionBoardArticleId,
+    }),
+    ...(props.body.discussionBoardRegisteredUserId && {
+      discussion_board_registered_user_id:
+        props.body.discussionBoardRegisteredUserId,
+    }),
+    ...(props.body.contentKeywords
+      ? {
+          content: {
+            contains: props.body.contentKeywords,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+  };
+  const data = await MyGlobal.prisma.discussion_board_comments.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: { created_at: "asc" },
+    select: {
+      id: true,
+      content: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      author: {
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          bio: true,
+          is_banned: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
         },
-        article: {
-          select: { id: true },
-        },
-        created_at: true,
-        updated_at: true,
       },
-    }),
-    MyGlobal.prisma.discussion_board_comments.count({
-      where: { deleted_at: null },
-    }),
-  ]);
+    },
+  });
+  const total = await MyGlobal.prisma.discussion_board_comments.count({
+    where,
+  });
   return {
-    data: comments.map((comment) => ({
+    data: data.map((comment) => ({
       id: comment.id,
       content: comment.content,
-      author_display_name: comment.author.display_name,
-      article_id: comment.article.id,
-      created_at: toISOStringSafe(comment.created_at),
-      updated_at: toISOStringSafe(comment.updated_at),
+      createdAt: toISOStringSafe(comment.created_at),
+      updatedAt: toISOStringSafe(comment.updated_at),
+      deletedAt: comment.deleted_at
+        ? toISOStringSafe(comment.deleted_at)
+        : null,
+      author: {
+        id: comment.author.id,
+        email: comment.author.email,
+        displayName: comment.author.display_name,
+        bio: comment.author.bio ?? null,
+        isBanned: comment.author.is_banned,
+        createdAt: toISOStringSafe(comment.author.created_at),
+        updatedAt: toISOStringSafe(comment.author.updated_at),
+        deletedAt: comment.author.deleted_at
+          ? toISOStringSafe(comment.author.deleted_at)
+          : null,
+      },
     })),
     pagination: {
       current: page,

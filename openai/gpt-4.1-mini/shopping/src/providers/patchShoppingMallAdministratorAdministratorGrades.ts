@@ -18,17 +18,30 @@ export async function patchShoppingMallAdministratorAdministratorGrades(props: {
   administrator: AdministratorPayload;
   body: IShoppingMallAdministratorGrade.IRequest;
 }): Promise<IPageIShoppingMallAdministratorGrade.ISummary> {
-  // Since props.body.page and limit do not exist, use default pagination values
-  const pageNumber = 1;
-  const limitNumber = 20;
-  const skipCount = (pageNumber - 1) * limitNumber;
-  const totalRecords =
-    await MyGlobal.prisma.shopping_mall_administrator_grades.count();
+  const page = props.body.page ?? 1;
+  const limitRaw = props.body.limit ?? 10;
+  const limit = limitRaw > 100 ? 100 : limitRaw;
+  const skip = (page - 1) * limit;
+  const gradeFilter: Prisma.shopping_mall_administrator_gradesWhereInput["grade"] =
+    {};
+  if (props.body.gradeMin !== undefined) gradeFilter.gte = props.body.gradeMin;
+  if (props.body.gradeMax !== undefined) gradeFilter.lte = props.body.gradeMax;
+  const whereFilter: Prisma.shopping_mall_administrator_gradesWhereInput = {
+    deleted_at: null,
+    ...(Object.keys(gradeFilter).length > 0 ? { grade: gradeFilter } : {}),
+    ...(props.body.superAdministrator !== undefined
+      ? { super_administrator: props.body.superAdministrator }
+      : {}),
+  };
+  const total = await MyGlobal.prisma.shopping_mall_administrator_grades.count({
+    where: whereFilter,
+  });
   const records =
     await MyGlobal.prisma.shopping_mall_administrator_grades.findMany({
-      skip: skipCount,
-      take: limitNumber,
-      orderBy: { grade: "desc" },
+      where: whereFilter,
+      skip,
+      take: limit,
+      orderBy: { grade: "asc" },
       select: {
         id: true,
         name: true,
@@ -41,13 +54,13 @@ export async function patchShoppingMallAdministratorAdministratorGrades(props: {
       id: record.id,
       name: record.name,
       grade: record.grade,
-      super_administrator: record.super_administrator,
+      superAdministrator: record.super_administrator,
     })),
     pagination: {
-      current: pageNumber,
-      limit: limitNumber,
-      records: totalRecords,
-      pages: Math.ceil(totalRecords / limitNumber),
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
   };
 }

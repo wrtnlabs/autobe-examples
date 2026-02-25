@@ -15,12 +15,6 @@ export async function deleteShoppingMallAdministratorBannedUsersBannedUserId(pro
   administrator: AdministratorPayload;
   bannedUserId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const bannedUser =
-    await MyGlobal.prisma.shopping_mall_banned_users.findUnique({
-      where: { id: props.bannedUserId },
-    });
-  if (bannedUser === null)
-    throw new HttpException("Banned user not found", 404);
   await MyGlobal.prisma.shopping_mall_banned_users.delete({
     where: { id: props.bannedUserId },
   });

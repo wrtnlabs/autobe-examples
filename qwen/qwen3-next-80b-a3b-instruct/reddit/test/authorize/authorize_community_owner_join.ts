@@ -11,15 +11,15 @@ import typia, { tags } from "typia";
 export async function authorize_community_owner_join(
   connection: api.IConnection,
   props: {
-    body: IRedditCommunityCommunityOwner.IJoin;
+    body?: DeepPartial<IRedditCommunityCommunityOwner.IJoin>;
   },
 ): Promise<IRedditCommunityCommunityOwner.IAuthorized> {
   const joinInput = {
-    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
-    display_name: props.body.display_name ?? props.body.email?.split("@")[0],
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    displayName: props.body?.displayName ?? RandomGenerator.name(),
   } satisfies IRedditCommunityCommunityOwner.IJoin;
-  return await api.functional.redditCommunity.auth.communityOwner.join(
+  return await api.functional.redditCommunity.auth.community_owner.join(
     connection,
     {
       body: joinInput,

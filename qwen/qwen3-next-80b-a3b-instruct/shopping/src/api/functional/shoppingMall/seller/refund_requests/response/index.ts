@@ -3,44 +3,58 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IShoppingMallRefundResponseSnapshot } from "../../../../../structures/IShoppingMallRefundResponseSnapshot";
-import { IShoppingMallRequestResponse } from "../../../../../structures/IShoppingMallRequestResponse";
+import { IShoppingMallRefundRequest } from "../../../../../structures/IShoppingMallRefundRequest";
 
 /**
- * Respond to a customer-initiated refund request for an order item.
+ * Respond to a pending refund request initiated by a customer for a delivered order item.
  *
- * This operation allows a seller to approve or reject a refund request submitted by a customer for a specific order item. When a customer requests a refund for a delivered product, a refund request is created in the system with status 'pending'. The seller must respond to this request within 72 hours, or the system will automatically approve it. This endpoint enables the seller to provide a decision ('approve' or 'reject') along with a reason (minimum 10 characters, maximum 500 characters). The response is stored as an immutable record that cannot be modified or deleted, preserving the exact decision and reason as it was submitted.
+ * This operation allows a seller to either approve or reject a refund request. The seller's decision is final. If the seller approves, the system restores stock to inventory and initiates an external payment refund to the customer, changing the item status to 'refunded'. If the seller rejects, the item status remains as 'delivered' and the customer is notified with the rejection reason. A seller may respond only once; subsequent attempts are rejected. If no response is made within 72 hours, the system automatically approves the refund by creating a snapshot with status 'auto-approved'.
  *
- * The refund request is linked to an order item, which contains the exact product state, variant configuration, seller profile, and price as they existed at time of purchase. This operation preserves this context by tying the seller's response to the specific refund request. Upon successful response, the refund request status is updated to match the seller's decision, and an immutable audit record is created in the system for audit purposes.
+ * The response is permanently recorded as a snapshot in the shopping_mall_refund_request_snapshots table, preserving the decision, reason, timestamp, and responder. This snapshot ensures auditability, compliance, and historical consistency. The reason field for rejection must be 10–500 characters, while approval reason is optional but encouraged for transparency.
  *
- * This operation is only allowed for sellers who are the owners of the product associated with the refund request. The seller's response is final and cannot be changed after submission. If the seller rejects the request, the customer may not submit another refund request for the same order item. If the seller approves the request, the system will restore inventory to the product variant and process the financial refund according to the platform refund policy.
+ * This operation is not accessible to customers or administrators — only authenticated sellers may respond to refund requests. This endpoint cannot be used to cancel a previously submitted response.
  *
- * The response reason must be provided by the seller and must be at least 10 characters in length, with a maximum of 500 characters. This ensures accountability and provides meaningful context for customers and administrators in case of disputes. The response timestamp is recorded precisely when the seller submits it, and this cannot be altered or falsified.
- *
- * This operation is governed by strict audit trail requirements: every response creation event is recorded in the system's immutable audit history, and administrators have access to all response histories for dispute resolution. These records are preserved indefinitely and are used as authoritative records for resolving commercial disputes, compliance audits, and fraud investigations.
- *
- * For security and access control: Only authenticated sellers who are the owners of the product associated with the refund request may call this endpoint. This endpoint does not allow customer-initiated responses or responses from non-owner sellers. Attempting to respond to a refund request owned by another seller will result in a 403 Forbidden response.
- *
- * This operation does not create or modify any order items, shipping records, or inventory records directly. These changes occur through separate business processes triggered by the response status change. The API operation is strictly limited to capturing the seller's decision and reason as an immutable audit record.
- *
- * This endpoint is designed to work in conjunction with the system's auto-approval feature: if no response is received within 72 hours of the refund request being created, the system will automatically approve the refund without requiring any manual intervention from the seller. Manual responses, however, override the automatic approval process and are recorded with their exact submission timestamp for audit completeness.
+ * Depends on: POST /customers/order-items/{item_id}/refund-request to create the initial request.
  *
  * @param props.connection
- * @param props.requestId The unique identifier of the refund request being responded to. This links to the shopping_mall_refund_requests table.
- * @param props.body Contains the seller's decision and reason for the refund request response.
+ * @param props.body Action and optional reason for refund response
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Find refund request by ID in shopping_mall_refund_requests table using requestId path parameter. Validate seller has ownership of the product linked to this refund request by joining with shopping_mall_order_items, shopping_mall_products, and shopping_mall_sellers. Validate seller is authenticated and matches seller_id on the refund request. Validate that the refund request status is currently 'pending'. Extract decision (must be 'approve' or 'reject') and reason (10-500 characters) from request body. Create new shopping_mall_refund_response_snapshots record with refund_request_id, seller_id, decision, reason, and current timestamp. Update the shopping_mall_refund_requests status field to match the decision provided. Return HTTP 201 Created with the created response snapshot. If refund request not found, return 404. If seller is unauthorized (not owner of product), return 403. If refund request is not 'pending', return 409 Conflict. If decision is not 'approve' or 'reject', return 400 Bad Request. If reason is below 10 or above 500 characters, return 400 Bad Request. Ensure all operations are in a single atomic transaction to prevent inconsistent states. All data in response snapshot must be immutable. Never allow deletion or modification of response snapshot after creation.
- * @path /shoppingMall/seller/refund-requests/:requestId/response
- * @accessor api.functional.shoppingMall.seller.refund_requests.response.approveRefund
+ * @x-autobe-specification Fetch refund request by refund_request_id from shopping_mall_refund_requests.
+ * Verify request status is 'pending'.
+ * Verify requester_id corresponds to a seller that owns the associated order item.
+ * Verify seller_id matches the authenticated seller from JWT.
+ * Reject if response already exists (responded_at is not null).
+ * If action = 'approve':
+ *   - Set status = 'approved', responded_at = now, response_reason = given reason (or null).
+ *   - Update order_item status to 'refunded'.
+ *   - Add inventory stock via logging entry with reason 'refund'.
+ *   - Trigger external payment gateway refund process.
+ *   - Send notification to customer.
+ * If action = 'reject':
+ *   - Validate response_reason length (10–500 chars).
+ *   - Set status = 'rejected', responded_at = now, response_reason = given reason.
+ *   - Send notification to customer with reason.
+ * Create a snapshot in shopping_mall_refund_request_snapshots:
+ *   - refund_request_id = ID
+ *   - version = current_version + 1
+ *   - reason = original request reason
+ *   - status = new status
+ *   - responder_id = seller_id
+ *   - response_reason = provided reason (null if approve and no reason given)
+ *   - changed_at = now
+ *   - changed_by = 'seller'
+ * Return 201 Created with response details.
+ * @path /shoppingMall/seller/refund-requests/response
+ * @accessor api.functional.shoppingMall.seller.refund_requests.response.respond
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function approveRefund(
+export async function respond(
   connection: IConnection,
-  props: approveRefund.Props,
-): Promise<approveRefund.Response> {
+  props: respond.Props,
+): Promise<respond.Response> {
   return true === connection.simulate
-    ? approveRefund.simulate(connection, props)
+    ? respond.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -50,31 +64,26 @@ export async function approveRefund(
           },
         },
         {
-          ...approveRefund.METADATA,
-          path: approveRefund.path(props),
+          ...respond.METADATA,
+          path: respond.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace approveRefund {
+export namespace respond {
   export type Props = {
     /**
-     * The unique identifier of the refund request being responded to. This links to the shopping_mall_refund_requests table.
+     * Action and optional reason for refund response
      */
-    requestId: string;
-
-    /**
-     * Contains the seller's decision and reason for the refund request response.
-     */
-    body: IShoppingMallRequestResponse;
+    body: IShoppingMallRefundRequest.IRequest;
   };
-  export type Body = IShoppingMallRequestResponse;
-  export type Response = IShoppingMallRefundResponseSnapshot;
+  export type Body = IShoppingMallRefundRequest.IRequest;
+  export type Response = IShoppingMallRefundRequest;
 
   export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/seller/refund-requests/:requestId/response",
+    method: "POST",
+    path: "/shoppingMall/seller/refund-requests/response",
     request: {
       type: "application/json",
       encrypted: false,
@@ -85,22 +94,20 @@ export namespace approveRefund {
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/refund-requests/${encodeURIComponent(props.requestId ?? "null")}/response`;
-  export const random = (): IShoppingMallRefundResponseSnapshot =>
-    typia.random<IShoppingMallRefundResponseSnapshot>();
+  export const path = () => "/shoppingMall/seller/refund-requests/response";
+  export const random = (): IShoppingMallRefundRequest =>
+    typia.random<IShoppingMallRefundRequest>();
   export const simulate = (
     connection: IConnection,
-    props: approveRefund.Props,
+    props: respond.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: approveRefund.path(props),
+      path: respond.path(),
       contentType: "application/json",
     });
     try {
-      assert.param("requestId")(() => typia.assert(props.requestId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;

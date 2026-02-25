@@ -1,5 +1,4 @@
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardSectionImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionImage";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,29 +8,23 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardSectionImageTransformer } from "../transformers/DiscussionBoardSectionImageTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardSectionAtmageTransformer } from "../transformers/DiscussionBoardSectionAtmageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminSectionsSectionIdImagesImageId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   sectionId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardSectionImage> {
+}): Promise<IDiscussionBoardSection.Image> {
   const image =
-    await MyGlobal.prisma.discussion_board_section_images.findUnique({
+    await MyGlobal.prisma.discussion_board_section_images.findUniqueOrThrow({
       where: {
         id: props.imageId,
-        discussion_board_section_id: props.sectionId,
+        section: { id: props.sectionId },
       },
-      ...DiscussionBoardSectionImageTransformer.select(),
+      ...DiscussionBoardSectionAtmageTransformer.select(),
     });
-  if (!image) {
-    throw new HttpException(
-      "Image not found or does not belong to the specified section",
-      404,
-    );
-  }
-  return await DiscussionBoardSectionImageTransformer.transform(image);
+  return await DiscussionBoardSectionAtmageTransformer.transform(image);
 }

@@ -2,6 +2,7 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardArticleFile } from "../../../../../api/structures/IDiscussionBoardArticleFile";
 import { IDiscussionBoardSectionFile } from "../../../../../api/structures/IDiscussionBoardSectionFile";
 import { IPageIDiscussionBoardSectionFile } from "../../../../../api/structures/IPageIDiscussionBoardSectionFile";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
@@ -15,24 +16,22 @@ import { putDiscussionBoardAdminSectionsSectionIdFilesFileId } from "../../../..
 @Controller("/discussionBoard/admin/sections/:sectionId/files")
 export class DiscussionboardAdminSectionsFilesController {
   /**
-   * Upload a new file attachment to a specific section.
+   * Create a new file attachment within a specific discussion board section.
    *
-   * This operation allows authorized administrators to attach supplementary files to discussion board sections, referencing the discussion_board_sections table which stores core section information for organizing discussion board content. Files can include guidelines, reference materials, or other resources that enhance the section's utility for users.
+   * This operation allows users to upload file attachments that can later be associated with articles in the specified section. The file metadata is stored including file name, type, size, and storage path. The operation validates that the section exists and is active, and that the user has permission to upload files to this section.
    *
-   * The operation validates administrator permissions and checks that the target section exists and is accessible. Only administrators and super administrators who manage the specific section can upload files. File metadata includes the original filename, MIME type, file size, storage path, and optional description, with records stored in the discussion_board_section_files table.
+   * File attachments support various document formats and are stored with unique identifiers to prevent naming conflicts. The storage path is generated based on the section ID and upload timestamp for organized file management. Once created, the file attachment can be referenced when creating or editing articles within the section.
    *
-   * The system generates a secure storage path and manages file lifecycle through the section file management system, supporting soft deletion via the deleted_at field. Files uploaded through this operation become available for download by users browsing the section and can be marked as deleted while preserving the audit trail.
+   * The operation returns comprehensive file metadata including the storage path, which should be used when associating the file with articles. File size limits and format restrictions are enforced according to system configuration. Uploaded files are scanned for security threats before being made available for download.
    *
-   * Administrators can use this operation to provide additional resources that complement the section's content, such as policy documents, reference materials, or community guidelines. The operation supports various file types and includes validation for file size limits and acceptable formats.
-   *
-   * Related operations include viewing section files through GET /sections/{sectionId}/files and managing existing files through PUT and DELETE operations on individual file resources.
+   * Related operations include GET /sections/{sectionId}/files/{fileId} for retrieving file information and DELETE /sections/{sectionId}/files/{fileId} for removing file attachments. File downloads are handled through dedicated download endpoints that track download statistics.
    *
    * @param connection
-   * @param sectionId Unique identifier of the target section
-   * @param body File metadata and upload information
+   * @param sectionId The unique identifier of the section where the file will be uploaded
+   * @param body File attachment creation data including file metadata
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the section exists and is accessible. Check administrator permissions to ensure only authorized administrators can upload files to sections. Process file metadata and store the file information in the database. Generate a unique file path for storage. Return the complete file record with all metadata including the generated file path.
+   * @x-autobe-specification Validate that the section exists and is active. Check user permissions to ensure they can upload files to this section. Generate a unique storage path for the file based on section ID and timestamp. Store file metadata including name, type, size, and storage path. Set initial download count to zero. Return the created file record with storage path for future article association.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -42,8 +41,8 @@ export class DiscussionboardAdminSectionsFilesController {
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardSectionFile.ICreate,
-  ): Promise<IDiscussionBoardSectionFile> {
+    body: IDiscussionBoardArticleFile.ICreate,
+  ): Promise<IDiscussionBoardArticleFile> {
     try {
       return await postDiscussionBoardAdminSectionsSectionIdFiles({
         admin,
@@ -57,20 +56,22 @@ export class DiscussionboardAdminSectionsFilesController {
   }
 
   /**
-   * Search and filter through files attached to a specific discussion board section.
+   * Retrieve a paginated list of files attached to a specific discussion board section.
    *
-   * This operation allows administrators to retrieve a paginated list of files associated with a particular section using advanced search criteria. Files can be filtered by filename patterns, file types, size ranges, creation dates, and optional description content. The operation queries the discussion_board_section_files table and respects the soft delete mechanism by excluding records where deleted_at is not null.
+   * This operation provides administrators with comprehensive file management capabilities for section attachments. Files can be filtered by filename patterns, file types, upload date ranges, and file sizes. The operation supports advanced search functionality including partial filename matching and MIME type filtering.
    *
-   * The search functionality supports partial matching on filename using pattern matching, exact matching on file types, and range-based filtering for file sizes and creation timestamps. Results are returned in a paginated format suitable for administrative interfaces displaying file lists.
+   * Response includes file metadata summaries optimized for administrative interfaces, showing essential information like filename, file type, file size, upload date, and optional descriptions. Pagination ensures efficient handling of sections with large numbers of attached files.
    *
-   * Administrators can use this operation to manage section files, review uploaded materials, and maintain organized section resources. The operation requires administrator privileges as section file management is restricted to authorized personnel only. The underlying database structure follows the discussion_board_section_files schema definition.
+   * Security considerations require that only authorized administrators can access this endpoint, as section files may contain sensitive administrative materials or guidelines. The operation validates that the requesting user has appropriate permissions for the target section before returning any file information.
+   *
+   * The operation queries the discussion_board_section_files table, which stores supporting files and documents attached to sections for reference or guidelines. Each file is associated with exactly one section through the discussion_board_section_id foreign key relationship to the discussion_board_sections table.
    *
    * @param connection
-   * @param sectionId Unique identifier of the section whose files are being searched
-   * @param body Search criteria and pagination parameters for filtering section files
+   * @param sectionId Unique identifier of the target section
+   * @param body Search criteria and pagination parameters for section files
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_section_files table filtered by the provided sectionId path parameter. Apply search filters from the request body including filename pattern matching, file type filtering, file size range, creation date range, and optional description search. Support pagination with cursor-based or page-based approaches. Return file summary information optimized for list display, excluding the actual file content but including metadata like filename, type, size, and creation date. Ensure proper authorization - only administrators should be able to search section files.
+   * @x-autobe-specification Query discussion_board_section_files table filtered by discussion_board_section_id parameter. Apply search filters on filename, file_type, and date ranges if provided in the request body. Implement pagination with configurable page sizes and sorting options. Return file summaries optimized for list display including filename, file type, size, and upload timestamp.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -95,20 +96,22 @@ export class DiscussionboardAdminSectionsFilesController {
   }
 
   /**
-   * Retrieve a specific file attachment associated with a discussion board section.
+   * Retrieve detailed metadata and information for a specific file attached to a discussion board section.
    *
-   * This operation provides access to files that administrators have attached to sections for reference materials, guidelines, or supplementary content. Files can include documents, images, or other resources that enhance the section's utility for users.
+   * This operation provides complete file information including filename, file type, file size, storage path, and optional description for files that administrators have attached to sections as supplementary materials. The operation ensures that the requested file belongs to the specified section by validating the section-file relationship.
    *
-   * Each file retrieval requires both the section identifier and the specific file identifier to ensure proper scoping and access control. The operation returns the actual file content with appropriate MIME type headers for proper handling by clients.
+   * Files stored in the discussion_board_section_files table serve as reference materials, guidelines, or supplementary content that enhance the section's utility for users browsing the discussion board. Each file is managed exclusively by administrators and cannot be independently created or modified by regular users.
    *
-   * Security considerations include validating that the requesting user has appropriate permissions to access the section and its associated files. File downloads should respect any access control rules established for the discussion board platform.
+   * The response includes all file metadata necessary for proper file handling and display, including the original filename, MIME type information, file size for download progress indication, and the server-side storage path for file access. Optional description fields provide context about the file's purpose or content when available.
+   *
+   * Security considerations include validating that the requesting user has appropriate permissions to access the section and its attached files. The operation follows standard file access patterns while maintaining referential integrity between sections and their associated files.
    *
    * @param connection
-   * @param sectionId Unique identifier of the section that contains the file
+   * @param sectionId Unique identifier of the section containing the file
    * @param fileId Unique identifier of the specific file to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a specific file attached to a section by its ID. Query the discussion_board_section_files table using both section_id and file_id parameters to ensure proper scoping. Verify that the file exists and has not been soft-deleted (deleted_at IS NULL). Return the file content with appropriate Content-Type headers based on the file_type field. Handle file not found, section not found, and permission validation for file access.
+   * @x-autobe-specification Query the discussion_board_section_files table to retrieve the specific file record by its ID, ensuring it belongs to the specified section ID. Validate that both the section and file exist and that the file is associated with the correct section. Return complete file metadata including filename, file type, file size, file path, description, and timestamps. Handle cases where the file or section does not exist or the file is not associated with the specified section.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":fileId")
@@ -119,7 +122,7 @@ export class DiscussionboardAdminSectionsFilesController {
     sectionId: string & tags.Format<"uuid">,
     @TypedParam("fileId")
     fileId: string & tags.Format<"uuid">,
-  ): Promise<void> {
+  ): Promise<IDiscussionBoardSectionFile> {
     try {
       return await getDiscussionBoardAdminSectionsSectionIdFilesFileId({
         admin,
@@ -133,23 +136,34 @@ export class DiscussionboardAdminSectionsFilesController {
   }
 
   /**
-   * Update the metadata information for a file attached to a discussion board section.
+   * Update the metadata and description of a specific file attached to a discussion board section.
    *
-   * This operation allows administrators to modify the descriptive information associated with a section file, such as updating the filename for clarity, changing the file type classification, or adding/modifying the description text. Files serve as supplementary materials that enhance the section's content and utility for users browsing the discussion board.
+   * This API operation allows administrators to modify the descriptive information associated with a file that has been attached to a section. The operation updates the file's metadata such as the description field while preserving the core file properties like filename, file type, file size, and file path which are typically immutable after initial upload.
    *
-   * Only administrators with appropriate permissions can modify section files. The operation validates that the specified section exists and that the file belongs to that section before applying any changes. File content and storage paths are managed separately through file upload operations and cannot be modified through this metadata update endpoint.
+   * When updating section file metadata, the system validates that the target file exists within the specified section and that the requesting administrator has appropriate permissions to modify section resources. The operation maintains referential integrity by ensuring the file remains associated with its parent section throughout the update process.
    *
-   * The response returns the complete updated file record with all current metadata, including the new updated_at timestamp reflecting when the modification occurred. This operation supports soft delete recovery by allowing metadata updates to files that may have been previously soft-deleted. Files with deletion markers can have their descriptive information updated while maintaining their deleted_at status for audit purposes.
+   * Administrators can use this operation to provide clearer descriptions for section files, update file categorization information, or modify supplementary documentation associated with section guidelines. The operation supports the overall section management workflow by allowing fine-grained control over section resources.
    *
-   * This operation is designed for administrative file management and supports the ongoing maintenance of section resources, ensuring file metadata remains accurate and useful for section visitors.
+   * This operation is part of the comprehensive section management system that enables administrators to maintain organized and well-documented discussion board sections. It complements other section file operations such as file creation, retrieval, and deletion to provide complete file management capabilities within the discussion board platform.
+   *
+   * The operation requires administrator privileges as section file management is restricted to platform administrators who have the authority to maintain section resources and ensure proper documentation standards across all discussion board sections.
+   *
+   * Related operations include GET /sections/{sectionId}/files/{fileId} for retrieving file information and DELETE /sections/{sectionId}/files/{fileId} for removing files from sections. These operations together form a complete CRUD interface for section file management.
    *
    * @param connection
-   * @param sectionId Unique identifier of the discussion board section containing the file
-   * @param fileId Unique identifier of the specific section file to update
-   * @param body Updated file metadata information
+   * @param sectionId Unique identifier of the section containing the target file
+   * @param fileId Unique identifier of the file to be updated
+   * @param body Updated file metadata including the new description
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update the metadata of a specific file attached to a discussion board section. Validate that both the section and file exist and that the file belongs to the specified section. Only administrators should have permission to modify section files. Update the provided fields (filename, file_type, description) while preserving file_path and file_size which are managed by the file upload system. Update the updated_at timestamp to reflect the modification time.
+   * @x-autobe-specification Validate that both the section and file exist and are properly associated.
+   * Verify that the requesting user has administrator privileges for section management.
+   * Update the file description field with the new value provided in the request body.
+   * Preserve all other file properties (filename, file_type, file_size, file_path) as immutable.
+   * Maintain the file's association with the parent section throughout the update.
+   * Return the complete updated file entity with all current metadata.
+   * Log the update operation for audit trail purposes.
+   * Ensure transactional integrity so the update either completes fully or fails without partial changes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":fileId")
@@ -177,22 +191,20 @@ export class DiscussionboardAdminSectionsFilesController {
   }
 
   /**
-   * Soft delete a specific file attached to a discussion board section by marking it as deleted.nnThis operation allows administrators to soft delete supplementary files that were previously attached to sections. Files may include guidelines, reference materials, or other documents that enhance the section's content. The deletion is implemented as a soft delete, marking the record as deleted while preserving the data in the database for potential recovery or audit purposes.nnAdministrators must have appropriate permissions to manage the target section. The operation validates that the file exists within the specified section before proceeding with deletion. Authentication is required for administrator access to ensure only authorized users can perform this operation.nnSecurity considerations include verifying administrator authorization through proper authentication and ensuring that only authorized users can delete section files. The operation maintains data integrity by implementing soft deletion rather than permanent removal.nnRelated operations include creating section files through POST operations and viewing section files through GET operations. This soft deletion operation complements the complete file management lifecycle for section administrators.
+   * Permanently delete a file attachment from a discussion board section.
+   *
+   * This operation removes a specific file that was previously attached to a section for reference materials, guidelines, or supplementary content. The deletion requires administrator privileges and affects both the database record and the physical file storage.
+   *
+   * File deletion is permanent and irreversible. Administrators should verify the file is no longer needed before proceeding. The operation returns the deleted file metadata including filename, type, size, and description for confirmation purposes.
+   *
+   * This API is part of the section management system and requires proper authorization. Only administrators with section management privileges can delete section files. The operation validates that the file exists within the specified section before proceeding with deletion.
    *
    * @param connection
-   * @param sectionId Unique identifier of the section containing the target file
-   * @param fileId Unique identifier of the file to be deleted
+   * @param sectionId Unique identifier of the section containing the file (UUID format)
+   * @param fileId Unique identifier of the file to delete (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Delete a specific file attached to a section by its unique identifier.
-   *
-   * Implementation details:
-   * - Verify that the file exists and belongs to the specified section
-   * - Perform hard deletion of the file record from discussion_board_section_files table
-   * - Remove the physical file from storage if it exists
-   * - Ensure proper authorization checks for administrator permissions
-   * - Handle concurrent deletion attempts gracefully
-   * - Log the deletion action for audit purposes
+   * @x-autobe-specification Delete a specific file attachment from a section. First validate that the section exists and that the file belongs to the specified section. Check administrator permissions for file deletion (only administrators can manage section files). Perform hard deletion of the file record from the database and optionally delete the actual file from storage. Return the deleted file metadata to confirm successful deletion. Ensure proper error handling for non-existent files, permission errors, and storage deletion failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":fileId")

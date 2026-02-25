@@ -9,28 +9,25 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardBanReasonCategoryCollector } from "../collectors/DiscussionBoardBanReasonCategoryCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardBanReasonCategoryTransformer } from "../transformers/DiscussionBoardBanReasonCategoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminBanReasonCategories(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IDiscussionBoardBanReasonCategory.ICreate;
 }): Promise<IDiscussionBoardBanReasonCategory> {
-  // Check if category name already exists
-  const existingCategory =
+  // Check if category name already exists among active categories
+  const existing =
     await MyGlobal.prisma.discussion_board_ban_reason_categories.findFirst({
       where: {
         name: props.body.name,
         deleted_at: null,
       },
     });
-  if (existingCategory) {
-    throw new HttpException(
-      "Ban reason category with this name already exists",
-      400,
-    );
+  if (existing) {
+    throw new HttpException("Category name already exists", 400);
   }
   const created =
     await MyGlobal.prisma.discussion_board_ban_reason_categories.create({

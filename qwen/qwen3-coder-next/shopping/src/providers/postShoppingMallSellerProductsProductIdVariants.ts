@@ -1,5 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOptionValue";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -8,7 +12,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallProductVariantCollector } from "../collectors/ShoppingMallProductVariantCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallProductVariantTransformer } from "../transformers/ShoppingMallProductVariantTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,38 +23,36 @@ export async function postShoppingMallSellerProductsProductIdVariants(props: {
   productId: string;
   body: IShoppingMallProductVariant.ICreate;
 }): Promise<IShoppingMallProductVariant> {
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: {
-      id: props.productId,
-      shopping_mall_seller_id: props.seller.id,
-      deleted_at: null,
+  // Verify product exists and belongs to seller
+  const product = await MyGlobal.prisma.shopping_mall_products.findFirstOrThrow(
+    {
+      where: {
+        id: props.productId as string & tags.Format<"uuid">,
+        shopping_mall_seller_id: props.seller.id,
+        is_deleted: false,
+      },
     },
-  });
-  if (!product) {
-    throw new HttpException("Product not found or unauthorized", 404);
+  );
+  // Check SKU code uniqueness within this product
+  const existingVariant =
+    await MyGlobal.prisma.shopping_mall_product_variants.findFirst({
+      where: {
+        shopping_mall_product_id: props.productId as string &
+          tags.Format<"uuid">,
+        sku_code: props.body.sku_code,
+      },
+    });
+  if (existingVariant) {
+    throw new HttpException("SKU code already exists for this product", 409);
   }
+  // Create the variant using collector
   const created = await MyGlobal.prisma.shopping_mall_product_variants.create({
-    data: {
-      id: v4(),
-      shopping_mall_product_id: props.productId,
-      sku: "",
-      option_values: "",
-      price_override: 0,
-      stock_quantity: 0,
-      is_active: true,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-    },
+    data: await ShoppingMallProductVariantCollector.collect({
+      body: props.body,
+      product: product,
+    }),
+    ...ShoppingMallProductVariantTransformer.select(),
   });
-  return {
-    id: created.id,
-    shopping_mall_product_id: created.shopping_mall_product_id,
-    sku: created.sku,
-    option_values: created.option_values,
-    price_override: created.price_override,
-    stock_quantity: created.stock_quantity,
-    is_active: created.is_active,
-    created_at: toISOStringSafe(created.created_at),
-    updated_at: toISOStringSafe(created.updated_at),
-  };
+  // Transform to response DTO
+  return await ShoppingMallProductVariantTransformer.transform(created);
 }

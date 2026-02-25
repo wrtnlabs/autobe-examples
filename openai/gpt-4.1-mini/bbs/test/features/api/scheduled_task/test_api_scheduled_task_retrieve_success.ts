@@ -16,36 +16,88 @@ import { authorize_super_administrator_refresh } from "../../../authorize/author
 export async function test_api_scheduled_task_retrieve_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create superAdministrator connection and authorize
+  // 1. Authenticate as superAdministrator
   const superAdminConnection: api.IConnection = { host: connection.host };
-  const auth = await authorize_super_administrator_join(superAdminConnection, {
-    body: {},
-  });
-  superAdminConnection.headers = {
-    Authorization: `Bearer ${auth.token.access}`,
-  };
-  // Generate a valid UUID for scheduledTask ID
-  const validTaskId = typia.random<string & typia.tags.Format<"uuid">>();
-  // Retrieve scheduled task by valid UUID
+  const superAdminAuthorized = await authorize_super_administrator_join(
+    superAdminConnection,
+    {},
+  );
+  superAdminConnection.headers ??= {};
+  superAdminConnection.headers.Authorization =
+    superAdminAuthorized.token.access;
+  // 2. Use the id from simulated scheduled task to guarantee existence
+  const simulatedTask =
+    await api.functional.discussionBoard.superAdministrator.scheduledTasks.at(
+      superAdminConnection,
+      {
+        id: typia.random<string & tags.Format<"uuid">>(),
+      },
+    );
+  typia.assert(simulatedTask);
+  const taskId = simulatedTask.id;
+  // 3. Retrieve the scheduled task by id
   const scheduledTask =
     await api.functional.discussionBoard.superAdministrator.scheduledTasks.at(
       superAdminConnection,
-      { id: validTaskId },
+      {
+        id: taskId,
+      },
     );
+  // 4. Assert the response structure
   typia.assert(scheduledTask);
-  // Test invalid UUID format error
-  await TestValidator.error("invalid UUID format", async () => {
+  // 5. Validate fields presence and types
+  TestValidator.predicate(
+    "id is a valid UUID",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      scheduledTask.id,
+    ),
+  );
+  TestValidator.predicate(
+    "taskName is a non-empty string",
+    typeof scheduledTask.taskName === "string" &&
+      scheduledTask.taskName.length > 0,
+  );
+  TestValidator.predicate(
+    "schedulePattern is a non-empty string",
+    typeof scheduledTask.schedulePattern === "string" &&
+      scheduledTask.schedulePattern.length > 0,
+  );
+  if (scheduledTask.lastRunAt !== null) {
+    TestValidator.predicate(
+      "lastRunAt is ISO date-time string",
+      typeof scheduledTask.lastRunAt === "string",
+    );
+  }
+  TestValidator.predicate(
+    "status is a non-empty string",
+    typeof scheduledTask.status === "string" && scheduledTask.status.length > 0,
+  );
+  TestValidator.predicate(
+    "createdAt is ISO date-time string",
+    typeof scheduledTask.createdAt === "string",
+  );
+  TestValidator.predicate(
+    "updatedAt is ISO date-time string",
+    typeof scheduledTask.updatedAt === "string",
+  );
+  if (scheduledTask.deletedAt !== null) {
+    TestValidator.predicate(
+      "deletedAt is ISO date-time string",
+      typeof scheduledTask.deletedAt === "string",
+    );
+  }
+  // 6. Confirm no data modifications by re-retrieving and comparing
+  const scheduledTaskRecheck =
     await api.functional.discussionBoard.superAdministrator.scheduledTasks.at(
       superAdminConnection,
-      { id: "invalid-uuid" as string & typia.tags.Format<"uuid"> },
+      {
+        id: taskId,
+      },
     );
-  });
-  // Test unauthorized access
-  const unauthorizedConnection: api.IConnection = { host: connection.host };
-  await TestValidator.error("unauthorized access", async () => {
-    await api.functional.discussionBoard.superAdministrator.scheduledTasks.at(
-      unauthorizedConnection,
-      { id: validTaskId },
-    );
-  });
+  typia.assert(scheduledTaskRecheck);
+  TestValidator.equals(
+    "no data modification on recheck",
+    scheduledTask,
+    scheduledTaskRecheck,
+  );
 }

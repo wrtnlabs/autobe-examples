@@ -15,23 +15,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceAuthAdminRefresh(props: {
   body: IEcommerceAdmin.IRefresh;
 }): Promise<IEcommerceAdmin.IAuthorized> {
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "admin";
-  };
+  const { refresh_token } = props.body;
   try {
-    const refreshToken = props.body.refreshToken;
-    decoded = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    const decoded = jwt.verify(refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as typeof decoded;
+    }) as any;
     if (decoded.type !== "admin") {
-      throw new HttpException("Invalid token type", 403);
+      throw new HttpException("Invalid token type", 401);
     }
     const session = await MyGlobal.prisma.ecommerce_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
-        ecommerce_admin_id: decoded.id,
+        admin: decoded.id,
       },
     });
     if (!session) {
@@ -43,33 +38,33 @@ export async function postEcommerceAuthAdminRefresh(props: {
     if (admin.deleted_at !== null) {
       throw new HttpException("Account has been deleted", 403);
     }
-    const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-    const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const token = {
-      access: jwt.sign(
-        {
-          type: decoded.type,
-          id: decoded.id,
-          session_id: decoded.session_id,
-          created_at: toISOStringSafe(new Date()),
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "1h", issuer: "autobe" },
-      ),
-      refresh: jwt.sign(
-        {
-          type: decoded.type,
-          id: decoded.id,
-          session_id: decoded.session_id,
-          tokenType: "refresh",
-          created_at: toISOStringSafe(new Date()),
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "7d", issuer: "autobe" },
-      ),
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    };
+    const accessExpires = toISOStringSafe(
+      new Date(Date.now() + 60 * 60 * 1000),
+    );
+    const refreshExpires = toISOStringSafe(
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    );
+    const accessToken = jwt.sign(
+      {
+        type: "admin",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    );
+    const refreshToken = jwt.sign(
+      {
+        type: "admin",
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    );
     await MyGlobal.prisma.ecommerce_admin_sessions.update({
       where: { id: decoded.session_id },
       data: { expired_at: refreshExpires },
@@ -80,11 +75,17 @@ export async function postEcommerceAuthAdminRefresh(props: {
       created_at: toISOStringSafe(admin.created_at),
       updated_at: toISOStringSafe(admin.updated_at),
       deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-      token: token,
-      catch: {
-        throw: new HttpException("Invalid or expired refresh token", 401),
+      token: {
+        access: accessToken,
+        refresh: refreshToken,
+        expired_at: accessExpires,
+        refreshable_until: refreshExpires,
       },
     };
-  } finally {
+  } catch (error: any) {
+    if (error.status === 401 || error.status === 403) {
+      throw error;
+    }
+    throw new HttpException("Invalid refresh token", 401);
   }
 }

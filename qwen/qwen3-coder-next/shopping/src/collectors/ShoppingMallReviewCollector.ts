@@ -12,14 +12,20 @@ export namespace ShoppingMallReviewCollector {
     body: IShoppingMallReview.ICreate;
     shoppingMallCustomers: IEntity;
     shoppingMallOrderItems: IEntity;
+    shoppingMallProducts: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      rating: (props.body as any).starRating ?? 0,
-      content: (props.body as any).message ?? null,
-      customer: { connect: { id: props.shoppingMallCustomers.id } },
+      rating: props.body.rating,
+      text_content: props.body.textContent ?? null,
+      is_deleted: false,
+      deleted_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
       orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
+      product: { connect: { id: props.shoppingMallProducts.id } },
+      customer: { connect: { id: props.shoppingMallCustomers.id } },
     } satisfies Prisma.shopping_mall_reviewsCreateInput;
   }
 }

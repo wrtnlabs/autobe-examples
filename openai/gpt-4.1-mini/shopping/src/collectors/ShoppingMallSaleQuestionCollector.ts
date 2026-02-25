@@ -9,24 +9,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace ShoppingMallSaleQuestionCollector {
   export async function collect(props: {
-    body: IShoppingMallSaleQuestion.ICreate & {
-      title: string;
-      body: string;
-      status: string;
-    };
+    body: IShoppingMallSaleQuestion.ICreate;
     sale: IEntity;
     customer: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       title: props.body.title,
       body: props.body.body,
-      status: props.body.status,
+      status: "open",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       sale: { connect: { id: props.sale.id } },
       customer: { connect: { id: props.customer.id } },
+      // saleQuestionAnswer is hasOne relation, omitted in create
     } satisfies Prisma.shopping_mall_sale_questionsCreateInput;
   }
 }

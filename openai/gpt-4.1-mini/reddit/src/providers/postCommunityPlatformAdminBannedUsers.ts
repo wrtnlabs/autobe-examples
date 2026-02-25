@@ -1,4 +1,6 @@
 import { ICommunityPlatformBannedUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformBannedUser";
+import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,6 +12,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { CommunityPlatformBannedUserCollector } from "../collectors/CommunityPlatformBannedUserCollector";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { CommunityPlatformBannedUserTransformer } from "../transformers/CommunityPlatformBannedUserTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,62 +20,50 @@ export async function postCommunityPlatformAdminBannedUsers(props: {
   admin: AdminPayload;
   body: ICommunityPlatformBannedUser.ICreate;
 }): Promise<ICommunityPlatformBannedUser> {
-  const user = await MyGlobal.prisma.community_platform_users.findUnique({
-    where: { id: (props.body as any).community_platform_user_id },
+  const userId: string & tags.Format<"uuid"> =
+    props.body.community_platform_user_id;
+  const communityId: string & tags.Format<"uuid"> =
+    props.body.community_platform_community_id;
+  const bannedAt: string & tags.Format<"date-time"> = props.body.banned_at;
+  const unbannedAt: (string & tags.Format<"date-time">) | null | undefined =
+    props.body.unbanned_at ?? null;
+  const reason: string = props.body.reason;
+  // Validate user existence
+  await MyGlobal.prisma.community_platform_users.findUniqueOrThrow({
+    where: { id: userId },
   });
-  if (!user) throw new HttpException("User not found", 400);
-  const community =
-    await MyGlobal.prisma.community_platform_communities.findUnique({
-      where: { id: (props.body as any).community_platform_community_id },
-    });
-  if (!community) throw new HttpException("Community not found", 400);
+  // Validate community existence
+  await MyGlobal.prisma.community_platform_communities.findUniqueOrThrow({
+    where: { id: communityId },
+  });
+  // Check for existing active ban
   const existingBan =
-    await MyGlobal.prisma.community_platform_banned_users.findUnique({
+    await MyGlobal.prisma.community_platform_banned_users.findFirst({
       where: {
-        community_platform_user_id_community_platform_community_id: {
-          community_platform_user_id: (props.body as any)
-            .community_platform_user_id,
-          community_platform_community_id: (props.body as any)
-            .community_platform_community_id,
-        },
+        community_platform_user_id: userId,
+        community_platform_community_id: communityId,
+        deleted_at: null,
+        unbanned_at: null,
       },
     });
-  if (existingBan && existingBan.deleted_at === null) {
-    throw new HttpException("Ban record already exists", 400);
+  if (existingBan) {
+    throw new HttpException("User already banned in this community", 409);
   }
-  // Assign ban reason from request body to pass into collector
-  const createData = await CommunityPlatformBannedUserCollector.collect({
-    body: {
-      ...(props.body as any),
-      reason: (props.body as any).reason ?? "",
-    },
-    user: { id: (props.body as any).community_platform_user_id },
-    community: { id: (props.body as any).community_platform_community_id },
+  // Use a transaction for atomic creation and retrieval
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const data = await CommunityPlatformBannedUserCollector.collect({
+      body: {
+        community_platform_user_id: userId,
+        community_platform_community_id: communityId,
+        banned_at: bannedAt,
+        unbanned_at: unbannedAt,
+        reason,
+      },
+    });
+    const created = await tx.community_platform_banned_users.create({
+      data,
+      ...CommunityPlatformBannedUserTransformer.select(),
+    });
+    return await CommunityPlatformBannedUserTransformer.transform(created);
   });
-  // Perform create operation
-  const created = await MyGlobal.prisma.community_platform_banned_users.create({
-    data: createData,
-  });
-  return {
-    id: created.id,
-    community_platform_user_id: created.community_platform_user_id,
-    community_platform_community_id: created.community_platform_community_id,
-    banned_at: toISOStringSafe(created.banned_at) as string &
-      tags.Format<"date-time">,
-    unbanned_at:
-      created.unbanned_at === null
-        ? null
-        : (toISOStringSafe(created.unbanned_at) as string &
-            tags.Format<"date-time">),
-    reason: created.reason,
-    created_at: toISOStringSafe(created.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(created.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at:
-      created.deleted_at === null
-        ? null
-        : (toISOStringSafe(created.deleted_at) as string &
-            tags.Format<"date-time">),
-  };
 }

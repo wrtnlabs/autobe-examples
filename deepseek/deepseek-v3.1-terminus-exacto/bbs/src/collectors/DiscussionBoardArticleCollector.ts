@@ -10,7 +10,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticle.ICreate;
-    discussionBoardUsers: IEntity;
+    discussionBoardUsers: IEntity; // from authorized actor
+    discussionBoardUserSessions: IEntity; // from authorized session
   }) {
     const id: string = v4();
     return {
@@ -18,14 +19,28 @@ export namespace DiscussionBoardArticleCollector {
       id,
       title: props.body.title,
       content: props.body.content,
-      status: props.body.status,
+      status: "draft",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relations
-      section: { connect: { id: props.body.section_id } },
+      section: { connect: { id: props.body.discussion_board_section_id } },
       author: { connect: { id: props.discussionBoardUsers.id } },
-      // Remove non-existent properties from Prisma schema
+      // Has relations (empty for creation)
+      auditActions: undefined,
+      snapshots: undefined,
+      files: undefined,
+      images: undefined,
+      tags: undefined,
+      viewStat: undefined,
+      favoritedBies: undefined,
+      drafts: undefined,
+      viewStatEvents: undefined,
+      comments: undefined,
+      commentPaginationSetting: undefined,
+      moderationLogs: undefined,
+      moderationHistories: undefined,
+      contentFlags: undefined,
     } satisfies Prisma.discussion_board_articlesCreateInput;
   }
 }

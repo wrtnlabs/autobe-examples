@@ -28,7 +28,7 @@ export namespace IPageIDiscussionBoardComment {
    *
    * Collection of records with pagination information.
    */
-  export type ISummaryReport = {
+  export type ITrending = {
     /**
      * Page information.
      *
@@ -39,8 +39,8 @@ export namespace IPageIDiscussionBoardComment {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IDiscussionBoardComment.ISummaryReport.
+     * @x-autobe-specification List of records of type IDiscussionBoardComment.ITrending.
      */
-    data: IDiscussionBoardComment.ISummaryReport[];
+    data: IDiscussionBoardComment.ITrending[];
   };
 }

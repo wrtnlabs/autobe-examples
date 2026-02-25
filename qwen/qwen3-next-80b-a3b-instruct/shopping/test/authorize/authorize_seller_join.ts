@@ -11,11 +11,12 @@ import typia, { tags } from "typia";
 export async function authorize_seller_join(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallSeller.IJoin;
+    body?: DeepPartial<IShoppingMallSeller.IJoin>;
   },
 ): Promise<IShoppingMallSeller.IAuthorized> {
   const joinInput = {
-    ...props.body,
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
   } satisfies IShoppingMallSeller.IJoin;
   return await api.functional.shoppingMall.auth.seller.join(connection, {
     body: joinInput,

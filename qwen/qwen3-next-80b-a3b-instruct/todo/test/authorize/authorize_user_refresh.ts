@@ -14,7 +14,7 @@ export async function authorize_user_refresh(
     body: ITodoAppUser.IRefresh;
   },
 ): Promise<ITodoAppUser.IAuthorized> {
-  return await api.functional.todoApp.auth.user.refresh(connection, {
+  return await api.functional.todoApp.auth.refresh(connection, {
     body: props.body,
   });
 }

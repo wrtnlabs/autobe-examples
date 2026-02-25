@@ -1,55 +1,131 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IDiscussionBoardCommentModeration } from "../../../../../api/structures/IDiscussionBoardCommentModeration";
 import { IPageIDiscussionBoardCommentModeration } from "../../../../../api/structures/IPageIDiscussionBoardCommentModeration";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { patchDiscussionBoardAdminCommentsModerations } from "../../../../../providers/patchDiscussionBoardAdminCommentsModerations";
+import { getDiscussionBoardAdminCommentsCommentIdModerationsModerationId } from "../../../../../providers/getDiscussionBoardAdminCommentsCommentIdModerationsModerationId";
+import { patchDiscussionBoardAdminCommentsCommentIdModerations } from "../../../../../providers/patchDiscussionBoardAdminCommentsCommentIdModerations";
+import { postDiscussionBoardAdminCommentsCommentIdModerations } from "../../../../../providers/postDiscussionBoardAdminCommentsCommentIdModerations";
 
-@Controller("/discussionBoard/admin/comments/moderations")
+@Controller("/discussionBoard/admin/comments/:commentId/moderations")
 export class DiscussionboardAdminCommentsModerationsController {
   /**
-   * Search and filter comment moderation records with comprehensive filtering capabilities.
+   * Create a new moderation action record for a specific comment.
    *
-   * This API operation provides administrators with advanced search functionality to review comment moderation activities across the platform. Administrators can filter moderation records by various criteria including action type, moderation status, specific administrators, target comments, and date ranges to effectively monitor moderation workflows and maintain audit trails.
+   * This API operation allows administrators to record moderation actions performed on comments within the discussion board platform. Each moderation record captures essential information including the type of action taken, the reason for moderation, and the current status of the moderation process.
    *
-   * The operation supports paginated results with configurable page sizes and sorting options. Each result includes essential moderation information such as the action performed, the administrator who performed it, the target comment, moderation reason, and timestamps for comprehensive audit tracking.
+   * The operation requires authentication as an administrator and validates that the specified comment exists before creating the moderation record. The moderation action types are predefined in the system to ensure consistent categorization and reporting of moderation activities.
    *
-   * Administrators can use this operation to monitor moderation patterns, identify potential issues in moderation practices, and ensure consistent application of community guidelines. The search functionality enables both broad overviews of moderation activities and targeted investigations into specific moderation events.
+   * Administrators can use this operation to maintain a comprehensive audit trail of all moderation activities performed on comments, supporting compliance requirements and providing transparency into community management practices. The moderation records serve as evidence of proper content management and can be reviewed for quality assurance purposes.
    *
-   * Security considerations require that only authenticated administrators can access this operation. The system validates administrator permissions before returning moderation records to ensure proper access control and data protection.
-   *
-   * This operation complements the overall moderation workflow by providing visibility into moderation activities, supporting transparency in content management decisions, and enabling administrators to review and improve moderation practices.
+   * Related operations include viewing moderation history for comments and updating moderation records if actions need to be reversed or modified.
    *
    * @param connection
-   * @param body Search criteria for filtering comment moderation records
+   * @param commentId Unique identifier of the comment being moderated
+   * @param body Details of the moderation action to be recorded
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_comment_moderations table with comprehensive filtering options. Join with discussion_board_admins to include administrator information and discussion_board_comments to include comment context.
+   * @x-autobe-specification Validate that the authenticated user is an administrator. Verify that the specified comment exists in the database. Check that the provided action type is valid according to predefined moderation action types. Create a new moderation record in the discussion_board_comment_moderations table with the provided details. Include administrator ID from authentication context and comment ID from path parameter. Set creation timestamp and initial status if not provided. Return the complete moderation record with generated ID and timestamps.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardCommentModeration.ICreate,
+  ): Promise<IDiscussionBoardCommentModeration> {
+    try {
+      return await postDiscussionBoardAdminCommentsCommentIdModerations({
+        admin,
+        commentId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search and retrieve a paginated list of moderation actions performed on a specific comment.
    *
-   * Apply filters based on the request body parameters: action type, status, administrator ID, comment ID, and date ranges. Use case-insensitive pattern matching for reason text filtering.
+   * This operation provides comprehensive access to the moderation history stored in the discussion_board_comment_moderations table, allowing administrators to review all actions taken including edits, deletions, approvals, and other moderation activities. The search supports filtering by action type, status, date ranges, and administrator information.
    *
-   * Implement pagination with cursor-based or offset-based approach depending on result set size. Sort results by creation timestamp descending by default to show most recent moderations first.
+   * Each moderation record includes details about the action performed, the administrator responsible (via discussion_board_admins relationship), the reason for moderation, and timestamps. This audit trail ensures transparency and accountability in content moderation processes by leveraging the comprehensive audit capabilities of the discussion_board_comment_moderations table.
    *
-   * Validate that the requesting user has administrator privileges before executing the query. Return appropriate error responses for unauthorized access attempts.
+   * The response is paginated to handle potentially extensive moderation histories while maintaining performance. Administrators can use this operation to investigate comment moderation patterns, verify compliance with community guidelines, and review specific moderation decisions documented in the database schema.
    *
-   * Handle edge cases such as empty result sets, invalid filter combinations, and pagination boundaries gracefully with appropriate HTTP status codes and error messages.
+   * This operation directly queries the discussion_board_comment_moderations table with appropriate joins to discussion_board_admins for administrator information, ensuring complete audit trail access as designed in the database schema.
+   *
+   * @param connection
+   * @param commentId UUID identifier of the comment to retrieve moderation records for
+   * @param body Search criteria and pagination parameters for filtering comment moderation records
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Query the discussion_board_comment_moderations table filtered by discussion_board_comment_id matching the path parameter. Join with discussion_board_admins to include administrator information in the response. Support filtering by action_type, status, date range, and administrator details. Implement cursor-based pagination for efficient browsing of potentially large moderation histories. Return summarized moderation records with essential information for auditing purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
     @AdminAuth()
     admin: AdminPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardCommentModeration.IRequest,
   ): Promise<IPageIDiscussionBoardCommentModeration.ISummary> {
     try {
-      return await patchDiscussionBoardAdminCommentsModerations({
+      return await patchDiscussionBoardAdminCommentsCommentIdModerations({
         admin,
+        commentId,
         body,
       });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific comment moderation action.
+   *
+   * This operation returns the complete record of a moderation action performed on a comment, including the action type (such as edit, delete, approve, or reject), the reason for the moderation, the current status of the action, and metadata about when the moderation was performed and by which administrator.
+   *
+   * Administrators can use this endpoint to review specific moderation decisions, investigate compliance with community guidelines, and maintain transparency in the moderation process. The operation requires both the comment ID and moderation ID to ensure proper scope and prevent unauthorized access to moderation records across different comments.
+   *
+   * The response includes comprehensive audit trail information making this suitable for compliance reviews, administrator performance monitoring, and dispute resolution processes related to content moderation activities.
+   *
+   * @param connection
+   * @param commentId ID of the comment that was moderated
+   * @param moderationId ID of the specific moderation record to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Retrieve a specific comment moderation record by its ID, scoped to a particular comment. Query the discussion_board_comment_moderations table using both the commentId and moderationId path parameters to ensure the moderation record belongs to the specified comment. Join with the discussion_board_admins table to fetch administrator information and include the full moderation details including action type, reason, status, and timestamps. Return a comprehensive view of the moderation event for audit purposes.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":moderationId")
+  public async at(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedParam("moderationId")
+    moderationId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardCommentModeration> {
+    try {
+      return await getDiscussionBoardAdminCommentsCommentIdModerationsModerationId(
+        {
+          admin,
+          commentId,
+          moderationId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

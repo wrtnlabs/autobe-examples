@@ -2,50 +2,40 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardArticle } from "../../../../../api/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardArticleTagMapping } from "../../../../../api/structures/IDiscussionBoardArticleTagMapping";
-import { IPageIDiscussionBoardArticleTagMapping } from "../../../../../api/structures/IPageIDiscussionBoardArticleTagMapping";
 import { AdministratorAuth } from "../../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../../decorators/payload/AdministratorPayload";
-import { deleteDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId } from "../../../../../providers/deleteDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId";
 import { getDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId } from "../../../../../providers/getDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId";
 import { patchDiscussionBoardAdministratorArticlesArticleIdTagMappings } from "../../../../../providers/patchDiscussionBoardAdministratorArticlesArticleIdTagMappings";
 
 @Controller("/discussionBoard/administrator/articles/:articleId/tag-mappings")
 export class DiscussionboardAdministratorArticlesTag_mappingsController {
   /**
-   * Update the tag mappings assigned to a specific article. This operation allows clients to set the list of tags associated with the article identified by `articleId`.
+   * Update tag mappings for the specified article identified by the UUID `articleId`. This operation allows authenticated administrators to manage the association of tags with the article, enabling effective categorization and filtering of content within the discussion board.
    *
-   * The article is identified by its unique UUID `articleId` path parameter. The request body expects an object containing an array of tag UUIDs that will be associated with the article.
+   * This endpoint manipulates records in the `discussion_board_article_tag_mappings` table, which represents the many-to-many relationships between articles and tags. The article is uniquely identified by its UUID.
    *
-   * This operation enforces that only the article's author or system administrators can perform this update.
+   * The request body must include arrays of tag UUIDs to be added or removed from the article's tag associations. Validation is performed to ensure tags exist and no duplicate mappings are created.
    *
-   * Upon successful update, the operation returns the updated tag mappings summary information, including tag names and IDs.
+   * Successful execution returns the updated `discussion_board_articles` entity including all related current tag mappings. This enables clients to synchronize the article's tag data.
    *
-   * This operation manipulates the many-to-many relationship represented by `discussion_board_article_tag_mappings`, ensuring data integrity and consistent article tagging.
-   *
-   * Clients can replace the entire tag set; the operation is idempotent regarding tag assignments.
-   *
-   * Related operations:
-   * - GET /articles/{articleId} to fetch article details including current tags
-   * - PATCH /articles/{articleId}/tag-mappings to update tags
-   *
-   * No soft delete behavior applies here as records are permanently replaced or updated.
+   * Authorization is restricted to users with administrator roles. Related operations include retrieval of articles and tags via `GET /discussionBoard/administrator/articles/{articleId}` and creation via `POST /discussionBoard/administrator/articles`.
    *
    * @param connection
-   * @param articleId UUID of the target article to update tag mappings for.
-   * @param body List of tag UUIDs to associate with the article
+   * @param articleId UUID of the target article to update tag mappings.
+   * @param body Request object containing arrays of tag UUIDs to add or remove from the article's tag mappings.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Service implementation must:
-   * - Validate existence of article with `articleId`.
-   * - Check that the caller is either the article author or an administrator.
-   * - Accept a list of tag IDs to associate with the article.
-   * - Remove current tag mappings not in the new list.
-   * - Create new tag mappings for tags not currently associated.
-   * - Perform all DB operations within a transaction to ensure consistency.
-   * - Return the updated tag mappings summary including tag names and IDs.
-   * - Handle edge cases such as empty tag list (remove all tags).
-   * - Return appropriate error if article does not exist or caller unauthorized.
+   * @x-autobe-specification Validate articleId as UUID path parameter.
+   * Validate request body containing arrays of tags to add or remove.
+   * Begin a transaction to update discussion_board_article_tag_mappings:
+   * - For each tag to add, ensure it exists and create mapping if not present.
+   * - For each tag to remove, delete mapping if it exists.
+   * Ensure atomicity to prevent partial updates.
+   * Return the updated discussion_board_articles entity with fully resolved tags.
+   * Handle errors with clear validation messages and forbid unauthorized modification.
+   * Audit changes for traceability as appropriate.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -55,8 +45,8 @@ export class DiscussionboardAdministratorArticlesTag_mappingsController {
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardArticleTagMapping.IPatch,
-  ): Promise<IPageIDiscussionBoardArticleTagMapping.ISummary> {
+    body: IDiscussionBoardArticleTagMapping.IUpdate,
+  ): Promise<IDiscussionBoardArticle> {
     try {
       return await patchDiscussionBoardAdministratorArticlesArticleIdTagMappings(
         {
@@ -72,46 +62,38 @@ export class DiscussionboardAdministratorArticlesTag_mappingsController {
   }
 
   /**
-   * Retrieve detailed information about a specific article-tag mapping.
+   * Retrieve detailed information of a specific tag mapping that links an article to a tag in the discussion board system.
    *
-   * This endpoint fetches the mapping record that links an article and a tag in the discussion board system, enabling clients to understand the tag assignments for articles.
+   * This endpoint allows clients to fetch the exact relationship instance between an article and a tag by specifying both the article ID and the tag mapping ID. It is useful for administrative tasks and content management workflows that require examining how articles are categorized.
    *
-   * Security and Permissions:
-   * - This operation is generally publicly accessible as it exposes tag metadata linked to public articles.
+   * Authorization: This operation is accessible to authorized users who have read permissions in the discussion board system.
    *
-   * Database Entities:
-   * - This operation directly accesses the discussion_board_article_tag_mappings table.
+   * The entity corresponds to the discussion_board_article_tag_mappings table which guarantees uniqueness and referential integrity of article-tag connections.
    *
    * Validation:
-   * - Both articleId and tagMappingId must be valid UUIDs.
-   * - The tag mapping must exist and be linked to the given articleId.
+   * - Both parameters must be valid UUIDs.
+   * - Returns 404 if the tag mapping or article is not found.
    *
    * Related Operations:
-   * - Related to list retrieval of tag mappings under articles.
-   * - Complements article listing and tag filtering operations.
-   *
-   * Expected Behavior:
-   * - Returns 404 if the mapping does not exist or does not belong to the specified article.
-   * - Returns full mapping details including creation, update, and deletion timestamps if applicable.
+   * - Use GET /articles/{articleId} to get article details.
+   * - Use GET /articles/{articleId}/tag-mappings to list all tag mappings of an article.
    *
    * @param connection
-   * @param articleId UUID of the target article associated with the tag mapping.
-   * @param tagMappingId UUID of the tag mapping record to retrieve.
+   * @param articleId UUID of the target article
+   * @param tagMappingId UUID of the tag mapping linking the article to the tag
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the discussion_board_article_tag_mappings table filtering by id = tagMappingId AND discussion_board_article_id = articleId.
-   * Validate that both parameters are UUIDs.
-   * Return the found record including all fields: id, discussion_board_article_id, discussion_board_tag_id, created_at, updated_at, deleted_at.
-   * Respond with 404 Not Found if no matching record is found.
-   * No request body is expected.
-   * Use standard GET HTTP method.
-   *
-   * No complex joins or transactions are needed for this operation.
-   * Use simple, indexed queries for performance.
+   * @x-autobe-specification Fetch the discussion_board_article_tag_mappings record matching tagMappingId and articleId.
+   * Verify the existence of both.
+   * Return full details including article and tag IDs, timestamps, and deletion status.
+   * No request body. No side effects.
+   * Validate UUID format for both path params.
+   * Handle not found errors with appropriate HTTP 404 response.
+   * Apply standard read permission checks.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":tagMappingId")
-  public async atTagMapping(
+  public async at(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("articleId")
@@ -121,72 +103,6 @@ export class DiscussionboardAdministratorArticlesTag_mappingsController {
   ): Promise<IDiscussionBoardArticleTagMapping> {
     try {
       return await getDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId(
-        {
-          administrator,
-          articleId,
-          tagMappingId,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Permanently removes the specified tag mapping from the article, identified by the combination of `articleId` and `tagMappingId`.
-   *
-   * This operation allows authorized users to untag an article by deleting the link between the article and a tag in the `discussion_board_article_tag_mappings` table.
-   *
-   * The `articleId` parameter corresponds to the article's UUID, ensuring that deletion only happens within the context of the specified article.
-   *
-   * The `tagMappingId` parameter uniquely identifies the tag mapping record to remove.
-   *
-   * Authorization headers should ensure the requester is either the article author or an administrator with sufficient permissions.
-   *
-   * Errors will be returned if the tag mapping does not exist or the caller lacks permissions.
-   *
-   * No request body is required, and a successful deletion returns no content.
-   *
-   * Related operations include POST /articles/{articleId}/tag-mappings to add tags, and GET /articles/{articleId}/tag-mappings to list tags for an article.
-   *
-   * @param connection
-   * @param articleId Target article's unique identifier (UUID)
-   * @param tagMappingId The unique identifier of the tag mapping to be deleted (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification To implement this operation, verify the user is authorized to modify the targeted article.
-   *
-   * Perform a database deletion on the `discussion_board_article_tag_mappings` table filtering by `id` = `tagMappingId` and `discussion_board_article_id` = `articleId`.
-   *
-   * Ensure the transaction is atomic to prevent partial data corruption.
-   *
-   * Return HTTP 204 No Content upon successful deletion.
-   *
-   * Return appropriate HTTP 404 Not Found if the tag mapping does not exist.
-   *
-   * Return HTTP 403 Forbidden if the user lacks authorization.
-   *
-   * Log deletion action for audit purposes.
-   *
-   * No request body is needed.
-   *
-   * No response body is returned.
-   *
-   * Path parameters include `articleId` and `tagMappingId`, both as UUID strings with descriptive metadata.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":tagMappingId")
-  public async eraseTagMapping(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("articleId")
-    articleId: string & tags.Format<"uuid">,
-    @TypedParam("tagMappingId")
-    tagMappingId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteDiscussionBoardAdministratorArticlesArticleIdTagMappingsTagMappingId(
         {
           administrator,
           articleId,

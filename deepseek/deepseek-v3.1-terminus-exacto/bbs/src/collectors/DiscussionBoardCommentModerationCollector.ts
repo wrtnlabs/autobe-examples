@@ -10,21 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardCommentModerationCollector {
   export async function collect(props: {
     body: IDiscussionBoardCommentModeration.ICreate;
-    discussionBoardComments: IEntity; // from path parameter commentId
-    discussionBoardAdmins: IEntity; // from authorized actor
-    discussionBoardAdminSessions: IEntity; // from authorized session
+    discussionBoardAdmins: IEntity;
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       action_type: props.body.action_type,
       reason: props.body.reason,
-      status: "completed", // Default status for direct moderation actions
+      status: props.body.status ?? "completed",
       created_at: new Date(),
       updated_at: new Date(),
-      // BelongsTo relations
-      comment: { connect: { id: props.discussionBoardComments.id } },
+      comment: { connect: { id: props.body.discussion_board_comment_id } },
       admin: { connect: { id: props.discussionBoardAdmins.id } },
     } satisfies Prisma.discussion_board_comment_moderationsCreateInput;
   }

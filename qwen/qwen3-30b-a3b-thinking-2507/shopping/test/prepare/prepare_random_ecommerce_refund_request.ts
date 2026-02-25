@@ -9,6 +9,6 @@ export function prepare_random_ecommerce_refund_request(
   input?: DeepPartial<IEcommerceRefundRequest.ICreate>,
 ): IEcommerceRefundRequest.ICreate {
   return {
-    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+    reason: input?.reason ?? RandomGenerator.content({ paragraphs: 2 }),
   };
 }

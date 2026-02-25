@@ -23,6 +23,13 @@ export namespace DiscussionBoardSystemConfigurationTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        performanceMetrics: {
+          select: {
+            id: true,
+            metric_value: true,
+            // Removed recorded_at as it doesn't exist in the schema
+          },
+        } satisfies Prisma.discussion_board_performance_metricsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_system_configurationsFindManyArgs;
   }
@@ -33,7 +40,12 @@ export namespace DiscussionBoardSystemConfigurationTransformer {
       id: input.id,
       config_key: input.config_key,
       config_value: input.config_value,
-      data_type: input.data_type,
+      data_type: input.data_type as
+        | "string"
+        | "integer"
+        | "boolean"
+        | "number"
+        | "json",
       description: input.description,
       category: input.category,
       is_sensitive: input.is_sensitive,

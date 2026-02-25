@@ -18,7 +18,6 @@ export async function authorize_user_join(
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
     display_name: props.body?.display_name ?? RandomGenerator.name(),
-    bio: props.body?.bio ?? RandomGenerator.paragraph({ sentences: 2 }),
   } satisfies IDiscussionBoardUser.IJoin;
   return await api.functional.discussionBoard.auth.user.join(connection, {
     body: joinInput,

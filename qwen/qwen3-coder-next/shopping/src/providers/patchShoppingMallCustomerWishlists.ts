@@ -1,5 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlist";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIShoppingMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallWishlistItem";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlistItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -14,28 +19,68 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallCustomerWishlists(props: {
   customer: CustomerPayload;
-  body: IShoppingMallWishlist.IRequest;
-}): Promise<IShoppingMallWishlist[]> {
-  // Since IShoppingMallWishlist.IRequest is empty in the schema,
-  // this endpoint likely returns all wishlist items for the authenticated customer
-  // rather than performing updates (the PATCH method might be used for filtering/searching).
-  const wishlists = await MyGlobal.prisma.shopping_mall_wishlists.findMany({
+  body: IPageIShoppingMallWishlistItem.IRequest;
+}): Promise<IPageIShoppingMallWishlistItem.ISummary> {
+  const page = props.body.pagination.current ?? 1;
+  const limit = props.body.pagination.limit ?? 20;
+  const skip = (page - 1) * limit;
+  const data = await MyGlobal.prisma.shopping_mall_wishlist_items.findMany({
     where: {
       shopping_mall_customer_id: props.customer.id,
-      deleted_at: null,
     },
-    orderBy: {
-      created_at: "desc",
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    include: {
+      product: {
+        include: {
+          seller: true,
+          category: true,
+        },
+      },
     },
   });
-  // Map database records to response format with proper type conversions
-  return wishlists.map((record) => ({
-    id: record.id as string & tags.Format<"uuid">,
-    customer_id: record.shopping_mall_customer_id as string &
-      tags.Format<"uuid">,
-    product_id: record.shopping_mall_product_id as string & tags.Format<"uuid">,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-  }));
+  const total = await MyGlobal.prisma.shopping_mall_wishlist_items.count({
+    where: {
+      shopping_mall_customer_id: props.customer.id,
+    },
+  });
+  return {
+    data: data.map((item) => ({
+      id: item.id,
+      created_at: toISOStringSafe(item.created_at),
+      product: {
+        id: item.product.id,
+        name: item.product.name,
+        base_price: Number(item.product.base_price),
+        is_deleted: item.product.is_deleted,
+        seller: {
+          id: item.product.seller.id,
+          shop_name: item.product.seller.shop_name,
+          approval_status: item.product.seller.approval_status,
+          created_at: toISOStringSafe(item.product.seller.created_at),
+        },
+        category: {
+          id: item.product.category.id,
+          name: item.product.category.name,
+          description: item.product.category.description,
+          parent: null,
+          subcategory_count: 0,
+        },
+        average_rating: 0,
+      },
+      seller: {
+        id: item.product.seller.id,
+        shop_name: item.product.seller.shop_name,
+        approval_status: item.product.seller.approval_status,
+        created_at: toISOStringSafe(item.product.seller.created_at),
+      },
+    })),
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
+  };
 }

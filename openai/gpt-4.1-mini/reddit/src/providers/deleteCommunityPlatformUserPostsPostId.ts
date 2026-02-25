@@ -18,56 +18,32 @@ export async function deleteCommunityPlatformUserPostsPostId(props: {
   const post = await MyGlobal.prisma.community_platform_posts.findUnique({
     where: { id: props.postId },
     select: {
-      id: true,
       author_user_id: true,
-      author_moderator_id: true,
       community_id: true,
     },
   });
-  if (!post) throw new HttpException("Post not found", 404);
-  const isAuthor = post.author_user_id === props.user.id;
-  let isModerator = false;
-  if (!isAuthor) {
-    const moderatorRecord =
+  if (post === null) {
+    throw new HttpException("Post not found", 404);
+  }
+  if (post.author_user_id !== props.user.id) {
+    const moderator =
       await MyGlobal.prisma.community_platform_community_moderators.findFirst({
         where: {
           community_id: post.community_id,
-          community_moderator_id: props.user.id,
-          role: { in: ["owner", "moderator"] },
-          deleted_at: null,
+          user_id: props.user.id,
         },
       });
-    isModerator = moderatorRecord !== null;
+    if (moderator === null) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
-  if (!isAuthor && !isModerator) {
-    throw new HttpException("Forbidden", 403);
-  }
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    await prisma.community_platform_post_texts.deleteMany({
-      where: { community_platform_post_id: props.postId },
-    });
-    await prisma.community_platform_post_links.deleteMany({
-      where: { community_platform_post_id: props.postId },
-    });
-    await prisma.community_platform_post_images.deleteMany({
-      where: { community_platform_post_id: props.postId },
-    });
-    await prisma.community_platform_post_votes.deleteMany({
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.community_platform_post_votes.deleteMany({
       where: { post_id: props.postId },
     });
-    await prisma.community_platform_posts.delete({
-      where: { id: props.postId },
+    await tx.community_platform_post_comments.deleteMany({
+      where: { post_id: props.postId },
     });
-    await prisma.community_platform_moderation_logs.create({
-      data: {
-        id: v4(),
-        moderator_id: props.user.id,
-        post_id: props.postId,
-        action_type: "delete_post",
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
-      },
-    });
+    await tx.community_platform_posts.delete({ where: { id: props.postId } });
   });
-  return;
 }

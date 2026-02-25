@@ -11,25 +11,17 @@ export namespace DiscussionBoardArticleCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticle.ICreate;
     discussionBoardMembers: IEntity;
-    discussionBoardSections: IEntity;
+    discussionBoardMemberSessions: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      title: props.body.title ?? "",
-      content: props.body.content ?? "",
-      view_count: 0,
+      id: v4(),
+      title: props.body.title,
+      content: props.body.content,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       author: { connect: { id: props.discussionBoardMembers.id } },
-      section: { connect: { id: props.discussionBoardSections.id } },
-      discussion_board_article_files: undefined,
-      discussion_board_article_images: undefined,
-      discussion_board_article_tags: undefined,
-      discussion_board_comments: undefined,
-      discussion_board_search_results: undefined,
-      discussion_board_search_indices: undefined,
+      section: { connect: { id: props.body.section_id } },
     } satisfies Prisma.discussion_board_articlesCreateInput;
   }
 }

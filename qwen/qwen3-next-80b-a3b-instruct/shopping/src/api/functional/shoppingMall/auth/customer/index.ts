@@ -6,21 +6,21 @@ import typia from "typia";
 import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCustomer";
 
 /**
- * This operation handles the registration (join) of a new customer to the shoppingMall platform. During join, the customer must submit an email address and password, both of which are validated against strict requirements: email must conform to RFC 5322 (validated via format: 'email' schema), be unique in the shopping_mall_customers table, and must not be already verified. Password must be at least 8 characters long and contain at least one alphanumeric character and one non-alphanumeric character (institutional password policy). After validation, the system creates a new record in the shopping_mall_customers table with active=false, email_verified=false, and password set to a bcrypt-hashed value. Simultaneously, a verification token is generated (UUID) and stored in the shopping_mall_customer_email_verifications table with an expiry of 24 hours and reference to the new customer ID. Upon successful registration, the system generates a pair of JWT tokens: a short-lived access token (30-minute expiry) for API requests and a long-lived refresh token (30-day expiry) for token renewal. This operation returns the IShoppingMallCustomer.IAuthorized response containing both tokens, along with the newly created customer ID and confirmation that email verification is required. The system does not send an email automatically — that job is handled externally via the system log, which records a 'customer_registration' event for worker consumption. This separation ensures system reliability and avoids network dependency during core authentication. Authentication remains stateless; sessions are managed purely via tokens and not server memory.
+ * Creates a new customer account by validating email uniqueness and storing a cryptographically hashed password. This operation confirms identity through email verification after creation. The registration flow requires the email and password_hash fields from the shopping_mall_customers table. Upon successful join, a session is initiated with access and refresh tokens issued via the shopping_mall_customer_sessions table. This operation is required as the customer actor is a member type with full authentication capability and joins via credential-based registration.
  *
- * The operation strictly adheres to the platform's snapshot principle. Although customer profile modifications (e.g., name, phone) do not require snapshots, the initial registration state of customer email and password is the foundation of trust — therefore, the customer record is immutable from creation (no edits allowed after creation). The email and hashed password are stored as intended, with no temporary or draft state. The token generation process ensures that access token issuance occurs only after database persistence confirms atomic success in both shopping_mall_customers and shopping_mall_customer_email_verifications tables. Any failure results in a full rollback, ensuring no orphaned records are created.
+ * The system MUST validate email uniqueness against the shopping_mall_customers.email field. Passwords are stored as hash in shopping_mall_customers.password_hash and must meet complexity requirements (design implied by schema). Registration creates a new customer record in shopping_mall_customers and an initial session in shopping_mall_customer_sessions. The system must send an email verification token to the provided email, linked to shopping_mall_customer_email_verifications. No pre-authentication state is required; join is the entry point for unauthenticated users.
  *
- * As this is an authentication operation, it does not interact with other APIs like shopping_mall_shipments or shopping_mall_reviews. It must be called before any other protected API. The authorizationActor field is customer, as this endpoint is for customer authentication. Since refresh and login operations are also part of the flow, this operation must be the initial step in any new user journey. The IShoppingMallCustomer.IAuthorized response payload is consistent with all other JWT-based auth operations, allowing a unified client-side token handling strategy across the entire API.
+ * A successful join response returns an IShoppingMallCustomer.IAuthorized object with a new access token (30-min TTL) and refresh token (30-day TTL), both mapped to the generated session record. Invalid registration (duplicate email, weak password) returns 422. The token generation mechanism relies on the JWT infrastructure supplied by authN service, binding to the customer.id.
  *
- * Relevant schema fields referenced: shopping_mall_customers.email (unique), shopping_mall_customers.password_hash, shopping_mall_customers.active, shopping_mall_customers.email_verified, shopping_mall_customer_email_verifications.token, shopping_mall_customer_email_verifications.expires_at.
+ * This operation has no prerequisites as it is the initial entry point for customer identity creation and does not rely on prior system state. All operations downstream depend on this being completed first. Subsequent operations (login, refresh) require this session state.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Request payload for new customer registration. Contains required credentials and validates them against system constraints.
+ * @param props.body Request payload to create a new customer account with email and password.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Handle new customer registration. Validate email format (must be unique), password strength (min 8 chars, alphanumeric), and require email verification. Upon success, generate JWT access token (30 min expiry) and refresh token (30 day expiry). Create customer record with email, hashed password, and active=false flag. Generate and store email verification token in shopping_mall_customer_email_verifications with 24h expiry. Set session flag to authenticating. Return IAuthorized with tokens and customer ID. All data stored in canonical form (lowercase email).
+ * @x-autobe-specification The service layer creates a new shopping_mall_customers record with email and password_hash. It generates a unique verification token, inserts it into shopping_mall_customer_email_verifications with 1-hour expiration, and generates a JWT access token (30-min) and refresh token (30-day). These are stored in shopping_mall_customer_sessions with customer_id linked. Session records include IP and referrer for audit. Response returns IShoppingMallCustomer.IAuthorized with tokens. Validation checks: email format, uniqueness in shopping_mall_customers, password length/complexity. Upon failure, no record is created or token generated. Immutable session audit trail maintained.
  * @path /shoppingMall/auth/customer/join
  * @accessor api.functional.shoppingMall.auth.customer.join
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -54,7 +54,7 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Request payload for new customer registration. Contains required credentials and validates them against system constraints.
+     * Request payload to create a new customer account with email and password.
      */
     body: IShoppingMallCustomer.IJoin;
   };
@@ -103,23 +103,21 @@ export namespace join {
 }
 
 /**
- * This operation authenticates a registered customer using their email and password. The system retrieves the customer record from the shopping_mall_customers table using the provided email (case-insensitive match). Password is validated using bcrypt comparison against stored password_hash. Upon successful validation, the system checks two prerequisites: the account must be active (active=true) and the email must be verified (email_verified=true). If either check fails, a specific error is returned ('account_inactive' or 'email_not_verified') — never a generic 'invalid credentials' to avoid credential enumeration.
+ * Verifies customer credentials by matching submitted email and password against the stored hash in the shopping_mall_customers table. Upon successful authentication, generates a new JWT access token (30-min) and refresh token (30-day) and stores them in shopping_mall_customer_sessions. This operation is required for all member actors to establish an authenticated session after registration. The customer actor type requires login to access protected resources.
  *
- * If authentication succeeds, the system generates a fresh pair of JWT tokens: a short-lived access token valid for 30 minutes and a long-lived refresh token valid for 30 days. These tokens must be cryptographically signed and include the customer ID as subject and the issue time (iat). A corresponding session entry is created in the shopping_mall_customer_sessions table, containing the hashed refresh token (using SHA-256), the client's IP address, device fingerprint (if provided), and both token expiry timestamps. This session record enables token revocation infrastructure in future cases (e.g., forced logout or security breach).
+ * The system validates the email exists in shopping_mall_customers and that the password_hash matches the submitted plaintext password after cryptographic hashing. If both validations pass, it generates new tokens and creates or updates a session record with client IP and referrer context. The operation fails with 401 if credentials mismatch, account is deleted (deleted_at not null), or if server-side technical errors occur.
  *
- * The response returns the IShoppingMallCustomer.IAuthorized payload with the tokens but never any user data such as email, password, or account status, adhering to security best practices. This endpoint is called by the client after login form submission and before any API calls requiring authorization. The method is POST because it modifies server state by creating a session. The request body must be application/json, and the entire operation must execute in a single database transaction to ensure consistency.
+ * The defined IShoppingMallCustomer.ILogin body must contain email and password. The IShoppingMallCustomer.IAuthorized response contains the new tokens and the customer ID associated with this login event. The refresh token enables token renewal without re-authenticating credentials.
  *
- * This endpoint has no prerequisites because authentication is handled by the `authorizationActor` field and security decorator, not through dependency chains. It may be triggered after join, or as a standalone login by existing users. Customers may call this endpoint using the same email as stored (lowercase), regardless of original input case during registration.
- *
- * Relevant schema fields referenced: shopping_mall_customers.email, shopping_mall_customers.password_hash, shopping_mall_customers.active, shopping_mall_customers.email_verified, shopping_mall_customer_sessions.refresh_token_hash, shopping_mall_customer_sessions.ip_address, shopping_mall_customer_sessions.device_fingerprint, shopping_mall_customer_sessions.expires_at.
+ * This operation has no prerequisites as it is the primary entry point for authenticated sessions and does not require prior login or state. It is decoupled from pending email verification — residual verification tokens do not block login if the account exists and credentials are valid.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Credentials payload for authenticating an existing customer. Email and password must be provided in JSON format.
+ * @param props.body Request containing email and plaintext password to authenticate customer and establish session.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Handle customer credential authentication. Validate email/password against shopping_mall_customers table. If validated, generate fresh JWT access token (30 min expiry) and refresh token (30 day expiry). If account is inactive or email not verified, return specific error. If wrong credentials, return 401. Generate new session entry in shopping_mall_customer_sessions table with token hash, IP, device fingerprint, and expiry. Return IAuthorized with new tokens. Never return sensitive fields like password_hash.
+ * @x-autobe-specification When login is called, server looks up customer in shopping_mall_customers by email. Checks if deleted_at is null. Computes hash of submitted password and compares to password_hash. On match, generates new JWTs: access token (30m) and refresh token (30d). Inserts new record in shopping_mall_customer_sessions with IP, referrer, and expiry. Returns IShoppingMallCustomer.IAuthorized. On mismatch or account deleted, returns 401. Invalid input (missing email/password) returns 422. All token issuance is stateless and bound by customer_id. No session cleanup occurs on login—previous sessions remain valid unless manually revoked.
  * @path /shoppingMall/auth/customer/login
  * @accessor api.functional.shoppingMall.auth.customer.login
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -153,7 +151,7 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Credentials payload for authenticating an existing customer. Email and password must be provided in JSON format.
+     * Request containing email and plaintext password to authenticate customer and establish session.
      */
     body: IShoppingMallCustomer.ILogin;
   };
@@ -202,26 +200,21 @@ export namespace login {
 }
 
 /**
- * This operation renews the customer's access token using a previously issued and still-valid refresh token. The client sends the refresh token in the body of a POST request. The system looks up the corresponding session record in the shopping_mall_customer_sessions table by matching the SHA-256 hash of the presented refresh token. It validates that:
- * - The token is not expired (expires_at > now)
- * - The session has not been revoked (is_deleted = false)
- * - The IP address and device fingerprint (if recorded) still match or are flagged as consistent
+ * Renews the access token by validating a previously issued refresh token stored in shopping_mall_customer_sessions. This operation allows the customer to maintain a session without re-entering credentials, reducing exposure to credential harvesting. The refresh token must be valid (not expired, not revoked) and associated with an active customer record. Both tokens persist in the shopping_mall_customer_sessions table for audit and revocation tracking.
  *
- * If validation fails, the system returns 401 Unauthorized with a code indicating token invalidity. If validation succeeds, the system generates a new access token (30-minute expiry) and a new refresh token (30-day expiry). The old refresh token is immediately invalidated by setting is_deleted=true and marking the session as expired. A new session record is created with the new refresh token hash, same customer ID, updated timestamps, and new expiry — ensuring forward secrecy for refresh tokens.
+ * The system accepts a refresh token string and validates it against the shopping_mall_customer_sessions table. If the token exists, its expired_at timestamp is later than current time, and the associated customer record has deleted_at = null, then a new access token is generated and returned. The refresh token itself is not renewed unless explicitly designed (per specification, it remains valid until expiration). This operation cements the stateless JWT architecture—no session persistence beyond token validity.
  *
- * The response contains IShoppingMallCustomer.IAuthorized with the new pair of tokens. The customer ID remains unchanged — the token refresh operation maintains context without requiring re-authentication. This operation is critical for moving from a client-side persistent session (via refresh token) to API-level functionality without prompting the user to re-enter credentials.
+ * The IShoppingMallCustomer.IRefresh request body expects only the refresh token string. The response IShoppingMallCustomer.IAuthorized returns a new access token with 30-minute TTL. The refresh token remains unchanged. If refresh token is invalid, expired, or belongs to a deleted customer, a 401 Unauthorized is returned.
  *
- * No prerequisites are required because refresh is a self-contained authentication renewal. It only succeeds after a prior successful login or join. The method is POST because it changes server state (token regeneration). Devices that do not pass device fingerprint consistency checks may be prompted for additional authentication on refresh (multi-factor optional). The endpoint supports logout by revoking refresh tokens, but there is no 'logout' endpoint — revocation is achieved by client-side token discard and server-side refresh token deletion. This operation supports stateless token rotation architecture.
- *
- * Relevant schema fields referenced: shopping_mall_customer_sessions.refresh_token_hash, shopping_mall_customer_sessions.expires_at, shopping_mall_customer_sessions.is_deleted, shopping_mall_customer_sessions.ip_address, shopping_mall_customer_sessions.device_fingerprint, shopping_mall_customer_sessions.updated_at.
+ * This operation has no prerequisites. It can be called at any time if a valid refresh token exists, even without prior login during the session. It is the mechanism enabling stateless, long-duration authentication without re-authenticating credentials.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Contains only the refresh token to be renewed. The refresh token is a JWT string previously issued after login or join.
+ * @param props.body Request body containing a valid refresh token to renew access token without re-authentication.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Refresh access token using valid refresh token. Validate refresh token against shopping_mall_customer_sessions table. If expired, revoked, or invalid, return 401. If valid, generate new access token (30 min) and return new refresh token (30 day) — replace old one. Update session record with new refresh_token_hash and new expiry. Return IAuthorized with new tokens. Maintain original customer context.
+ * @x-autobe-specification The server looks up the refresh token in shopping_mall_customer_sessions by its value. Checks if expired_at > now and shopping_mall_customers.deleted_at is null for the associated customer_id. If valid, generates new JWT access token (30-min TTL) and returns it in IShoppingMallCustomer.IAuthorized. Refresh token value and expiry remain unchanged. Does NOT update the session entry—session expiration is unchanged. Returns 401 if token not found, expired, or linked to deleted user. No side effects on database other than token issuance. Access token issued without verifying user password. Only token trust is needed.
  * @path /shoppingMall/auth/customer/refresh
  * @accessor api.functional.shoppingMall.auth.customer.refresh
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -255,7 +248,7 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Contains only the refresh token to be renewed. The refresh token is a JWT string previously issued after login or join.
+     * Request body containing a valid refresh token to renew access token without re-authentication.
      */
     body: IShoppingMallCustomer.IRefresh;
   };

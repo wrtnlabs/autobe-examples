@@ -1,97 +1,38 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IPageIShoppingMallProductVariant } from "../../../../api/structures/IPageIShoppingMallProductVariant";
-import { IShoppingMallProductVariant } from "../../../../api/structures/IShoppingMallProductVariant";
-import { getShoppingMallProductsProductIdVariantsVariantId } from "../../../../providers/getShoppingMallProductsProductIdVariantsVariantId";
-import { patchShoppingMallProductsProductIdVariants } from "../../../../providers/patchShoppingMallProductsProductIdVariants";
+import { getShoppingMallProductsProductIdVariants } from "../../../../providers/getShoppingMallProductsProductIdVariants";
 
 @Controller("/shoppingMall/products/:productId/variants")
 export class ShoppingmallProductsVariantsController {
   /**
-   * Retrieve a paginated list of product variants owned by a specific product with advanced filtering and sorting capabilities.
+   * Retrieve all active variants for a specific product.
    *
-   * This endpoint allows customers and administrators to discover all variants of a specified product, filtered by SKU, option values, price range, stock availability, and other criteria. The response includes summary information optimized for list displays, with the full variant details available through individual variant retrieval.
+   * This endpoint provides customers with a complete list of available product configurations (SKUs) including pricing, stock availability, and option values (such as color, size, etc.). Only variants from approved sellers are displayed, and variants that are out of stock or deleted are excluded.
    *
-   * Variants can be filtered by exact SKU match, partial SKU matching, specific option value combinations (e.g., color=red, size=large), price range (using price_override or base_price), and stock availability status (in_stock or out_of_stock). Results can be sorted by price, creation date, update date, or stock level. The pagination system supports cursor-based navigation for large result sets with configurable page sizes.
+   * The response supports product browsing and selection in the shopping cart flow. Customers can compare different variants of the same product based on price and availability. Each variant is identified by a unique SKU code that is used for inventory tracking and order fulfillment.
    *
-   * This operation is essential for product selection interfaces, comparison tools, and administrative oversight of product inventory. When combined with the product detail endpoint, it enables users to explore all available variations of a product with precision.
+   * Variants are immutable in historical orders through snapshots, but this endpoint only returns current active variants. Variant price overrides are displayed if set; otherwise, the product's base price is used as the default.
    *
-   * Related Operations:
-   * - GET /products/{productId} - Retrieve product details
-   * - GET /products/{productId}/variants/{variantId} - Retrieve individual variant details
-   * - PATCH /products/{productId} - Update product metadata
-   * - PATCH /products/{productId}/variants/{variantId}/restock - Restock specific inventory
-   * - PATCH /products/{productId}/variants/{variantId}/update - Update variant details
-   * - DELETE /products/{productId}/variants/{variantId} - Delete a variant
-   * - PATCH /products/{productId}/variants/search - Advanced search (this operation)
+   * This operation does not return information about variant history or snapshots - for that, use the variant snapshot endpoint.
    *
    * @param connection
-   * @param productId The unique identifier of the parent product to which these variants belong. This path parameter scopes the search to variants of a specific product.
-   * @param body Search criteria and ordering parameters for filtering and sorting product variants.
+   * @param productId Unique identifier of the product whose variants are being requested.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_product_variants table with pagination and filtering. Apply filters based on productId provided in path. Apply search filters on SKU pattern matching, option_values JSON field using GIN trigram search, price range (base_price or price_override), and stock availability (stock > 0). Join with shopping_mall_products to include base_price when price_override is null. Apply sorting by specified field and direction. Use cursor-based pagination for large result sets and return total count for pagination interface. Ensure user has permission to read product variants. Return IPageIShoppingMallProductVariant.ISummary structure with variant summary data including id, sku, option_values, price (calculated as price_override or base_price), stock, created_at, updated_at, and deleted_at.
+   * @x-autobe-specification Query shopping_mall_product_variants table filtered by product_id parameter. Join with shopping_mall_products to verify product is active and seller is approved. Exclude variants with deleted_at field set. Only return variants with stock_quantity >= 0. Sort by sku_code ascending. Return sku_code, price, stock_quantity, and option_values (from variant_snapshots if needed).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedParam("productId")
-    productId: string,
-    @TypedBody()
-    body: IShoppingMallProductVariant.IRequest,
-  ): Promise<IPageIShoppingMallProductVariant.ISummary> {
-    try {
-      return await patchShoppingMallProductsProductIdVariants({
-        productId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information about a specific product variant, including its SKU code, option values, pricing, and current stock availability.
-   *
-   * This operation returns the exact state of a product variant as it existed at the time of the request, consistent with shoppingMall's immutable snapshot principle. Customers use this endpoint to verify precisely what they're purchasing before adding the item to their cart, ensuring they understand the variant's specifications, any price adjustments, and available inventory.
-   *
-   * The variant's SKU code serves as the unique identifier for this particular configuration within the product, while the option_values field contains all the selected attributes (such as size, color, material) as a JSON object. The price_override field indicates any deviation from the product's base price, and stock quantity is calculated in real-time based on cumulative inventory_histories records.
-   *
-   * This endpoint is crucial for the shopping experience as it provides the accurate, authoritative data needed for customers to make informed purchasing decisions. The retrieved variant data is used throughout the platform—from product detail pages to cart validation checks—to ensure consistency and transparency.
-   *
-   * All information returned in this response is drawn directly from the current state of the shopping_mall_product_variants table, with the stock quantity computed from cumulative inventory_histories records. There are no caching layers that would delay updates to stock levels or pricing information.
-   *
-   * This operation does not require authentication for basic variant information, but users must be logged in to add variants to cart or proceed with checkout.
-   *
-   * @param connection
-   * @param productId The unique identifier of the parent product that contains this variant.
-   * @param variantId The unique identifier of the product variant to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_product_variants table with the provided variantId and productId as filters.
-   * Join with shopping_mall_products to validate that the variant belongs to the specified product and that the product is not deleted (deleted_at is null).
-   * Join with shopping_mall_sellers to validate that the seller of the product is not suspended or banned.
-   * Calculate the current stock quantity by summing all inventory_histories records for this variant.
-   * Return the complete variant object with its id, product_id, seller_id, sku, option_values, price_override, stock, created_at, updated_at, and deleted_at fields.
-   * Return 404 if the variant doesn't exist, doesn't belong to the product, or the product is deleted.
-   * Return 403 if the seller of the product has been suspended.
-   * Return 200 with variant data on success.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":variantId")
+  @TypedRoute.Get()
   public async at(
     @TypedParam("productId")
-    productId: string,
-    @TypedParam("variantId")
-    variantId: string,
-  ): Promise<IShoppingMallProductVariant> {
+    productId: string & tags.Format<"uuid">,
+  ): Promise<IPageIShoppingMallProductVariant.ISummary> {
     try {
-      return await getShoppingMallProductsProductIdVariantsVariantId({
+      return await getShoppingMallProductsProductIdVariants({
         productId,
-        variantId,
       });
     } catch (error) {
       console.log(error);

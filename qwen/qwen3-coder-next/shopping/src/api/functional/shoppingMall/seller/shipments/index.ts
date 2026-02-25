@@ -6,44 +6,62 @@ import typia from "typia";
 import { IPageIShoppingMallShipment } from "../../../../structures/IPageIShoppingMallShipment";
 import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipment";
 
-export * as tracking_history from "./tracking_history/index";
+export * as items from "./items/index";
+export * as auto_confirmations from "./auto_confirmations/index";
+export * as status from "./status/index";
+export * as tracking from "./tracking/index";
 
 /**
- * Create a new shipment for an order item.
+ * Create a new shipment for seller's order items
  *
- * This operation allows sellers to register a physical shipment for one of their order items. When creating a shipment, sellers provide carrier name and tracking number information, which enables customers to track their deliveries.
+ * This API endpoint allows authorized sellers to create shipping shipments for their customers' orders. A shipment represents a physical package containing one or more order items that will be shipped to the customer.
  *
- * ## Key Features
+ * ## Features and Capabilities
  *
- * - **One-to-One Relationship**: Each order item can have exactly one shipment (enforced by @@unique constraint)
- * - **Seller Association**: Shipments are linked to specific sellers for accountability
- * - **Tracking Integration**: Supports shipping carrier tracking numbers for delivery monitoring
- * - **Delivery Confirmation**: Tracks both customer-confirmed and automatic (14-day) delivery confirmations
+ * - Shipment creation by authenticated sellers only
+ * - Support for bundling multiple order items from the same seller into a single shipment
+ * - Tracking information entry including carrier name and tracking number
+ * - Automatic status updates for linked order items (status changes to "shipped")
+ * - Immutable tracking information once shipment is created (audit trail)
  *
- * ## Security and Permissions
+ * ## Security & Authorization
  *
- * - Only authenticated sellers can create shipments for their own order items
- * - Order items must belong to the authenticated seller
- * - Shipment cannot be created if order item is already shipped
+ * - Only authenticated sellers can create shipments
+ * - Sellers can only create shipments for their own order items
+ * - Order items must have 'paid' status to be eligible for shipment
+ * - Multiple items from the same seller can be combined in one shipment
  *
  * ## Business Rules
  *
- * - Cannot create shipment if order item status is not 'paid'
- * - Cannot create shipment if the same order item already has a shipment (one-to-one)
- * - Creating a shipment automatically updates order item status to 'shipped'
- * - Delivery confirmation happens via customer action or automatically after 14 days
+ * - Each shipment must be associated with a specific order from the authenticated seller
+ * - Tracking information must be valid and complete before shipment creation
+ * - Once created, tracking information cannot be modified (maintains audit trail)
+ * - Order items automatically update to 'shipped' status when shipment is created
+ * - Items can only be included in shipments if they have 'paid' status and belong to the authenticated seller
  *
- * ## Related Operations
+ * ## Relationship to Database Entities
  *
- * - GET /shipments/{id}: Retrieve specific shipment details
- * - PATCH /shipments/{id}: Update shipment information
- * - GET /orders/{id}/shipments: View all shipments for an order
+ * This operation creates records in the `shopping_mall_shipments` table, links them to order items via `shopping_mall_shipment_items`, and updates the status of order items in the `shopping_mall_order_items` table. The operation preserves historical tracking information through the `shopping_mall_shipment_status_logs` table.
  *
  * @param props.connection
- * @param props.body Shipment creation request with carrier and tracking information
+ * @param props.body Shipment creation request with order reference, tracking information, and item selection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new shipment record for an order item. Validate that the order item belongs to the authenticated seller and doesn't already have a shipment. Create the shipment with provided carrier name and tracking number, set status to 'pending', and record the shipping address from the order. Upon successful creation, update the order item status to 'shipped' and record the shipped_at timestamp.
+ * @x-autobe-specification Create shipment for seller's order items with tracking information.
+ *
+ * 1. Validate seller authentication and authorization
+ * 2. Verify all order items belong to the authenticated seller
+ * 3. Check that all order items have status 'paid' (eligible for shipment)
+ * 4. Create shopping_mall_shipments record with:
+ *    - Shopping mall order ID
+ *    - Seller ID
+ *    - Tracking number and carrier
+ *    - Initial status: 'shipped'
+ *    - Shipped at timestamp
+ * 5. Create shopping_mall_shipment_items records linking shipment to order items
+ * 6. Update linked order items status to 'shipped'
+ * 7. Create shopping_mall_shipment_status_logs for status transition
+ * 8. Return complete shipment details with all linked items
  * @path /shoppingMall/seller/shipments
  * @accessor api.functional.shoppingMall.seller.shipments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -73,7 +91,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Shipment creation request with carrier and tracking information
+     * Shipment creation request with order reference, tracking information, and item selection
      */
     body: IShoppingMallShipment.ICreate;
   };
@@ -122,19 +140,21 @@ export namespace create {
 }
 
 /**
- * Search and retrieve paginated list of shipments with filtering and sorting capabilities.
+ * Retrieve a filtered and paginated list of shipments with tracking information.
  *
- * This operation provides comprehensive search functionality for shopping mall shipments, allowing users to filter shipments by multiple criteria including tracking number, carrier name, status, date ranges, and order item relationships.
+ * This operation provides comprehensive search and filtering capabilities for shipments including status filtering, date range filtering, carrier filtering, and tracking number search. Support comprehensive pagination with configurable page sizes and sorting.
  *
- * The system supports advanced filtering on shipping details, enabling precise shipment discovery for sellers managing order fulfillment and administrators overseeing logistics operations. All search criteria are applied with AND logic to narrow down results effectively.
- *
- * Security considerations ensure that customers can only access their own order shipments, sellers can only view shipments for their own products, and administrators have access to all shipments across the platform. The system maintains proper access control throughout the search process.
+ * The system automatically confirms delivery for shipments that have not been manually confirmed after 14 days. Response includes shipment summary information optimized for list displays.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for shipment filtering
+ * @param props.body Search criteria and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_shipments table with comprehensive search filtering and pagination. Apply filters on carrier_name, tracking_number, status, shipped_at, delivered_at, and customer_confirmed_delivery fields. Join with shopping_mall_order_items and shopping_mall_sellers tables for related data. Support sorting by created_at, shipped_at, and delivered_at timestamps. Return paginated results with configurable page size and cursor-based navigation for large result sets.
+ * @x-autobe-specification Query shopping_mall_shipments table with pagination and filtering.
+ * Apply status, carrier, date range filters and tracking number search.
+ * Include shipment items and status logs in response.
+ * Handle automatic delivery confirmation logic for shipments older than 14 days without manual confirmation.
+ * Return cursor-based pagination for large result sets.
  * @path /shoppingMall/seller/shipments
  * @accessor api.functional.shoppingMall.seller.shipments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -164,7 +184,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for shipment filtering
+     * Search criteria and pagination parameters
      */
     body: IShoppingMallShipment.IRequest;
   };
@@ -215,240 +235,25 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific shipment.
  *
- * This operation provides comprehensive shipment details including carrier information, tracking number, current status, and delivery confirmation details for a single shipment record. The shipment represents a physical package sent from a seller to a customer containing one or more order items.
+ * This operation provides comprehensive shipment details including carrier information, tracking number, current status, shipping timestamps, and all order items included in this shipment. It supports the seller's shipping workflow by providing complete visibility into shipment contents and status.
  *
- * The operation supports multiple user roles: sellers can view their own shipments, customers can view shipments containing their orders, and administrators can view all shipments for platform oversight. The response includes complete tracking information for delivery monitoring and customer support purposes.
- *
- * @param props.connection
- * @param props.id Unique identifier of the shipment to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_shipments table by primary key id to retrieve complete shipment details.
- * Join with shopping_mall_order_items to get the ordered item information.
- * Join with shopping_mall_sellers to get seller information.
- * Return complete shipment data including all tracking and delivery information.
- * Implement role-based access control: sellers can only view their own shipments, customers can view shipments containing their orders, admins can view all shipments.
- * @path /shoppingMall/seller/shipments/:id
- * @accessor api.functional.shoppingMall.seller.shipments.getById
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function getById(
-  connection: IConnection,
-  props: getById.Props,
-): Promise<getById.Response> {
-  return true === connection.simulate
-    ? getById.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...getById.METADATA,
-          path: getById.path(props),
-          status: null,
-        },
-      );
-}
-export namespace getById {
-  export type Props = {
-    /**
-     * Unique identifier of the shipment to retrieve
-     */
-    id: string;
-  };
-  export type Response = IShoppingMallShipment;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/shoppingMall/seller/shipments/:id",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/seller/shipments/${encodeURIComponent(props.id ?? "null")}`;
-  export const random = (): IShoppingMallShipment =>
-    typia.random<IShoppingMallShipment>();
-  export const simulate = (
-    connection: IConnection,
-    props: getById.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: getById.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("id")(() => typia.assert(props.id));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update shipment information for a seller's order item.
- *
- * This operation allows sellers to update shipment details including carrier name, tracking number, and shipment status. Sellers can only update shipments that belong to their account, enforced through ownership verification.
- *
- * The system maintains complete shipment status history, tracking when status changes from 'pending' to 'shipped' and finally to 'delivered'. Delivery confirmation can be made either by customer action or automatically after 14 days as per the platform's delivery policy.
- *
- * Security considerations include verifying that the authenticated seller owns the shipment being updated. Sellers cannot modify shipments belonging to other sellers or public shipments.
- *
- * Related operations include GET /sellers/me/shipments/pending for listing pending shipments and GET /shipments/{id} for retrieving shipment details.
+ * The operation returns both the shipment header information and the complete list of order items that are part of this shipment, enabling sellers to verify shipment contents before or after delivery confirmation.
  *
  * @param props.connection
- * @param props.id Shipment ID to update
- * @param props.body Shipment update information including carrier details and tracking
+ * @param props.shipmentId The unique identifier of the shipment to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Update shipment record in shopping_mall_shipments table.
- * Validate that authenticated seller owns the shipment (shopping_mall_sellers_id matches).
- * Update allowed fields: carrier_name, tracking_number, status.
- * Enforce status transitions: pending → shipped → delivered.
- * Record timestamps for status changes (shipped_at, delivered_at).
- * Update customer_confirmed_delivery flag when applicable.
- * Return complete updated shipment with current status history.
- * @path /shoppingMall/seller/shipments/:id
- * @accessor api.functional.shoppingMall.seller.shipments.putById
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function putById(
-  connection: IConnection,
-  props: putById.Props,
-): Promise<putById.Response> {
-  return true === connection.simulate
-    ? putById.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...putById.METADATA,
-          path: putById.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace putById {
-  export type Props = {
-    /**
-     * Shipment ID to update
-     */
-    id: string;
-
-    /**
-     * Shipment update information including carrier details and tracking
-     */
-    body: IShoppingMallShipment.IUpdate;
-  };
-  export type Body = IShoppingMallShipment.IUpdate;
-  export type Response = IShoppingMallShipment;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/seller/shipments/:id",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/shipments/${encodeURIComponent(props.id ?? "null")}`;
-  export const random = (): IShoppingMallShipment =>
-    typia.random<IShoppingMallShipment>();
-  export const simulate = (
-    connection: IConnection,
-    props: putById.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: putById.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("id")(() => typia.assert(props.id));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve detailed information about a specific shipment.
- *
- * This API endpoint provides comprehensive shipment information including tracking details, carrier information, delivery status, and the shipping address. It is designed for both customers to track their orders and sellers to manage their shipments.
- *
- * ## Access Control
- * - Customer users can access shipments containing their own order items
- * - Seller users can access shipments they are responsible for shipping
- * - Admin and Super Admin users can access all shipments for platform oversight
- *
- * ## Shipment Lifecycle
- * The shipment record contains information about the entire delivery process:
- * - Initial creation with shipping address
- * - Tracking information addition (carrier and tracking number)
- * - Delivery confirmation (customer action or automatic after 14 days)
- * - Complete audit trail of shipment status changes
- *
- * ## Related Operations
- * - `PATCH /shipments/{shipmentId}/confirm-delivery` - Confirm delivery of this shipment
- * - `GET /orders/{orderId}/shipments` - Get all shipments for an order
- * - `GET /sellers/me/shipments` - Get shipments for current seller
- *
- * @param props.connection
- * @param props.shipmentId Unique identifier of the shipment to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_shipments table by ID to retrieve complete shipment information.
- * Include joined data for order item and seller information.
- * Return shipment details with tracking information, delivery status, and shipping address.
- * Implement access control based on user role (customer, seller, admin).
- * Return 404 if shipment not found.
+ * @x-autobe-specification Query the shopping_mall_shipments table by id to retrieve shipment details. Join with shopping_mall_shipment_items to get all order items in this shipment. Include related order and seller information for context. Return shipment status, tracking information, and timestamps.
  * @path /shoppingMall/seller/shipments/:shipmentId
- * @accessor api.functional.shoppingMall.seller.shipments.getByShipmentid
+ * @accessor api.functional.shoppingMall.seller.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function getByShipmentid(
+export async function at(
   connection: IConnection,
-  props: getByShipmentid.Props,
-): Promise<getByShipmentid.Response> {
+  props: at.Props,
+): Promise<at.Response> {
   return true === connection.simulate
-    ? getByShipmentid.simulate(connection, props)
+    ? at.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -458,16 +263,16 @@ export async function getByShipmentid(
           },
         },
         {
-          ...getByShipmentid.METADATA,
-          path: getByShipmentid.path(props),
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
       );
 }
-export namespace getByShipmentid {
+export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the shipment to retrieve
+     * The unique identifier of the shipment to retrieve
      */
     shipmentId: string;
   };
@@ -489,118 +294,16 @@ export namespace getByShipmentid {
     typia.random<IShoppingMallShipment>();
   export const simulate = (
     connection: IConnection,
-    props: getByShipmentid.Props,
+    props: at.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: getByShipmentid.path(props),
+      path: at.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("shipmentId")(() => typia.assert(props.shipmentId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update a shipping shipment record with tracking information.
- *
- * This operation allows sellers to update shipment tracking information for orders they are responsible for shipping. It supports updating carrier name, tracking number, and shipment status through a comprehensive tracking workflow that integrates with order management and delivery confirmation systems.
- *
- * The shipment tracking system enables real-time delivery monitoring, automatic delivery confirmation after 14 days if customer doesn't manually confirm, and provides complete audit trail of all shipment status changes. This ensures transparency between sellers, customers, and platform administrators throughout the delivery process.
- *
- * @param props.connection
- * @param props.shipmentId Shipment ID to update
- * @param props.body Shipment update request with tracking information
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Update shipping_mall_shipments table with new tracking information.
- * Apply partial update to carrier_name, tracking_number, status fields.
- * If status changes to 'shipped', set shipped_at to current timestamp.
- * If status changes to 'delivered', set delivered_at to current timestamp.
- * Update updated_at timestamp automatically.
- * Return updated shipment record with all fields.
- * @path /shoppingMall/seller/shipments/:shipmentId
- * @accessor api.functional.shoppingMall.seller.shipments.patchByShipmentid
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function patchByShipmentid(
-  connection: IConnection,
-  props: patchByShipmentid.Props,
-): Promise<patchByShipmentid.Response> {
-  return true === connection.simulate
-    ? patchByShipmentid.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...patchByShipmentid.METADATA,
-          path: patchByShipmentid.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace patchByShipmentid {
-  export type Props = {
-    /**
-     * Shipment ID to update
-     */
-    shipmentId: string;
-
-    /**
-     * Shipment update request with tracking information
-     */
-    body: IShoppingMallShipment.IUpdate;
-  };
-  export type Body = IShoppingMallShipment.IUpdate;
-  export type Response = IShoppingMallShipment;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/shoppingMall/seller/shipments/:shipmentId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/shipments/${encodeURIComponent(props.shipmentId ?? "null")}`;
-  export const random = (): IShoppingMallShipment =>
-    typia.random<IShoppingMallShipment>();
-  export const simulate = (
-    connection: IConnection,
-    props: patchByShipmentid.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: patchByShipmentid.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("shipmentId")(() => typia.assert(props.shipmentId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

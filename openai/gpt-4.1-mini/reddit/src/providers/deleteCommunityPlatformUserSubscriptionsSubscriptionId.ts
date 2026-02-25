@@ -23,7 +23,8 @@ export async function deleteCommunityPlatformUserSubscriptionsSubscriptionId(pro
       },
     );
   if (subscription === null) {
-    throw new HttpException("Subscription not found", 404);
+    // Idempotent delete - if subscription doesn't exist, return immediately
+    return;
   }
   if (subscription.user_id !== props.user.id) {
     throw new HttpException("Forbidden", 403);

@@ -42,11 +42,16 @@ model discussion_board_comments {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   author discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   auditActions discussion_board_audit_logs[]
   snapshots discussion_board_comment_snapshots[]
   moderations discussion_board_comment_moderations[]
@@ -60,6 +65,9 @@ model discussion_board_comments {
   moderationHistories discussion_board_moderated_content_histories[]
   contentFlags discussion_board_content_flags[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
   // spellchecker: ignore-next-line
@@ -123,11 +131,15 @@ model discussion_board_comment_snapshots {
   comment_deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_id, version_number], map: "discussion_board_comment_snapshots_discussion_board_co_0cd7422d")
   // spellchecker: ignore-next-line
@@ -184,11 +196,15 @@ model discussion_board_comment_moderations {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_comment_id, created_at], map: "discussion_board_comment_moderations_discussion_board__0dc791fd")
   // spellchecker: ignore-next-line
@@ -248,11 +264,15 @@ model discussion_board_comment_reports {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   reporter discussion_board_users @relation(fields: [reporter_user_id], references: [id], onDelete: Cascade)
   reportedComment discussion_board_comments @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([reporter_user_id, reported_comment_id], map: "discussion_board_comment_reports_reporter_user_id_repo_75a26d1e")
   @@index([status, created_at])
@@ -299,11 +319,15 @@ model discussion_board_comment_votes {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_user_id, discussion_board_comment_id], map: "discussion_board_comment_votes_discussion_board_user_i_327610bc")
   // spellchecker: ignore-next-line
@@ -347,11 +371,15 @@ model discussion_board_comment_attachments {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   file discussion_board_article_files @relation(fields: [discussion_board_article_file_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_id, discussion_board_article_file_id], map: "discussion_board_comment_attachments_discussion_board__6f1c9c2d")
   // spellchecker: ignore-next-line
@@ -401,11 +429,15 @@ model discussion_board_comment_mentions {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   mentionedUser discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_comment_id, discussion_board_user_id], map: "discussion_board_comment_mentions_discussion_board_com_e33ea88e")
   // spellchecker: ignore-next-line
@@ -470,14 +502,17 @@ model discussion_board_comment_flags {
   resolved_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
   comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
   reviewer discussion_board_admins? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([reviewer_id])
-  
   @@index([comment_id, created_at])
   @@index([user_id, created_at])
   @@index([status, created_at])
@@ -532,14 +567,22 @@ model discussion_board_comment_edit_histories {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   userEditAttribution discussion_board_comment_edit_history_of_users?
   adminEditMapping discussion_board_comment_edit_history_of_admins?
   superAdminEditAttribution discussion_board_comment_edit_history_of_super_admins?
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_id, edit_sequence], map: "discussion_board_comment_edit_histories_discussion_boa_036b8ee8")
   // spellchecker: ignore-next-line
@@ -589,10 +632,14 @@ model discussion_board_comment_pagination_settings {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_article_id], map: "discussion_board_comment_pagination_settings_discussio_3fd45f5a")
   // spellchecker: ignore-next-line
@@ -630,10 +677,14 @@ model discussion_board_comment_rate_limits {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([discussion_board_user_id, submitted_at], map: "discussion_board_comment_rate_limits_discussion_board__1ed62245")
   @@index([submitted_at])
@@ -687,11 +738,15 @@ model discussion_board_comment_edit_history_of_users {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   editHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
   user discussion_board_users @relation(fields: [discussion_board_user_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_users_discuss_0ae592e4")
   // spellchecker: ignore-next-line
@@ -737,11 +792,15 @@ model discussion_board_comment_edit_history_of_admins {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   commentEditHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
   admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_admins_discus_616fb30d")
   // spellchecker: ignore-next-line
@@ -791,11 +850,15 @@ model discussion_board_comment_edit_history_of_super_admins {
   updated_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   commentEditHistory discussion_board_comment_edit_histories @relation(fields: [discussion_board_comment_edit_history_id], references: [id], onDelete: Cascade)
   superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([discussion_board_comment_edit_history_id], map: "discussion_board_comment_edit_history_of_super_admins__116789cf")
   // spellchecker: ignore-next-line

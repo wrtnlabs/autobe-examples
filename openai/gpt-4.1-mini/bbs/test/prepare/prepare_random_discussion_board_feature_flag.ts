@@ -6,8 +6,14 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_feature_flag(
-  input?: DeepPartial<IDiscussionBoardFeatureFlag.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardFeatureFlag.ICreate>,
 ): IDiscussionBoardFeatureFlag.ICreate {
-  input;
-  return {};
+  return {
+    code: input?.code ?? RandomGenerator.alphaNumeric(10),
+    name: input?.name ?? RandomGenerator.name(),
+    description:
+      input?.description ??
+      RandomGenerator.paragraph({ sentences: RandomGenerator.pick([2, 3, 4]) }),
+    enabled: input?.enabled ?? typia.random<boolean>(),
+  };
 }

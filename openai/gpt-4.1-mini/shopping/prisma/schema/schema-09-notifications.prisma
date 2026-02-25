@@ -35,12 +35,16 @@ model shopping_mall_notification_templates {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   userNotifications shopping_mall_user_notifications[]
   notificationDeliveries shopping_mall_notification_deliveries[]
   logs shopping_mall_notification_logs[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([template_code])
 }
 
@@ -100,14 +104,22 @@ model shopping_mall_user_notifications {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   notificationTemplate shopping_mall_notification_templates @relation(fields: [notification_template_id], references: [id], onDelete: Cascade)
   owner shopping_mall_customers @relation(fields: [owner_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   notificationDeliveries shopping_mall_notification_deliveries[]
   logs shopping_mall_notification_logs[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([notification_template_id, owner_id, title, created_at], map: "shopping_mall_user_notifications_notification_template_8b2643a2")
   // spellchecker: ignore-next-line
@@ -159,11 +171,15 @@ model shopping_mall_notification_deliveries {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   userNotification shopping_mall_user_notifications @relation(fields: [shopping_mall_user_notification_id], references: [id], onDelete: Cascade)
   notificationTemplate shopping_mall_notification_templates @relation(fields: [shopping_mall_notification_template_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_user_notification_id, attempted_at], map: "shopping_mall_notification_deliveries_shopping_mall_us_26e6955b")
   // spellchecker: ignore-next-line
@@ -210,11 +226,15 @@ model shopping_mall_notification_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   notificationTemplate shopping_mall_notification_templates? @relation(fields: [notification_template_id], references: [id], onDelete: Cascade)
   userNotification shopping_mall_user_notifications? @relation(fields: [user_notification_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([notification_template_id])
   @@index([user_notification_id])
   @@index([event_type, created_at])
@@ -266,12 +286,16 @@ model shopping_mall_user_notification_preferences {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   customer shopping_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
   seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   administrator shopping_mall_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([customer_id, channel_name, notification_type], map: "shopping_mall_user_notification_preferences_customer_i_2408a795")
   // spellchecker: ignore-next-line

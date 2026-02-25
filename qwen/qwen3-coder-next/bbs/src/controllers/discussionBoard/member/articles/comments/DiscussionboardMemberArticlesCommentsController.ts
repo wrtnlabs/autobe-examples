@@ -2,216 +2,78 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IDiscussionBoardArticleComment } from "../../../../../api/structures/IDiscussionBoardArticleComment";
-import { IPageIDiscussionBoardArticleComment } from "../../../../../api/structures/IPageIDiscussionBoardArticleComment";
+import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussionBoardComment";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
-import { deleteDiscussionBoardMemberArticlesArticleIdCommentsCommentId } from "../../../../../providers/deleteDiscussionBoardMemberArticlesArticleIdCommentsCommentId";
-import { getDiscussionBoardMemberArticlesArticleIdCommentsCommentId } from "../../../../../providers/getDiscussionBoardMemberArticlesArticleIdCommentsCommentId";
-import { patchDiscussionBoardMemberArticlesArticleIdComments } from "../../../../../providers/patchDiscussionBoardMemberArticlesArticleIdComments";
-import { putDiscussionBoardMemberArticlesArticleIdCommentsCommentId } from "../../../../../providers/putDiscussionBoardMemberArticlesArticleIdCommentsCommentId";
+import { postDiscussionBoardMemberArticlesArticleIdComments } from "../../../../../providers/postDiscussionBoardMemberArticlesArticleIdComments";
 
 @Controller("/discussionBoard/member/articles/:articleId/comments")
 export class DiscussionboardMemberArticlesCommentsController {
   /**
-   * Retrieve a paginated list of comments for a specific article with search and filtering capabilities.
+   * Create a new comment on a specific article.
    *
-   * This operation provides advanced comment management functionality allowing users to browse, search, and filter comments on specific articles. The system supports keyword search within comment content, filtering by comment author, and sorting by creation timestamp in both ascending and descending order.
+   * This endpoint allows authenticated members to add comments to existing articles. Each comment must have content and is automatically associated with the current user as the author.
    *
-   * Security considerations: Users can only view comments on articles they have permission to access. Comments are filtered based on the user's permission level - regular members can only view active comments, while administrators can view all comments including soft-deleted ones.
+   * ## Comment Structure
+   *
+   * Comments are stored with the following key properties:
+   * - Content: The actual comment text (minimum 1 character, maximum 5000 characters)
+   * - Article ID: References the article being commented on (provided via path parameter)
+   * - Author ID: Automatically set from the authenticated user's session
+   * - Created timestamp: Automatically recorded when comment is created
+   * - Last updated timestamp: Automatically updated on edits
+   *
+   * ## Validation Rules
+   *
+   * - Content must be at least 1 character
+   * - Content must not exceed 5000 characters
+   * - Article ID from path parameter must reference an existing article
+   * - User must be authenticated to create comments
+   *
+   * ## Error Handling
+   *
+   * - Returns 400 if content validation fails
+   * - Returns 404 if article ID does not exist
+   * - Returns 401 if user is not authenticated
+   * - Returns 403 if user's account is banned
+   *
+   * ## Usage Notes
+   *
+   * - Comments are single-level (no nested replies)
+   * - Each comment is associated with exactly one article
+   * - Comment authors can edit or delete their own comments
+   * - Administrators can edit or delete any comments
    *
    * @param connection
-   * @param articleId Target article's unique identifier
-   * @param body Search criteria and pagination parameters for filtering comments
+   * @param articleId ID of the article to comment on
+   * @param body Comment content for creation
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query discussion_board_comments table with pagination and search filtering.
-   * Join with discussion_board_members table to get author information.
-   * Apply search filters on comment content using LIKE operator for partial matching.
-   * Filter by article_id to get comments for the specified article.
-   * Support sorting by created_at timestamp in ascending or descending order.
-   * Implement pagination with configurable page size and offset.
-   * Handle soft-deleted comments based on user permissions - filter out soft-deleted comments for regular users, include them for administrators.
-   * Return structured response with pagination metadata and comment summary data.
+   * @x-autobe-specification Create a new comment on the specified article.
+   * 1. Extract articleId from path parameters
+   * 2. Retrieve authenticated user from session
+   * 3. Validate article exists by articleId
+   * 4. Validate comment content (1-5000 characters)
+   * 5. Create comment record in database
+   * 6. Increment article's comment count
+   * 7. Return created comment with full details
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Post()
+  public async create(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("articleId")
     articleId: string,
     @TypedBody()
-    body: IDiscussionBoardArticleComment.IRequest,
-  ): Promise<IPageIDiscussionBoardArticleComment.ISummary> {
+    body: IDiscussionBoardComment.ICreate,
+  ): Promise<IDiscussionBoardComment> {
     try {
-      return await patchDiscussionBoardMemberArticlesArticleIdComments({
+      return await postDiscussionBoardMemberArticlesArticleIdComments({
         member,
         articleId,
         body,
       });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information for a specific comment on a discussion board article.
-   *
-   * This endpoint provides comprehensive details for a single comment including the content, creation timestamp, last update timestamp, and author information. The comment belongs to a specific article and is part of the single-level comment structure used throughout the discussion board system.
-   *
-   * The comment entity has the following database fields:
-   * - content: The text content of the comment
-   * - created_at: Timestamp when the comment was created
-   * - updated_at: Timestamp when the comment was last modified
-   * - deleted_at: Soft delete timestamp (null if not deleted)
-   * - discussion_board_member_id: Foreign key to the author
-   * - discussion_board_article_id: Foreign key to the parent article
-   *
-   * Security considerations:
-   * - Comments can be viewed by any authenticated user
-   * - Banned users' comments remain visible but with ban indication
-   * - Super administrators can view all comments regardless of ownership
-   *
-   * Related operations:
-   * - GET /articles/{articleId}/comments: Retrieves paginated list of comments for an article
-   * - POST /articles/{articleId}/comments: Creates a new comment on an article
-   * - PUT /comments/{commentId}: Updates a comment (owner only)
-   * - DELETE /comments/{commentId}: Deletes a comment (owner or admin only)
-   *
-   * @param connection
-   * @param articleId Unique identifier of the comment to retrieve
-   * @param commentId Unique identifier of the article containing the comment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the discussion_board_comments table by comment ID to retrieve the specific comment details.
-   * Validate that the comment exists and is not soft-deleted (deleted_at is null).
-   * Return the complete comment object including all fields and relationships.
-   * Handle both regular and super admin access patterns.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":commentId")
-  public async at(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("articleId")
-    articleId: string,
-    @TypedParam("commentId")
-    commentId: string,
-  ): Promise<IDiscussionBoardArticleComment> {
-    try {
-      return await getDiscussionBoardMemberArticlesArticleIdCommentsCommentId({
-        member,
-        articleId,
-        commentId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing comment on a discussion board article.
-   *
-   * This operation allows authorized users to modify the content of their own comments or comments as an administrator. Only the comment content field can be updated through this endpoint. The operation validates that the user has appropriate permissions based on either being the original comment author or having administrative privileges.
-   *
-   * Security Considerations:
-   * - Users can only update comments they authored
-   * - Administrators can update any comment
-   * - The updated content must meet minimum and maximum length requirements
-   *
-   * @param connection
-   * @param articleId Target article's unique identifier (UUID format)
-   * @param commentId Target comment's unique identifier (UUID format)
-   * @param body Updated comment content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update an existing comment in the discussion_board_comments table.
-   * Find comment by commentId and verify it belongs to the specified articleId.
-   * Check if current user is the comment author or an administrator.
-   * Update only the content field with validated input.
-   * Return updated comment record with all metadata fields.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":commentId")
-  public async update(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("articleId")
-    articleId: string,
-    @TypedParam("commentId")
-    commentId: string,
-    @TypedBody()
-    body: IDiscussionBoardArticleComment.IUpdate,
-  ): Promise<IDiscussionBoardArticleComment> {
-    try {
-      return await putDiscussionBoardMemberArticlesArticleIdCommentsCommentId({
-        member,
-        articleId,
-        commentId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a comment from an article.
-   *
-   * This operation permanently removes a comment from the discussion board. The comment must belong to the specified article, and the user must either be the original author of the comment or have administrator privileges to delete any comment.
-   *
-   * The operation supports the soft delete pattern where comments are marked as deleted rather than permanently removed from the database. This preserves historical data for audit purposes while hiding the comment from normal views. When a comment is soft-deleted, it remains in the database with a `deleted_at` timestamp, and the comment count for the article is decremented.
-   *
-   * ## Authorization
-   *
-   * - **Comment author**: Can delete their own comments
-   * - **Administrator**: Can delete any comment
-   * - **Regular users**: Cannot delete comments they don't own
-   *
-   * ## Behavior
-   *
-   * - Validates that the comment exists and belongs to the specified article
-   * - Checks user authorization before deletion
-   * - Updates the article's comment count after successful deletion
-   * - Supports soft delete pattern with `deleted_at` timestamp
-   * - Returns appropriate error for unauthorized deletion attempts
-   *
-   * @param connection
-   * @param articleId Article's unique identifier
-   * @param commentId Comment's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Execute soft delete on discussion_board_comments table.
-   * 1. Validate comment exists and belongs to specified article
-   * 2. Verify user authorization (comment author or admin)
-   * 3. Update deleted_at timestamp with current time
-   * 4. Decrement article's comment count
-   * 5. Log audit trail for administrative actions
-   * 6. Return no content (204 No Content)
-   * 7. Handle edge cases: comment already deleted, unauthorized access
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":commentId")
-  public async erase(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("articleId")
-    articleId: string,
-    @TypedParam("commentId")
-    commentId: string,
-  ): Promise<void> {
-    try {
-      return await deleteDiscussionBoardMemberArticlesArticleIdCommentsCommentId(
-        {
-          member,
-          articleId,
-          commentId,
-        },
-      );
     } catch (error) {
       console.log(error);
       throw error;

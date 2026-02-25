@@ -13,29 +13,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteTodoAppUserTodosTodoId(props: {
   user: UserPayload;
-  todoId: string;
+  todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify the todo exists and belongs to the requesting user
-  const todo = await MyGlobal.prisma.todo_app_todos.findFirst({
-    where: {
-      id: props.todoId,
-      todo_app_user_id: props.user.id,
-      deleted_at: null,
-    },
-  });
-  if (!todo) {
-    throw new HttpException("Todo not found or access denied", 404);
-  }
-  // Permanently delete associated edit history entries
-  await MyGlobal.prisma.todo_app_todo_edit_histories.deleteMany({
-    where: { todo_id: props.todoId },
-  });
-  // Permanently delete trash entry (if exists)
-  await MyGlobal.prisma.todo_app_todo_trashes.deleteMany({
-    where: { todo_id: props.todoId },
-  });
-  // Permanently delete the todo record
-  await MyGlobal.prisma.todo_app_todos.delete({
-    where: { id: props.todoId },
-  });
-}
+  const { user, todoId } = props;
+} // Soft-delete todo by setting is_deleted=true and deleted_at=current timestamp await MyGlobal.prisma.todo_app_todos.update({ where: { id: todoId, todo_app_user_id: user.id }, data: { is_deleted: true, deleted_at: new Date().toISOString() as string & tags.Format<'date-time'> } }); const deleted = await MyGlobal.prisma.todo_app_todos.findUnique({ where: { id: todoId, todo_app_user_id: user.id } }); if (deleted === null || !deleted.is_deleted) { throw new HttpException('Todo not found or access denied', 404); } }

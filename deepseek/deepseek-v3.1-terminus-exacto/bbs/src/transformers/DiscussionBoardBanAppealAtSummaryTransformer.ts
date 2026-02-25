@@ -24,9 +24,17 @@ export namespace DiscussionBoardBanAppealAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        banRecord: true,
+        banRecord: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_ban_recordsFindManyArgs,
         user: DiscussionBoardUserAtSummaryTransformer.select(),
-        reviewer: true,
+        reviewer: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_adminsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_ban_appealsFindManyArgs;
   }
@@ -38,7 +46,7 @@ export namespace DiscussionBoardBanAppealAtSummaryTransformer {
       appeal_reason: input.appeal_reason,
       status: input.status,
       appealed_at: input.appealed_at.toISOString(),
-      reviewed_at: input.reviewed_at ? input.reviewed_at.toISOString() : null,
+      reviewed_at: input.reviewed_at?.toISOString() ?? null,
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
     };
   }

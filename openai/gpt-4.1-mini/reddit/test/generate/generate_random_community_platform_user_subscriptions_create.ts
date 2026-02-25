@@ -12,7 +12,9 @@ import { prepare_random_community_platform_community_subscription } from "../pre
 export async function generate_random_community_platform_user_subscriptions_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<ICommunityPlatformCommunitySubscription.ICreate>;
+    body?:
+      | DeepPartial<ICommunityPlatformCommunitySubscription.ICreate>
+      | undefined;
   },
 ): Promise<ICommunityPlatformCommunitySubscription> {
   const prepared: ICommunityPlatformCommunitySubscription.ICreate =
@@ -20,7 +22,9 @@ export async function generate_random_community_platform_user_subscriptions_crea
   const result: ICommunityPlatformCommunitySubscription =
     await api.functional.communityPlatform.user.subscriptions.create(
       connection,
-      { body: prepared },
+      {
+        body: prepared,
+      },
     );
   return result;
 }

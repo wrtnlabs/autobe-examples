@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
-import type { IEcommerceCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCart";
 import type { IEcommerceCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCartItem";
-import type { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
+import type { IEcommerceCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCategory";
+import type { IEcommerceProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProduct";
 import type { IEcommerceProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductVariant";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -10,20 +10,17 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { prepare_random_ecommerce_cart } from "../prepare/prepare_random_ecommerce_cart";
+import { prepare_random_ecommerce_cart_item } from "../prepare/prepare_random_ecommerce_cart_item";
 
 export async function generate_random_ecommerce_customer_carts_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEcommerceCart.ICreate>;
+    body?: DeepPartial<IEcommerceCartItem.ICreate> | undefined;
   },
-): Promise<IEcommerceCart> {
-  const prepared: IEcommerceCart.ICreate = prepare_random_ecommerce_cart(
-    props.body,
-  );
-  const result: IEcommerceCart =
-    await api.functional.ecommerce.customer.carts.create(connection, {
-      body: prepared,
-    });
-  return result;
+): Promise<IEcommerceCartItem> {
+  const prepared: IEcommerceCartItem.ICreate =
+    prepare_random_ecommerce_cart_item(props.body);
+  return await api.functional.ecommerce.customer.carts.create(connection, {
+    body: prepared,
+  });
 }

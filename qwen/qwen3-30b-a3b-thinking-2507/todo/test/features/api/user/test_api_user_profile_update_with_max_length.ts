@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { ITodoProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoProfile";
-import type { ITodoUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoUser";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,26 +14,20 @@ import { authorize_user_refresh } from "../../../authorize/authorize_user_refres
 
 export async function test_api_user_profile_update_with_max_length(
   connection: api.IConnection,
-): Promise<void> {
-  // 1. Register user through utility function
+) {
   const userConnection: api.IConnection = { host: connection.host };
-  await authorize_user_join(userConnection, {
-    body: typia.random<ITodoUser.IJoin>(),
-  });
-  // 2. Generate 20-character alphanumeric string
-  const expectedDisplayName: string = RandomGenerator.alphaNumeric(20);
-  // 3. Update user profile
-  const profileResponse: ITodoProfile =
-    await api.functional.todo.user.profile.update(userConnection, {
-      body: {
-        display_name: expectedDisplayName,
-      } satisfies ITodoProfile.IUpdate,
-    });
-  typia.assert(profileResponse);
-  // 4. Verify response has the exactly the same display name
+  await authorize_user_join(userConnection, {});
+  const displayName = RandomGenerator.alphabets(30);
+  const response = await api.functional.todoApp.user.profile.update(
+    userConnection,
+    {
+      body: { display_name: displayName } satisfies ITodoAppUser.IUpdate,
+    },
+  );
+  typia.assert(response);
   TestValidator.equals(
     "display name matches",
-    profileResponse.display_name,
-    expectedDisplayName,
+    response.display_name,
+    displayName,
   );
 }

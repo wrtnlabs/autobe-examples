@@ -11,15 +11,12 @@ export namespace DiscussionBoardBanDurationCollector {
   export async function collect(props: {
     body: IDiscussionBoardBanDuration.ICreate;
   }) {
-    const id: string = v4();
     return {
-      // Primary key and direct mappings
-      id,
+      id: v4(),
       name: props.body.name,
       description: props.body.description,
       duration_hours: props.body.duration_hours,
       is_permanent: props.body.is_permanent,
-      // Timestamps
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

@@ -12,17 +12,17 @@ import { prepare_random_discussion_board_moderation_action_type } from "../prepa
 export async function generate_random_discussion_board_super_admin_moderation_action_types_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardModerationActionType.ICreate>;
+    body?:
+      | DeepPartial<IDiscussionBoardModerationActionType.ICreate>
+      | undefined;
   },
 ): Promise<IDiscussionBoardModerationActionType> {
   const prepared: IDiscussionBoardModerationActionType.ICreate =
     prepare_random_discussion_board_moderation_action_type(props.body);
-  const result: IDiscussionBoardModerationActionType =
-    await api.functional.discussionBoard.superAdmin.moderation_action_types.create(
-      connection,
-      {
-        body: prepared,
-      },
-    );
-  return result;
+  return await api.functional.discussionBoard.superAdmin.moderation_action_types.create(
+    connection,
+    {
+      body: prepared,
+    },
+  );
 }

@@ -1,12 +1,10 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
+import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
 import { IDiscussionBoardModeratedContentHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardModeratedContentHistory";
-import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
 import { IPageIDiscussionBoardModeratedContentHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardModeratedContentHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -25,80 +23,82 @@ export async function patchDiscussionBoardAdminModeratedContentHistories(props: 
   admin: AdminPayload;
   body: IDiscussionBoardModeratedContentHistory.IRequest;
 }): Promise<IPageIDiscussionBoardModeratedContentHistory.ISummary> {
-  // Verify admin authorization
-  const adminRecord = await MyGlobal.prisma.discussion_board_admins.findFirst({
-    where: {
-      id: props.admin.id,
-      deleted_at: null,
-    },
-  });
-  if (!adminRecord) {
-    throw new HttpException("Administrator not found or unauthorized", 403);
-  }
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  // Build comprehensive WHERE conditions
-  const whereInput: Prisma.discussion_board_moderated_content_historiesWhereInput =
-    {
-      ...(props.body.content_type && { content_type: props.body.content_type }),
-      ...(props.body.moderator_admin_id && {
-        moderator_admin_id: props.body.moderator_admin_id,
-      }),
-      ...(props.body.moderator_super_admin_id && {
-        moderator_super_admin_id: props.body.moderator_super_admin_id,
-      }),
-      ...(props.body.moderation_reason && {
-        moderation_reason: {
-          contains: props.body.moderation_reason,
-          mode: "insensitive",
-        },
-      }),
-      ...(props.body.original_content && {
-        original_content: {
-          contains: props.body.original_content,
-          mode: "insensitive",
-        },
-      }),
-      ...(props.body.created_at_start && {
-        created_at: {
-          gte: new Date(props.body.created_at_start),
-        },
-      }),
-      ...(props.body.created_at_end && {
-        created_at: {
-          lte: new Date(props.body.created_at_end),
-        },
-      }),
-      ...(props.body.search && {
-        OR: [
-          {
-            moderation_reason: {
-              contains: props.body.search,
-              mode: "insensitive",
-            },
-          },
-          {
-            original_content: {
-              contains: props.body.search,
-              mode: "insensitive",
-            },
-          },
-        ],
-      }),
-    };
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_moderated_content_histories.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...DiscussionBoardModeratedContentHistoryAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.discussion_board_moderated_content_histories.count({
-      where: whereInput,
-    }),
-  ]);
+  const whereInput: Prisma.discussion_board_moderation_logsWhereInput = {
+    deleted_at: null,
+    admin: { deleted_at: null },
+    superAdmin: { deleted_at: null },
+  };
+  // Apply filters with proper null/undefined handling
+  if (props.body.action_type) {
+    whereInput.action_type = { contains: props.body.action_type };
+  }
+  if (props.body.admin_id !== undefined) {
+    whereInput.admin_id =
+      props.body.admin_id === null ? null : props.body.admin_id;
+  }
+  if (props.body.super_admin_id !== undefined) {
+    whereInput.super_admin_id =
+      props.body.super_admin_id === null ? null : props.body.super_admin_id;
+  }
+  if (props.body.target_article_id !== undefined) {
+    whereInput.target_article_id =
+      props.body.target_article_id === null
+        ? null
+        : props.body.target_article_id;
+  }
+  if (props.body.target_comment_id !== undefined) {
+    whereInput.target_comment_id =
+      props.body.target_comment_id === null
+        ? null
+        : props.body.target_comment_id;
+  }
+  if (props.body.target_user_id !== undefined) {
+    whereInput.target_user_id =
+      props.body.target_user_id === null ? null : props.body.target_user_id;
+  }
+  if (props.body.target_section_id !== undefined) {
+    whereInput.target_section_id =
+      props.body.target_section_id === null
+        ? null
+        : props.body.target_section_id;
+  }
+  if (props.body.status) {
+    whereInput.status = props.body.status;
+  }
+  if (props.body.action_description) {
+    whereInput.action_description = { contains: props.body.action_description };
+  }
+  if (props.body.performed_at_from || props.body.performed_at_to) {
+    whereInput.performed_at = {};
+    if (props.body.performed_at_from) {
+      whereInput.performed_at.gte = props.body.performed_at_from;
+    }
+    if (props.body.performed_at_to) {
+      whereInput.performed_at.lte = props.body.performed_at_to;
+    }
+  }
+  if (props.body.created_at_from || props.body.created_at_to) {
+    whereInput.created_at = {};
+    if (props.body.created_at_from) {
+      whereInput.created_at.gte = props.body.created_at_from;
+    }
+    if (props.body.created_at_to) {
+      whereInput.created_at.lte = props.body.created_at_to;
+    }
+  }
+  const data = await MyGlobal.prisma.discussion_board_moderation_logs.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { performed_at: "desc" },
+    ...DiscussionBoardModeratedContentHistoryAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.discussion_board_moderation_logs.count({
+    where: whereInput,
+  });
   const transformedData = await ArrayUtil.asyncMap(
     data,
     DiscussionBoardModeratedContentHistoryAtSummaryTransformer.transform,

@@ -11,7 +11,25 @@ export function prepare_random_discussion_board_comment_moderation(
   return {
     action_type:
       input?.action_type ??
-      RandomGenerator.pick(["edit", "delete", "approve", "reject"] as const),
+      RandomGenerator.pick([
+        "edit",
+        "delete",
+        "approve",
+        "reject",
+        "flag",
+        "unflag",
+      ] as const),
     reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+    status:
+      input?.status ??
+      RandomGenerator.pick([
+        "pending",
+        "completed",
+        "reversed",
+        "cancelled",
+      ] as const),
+    discussion_board_comment_id:
+      input?.discussion_board_comment_id ??
+      typia.random<string & tags.Format<"uuid">>(),
   };
 }

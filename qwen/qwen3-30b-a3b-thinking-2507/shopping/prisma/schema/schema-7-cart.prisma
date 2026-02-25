@@ -1,0 +1,51 @@
+/// Active cart items for customers, tracking product variants and quantities
+/// with real-time stock validation for purchase intent.
+///
+/// This table manages cart state during checkout process with:
+/// - 1:1 relationship to customers (cart items belong to one customer)
+/// - 1:N relationship to product variants (single variant per cart item)
+/// - Composite unique constraint preventing duplicate item entries per cart
+/// - Full temporal tracking for audit purposes (created_at, updated_at,
+/// deleted_at)
+///
+/// @namespace Cart
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who owns this cart item. {@link ecommerce_customers.id}.
+  customer_id String
+  
+  /// The specific product variant associated with this cart item. {@link
+  /// ecommerce_product_variants.id}.
+  product_variant_id String
+  
+  /// Current quantity of the variant in the cart. Must be at least 1.
+  quantity Int
+  
+  /// Timestamp when the cart item was created.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  variant ecommerce_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_variant_id])
+  @@unique([customer_id, product_variant_id])
+}

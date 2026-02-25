@@ -12,88 +12,65 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postShoppingMallAuthCustomerRefresh(props: {
   body: IShoppingMallCustomer.IRefresh;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // The refresh token is the raw string value of the request body, not a property
-  const refreshTokenInput = props.body as string;
-  // Validate refresh token using jwt.verify
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "customer";
-  };
-  try {
-    decoded = jwt.verify(refreshTokenInput, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  // Validate token type
-  if (decoded.type !== "customer") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  // Validate session existence and status
+  // 1. Verify refresh token existence and validity
   const session =
     await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
-      where: {
-        id: decoded.session_id,
-        shopping_mall_customer_id: decoded.id,
-        is_active: true,
-      },
+      where: { id: props.body.refresh_token }, // Correct field name 'id' from schema
     });
   if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // Validate customer account not deleted
+  // 2. Verify session not expired (expired_at > now)
+  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  const sessionExpiredAt = session.expired_at.toISOString() as string &
+    tags.Format<"date-time">;
+  if (sessionExpiredAt <= now) {
+    throw new HttpException("Refresh token expired", 401);
+  }
+  // 3. Validate customer account is not deleted
   const customer =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-      where: { id: decoded.id },
+      where: { id: session.shopping_mall_customer_id },
     });
   if (customer.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // Generate new tokens with SAME session_id
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-  // Create properly formatted ISO string dates with tags.Format<"date-time">
-  const newAccessExpires = toISOStringSafe(accessExpires);
-  const newRefreshExpires = toISOStringSafe(refreshExpires);
-  // Generate new tokens
-  const accessToken = jwt.sign(
+  // 4. Generate new access token (30-minute TTL)
+  const accessExpires = new Date(
+    Date.now() + 30 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const refreshableUntil = session.expired_at.toISOString() as string &
+    tags.Format<"date-time">;
+  const token = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
+      type: "customer",
+      id: customer.id as string & tags.Format<"uuid">,
+      session_id: session.id as string & tags.Format<"uuid">,
+      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "30m", issuer: "autobe" },
   );
-  const generatedRefreshToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30d", issuer: "autobe" },
-  );
-  // Update session with new expiration
-  await MyGlobal.prisma.shopping_mall_customer_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
-  });
-  // Return authorized response with new tokens
+  // 5. Return authorized response with new access token
   return {
+    id: customer.id as string & tags.Format<"uuid">,
+    email: customer.email,
+    display_name: customer.display_name ?? undefined,
+    phone_number: customer.phone_number ?? undefined,
+    created_at: customer.created_at.toISOString() as string &
+      tags.Format<"date-time">,
+    updated_at: customer.updated_at.toISOString() as string &
+      tags.Format<"date-time">,
     token: {
-      access: accessToken,
-      refresh: generatedRefreshToken,
-      expired_at: newAccessExpires,
-      refreshable_until: newRefreshExpires,
+      access: token,
+      refresh: props.body.refresh_token, // unchanged
+      expired_at: accessExpires,
+      refreshable_until: refreshableUntil,
     },
   };
 }

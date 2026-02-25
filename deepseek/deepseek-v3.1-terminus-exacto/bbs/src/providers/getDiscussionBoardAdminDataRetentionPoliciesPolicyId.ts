@@ -18,15 +18,14 @@ export async function getDiscussionBoardAdminDataRetentionPoliciesPolicyId(props
   policyId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardDataRetentionPolicy> {
   const policy =
-    await MyGlobal.prisma.discussion_board_data_retention_policies.findUnique({
-      where: {
-        id: props.policyId,
-        deleted_at: null, // Only return non-deleted policies
+    await MyGlobal.prisma.discussion_board_data_retention_policies.findUniqueOrThrow(
+      {
+        where: {
+          id: props.policyId,
+          deleted_at: null,
+        },
+        ...DiscussionBoardDataRetentionPolicyTransformer.select(),
       },
-      ...DiscussionBoardDataRetentionPolicyTransformer.select(),
-    });
-  if (!policy) {
-    throw new HttpException("Data retention policy not found", 404);
-  }
+    );
   return await DiscussionBoardDataRetentionPolicyTransformer.transform(policy);
 }

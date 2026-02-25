@@ -10,16 +10,15 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallShipmentItemCollector {
   export async function collect(props: {
     body: IShoppingMallShipmentItem.ICreate;
-    shipmentId: string;
-    orderItemId: string;
   }) {
+    const id = v4();
     return {
-      id: v4(),
+      id,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      shipment: { connect: { id: props.shipmentId } },
-      orderItem: { connect: { id: props.orderItemId } },
+      shipment: { connect: { id: props.body.shipmentId } },
+      orderItem: { connect: { id: props.body.orderItemId } },
     } satisfies Prisma.shopping_mall_shipment_itemsCreateInput;
   }
 }

@@ -15,73 +15,100 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthSuperAdminLogin(props: {
   body: IDiscussionBoardSuperAdmin.ILogin;
 }): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  // 1. Find super admin with password_hash explicitly selected
+  // 1. Find super administrator by email with password_hash
   const admin = await MyGlobal.prisma.discussion_board_super_admins.findFirst({
-    where: { email: (props.body as any).email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
       password_hash: true,
-      display_name: true,
-      bio: true,
+      is_super_admin: true,
+      can_promote_super_admins: true,
       created_at: true,
       updated_at: true,
+      deleted_at: true,
     },
   });
-  if (!admin) throw new HttpException("Invalid credentials", 401);
+  if (!admin) {
+    throw new HttpException("Invalid credentials", 401);
+  }
   // 2. Verify password
   const isValid = await PasswordUtil.verify(
-    (props.body as any).password,
+    props.body.password,
     admin.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 3. Check account is not banned or deleted
-  const adminWithDeletedAt = admin as any as {
-    deleted_at: Date | null;
-  };
-  if (adminWithDeletedAt.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 401);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Create NEW session record
-  const accessExpires = Date.now() + 60 * 60 * 1000; // 1 hour
-  const refreshExpires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+  // 3. Create new session record
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 15 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  );
   const session =
     await MyGlobal.prisma.discussion_board_super_admin_sessions.create({
       data: {
         id: v4() as string & tags.Format<"uuid">,
-        discussion_board_super_admin_id: admin.id as string &
-          tags.Format<"uuid">,
-        token: v4() as string & tags.Format<"uuid">,
-        expires_at: toISOStringSafe(new Date(accessExpires)),
-        ip: (props.body as any).ip ?? "",
-        user_agent: (props.body as any).user_agent ?? null,
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
+        super_admin_id: admin.id as string & tags.Format<"uuid">,
+        access_token: "", // Will be populated after JWT generation
+        refresh_token: "", // Will be populated after JWT generation
+        ip: "0.0.0.0", // Default IP if not provided
+        active: true,
+        created_at: now,
+        expired_at: accessExpires,
+        updated_at: now,
+      },
+      select: {
+        id: true,
+        access_token: true,
+        refresh_token: true,
       },
     });
-  // 5. Generate JWT tokens
-  const tokenPayload = {
-    type: "superAdmin",
+  // 4. Generate JWT tokens
+  const accessPayload = {
+    type: "superadmin",
     id: admin.id,
     session_id: session.id,
-    created_at: toISOStringSafe(new Date()),
+    created_at: now,
   };
-  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
+  const refreshPayload = {
+    type: "superadmin",
+    id: admin.id,
+    session_id: session.id,
+    tokenType: "refresh",
+    created_at: now,
+  };
+  const access_token = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "15m",
     issuer: "autobe",
   });
-  const refreshToken = jwt.sign(
-    { ...tokenPayload, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 6. Return IAuthorized with token
+  const refresh_token = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "30d",
+    issuer: "autobe",
+  });
+  // 5. Update session with generated tokens
+  await MyGlobal.prisma.discussion_board_super_admin_sessions.update({
+    where: { id: session.id },
+    data: {
+      access_token,
+      refresh_token,
+    },
+  });
+  // 6. Build and return response
   return {
+    id: admin.id as string & tags.Format<"uuid">,
+    email: admin.email as string & tags.Format<"email">,
+    isSuperAdmin: admin.is_super_admin,
+    canPromoteSuperAdmins: admin.can_promote_super_admins,
+    createdAt: toISOStringSafe(admin.created_at),
+    updatedAt: toISOStringSafe(admin.updated_at),
+    deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(new Date(accessExpires)),
-      refreshable_until: toISOStringSafe(new Date(refreshExpires)),
+      access: access_token,
+      refresh: refresh_token,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   } satisfies IDiscussionBoardSuperAdmin.IAuthorized;
 }

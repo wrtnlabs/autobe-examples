@@ -6,43 +6,38 @@ import { IDiscussionBoardSectionArchive } from "../../../../../api/structures/ID
 import { IPageIDiscussionBoardSectionArchive } from "../../../../../api/structures/IPageIDiscussionBoardSectionArchive";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminSectionsSectionIdArchivesArchiveId } from "../../../../../providers/getDiscussionBoardAdminSectionsSectionIdArchivesArchiveId";
-import { patchDiscussionBoardAdminSectionsSectionIdArchives } from "../../../../../providers/patchDiscussionBoardAdminSectionsSectionIdArchives";
+import { getDiscussionBoardAdminSectionsArchivesArchiveId } from "../../../../../providers/getDiscussionBoardAdminSectionsArchivesArchiveId";
+import { patchDiscussionBoardAdminSectionsArchives } from "../../../../../providers/patchDiscussionBoardAdminSectionsArchives";
+import { postDiscussionBoardAdminSectionsSectionIdArchives } from "../../../../../providers/postDiscussionBoardAdminSectionsSectionIdArchives";
 
-@Controller("/discussionBoard/admin/sections/:sectionId/archives")
+@Controller("/discussionBoard/admin/sections")
 export class DiscussionboardAdminSectionsArchivesController {
   /**
-   * Search and filter archived section records associated with a specific section.
+   * Search and retrieve archived section records with advanced filtering and pagination capabilities.
    *
-   * This operation provides advanced search capabilities for section archives, allowing administrators to filter archived records by reason text, archival date ranges, and administrator who performed the archival. The search supports text matching on the archival reason field using trigram-based search for flexible pattern matching.
+   * This operation provides administrators with a comprehensive view of section archival history, allowing them to search through archived sections using various criteria including archival reason text, date ranges, responsible administrators, and specific section references. The operation supports full-text search on archival reasons using advanced text matching algorithms for comprehensive record retrieval.
    *
-   * Archived sections represent sections that have been preserved for historical reference while preventing new content creation. Each archive record contains the original section reference, archival timestamp, administrator who performed the archival, and the reason for archival. This operation helps administrators review archival history and manage historical section data.
+   * Administrators can use this operation to review archival decisions, audit historical section management actions, and analyze patterns in section archiving over time. The response includes detailed archival information with references to both the archived section and the administrator who performed the archival action.
    *
-   * The response includes paginated results with summary information optimized for list displays, including archival date, administrator reference, and archival reason preview. This operation is primarily used by administrators for audit and historical reference purposes.
-   *
-   * Related operations include GET /sections/{sectionId} for viewing the current section details and PATCH /sections for searching active sections.
+   * The operation provides robust pagination support for large result sets, ensuring efficient retrieval of archival records while maintaining system performance. Sorting options allow administrators to organize results by archival date, section name, or administrator reference as needed for their review and analysis workflows.
    *
    * @param connection
-   * @param sectionId The ID of the section whose archives to search
-   * @param body Search criteria and pagination parameters for filtering section archives
+   * @param body Search criteria and pagination parameters for archived section records
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query discussion_board_section_archives table filtered by discussion_board_section_id matching the path parameter. Apply search filters on reason field using text search. Support pagination with cursor-based approach. Join with discussion_board_sections to include section information if needed. Return archived records sorted by archived_at descending to show most recent archives first.
+   * @x-autobe-specification Query the discussion_board_section_archives table with comprehensive filtering capabilities. Support pagination with page size and cursor-based navigation. Allow filtering by archive reason (text search using trigram similarity), archived date ranges (from/to), archived_by administrator ID, and discussion_board_section_id reference. Join with discussion_board_sections to include section information if requested. Return results sorted by archived_at descending by default with configurable sorting options. Validate that only administrators can access this operation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
+  @TypedRoute.Patch("archives")
   public async index(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("sectionId")
-    sectionId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardSectionArchive.IRequest,
-  ): Promise<IPageIDiscussionBoardSectionArchive.ISummary> {
+  ): Promise<IPageIDiscussionBoardSectionArchive> {
     try {
-      return await patchDiscussionBoardAdminSectionsSectionIdArchives({
+      return await patchDiscussionBoardAdminSectionsArchives({
         admin,
-        sectionId,
         body,
       });
     } catch (error) {
@@ -52,38 +47,70 @@ export class DiscussionboardAdminSectionsArchivesController {
   }
 
   /**
-   * Retrieve detailed information about a specific section archive record.
+   * Retrieve detailed information for a specific section archive record that tracks archival actions performed by administrators.
    *
-   * This operation allows administrators to view comprehensive information about a particular archived section, including the archival reason, timestamp, and the administrator who performed the archival action. Archived sections preserve historical data while preventing new content creation, maintaining referential integrity with existing articles and comments.
+   * This operation provides access to administrative archive metadata, including the archival timestamp, administrator who performed the archival action, and the reason for archival. The archive record serves as an audit trail entry that references the original section through discussion_board_section_id while maintaining separate lifecycle management.
    *
-   * The response includes the complete archive record with relationships to the original section and the archiving administrator. This information is essential for audit purposes and understanding the administrative decisions behind section archival.
+   * Unlike archived sections which retain content visibility, this operation specifically accesses the administrative archive record that documents the archival event. This metadata is essential for administrative review, audit purposes, and understanding the context behind section archival decisions.
    *
-   * Administrators can use this operation to review archival history, verify archival reasons, and maintain transparency in section management decisions. The operation requires valid section ID and archive ID parameters to ensure precise record retrieval.
-   *
-   * This operation complements the section management system by providing detailed visibility into archival actions, supporting administrative oversight and historical record keeping for the discussion board platform.
+   * Access to this operation requires administrator privileges as it reveals administrative action history and archival rationale. The operation supports comprehensive audit trail management and administrative oversight workflows.
    *
    * @param connection
-   * @param sectionId ID of the section that was archived
-   * @param archiveId ID of the specific archive record to retrieve
+   * @param archiveId Unique identifier of the archive record to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_section_archives table using the provided sectionId and archiveId path parameters. Perform a database lookup with proper validation to ensure both IDs exist and belong to the same archival record. Include related section information from discussion_board_sections table for context. Return the complete archive record with all fields including archival reason, timestamps, and administrator references. Handle cases where the archive record does not exist or the section ID does not match the archive's section reference.
+   * @x-autobe-specification Query the discussion_board_section_archives table by the provided archiveId UUID parameter. Include the related section data from discussion_board_sections table to provide complete context about what was archived. Return the full archive record with all fields including archival reason, timestamp, and administrator information. Validate that the archive record exists and return appropriate error responses for invalid or non-existent archive IDs.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":archiveId")
+  @TypedRoute.Get("archives/:archiveId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("sectionId")
-    sectionId: string & tags.Format<"uuid">,
     @TypedParam("archiveId")
     archiveId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardSectionArchive> {
     try {
-      return await getDiscussionBoardAdminSectionsSectionIdArchivesArchiveId({
+      return await getDiscussionBoardAdminSectionsArchivesArchiveId({
+        admin,
+        archiveId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archive a discussion board section to prevent new content creation while preserving historical data.
+   *
+   * This operation allows administrators to archive sections that are no longer active or need to be preserved for historical purposes. When a section is archived, it retains all existing articles and comments but prevents users from creating new content within the section. The archival process maintains referential integrity while changing the section's status field from 'active' or 'inactive' to 'archived' in the discussion_board_sections table.
+   *
+   * The operation requires administrator privileges and creates a permanent record of the archival action including the reason provided by the administrator. Archived sections with status 'archived' remain accessible for viewing historical content but cannot receive new contributions or modifications. The system maintains audit trails through the archive records for administrative accountability and preserves the section's state at the time of archival.
+   *
+   * Administrators must verify that a section is not already archived before performing this operation, as sections can only be archived once. The operation updates both the discussion_board_sections status and creates a corresponding discussion_board_section_archives record for audit purposes.
+   *
+   * @param connection
+   * @param sectionId UUID identifier of the section to be archived
+   * @param body Archival reason and configuration
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Validate that the section exists and is not already archived. Check administrator permissions to ensure only authorized users can archive sections. Create a new record in discussion_board_section_archives table with the provided reason, section ID, administrator ID, and current timestamp. Update the section's status to 'archived' in discussion_board_sections table. Ensure proper transaction handling to maintain data consistency between the section and archive tables.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":sectionId/archives")
+  public async create(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("sectionId")
+    sectionId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardSectionArchive.ICreate,
+  ): Promise<IDiscussionBoardSectionArchive> {
+    try {
+      return await postDiscussionBoardAdminSectionsSectionIdArchives({
         admin,
         sectionId,
-        archiveId,
+        body,
       });
     } catch (error) {
       console.log(error);

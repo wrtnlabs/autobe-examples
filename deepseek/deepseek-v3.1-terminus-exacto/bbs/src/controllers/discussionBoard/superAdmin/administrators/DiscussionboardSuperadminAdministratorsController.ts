@@ -2,37 +2,186 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardAdministratorGradeChange } from "../../../../api/structures/IDiscussionBoardAdministratorGradeChange";
 import { IDiscussionBoardAdministratorPromotionApproval } from "../../../../api/structures/IDiscussionBoardAdministratorPromotionApproval";
+import { IDiscussionBoardSuperAdmin } from "../../../../api/structures/IDiscussionBoardSuperAdmin";
 import { IPageIDiscussionBoardAdministratorPromotionApproval } from "../../../../api/structures/IPageIDiscussionBoardAdministratorPromotionApproval";
-import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { deleteDiscussionBoardSuperAdminAdministratorsAdministratorId } from "../../../../providers/deleteDiscussionBoardSuperAdminAdministratorsAdministratorId";
 import { getDiscussionBoardSuperAdminAdministratorsAdministratorId } from "../../../../providers/getDiscussionBoardSuperAdminAdministratorsAdministratorId";
 import { patchDiscussionBoardSuperAdminAdministrators } from "../../../../providers/patchDiscussionBoardSuperAdminAdministrators";
+import { postDiscussionBoardSuperAdminAdministrators } from "../../../../providers/postDiscussionBoardSuperAdminAdministrators";
+import { postDiscussionBoardSuperAdminAdministratorsAdministratorIdDemote } from "../../../../providers/postDiscussionBoardSuperAdminAdministratorsAdministratorIdDemote";
+import { postDiscussionBoardSuperAdminAdministratorsAdministratorIdPromote } from "../../../../providers/postDiscussionBoardSuperAdminAdministratorsAdministratorIdPromote";
 import { putDiscussionBoardSuperAdminAdministratorsAdministratorId } from "../../../../providers/putDiscussionBoardSuperAdminAdministratorsAdministratorId";
 
 @Controller("/discussionBoard/superAdmin/administrators")
 export class DiscussionboardSuperadminAdministratorsController {
   /**
-   * Search and filter administrator records with comprehensive pagination and filtering capabilities.
+   * Retrieve detailed information about a specific administrator account.
    *
-   * This operation provides super administrators with the ability to search and browse administrator records across the platform. Super administrators can filter by grade level (regular or super administrator), active status, promotion date ranges, and search by display name patterns. The operation supports comprehensive pagination for efficient browsing of administrator lists.
+   * This operation provides comprehensive administrator data including the user's base identity, current administrator grade level (regular or super), promotion history, and authentication status. The response includes references to both regular and super administrator authentication tables as applicable based on the current grade.
    *
-   * The response includes administrator summary information including grade level, active status, promotion date, and user display name. This operation is essential for administrator management workflows, enabling super administrators to review administrator assignments, track promotion history, and manage administrator hierarchy according to the platform's governance policies.
-   *
-   * Security considerations: This operation requires super administrator-level authentication and authorization. Only authenticated super administrators can access administrator search functionality. The system validates the requesting super administrator's permissions before returning any administrator records.
+   * Access to this operation is restricted to authorized administrators and super administrators. The system maintains a hierarchical administrator structure where super administrators have elevated privileges including the ability to promote regular administrators and demote other super administrators, while regular administrators have section management and content moderation capabilities.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering administrator records
+   * @param administratorId Unique identifier of the administrator to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_administrators table with join to discussion_board_admins and discussion_board_super_admins for authentication details. Apply filters based on grade (regular/super), active status, promotion date ranges, and user display name patterns. Join with discussion_board_users to get user profile information. Implement pagination with cursor-based or offset-based approach. Ensure proper authorization checks - only administrators should be able to access this endpoint.
+   * @x-autobe-specification Fetch administrator record by ID from discussion_board_administrators table. Include user identity reference, admin authentication references, grade level, promotion timestamp, and status. Validation: Ensure administrator exists and ID is valid UUID format. Security: Should be accessible only to authorized administrators or super administrators.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":administratorId")
+  public async at(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("administratorId")
+    administratorId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardSuperAdmin> {
+    try {
+      return await getDiscussionBoardSuperAdminAdministratorsAdministratorId({
+        superAdmin,
+        administratorId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an administrator's grade level with comprehensive audit trail support.
+   *
+   * This operation allows super administrators to promote regular administrators to super administrator status or demote other super administrators to regular administrator. The operation enforces the administrator hierarchy system by validating that only super administrators can perform grade changes and preventing self-demotion for security reasons.
+   *
+   * Security validation ensures the requesting administrator is a super administrator and not attempting to demote themselves. The operation creates a detailed audit trail in the discussion_board_administrator_grade_changes table, recording the previous grade, new grade, reason for change, and the administrator who performed the action. This maintains full transparency and accountability in administrator management operations.
+   *
+   * The response includes the updated administrator record with the new grade level and timestamps reflecting the change. Related authentication records in discussion_board_admins and discussion_board_super_admins tables are updated accordingly to reflect the new privilege level. The operation supports the platform's governance model where administrator privileges are carefully managed and tracked.
+   *
+   * @param connection
+   * @param administratorId Unique identifier of the administrator to update
+   * @param body Grade change request with new grade level and change justification
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Validate that the requesting administrator is a super administrator with grade change privileges. Check if the target administrator ID matches the requesting administrator ID to prevent self-demotion. Verify the current grade of the target administrator and validate the requested grade transition is valid (regular→super or super→regular).
+   *
+   * Update the administrator's grade in the discussion_board_administrators table, set the grade_changed_at timestamp, and update the appropriate authentication table reference (admin_id or super_admin_id). Create an audit trail record in discussion_board_administrator_grade_changes with the previous grade, new grade, change reason, and performing administrator. Handle edge cases where the administrator doesn't exist, the grade change is invalid, or authorization fails.
+   *
+   * Return the updated administrator record with the new grade level and updated timestamps. Ensure all database operations are performed within a transaction to maintain data consistency across the administrator record and audit trail tables.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":administratorId")
+  public async update(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("administratorId")
+    administratorId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardSuperAdmin.IUpdate,
+  ): Promise<IDiscussionBoardSuperAdmin> {
+    try {
+      return await putDiscussionBoardSuperAdminAdministratorsAdministratorId({
+        superAdmin,
+        administratorId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Soft deletes an administrator assignment from the platform by marking it as deleted while preserving the record for audit purposes. This operation removes the administrator's privileges and cleans up associated authentication records based on the administrator grade. Regular administrators have their admin authentication records removed, while super administrators have their super admin authentication records removed. The administrator assignment record is preserved with a deletion timestamp for audit trail purposes.
+   *
+   * This operation requires super administrator privileges and includes validation to prevent deletion of the last remaining super administrator to maintain system governance. The deletion process maintains referential integrity by handling all related authentication records appropriately based on the administrator's grade level.
+   *
+   * Administrators being deleted will lose all system privileges immediately upon successful deletion. Their user account remains intact but loses administrative capabilities. This operation preserves historical records for compliance and audit requirements while effectively removing administrative access.
+   *
+   * @param connection
+   * @param administratorId The unique identifier of the administrator assignment to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Handle administrator deletion by first verifying the target administrator exists and is not the last super administrator. Check the administrator's grade to determine which authentication record needs cleanup. For regular administrators (grade 'regular'), delete the corresponding admin_id record from discussion_board_admins. For super administrators (grade 'super'), delete the corresponding super_admin_id record from discussion_board_super_admins. Perform soft deletion on the discussion_board_administrators record by setting deleted_at timestamp. Preserve the record for audit purposes while removing active status. Handle all deletions within a transaction to maintain data integrity. Validate that the requesting user has appropriate super administrator privileges before proceeding. Return the deleted administrator details for confirmation.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":administratorId")
+  public async erase(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedParam("administratorId")
+    administratorId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteDiscussionBoardSuperAdminAdministratorsAdministratorId(
+        {
+          superAdmin,
+          administratorId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new administrator assignment for a user, establishing the appropriate authentication linkage based on the specified grade level.
+   *
+   * This operation creates an administrator record in the discussion_board_administrators table that links a regular user to either regular administrator or super administrator privileges. The system automatically handles the creation of appropriate authentication records in the corresponding discussion_board_admins table (for grade 'regular') or discussion_board_super_admins table (for grade 'super') based on the specified grade level.
+   *
+   * Administrator assignments require proper authorization checks to ensure only super administrators can create new administrator assignments. The operation validates that the target user exists in the discussion_board_users table and is not already assigned administrator privileges (no existing record in discussion_board_administrators for the user_id).
+   *
+   * When creating a regular administrator (grade: 'regular'), the system creates a corresponding record in the discussion_board_admins table with default credentials. For super administrators (grade: 'super'), a record is created in the discussion_board_super_admins table. The operation maintains referential integrity across all related tables through proper foreign key relationships.
+   *
+   * The created administrator record includes timestamps for promotion and grade changes, ensuring a complete audit trail of administrator assignments. This supports the hierarchical administrator system where super administrators manage regular administrator assignments.
+   *
+   * @param connection
+   * @param body Administrator creation parameters including user ID and grade level
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Create a new administrator assignment by first validating the requesting user has super administrator privileges. Check if the target user exists and does not already have an administrator assignment. Based on the grade parameter, create the appropriate authentication record in either discussion_board_admins (for regular) or discussion_board_super_admins (for super). Then create the administrator record in discussion_board_administrators linking to the user and the newly created authentication record. Set promotion timestamp and initialize grade change tracking. Return the complete administrator record with all relationships populated.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
+    @TypedBody()
+    body: IDiscussionBoardSuperAdmin.ICreate,
+  ): Promise<IDiscussionBoardSuperAdmin> {
+    try {
+      return await postDiscussionBoardSuperAdminAdministrators({
+        superAdmin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search and retrieve administrator promotion requests with advanced filtering and pagination capabilities.
+   *
+   * This operation provides super administrators with comprehensive access to the promotion request workflow, allowing them to review pending requests, track approved promotions, and audit historical decisions. Filters support status-based searching (pending for review, approved for successful promotions, rejected for denied requests), user-specific requests, and timeframe constraints for both submission and decision dates.
+   *
+   * The response includes summary information optimized for administrative review, showing request status, user information, submission timestamps, and decision details when applicable. This supports the hierarchical administrator system by enabling super administrators to manage the promotion process efficiently while maintaining complete audit trails of all promotion activities.
+   *
+   * Access to this operation is restricted to super administrators only, ensuring proper governance of the administrator promotion workflow as specified in the platform requirements.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for filtering administrator promotion requests
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Query the discussion_board_administrator_promotion_requests table with pagination and filtering capabilities. Apply filters based on status (pending, approved, rejected), user ID, date ranges for submission or decision, and reviewer ID. Join with discussion_board_users table to include user display names in the response. Implement cursor-based pagination for large result sets. Only super administrators should have access to this operation for security. Return comprehensive summary information including request status, submission timeline, and decision details when applicable.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IDiscussionBoardAdministratorPromotionApproval.IRequest,
   ): Promise<IPageIDiscussionBoardAdministratorPromotionApproval.ISummary> {
@@ -48,75 +197,39 @@ export class DiscussionboardSuperadminAdministratorsController {
   }
 
   /**
-   * Retrieve detailed information about a specific administrator by their unique identifier.
+   * Promotes a regular administrator to super administrator status.
    *
-   * This operation provides comprehensive administrator information including assignment details, user profile data, and authentication information based on the administrator's current grade level. The response includes the administrator's display name, email, biography, current grade level (regular or super administrator), promotion history, and assignment status.
+   * This operation allows super administrators to elevate regular administrators to super administrator privileges. The promotion permanently grants full system-wide administrative capabilities including the ability to promote/demote other administrators and manage all platform functions. Promoted administrators gain access to sensitive system operations and hierarchical management features.
    *
-   * Administrators can view their own information and super administrators can view information for any administrator. Regular administrators can only view information for administrators they have permission to manage. The operation ensures proper authorization checks are performed before returning sensitive administrator data.
+   * Only authenticated super administrators can perform this operation, and it can only be applied to administrators currently at the 'regular' grade level. The operation maintains comprehensive audit trails including timestamp recording, promoting administrator identification, and confirmation tracking for compliance and accountability purposes.
    *
-   * The response includes both the administrator assignment record from discussion_board_administrators and the corresponding user profile information from discussion_board_users, providing a complete view of the administrator's identity and privileges within the platform.
-   *
-   * @param connection
-   * @param administratorId Unique identifier of the administrator to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_administrators table by the provided administratorId parameter to retrieve the administrator assignment record. Include the related user record from discussion_board_users to get profile information like display name and biography. Based on the current grade level, include the appropriate authentication information from either discussion_board_admins (for regular administrators) or discussion_board_super_admins (for super administrators).
-   *
-   * Validate that the administrator exists and is currently active. Perform authorization checks to ensure the requesting user has permission to view this administrator's information. Return a comprehensive DTO that combines assignment details, user profile information, and authentication details based on the current grade level.
-   *
-   * Handle edge cases such as inactive administrator assignments, missing related records, and authorization failures with appropriate error responses.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":administratorId")
-  public async at(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
-    @TypedParam("administratorId")
-    administratorId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardAdministratorPromotionApproval> {
-    try {
-      return await getDiscussionBoardSuperAdminAdministratorsAdministratorId({
-        superAdmin,
-        administratorId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing administrator's grade level and active status.
-   *
-   * This API operation allows super administrators to modify the grade level and active status of administrator accounts. The grade field controls whether an administrator has regular or super administrator privileges, while the is_active field determines if the administrator assignment is currently valid.
-   *
-   * When changing an administrator's grade level, the system automatically updates the grade_changed_at timestamp to track when the privilege level was modified. This operation requires super administrator privileges and maintains the hierarchical administrator system where super administrators can promote regular administrators or demote other super administrators (but not themselves).
-   *
-   * The operation validates that grade changes are performed correctly and maintains referential integrity between the administrator record and the corresponding authentication tables (discussion_board_admins for regular administrators, discussion_board_super_admins for super administrators).
+   * Security validation ensures the requesting user has appropriate privileges and that the target administrator is eligible for promotion. The operation preserves the hierarchical administrator system structure defined in the platform requirements while enabling proper grade escalation workflows.
    *
    * @param connection
-   * @param administratorId Unique identifier of the administrator to update
-   * @param body Administrator update data including grade level and active status
+   * @param administratorId Unique identifier of the administrator to promote
+   * @param body Promotion confirmation and metadata for audit trail
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update an existing administrator record with the provided data. Verify the administratorId exists in the discussion_board_administrators table. Check that the requesting user is a super administrator with permission to modify administrator records. Validate the grade field to ensure it's either 'regular' or 'super'. Update the grade_changed_at timestamp if the grade is modified. Ensure the update maintains referential integrity with the admin_id and super_admin_id relationships. Return the updated administrator record with current timestamps.
+   * @x-autobe-specification Validate that the requesting user is a super administrator with promotion privileges. Verify the target administrator exists and has 'regular' grade status. Update the administrator's grade to 'super', set grade_changed_at to current timestamp, and update super_admin_id reference. Return the updated administrator record with new grade status. Ensure audit trail by logging the promotion action in system activities.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":administratorId")
-  public async update(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+  @TypedRoute.Post(":administratorId/promote")
+  public async promote(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardAdministratorPromotionApproval.IUpdate,
-  ): Promise<IDiscussionBoardAdministratorPromotionApproval> {
+    body: IDiscussionBoardSuperAdmin.IPromote,
+  ): Promise<IDiscussionBoardSuperAdmin> {
     try {
-      return await putDiscussionBoardSuperAdminAdministratorsAdministratorId({
-        superAdmin,
-        administratorId,
-        body,
-      });
+      return await postDiscussionBoardSuperAdminAdministratorsAdministratorIdPromote(
+        {
+          superAdmin,
+          administratorId,
+          body,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;
@@ -124,33 +237,37 @@ export class DiscussionboardSuperadminAdministratorsController {
   }
 
   /**
-   * Permanently remove an administrator assignment from the system.
+   * Demote a super administrator to regular administrator status.
    *
-   * This operation allows authorized super administrators to permanently delete administrator assignments, effectively revoking administrative privileges from users. When an administrator assignment is deleted, the user loses their administrative capabilities but retains their regular user account and content.
+   * This operation allows super administrators to downgrade other super administrators to regular administrator grade. The operation enforces business rules including preventing self-demotion and ensuring the target administrator is currently a super administrator. When successful, the administrator loses super administrator privileges but retains regular administrator capabilities.
    *
-   * The operation performs a hard deletion, completely removing the administrator assignment record from the database. This action is irreversible and ensures the immediate revocation of administrative privileges. No historical record of the administrator assignment is preserved after deletion.
+   * The operation creates a comprehensive audit trail in the discussion_board_administrator_grade_changes table, recording the demotion reason, timestamp, and administrator who performed the action. This supports transparency and accountability in administrator management operations.
    *
-   * Authorization is strictly required for this operation - only super administrators have the privilege to remove administrator assignments. The operation contains safeguards to prevent unauthorized deletion and maintains system security by verifying the administrator's current status before proceeding with deletion.
+   * Security considerations include verifying that only authenticated super administrators can perform this operation and ensuring proper authorization checks are applied. The operation integrates with the administrator hierarchy system defined in the discussion_board_administrators table and maintains referential integrity across related authentication tables including discussion_board_admins and discussion_board_super_admins.
    *
    * @param connection
-   * @param administratorId Unique identifier of the administrator assignment to erase
+   * @param administratorId Unique identifier of the super administrator to be demoted
+   * @param body Demotion request containing the reason for the grade change
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_administrators table by the provided administratorId parameter. Verify the administrator assignment exists and is active. Perform a soft delete by setting the deleted_at timestamp to the current time. Update the record with the deletion timestamp. Return the erased administrator record for confirmation. Ensure proper authorization checks - only super administrators should be able to perform this operation.
+   * @x-autobe-specification Validate that the requesting administrator is authenticated as a super administrator. Verify that the target administrator exists and is currently a super administrator. Check that the requesting administrator is not attempting to demote themselves (self-demotion prevention). Create a demotion record in discussion_board_administrator_grade_changes table with reason and audit information. Update the target administrator's grade from 'super' to 'regular' in discussion_board_administrators table. Update the administrator assignment to remove super_admin_id reference and set admin_id reference appropriately. Return the updated administrator record with new grade information. Ensure all database operations are performed within a transaction for data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":administratorId")
-  public async erase(
-    @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+  @TypedRoute.Post(":administratorId/demote")
+  public async demote(
+    @SuperAdminAuth()
+    superAdmin: SuperAdminPayload,
     @TypedParam("administratorId")
     administratorId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardAdministratorPromotionApproval> {
+    @TypedBody()
+    body: IDiscussionBoardAdministratorGradeChange.ICreate,
+  ): Promise<IDiscussionBoardSuperAdmin> {
     try {
-      return await deleteDiscussionBoardSuperAdminAdministratorsAdministratorId(
+      return await postDiscussionBoardSuperAdminAdministratorsAdministratorIdDemote(
         {
           superAdmin,
           administratorId,
+          body,
         },
       );
     } catch (error) {

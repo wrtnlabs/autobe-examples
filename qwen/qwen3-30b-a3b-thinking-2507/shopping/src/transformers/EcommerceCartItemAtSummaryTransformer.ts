@@ -1,4 +1,6 @@
 import { IEcommerceCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCartItem";
+import { IEcommerceCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCategory";
+import { IEcommerceProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProduct";
 import { IEcommerceProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductVariant";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -17,12 +19,11 @@ export namespace EcommerceCartItemAtSummaryTransformer {
       select: {
         id: true,
         quantity: true,
-        price_at_addition: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        cart: true,
         variant: EcommerceProductVariantAtSummaryTransformer.select(),
+        customer: true,
       },
     } satisfies Prisma.ecommerce_cart_itemsFindManyArgs;
   }
@@ -32,11 +33,12 @@ export namespace EcommerceCartItemAtSummaryTransformer {
     return {
       id: input.id,
       quantity: input.quantity,
-      price_at_addition: input.price_at_addition,
-      created_at: toISOStringSafe(input.created_at),
       variant: await EcommerceProductVariantAtSummaryTransformer.transform(
         input.variant,
       ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

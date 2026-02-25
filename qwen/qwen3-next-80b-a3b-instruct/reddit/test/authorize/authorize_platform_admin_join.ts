@@ -17,8 +17,9 @@ export async function authorize_platform_admin_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    username: props.body?.username ?? RandomGenerator.name(1),
   } satisfies IRedditCommunityPlatformAdmin.IJoin;
-  return await api.functional.redditCommunity.auth.platformadmin.join(
+  return await api.functional.redditCommunity.auth.platformAdmin.join(
     connection,
     { body: joinInput },
   );

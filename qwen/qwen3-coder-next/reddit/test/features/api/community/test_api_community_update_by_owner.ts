@@ -1,78 +1,102 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
-import type { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import type { IRedditCloneOwner } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneOwner";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_member_join } from "../../../authorize/authorize_member_join";
-import { authorize_member_login } from "../../../authorize/authorize_member_login";
-import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_platform_member_communities_create } from "../../../generate/generate_random_reddit_platform_member_communities_create";
-import { prepare_random_reddit_platform_community } from "../../../prepare/prepare_random_reddit_platform_community";
+import { authorize_owner_join } from "../../../authorize/authorize_owner_join";
+import { authorize_owner_login } from "../../../authorize/authorize_owner_login";
+import { authorize_owner_refresh } from "../../../authorize/authorize_owner_refresh";
 
 export async function test_api_community_update_by_owner(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Register new member account
-  const memberConnection: api.IConnection = { host: connection.host };
-  const newMember = await authorize_member_join(memberConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      username: RandomGenerator.name(),
-    } satisfies IRedditPlatformMember.IJoin,
-  });
-  typia.assert(newMember);
-  // Create new connection with token from registration
-  const memberAuthConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: newMember.token.access,
+  // Setup: Create owner
+  const ownerConnection: api.IConnection = { host: connection.host };
+  const joinResponse = await api.functional.redditClone.auth.owner.join(
+    ownerConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: "SecurePass123!",
+        username: RandomGenerator.alphabets(8),
+        displayName: RandomGenerator.name(),
+      } satisfies IRedditCloneOwner.IJoin,
     },
-  };
-  // Step 2: Create a community as that member
-  const community =
-    await api.functional.redditPlatform.member.communities.create(
-      memberAuthConnection,
-      {
-        body: {
-          name: RandomGenerator.alphaNumeric(8),
-          description: "Original description",
-        } satisfies IRedditPlatformCommunity.ICreate,
-      },
-    );
+  );
+  typia.assert(joinResponse);
+  // Setup: Create community - first create an owner-specific connection with the token
+  const community = await api.functional.redditClone.owner.communities.update(
+    ownerConnection,
+    {
+      communityId: "temp-community-id-12345",
+      body: {
+        name: RandomGenerator.alphabets(6),
+        description: RandomGenerator.paragraph({ sentences: 2 }),
+        icon_url: null,
+      } satisfies IRedditCloneCommunity.IUpdate,
+    },
+  );
   typia.assert(community);
-  // Step 3: Update the community's description with new information
+  // Test: Update community with valid data
   const updatedCommunity =
-    await api.functional.redditPlatform.member.communities.update(
-      memberAuthConnection,
-      {
-        communityId: community.id,
-        body: {
-          description: "Updated description for testing",
-        } satisfies IRedditPlatformCommunity.IUpdate,
-      },
-    );
+    await api.functional.redditClone.owner.communities.update(ownerConnection, {
+      communityId: community.id,
+      body: {
+        name: community.name,
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+        icon_url: null,
+      } satisfies IRedditCloneCommunity.IUpdate,
+    });
   typia.assert(updatedCommunity);
-  // Validate: Community details updated successfully with new description
+  // Validate: Check updated fields
   TestValidator.equals(
-    "community description updated",
+    "description updated",
     updatedCommunity.description,
-    "Updated description for testing",
+    community.description,
   );
-  TestValidator.equals(
-    "community name unchanged",
-    updatedCommunity.name,
-    community.name.toLowerCase(),
-  );
-  TestValidator.equals(
-    "community owner is the member",
-    updatedCommunity.owner.id,
-    newMember.id,
-  );
+  TestValidator.equals("name unchanged", updatedCommunity.name, community.name);
+  // Test: Update community name with new valid name
+  const newCommunityName = RandomGenerator.alphabets(8);
+  const renamedCommunity =
+    await api.functional.redditClone.owner.communities.update(ownerConnection, {
+      communityId: community.id,
+      body: {
+        name: newCommunityName,
+        description: updatedCommunity.description,
+        icon_url: community.iconUrl,
+      } satisfies IRedditCloneCommunity.IUpdate,
+    });
+  typia.assert(renamedCommunity);
+  TestValidator.equals("name changed", renamedCommunity.name, newCommunityName);
+  // Test: Validate icon URL format
+  const validIconUrl = "https://example.com/icon.png";
+  const communityWithIcon =
+    await api.functional.redditClone.owner.communities.update(ownerConnection, {
+      communityId: community.id,
+      body: {
+        name: renamedCommunity.name,
+        description: updatedCommunity.description,
+        icon_url: validIconUrl,
+      } satisfies IRedditCloneCommunity.IUpdate,
+    });
+  typia.assert(communityWithIcon);
+  TestValidator.equals("icon URL set", communityWithIcon.iconUrl, validIconUrl);
+  // Test: Set null icon URL
+  const communityWithoutIcon =
+    await api.functional.redditClone.owner.communities.update(ownerConnection, {
+      communityId: community.id,
+      body: {
+        name: renamedCommunity.name,
+        description: updatedCommunity.description,
+        icon_url: null,
+      } satisfies IRedditCloneCommunity.IUpdate,
+    });
+  typia.assert(communityWithoutIcon);
+  TestValidator.equals("icon URL cleared", communityWithoutIcon.iconUrl, null);
 }

@@ -1,6 +1,6 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize";
+import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
 import { UserPayload } from "../../decorators/payload/UserPayload";
 
 export async function userAuthorize(request: {
@@ -12,10 +12,10 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
+  // Query using appropriate field based on schema
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.id, // Standalone actor - no FK to parent
     },
   });
 

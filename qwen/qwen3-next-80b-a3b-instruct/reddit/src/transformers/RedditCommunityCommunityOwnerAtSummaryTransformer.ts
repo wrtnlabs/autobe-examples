@@ -16,12 +16,17 @@ export namespace RedditCommunityCommunityOwnerAtSummaryTransformer {
         id: true,
         email: true,
         password_hash: true,
+        username: true,
         display_name: true,
         bio: true,
         avatar_url: true,
+        karma_score: true,
+        is_deleted: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
+        sessions: true,
+        passwordResets: true,
+        emailVerification: true,
       },
     } satisfies Prisma.reddit_community_community_ownersFindManyArgs;
   }
@@ -30,9 +35,10 @@ export namespace RedditCommunityCommunityOwnerAtSummaryTransformer {
   ): Promise<IRedditCommunityCommunityOwner.ISummary> {
     return {
       id: input.id,
+      username: input.username,
       display_name: input.display_name,
-      bio: input.bio ?? undefined,
-      avatar_url: input.avatar_url ?? undefined,
+      karma_score: Number(input.karma_score),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

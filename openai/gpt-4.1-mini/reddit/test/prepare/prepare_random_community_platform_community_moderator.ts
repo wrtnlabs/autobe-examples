@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_community_platform_community_moderator(
-  input?: DeepPartial<ICommunityPlatformCommunityModerator.ICreate> | undefined,
+  input?: DeepPartial<ICommunityPlatformCommunityModerator.ICreate>,
 ): ICommunityPlatformCommunityModerator.ICreate {
-  input;
-  return {};
+  return {
+    communityModeratorId:
+      input?.communityModeratorId ??
+      typia.random<string & tags.Format<"uuid">>(),
+    role: input?.role ?? RandomGenerator.pick(["owner", "moderator"] as const),
+  };
 }

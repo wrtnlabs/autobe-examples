@@ -1,4 +1,3 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionArchive } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionArchive";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -7,7 +6,6 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
 import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
 
 export namespace DiscussionBoardSectionArchiveTransformer {
@@ -32,13 +30,12 @@ export namespace DiscussionBoardSectionArchiveTransformer {
   ): Promise<IDiscussionBoardSectionArchive> {
     return {
       id: input.id,
-      archived_at: toISOStringSafe(input.archived_at),
-      archivedByAdmin: await DiscussionBoardAdminAtSummaryTransformer.transform(
-        input.archived_by,
-      ),
+      archivedAt: input.archived_at.toISOString(),
+      archivedBy: input.archived_by,
       reason: input.reason,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      sectionId: input.section.id,
       section: await DiscussionBoardSectionAtSummaryTransformer.transform(
         input.section,
       ),

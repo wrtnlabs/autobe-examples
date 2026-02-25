@@ -42,17 +42,24 @@ model community_platform_reports {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   user community_platform_users @relation(fields: [community_platform_user_id], references: [id], onDelete: Cascade)
   reportReason community_platform_report_reasons @relation(fields: [community_platform_report_reason_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   reportedContents community_platform_reported_contents[]
   decisions community_platform_reports_decisions[]
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([community_platform_report_reason_id], map: "community_platform_reports_community_platform_report_r_1165d6c9")
-  
   // spellchecker: ignore-next-line
   @@index([community_platform_user_id, created_at], map: "community_platform_reports_community_platform_user_id__94d81571")
 }
@@ -84,7 +91,8 @@ model community_platform_report_reasons {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   commentReports community_platform_comment_reports[]
   reports community_platform_reports[]

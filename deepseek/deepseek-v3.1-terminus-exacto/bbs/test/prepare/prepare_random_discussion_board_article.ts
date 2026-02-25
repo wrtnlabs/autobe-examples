@@ -11,18 +11,18 @@ export function prepare_random_discussion_board_article(
   return {
     title:
       input?.title ??
-      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 15 }),
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
     content:
       input?.content ??
       RandomGenerator.content({
         paragraphs: 2,
-        sentenceMin: 5,
-        sentenceMax: 10,
+        sentenceMin: 10,
+        sentenceMax: 15,
+        wordMin: 5,
+        wordMax: 10,
       }),
-    section_id:
-      input?.section_id ?? typia.random<string & tags.Format<"uuid">>(),
-    status:
-      input?.status ??
-      RandomGenerator.pick(["draft", "published", "archived"] as const),
+    discussion_board_section_id:
+      input?.discussion_board_section_id ??
+      typia.random<string & tags.Format<"uuid">>(),
   };
 }

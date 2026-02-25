@@ -6,11 +6,8 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_article_favorite(
-  input?: DeepPartial<IDiscussionBoardArticleFavorite.ICreate>,
+  input?: DeepPartial<IDiscussionBoardArticleFavorite.ICreate> | undefined,
 ): IDiscussionBoardArticleFavorite.ICreate {
-  return {
-    discussion_board_article_id:
-      input?.discussion_board_article_id ??
-      typia.random<string & tags.Format<"uuid">>(),
-  };
+  input;
+  return {};
 }

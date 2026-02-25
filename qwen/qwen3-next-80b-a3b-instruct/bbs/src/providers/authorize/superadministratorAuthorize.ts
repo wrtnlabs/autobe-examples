@@ -1,6 +1,6 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
-import { jwtAuthorize } from "./jwtAuthorize";
+import { jwtAuthorize } from "./jwtAuthorize"; // ← Same directory!
 import { SuperadministratorPayload } from "../../decorators/payload/SuperadministratorPayload";
 
 export async function superadministratorAuthorize(request: {
@@ -12,14 +12,15 @@ export async function superadministratorAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const superadministrator = await MyGlobal.prisma.economic_board_super_administrators.findFirst({
+  // Query using appropriate field based on schema
+  // superAdministrator is a standalone actor table with direct id reference
+  const superAdmin = await MyGlobal.prisma.economic_board_super_administrators.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 
-  if (superadministrator === null) {
+  if (superAdmin === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

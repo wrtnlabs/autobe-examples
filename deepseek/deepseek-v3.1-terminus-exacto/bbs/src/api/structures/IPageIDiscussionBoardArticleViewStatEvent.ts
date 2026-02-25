@@ -1,5 +1,5 @@
 import { IDiscussionBoardArticleViewStatEvent } from "./IDiscussionBoardArticleViewStatEvent";
-import { IPage } from "./IPage";
+import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
 
 export namespace IPageIDiscussionBoardArticleViewStatEvent {
   /**
@@ -13,12 +13,12 @@ export namespace IPageIDiscussionBoardArticleViewStatEvent {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIDiscussionBoardSection.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IDiscussionBoardArticleViewStatEvent.ISummary.
+     * @x-autobe-specification List of records of type IDiscussionBoardArticleViewStat.ISummary.
      */
     data: IDiscussionBoardArticleViewStatEvent.ISummary[];
   };

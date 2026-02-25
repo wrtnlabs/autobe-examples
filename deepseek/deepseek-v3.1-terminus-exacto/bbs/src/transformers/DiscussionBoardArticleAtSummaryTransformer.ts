@@ -19,11 +19,8 @@ export namespace DiscussionBoardArticleAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        content: true,
         status: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
         author: DiscussionBoardUserAtSummaryTransformer.select(),
         section: DiscussionBoardSectionAtSummaryTransformer.select(),
       },

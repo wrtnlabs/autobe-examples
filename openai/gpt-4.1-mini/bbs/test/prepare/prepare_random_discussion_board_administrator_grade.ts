@@ -6,8 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_administrator_grade(
-  input?: DeepPartial<IDiscussionBoardAdministratorGrade.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardAdministratorGrade.ICreate>,
 ): IDiscussionBoardAdministratorGrade.ICreate {
-  input;
-  return {};
+  return {
+    name: input?.name ?? RandomGenerator.name(),
+    description:
+      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
+    level: input?.level ?? typia.random<number & tags.Type<"int32">>(),
+  };
 }

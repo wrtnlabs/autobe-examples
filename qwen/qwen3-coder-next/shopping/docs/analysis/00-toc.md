@@ -1,1164 +1,1165 @@
-# E-Commerce Shopping Mall Platform Requirements Specification
+# E-Commerce Shopping Mall Platform
 
-## Executive Summary
+## 1. Overview
 
-### Business Context
+### 1.1 Service Vision
 
-This e-commerce shopping mall platform serves as a comprehensive marketplace connecting customers, sellers, and administrators in a digital commerce environment. The platform addresses the growing demand for robust online retail infrastructure that supports diverse product catalogs, secure transactions, and efficient order management.
+The E-Commerce Shopping Mall Platform is a comprehensive marketplace system that connects customers, sellers, and administrators in a seamless online shopping experience. The platform enables multiple sellers to list products, customers to browse and purchase items, and administrators to ensure smooth operation and policy compliance.
 
-### Platform Vision
+### 1.2 Target Users
 
-The platform enables:
-- **For Customers**: A unified shopping experience with diverse product selection, secure transactions, and comprehensive order tracking
-- **For Sellers**: Professional storefronts with inventory management, order processing, and customer engagement tools
-- **For Administrators**: Platform oversight capabilities for governance, dispute resolution, and policy enforcement
+- **Customers**: Individual shoppers seeking products from various sellers
+- **Sellers**: Businesses and individuals managing their own product listings and inventory
+- **Administrators**: System operators ensuring platform integrity, seller approval, and policy enforcement
+- **Super Administrators**: High-level system managers with complete oversight capabilities
 
-### Market Differentiation
+### 1.3 Core Features
 
-Key differentiators include:
-- **Immutable Snapshots**: Complete audit trail for all critical data modifications supporting dispute resolution
-- **Seller Empowerment**: Non-technical sellers can manage complex inventories without development resources
-- **Advanced Search**: Multi-criteria search with real-time filtering and intelligent sorting
-- **Flexible Fulfillment**: Seller-controlled shipping with comprehensive tracking integration
+- Customer account registration and profile management
+- Seller registration with approval workflow
+- Product creation, management, and categorization
+- Complex inventory tracking with stock history
+- Multi-item order processing with flexible shipping
+- Multi-stage payment and refund handling
+- Review and rating system for products
+- Customer wishlist functionality
+- Advanced search and filtering capabilities
+- Comprehensive administrator tools for oversight
 
-### Success Metrics
+### 1.4 Business Model
 
-- **Customer Acquisition**: 50,000+ registered customers in year one
-- **Seller Base**: 500+ active sellers with regular product updates
-- **Transaction Volume**: $10M+ in annual gross merchandise value
-- **Platform Health**: 99.9% uptime, <2 second page load times
-- **Customer Satisfaction**: 85%+ positive review rate
+The platform operates on a commission-based model where:
 
-## User Actors and Authentication Requirements
+- **Sellers** pay listing fees and/or transaction commissions
+- **Customers** pay for products and shipping (fees vary by seller)
+- **Administrators** ensure platform security and compliance
+- **No guest browsing** – all users must register to access features
 
-### Actor Hierarchy
+### 1.5 Success Metrics
 
-The platform supports four distinct user actor types with clearly defined permissions and capabilities:
+- Number of active sellers and products
+- Monthly transaction volume and revenue
+- Customer retention rate and repeat purchase frequency
+- Average order value and cart abandonment rate
+- Seller satisfaction and growth rate
+- Platform security incidents and resolution time
 
-1. **Customer**: Primary shoppers who browse products, make purchases, and engage with sellers through reviews
-2. **Seller**: Business users who create products, manage inventory, and process customer orders
-3. **Administrator**: Platform managers who oversee operations, approve sellers, and handle policy violations
-4. **Super Administrator**: System owners with ultimate control over platform configuration and user management
+## 2. Functional Requirements
 
-### Authentication Flow
+### 2.1 Customer Account Management
 
-```mermaid
-sequenceDiagram
-    participant User as Customer/Seller
-    participant Frontend as Client Application
-    participant Auth as Authentication Service
-    participant DB as Database
+#### 2.1.1 Registration
 
-    User->>Frontend: Register with email/password
-    Frontend->>Auth: POST /auth/register
-    Auth->>DB: Check email uniqueness
-    DB-->>Auth: Availability status
-    alt Email available
-        Auth->>DB: Create user account
-        DB-->>Auth: Created user ID
-        Auth->>Frontend: Success response
-        Frontend->>User: Registration successful
-        User->>Frontend: Login with credentials
-        Frontend->>Auth: POST /auth/login
-        Auth->>DB: Verify credentials
-        DB-->>Auth: User data
-        Auth->>Auth: Generate JWT tokens
-        Auth->>Frontend: Access token + Refresh token
-        Frontend->>Frontend: Store tokens securely
-        Frontend->>User: Login successful
-    else Email taken
-        Auth->>Frontend: Error response
-        Frontend->>User: Email already in use
-    end
-```
+**WHEN** a customer visits the platform for the first time,
+**THEN** they are required to register an account before accessing any features.
 
-### Token Management
+**WHEN** a customer registers,
+**THEY** must provide their email address and create a password.
 
-The authentication system uses JSON Web Tokens (JWT) for stateless session management:
-- **Access Token**: 30-minute lifetime for API requests
-- **Refresh Token**: 7-day lifetime for session continuation
-- **Payload Structure**: Includes user ID, role, permissions array, and expiration timestamp
-- **Storage Strategy**: HTTP-only cookies for production security
-- **Revocation**: Users can invalidate all active sessions from any device
+**THE** registration process creates a customer account with the following initial profile information:
+- Display name (optional, defaults to email prefix)
+- Phone number (optional)
+- Default address set (initially empty)
 
-### Account Verification Requirements
+**WHEN** registration is successful,
+**THEN** the customer is automatically logged in and can access customer features.
 
-**WHEN a user registers, THE system SHALL require email verification before full functionality.**
+**WHEN** registration fails (e.g., email already exists),
+**THEN** the customer receives a clear error message explaining the issue.
 
-**WHILE an account is unverified, THE system SHALL limit functionality to email verification and account management.**
+#### 2.1.2 Login
 
-**IF a verification email expires, THEN THE system SHALL allow re-sending of verification requests.**
+**WHEN** an existing customer returns to the platform,
+**THEN** they must log in using their email and password.
 
-**WHEN an account is verified, THE system SHALL enable full platform access.**
+**WHEN** login credentials are valid,
+**THEN** the customer is authenticated and granted access to their account.
 
-## Account Management Requirements
+**WHEN** login credentials are invalid,
+**THEN** the customer receives an appropriate error message (credentials incorrect).
 
-### Customer Account Management
+**WHEN** a customer account has been deleted,
+**THEN** login attempts with those credentials are rejected.
 
-**WHEN a customer registers, THE system SHALL require email address and password with appropriate validation.**
+#### 2.1.3 Account Deletion
 
-**WHEN a customer attempts to log in, THE system SHALL authenticate credentials and create a new session.**
+**WHEN** a customer requests account deletion,
+**THEY** must confirm the deletion action (two-step process to prevent accidental deletion).
 
-**WHEN a customer requests password change, THE system SHALL verify current password and update with encrypted new credentials.**
+**WHEN** account deletion is processed,
+**THEN** the following data is permanently removed:
+- Customer profile information (display name, phone number, etc.)
+- All shipping addresses associated with the account
+- Wishlist entries
+- Active cart items
 
-**WHEN a customer requests account deletion, THE system SHALL preserve order history for legal compliance while removing profile information.**
+**WHEN** account deletion is processed,
+**THEN** the following data is preserved (not deleted):
+- All order history and order snapshots (for seller records and legal compliance)
+- All reviews (but displayed as "deleted user" instead of the customer's name)
+- Any pending cancellation or refund requests (for audit trail)
 
-**WHEN a customer deletes their account, THEN THE system SHALL:**
-- Delete the customer's profile information completely
-- Preserve all order records associated with the customer
-- Update all reviews to display "deleted user" instead of the customer's name
-- Maintain audit trails for compliance and legal requirements
+**WHEN** account deletion is complete,
+**THEN** the customer is logged out and cannot log in again with those credentials.
 
-**WHILE a customer has active orders with status "paid" or "shipped", THE system SHALL prevent account deletion until all orders are completed or cancelled.**
+**WHEN** a customer attempts to delete an account that has pending orders (paid or shipped status),
+**THEN** the deletion is blocked and the customer receives a message explaining why.
 
-### Customer Profile Management
+#### 2.1.4 Password Management
 
-**WHEN a customer accesses profile settings, THE system SHALL display current display name and phone number.**
+**WHEN** a customer wants to change their password,
+**THEN** they must provide their current password for verification.
 
-**WHEN a customer updates their display name, THE system SHALL validate format and save the new value.**
+**WHEN** the current password is verified,
+**THEN** the customer can set a new password meeting security requirements.
 
-**WHEN a customer updates their phone number, THE system SHALL validate format and save the new value.**
+**WHEN** password change is successful,
+**THEN** the customer receives confirmation and the change is logged.
 
-**IF a customer attempts to update with invalid format, THEN THE system SHALL show specific error message for each field.**
+**WHEN** a customer forgets their password,
+**THEN** they can request a password reset via email verification.
 
-**WHEN profile changes are made, THE system SHALL create a profile snapshot preserving previous values.**
+**WHEN** password reset is requested,
+**THEN** a secure reset link is sent to the customer's registered email address.
 
-### Address Management
+**WHEN** the reset link is used,
+**THEN** the customer can set a new password without providing the current one.
 
-**WHEN a customer adds a new shipping address, THE system SHALL store: recipient name, phone number, street address, city, state/province, postal code, and country.**
+#### 2.1.5 Profile Management
 
-**WHEN a customer edits an existing address, THE system SHALL update all specified fields.**
+**WHEN** a customer views their profile,
+**THEN** they can see their current display name and phone number.
 
-**WHEN a customer deletes an address, THE system SHALL remove the address record.**
+**WHEN** a customer edits their profile,
+**THEY** can update their display name and phone number.
 
-**WHEN a customer sets an address as default, THE system SHALL update default flag for all addresses for that customer.**
+**WHEN** profile information is updated,
+**THEN** the changes are saved and immediately reflected across the platform.
 
-**IF a customer attempts to use a deleted address during checkout, THEN THE system SHALL prevent checkout and show appropriate error.**
+**WHEN** a customer updates their profile information,
+**THEN** a snapshot is created preserving the previous state.
 
-**IF a customer has no default address, THEN THE system SHALL require address selection during first checkout.**
+### 2.2 Address Management
 
-### Seller Account Management
+#### 2.2.1 Address Creation
 
-**WHEN a seller registers, THE system SHALL require email address, password, and initial shop information, but place the account in "pending" approval status.**
+**WHEN** a customer adds a new shipping address,
+**THEY** must provide the following information:
+- Recipient name
+- Phone number
+- Street address
+- City
+- State/Province
+- Postal code
+- Country
 
-**WHEN a seller attempts to log in with pending approval status, THEN THE system SHALL deny access and show appropriate message with approval status.**
+**WHEN** an address is successfully added,
+**THEN** it appears in the customer's address list.
 
-**WHEN an administrator approves a seller account, THE system SHALL change status to "approved" and allow full platform access.**
+**WHEN** a customer adds their first address,
+**THEN** it automatically becomes the default shipping address.
 
-**WHEN an administrator rejects a seller registration, THE system SHALL store the rejection reason and allow resubmission.**
+#### 2.2.2 Address Listing and Selection
 
-**WHEN a seller with rejected status attempts to log in, THEN THE system SHALL show rejection reason and provide option to resubmit application.**
+**WHEN** a customer views their addresses,
+**THEN** they can see a list of all their saved addresses.
 
-**WHEN a seller requests account deletion, THE system SHALL verify no pending orders or requests exist before proceeding.**
+**WHEN** viewing the address list,
+**THEN** the default shipping address is clearly marked.
 
-**WHEN a seller account is deleted, THEN THE system SHALL:**
-- Remove all products from active listings
-- Preserve complete order history and product snapshots
-- Maintain shop name and logo in historical order records
-- Delete all unsold inventory records
+**WHEN** a customer selects an address for checkout,
+**THEN** they can choose from their saved addresses or use the default.
 
-**WHILE a seller has pending orders with status "paid" or "shipped", THE system SHALL prevent account deletion until resolution.**
+**WHEN** a customer selects a non-default address,
+**THEN** it becomes the temporary shipping address for that order.
 
-**WHILE a seller has pending cancellation or refund requests, THE system SHALL prevent account deletion until resolution.**
+#### 2.2.3 Address Editing
 
-### Seller Profile Management
+**WHEN** a customer edits an existing address,
+**THEN** they can modify any of the address fields.
 
-**WHEN a seller accesses shop profile settings, THE system SHALL display current shop name, description, and logo.**
+**WHEN** address editing is successful,
+**THEN** the changes are saved and a snapshot is created.
 
-**WHEN a seller updates shop name, THE system SHALL create a snapshot of previous values.**
+**WHEN** a customer edits their default shipping address,
+**THEN** the default status is preserved unless explicitly changed.
 
-**WHEN a seller updates shop description, THE system SHALL create a snapshot of previous values.**
+#### 2.2.4 Address Deletion
 
-**WHEN a seller uploads a new logo image, THE system SHALL create a snapshot of previous logo reference.**
+**WHEN** a customer deletes an address,
+**THEN** the address is removed from their address list.
 
-**WHEN a seller edits profile information, THEN THE system SHALL:**
-- Create a complete profile snapshot recording all changed values
-- Store timestamp, editor information, and before/after values
-- Make snapshot available for dispute resolution
-- Update current profile values for display
+**WHEN** a customer deletes their default shipping address,
+**THEN** another address is automatically promoted to default status.
 
-**WHEN a customer views a seller profile, THE system SHALL show current shop name, description, and logo.**
+**WHEN** a customer attempts to delete an address that is set as the shipping address for a pending order,
+**THEN** the deletion is blocked and the customer receives a message explaining why.
 
-## Product Management Requirements
+### 2.3 Seller Account Management
 
-### Product Creation Workflow
+#### 2.3.1 Registration
 
-**WHEN a seller creates a new product, THE system SHALL require: name, description, category selection, and base price.**
+**WHEN** an individual or business wants to sell on the platform,
+**THEN** they can register as a seller with their email and password.
 
-**WHEN a seller creates a product, THE system SHALL associate it with their seller account.**
+**WHEN** seller registration is completed,
+**THEN** the seller account is created with "pending" approval status.
 
-**WHEN a seller edits an existing product, THE system SHALL create a complete product snapshot including all fields and images.**
+**WHEN** a seller registers,
+**THEY** can provide initial shop information (shop name, description, logo).
 
-**WHEN a seller attempts to delete a product, THE system SHALL verify no pending order items exist.**
+**WHEN** a seller registers,
+**THEN** they can view their account approval status.
 
-**WHEN a seller deletes a product, THEN THE system SHALL:**
-- Remove all variants associated with the product
-- Delete all inventory records for those variants
-- Update product search indexing to exclude the product
-- Preserve product snapshots for historical reference
-- Remove product from all customer wishlists
+#### 2.3.2 Approval Process
 
-**WHEN a product is deleted, THEN ALL of the following shall occur:**
-- Product no longer appears in search results
-- Product no longer appears in category listings
-- Product detail pages return 404 or appropriate error
-- Existing order records retain product snapshots
-- Wishlist entries for the product are automatically removed
+**WHEN** a seller's approval status is "pending",
+**THEN** they can view their pending status but cannot sell products yet.
 
-### Product Variant Management
+**WHEN** a seller is approved by an administrator,
+**THEN** they gain full seller privileges to list products and manage their shop.
 
-**WHEN a seller creates a product variant, THE system SHALL require: SKU code, option values, and stock quantity.**
+**WHEN** a seller is rejected by an administrator,
+**THEN** they receive the rejection reason provided by the administrator.
 
-**WHEN a seller updates a variant, THE system SHALL create a snapshot of all variant data including SKU, options, and price.**
+**WHEN** a seller is rejected,
+**THEN** they can submit a new registration request with updated information.
 
-**WHEN a seller attempts to delete a variant, THE system SHALL verify no pending order items exist.**
+**WHEN** a seller's approval status is changed,
+**THEN** they receive a notification about the status change.
 
-**WHEN a product has zero variants, THEN THE system SHALL:**
-- Display product as "unavailable" in search and listings
-- Allow product to remain visible but not purchasable
-- Show appropriate message to customers attempting purchase
+#### 2.3.3 Account Management
 
-**WHEN a product has at least one variant, THEN THE system SHALL:**
-- Allow product to be added to cart
-- Enable variant selection during purchase
-- Display stock availability per variant
-- Calculate pricing based on variant-specific or base price
+**WHEN** a seller wants to change their password,
+**THEN** they can follow the same password management flow as customers.
 
-### Product Image Management
+**WHEN** a seller views their profile,
+**THEN** they can see their current shop name, description, and logo.
 
-**WHEN a seller uploads product images, THE system SHALL store multiple image references per product.**
+**WHEN** a seller wants to delete their account,
+**THEN** they can only proceed if:
+- They have no pending orders (orders with "paid" or "shipped" status)
+- They have no pending cancellation or refund requests
 
-**WHEN a seller reorders product images, THE system SHALL update display order for all images.**
+**WHEN** a seller's account deletion meets all requirements,
+**THEN** the following data is permanently removed:
+- Seller profile information (shop name, description, logo)
+- All products and variants owned by the seller
+- All inventory records for the seller's products
 
-**WHEN a seller deletes an image, THE system SHALL remove the image reference and update product snapshots accordingly.**
+**WHEN** a seller's account deletion is processed,
+**THEN** the following data is preserved:
+- Order history and order snapshots (for customer records and legal compliance)
+- Shop name and logo in past orders (preserved as historical reference)
+- All product snapshots created during the seller's account lifetime
 
-**IF a product has no images, THEN THE system SHALL:**
-- Display placeholder image during product listings
-- Show appropriate error during product detail view
-- Allow product to remain searchable but not displayed prominently
+**WHEN** a seller attempts to delete an account that doesn't meet requirements,
+**THEN** the deletion is blocked and the seller receives a message explaining why.
 
-### Inventory Tracking and Management
+#### 2.3.4 Profile Management
 
-**WHEN an order is placed, THE system SHALL create negative inventory records for purchased variants.**
+**WHEN** a seller views their shop profile,
+**THEN** they can see their shop name, description, and logo.
 
-**WHEN an order is cancelled or refunded, THE system SHALL create positive inventory records restoring stock.**
+**WHEN** a seller edits their shop profile,
+**THEY** can update their shop name, description, and logo.
 
-**WHEN stock reaches zero for a variant, THEN THE system SHALL:**
-- Display "out of stock" status for that variant
-- Prevent variant from being added to cart
-- Show appropriate message to customers attempting purchase
+**WHEN** shop profile information is updated,
+**THEN** a snapshot is created preserving the previous state.
 
-**WHEN a seller views inventory history, THE system SHALL display all recorded changes with timestamps, quantities, and reasons.**
+**WHEN** shop profile information is updated,
+**THEN** the changes are immediately visible to customers.
 
-**WHILE viewing inventory history, THEN THE system SHALL:**
-- Show chronological list of all changes
-- Display running balance for current stock calculation
-- Include reason codes for each transaction
-- Show operator information for audit purposes
+### 2.4 Category Management
 
-## Order Processing Requirements
+#### 2.4.1 Category Structure
 
-### Cart Management
+**CATEGORIES** are organized in a two-level hierarchy:
+- **Level 1**: Top-level categories (e.g., "Electronics", "Clothing", "Home")
+- **Level 2**: Subcategories nested under top-level categories (e.g., "Smartphones" under "Electronics")
 
-**WHEN a customer adds a variant to cart, THE system SHALL ensure they select a specific variant.**
+**CATEGORIES** can have at most one level of nesting (no deeper hierarchy).
 
-**WHEN a customer specifies quantity during add-to-cart, THE system SHALL validate against available stock.**
+**CATEGORIES** are created and managed exclusively by administrators.
 
-**WHEN the same variant already exists in cart, THEN THE system SHALL:**
-- Combine quantities rather than creating duplicate entries
-- Update cart subtotal for that variant line
-- Show updated cart total price
+#### 2.4.2 Category Information
 
-**WHEN a customer views cart, THE system SHALL display:**
-- Product name, variant options, price, quantity, and subtotal
-- Total cart price
-- Stock availability warning if applicable
-- Unavailable item indicators
+**EACH** category has the following information:
+- Name (required, unique within its level)
+- Description (optional but recommended)
 
-**WHEN cart quantity exceeds available stock, THEN THE system SHALL:**
-- Display warning message for that item
-- Prevent checkout until quantity is adjusted
-- Show current available stock quantity
+**EACH** category can have multiple subcategories.
 
-**WHEN a variant is deleted or becomes out of stock, THEN THE system SHALL:**
-- Mark item as unavailable in cart
-- Display appropriate message
-- Allow customer to remove item from cart
-- Prevent checkout of unavailable items
+**EACH** subcategory belongs to exactly one parent category.
 
-### Checkout Process
+#### 2.4.3 Category Operations
 
-**WHEN a customer proceeds to checkout, THE system SHALL validate all items are available for purchase.**
+**WHEN** a customer views the list of all categories,
+**THEN** they can see the complete category hierarchy.
 
-**WHEN checkout is initiated, THE system SHALL require shipping address selection.**
+**WHEN** a customer views a category,
+**THEN** they can see:
+- The category name and description
+- All subcategories
+- Products in that category (including products in subcategories)
 
-**WHEN a customer reviews order summary, THE system SHALL show:**
-- List of items with prices
-- Shipping address
+**WHEN** a customer views a subcategory,
+**THEN** they can navigate to its parent category.
+
+**WHEN** an administrator creates a category,
+**THEN** they can specify the parent category (or leave blank for top-level).
+
+**WHEN** an administrator edits a category,
+**THEN** they can update the name and description.
+
+**WHEN** an administrator deletes a category,
+**THEN** products in that category become uncategorized unless they have other categories assigned.
+
+### 2.5 Product Management
+
+#### 2.5.1 Product Creation
+
+**WHEN** a seller creates a product,
+**THEY** must provide the following required information:
+- Name (required, minimum 1 character, maximum 200 characters)
+- Description (required, minimum 10 characters, maximum 5,000 characters)
+- Category (required, must be a valid category ID)
+- Base price (required, must be positive, maximum 2 decimal places)
+
+**WHEN** a seller creates a product,
+**THEY** can optionally provide:
+- Product images (at least one image recommended)
+- Product variants (at least one variant required for purchasable products)
+
+**WHEN** a product is created,
+**THEN** it is associated with the seller who created it.
+
+**WHEN** a product is created,
+**THEN** it appears in the seller's product list but is not visible to customers.
+
+**WHEN** a product is created with at least one variant,
+**THEN** the product can be purchased by customers.
+
+**WHEN** a product is created without any variants,
+**THEN** the product is visible in search but shown as "unavailable".
+
+#### 2.5.2 Product Listing
+
+**WHEN** a customer views the product list (search results, category page),
+**THEN** each product displays:
+- Main image (thumbnail from the first uploaded image)
+- Product name
+- Base price (or price range if variants have different prices)
+- Seller shop name (linked to seller profile)
+- Average rating (if reviews exist)
+
+**WHEN** a product has variants with different prices,
+**THEN** the price range is displayed (e.g., "$10 - $25").
+
+**WHEN** a product has no available variants (all out of stock or deleted),
+**THEN** it is shown as "out of stock" or "unavailable".
+
+**WHEN** a product is deleted by its seller,
+**THEN** it is removed from search results and category listings.
+
+#### 2.5.3 Product Editing
+
+**WHEN** a seller edits their product,
+**THEY** can modify any of the editable fields:
+- Name
+- Description
+- Category
+- Base price
+- Product images (add, remove, reorder)
+
+**WHEN** a seller edits a product,
+**THEN** the changes are saved and a product snapshot is created.
+
+**WHEN** a product snapshot is created,
+**THEN** it includes all product fields at the time of editing.
+
+**WHEN** a product has variants and is edited,
+**THEN** existing variants are also snapshotted if their information changes.
+
+#### 2.5.4 Product Deletion
+
+**WHEN** a seller deletes their product,
+**THEN** the following data is permanently removed:
+- Product information
+- All variants associated with the product
+- All inventory records for the product variants
+
+**WHEN** a seller attempts to delete a product,
+**THEN** the deletion is blocked if:
+- Any variant has pending order items (status "paid" or "shipped")
+- Any variant has pending cancellation requests
+- Any variant has pending refund requests
+
+**WHEN** product deletion is blocked,
+**THEN** the seller receives a message explaining which items prevent deletion.
+
+**WHEN** a product is deleted,
+**THEN** it is removed from all customer wishlists.
+
+**WHEN** a product is deleted,
+**THEN** past orders and snapshots are preserved for historical reference.
+
+#### 2.5.5 Product Snapshots
+
+**WHEN** a product is edited,
+**THEN** a product snapshot is automatically created.
+
+**EACH** product snapshot includes:
+- Product name, description, category
+- Base price at the time of editing
+- All product images (with order preserved)
+- All variant information at that moment
+
+**WHEN** a variant is edited,
+**THEN** a variant snapshot is created as part of the product snapshot.
+
+**EACH** variant snapshot includes:
+- SKU code
+- Option values (color, size, etc.)
+- Price (variant price or null if using base price)
+- Stock quantity at that moment
+
+**WHEN** a product is deleted,
+**THEN** all associated product snapshots are preserved.
+
+**WHEN** an administrator or seller views product snapshots,
+**THEN** they can see the complete history of changes.
+
+### 2.6 Product Images
+
+#### 2.6.1 Image Management
+
+**WHEN** a seller uploads images for a product,
+**THEY** can upload multiple images (recommended maximum 10).
+
+**WHEN** images are uploaded,
+**THEN** they are associated with the product.
+
+**WHEN** a seller sets the first uploaded image,
+**THEN** it becomes the main thumbnail for product listings.
+
+#### 2.6.2 Image Reordering
+
+**WHEN** a seller reorders product images,
+**THEN** the first image in the reordered list becomes the main thumbnail.
+
+**WHEN** image order is changed,
+**THEN** a product snapshot is created if other product edits are made.
+
+#### 2.6.3 Image Deletion
+
+**WHEN** a seller deletes a product image,
+**THEN** the image is removed from the product.
+
+**WHEN** the main thumbnail is deleted,
+**THEN** the next image in the list automatically becomes the main thumbnail.
+
+**WHEN** image deletion is successful,
+**THEN** a product snapshot is created.
+
+### 2.7 Product Variants (SKU)
+
+#### 2.7.1 Variant Creation
+
+**WHEN** a seller adds variants to a product,
+**THEY** must create at least one variant for the product to be purchasable.
+
+**EACH** variant must have:
+- SKU code (required, unique identifier, maximum 50 characters)
+- Option values (e.g., "Red", "Large" for color/size combinations)
+- Stock quantity (required, must be non-negative integer)
+
+**WHEN** option values are specified,
+**THEY** must represent a valid combination of the product's defined options.
+
+**WHEN** a variant is created,
+**THEN** it is associated with the parent product.
+
+#### 2.7.2 Variant Pricing
+
+**EACH** variant has a price field that can either:
+- Use the product's base price (default behavior)
+- Override the base price with a specific variant price
+
+**WHEN** a variant uses the base price,
+**THEN** the price is automatically updated when the base price changes.
+
+**WHEN** a variant overrides the base price,
+**THEN** the variant price remains fixed regardless of base price changes.
+
+**WHEN** a product has variants with different prices,
+**THEN** the price range is displayed in product listings.
+
+#### 2.7.3 Variant Editing
+
+**WHEN** a seller edits a variant,
+**THEY** can modify:
+- SKU code
+- Option values
+- Variant price (add, remove, or change price)
+
+**WHEN** a variant is edited,
+**THEN** a variant snapshot is created as part of the product snapshot.
+
+**WHEN** a variant's stock quantity is changed via inventory operations,
+**THEN** a stock inventory record is created (not a variant snapshot).
+
+#### 2.7.4 Variant Deletion
+
+**WHEN** a seller deletes a variant,
+**THEN** the variant is removed from the product.
+
+**WHEN** a seller attempts to delete a variant,
+**THEN** the deletion is blocked if:
+- Any order item has this variant with status "paid" or "shipped"
+- Any cancellation request exists for this variant
+- Any refund request exists for this variant
+
+**WHEN** variant deletion is blocked,
+**THEN** the seller receives a message explaining which orders prevent deletion.
+
+**WHEN** a product's last variant is deleted,
+**THEN** the product becomes "unavailable" for purchase.
+
+### 2.8 Inventory Management
+
+#### 2.8.1 Stock Tracking
+
+**EACH** product variant has a stock quantity that tracks available units.
+
+**CURRENT** stock is calculated by summing all inventory records for the variant.
+
+**WHEN** stock quantity reaches 0,
+**THEN** the variant is shown as "out of stock".
+
+**WHEN** a variant is out of stock,
+**THEN** it cannot be added to the customer's cart.
+
+#### 2.8.2 Inventory Records
+
+**EACH** inventory record contains:
+- Quantity change (positive for restocking, negative for orders/adjustments)
+- Reason for the change (e.g., "order", "restock", "adjustment")
+- Timestamp of the change
+- Associated order ID (if applicable)
+
+**WHEN** inventory records are created,
+**THEN** they are preserved permanently for audit purposes.
+
+**WHEN** a seller views inventory history for a variant,
+**THEN** they can see all inventory records with full details.
+
+#### 2.8.3 Stock Addition (Restocking)
+
+**WHEN** a seller adds stock to a variant,
+**THEY** must specify:
+- Quantity to add (positive integer)
+- Reason for restocking (e.g., "supplier shipment", "return from customer")
+
+**WHEN** stock is successfully added,
+**THEN** a positive inventory record is created and stock quantity increases.
+
+#### 2.8.4 Stock Subtraction (Adjustment/Loss)
+
+**WHEN** a seller subtracts stock from a variant,
+**THEY** must specify:
+- Quantity to subtract (positive integer)
+- Reason for subtraction (e.g., "damage", "loss", "breakage")
+
+**WHEN** stock is successfully subtracted,
+**THEN** a negative inventory record is created and stock quantity decreases.
+
+**WHEN** stock subtraction causes stock to go negative,
+**THEN** the operation is blocked and the seller receives an error message.
+
+#### 2.8.5 Stock Deduction (Order Placement)
+
+**WHEN** an order is placed successfully,
+**THEN** stock quantities are automatically decreased for each purchased variant.
+
+**WHEN** stock deduction is processed,
+**THEN** a negative inventory record is created with reason "order".
+
+#### 2.8.6 Stock Restoration (Order Cancellation/Refund)
+
+**WHEN** an order item is cancelled,
+**THEN** the stock quantity is restored for the purchased variant.
+
+**WHEN** stock is restored due to cancellation,
+**THEN** a positive inventory record is created with reason "order cancellation".
+
+**WHEN** an order item is refunded,
+**THEN** the stock quantity is restored for the purchased variant.
+
+**WHEN** stock is restored due to refund,
+**THEN** a positive inventory record is created with reason "refund".
+
+### 2.9 Product Search
+
+#### 2.9.1 Search Functionality
+
+**WHEN** a customer searches for products,
+**THEY** can search by product name (partial matches allowed).
+
+**WHEN** search results are displayed,
+**THEN** they show products from all sellers (cross-seller search).
+
+**WHEN** search results are displayed,
+**THEN** they are paginated (20 products per page by default).
+
+**WHEN** a customer views search results,
+**THEN** they can see basic product information as described in product listing requirements.
+
+#### 2.9.2 Search Filters
+
+**WHEN** a customer searches products,
+**THEY** can apply the following filters:
+- **Category filter**: Show only products in specific category (including subcategories)
+- **Price range filter**: Set minimum and maximum price limits
+- **In-stock filter**: Show only products with available stock
+
+**WHEN** multiple filters are applied,
+**THEN** results are combined (logical AND operation).
+
+**WHEN** filters are applied,
+**THEN** the filter state is preserved when navigating pages.
+
+#### 2.9.3 Search Sorting
+
+**WHEN** search results are displayed,
+**THEY** can be sorted by the following options:
+- **Newest first**: Sort by product creation date, newest first
+- **Price (low to high)**: Sort by price ascending
+- **Price (high to low)**: Sort by price descending
+
+**WHEN** no sort order is specified,
+**THEN** results are sorted by relevance (search term matching and recency).
+
+### 2.10 Product Detail Page
+
+#### 2.10.1 Product Information Display
+
+**WHEN** a customer views a product detail page,
+**THEN** the page displays:
+- All product images (gallery or carousel format)
+- Product name and description
+- Category information (linked to category page)
+- Seller shop name (linked to seller profile page)
+- Price information (base price or price range for variants)
+
+#### 2.10.2 Variant Selection
+
+**WHEN** a customer views a product detail page,
+**THEN** they can see all available variants with:
+- Variant option values (e.g., "Red / Large")
+- Price for that variant
+- Stock quantity and status ("In Stock", "Limited Stock", "Out of Stock")
+
+**WHEN** a customer selects a variant,
+**THEN** the price updates to show that variant's specific price.
+
+**WHEN** a customer selects an out-of-stock variant,
+**THEN** they cannot add it to the cart.
+
+#### 2.10.3 Rating and Reviews
+
+**WHEN** a customer views a product detail page,
+**THEN** they can see:
+- Average rating (calculated from all non-deleted reviews)
+- Total review count
+- Option to view all reviews
+
+**WHEN** reviews are displayed,
+**THEN** they are sorted by newest first.
+
+**WHEN** a customer views a review,
+**THEN** they can see:
+- Reviewer name (or "Deleted User" for deleted accounts)
+- Rating (1-5 stars)
+- Review text (if provided)
+- Review date
+
+### 2.11 Wishlist Management
+
+#### 2.11.1 Wishlist Creation and Viewing
+
+**WHEN** a customer adds a product to their wishlist,
+**THEN** the product is added to their wishlist.
+
+**WHEN** a customer views their wishlist,
+**THEN** they can see all products they've added.
+
+**WHEN** a wishlist is displayed,
+**THEN** it is paginated (20 products per page by default).
+
+**WHEN** a wishlist product is displayed,
+**THEN** it shows:
+- Product name
+- Main image
+- Base price (or price range)
+- Seller shop name
+- Option to remove from wishlist
+
+#### 2.11.2 Wishlist Operations
+
+**WHEN** a customer removes a product from their wishlist,
+**THEN** the product is removed from their wishlist.
+
+**WHEN** a product is deleted by its seller,
+**THEN** it is automatically removed from all customers' wishlists.
+
+**WHEN** a customer views their wishlist,
+**THEN** products that are out of stock or deleted are marked as unavailable.
+
+### 2.12 Shopping Cart
+
+#### 2.12.1 Cart Creation and Viewing
+
+**WHEN** a customer adds a variant to their cart,
+**THEY** must specify:
+- Product variant (specific SKU, not just product)
+- Quantity (positive integer)
+
+**WHEN** a customer views their cart,
+**THEN** they can see all items with:
+- Product name
+- Variant options (e.g., "Red / Large")
+- Price per item
+- Quantity
+- Subtotal (price × quantity)
+
+**WHEN** a customer views their cart,
+**THEN** they can see the total price of all items.
+
+**WHEN** a customer views their cart,
+**THEN** the cart is paginated (20 items per page by default).
+
+#### 2.12.2 Cart Operations
+
+**WHEN** a customer adds the same variant to their cart,
+**THEN** the quantities are combined (not added as separate line items).
+
+**WHEN** a customer changes the quantity of an item in their cart,
+**THEN** the quantity updates and subtotal recalculates.
+
+**WHEN** a customer removes an item from their cart,
+**THEN** the item is removed from the cart.
+
+#### 2.12.3 Cart Validation
+
+**WHEN** a variant's stock is less than the cart quantity,
+**THEN** a warning is displayed ("Only X items available, reduce quantity").
+
+**WHEN** a variant is out of stock,
+**THEN** it is marked as unavailable in the cart.
+
+**WHEN** a variant is deleted by the seller,
+**THEN** it is marked as unavailable in the cart.
+
+**WHEN** a customer attempts to proceed to checkout with unavailable items,
+**THEN** they are prevented from checking out those items.
+
+### 2.13 Checkout and Order Placement
+
+#### 2.13.1 Checkout Process
+
+**WHEN** a customer proceeds to checkout from their cart,
+**THEN** they review the order summary including:
+- List of items with prices and quantities
+- Selected shipping address
 - Total price
 
-**WHEN a customer confirms order, THE system SHALL proceed to payment processing.**
+**WHEN** a customer selects a shipping address,
+**THEN** they can choose from their saved addresses or use the default.
 
-**WHEN payment fails, THEN THE system SHALL NOT create order record and allow retry.**
+**WHEN** a customer views the order summary,
+**THEN** they can confirm or cancel the checkout process.
 
-**WHEN payment succeeds, THEN THE system SHALL create order record.**
+#### 2.13.2 Order Placement
 
-### Order Creation
+**WHEN** a customer confirms and places the order,
+**THEN** payment is initiated through the external payment gateway.
 
-**WHEN an order is placed successfully, THEN THE system SHALL:**
-- Create inventory records reducing stock for each purchased variant
-- Remove items from the customer's cart
-- Create order record with current shipping address
-- Generate order items from cart variants
-- Create product snapshots preserving state at time of purchase
-- Create seller profile snapshots at time of purchase
+**WHEN** payment processing fails,
+**THEN** the order is not created and the customer can retry.
 
-**WHEN an order item is created, THE system SHALL:**
-- Capture product name, description, variant options
-- Store price at time of purchase
-- Save current seller shop name and logo reference
-- Set initial status to "paid"
-- Link to associated product and seller snapshots
+**WHEN** payment processing succeeds,
+**THEN** the order is created with the following actions:
+- Stock quantities are decreased for each purchased variant
+- Cart items are removed for the purchased variants
+- An order record is created
+- Order items are created for each purchased variant
 
-### Order Structure and Status
+#### 2.13.3 Order Snapshots
 
-**WHEN an order has multiple items from different sellers, THEN THE system SHALL:**
-- Group items by seller for shipment processing
-- Maintain individual item status for each order item
-- Allow cancellation and refund at item level only
+**WHEN** an order is placed successfully,
+**THEN** a snapshot of each purchased product is saved with the order item.
 
-**IF all order items have status "paid", THEN THE system SHALL set overall order status to "paid".**
+**WHEN** a product snapshot is saved,
+**THEN** it preserves:
+- Product name, description, category at time of purchase
+- Base price at time of purchase
+- All product images (in order) at time of purchase
 
-**IF any item has status "shipped" and none are "delivered", THEN THE system SHALL set overall order status to "shipped".**
+**WHEN** an order is placed successfully,
+**THEN** a snapshot of each purchased variant is saved with the order item.
 
-**IF all items have status "delivered", THEN THE system SHALL set overall order status to "delivered".**
+**WHEN** a variant snapshot is saved,
+**THEN** it preserves:
+- SKU code at time of purchase
+- Option values at time of purchase
+- Price at time of purchase (variant price or base price)
 
-**IF all items have status "cancelled", THEN THE system SHALL set overall order status to "cancelled".**
+**WHEN** an order is placed successfully,
+**THEN** a snapshot of each seller's profile is saved with order items for that seller.
 
-**IF all items have status "refunded", THEN THE system SHALL set overall order status to "refunded".**
+**WHEN** a seller profile snapshot is saved,
+**THEN** it preserves:
+- Shop name at time of purchase
+- Shop logo at time of purchase
 
-**IF items have mixed statuses (e.g., some delivered, some refunded), THEN THE system SHALL set overall order status to "partially completed".**
+**WHEN** an order item is snapshotted,
+**THEN** the snapshot is immutable and cannot be modified.
 
-### Shipping and Tracking
+### 2.14 Order Structure and Management
 
-**WHEN a shipment is created, THE system SHALL associate it with one or more order items from the same seller.**
+#### 2.14.1 Order Creation
 
-**WHEN a seller enters tracking information, THE system SHALL store carrier name and tracking number for the shipment.**
+**WHEN** an order is placed successfully,
+**THEN** it contains one or more order items.
 
-**WHEN a shipment is created, THEN ALL of the following shall occur:**
-- All items in the shipment change status to "shipped"
-- Tracking information becomes visible to customers
-- Delivery countdown begins for automatic delivery confirmation
+**EACH** order item represents a purchased product variant with a quantity.
 
-**WHEN a customer confirms delivery, THEN THE system SHALL:**
-- Change all items in that shipment to status "delivered"
-- Update order status if all items are now delivered
-- Enable review functionality for those items
+**WHEN** a customer buys multiple quantities of the same variant,
+**THEN** it becomes one order item (not multiple items).
 
-**WHEN 14 days have passed since shipping without customer confirmation, THEN THE system SHALL:**
-- Automatically change all items in shipment to "delivered"
-- Update order status accordingly
-- Enable review functionality
+**WHEN** a customer buys products from multiple sellers,
+**THEN** each seller's items become separate order items.
 
-### Order Cancellation Process
+**WHEN** an order is created,
+**THEN** each order item has its own status (initially "paid").
 
-**WHEN a customer requests cancellation for a "paid" item, THE system SHALL create a cancellation request with reason.**
+#### 2.14.2 Order History
 
-**WHEN a seller responds to a cancellation request, THEN THE system SHALL:**
-- Create snapshot of request state at time of response
-- Change item status to "cancelled" if approved
-- Restore stock quantities if approved
-- Keep item status unchanged if rejected
+**WHEN** a customer views their order history,
+**THEN** they can see a list of all their orders.
 
-**WHEN an item is cancelled, THEN THE system SHALL:**
-- Create positive inventory record restoring stock
-- Update order status if all items are cancelled
-- Show cancellation confirmation to customer
+**WHEN** orders are displayed,
+**THEN** they are sorted by newest first.
 
-**IF all items in an order are cancelled, THEN THE system SHALL set overall order status to "cancelled".**
+**WHEN** an order is displayed in the list,
+**THEN** it shows:
+- Order number
+- Order date
+- Total price
+- Overall order status
 
-### Refund Process
+**WHEN** a customer views an order's full details,
+**THEN** they can see:
+- List of items with product name, variant, quantity, price, and status
+- Shipping address used for the order
+- List of shipments with tracking information
 
-**WHEN a customer requests refund for a "delivered" item within 7 days, THE system SHALL create a refund request with reason.**
+#### 2.14.3 Order Status
 
-**WHEN a seller responds to a refund request, THEN THE system SHALL:**
-- Create snapshot of request state at time of response
-- Process refund if approved
-- Restore stock quantities if approved
-- Keep item status unchanged if rejected
+**EACH** order item has its own status:
+- **Paid**: Payment completed, waiting for seller to ship
+- **Shipped**: Seller has shipped the item
+- **Delivered**: Item has been delivered
+- **Cancelled**: Item was cancelled
+- **Refunded**: Item was refunded
 
-**WHEN an item is refunded, THEN THE system SHALL:**
-- Create positive inventory record restoring stock
-- Update order status if all items are refunded
-- Show refund confirmation to customer
+**THE** overall order status is derived from its items:
+- If all items are paid → order is "paid"
+- If any item is shipped (and none delivered yet) → order is "shipped"
+- If all items are delivered → order is "delivered"
+- If all items are cancelled → order is "cancelled"
+- If all items are refunded → order is "refunded"
+- If mixed states exist → order is "partially completed"
 
-**IF all items in an order are refunded, THEN THE system SHALL set overall order status to "refunded".**
+#### 2.14.4 Order Item Cancellation
 
-**IF any item is refunded but others remain active, THEN THE system SHALL set overall order status to "partially completed".**
+**WHEN** a customer requests cancellation for an order item with status "paid",
+**THEY** must provide a cancellation reason.
 
-## Review System Requirements
+**WHEN** a cancellation request is submitted,
+**THEN** the seller of that item receives a notification.
 
-**WHEN a customer writes a review for a product, THE system SHALL require rating (1-5 stars).**
+**WHEN** a seller responds to a cancellation request,
+**THEN** a snapshot of the request state is created.
 
-**WHEN a customer writes a review, THE system SHALL associate it with a specific order item that has status "delivered".**
+**WHEN** a cancellation request is approved,
+**THEN** that item is cancelled and refund is processed.
 
-**WHEN a customer writes a review, THEN THE system SHALL:**
-- Allow optional text content
-- Store rating and text content
-- Timestamp the review creation
-- Link to the purchased product
+**WHEN** stock is restored due to cancellation,
+**THEN** a positive inventory record is created with reason "order cancellation".
 
-**WHEN a customer edits their review, THE system SHALL create a snapshot of the previous review state.**
+**WHEN** some items in an order are cancelled but others continue,
+**THEN** the remaining items process normally.
 
-**WHEN a customer deletes their review, THE system SHALL:**
-- Remove review from product's review list
-- Preserve review snapshot for audit purposes
-- Recalculate product's average rating excluding deleted review
+**WHEN** all items in an order are cancelled,
+**THEN** the entire order status becomes "cancelled".
 
-**WHEN a product's average rating is calculated, THEN THE system SHALL:**
-- Include only non-deleted reviews
-- Calculate arithmetic mean of all ratings
-- Store average for display purposes
-- Update product detail pages automatically
+**WHEN** an order item has status "shipped", "delivered", "cancelled", or "refunded",
+**THEN** cancellation is not possible.
 
-**WHEN reviews are displayed on product page, THE system SHALL:**
-- Show reviews sorted by newest first
-- Display rating, text content, and timestamp
-- Show reviewer information (or "deleted user" if anonymized)
-- Display average rating and total count
+#### 2.14.5 Order Item Refunds
 
-## Business Rules and Validation
+**WHEN** a customer requests a refund for a delivered order item,
+**THEY** must provide a refund reason.
 
-### Account Validation Rules
+**WHEN** a refund request is submitted,
+**THEN** the seller of that item receives a notification.
 
-**WHEN a customer registers, THE system SHALL validate email format and uniqueness.**
+**WHEN** a seller responds to a refund request,
+**THEN** a snapshot of the request state is created.
 
-**WHEN a customer registers, THE system SHALL validate password strength requirements.**
+**WHEN** a refund request is approved,
+**THEN** that item is refunded and stock is restored.
 
-**WHEN a seller registers, THE system SHALL validate email format and uniqueness.**
+**WHEN** stock is restored due to refund,
+**THEN** a positive inventory record is created with reason "refund".
 
-**WHEN a seller registers, THE system SHALL validate password strength requirements.**
+**WHEN** a refund request is within 7 days of delivery,
+**THEN** it can be submitted.
 
-**IF email format is invalid, THEN THE system SHALL show specific error message.**
+**WHEN** a refund request is after 7 days of delivery,
+**THEN** it is rejected (time limit enforcement).
 
-**IF email already exists, THEN THE system SHALL show specific error message.**
+**WHEN** some items in an order are refunded but others are delivered,
+**THEN** the remaining items are unaffected.
 
-**IF password does not meet requirements, THEN THE system SHALL show specific error message.**
+**WHEN** all items in an order are refunded,
+**THEN** the entire order status becomes "refunded".
 
-### Product Validation Rules
+### 2.15 Shipping and Tracking
 
-**WHEN a product is created, THE system SHALL require name field.**
+#### 2.15.1 Shipment Concept
 
-**WHEN a product is created, THE system SHALL require description field.**
+**A** shipment is a package sent by a seller.
 
-**WHEN a product is created, THE system SHALL require category selection.**
+**A** shipment can contain one or more order items from the same seller.
 
-**WHEN a product is created, THE system SHALL require base price field.**
+**Different** sellers always ship separately (different shipments).
 
-**WHEN a product is created, THE system SHALL associate it with seller account.**
+**A** seller can choose to ship items individually or bundle multiple items into one shipment.
 
-**WHEN a product is edited, THE system SHALL validate all required fields remain present.**
+#### 2.15.2 Shipping Process
 
-**IF a product has no variants, THEN THE system SHALL display as "unavailable".**
+**WHEN** a seller needs to ship order items,
+**THEN** they can select which of their items to include in a shipment.
 
-**IF a product has variants but none are in stock, THEN THE system SHALL display as "out of stock".**
+**WHEN** a seller creates a shipment,
+**THEY** must enter:
+- Carrier name
+- Tracking number
 
-### Inventory Validation Rules
+**WHEN** a shipment is created,
+**THEN** all items in the shipment change to status "shipped".
 
-**WHEN inventory is added, THE system SHALL validate quantity is positive.**
+**WHEN** a seller views their shipping queue,
+**THEN** they can see order items that need shipping.
 
-**WHEN inventory is subtracted, THE system SHALL validate reason field.**
+#### 2.15.3 Delivery Confirmation
 
-**WHEN inventory reaches zero, THE system SHALL update variant status.**
+**WHEN** a customer views a shipment,
+**THEN** they can see tracking information (carrier name, tracking number).
 
-**WHEN inventory is adjusted, THE system SHALL create history record.**
+**WHEN** a customer confirms delivery of a shipment,
+**THEN** all items in that shipment change to status "delivered".
 
-**WHEN order placement requires inventory reduction, THEN THE system SHALL:**
-- Verify sufficient stock exists
-- Reduce stock by exact quantity
-- Create inventory history record
-- Fail transaction if insufficient stock
+**WHEN** a customer does not confirm delivery,
+**THEN** items automatically change to "delivered" after 14 days from shipping.
 
-### Order Validation Rules
+**WHEN** items are marked as delivered,
+**THEN** the customer can write reviews for those products.
 
-**WHEN an order is placed, THE system SHALL validate shipping address selection.**
+### 2.16 Review System
 
-**WHEN an order is placed, THE system SHALL validate all items are available.**
+#### 2.16.1 Review Creation
 
-**WHEN payment fails, THEN THE system SHALL NOT create order record.**
+**WHEN** a customer has delivered order items for a product,
+**THEN** they can write a review for that product.
 
-**WHEN payment succeeds, THEN THE system SHALL:**
-- Create order record with status "paid"
-- Reduce inventory for purchased variants
-- Remove items from cart
-- Create order item records
-- Create product and variant snapshots
+**WHEN** a customer writes a review,
+**THEY** must provide:
+- Rating (1 to 5 stars, required)
+- Text content (optional)
 
-**WHEN a customer has no default address, THEN THE system SHALL:**
-- Require address selection before checkout
-- Allow creating new address during checkout
-- Show appropriate error if address unavailable
+**WHEN** a customer writes a review,
+**THEN** only one review per product per order is allowed.
 
-### Review Validation Rules
+**WHEN** a review is submitted,
+**THEN** it appears on the product detail page.
 
-**WHEN a customer writes a review, THE system SHALL require rating between 1-5.**
+#### 2.16.2 Review Display and Calculation
 
-**WHEN a customer writes a review, THE system SHALL require item status to be "delivered".**
+**WHEN** a product's average rating is calculated,
+**THEN** it is computed from all non-deleted reviews.
 
-**WHEN a customer writes a review, THE system SHALL allow optional text content.**
+**WHEN** reviews are displayed on a product page,
+**THEN** they are sorted by newest first.
 
-**WHEN a customer edits a review, THE system SHALL require existing review ownership.**
+**WHEN** a review is displayed,
+**THEN** it shows:
+- Reviewer name (or "Deleted User" for deleted accounts)
+- Rating (1-5 stars)
+- Review text (if provided)
+- Review date
 
-**IF a customer attempts to write multiple reviews for same item, THEN THE system SHALL prevent duplicate.**
+#### 2.16.3 Review Editing and Deletion
 
-### Snapshot Validation Rules
+**WHEN** a customer edits their own review,
+**THEN** a snapshot of the previous review state is created.
 
-**WHEN any snapshot is created, THE system SHALL be immutable and non-deletable.**
+**WHEN** a customer deletes their own review,
+**THEN** the review is marked as deleted but snapshots are preserved.
 
-**WHEN a snapshot is created, THE system SHALL include complete state at time of event.**
+**WHEN** a review is deleted,
+**THEN** it is no longer included in the average rating calculation.
 
-**WHEN a snapshot is accessed, THE system SHALL verify appropriate permissions.**
+**WHEN** a customer views their reviews,
+**THEN** they can see all their submitted reviews with edit and delete options.
 
-**WHEN a snapshot is used for dispute resolution, THEN THE system SHALL:**
-- Show complete historical state
-- Include all related snapshots
-- Provide context for comparison
-- Maintain chain of custody
+### 2.17 Seller Dashboard
 
-## Snapshot and Audit System
+#### 2.17.1 Shop Summary
 
-### Snapshot Creation Triggers
-
-**WHEN a product is edited, THE system SHALL create a complete product snapshot.**
-
-**WHEN a variant is edited, THE system SHALL create a snapshot of that variant.**
-
-**WHEN a seller profile is edited, THE system SHALL create a profile snapshot.**
-
-**WHEN an order item is created, THE system SHALL create product and variant snapshots.**
-
-**WHEN a review is edited, THE system SHALL create a review snapshot.**
-
-**WHEN a cancellation request is updated, THE system SHALL create a request snapshot.**
-
-**WHEN a refund request is updated, THE system SHALL create a request snapshot.**
-
-### Snapshot Structure Requirements
-
-**WHEN a product snapshot is created, THE system SHALL include:**
-- Complete product data at time of snapshot
-- All variant snapshots with their complete state
-- Image references at time of snapshot
-- Timestamp of snapshot creation
-- User who performed the edit
-
-**WHEN a variant snapshot is created, THE system SHALL include:**
-- SKU code at time of snapshot
-- Option values at time of snapshot
-- Price at time of snapshot
-- Timestamp of snapshot creation
-
-**WHEN a seller profile snapshot is created, THE system SHALL include:**
-- Shop name at time of snapshot
-- Shop description at time of snapshot
-- Logo reference at time of snapshot
-- Timestamp of snapshot creation
-
-**WHEN an order item snapshot is created, THE system SHALL include:**
-- Product snapshot with all fields
-- Variant snapshot with all fields
-- Seller profile snapshot with shop information
-- Price at time of purchase
-- Timestamp of snapshot creation
-
-**WHEN a review snapshot is created, THE system SHALL include:**
-- Rating at time of snapshot
-- Text content at time of snapshot
-- Timestamp of snapshot creation
-- User who performed the edit
-
-### Snapshot Access and Usage
-
-**WHEN an owner views their own snapshots, THE system SHALL provide access.**
-
-**WHEN an administrator views any snapshot, THE system SHALL provide complete access.**
-
-**WHEN a snapshot is created, THEN THE system SHALL:**
-- Store snapshot in immutable storage
-- Prevent deletion of any snapshot
-- Enable retrieval by timestamp and user context
-- Support dispute resolution needs
-
-**WHILE viewing snapshots for dispute resolution, THEN THE system SHALL:**
-- Show complete historical state of modified data
-- Include timestamps and modifier information
-- Enable comparison between versions
-- Preserve chain of custody
-
-## Seller Dashboard Requirements
-
-**WHEN a seller accesses dashboard, THE system SHALL display summary statistics.**
-
-**WHEN a seller views summary, THE system SHALL show:**
-- Total number of active products
-- Total number of order items for their products
+**WHEN** a seller views their dashboard,
+**THEN** they can see a summary of their shop including:
+- Total number of products
+- Total number of order items (for their products)
 - Number of pending cancellation requests
 - Number of pending refund requests
 
-**WHEN a seller views order items, THE system SHALL show list of items for their products.**
+#### 2.17.2 Order Management
 
-**WHEN a seller filters order items, THE system SHALL support filtering by status.**
+**WHEN** a seller views order items for their products,
+**THEN** they can see all order items with status, quantity, and customer information.
 
-**WHEN a seller processes shipments, THE system SHALL select items for each shipment.**
+**WHEN** a seller filters order items,
+**THEN** they can filter by status (paid, shipped, delivered, cancelled, refunded).
 
-**WHEN a seller enters tracking information, THEN THE system SHALL create shipment records.**
+**WHEN** a seller views order item details,
+**THEN** they can process cancellations and refunds.
 
-## Administrator System Requirements
+### 2.18 Administrator System
 
-### Seller Approval Workflow
+#### 2.18.1 Administrator Roles
 
-**WHEN a seller registration is pending, THE system SHALL require administrator action.**
+**ADMINISTRATORS** have two grades:
+- **Regular administrator**: Standard administrative capabilities
+- **Super administrator**: Complete system oversight and user management
 
-**WHEN an administrator approves a seller, THE system SHALL set status to "approved".**
+**WHEN** a user (customer or seller) submits an administrator request,
+**THEY** must provide a reason for the request.
 
-**WHEN an administrator rejects a seller, THE system SHALL require rejection reason.**
+**WHEN** a super administrator reviews an administrator request,
+**THEN** they can approve or reject the request.
 
-**WHEN a seller is rejected, THEN THE system SHALL:**
-- Store rejection reason in seller record
-- Allow seller to view reason
-- Enable resubmission of new application
-- Keep previous application data for reference
+**WHEN** an administrator request is approved,
+**THEN** the user becomes a regular administrator.
 
-### Seller Suspension
+**WHEN** a super administrator promotes a regular administrator,
+**THEN** they become a super administrator.
 
-**WHEN an administrator suspends a seller, THE system SHALL hide all their products.**
+**WHEN** a super administrator demotes another super administrator,
+**THEN** they become a regular administrator.
 
-**WHEN a seller is suspended, THEN THE system SHALL:**
-- Hide products from search and category listings
-- Block new purchases of their products
-- Allow processing of existing orders (shipping, responses)
-- Prevent product creation and editing
+**WHEN** a super administrator attempts to demote themselves,
+**THEN** the demotion is blocked.
 
-**WHEN an administrator unsuspends a seller, THE system SHALL restore product visibility.**
+#### 2.18.2 Seller Management
 
-### Category Management
+**WHEN** an administrator views pending seller approvals,
+**THEN** they can see all registration requests awaiting review.
 
-**WHEN an administrator creates a category, THE system SHALL store name and description.**
+**WHEN** an administrator reviews a seller registration,
+**THEN** they can approve or reject the request.
 
-**WHEN an administrator creates a subcategory, THE system SHALL link to parent category.**
+**WHEN** a seller registration is rejected,
+**THEN** the administrator must provide a rejection reason.
 
-**WHEN an administrator edits a category, THE system SHALL allow name and description updates.**
+**WHEN** a seller is rejected,
+**THEN** they can submit a new registration request.
 
-**WHEN an administrator deletes a category, THE system SHALL set products to "uncategorized".**
+**WHEN** an administrator suspends a seller account,
+**THEN** the following restrictions apply:
+- Seller's products are hidden from search and category listings
+- Seller's products cannot be purchased
+- Seller can still process existing orders (ship items, respond to cancellation/refund requests)
+- Seller cannot create new products or edit existing products
 
-**IF a category has products, THEN THE system SHALL:**
-- Require administrator to reassign or uncategorize products first
-- Or automatically mark products as uncategorized
-- Maintain category history for reference
+**WHEN** an administrator unsuspends a seller account,
+**THEN** the seller's products become visible again and normal operations resume.
 
-### Product Oversight
+#### 2.18.3 Category Management
 
-**WHEN an administrator views all products, THE system SHALL display products from all sellers.**
+**WHEN** an administrator creates a category,
+**THEN** they can specify the parent category (top-level or subcategory).
 
-**WHEN an administrator views a product snapshot, THE system SHALL show complete historical state.**
+**WHEN** an administrator edits a category,
+**THEN** they can update the name and description.
 
-**WHEN an administrator deletes a product, THEN THE system SHALL:**
-- Remove product from listings immediately
-- Delete all variants and inventory records
-- Preserve product snapshots for audit
-- Remove from all customer wishlists
-- Update order history snapshots
-
-### Order Oversight
-
-**WHEN an administrator views all orders, THE system SHALL display complete order data.**
-
-**WHEN an administrator force-cancels an item, THE system SHALL:**
-- Process refund to customer
-- Restore stock quantities
-- Update item and order status
-- Create audit trail
-
-**WHEN an administrator force-refunds an item, THE system SHALL:**
-- Process refund to customer
-- Restore stock quantities
-- Update item and order status
-- Create audit trail
-
-### User Management
-
-**WHEN an administrator views all customers, THE system SHALL display customer accounts.**
-
-**WHEN an administrator bans a customer, THE system SHALL prevent login.**
-
-**WHEN an administrator unbans a customer, THE system SHALL restore access.**
-
-**WHEN an administrator views all sellers, THE system SHALL display seller accounts with status.**
-
-**WHEN an administrator bans a seller, THE system SHALL:**
-- Prevent login to seller account
-- Maintain existing order processing capabilities
-- Allow order fulfillment and dispute resolution
-
-## Business Workflow Diagrams
-
-### Product Lifecycle and Snapshot Management
-
-```mermaid
-graph LR
-  A["Seller Creates Product"] --> B["Initial Product State"]
-  B --> C["Product Published"]
-  C --> D{"Product Edited?"}
-  D -->|Yes| E["Create Product Snapshot"]
-  E --> F["Update Product"]
-  F --> G["Product Updated"]
-  D -->|No| H["Product Unchanged"]
-  G --> D
-  H --> D
-  C --> I{"Product Deleted?"}
-  I -->|Yes| J["Check Order Items"]
-  J --> K{"Pending Orders?"}
-  K -->|Yes| L["Prevent Deletion"]
-  K -->|No| M["Delete Product"]
-  L --> I
-  M --> N["Preserve Snapshots"]
-  N --> O["Remove from Listings"]
-  I -->|No| P["Product Active"]
-  P --> D
-```
-
-### Order Processing and Inventory Flow
-
-```mermaid
-graph LR
-  A["Customer Adds to Cart"] --> B["Validate Stock"]
-  B --> C{"In Stock?"}
-  C -->|No| D["Show Error"]
-  C -->|Yes| E["Update Cart"]
-  E --> F["Proceed to Checkout"]
-  F --> G["Select Shipping Address"]
-  G --> H["Review Order Summary"]
-  H --> I["Confirm Payment"]
-  I --> J{"Payment Success?"}
-  J -->|No| K["Show Error, Allow Retry"]
-  J -->|Yes| L["Create Order Record"]
-  L --> M["Create Order Items"]
-  M --> N["Create Product Snapshots"]
-  N --> O["Create Seller Snapshots"]
-  O --> P["Reduce Inventory Records"]
-  P --> Q["Clear Cart"]
-  Q --> R["Send Confirmation"]
-  K --> I
-```
-
-### Product Snapshot Structure
-
-```mermaid
-graph TB
-  A["Product Snapshot"] --> B["Product ID"]
-  A --> C["Name"]
-  A --> D["Description"]
-  A --> E["Base Price"]
-  A --> F["Category"]
-  A --> G["Images"]
-  A --> H["Creation Timestamp"]
-  A --> I["Editing User"]
-  A --> J["Variant Snapshots"]
-  J --> K["Variant 1"]
-  J --> L["Variant 2"]
-  J --> M["Variant N"]
-  K --> N["SKU Code"]
-  K --> O["Option Values"]
-  K --> P["Price Override"]
-  K --> Q["Stock Quantity"]
-  K --> R["Timestamp"]
-```
-
-### Order Status Transition Flow
-
-```mermaid
-graph LR
-  A["Paid"] --> B{"Shipped?"}
-  B -->|Yes| C["Shipped"]
-  B -->|No| A
-  C --> D{"Delivered?"}
-  D -->|Yes| E["Delivered"]
-  D -->|No| C
-  E --> F{"All Items Delivered?"}
-  F -->|Yes| G["Order Delivered"]
-  F -->|No| H["Partially Completed"]
-  A --> I{"Cancelled?"}
-  I -->|Yes| J["Cancelled"]
-  I -->|No| A
-  E --> K{"Refunded?"}
-  K -->|Yes| L["Refunded"]
-  K -->|No| E
-  L --> M{"All Items Refunded?"}
-  M -->|Yes| N["Order Refunded"]
-  M -->|No| H
-  J --> O{"All Items Cancelled?"}
-  O -->|Yes| G
-  O -->|No| H
-```
-
-### Seller Account Lifecycle
-
-```mermaid
-graph LR
-  A["Seller Registration"] --> B["Submit Application"]
-  B --> C["Pending Approval"]
-  C --> D{"Administrator Review"}
-  D -->|Approve| E["Approved - Full Access"]
-  D -->|Reject| F["Rejected with Reason"]
-  F --> G["View Rejection Reason"]
-  G --> H["Resubmit Application"]
-  H --> C
-  E --> I["Seller Dashboard Access"]
-  I --> J["Product Management"]
-  I --> K["Order Processing"]
-  I --> L["Inventory Management"]
-  E --> M{"Seller Requests Deletion?"}
-  M -->|Yes| N["Check Pending Orders"]
-  N --> O{"Pending Orders?"}
-  O -->|Yes| P["Block Deletion"]
-  O -->|No| Q["Check Refund Requests"]
-  Q --> R{"Pending Requests?"}
-  R -->|Yes| P
-  R -->|No| S["Delete Account"]
-  P --> M
-  S --> T["Preserve Order History"]
-  T --> U["Delete Products"]
-  U --> V["Remove Shop Name from Orders"]
-  M -->|No| I
-```
-
-## Complete User Actors and Permissions Matrix
-
-### Customer Permissions
-
-| Action | Customer | Seller | Admin | Super Admin |
-|--------|----------|--------|-------|-------------|
-| Register Account | ✅ | ❌ | ❌ | ❌ |
-| Login/Logout | ✅ | ✅ | ✅ | ✅ |
-| View Products | ✅ | ✅ | ✅ | ✅ |
-| Search Products | ✅ | ✅ | ✅ | ✅ |
-| Filter by Category | ✅ | ✅ | ✅ | ✅ |
-| Filter by Price Range | ✅ | ✅ | ✅ | ✅ |
-| Filter In-Stock Only | ✅ | ✅ | ✅ | ✅ |
-| Sort Products | ✅ | ✅ | ✅ | ✅ |
-| Add to Wishlist | ✅ | ❌ | ❌ | ❌ |
-| Add to Cart | ✅ | ❌ | ❌ | ❌ |
-| Edit Cart | ✅ | ❌ | ❌ | ❌ |
-| Place Order | ✅ | ❌ | ❌ | ❌ |
-| View Order History | ✅ | ❌ | ❌ | ❌ |
-| Cancel Order Items | ✅ | ❌ | ❌ | ✅ |
-| Request Refund | ✅ | ❌ | ❌ | ✅ |
-| Write Reviews | ✅ | ❌ | ❌ | ❌ |
-| Edit Own Reviews | ✅ | ❌ | ❌ | ❌ |
-| View Seller Profiles | ✅ | ❌ | ❌ | ❌ |
-| View Product Details | ✅ | ❌ | ❌ | ✅ |
-| View Product Snapshots | ✅ | ❌ | ❌ | ✅ |
-
-### Seller Permissions
-
-| Action | Customer | Seller | Admin | Super Admin |
-|--------|----------|--------|-------|-------------|
-| Register Seller | ❌ | ✅ | ❌ | ❌ |
-| Apply for Approval | ❌ | ✅ | ❌ | ❌ |
-| Edit Shop Profile | ❌ | ✅ | ❌ | ❌ |
-| Create Products | ❌ | ✅ | ❌ | ❌ |
-| Edit Own Products | ❌ | ✅ | ❌ | ❌ |
-| Delete Own Products | ❌ | ✅ | ❌ | ❌ |
-| Add Product Images | ❌ | ✅ | ❌ | ❌ |
-| Reorder Product Images | ❌ | ✅ | ❌ | ❌ |
-| Create Variants | ❌ | ✅ | ❌ | ❌ |
-| Edit Variants | ❌ | ✅ | ❌ | ❌ |
-| Add Inventory | ❌ | ✅ | ❌ | ❌ |
-| Adjust Inventory | ❌ | ✅ | ❌ | ❌ |
-| View Inventory History | ❌ | ✅ | ❌ | ❌ |
-| View Product Snapshots | ❌ | ✅ | ❌ | ❌ |
-| View Own Order Items | ❌ | ✅ | ❌ | ❌ |
-| Process Shipments | ❌ | ✅ | ❌ | ❌ |
-| Handle Cancellation Requests | ❌ | ✅ | ❌ | ✅ |
-| Handle Refund Requests | ❌ | ✅ | ❌ | ✅ |
-| View Seller Dashboard | ❌ | ✅ | ❌ | ❌ |
-| Suspend Own Account | ❌ | ✅ | ❌ | ❌ |
-
-### Administrator Permissions
-
-| Action | Customer | Seller | Admin | Super Admin |
-|--------|----------|--------|-------|-------------|
-| View All Products | ❌ | ❌ | ✅ | ✅ |
-| View All Order Items | ❌ | ❌ | ✅ | ✅ |
-| Approve Seller Registration | ❌ | ❌ | ✅ | ✅ |
-| Reject Seller Registration | ❌ | ❌ | ✅ | ✅ |
-| Suspend Seller Account | ❌ | ❌ | ✅ | ✅ |
-| Unsuspend Seller Account | ❌ | ❌ | ✅ | ✅ |
-| Manage Categories | ❌ | ❌ | ✅ | ✅ |
-| Delete Any Product | ❌ | ❌ | ✅ | ✅ |
-| View Any Product Snapshot | ❌ | ❌ | ✅ | ✅ |
-| Force Cancel Order Items | ❌ | ❌ | ✅ | ✅ |
-| Force Refund Order Items | ❌ | ❌ | ✅ | ✅ |
-| View All Customers | ❌ | ❌ | ✅ | ✅ |
-| Ban Customer Account | ❌ | ❌ | ✅ | ✅ |
-| Unban Customer Account | ❌ | ❌ | ✅ | ✅ |
-| View All Seller Accounts | ❌ | ❌ | ✅ | ✅ |
-| Ban Seller Account | ❌ | ❌ | ✅ | ✅ |
-| Promote Admin to Super | ❌ | ❌ | ❌ | ✅ |
-| Demote Super to Admin | ❌ | ❌ | ❌ | ✅ |
-| View All Snapshots | ❌ | ❌ | ✅ | ✅ |
-
-### Super Administrator Permissions
-
-| Action | Customer | Seller | Admin | Super Admin |
-|--------|----------|--------|-------|-------------|
-| Full System Access | ❌ | ❌ | ❌ | ✅ |
-| Configure Platform Settings | ❌ | ❌ | ❌ | ✅ |
-| Manage Admin Accounts | ❌ | ❌ | ❌ | ✅ |
-| Override Any System Rules | ❌ | ❌ | ❌ | ✅ |
-| Access All Data Without Restrictions | ❌ | ❌ | ❌ | ✅ |
-| Audit All User Activities | ❌ | ❌ | ❌ | ✅ |
-| View Complete Audit Logs | ❌ | ❌ | ❌ | ✅ |
-| Export All Data | ❌ | ❌ | ❌ | ✅ |
-
-## Error Handling Requirements
-
-### Authentication Errors
-
-**WHEN invalid credentials are submitted, THEN THE system SHALL:**
-- Return appropriate error code
-- Log security event
-- Increment failed login counter
-- Implement rate limiting after threshold
-
-**WHEN account is locked due to failures, THEN THE system SHALL:**
-- Block authentication attempts
-- Show appropriate error message
-- Provide unlock or reset instructions
-- Log security event
-
-**WHEN session expires, THEN THE system SHALL:**
-- Return appropriate error code
-- Redirect to login page
-- Preserve navigation context for return
-- Show appropriate error message
-
-**WHEN authentication token is invalid, THEN THE system SHALL:**
-- Return appropriate error code
-- Clear invalid token
-- Show appropriate error message
-
-### Validation Errors
-
-**WHEN form data is invalid, THEN THE system SHALL:**
-- Return specific field errors
-- Show descriptive validation messages
-- Preserve form data where possible
-- Highlight invalid fields
-
-**WHEN business validation fails, THEN THE system SHALL:**
-- Return specific error code
-- Show descriptive business rule message
-- Provide recovery path when possible
-- Log error for debugging
-
-**WHEN duplicate entry is detected, THEN THE system SHALL:**
-- Return appropriate error code
-- Show user-friendly message
-- Suggest alternative action
-- Preserve original record
-
-### Business Logic Errors
-
-**WHEN inventory is insufficient, THEN THE system SHALL:**
-- Show current available quantity
-- Suggest adjusted quantity or wait
-- Allow user to remove item
-- Update shopping cart display
-
-**WHEN product is unavailable, THEN THE system SHALL:**
-- Show appropriate message
-- Allow removal from cart/wishlist
-- Suggest similar available products
-- Update displays automatically
-
-**WHEN order cannot be cancelled, THEN THE system SHALL:**
-- Show current order status
-- Explain why cancellation isn't allowed
-- Provide alternative options
-- Link to return/refund process
-
-**WHEN refund window has passed, THEN THE system SHALL:**
-- Show current order status
-- Explain refund policy
-- Suggest customer service contact
-- Provide escalation path
-
-### System Errors
-
-**WHEN database operation fails, THEN THE system SHALL:**
-- Log complete error details
-- Return appropriate error code
-- Show user-friendly message
-- Implement retry mechanism if appropriate
-
-**WHEN external service fails, THEN THE system SHALL:**
-- Log service error details
-- Return appropriate error code
-- Show user-friendly message
-- Implement fallback procedures
-
-**WHEN payment gateway fails, THEN THE system SHALL:**
-- Log payment error details
-- Return appropriate error code
-- Show user-friendly message
-- Allow payment retry with different method
-
-### Recovery Processes
-
-**WHEN error occurs during order placement, THEN THE system SHALL:**
-- Roll back database transactions
-- Preserve cart state
-- Allow user to retry order
-- Show appropriate error message
-
-**WHEN error occurs during payment, THEN THE system SHALL:**
-- Roll back any partial changes
-- Preserve cart state
-- Allow user to retry payment
-- Show appropriate error message
-
-**WHEN error occurs during checkout, THEN THE system SHALL:**
-- Preserve cart and customer data
-- Allow user to restart checkout
-- Show appropriate error message
-- Log error for investigation
-
-## Performance Requirements
-
-### Response Time Expectations
-
-**WHEN a user performs common search, THEN THE system SHALL return results within 2 seconds.**
-
-**WHEN a user views product listing, THEN THE system SHALL load page within 2 seconds.**
-
-**WHEN a user views product detail page, THEN THE system SHALL load page within 3 seconds.**
-
-**WHEN a user adds item to cart, THEN THE system SHALL complete within 1 second.**
-
-**WHEN a user places order, THEN THE system SHALL complete within 5 seconds.**
-
-**WHEN a user logs in, THEN THE system SHALL complete within 1 second.**
-
-**WHEN a user accesses dashboard, THEN THE system SHALL load summary within 3 seconds.**
-
-**WHEN a user views order history, THEN THE system SHALL load first page within 3 seconds.**
-
-**WHEN a user views review section, THEN THE system SHALL load within 2 seconds.**
-
-**WHEN a user uploads image, THEN THE system SHALL complete within 10 seconds for images under 5MB.**
-
-**WHEN a user searches with filters, THEN THE system SHALL return results within 3 seconds.**
-
-### Concurrency Requirements
-
-**WHEN multiple users attempt to purchase same inventory, THEN THE system SHALL:**
-- Prevent overselling through atomic operations
-- Show appropriate error if stock insufficient
-- Maintain data integrity under load
-- Implement proper locking mechanisms
-
-**WHEN inventory is updated simultaneously, THEN THE system SHALL:**
-- Use optimistic locking for updates
-- Show appropriate error if conflict detected
-- Allow user to retry with current values
-- Maintain inventory accuracy
-
-**WHEN order creation occurs simultaneously, THEN THE system SHALL:**
-- Process each order independently
-- Maintain order sequence and integrity
-- Handle payment processing concurrently
-- Update inventory atomically
-
-### Scalability Requirements
-
-**WHEN platform scales to 100,000 products, THEN THE system SHALL:**
-- Maintain search response times within requirements
-- Support efficient category navigation
-- Enable product filtering and sorting
-- Handle concurrent user load
-
-**WHEN platform scales to 10,000 active sellers, THEN THE system SHALL:**
-- Maintain dashboard load times within requirements
-- Support order processing capacity
-- Enable efficient order assignment
-- Handle seller dashboard load
-
-**WHEN platform scales to 1,000,000 orders per month, THEN THE system SHALL:**
-- Maintain order processing performance
-- Support reporting and analytics
-- Enable audit trail queries
-- Handle payment processing volume
-
-### Availability Requirements
-
-**THE system SHALL achieve 99.9% uptime for core functionality.**
-
-**THE system SHALL maintain order processing availability 99.9% of time.**
-
-**THE system SHALL maintain product browsing availability 99.9% of time.**
-
-**THE system SHALL maintain user authentication availability 99.9% of time.**
-
-**WHEN planned maintenance occurs, THEN THE system SHALL:**
-- Notify users in advance
-- Schedule during low-traffic periods
-- Minimize impact on active processes
-- Provide status updates
-
-### User Experience Requirements
-
-**WHEN a user performs action, THEN THE system SHALL show immediate feedback.**
-
-**WHEN an operation is in progress, THEN THE system SHALL show loading indicator.**
-
-**WHEN an operation completes, THEN THE system SHALL show success confirmation.**
-
-**WHEN an error occurs, THEN THE system SHALL show user-friendly message.**
-
-**WHEN a user navigates, THEN THE system SHALL maintain context where appropriate.**
-
-**WHEN a user returns after time away, THEN THE system SHALL:**
-- Show login prompt if session expired
-- Preserve shopping cart state
-- Show appropriate welcome message
-- Allow quick re-authentication
-
-## Conclusion
-
-This requirements specification document provides comprehensive business requirements for the e-commerce shopping mall platform. The document covers all functional areas including user management, product catalog, order processing, and administrative controls.
-
-The platform implements a comprehensive marketplace solution with the following core business capabilities:
-
-1. **User Management**: Complete account lifecycle with approval workflows for sellers and comprehensive user management for administrators
-2. **Product Catalog**: Advanced product management with variants, inventory tracking, and snapshot preservation for historical accuracy
-3. **Shopping Experience**: Complete customer journey from search and wishlist to cart and checkout with robust validation
-4. **Order Processing**: Sophisticated order management with item-level cancellation, shipping tracking, and refund processing
-5. **Seller Tools**: Professional seller dashboard with order processing, shipment management, and inventory control
-6. **Review System**: Customer engagement through product reviews with star ratings and seller reputation tracking
-7. **Administrative Control**: Comprehensive oversight with seller approval, category management, and dispute resolution capabilities
-8. **Audit and Compliance**: Immutable snapshots for all critical data modifications supporting dispute resolution and legal requirements
-
-The platform balances customer convenience with seller professionalism while maintaining administrative oversight for platform health and compliance.
-
-**Next Steps for Development Team**:
-1. Review all requirements and clarify any ambiguities
-2. Design technical architecture to support these business requirements
-3. Implement authentication system with JWT-based session management
-4. Develop database schema supporting all business entities and relationships
-5. Implement API endpoints following REST principles
-6. Build frontend components for each user journey
-7. Implement snapshot system for audit and compliance requirements
-8. Build admin interface for platform management
-
-The requirements document serves as the complete business specification for development implementation. Technical implementation details including API design, database schema, and frontend requirements are at the discretion of the development team.
+**WHEN** an administrator deletes a category,
+**THEN** products in that category become uncategorized (unless they have other categories).
+
+#### 2.18.4 Product Oversight
+
+**WHEN** an administrator views all products,
+**THEN** they can see products from all sellers.
+
+**WHEN** an administrator views a product,
+**THEN** they can see all product snapshots.
+
+**WHEN** an administrator deletes a product,
+**THEN** it is removed from all listings and customer views.
+
+**WHEN** an administrator deletes a product,
+**THEN** all associated inventory records and snapshots are preserved.
+
+#### 2.18.5 Order Oversight
+
+**WHEN** an administrator views all orders,
+**THEN** they can see orders from all customers and sellers.
+
+**WHEN** an administrator force-cancels an order item,
+**THEN** the item is cancelled and stock is restored.
+
+**WHEN** an administrator force-cancels an entire order,
+**THEN** all items are cancelled and stock is restored.
+
+**WHEN** an administrator force-refunds an order item,
+**THEN** the item is refunded and stock is restored.
+
+**WHEN** an administrator force-refunds an entire order,
+**THEN** all items are refunded and stock is restored.
+
+#### 2.18.6 User Management
+
+**WHEN** an administrator views customer accounts,
+**THEN** they can see all customer information.
+
+**WHEN** an administrator bans a customer,
+**THEN** the customer cannot log in to their account.
+
+**WHEN** a customer is banned,
+**THEN** their existing orders remain active and can be processed.
+
+**WHEN** an administrator unbans a customer,
+**THEN** the customer can log in again.
+
+**WHEN** an administrator views seller accounts,
+**THEN** they can see all seller information and approval status.
+
+**WHEN** an administrator bans a seller,
+**THEN** the seller cannot log in but existing orders remain active.
+
+---
+
+> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*

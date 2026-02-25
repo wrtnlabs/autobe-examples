@@ -28,7 +28,7 @@ export namespace IPageIRedditCommunityPost {
    *
    * Collection of records with pagination information.
    */
-  export type IS = {
+  export type ISum = {
     /**
      * Page information.
      *
@@ -39,8 +39,8 @@ export namespace IPageIRedditCommunityPost {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IRedditCommunityPost.IS.
+     * @x-autobe-specification List of records of type IRedditCommunityPost.ISum.
      */
-    data: IRedditCommunityPost.IS[];
+    data: IRedditCommunityPost.ISum[];
   };
 }

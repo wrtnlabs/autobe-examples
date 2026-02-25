@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEconomyPoliticsBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomyPoliticsBoardUser";
+import type { IEconomicPoliticalDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,10 +11,19 @@ import typia, { tags } from "typia";
 export async function authorize_user_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEconomyPoliticsBoardUser.IJoin>;
+    body?: IEconomicPoliticalDiscussionBoardUser.IJoin;
   },
-): Promise<IEconomyPoliticsBoardUser.IAuthorized> {
-  return await api.functional.economyPoliticsBoard.auth.user.join(connection, {
-    body: props.body ?? ({} as IEconomyPoliticsBoardUser.IJoin),
-  });
+): Promise<IEconomicPoliticalDiscussionBoardUser.IAuthorized> {
+  const joinInput = {
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
+    ip: props.body?.ip ?? undefined,
+  } satisfies IEconomicPoliticalDiscussionBoardUser.IJoin;
+  return await api.functional.economicPoliticalDiscussionBoard.auth.user.join(
+    connection,
+    { body: joinInput },
+  );
 }

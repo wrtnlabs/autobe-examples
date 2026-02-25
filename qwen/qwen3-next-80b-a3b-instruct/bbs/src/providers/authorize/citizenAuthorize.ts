@@ -15,7 +15,7 @@ export async function citizenAuthorize(request: {
   const citizen = await MyGlobal.prisma.economic_board_citizens.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      is_banned: false,
     },
   });
 

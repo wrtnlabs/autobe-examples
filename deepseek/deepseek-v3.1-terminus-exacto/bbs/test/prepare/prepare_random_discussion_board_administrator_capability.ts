@@ -6,9 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_administrator_capability(
-  input?:
-    | DeepPartial<IDiscussionBoardAdministratorCapability.ICreate>
-    | undefined,
+  input?: DeepPartial<IDiscussionBoardAdministratorCapability.ICreate>,
 ): IDiscussionBoardAdministratorCapability.ICreate {
   return {
     capability_type:

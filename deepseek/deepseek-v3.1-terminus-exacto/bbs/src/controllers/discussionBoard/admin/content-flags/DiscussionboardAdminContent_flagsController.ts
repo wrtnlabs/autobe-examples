@@ -8,26 +8,48 @@ import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getDiscussionBoardAdminContentFlagsFlagId } from "../../../../providers/getDiscussionBoardAdminContentFlagsFlagId";
 import { patchDiscussionBoardAdminContentFlags } from "../../../../providers/patchDiscussionBoardAdminContentFlags";
-import { putDiscussionBoardAdminContentFlagsFlagId } from "../../../../providers/putDiscussionBoardAdminContentFlagsFlagId";
+import { patchDiscussionBoardAdminContentFlagsFlagIdReview } from "../../../../providers/patchDiscussionBoardAdminContentFlagsFlagIdReview";
 
 @Controller("/discussionBoard/admin/content-flags")
 export class DiscussionboardAdminContent_flagsController {
   /**
-   * Search and retrieve a paginated list of content flags with comprehensive filtering options for moderation workflow management.
+   * Retrieve a filtered and paginated list of content flags for moderation workflow management.
    *
-   * This operation enables administrators to efficiently browse and filter user-reported content flags that require moderation attention. The search functionality supports filtering by flag status, reporter identity, type of flagged content (articles or comments), assigned reviewing administrator, and creation/resolution date ranges. Advanced text search capabilities allow searching within flag reason descriptions.
+   * This operation provides administrators with comprehensive search capabilities to manage the content flag moderation queue. Flags can be filtered by status field values (pending, under investigation, resolved, dismissed), reporter user identification, content type (article vs comment based on flagged_article_id and flagged_comment_id fields), date ranges using created_at and resolved_at timestamps, and resolution reason text search.
    *
-   * The response provides summarized flag information suitable for moderation queue management, including key details about the reporter, flagged content, current status, and assignment information. This operation is essential for administrators to manage the content moderation workflow effectively.
+   * The response includes summary information for each flag including the flag_reason, status, creation timestamp, and basic information about the flagged content. Administrators can use this operation to efficiently review and process user-reported content that requires moderation attention.
    *
-   * Administrators can use this operation to monitor pending flags, track flag resolution progress, and analyze moderation patterns across the platform. The paginated response ensures efficient handling of large volumes of content flags while maintaining optimal performance.
+   * Security considerations: This operation is restricted to administrators only, as content flag management requires elevated privileges. The system validates administrator permissions before returning any flag information.
    *
-   * Related operations include GET /content-flags/{id} for detailed flag information and PATCH /content-flags/{id} for updating flag status and resolution details.
+   * Related operations include individual flag resolution endpoints for updating flag status and resolution details, as well as content moderation endpoints for taking action on flagged content. The operation leverages the discussion_board_content_flags table structure with proper foreign key relationships to related entities.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for content flag filtering
+   * @param body Search criteria and pagination parameters for content flags
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_content_flags table with comprehensive filtering capabilities. Support filtering by status (pending, under investigation, resolved, dismissed), reporter user ID, flagged article ID, flagged comment ID, reviewing admin ID, and date ranges (created_at, resolved_at). Apply text search on flag_reason field using trigram matching. Implement pagination with cursor-based or offset-based approach. Join with related tables (discussion_board_users, discussion_board_articles, discussion_board_comments, discussion_board_admins) to include reporter information, flagged content details, and reviewing admin details in the response. Return summary information optimized for moderation workflow management.
+   * @x-autobe-specification Query discussion_board_content_flags table with comprehensive filtering options for moderation workflow management.
+   *
+   * Apply filters based on:
+   * - Status: pending, under investigation, resolved, dismissed
+   * - Reporter user ID for specific user's flags
+   * - Flagged content type: article vs comment
+   * - Date ranges for flag creation and resolution
+   * - Resolution reason text search
+   * - Reviewing administrator assignment
+   *
+   * Join with related tables:
+   * - discussion_board_users for reporter information
+   * - discussion_board_articles for flagged article details
+   * - discussion_board_comments for flagged comment details
+   * - discussion_board_admins for reviewing admin information
+   *
+   * Return paginated results with summary information optimized for moderation dashboard display. Include relevant metadata for efficient moderation workflow management.
+   *
+   * Handle edge cases:
+   * - Empty result sets with appropriate pagination metadata
+   * - Invalid filter combinations with clear error messages
+   * - Performance optimization for large flag datasets
+   * - Permission validation for administrator access only
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -49,19 +71,31 @@ export class DiscussionboardAdminContent_flagsController {
   }
 
   /**
-   * Retrieve detailed information about a specific content flag reported by users for moderation review.
+   * Retrieve detailed information about a specific content flag by its unique identifier.
    *
-   * This operation provides administrators with comprehensive access to content flag records, including the reporter's information, the specific content being flagged (either an article or comment), the current moderation status, and any resolution details provided by reviewing administrators. The response includes all fields from the content flags table to support thorough moderation workflows.
+   * This operation provides comprehensive access to content flag records, which represent user-reported content requiring moderator review. Each flag contains information about the reporting user, the specific content being flagged (either an article or a comment), the current moderation status, and any resolution details provided by administrators.
    *
-   * Administrators can use this endpoint to review individual flags during the moderation process, track flag progression through different statuses, and understand the context behind user-reported content issues. The operation supports the platform's community-driven content moderation system while maintaining administrator oversight and audit capabilities.
+   * The response includes the complete flag record with all associated relationships, allowing administrators to understand the context of the reported content and make informed moderation decisions. This operation is essential for the content moderation workflow, enabling detailed review of individual flags before taking action.
    *
-   * The operation respects the soft deletion mechanism by only returning content flags that have not been marked as deleted (deleted_at IS NULL), ensuring deleted flags remain inaccessible through normal API operations while preserving audit trail integrity.
+   * Security considerations require that only authenticated administrators should have access to this operation, as content flags contain sensitive moderation information and user reporting data. The operation supports the platform's community-driven content moderation system while maintaining appropriate access controls.
+   *
+   * Related operations include PATCH /content-flags for searching and filtering flags, and PUT /content-flags/{flagId} for updating flag status during the moderation process.
    *
    * @param connection
    * @param flagId Unique identifier of the content flag to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_content_flags table by primary key ID to retrieve a single content flag record. Include all related entity information through joins: reporter user details, flagged article/comment information, and reviewing administrator details. Validate that the flag exists and return appropriate error responses for non-existent flags.
+   * @x-autobe-specification Query the discussion_board_content_flags table using the provided flagId parameter to retrieve the specific content flag record.
+   *
+   * Include all related data through database joins: reporter user information, flagged article details (if applicable), flagged comment details (if applicable), and reviewing administrator information.
+   *
+   * Validate that the flag exists and return appropriate error responses for invalid or non-existent flag IDs. Ensure the response includes all flag fields including timestamps, status, and resolution details.
+   *
+   * Implement proper authorization checks to ensure only authenticated administrators can access this endpoint, as content flags contain sensitive moderation information.
+   *
+   * Handle edge cases such as soft-deleted flags by filtering out records where deleted_at is not null, unless specifically requested for audit purposes.
+   *
+   * Return the complete flag object with all relationships populated for comprehensive moderation review.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":flagId")
@@ -83,41 +117,33 @@ export class DiscussionboardAdminContent_flagsController {
   }
 
   /**
-   * Update the status and resolution details of a user-reported content flag.
+   * Submit a review decision for a content flag that has been reported by users.
    *
-   * This operation allows administrators to manage the moderation workflow for content flags reported by users. Content flags are used to identify inappropriate articles or comments that require moderator review. Administrators can update the flag status, assign reviewers, provide resolution reasons, and resolve or dismiss flags.
+   * This operation allows administrators to review content flags that have been reported for inappropriate content. The administrator can update the flag status, provide a resolution reason, and record the decision. The system tracks which administrator performed the review and when the review was completed.
    *
-   * The operation validates status transitions to ensure flags follow the proper moderation workflow: pending → under_review → resolved/dismissed. When resolving a flag, administrators must provide a detailed resolution reason explaining the moderation decision.
+   * When reviewing content flags, administrators must consider the community guidelines and content policies. The resolution reason should clearly explain the decision, whether the content is approved, requires modification, or needs to be removed. This operation integrates with the broader moderation workflow, ensuring proper audit trails and accountability for all moderation actions.
    *
-   * This API requires administrator privileges and provides comprehensive audit trail tracking for all moderation actions. The response includes the complete updated flag object with all current field values for confirmation.
-   *
-   * Related operations: GET /content-flags/{flagId} to retrieve flag details, PATCH /content-flags to search and list flags, POST /content-flags to create new flag reports from users.
+   * The response includes the updated content flag information with the new status, resolution details, and timestamps. This allows administrators to confirm their review decision was properly recorded and provides transparency in the moderation process.
    *
    * @param connection
-   * @param flagId Unique identifier of the content flag to update
-   * @param body Content flag update information including status, resolution reason, and reviewer assignment
+   * @param flagId Unique identifier of the content flag to be reviewed
+   * @param body Content flag review decision and resolution details
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update an existing content flag record with new status, resolution reason, and reviewer assignment.
-   *
-   * Validate that the requesting user is an administrator with appropriate permissions. Check that the flag exists and is not already resolved or soft deleted. Validate status transitions - flags can only transition from 'pending' to 'under_review' or 'resolved', and from 'under_review' to 'resolved' or 'dismissed'.
-   *
-   * When status changes to 'resolved' or 'dismissed', require a resolution_reason and set resolved_at timestamp. When assigning a reviewer (reviewing_admin_id), validate the admin exists and has appropriate permissions.
-   *
-   * Perform the update transactionally and return the complete updated flag object. Handle concurrent updates with optimistic locking using updated_at timestamp.
+   * @x-autobe-specification Update the content flag review status and resolution details. Verify the content flag exists and the current user has administrator privileges. Validate that the resolution reason is provided when changing status to 'resolved' or 'dismissed'. Update the reviewing_admin_id with the current administrator's ID, set the resolution_reason, status, and resolved_at timestamp appropriately. Ensure the flag belongs to the moderation queue workflow and handle edge cases where the flag is already resolved.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":flagId")
-  public async update(
+  @TypedRoute.Patch(":flagId/review")
+  public async review(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("flagId")
     flagId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardContentFlag.IUpdate,
+    body: IDiscussionBoardContentFlag.IReview,
   ): Promise<IDiscussionBoardContentFlag> {
     try {
-      return await putDiscussionBoardAdminContentFlagsFlagId({
+      return await patchDiscussionBoardAdminContentFlagsFlagIdReview({
         admin,
         flagId,
         body,

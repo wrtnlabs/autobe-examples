@@ -3,22 +3,28 @@ import { Controller, Ip } from "@nestjs/common";
 import typia from "typia";
 
 import { IRedditCommunityPlatformAdmin } from "../../../../api/structures/IRedditCommunityPlatformAdmin";
-import { postRedditCommunityAuthPlatformadminJoin } from "../../../../providers/postRedditCommunityAuthPlatformadminJoin";
-import { postRedditCommunityAuthPlatformadminLogin } from "../../../../providers/postRedditCommunityAuthPlatformadminLogin";
-import { postRedditCommunityAuthPlatformadminRefresh } from "../../../../providers/postRedditCommunityAuthPlatformadminRefresh";
+import { postRedditCommunityAuthPlatformAdminJoin } from "../../../../providers/postRedditCommunityAuthPlatformAdminJoin";
+import { postRedditCommunityAuthPlatformAdminLogin } from "../../../../providers/postRedditCommunityAuthPlatformAdminLogin";
+import { postRedditCommunityAuthPlatformAdminRefresh } from "../../../../providers/postRedditCommunityAuthPlatformAdminRefresh";
 
-@Controller("/redditCommunity/auth/platformadmin")
+@Controller("/redditCommunity/auth/platformAdmin")
 export class RedditcommunityAuthPlatformadminController {
   /**
-   * Registers a new platform administrator account using validated email and password credentials. The email must be unique across the system and comply with RFC 5322 standards. Password must meet minimum complexity requirements (at least 12 characters, one uppercase, one lowercase, one digit, one special character) and is stored as a bcrypt hash in the reddit_community_platform_admins table. Upon successful registration, an initial JWT access and refresh token pair is issued. This operation is atomic: if the email already exists or the password fails validation, the entire request is rejected without creating any partial records. This endpoint triggers a system-wide audit log entry of type 'account_creation' in reddit_community_user_audit_logs. The operation requires no preconditions, as guest or unauthenticated state is the default entry point for new system administrators. The corresponding response body is an IRedditCommunityPlatformAdmin.IAuthorized object containing the issued tokens and user context for immediate session establishment.
+   * Registers a new platformAdmin account. Requires valid email, password, and username, all of which must be unique and satisfy validation rules. This operation creates a record in reddit_community_platform_admins with email, password_hash, and username fields. A verification token is automatically generated and stored in reddit_community_platform_admin_email_verifications, linked to the newly created user. The operation fails if email or username already exist, or if passwords are below 8 characters. The response includes new user profile details and JWT access token.
+   *
+   * The frontend must send email, password, and username. password_hash is computed server-side using bcrypt. System validates email format, username alphanumeric+underscore constraint (3-30 chars), and password length. On success, a 201 Created status is returned with IRedditCommunityPlatformAdmin.IAuthorized response.
+   *
+   * This operation does not require existing authentication.
+   *
+   * Related operations: After join completion, the user must confirm email via the sent token. Then, they can use login to obtain refresh tokens.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for registering a new platform admin. Contains the email address and plaintext password for new account creation. Email must conform to standard email format and cannot be a duplicate of any existing admin or member account. Password must satisfy complexity rules defined by security policy (min 12 chars, alphanumeric and special characters required). No other fields are accepted, as display_name, bio, and avatar_url are set post-verification via user profile update endpoint.
+   * @param body Data required to register a new platformAdmin account
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Service layer must validate email uniqueness against reddit_community_platform_admins and reddit_community_members tables. Password must be hashed with bcrypt cost 12 before insertion into reddit_community_platform_admins. A record in reddit_community_platform_admin_sessions must be created with current IP, href, and expires_at. A token revocation entry should never be created unless explicitly revoked later. Ensure transactional integrity: if any step fails (e.g., token generation), rollback the entire registration and return 500 internal error.
+   * @x-autobe-specification 1. Validate email format, username uniqueness and constraint (3-30 chars, alphanumeric+underscore), and password length (min 8). 2. Hash password using bcrypt with salt. 3. Insert new record into reddit_community_platform_admins with generated UUID, hashed password, email, username, default karma=0, created_at, updated_at, is_deleted=false. 4. Generate cryptographically random 64-char token. 5. Insert verification record into reddit_community_platform_admin_email_verifications with token, expires_at (now + 24h), and reference to new platform admin. 6. Issue access token (JWT) using HS256 algorithm with user ID, role, and 7-day expiration. 7. Return response body containing user profile (id, email, username, karma, etc.) and JWT token in IRedditCommunityPlatformAdmin.IAuthorized schema.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -29,7 +35,7 @@ export class RedditcommunityAuthPlatformadminController {
     body: IRedditCommunityPlatformAdmin.IJoin,
   ): Promise<IRedditCommunityPlatformAdmin.IAuthorized> {
     try {
-      return await postRedditCommunityAuthPlatformadminJoin({
+      return await postRedditCommunityAuthPlatformAdminJoin({
         ip,
         body,
       });
@@ -40,15 +46,21 @@ export class RedditcommunityAuthPlatformadminController {
   }
 
   /**
-   * Authenticates an existing platform administrator using their registered email and password. Password is validated against the bcrypt hash stored in reddit_community_platform_admins table. If credentials match and the account is not soft-deleted (deleted_at is null), a new JWT access and refresh token pair is issued. This operation creates a new entry in reddit_community_platform_admin_sessions with the client's IP, referrer, and href. Audit log entry of type 'login' is recorded in reddit_community_user_audit_logs. The request fails if the email doesn't exist, password is incorrect, or the account is disabled or deleted. The generated tokens are included in the IRedditCommunityPlatformAdmin.IAuthorized response. This operation does not check for active sessions — multiple concurrent logins from different devices are permitted to support multi-device usage of administrative tools.
+   * Authenticates an existing platformAdmin using email and password. Verifies credentials against reddit_community_platform_admins table. On success, issues a fresh JWT access token and a refresh token. The operation fails if credentials are invalid or if the account is logically deleted (is_deleted=true).
+   *
+   * The request body contains email and password. The system performs bcrypt comparison on the password_hash. If valid, a new session is created in reddit_community_platform_admin_sessions with IP, referrer, and expiration details. The response includes user profile and JWT tokens.
+   *
+   * This operation does not require existing authentication.
+   *
+   * Related operations: After successful login, the client may use the refresh token to obtain new access tokens before they expire. If an unknown user attempts login, the system returns 401 Unauthorized.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for authenticating a platform admin. Contains email and password fields only. Email must match a verified admin account in reddit_community_platform_admins table and be case-insensitive. Password must be the plaintext credential provided by the user and will be hashed server-side for comparison with the stored bcrypt hash. No other metadata or tokens are accepted — this is a pure credential-based authentication flow.
+   * @param body Credentials required to authenticate a platformAdmin: email and password
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Service layer must lookup the admin by email (case-insensitive) in reddit_community_platform_admins. Validate the password using bcrypt.compare. If account.deleted_at is not null, return 403 Forbidden. If password is invalid, return 401 Unauthorized. On success, generate JWT tokens (access and refresh) using system key. Insert fresh session into reddit_community_platform_admin_sessions. Log the login event in reddit_community_user_audit_logs with action 'login'. Return the IAuthorized response with tokens and user context.
+   * @x-autobe-specification 1. Look up user by email in reddit_community_platform_admins. 2. Validate user exists and is_active=false (is_deleted=false). 3. Compare provided password against stored password_hash using bcrypt. 4. If invalid, return 401 Unauthorized. 5. Generate access token (7-day expiry) and refresh token (30-day expiry). 6. Create new session in reddit_community_platform_admin_sessions with current timestamp, IP, referrer, and expires_at. 7. Return user profile and JWT tokens in IRedditCommunityPlatformAdmin.IAuthorized response. 8. Log login event for audit if enabled.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -59,7 +71,7 @@ export class RedditcommunityAuthPlatformadminController {
     body: IRedditCommunityPlatformAdmin.ILogin,
   ): Promise<IRedditCommunityPlatformAdmin.IAuthorized> {
     try {
-      return await postRedditCommunityAuthPlatformadminLogin({
+      return await postRedditCommunityAuthPlatformAdminLogin({
         ip,
         body,
       });
@@ -70,15 +82,28 @@ export class RedditcommunityAuthPlatformadminController {
   }
 
   /**
-   * Refreshes an expired access token by validating the corresponding refresh token. The refresh token must be a valid signature issued in a previously successful login or refresh operation and must not have been revoked. The token is checked against the reddit_community_token_revocations table — if it's present there, the request is denied. Only the refresh token from the current session (identified by user id and token signature) can be used. Upon successful validation, a new access and refresh token pair is issued. The old refresh token is automatically revoked and added to reddit_community_token_revocations table. A new session record is created in reddit_community_platform_admin_sessions. This operation is designed to reduce the need for frequent re-authentication while maintaining security by short-lived access tokens and revocable refresh tokens. Only users with an existing valid refresh token can call this endpoint — it is not an alternative to login.
+   * Renews expired access token using a valid refresh token. Requires a previously issued refresh token from login or a prior refresh.
+   *
+   * The client sends a refresh token in the request body. The system validates that:
+   * - The refresh token exists in reddit_community_platform_admin_sessions
+   * - The refresh token is not expired
+   * - The session is marked active (not deleted)
+   *
+   * If valid, issues a new access token with 7-day expiry and updates the session's expires_at. Returns an IRedditCommunityPlatformAdmin.IAuthorized response with renewed token.
+   *
+   * This operation is stateful and requires prior authentication.
+   *
+   * Related operations: This completes the authentication lifecycle. After refresh, new access token should be used for further API calls. If refresh fails, the client must re-authenticate with login.
+   *
+   * No logout mechanism is implemented because JWT is stateless. Refresh is the only token renewal mechanism.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Request body for refreshing access tokens. Contains exactly one field: refresh_token, which is the opaque JWT refresh token issued during login or a previous refresh. The token must be a valid, unrevoked, and unexpired JWT. The client must transmit this token in the request body as a plaintext string — not in headers or cookies. Server parses the token to extract the user_id and compares it with the user's active session records. The refresh token is not re-hashed or stored server-side; its signature is validated cryptographically.
+   * @param body Refresh token issued during authentication session
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor platformAdmin
-   * @x-autobe-specification Service layer must decode the refresh token without signature validation (using secret) to extract user_id. Validate that user exists in reddit_community_platform_admins with deleted_at = null. Check existence of refresh token in reddit_community_token_revocations — if found, return 401. Create an entry in reddit_community_token_revocations for the incoming refresh token. Generate new access and refresh tokens as in login flow. Create new session record in reddit_community_platform_admin_sessions. Return new IAuthorized response. Old session record remains for audit purposes but is no longer active.
+   * @x-autobe-specification 1. Extract refresh token from request body. 2. Look up associated session in reddit_community_platform_admin_sessions by refresh token. 3. Validate session is active (deleted_at is null) and not expired (expired_at > now). 4. If invalid, return 401 Unauthorized. 5. Generate new access token (7-day expiry). 6. Update session expires_at to 30 days ahead (refresh expiration). 7. Return IRedditCommunityPlatformAdmin.IAuthorized response with new access token, unchanged user profile and new refresh token (if rotation policy applied).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
@@ -87,7 +112,7 @@ export class RedditcommunityAuthPlatformadminController {
     body: IRedditCommunityPlatformAdmin.IRefresh,
   ): Promise<IRedditCommunityPlatformAdmin.IAuthorized> {
     try {
-      return await postRedditCommunityAuthPlatformadminRefresh({
+      return await postRedditCommunityAuthPlatformAdminRefresh({
         body,
       });
     } catch (error) {

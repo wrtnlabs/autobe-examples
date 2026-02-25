@@ -16,7 +16,7 @@ export async function generate_random_discussion_board_user_articles_tags_create
   connection: api.IConnection,
   props: {
     body?: DeepPartial<IDiscussionBoardArticleTag.ICreate>;
-    params: {
+    params?: {
       articleId: string;
     };
   },
@@ -25,8 +25,8 @@ export async function generate_random_discussion_board_user_articles_tags_create
     prepare_random_discussion_board_article_tag(props.body);
   const result: IDiscussionBoardArticleTag =
     await api.functional.discussionBoard.user.articles.tags.create(connection, {
+      articleId: typia.assert<string & tags.Format<"uuid">>(props.params?.articleId ?? "00000000-0000-0000-0000-000000000000"),
       body: prepared,
-      articleId: props.params.articleId,
     });
   return result;
 }

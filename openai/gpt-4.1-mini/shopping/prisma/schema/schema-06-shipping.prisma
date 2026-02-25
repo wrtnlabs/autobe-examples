@@ -30,15 +30,23 @@ model shopping_mall_shipments {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
   shipmentItems shopping_mall_shipment_items[]
   shipmentOrderItems shopping_mall_shipment_order_items[]
   shipmentTrackings shopping_mall_shipment_trackings[]
   shipmentConfirmations shopping_mall_shipment_confirmations[]
   
+  //----
+  // INDEXES
+  //----
   @@index([seller_id, created_at])
 }
 
@@ -73,14 +81,17 @@ model shopping_mall_shipment_order_items {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
   orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_order_item_id], map: "shopping_mall_shipment_order_items_shopping_mall_order_2757493a")
-  
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_shipment_id, shopping_mall_order_item_id], map: "shopping_mall_shipment_order_items_shopping_mall_shipm_002a6a58")
 }
@@ -117,10 +128,14 @@ model shopping_mall_shipment_trackings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   @@index([shopping_mall_shipment_id])
 }
 
@@ -153,10 +168,14 @@ model shopping_mall_shipment_confirmations {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_shipment_id, confirmed_at], map: "shopping_mall_shipment_confirmations_shopping_mall_shi_0d72c28e")
 }

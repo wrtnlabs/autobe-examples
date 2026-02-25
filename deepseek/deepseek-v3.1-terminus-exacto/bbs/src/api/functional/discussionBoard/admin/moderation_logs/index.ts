@@ -1,25 +1,25 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IDiscussionBoardModerationLog } from "../../../../structures/IDiscussionBoardModerationLog";
-import { IPageIDiscussionBoardModerationLog } from "../../../../structures/IPageIDiscussionBoardModerationLog";
+import { IDiscussionBoardModeratedContentHistory } from "../../../../structures/IDiscussionBoardModeratedContentHistory";
+import { IPageIDiscussionBoardModeratedContentHistory } from "../../../../structures/IPageIDiscussionBoardModeratedContentHistory";
 
 /**
- * Retrieve a filtered and paginated list of moderation activity logs for comprehensive audit and compliance oversight.
+ * Search and filter moderation logs with comprehensive filtering capabilities for administrative audit and compliance tracking.
  *
- * This operation provides administrators with complete access to the moderation audit trail, enabling detailed review of all moderation actions performed across the platform. The search functionality supports granular filtering by action type, administrator identity (both regular and super administrators), target entities (articles, comments, users, sections), timeframes, and status to facilitate efficient moderation oversight and compliance reporting.
+ * This operation provides administrators with powerful search capabilities to review moderation activities across the platform. The search supports filtering by action type, administrator identity (regular or super administrator), target entities (articles, comments, users, sections), time periods, and action status. This enables comprehensive audit trail analysis and compliance verification.
  *
- * Administrators can search for specific moderation patterns, review individual administrator performance, track moderation workflows, and generate detailed compliance reports. The response includes summary information optimized for list displays while maintaining complete audit trail integrity through comprehensive logging references to all related entities.
+ * Administrators can use this operation to investigate specific moderation patterns, track administrator activity, review action outcomes, and generate compliance reports. The search results include detailed information about each moderation action including who performed it, what action was taken, when it occurred, and the target entity involved. This supports accountability and transparency in the moderation system.
  *
- * Security considerations require that only authenticated administrators can access this operation, with appropriate authorization checks to ensure administrators can only view logs relevant to their permission level. Regular administrators may have limited visibility compared to super administrators who can access the complete moderation history as documented in the database schema's comprehensive audit trail design.
+ * The operation integrates with the complete moderation log database schema, supporting all filtering options available through the indexed fields including action type descriptions, administrator identities, and target entity relationships. Pagination ensures efficient handling of large result sets while maintaining comprehensive search capabilities.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for moderation log filtering
+ * @param props.body Search criteria and pagination parameters for filtering moderation logs
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the discussion_board_moderation_logs table with comprehensive filtering capabilities. Support filtering by action_type, admin_id, super_admin_id, target_article_id, target_comment_id, target_user_id, target_section_id, status, and date ranges (performed_at, scheduled_at, completed_at). Implement pagination with configurable page sizes and cursor-based navigation for large result sets. Join with related tables (admins, super_admins, target entities) to include display names and contextual information. Sort results by performed_at descending by default to show most recent activities first. Include search functionality on action_description using full-text search capabilities.
+ * @x-autobe-specification Query the discussion_board_moderation_logs table with flexible filtering and pagination. Implement search filters for action_type, admin_id, super_admin_id, target_article_id, target_comment_id, target_user_id, target_section_id, status, and date ranges (performed_at, created_at). Support partial text matching on action_description using trigram search. Join with administrator and target entity tables to resolve IDs to display names. Implement cursor-based pagination for large result sets. Return paginated results with moderation log summaries excluding sensitive system fields. Apply appropriate access control to ensure only authorized administrators can access moderation logs.
  * @path /discussionBoard/admin/moderation-logs
  * @accessor api.functional.discussionBoard.admin.moderation_logs.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -49,12 +49,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for moderation log filtering
+     * Search criteria and pagination parameters for filtering moderation logs
      */
-    body: IDiscussionBoardModerationLog.IRequest;
+    body: IDiscussionBoardModeratedContentHistory.IRequest;
   };
-  export type Body = IDiscussionBoardModerationLog.IRequest;
-  export type Response = IPageIDiscussionBoardModerationLog.ISummary;
+  export type Body = IDiscussionBoardModeratedContentHistory.IRequest;
+  export type Response = IPageIDiscussionBoardModeratedContentHistory.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -70,8 +70,9 @@ export namespace index {
   } as const;
 
   export const path = () => "/discussionBoard/admin/moderation-logs";
-  export const random = (): IPageIDiscussionBoardModerationLog.ISummary =>
-    typia.random<IPageIDiscussionBoardModerationLog.ISummary>();
+  export const random =
+    (): IPageIDiscussionBoardModeratedContentHistory.ISummary =>
+      typia.random<IPageIDiscussionBoardModeratedContentHistory.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -84,95 +85,6 @@ export namespace index {
     });
     try {
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve detailed information for a specific moderation log record.
- *
- * This operation provides comprehensive audit trail data for individual moderation actions performed by administrators or super administrators. The response includes complete details about the moderation action, including the performer (admin or super admin), target entity (article, comment, user, or section), action type, description, timestamps, and status information.
- *
- * Administrators can use this endpoint to review specific moderation actions for compliance auditing, accountability tracking, and moderation workflow analysis. The operation supports detailed investigation of moderation activities by providing complete context including IP address, user agent, and error information when applicable.
- *
- * Access to moderation logs is restricted to authorized administrators only, ensuring that sensitive moderation audit information remains protected within the administrative scope.
- *
- * @param props.connection
- * @param props.moderationLogId Unique identifier of the moderation log record to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the discussion_board_moderation_logs table by the provided moderationLogId UUID. Include all foreign key relationships to fetch complete administrator, super administrator, and target entity information. Return the full moderation log record with all fields populated. Validate that the moderation log exists and return appropriate error if not found.
- * @path /discussionBoard/admin/moderation-logs/:moderationLogId
- * @accessor api.functional.discussionBoard.admin.moderation_logs.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the moderation log record to retrieve
-     */
-    moderationLogId: string & tags.Format<"uuid">;
-  };
-  export type Response = IDiscussionBoardModerationLog;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/discussionBoard/admin/moderation-logs/:moderationLogId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/discussionBoard/admin/moderation-logs/${encodeURIComponent(props.moderationLogId ?? "null")}`;
-  export const random = (): IDiscussionBoardModerationLog =>
-    typia.random<IDiscussionBoardModerationLog>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("moderationLogId")(() =>
-        typia.assert(props.moderationLogId),
-      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

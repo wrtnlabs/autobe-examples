@@ -35,11 +35,8 @@ export namespace DiscussionBoardSectionTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      status: input.status as "active" | "inactive" | "archived",
+      status: input.status,
       display_order: input.display_order,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
       createdByAdmin: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.createdByAdmin,
       ),
@@ -48,6 +45,9 @@ export namespace DiscussionBoardSectionTransformer {
             input.lastModifiedByAdmin,
           )
         : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

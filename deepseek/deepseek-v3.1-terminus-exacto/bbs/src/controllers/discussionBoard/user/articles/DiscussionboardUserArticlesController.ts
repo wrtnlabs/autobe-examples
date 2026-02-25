@@ -7,6 +7,7 @@ import { IPageIDiscussionBoardArticle } from "../../../../api/structures/IPageID
 import { UserAuth } from "../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../decorators/payload/UserPayload";
 import { deleteDiscussionBoardUserArticlesArticleId } from "../../../../providers/deleteDiscussionBoardUserArticlesArticleId";
+import { getDiscussionBoardUserArticlesArticleId } from "../../../../providers/getDiscussionBoardUserArticlesArticleId";
 import { patchDiscussionBoardUserArticles } from "../../../../providers/patchDiscussionBoardUserArticles";
 import { postDiscussionBoardUserArticles } from "../../../../providers/postDiscussionBoardUserArticles";
 import { putDiscussionBoardUserArticlesArticleId } from "../../../../providers/putDiscussionBoardUserArticlesArticleId";
@@ -14,19 +15,23 @@ import { putDiscussionBoardUserArticlesArticleId } from "../../../../providers/p
 @Controller("/discussionBoard/user/articles")
 export class DiscussionboardUserArticlesController {
   /**
-   * Create a new article in the Economic/Political Discussion Board platform.
+   * Create a new article in the discussion board platform.
    *
-   * This operation allows authenticated users to create new articles within specified sections of the discussion board. Articles serve as the primary content units for discussions on economic and political topics. The operation requires a title, content, and section assignment, validating length requirements as specified in the database schema (title: 5-200 characters, content: minimum 50 characters).
+   * This operation allows authenticated members to publish articles within designated sections of the discussion board. When creating an article, users must provide a title meeting length requirements (5-200 characters), substantive content (minimum 50 characters), and select a valid section for publication. The system automatically assigns the author based on the authenticated user context and generates server-managed fields including unique identifier, creation timestamp, and initial publication status.
    *
-   * Articles are created in the discussion_board_articles table with fields including title, content, discussion_board_section_id, and discussion_board_user_id. The operation enforces user authentication and ensures the specified section exists before proceeding with article creation.
+   * Articles are created within the specified section context, maintaining proper database relationships between articles and sections. The system supports soft deletion through the deleted_at field, allowing content to be archived rather than permanently removed when managing inappropriate content.
    *
-   * Successful creation results in the article being immediately available for viewing, with status automatically set to 'published' according to business requirements. The system handles database constraints and relationship validation automatically through transaction management.
+   * Article creation is subject to platform content quality standards and rate limiting policies. Users are limited to creating articles based on configured rate limits to prevent spam and ensure content quality. The system performs comprehensive validation including section existence verification, title/content length requirements, and user permission checks for the selected section.
+   *
+   * Upon successful creation, the article becomes immediately visible in the designated section's article list. The response includes the complete article record with server-generated metadata, allowing the client to display the newly created article without requiring additional API calls. Related operations include editing articles via PUT /sections/{sectionCode}/articles/{articleId} and browsing articles through PATCH /sections/{sectionCode}/articles for search and filtering.
+   *
+   * The operation integrates with section management system to ensure articles are always associated with valid, active sections. Administrator capabilities allow for article moderation including soft deletion of inappropriate content regardless of authorship.
    *
    * @param connection
-   * @param body Article creation data including title, content, section assignment, and optional tags
+   * @param body Article creation data including title, content, and section assignment
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Create a new article in the discussion board system. Validate that all required fields are provided (title, content, section_id). Verify the section exists and is active. Check that the authenticated user has permission to create articles. Validate title length (5-200 characters) and content length (minimum 50 characters). Handle optional tag creation and ensure tag normalization. Return the complete article object with relationships populated.
+   * @x-autobe-specification Validate request body fields: title (5-200 chars), content (min 50 chars), section_id exists and is active. Check user rate limit (10 articles/hour). Verify user has permission to post in the selected section. Create article record with server-generated fields: id (UUID), created_at, updated_at (current timestamp), status 'published'. Set discussion_board_user_id from authenticated user context. Return complete article object with all fields including relationships.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -50,19 +55,19 @@ export class DiscussionboardUserArticlesController {
   /**
    * Search and retrieve a paginated list of articles with advanced filtering capabilities.
    *
-   * This operation provides comprehensive search functionality for articles across the discussion board platform. It supports full-text search on article titles and content, allowing users to find relevant discussions based on keywords and phrases. The search leverages PostgreSQL's trigram indexing for efficient partial matching and relevance ranking. The system automatically excludes soft-deleted articles (marked with deleted_at timestamp) from search results to maintain data cleanliness.
+   * This operation provides comprehensive search functionality for articles across the discussion board platform. Users can filter articles by section, author, publication status, creation date ranges, content search terms, and specific tags. The search supports partial text matching in title and content fields using full-text search capabilities.
    *
-   * Users can filter results by specific sections to focus on particular topics like Politics, Economy, or Current Affairs. Additional filtering options include author selection, publication status (draft, published, archived), and creation date ranges. The tag filtering system enables users to find articles with specific categorization labels that authors have assigned.
+   * The response includes paginated results with article summaries containing essential information for list displays. Each summary includes the article title, author display name, section name, creation timestamp, and tag information. The pagination system supports configurable page sizes and cursor-based navigation for efficient browsing of large result sets.
    *
-   * The response provides article summaries optimized for list displays, including essential information like title, author details, creation timestamp, and tag information. Pagination ensures efficient loading of large result sets with configurable page sizes. Sorting options allow users to prioritize newest content or explore historical discussions.
+   * This operation automatically filters out soft-deleted articles (those with deleted_at timestamp set) to ensure only active content is displayed in search results. Users can only search articles they have permission to view based on their role and section access rights.
    *
-   * This operation integrates with the discussion_board_articles table structure and respects the platform's content organization principles. It supports the business requirement for effective content discovery while maintaining performance standards for large-scale article databases.
+   * Administrators may have access to additional filtering options and article statuses compared to regular users.
    *
    * @param connection
-   * @param body Search criteria and filtering parameters for article retrieval
+   * @param body Search criteria including filters, pagination, and sorting parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Query the discussion_board_articles table with complex filtering and search capabilities. Implement full-text search on title and content fields using PostgreSQL's trigram indexes. Support filtering by section ID, author ID, status, creation date ranges, and tags. Join with related tables to include author information and tag counts. Apply pagination with cursor-based or offset-based approach. Sort results by creation date (newest/oldest first) as specified in requirements. Validate that all filter parameters correspond to actual database fields.
+   * @x-autobe-specification Query the discussion_board_articles table with comprehensive filtering capabilities. Join with discussion_board_sections for section information, discussion_board_users for author details, and discussion_board_article_tags for tag filtering. Apply pagination using cursor-based or offset-based approach. Support filtering by: section_id, author_id, status, created_at date ranges, title/content text search, and tag names. Return article summaries with essential fields optimized for list displays. Validate that all referenced entities exist (sections, users) before filtering.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -84,20 +89,54 @@ export class DiscussionboardUserArticlesController {
   }
 
   /**
-   * Update an existing article with new content, title, or section assignment.
+   * Retrieve complete details for a single discussion board article.
    *
-   * This operation allows authenticated users to modify their own articles that have not been soft-deleted. Users can update the article title, content body, and change the section where the article is published. All field validations from article creation apply to updates, including minimum and maximum length requirements for title and content.
+   * This operation returns the full content and metadata for an individual article, including the article title, main content text, publication status, creation and modification timestamps, author information, and section assignment details. The response provides comprehensive article information suitable for displaying the complete article to users.
    *
-   * The system verifies article ownership and checks that the article has not been soft-deleted before allowing updates, ensuring users can only modify active articles they authored. When changing sections, the system validates that the target section exists and is active. The operation returns the complete updated article including author information, section details, and any associated tags, files, or images.
+   * Security considerations: Published articles are visible to all authenticated users. Draft articles are only visible to the article author and administrators. Archived articles follow section-specific visibility rules as defined by section administrators. Users must be authenticated to access any article regardless of status.
    *
-   * This operation requires proper authentication and authorization. Users must be logged in and can only update their own articles. System validation ensures data integrity and compliance with platform content standards.
+   * Related operations: Use PATCH /articles to search and filter article lists, GET /sections/{sectionId}/articles to browse articles within a specific section, and POST /articles to create new articles. Authorization privileges depend on user role and article ownership for draft content.
+   *
+   * @param connection
+   * @param articleId Unique identifier of the article to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor user
+   * @x-autobe-specification Query the discussion_board_articles table by the provided articleId UUID parameter. Include joins with discussion_board_users to get author information and discussion_board_sections to get section details. Filter by status to ensure only published articles are visible to non-authors (except for authors who can view their own draft articles). Return complete article information with all fields including content, title, status, timestamps, and related author/section data. Validate that the article exists and handle 404 errors appropriately.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":articleId")
+  public async at(
+    @UserAuth()
+    user: UserPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+  ): Promise<IDiscussionBoardArticle> {
+    try {
+      return await getDiscussionBoardUserArticlesArticleId({
+        user,
+        articleId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing article with new title, content, or other metadata.
+   *
+   * This operation allows article authors to modify their published content while preserving the article's identity and relationships. Users can update the title, content text, and publication status of articles they have authored. Administrators have additional capabilities to update any article including section reassignment and metadata modifications.
+   *
+   * The request body includes fields that should be updated, with validation ensuring title length requirements (5-200 characters) and minimum content length (50 characters). Status transitions are validated to prevent invalid workflow changes. Article ownership is verified to ensure users can only modify their own content unless they have administrative privileges.
+   *
+   * Successful updates return the complete article entity with all current field values including timestamps, author information, and section assignment. This provides immediate feedback on the changes made and ensures the client has the most recent article state.
    *
    * @param connection
    * @param articleId Unique identifier of the article to update
-   * @param body Article update data including title, content, and section information
+   * @param body Article update fields including title, content, status, and other modifiable attributes
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Validate the article exists and belongs to the authenticated user. Check if the target section exists and is active. Validate title length (5-200 characters) and content length (minimum 50 characters). Update the article fields with the provided values. Update the timestamp field. Return the complete updated article with all relationships (author, section, tags, files, images). If the user tries to change section, verify the new section exists and is active. Handle validation errors for invalid data.
+   * @x-autobe-specification Update an existing article with the provided ID. First validate that the requesting user is either the article author or an administrator. Check that the target article exists and is not deleted. Validate update fields against business rules (title 5-200 chars, content min 50 chars, valid status transitions). For administrators, allow updating any field including section assignment. For regular users, restrict updates to their own articles only and prevent section changes. Update the article record and return the complete updated entity with all fields.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":articleId")
@@ -122,23 +161,41 @@ export class DiscussionboardUserArticlesController {
   }
 
   /**
-   * Soft delete a specific article from the discussion board platform by marking it as deleted.
+   * Mark an article as deleted in the discussion board platform while preserving the record for audit purposes.
    *
-   * This operation implements soft deletion by setting the deleted_at field to the current timestamp, which marks the article as deleted while preserving the record for audit purposes. The deletion cascades to all related entities including comments, file attachments, image attachments, tags, and favorite associations.
+   * This operation allows authenticated users to delete their own articles or administrators to delete any article regardless of ownership. The deletion follows a soft delete pattern where the article record is preserved in the database with a deletion timestamp, but becomes invisible in public interfaces.
    *
-   * Authorization is strictly enforced for this operation. Regular users can only delete their own articles, while administrators can delete any article regardless of ownership. The system validates article existence and user permissions before proceeding with deletion.
+   * When an article is soft-deleted, all associated content including comments, file attachments, and image attachments remains intact but becomes hidden from regular user views. The article's title and content are preserved for moderation and audit trail purposes.
    *
-   * After successful soft deletion, the complete article details are returned in the response, allowing the client to confirm the operation and maintain UI consistency. The response includes the article ID, title, content, section information, author details, and timestamps.
-   *
-   * Related operations include GET /articles/{articleId} for retrieving article details before deletion and PATCH /articles for searching articles that might need deletion. Administrators should use this operation responsibly as it affects user content visibility.
-   *
-   * Note: This is a soft delete operation - the article record remains in the database with a deletion timestamp rather than being permanently removed.
+   * Authorization is strictly enforced - regular users can only delete articles they authored, while administrators have the privilege to delete any article for moderation purposes. The system maintains referential integrity while preserving historical data through the soft delete mechanism.
    *
    * @param connection
    * @param articleId Unique identifier of the article to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Implement soft deletion by setting the deleted_at field to current timestamp. Validate that the requesting user either owns the article or has administrator privileges. Cascade deletion to related entities: set deleted_at for comments, files, and tags; remove article favorites. Return the deleted article details for confirmation. Handle authorization checks and return appropriate error responses for unauthorized access or non-existent articles.
+   * @x-autobe-specification Delete an article by ID with proper authorization checks.
+   *
+   * First validate that the article exists and is not already deleted (deleted_at is null).
+   *
+   * Authorization logic:
+   * - If the authenticated user is the article author: allow deletion
+   * - If the authenticated user is an administrator (regular or super): allow deletion
+   * - Otherwise: return authorization error
+   *
+   * Perform soft delete by setting deleted_at to current timestamp.
+   *
+   * Cascade delete all related entities:
+   * - Delete all article files (discussion_board_article_files) with cascade
+   * - Delete all article images (discussion_board_article_images) with cascade
+   * - Delete all comments (discussion_board_comments) with cascade
+   * - Delete all comment attachments (discussion_board_comment_attachments) through cascade
+   *
+   * Return the deleted article information for confirmation.
+   *
+   * Handle edge cases:
+   * - Article not found: return 404
+   * - Article already deleted: return 410 Gone
+   * - Unauthorized access: return 403
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":articleId")
@@ -147,7 +204,7 @@ export class DiscussionboardUserArticlesController {
     user: UserPayload,
     @TypedParam("articleId")
     articleId: string & tags.Format<"uuid">,
-  ): Promise<IDiscussionBoardArticle> {
+  ): Promise<void> {
     try {
       return await deleteDiscussionBoardUserArticlesArticleId({
         user,

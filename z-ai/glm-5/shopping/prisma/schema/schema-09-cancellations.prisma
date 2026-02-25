@@ -1,0 +1,145 @@
+/// Customer-initiated cancellation requests for order items with 'paid' status.
+///
+/// Customers can request cancellation for order items that have not yet been
+/// shipped (status: paid). Each request captures the customer's reason,
+/// tracks the approval workflow through pending/approved/rejected statuses,
+/// and records seller responses including rejection reasons when applicable.
+///
+/// Key relationships:
+/// - References {@link shopping_mall_order_items.id} for the item being
+/// cancelled (1:1 - one request per item)
+/// - References {@link shopping_mall_customers.id} for the requesting customer
+/// - Seller context is derived through the order item's seller association
+///
+/// Business rules:
+/// - Only order items with 'paid' status can have cancellation requests
+/// - Approved cancellations trigger automatic refund and stock restoration
+/// - All state changes are captured in {@link
+/// shopping_mall_cancellation_request_snapshots} for audit
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item being cancelled. References {@link
+  /// shopping_mall_order_items.id}. Only one cancellation request allowed per
+  /// order item.
+  order_item_id String
+  
+  /// The customer who initiated the cancellation request. References {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Customer's explanation for why they want to cancel this order item.
+  reason String
+  
+  /// Current state of the cancellation request: pending (awaiting seller
+  /// review), approved (seller accepted, refund initiated), or rejected
+  /// (seller declined with reason provided).
+  status String
+  
+  /// Seller's response message when approving or rejecting the request.
+  /// Optional additional context from the seller.
+  seller_response String?
+  
+  /// Reason provided by seller when rejecting the cancellation request.
+  /// Required when status is 'rejected'.
+  rejection_reason String?
+  
+  /// Timestamp when the cancellation request was created.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last modified (status change,
+  /// seller response, etc.).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([customer_id, created_at])
+}
+
+/// Immutable snapshots preserving complete state of cancellation requests at
+/// each stage of their lifecycle. Created automatically when a cancellation
+/// request is submitted and when a seller responds (approve/reject). Records
+/// the transition from previous status to new status, along with the
+/// customer's reason for cancellation, seller's response, and rejection
+/// reason if applicable. Provides complete audit trail for dispute
+/// resolution and legal compliance as required by the snapshot principle.
+/// Each snapshot represents a single state transition and cannot be modified
+/// or deleted.
+///
+/// Related to {@link shopping_mall_cancellation_requests} for the parent
+/// cancellation request entity.
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cancellation request this snapshot captures. {@link
+  /// shopping_mall_cancellation_requests.id}
+  shopping_mall_cancellation_request_id String
+  
+  /// The status of the cancellation request before this state change. Null for
+  /// initial submission snapshots.
+  previous_status String?
+  
+  /// The status of the cancellation request after this state change. Values:
+  /// 'pending' for initial submission, 'approved' when seller approves,
+  /// 'rejected' when seller rejects.
+  new_status String
+  
+  /// Customer's explanation for why they want to cancel the order item.
+  /// Captured at the time of snapshot creation to preserve the exact wording.
+  reason String
+  
+  /// Seller's response or explanation when approving or rejecting the
+  /// cancellation request. Null for initial submission snapshots, populated
+  /// when seller responds.
+  seller_response String?
+  
+  /// Seller's explanation for rejecting the cancellation request. Null for
+  /// approved or pending statuses, populated only when seller rejects the
+  /// request.
+  rejection_reason String?
+  
+  /// Timestamp when this snapshot was created, representing when the state
+  /// transition occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_shopping__802546ef")
+}

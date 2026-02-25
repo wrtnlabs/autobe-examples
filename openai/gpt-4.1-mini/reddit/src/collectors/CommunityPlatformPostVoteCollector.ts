@@ -9,19 +9,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace CommunityPlatformPostVoteCollector {
   export async function collect(props: {
-    body: ICommunityPlatformPostVote.ICreate & {
-      vote_type: string;
-      postId: string;
-    };
+    body: ICommunityPlatformPostVote.ICreate;
   }) {
     const id = v4();
     return {
       id,
       vote_type: props.body.vote_type,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      post: { connect: { id: props.body.postId } },
+      post: { connect: { id: props.body.post_id } },
     } satisfies Prisma.community_platform_post_votesCreateInput;
   }
 }

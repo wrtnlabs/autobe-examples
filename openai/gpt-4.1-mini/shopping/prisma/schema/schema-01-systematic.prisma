@@ -29,10 +29,14 @@ model shopping_mall_seller_profile_snapshots {
   created_at DateTime
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@unique([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_profile_snapshots_shopping_mall_s_46fc8e8f")
 }
@@ -94,11 +98,15 @@ model shopping_mall_order_item_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
   order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_order_item_id], map: "shopping_mall_order_item_snapshots_shopping_mall_order_30b7547a")
   @@index([shopping_mall_order_id])
@@ -141,10 +149,14 @@ model shopping_mall_review_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   review shopping_mall_product_reviews @relation(fields: [shopping_mall_product_review_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_product_review_id, snapshot_created_at], map: "shopping_mall_review_snapshots_shopping_mall_product_r_c3f1c7d7")
 }
@@ -185,7 +197,7 @@ model shopping_mall_system_settings {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@unique([key])
   @@index([created_at])
@@ -233,7 +245,7 @@ model shopping_mall_system_versions {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   // spellchecker: ignore-next-line
   @@unique([entity_name, entity_id, version_number], map: "shopping_mall_system_versions_entity_name_entity_id_ve_09d50e48")
@@ -288,7 +300,7 @@ model shopping_mall_audit_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // INDEXES
   //----
   @@index([created_at])
   @@index([actor_id])
@@ -331,10 +343,14 @@ model shopping_mall_cancellation_request_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   cancellationRequest shopping_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_cancellat_e6cacb72")
 }
@@ -377,10 +393,14 @@ model shopping_mall_refund_request_snapshots {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([shopping_mall_refund_request_id], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_017fb2af")
 }

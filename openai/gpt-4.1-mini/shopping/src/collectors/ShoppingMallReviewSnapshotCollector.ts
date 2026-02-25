@@ -10,19 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallReviewSnapshotCollector {
   export async function collect(props: {
     body: IShoppingMallReviewSnapshot.ICreate;
-    review: IEntity;
   }) {
-    const id = v4();
-    const now = new Date();
+    const id: string = (globalThis as any).v4();
     return {
       id,
-      rating: 0,
-      body: null,
-      snapshot_created_at: now,
-      created_at: now,
-      updated_at: now,
+      rating: props.body.rating,
+      body: props.body.body ?? null,
+      snapshot_created_at: new Date(props.body.snapshotCreatedAt),
+      created_at: new Date(props.body.createdAt),
+      updated_at: new Date(props.body.updatedAt),
       deleted_at: null,
-      review: { connect: { id: props.review.id } },
+      review: { connect: { id: props.body.shoppingMallProductReviewId } },
     } satisfies Prisma.shopping_mall_review_snapshotsCreateInput;
   }
 }

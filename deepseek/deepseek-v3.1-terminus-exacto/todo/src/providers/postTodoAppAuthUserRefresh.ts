@@ -15,7 +15,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postTodoAppAuthUserRefresh(props: {
   body: ITodoAppUser.IRefresh;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // 1. Verify refresh token
+  // Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
@@ -23,96 +23,96 @@ export async function postTodoAppAuthUserRefresh(props: {
     created_at: string;
   };
   try {
-    const result = jwt.verify(
+    decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    );
-    // Type narrowing: ensure result is an object with the expected properties
-    if (typeof result === "string" || !result || typeof result !== "object") {
-      throw new HttpException("Invalid token format", 401);
-    }
-    decoded = result as {
+      {
+        issuer: "autobe",
+      },
+    ) as {
       id: string;
       session_id: string;
       type: "user";
       created_at: string;
     };
+    // Type validation through assignment
+    if (
+      typeof decoded !== "object" ||
+      !decoded.id ||
+      !decoded.session_id ||
+      decoded.type !== "user"
+    ) {
+      throw new Error("Invalid token structure");
+    }
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type
-  if (decoded.type !== "user") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  // 3. Get current time as ISO string for comparison
-  const currentTimeISO = toISOStringSafe(new Date());
-  // 4. Validate session exists and not expired
+  // Validate session exists and not expired
   const session = await MyGlobal.prisma.todo_app_user_sessions.findFirst({
     where: {
       id: decoded.session_id,
       todo_app_user_id: decoded.id,
-      expired_at: { gt: currentTimeISO },
+      expired_at: {
+        gt: new Date(Date.now() - 1000), // Current time with buffer
+      },
     },
-    include: { user: true },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 5. Validate user account
-  if (session.user.deleted_at !== null) {
+  // Validate user exists and not deleted
+  const user = await MyGlobal.prisma.todo_app_users.findUniqueOrThrow({
+    where: { id: decoded.id },
+  });
+  if (user.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Generate new tokens with ISO string timestamps
-  const nowISO = toISOStringSafe(new Date());
-  const accessExpiresISO = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ); // 1 hour
-  const refreshExpiresISO = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
-  const newAccessToken = jwt.sign(
-    {
-      type: "user",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: nowISO,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
+  // Generate new tokens with updated expiration
+  const now = Date.now();
+  const accessExpiresMs = now + 30 * 60 * 1000; // 30 minutes
+  const refreshExpiresMs = now + 30 * 24 * 60 * 60 * 1000; // 30 days
+  const tokenPayload = {
+    type: "user" as const,
+    id: decoded.id,
+    session_id: decoded.session_id,
+    created_at: toISOStringSafe(new Date(now)),
+  };
+  const newAccessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "30m",
+    issuer: "autobe",
+  });
   const newRefreshToken = jwt.sign(
-    {
-      type: "user",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: nowISO,
-    },
+    { ...tokenPayload, tokenType: "refresh" },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
+    {
+      expiresIn: "30d",
+      issuer: "autobe",
+    },
   );
-  // 7. Update session with new tokens
+  // Update session with new tokens and expiration
   await MyGlobal.prisma.todo_app_user_sessions.update({
     where: { id: decoded.session_id },
     data: {
       access_token: newAccessToken,
       refresh_token: newRefreshToken,
-      expired_at: refreshExpiresISO,
+      expired_at: new Date(refreshExpiresMs),
     },
   });
-  // 8. Return authorized user response
-  return {
-    id: session.user.id,
-    email: session.user.email,
-    display_name: session.user.display_name,
-    created_at: toISOStringSafe(session.user.created_at),
-    updated_at: toISOStringSafe(session.user.updated_at),
+  const response: ITodoAppUser.IAuthorized = {
+    id: user.id as string & tags.Format<"uuid">,
+    email: user.email as string & tags.Format<"email">,
+    display_name: user.display_name,
+    created_at: toISOStringSafe(user.created_at),
+    updated_at: toISOStringSafe(user.updated_at),
+    deleted_at: user.deleted_at ? toISOStringSafe(user.deleted_at) : null,
     token: {
       access: newAccessToken,
       refresh: newRefreshToken,
-      expired_at: accessExpiresISO,
-      refreshable_until: refreshExpiresISO,
+      expired_at: toISOStringSafe(new Date(accessExpiresMs)) as string &
+        tags.Format<"date-time">,
+      refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)) as string &
+        tags.Format<"date-time">,
     },
   };
+  return typia.assert<ITodoAppUser.IAuthorized>(response);
 }

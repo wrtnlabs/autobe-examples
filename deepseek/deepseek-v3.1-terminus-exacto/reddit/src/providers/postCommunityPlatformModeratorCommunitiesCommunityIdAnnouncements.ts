@@ -1,0 +1,55 @@
+import { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import { ICommunityPlatformCommunityAnnouncement } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunityAnnouncement";
+import { ICommunityPlatformUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformUser";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { CommunityPlatformCommunityAnnouncementCollector } from "../collectors/CommunityPlatformCommunityAnnouncementCollector";
+import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
+import { CommunityPlatformCommunityAnnouncementTransformer } from "../transformers/CommunityPlatformCommunityAnnouncementTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function postCommunityPlatformModeratorCommunitiesCommunityIdAnnouncements(props: {
+  moderator: ModeratorPayload;
+  communityId: string & tags.Format<"uuid">;
+  body: ICommunityPlatformCommunityAnnouncement.ICreate;
+}): Promise<ICommunityPlatformCommunityAnnouncement> {
+  // Verify community exists
+  const community =
+    await MyGlobal.prisma.community_platform_communities.findUniqueOrThrow({
+      where: { id: props.communityId },
+    });
+  // Verify moderator is assigned to this community
+  const moderatorAssignment =
+    await MyGlobal.prisma.community_platform_community_moderators.findFirst({
+      where: {
+        community_id: props.communityId,
+        user_id: props.moderator.id,
+      },
+    });
+  if (!moderatorAssignment) {
+    throw new HttpException("Moderator not authorized for this community", 403);
+  }
+  // Create announcement using collector
+  const announcement =
+    await MyGlobal.prisma.community_platform_community_announcements.create({
+      data: await CommunityPlatformCommunityAnnouncementCollector.collect({
+        body: props.body,
+        communityPlatformCommunities: { id: props.communityId },
+        communityPlatformUsers: { id: props.moderator.id },
+        communityPlatformUserSessions: { id: props.moderator.session_id },
+      }),
+      ...CommunityPlatformCommunityAnnouncementTransformer.select(),
+    });
+  // Transform and return response
+  return await CommunityPlatformCommunityAnnouncementTransformer.transform(
+    announcement,
+  );
+}

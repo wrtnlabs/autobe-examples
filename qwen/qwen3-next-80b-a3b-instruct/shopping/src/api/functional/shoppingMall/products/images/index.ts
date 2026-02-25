@@ -3,44 +3,32 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IShoppingMallProductImage } from "../../../../structures/IShoppingMallProductImage";
+import { IPageIShoppingMallProductImage } from "../../../../structures/IPageIShoppingMallProductImage";
 
 /**
- * Reorder the images associated with a specific product. This operation allows sellers to change the display order of product images for customer-facing views. The image sequence determines the thumbnail and gallery ordering on product detail pages. Only sellers who own the product may initiate this request. This operation does not create, modify, or delete any image files - it reorders the existing image references only. When the image order is changed, the system automatically generates a product snapshot record in the shopping_mall_snapshots table to preserve the previous image sequence for audit and dispute resolution purposes.
+ * Retrieve the complete ordered set of active images associated with a specific product.
  *
- * This operation follows the immutability principle of the system: any change to product presentation (including image sequence) becomes part of the product's history. Customers will see the most current image order, but all historical orders remain accessible via product snapshots. The operation requires explicit permission through authentication (only product owners can reorder images) and validates that all provided image IDs belong to the specified product.
+ * This endpoint returns all currently active (non-deleted) images for the specified product in the exact order set by the seller. Each image is represented by its public URL and positional index for rendering in product galleries.
  *
- * Failure cases:
- * - If the product ID does not exist or is deleted, return 404
- * - If the authenticated user is not the product owner, return 403
- * - If an image ID in the list does not exist or belongs to another product, return 400
- * - If the image list is empty, return 400
+ * Images are immutable artifacts; they are never modified or reordered directly. Any image reordering or deletion triggers the creation of a new product snapshot, and this endpoint always serves the current state of the active product.
  *
- * This operation is dependent on the product's existence and the seller's ownership. It must be performed after the seller has authenticated and has access to edit the specific product. No other API operations must be executed in sequence before this one; it can be called independently as long as the user has ownership rights.
- *
- * Related operations:
- * - GET /products/{productId}/images: Retrieves current image order
- * - POST /products/{productId}/images: Uploads new images
- * - DELETE /products/{productId}/images/{imageId}: Deletes individual images
- *
- * Note: This endpoint's behavior is tightly coupled with the product's status. If the product is deleted or the seller's account is suspended, no image reordering is allowed.
+ * Access is authorized based on actor ownership: customers can view images of products they have purchased or are browsing, sellers can view images of their own products, and administrators can view images of any product. Deleted images are excluded from results, in accordance with the snapshot principle that historical images are preserved only within product snapshots and not in the active product view.
  *
  * @param props.connection
- * @param props.productId The unique identifier for the product whose images are being reordered. This must correspond to an existing product in the shopping_mall_products table.
- * @param props.body An array of image IDs specifying the desired order for displaying product images. Each ID must correspond to an existing image associated with the product. The first item in the array becomes the first image (sort_order=0), the second item becomes the second image (sort_order=1), etc. Reordering does not delete or modify any image files - it only changes the display sequence.
+ * @param props.productId The unique identifier of the product whose images are being retrieved.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve existing product images for the specified productId, validate that the authenticated seller owns the product, validate that all image IDs in the request body are valid and belong to the product, reorder the images in the database according to the provided IDs sequence, update the sort_order field for each image based on its position in the request array, create a snapshot of the entire product (including image order) before applying changes, return a 200 response with updated image list in new sequence, handle any database transaction failures with proper rollback. The sort_order field must be assigned sequentially starting from 0 for the first image in the array, 1 for the second, etc. Use atomic database operations to ensure consistency.
+ * @x-autobe-specification Query shopping_mall_product_images table filtering by product_id and where deleted_at is null. Order results by position ascending. Return only image_url and position fields. Do not join with products table — product_id is sufficient for validation. Authenticate actor and verify actor has view access to product (customer has purchased, seller owns, admin). Return 404 if product does not exist or customer has no access. Return empty array if product exists but has no active images.
  * @path /shoppingMall/products/:productId/images
- * @accessor api.functional.shoppingMall.products.images.index
+ * @accessor api.functional.shoppingMall.products.images.search
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function search(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: search.Props,
+): Promise<search.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? search.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -50,58 +38,47 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...search.METADATA,
+          path: search.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace index {
+export namespace search {
   export type Props = {
     /**
-     * The unique identifier for the product whose images are being reordered. This must correspond to an existing product in the shopping_mall_products table.
+     * The unique identifier of the product whose images are being retrieved.
      */
     productId: string;
-
-    /**
-     * An array of image IDs specifying the desired order for displaying product images. Each ID must correspond to an existing image associated with the product. The first item in the array becomes the first image (sort_order=0), the second item becomes the second image (sort_order=1), etc. Reordering does not delete or modify any image files - it only changes the display sequence.
-     */
-    body: IShoppingMallProductImage.IRequest;
   };
-  export type Body = IShoppingMallProductImage.IRequest;
-  export type Response = IShoppingMallProductImage;
+  export type Response = IPageIShoppingMallProductImage.ISummary;
 
   export const METADATA = {
-    method: "PATCH",
+    method: "GET",
     path: "/shoppingMall/products/:productId/images",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
+  export const path = (props: Props) =>
     `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/images`;
-  export const random = (): IShoppingMallProductImage =>
-    typia.random<IShoppingMallProductImage>();
+  export const random = (): IPageIShoppingMallProductImage.ISummary =>
+    typia.random<IPageIShoppingMallProductImage.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: search.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: search.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

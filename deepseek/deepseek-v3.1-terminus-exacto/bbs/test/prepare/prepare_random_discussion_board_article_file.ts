@@ -8,45 +8,17 @@ import typia, { tags } from "typia";
 export function prepare_random_discussion_board_article_file(
   input?: DeepPartial<IDiscussionBoardArticleFile.ICreate>,
 ): IDiscussionBoardArticleFile.ICreate {
-  // Generate realistic filename with common extensions
-  const fileName =
-    input?.file_name ??
-    (() => {
-      const extensions = ["pdf", "docx", "jpg", "png", "txt", "zip", "mp4"];
-      const baseName = RandomGenerator.alphabets(8);
-      const ext = RandomGenerator.pick(extensions as readonly string[]);
-      return `${baseName}.${ext}`;
-    })();
-  // Generate MIME type independently
-  const fileType =
-    input?.file_type ??
-    (() => {
-      const mimeTypes = [
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "image/jpeg",
-        "image/png",
-        "text/plain",
-        "application/zip",
-        "video/mp4",
-      ];
-      return RandomGenerator.pick(mimeTypes as readonly string[]);
-    })();
   return {
-    file_name: fileName,
-    file_type: fileType,
-    file_size:
-      input?.file_size ??
-      typia.random<
-        number & tags.Type<"int32"> & tags.Minimum<100> & tags.Maximum<10485760>
-      >(), // 100 bytes to 10MB
-    storage_path:
-      input?.storage_path ??
-      `/uploads/${RandomGenerator.alphabets(16)}/${fileName}`,
-    description:
-      input?.description ??
-      (Math.random() > 0.5
-        ? RandomGenerator.paragraph({ sentences: 2 })
-        : undefined),
+    attachment_file_id:
+      input?.attachment_file_id ?? typia.random<string & tags.Format<"uuid">>(),
+    display_order:
+      input?.display_order ??
+      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
+    alt_text:
+      input?.alt_text ??
+      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 5 }),
+    caption:
+      input?.caption ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
   };
 }

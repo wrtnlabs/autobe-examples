@@ -15,11 +15,11 @@ export async function deleteDiscussionBoardSuperAdministratorSystemMessagesId(pr
   superAdministrator: SuperadministratorPayload;
   id: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const found =
-    await MyGlobal.prisma.discussion_board_system_messages.findUnique({
-      where: { id: props.id },
-    });
-  if (!found) throw new HttpException("System message not found", 404);
+  // Verify existence
+  await MyGlobal.prisma.discussion_board_system_messages.findUniqueOrThrow({
+    where: { id: props.id },
+  });
+  // Perform deletion
   await MyGlobal.prisma.discussion_board_system_messages.delete({
     where: { id: props.id },
   });

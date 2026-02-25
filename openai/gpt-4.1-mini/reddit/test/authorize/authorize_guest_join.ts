@@ -11,10 +11,14 @@ import typia, { tags } from "typia";
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body: ICommunityPlatformGuest.IJoin;
+    body?: Partial<ICommunityPlatformGuest.IJoin>;
   },
 ): Promise<ICommunityPlatformGuest.IAuthorized> {
+  const joinInput = {
+    deviceFingerprint:
+      props.body?.deviceFingerprint ?? RandomGenerator.alphaNumeric(32),
+  } satisfies ICommunityPlatformGuest.IJoin;
   return await api.functional.communityPlatform.auth.guest.join(connection, {
-    body: props.body,
+    body: joinInput,
   });
 }

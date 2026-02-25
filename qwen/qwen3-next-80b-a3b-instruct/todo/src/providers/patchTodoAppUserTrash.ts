@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { UserPayload } from "../decorators/payload/UserPayload";
+import { TodoAppTodoAtSummaryTransformer } from "../transformers/TodoAppTodoAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,54 +19,63 @@ export async function patchTodoAppUserTrash(props: {
   user: UserPayload;
   body: ITodoAppTodo.IRequest;
 }): Promise<IPageITodoAppTodo.ISummary> {
-  // Operation specification defines defaults
-  const page = 1;
-  const limit = 100;
-  const skip = (page - 1) * limit;
-  // Build where clause with soft-deleted filter and user ownership
+  const {
+    status,
+    sortBy = "createdAt",
+    sortDirection = "desc",
+    page = 1,
+    perPage = 10,
+  } = props.body;
+  // Validate perPage range
+  const validPerPage = Math.min(Math.max(perPage, 1), 100);
+  // Calculate pagination
+  const skip = (page - 1) * validPerPage;
+  const take = validPerPage;
+  // Build where clause
   const where: Prisma.todo_app_todosWhereInput = {
     todo_app_user_id: props.user.id,
     deleted_at: { not: null },
   };
-  // Use default sort as specified in operation spec
-  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = {
-    created_at: "desc",
-  };
-  // Fetch paginated data
+  // Add status filter if specified
+  if (status && status !== "all") {
+    where.is_completed = status === "completed";
+  }
+  // Build orderBy clause (only createdAt, startDate, and dueDate allowed)
+  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = {};
+  if (sortBy === "createdAt") {
+    orderBy.created_at = sortDirection === "asc" ? "asc" : "desc";
+  } else if (sortBy === "startDate") {
+    orderBy.start_date = sortDirection === "asc" ? "asc" : "desc";
+  } else if (sortBy === "dueDate") {
+    orderBy.due_date = sortDirection === "asc" ? "asc" : "desc";
+  } else {
+    // Default to createdAt desc
+    orderBy.created_at = sortDirection === "asc" ? "asc" : "desc";
+  }
+  // Query data and count
   const data = await MyGlobal.prisma.todo_app_todos.findMany({
     where,
-    skip,
-    take: limit,
     orderBy,
-    select: {
-      id: true,
-      title: true,
-      completed: true,
-      start_date: true,
-      due_date: true,
-      created_at: true,
-    },
+    skip,
+    take,
+    ...TodoAppTodoAtSummaryTransformer.select(),
   });
-  // Count total records for pagination
   const total = await MyGlobal.prisma.todo_app_todos.count({
     where,
   });
-  // Transform to summary format with proper date string formatting
-  const summaryData = data.map((record) => ({
-    id: record.id as string & tags.Format<"uuid">,
-    title: record.title,
-    completed: record.completed,
-    start_date: record.start_date ? toISOStringSafe(record.start_date) : null,
-    due_date: record.due_date ? toISOStringSafe(record.due_date) : null,
-    created_at: toISOStringSafe(record.created_at),
-  }));
+  // Transform data using loaded transformer
+  const transformed = await ArrayUtil.asyncMap(
+    data,
+    TodoAppTodoAtSummaryTransformer.transform,
+  );
+  // Return paginated response
   return {
-    data: summaryData,
+    data: transformed,
     pagination: {
       current: page,
-      limit: limit,
+      limit: validPerPage,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / validPerPage),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageITodoAppTodo.ISummary;
 }

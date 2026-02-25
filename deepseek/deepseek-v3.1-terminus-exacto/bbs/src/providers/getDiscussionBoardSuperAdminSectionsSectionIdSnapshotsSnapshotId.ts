@@ -8,31 +8,24 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { DiscussionBoardSectionSnapshotAtArchiveTransformer } from "../transformers/DiscussionBoardSectionSnapshotAtArchiveTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { DiscussionBoardSectionSnapshotTransformer } from "../transformers/DiscussionBoardSectionSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminSectionsSectionIdSnapshotsSnapshotId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   sectionId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardSectionSnapshot.IArchive> {
+}): Promise<IDiscussionBoardSectionSnapshot> {
+  // Verify snapshot exists and belongs to specified section
   const snapshot =
-    await MyGlobal.prisma.discussion_board_section_snapshots.findUnique({
-      where: { id: props.snapshotId },
-      ...DiscussionBoardSectionSnapshotAtArchiveTransformer.select(),
+    await MyGlobal.prisma.discussion_board_section_snapshots.findUniqueOrThrow({
+      where: {
+        id: props.snapshotId,
+        section: { id: props.sectionId }, // Ensure snapshot belongs to this section
+      },
+      ...DiscussionBoardSectionSnapshotTransformer.select(),
     });
-  if (!snapshot) {
-    throw new HttpException("Snapshot not found", 404);
-  }
-  if (snapshot.section.id !== props.sectionId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified section",
-      404,
-    );
-  }
-  return await DiscussionBoardSectionSnapshotAtArchiveTransformer.transform(
-    snapshot,
-  );
+  return await DiscussionBoardSectionSnapshotTransformer.transform(snapshot);
 }

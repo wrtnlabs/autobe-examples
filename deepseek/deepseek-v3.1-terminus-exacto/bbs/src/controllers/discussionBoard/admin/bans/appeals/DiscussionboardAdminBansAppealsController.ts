@@ -7,31 +7,35 @@ import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 import { getDiscussionBoardAdminBansBanIdAppealsAppealId } from "../../../../../providers/getDiscussionBoardAdminBansBanIdAppealsAppealId";
 import { patchDiscussionBoardAdminBansBanIdAppeals } from "../../../../../providers/patchDiscussionBoardAdminBansBanIdAppeals";
-import { putDiscussionBoardAdminBansBanIdAppealsAppealId } from "../../../../../providers/putDiscussionBoardAdminBansBanIdAppealsAppealId";
+import { postDiscussionBoardAdminBansBanIdAppealsAppealIdReview } from "../../../../../providers/postDiscussionBoardAdminBansBanIdAppealsAppealIdReview";
 
 @Controller("/discussionBoard/admin/bans/:banId/appeals")
 export class DiscussionboardAdminBansAppealsController {
   /**
-   * Update the status and decision information for ban appeals associated with a specific ban record.
+   * Update the status and decision details for a ban appeal submitted by a user.
    *
-   * This operation allows administrators to process ban appeals by updating their workflow status, recording decision reasons, and assigning reviewers. The appeal process progresses through defined statuses: pending (awaiting review), under_review (currently being evaluated), approved (ban overturned), or rejected (ban upheld).
+   * This API operation allows administrators to review and make decisions on user appeals against ban decisions. When a user submits an appeal against their ban, administrators use this endpoint to update the appeal status, provide decision reasoning, and record the review outcome.
    *
-   * Administrators must have appropriate privileges to review ban appeals. The operation validates that the specified ban record exists and that the appeal workflow follows proper state transitions. When updating appeal status, the system records the reviewing administrator, decision timestamp, and detailed justification for the decision.
+   * The operation supports the complete appeal workflow including status transitions from 'pending' to 'under_review', 'approved', or 'rejected'. Administrators must provide a decision reason when approving or rejecting appeals to ensure transparency in the moderation process.
    *
-   * The response provides complete updated appeal information including the current status, decision details, reviewer assignment, and timestamps for tracking the appeal workflow progression. This operation supports transparency in moderation actions and ensures users have recourse for contested ban decisions.
+   * This operation integrates with the discussion_board_ban_appeals table which tracks appeal submissions, review status, administrator decisions, and timestamps for comprehensive audit trail maintenance. The operation ensures proper validation of appeal status transitions and maintains referential integrity with the associated ban record and user.
    *
-   * Related operations include GET /bans/{banId}/appeals for retrieving appeal information and POST /bans/{banId}/appeals for submitting new appeals. This operation completes the ban appeal workflow by providing the final decision mechanism for contested ban actions.
+   * Administrators must have appropriate permissions to review ban appeals, and the system enforces that only valid status transitions are allowed based on the current appeal state.
    *
    * @param connection
-   * @param banId Unique identifier of the ban record whose appeals are being updated
-   * @param body Ban appeal status update information including decision details
+   * @param banId Unique identifier of the ban record whose appeal is being updated
+   * @param body Appeal status update information including new status and decision details
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update ban appeal status and decision information. Query the discussion_board_ban_appeals table for appeals linked to the specified ban record. Validate that the ban record exists and the appeal is in a valid state for updates. Update the appeal status, decision reason, reviewer assignment, and review timestamp. Ensure proper authorization checks for administrator privileges. Handle workflow transitions between statuses (pending → under_review → approved/rejected). Return updated appeal information with complete workflow state.
+   * @x-autobe-specification Query the discussion_board_ban_appeals table to find the appeal associated with the specified ban ID. Validate that the appeal exists and is in a state that can be updated (e.g., not already decided). Check administrator permissions to ensure the user has authority to review appeals.
+   *
+   * Update the appeal record with the new status, decision reason, reviewer ID, and review timestamp. Validate status transitions to prevent invalid state changes (e.g., cannot revert from approved/rejected back to pending). Ensure decision reason is provided when status changes to approved or rejected.
+   *
+   * Return the updated appeal information including all current fields. Handle cases where the appeal doesn't exist or the administrator lacks permissions with appropriate error responses.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async patchByBanid(
+  public async update(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("banId")
@@ -52,20 +56,20 @@ export class DiscussionboardAdminBansAppealsController {
   }
 
   /**
-   * Retrieve detailed information about a specific ban appeal.
+   * Retrieve detailed information about a specific ban appeal for administrative review.
    *
-   * This operation provides administrators with complete access to ban appeal records, including the original ban details, the user's appeal reason, current appeal status, and any administrative decisions made on the appeal. The response includes comprehensive information needed for appeal review and moderation workflows.
+   * This operation provides administrators with comprehensive details about an individual ban appeal, including the user's appeal reason, current status, review timeline, and any administrator decisions. The response includes all relevant timestamps and workflow status information needed for proper appeal evaluation.
    *
-   * Administrators can use this operation to examine appeal details during the review process, understand the user's perspective on the ban decision, and track the appeal's progression through different statuses (pending, under_review, approved, rejected). The operation ensures proper authorization checks to prevent unauthorized access to appeal records.
+   * Administrators can use this operation to review appeal details before making decisions, track appeal progress, and maintain transparency in the moderation process. The operation ensures that appeal information is accessible only to authorized administrators with appropriate permissions.
    *
-   * The response includes timestamps for appeal submission, review completion, and record updates, providing a complete audit trail of the appeal process. Related user and administrator information is included to support moderation workflows and accountability tracking.
+   * Related operations include listing all appeals for a ban record and updating appeal status during the review process.
    *
    * @param connection
-   * @param banId Unique identifier of the ban record that contains the appeal
+   * @param banId Unique identifier of the ban record containing the appeal
    * @param appealId Unique identifier of the specific ban appeal to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_ban_appeals table using the provided banId and appealId parameters. Validate that both IDs exist and that the appeal belongs to the specified ban. Join with related tables (discussion_board_ban_records, discussion_board_users, discussion_board_admins) to include complete information about the ban, the appealing user, and the reviewing administrator if applicable. Return the full appeal record with all fields including appeal reason, status, decision reason, and timestamps. Handle cases where the appeal or ban doesn't exist with appropriate error responses.
+   * @x-autobe-specification Query the discussion_board_ban_appeals table by ID to retrieve a specific ban appeal. Include related ban record information and reviewer details if available. Validate that the appeal belongs to the specified ban record. Return complete appeal details with timestamps and status information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":appealId")
@@ -90,33 +94,27 @@ export class DiscussionboardAdminBansAppealsController {
   }
 
   /**
-   * Update the decision status and review details for a specific ban appeal.
+   * Process a ban appeal review by an administrator.
    *
-   * This operation allows administrators to review and make decisions on user appeals against ban decisions. The appeal process provides users with recourse to contest moderation actions while giving administrators a structured workflow for evaluating appeals.
+   * This operation allows administrators to review user appeals against ban decisions. The administrator provides a decision (approve or reject) along with a reason for their decision. The operation updates the appeal status and records the review decision in the discussion_board_ban_appeals table.
    *
-   * When reviewing an appeal, administrators can update the appeal status to reflect the current review state: 'pending' (awaiting review), 'under_review' (currently being evaluated), 'approved' (ban overturned), or 'rejected' (ban upheld). The decision_reason field captures the administrator's justification for their decision, which is visible to other administrators for transparency.
+   * The review process includes validation checks to ensure the appeal is currently pending review and that the administrator has appropriate permissions to review appeals. The operation records the decision timestamp and maintains an audit trail of all appeal reviews for transparency and accountability.
    *
-   * The operation validates that appeal workflow transitions follow proper sequence and that decision reasons are provided when making final decisions. It automatically timestamps the review action and assigns the reviewing administrator for audit trail purposes.
+   * Administrators should provide clear and specific reasons for their decisions to maintain trust in the moderation system. The decision reason is visible to other administrators for oversight purposes.
    *
-   * This API supports the platform's commitment to fair moderation practices by providing a documented appeal process with clear decision tracking and administrator accountability.
+   * This operation interacts with the discussion_board_ban_appeals table to update appeal status and review information, while maintaining referential integrity with ban records and user accounts.
    *
    * @param connection
-   * @param banId The unique identifier of the ban record containing the appeal
-   * @param appealId The unique identifier of the ban appeal being updated
-   * @param body Updated appeal decision information including status and review details
+   * @param banId Unique identifier of the ban record being appealed
+   * @param appealId Unique identifier of the appeal being reviewed
+   * @param body Review decision and justification for the ban appeal
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update an existing ban appeal record with reviewer decision information.
-   *
-   * Query the discussion_board_ban_appeals table to find the appeal by ID and verify it belongs to the specified ban. Validate that the current user is an administrator with permission to review appeals. Update the appeal status, decision_reason, reviewed_at timestamp, and assign the reviewer admin ID.
-   *
-   * Ensure the appeal workflow transitions are valid (e.g., cannot move from 'approved' back to 'pending'). Validate decision_reason length requirements when status changes to 'approved' or 'rejected'. Set reviewed_at to current timestamp when status changes from 'pending' or 'under_review' to a final decision state.
-   *
-   * Return the complete updated appeal record with all relationships loaded for comprehensive review information.
+   * @x-autobe-specification Update the ban appeal record with review decision. Validate that the appeal exists and is in a reviewable state (pending or under_review). Check that the administrator has appropriate permissions. Update the appeal status to 'approved' or 'rejected' based on the decision, record the decision reason, and set the review timestamp. Ensure the ban record is updated accordingly if the appeal is approved.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":appealId")
-  public async putByBanidAndAppealid(
+  @TypedRoute.Post(":appealId/review")
+  public async review(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("banId")
@@ -124,10 +122,10 @@ export class DiscussionboardAdminBansAppealsController {
     @TypedParam("appealId")
     appealId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IDiscussionBoardBanAppeal.IUpdate,
+    body: IDiscussionBoardBanAppeal.IReview,
   ): Promise<IDiscussionBoardBanAppeal> {
     try {
-      return await putDiscussionBoardAdminBansBanIdAppealsAppealId({
+      return await postDiscussionBoardAdminBansBanIdAppealsAppealIdReview({
         admin,
         banId,
         appealId,

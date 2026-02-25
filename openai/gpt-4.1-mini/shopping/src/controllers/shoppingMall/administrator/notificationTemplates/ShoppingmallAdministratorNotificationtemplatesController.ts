@@ -6,43 +6,44 @@ import { IPageIShoppingMallNotificationTemplate } from "../../../../api/structur
 import { IShoppingMallNotificationTemplate } from "../../../../api/structures/IShoppingMallNotificationTemplate";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
-import { deleteShoppingMallAdministratorNotificationTemplatesNotificationTemplateId } from "../../../../providers/deleteShoppingMallAdministratorNotificationTemplatesNotificationTemplateId";
-import { getShoppingMallAdministratorNotificationTemplatesNotificationTemplateId } from "../../../../providers/getShoppingMallAdministratorNotificationTemplatesNotificationTemplateId";
+import { deleteShoppingMallAdministratorNotificationTemplatesTemplateId } from "../../../../providers/deleteShoppingMallAdministratorNotificationTemplatesTemplateId";
+import { getShoppingMallAdministratorNotificationTemplatesTemplateId } from "../../../../providers/getShoppingMallAdministratorNotificationTemplatesTemplateId";
 import { patchShoppingMallAdministratorNotificationTemplates } from "../../../../providers/patchShoppingMallAdministratorNotificationTemplates";
 import { postShoppingMallAdministratorNotificationTemplates } from "../../../../providers/postShoppingMallAdministratorNotificationTemplates";
-import { putShoppingMallAdministratorNotificationTemplatesNotificationTemplateId } from "../../../../providers/putShoppingMallAdministratorNotificationTemplatesNotificationTemplateId";
+import { putShoppingMallAdministratorNotificationTemplatesTemplateId } from "../../../../providers/putShoppingMallAdministratorNotificationTemplatesTemplateId";
 
 @Controller("/shoppingMall/administrator/notificationTemplates")
 export class ShoppingmallAdministratorNotificationtemplatesController {
   /**
-   * This API endpoint allows creation of a new notification template within the shopping mall platform. Notification templates define reusable message formats, containing a unique code, human-readable name, content with placeholders, and parameters in JSON format.
+   * Create a new notification template in the shopping mall platform.
    *
-   * It is essential for maintaining consistent notification messaging across the system, enabling standardized communication with customers, sellers, and administrators.
+   * This operation allows an administrator to define reusable notification templates with a unique template code, a human-readable name, message content with parameters, and associated metadata.
    *
-   * Access to this endpoint should be restricted to administrative actors or authorized system components to prevent misuse or unauthorized template creation.
+   * It targets the shopping_mall_notification_templates table which stores these templates along with audit information including creation and update timestamps, and optional deletion timestamp.
    *
-   * The operation accepts a JSON request body matching the IShoppingMallNotificationTemplate.ICreate DTO that includes the template's identifying code, name, content, and parameters.
+   * Only authorized administrator users should be able to access this endpoint to create new templates.
    *
-   * Upon successful creation, the API responds with the complete notification template record, including the generated unique ID and metadata timestamps.
+   * The request body must supply all necessary fields to define the template except the ID and timestamps which are generated automatically.
    *
-   * This operation does not support path parameters as it targets the collection resource at /notificationTemplates.
+   * The response returns the full newly created notification template entity including all fields.
    *
-   * No soft deletion or snapshot function applies directly to this template creation endpoint.
+   * Related operations include GET, PUT, and DELETE on /notificationTemplates and retrieval operations for current templates.
    *
-   * Related operations include GET /notificationTemplates for listing and GET /notificationTemplates/{id} for retrieving details.
+   * This operation ensures consistent messaging templates for notification deliveries throughout the platform.
    *
    * @param connection
-   * @param body Creation information for notification template, including code, name, content, and parameters.
+   * @param body Notification template creation payload.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement service logic validating uniqueness of template_code and mandatory presence of template_name, content, and parameters fields.
-   * Use transactional database operations to ensure consistent record creation.
-   * Populate created_at and updated_at timestamps with current time in UTC.
-   * Enforce authorization checks to restrict this endpoint to admin or system roles.
-   * Persist the template record in shopping_mall_notification_templates table.
-   * Return the newly created template entity including its UUID id.
-   * Handle database constraint violation errors gracefully, returning appropriate HTTP status codes.
-   * Ensure response body matches IShoppingMallNotificationTemplate DTO shape.
+   * @x-autobe-specification Validate the request body against IShoppingMallNotificationTemplate.ICreate schema.
+   * Insert a new record into shopping_mall_notification_templates with provided template_code, template_name, content, and parameters.
+   * Set created_at and updated_at to the current timestamp. deleted_at is null.
+   * Ensure template_code is unique; fail with error if duplicate.
+   * Return the newly created template record including all fields.
+   * Handle authorization to allow only admin actors.
+   * No cascading or related entities are involved in creation.
+   * No soft deletion involved; this is a hard create.
+   * Log creation events for audit purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -64,37 +65,29 @@ export class ShoppingmallAdministratorNotificationtemplatesController {
   }
 
   /**
-   * Retrieve a filtered paginated list of notification templates.
+   * Retrieve a paginated, filtered list of notification templates.
    *
-   * This operation queries the shopping_mall_notification_templates table, which stores reusable notification message templates. Fields include id (UUID), template_code (unique string code), template_name, content text, parameters, and timestamps for creation, update, and soft deletion.
+   * This operation enables administrators or system users to query notification templates based on search filters, pagination, and sorting options. It queries the shopping_mall_notification_templates table, which holds template metadata such as title, type, content, and parameters.
    *
-   * Filtering supports criteria such as template_code or template_name with pagination and sorting.
+   * Security considerations: Access should be limited to authorized users with viewing rights on notification templates.
    *
-   * Authorization is intended for system administrators or similar actors.
+   * The request body accepts various filtering criteria including template type, keyword search on titles, and sorting preferences.
    *
-   * This endpoint is used by administrative UIs or backend system services needing to browse or select notification templates.
+   * The response contains paginated summaries of notification templates including fields like template ID, title, and type.
    *
-   * Request body allows specifying paging parameters, filters, and sorting options.
+   * Related operations might include POST /notificationTemplates for template creation, PUT /notificationTemplates/{templateId} for update, and DELETE /notificationTemplates/{templateId} for removal.
    *
-   * Response body provides a paginated summary list of notification templates including key fields for display and selection.
-   *
-   * Related operations include create, update, and delete operations on notification templates, typically available through POST, PUT, and DELETE methods on the same resource path.
+   * Error handling includes validation failures for filtering parameters and pagination errors.
    *
    * @param connection
    * @param body Search criteria and pagination parameters for notification templates
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_notification_templates table applying filtering by template_code and template_name from IShoppingMallNotificationTemplate.IRequest.
-   * Use pagination parameters for offset, limit, or cursor-based paging as defined in IShoppingMallNotificationTemplate.IRequest.
-   * Sort results by creation date descending by default or as specified.
-   * Return results paginated as IPageIShoppingMallNotificationTemplate.ISummary objects.
-   * Ensure filtering excludes records with deleted_at not null unless explicitly included.
-   * Handle authorization and authentication checks for admin roles.
-   * Implement efficient indexing on template_code for quick lookups.
-   * Validate request parameters for correctness and sanitization.
-   * Apply SQL queries with appropriate joins if required (none needed for this table).
-   * Support partial matching on template_name for search.
-   * Manage edge cases like empty result sets and invalid pagination parameters gracefully.
+   * @x-autobe-specification Query the shopping_mall_notification_templates table applying pagination, search filters, and sorting as specified in the IShoppingMallNotificationTemplate.IRequest body.
+   * Perform efficient database queries using indexes on template titles and types.
+   * Support filtering by template type and keyword matching on the title field.
+   * Return paginated response with IPageIShoppingMallNotificationTemplate.ISummary including template ID, title, and type.
+   * Handle edge cases such as empty result sets and invalid pagination parameters with appropriate response handling and error messages.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -116,41 +109,49 @@ export class ShoppingmallAdministratorNotificationtemplatesController {
   }
 
   /**
-   * Retrieve detailed information about a notification template identified by its unique ID.
+   * Retrieve detailed information for a specific notification template identified by its templateId. This operation allows authorized actors to fetch the full metadata and content of the notification template used for consistent messaging formats in the shopping mall platform.
    *
-   * This operation fetches all database fields including template code, name, content, parameters JSON, and timestamps.
+   * The notification template includes fields such as template code, name, content with parameter placeholders, and JSON parameters defining the replaceable parts. Timestamp fields provide record creation and update details.
    *
-   * Only authorized actors such as administrators should access this operation as these templates are administrative assets.
+   * Security considerations restrict this endpoint to authorized administrative users authorized to view notification templates. The returned information aids in management, auditing, and message dispatch systems.
    *
-   * The returned data represents an immutable snapshot of the notification template at the time of retrieval.
+   * This endpoint strictly follows RESTful principles for individual resource retrieval.
    *
-   * No modifications are allowed through this endpoint.
+   * Related operations might include listing all notification templates or updating templates by administrators.
    *
-   * Related operations might include creating or updating notification templates.
-   *
-   * Errors include 404 if the ID does not exist.
+   * Expected behavior includes returning HTTP 200 with the notification template details if found, or HTTP 404 if the template does not exist.
    *
    * @param connection
-   * @param notificationTemplateId Unique identifier of the notification template (UUID).
+   * @param templateId UUID of the notification template to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Perform a secure database query filtering shopping_mall_notification_templates by id matching the path parameter notificationTemplateId. Return all columns mapped to IShoppingMallNotificationTemplate DTO. Implement authorization checks for administrative roles. Handle 404 errors appropriately if no record is found. This is a read-only operation with no side effects.
+   * @x-autobe-specification Implement service logic to accept templateId as a UUID path parameter. Validate format and existence of the notification template in the database using shopping_mall_notification_templates table.
+   *
+   * Fetch the record with a primary key lookup by id. If not found, return HTTP 404.
+   *
+   * No request body is expected.
+   *
+   * Return the notification template data as an object of type IShoppingMallNotificationTemplate including id, template_code, template_name, content, parameters, created_at, updated_at, and deleted_at fields.
+   *
+   * Ensure authorization by verifying administrative actor roles before proceeding.
+   *
+   * Handle any database errors gracefully with appropriate error response.
+   *
+   * No soft deletion logic is involved because the deleted_at field is nullable and this operation returns the existing record regardless of soft deletion status.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":notificationTemplateId")
+  @TypedRoute.Get(":templateId")
   public async at(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("notificationTemplateId")
-    notificationTemplateId: string & tags.Format<"uuid">,
+    @TypedParam("templateId")
+    templateId: string & tags.Format<"uuid">,
   ): Promise<IShoppingMallNotificationTemplate> {
     try {
-      return await getShoppingMallAdministratorNotificationTemplatesNotificationTemplateId(
-        {
-          administrator,
-          notificationTemplateId,
-        },
-      );
+      return await getShoppingMallAdministratorNotificationTemplatesTemplateId({
+        administrator,
+        templateId,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -158,55 +159,63 @@ export class ShoppingmallAdministratorNotificationtemplatesController {
   }
 
   /**
-   * Updates a notification template identified by the given notificationTemplateId.
+   * Update the notification template identified by the given UUID.
    *
-   * This endpoint allows modification of the notification template's fields including its unique code, name, content string, and JSON-encoded parameters.
+   * This API operation allows administrators to modify the details of an existing notification template, such as the message content, title, and channel settings. Notification templates are used for sending consistent messages to users across various channels.
    *
-   * Security: Requires appropriate administrative privileges to update notification templates.
+   * Security and Permissions:
+   * Only users with administrator privileges can perform this update operation to ensure messaging integrity and prevent unauthorized modifications.
    *
-   * The shopping_mall_notification_templates table stores these templates with fields documented as the source of truth.
+   * Database Relationships:
+   * The operation updates the shopping_mall_notification_templates table entry corresponding to the provided templateId. The fields allowed to be updated are defined by the IUpdate type of the notification template entity.
    *
-   * Validation ensures the template_code remains unique across templates.
+   * Validation and Business Rules:
+   * The request body must adhere to the validation constraints of the IUpdate DTO. The system ensures that the templateId path parameter exists and points to a valid notification template record before applying updates.
    *
-   * Typical use case involves admins managing message formats for notifications sent to customers and sellers.
+   * Related Operations:
+   * - GET /notificationTemplates/{templateId} to retrieve the notification template details
+   * - DELETE /notificationTemplates/{templateId} to remove a notification template
    *
-   * Related operations might include fetching templates, creating new templates, or deleting templates.
+   * After successful update, the modified notification template entity will be returned in the response body, reflecting all applied changes.
    *
-   * Errors include 404 if the template ID does not exist, 400 for validation errors on input, and 403 for unauthorized access.
-   *
-   * The response returns the full updated template entity reflecting the new state after update.
+   * Error Handling:
+   * - 404 Not Found if the templateId does not correspond to an existing notification template
+   * - 400 Bad Request for invalid input data
+   * - 403 Forbidden if the user lacks administrator privileges
    *
    * @param connection
-   * @param notificationTemplateId UUID of the notification template to update.
-   * @param body Fields for updating the notification template.
+   * @param templateId UUID of the notification template to update
+   * @param body Notification template update data
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Verify the existence of notificationTemplateId UUID in the database.
-   * Update the 'shopping_mall_notification_templates' record matching the ID with fields from the IUpdate request body.
-   * Enforce uniqueness of 'template_code' among all templates.
-   * Return the updated notification template record.
-   * Handle errors for missing ID or uniqueness conflicts.
-   * Log the update operation for audit purposes.
-   * Ensure only authorized admin users can perform this update.
+   * @x-autobe-specification This specification outlines the steps needed to update a notification template record in the shopping_mall system.
+   *
+   * 1. Receive HTTP PUT request at /notificationTemplates/{templateId} with path parameter templateId (UUID) and request body conforming to IShoppingMallNotificationTemplate.IUpdate.
+   * 2. Authenticate user as an administrator.
+   * 3. Validate the input data according to IUpdate DTO rules.
+   * 4. Verify the existence of the notification template by templateId in shopping_mall_notification_templates table.
+   * 5. Using a transactional operation, update the notification template record fields.
+   * 6. If successful, return the full updated notification template entity.
+   * 7. Handle errors for not found, validation failures and unauthorized access with appropriate HTTP status codes.
+   *
+   * The operation does not require additional query parameters or supports pagination.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":notificationTemplateId")
-  public async updateNotificationTemplate(
+  @TypedRoute.Put(":templateId")
+  public async update(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("notificationTemplateId")
-    notificationTemplateId: string & tags.Format<"uuid">,
+    @TypedParam("templateId")
+    templateId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IShoppingMallNotificationTemplate.IUpdate,
   ): Promise<IShoppingMallNotificationTemplate> {
     try {
-      return await putShoppingMallAdministratorNotificationTemplatesNotificationTemplateId(
-        {
-          administrator,
-          notificationTemplateId,
-          body,
-        },
-      );
+      return await putShoppingMallAdministratorNotificationTemplatesTemplateId({
+        administrator,
+        templateId,
+        body,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -214,41 +223,49 @@ export class ShoppingmallAdministratorNotificationtemplatesController {
   }
 
   /**
-   * Delete a notification template identified by its unique ID.
+   * Permanently removes a notification template identified by the UUID parameter 'templateId'.
    *
-   * This operation permanently removes a notification template from the system used in the shopping mall platform for consistent notification messaging.
+   * This operation enables administrators to delete obsolete or incorrect notification templates used across the shopping mall platform for consistent messaging.
    *
-   * Only authorized administrators should be able to perform this deletion to maintain system integrity and prevent accidental loss of templates.
+   * Security: Restricted access to administrators or authorized system components managing notification templates.
    *
-   * The template to be deleted is identified by its UUID primary key.
+   * The underlying database entity is 'shopping_mall_notification_templates' with primary key 'id'. Deletion is permanent from the system.
    *
-   * - The `id` parameter is mandatory and validated to be a UUID.
-   * - Deletion is permanent and removes the record from the database.
+   * This operation requires validation of the UUID parameter and transactional removal from the database with appropriate error handling if the template does not exist.
    *
-   * Related operations:
-   * - Creation and editing of notification templates occur via POST and PUT operations on /notificationTemplates.
+   * Common use includes template cleanup or re-configuration workflows.
    *
-   * This endpoint depends on proper authorization and validation of the notificationTemplateId.
+   * No response content is returned on success (HTTP 204 No Content).
    *
    * @param connection
-   * @param notificationTemplateId The unique UUID identifying the notification template to delete.
+   * @param templateId UUID of the notification template to be deleted
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification To implement this operation, validate the `notificationTemplateId` path parameter as a UUID. Perform authorization checks to ensure the caller has administrator rights. Execute a database DELETE command targeting the `shopping_mall_notification_templates` table where the `id` equals `notificationTemplateId`. Handle and log errors such as nonexistent IDs or DB failures. Return HTTP 204 No Content on successful deletion with no response body.
+   * @x-autobe-specification Delete the record in shopping_mall_notification_templates where id equals the 'templateId' path parameter.
+   *
+   * Ensure database transactionality and integrity during deletion.
+   *
+   * Validate 'templateId' is a valid UUID before executing deletion.
+   *
+   * Return HTTP 204 No Content on successful deletion.
+   *
+   * Return HTTP 404 Not Found if the template with given 'templateId' does not exist.
+   *
+   * This operation requires administrator-level authorization to execute.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":notificationTemplateId")
+  @TypedRoute.Delete(":templateId")
   public async erase(
     @AdministratorAuth()
     administrator: AdministratorPayload,
-    @TypedParam("notificationTemplateId")
-    notificationTemplateId: string & tags.Format<"uuid">,
+    @TypedParam("templateId")
+    templateId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteShoppingMallAdministratorNotificationTemplatesNotificationTemplateId(
+      return await deleteShoppingMallAdministratorNotificationTemplatesTemplateId(
         {
           administrator,
-          notificationTemplateId,
+          templateId,
         },
       );
     } catch (error) {

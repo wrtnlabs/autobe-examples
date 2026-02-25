@@ -18,48 +18,106 @@ export async function patchDiscussionBoardRegisteredUserEmailVerifications(props
   registeredUser: RegistereduserPayload;
   body: IDiscussionBoardRegisteredUserEmailVerification.IRequest;
 }): Promise<IPageIDiscussionBoardRegisteredUserEmailVerification.ISummary> {
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
-  const page = 1;
-  const limit = 100;
-  const skip = (page - 1) * limit;
-  const where: {
-    deleted_at: null;
-  } = {
+  const {
+    email,
+    status,
+    createdAtFrom,
+    createdAtTo,
+    expiredAtFrom,
+    expiredAtTo,
+    page = 1,
+    limit = 20,
+  } = props.body;
+  if (limit > 100) {
+    throw new HttpException("Limit should not exceed 100", 400);
+  }
+  const whereConditions: any = {
     deleted_at: null,
   };
-  const data =
-    await MyGlobal.prisma.discussion_board_registered_user_email_verifications.findMany(
+  if (email) {
+    whereConditions.registered_user = {
+      is: {
+        email,
+        deleted_at: null,
+      },
+    };
+  }
+  if (createdAtFrom || createdAtTo) {
+    whereConditions.created_at = {};
+    if (createdAtFrom) {
+      whereConditions.created_at.gte = createdAtFrom;
+    }
+    if (createdAtTo) {
+      whereConditions.created_at.lte = createdAtTo;
+    }
+  }
+  if (expiredAtFrom || expiredAtTo) {
+    whereConditions.expired_at = {};
+    if (expiredAtFrom) {
+      whereConditions.expired_at.gte = expiredAtFrom;
+    }
+    if (expiredAtTo) {
+      whereConditions.expired_at.lte = expiredAtTo;
+    }
+  }
+  const nowISOString = new Date().toISOString();
+  if (status) {
+    switch (status) {
+      case "valid":
+        whereConditions.expired_at = { gte: nowISOString };
+        whereConditions.deleted_at = null;
+        break;
+      case "expired":
+        whereConditions.expired_at = { lt: nowISOString };
+        break;
+      case "used":
+        whereConditions.deleted_at = { not: null };
+        break;
+      case "invalid":
+        whereConditions.OR = [
+          { deleted_at: { not: null } },
+          { expired_at: { lt: nowISOString } },
+        ];
+        break;
+    }
+  }
+  const skip = (page - 1) * limit;
+  const [total, records] = await Promise.all([
+    MyGlobal.prisma.discussion_board_registered_user_email_verifications.count({
+      where: whereConditions,
+    }),
+    MyGlobal.prisma.discussion_board_registered_user_email_verifications.findMany(
       {
-        where,
+        where: whereConditions,
         skip,
         take: limit,
         orderBy: { created_at: "desc" },
         select: {
           id: true,
-          registered_user_id: true,
           token: true,
           expired_at: true,
           created_at: true,
+          updated_at: true,
+          deleted_at: true,
         },
       },
-    );
-  const total =
-    await MyGlobal.prisma.discussion_board_registered_user_email_verifications.count(
-      { where },
-    );
+    ),
+  ]);
+  const data = records.map((rec) => ({
+    id: rec.id,
+    token: rec.token,
+    expired_at: rec.expired_at ? toISOStringSafe(rec.expired_at) : null,
+    created_at: toISOStringSafe(rec.created_at),
+    updated_at: toISOStringSafe(rec.updated_at),
+    deleted_at: rec.deleted_at ? toISOStringSafe(rec.deleted_at) : null,
+  }));
   return {
-    data: data.map((record) => ({
-      id: record.id,
-      registered_user_id: record.registered_user_id,
-      token: record.token,
-      expired_at: record.expired_at,
-      created_at: record.created_at,
-    })),
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
+    data,
   };
 }

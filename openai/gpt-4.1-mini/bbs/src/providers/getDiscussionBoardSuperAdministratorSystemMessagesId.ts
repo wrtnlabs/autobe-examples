@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadministratorPayload } from "../decorators/payload/SuperadministratorPayload";
+import { DiscussionBoardSystemMessageTransformer } from "../transformers/DiscussionBoardSystemMessageTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,17 +18,9 @@ export async function getDiscussionBoardSuperAdministratorSystemMessagesId(props
   id: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSystemMessage> {
   const record =
-    await MyGlobal.prisma.discussion_board_system_messages.findUnique({
-      where: { id: props.id },
+    await MyGlobal.prisma.discussion_board_system_messages.findFirstOrThrow({
+      where: { id: props.id, deleted_at: null },
+      ...DiscussionBoardSystemMessageTransformer.select(),
     });
-  if (!record) throw new HttpException("System message not found", 404);
-  return {
-    id: record.id,
-    code: record.code,
-    message_text: record.message_text,
-    message_type: record.message_type,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-  };
+  return await DiscussionBoardSystemMessageTransformer.transform(record);
 }

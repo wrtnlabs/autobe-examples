@@ -1,8 +1,9 @@
 import api from "@ORGANIZATION/PROJECT-api";
+import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardApiRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardApiRateLimit";
+import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
+import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIDiscussionBoardApiRateLimit } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardApiRateLimit";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,10 +17,10 @@ export async function generate_random_discussion_board_super_admin_api_rate_limi
   props: {
     body?: DeepPartial<IDiscussionBoardApiRateLimit.ICreate>;
   },
-): Promise<IPageIDiscussionBoardApiRateLimit.ISummary> {
+): Promise<IDiscussionBoardApiRateLimit> {
   const prepared: IDiscussionBoardApiRateLimit.ICreate =
     prepare_random_discussion_board_api_rate_limit(props.body);
-  const result: IPageIDiscussionBoardApiRateLimit.ISummary =
+  const result: IDiscussionBoardApiRateLimit =
     await api.functional.discussionBoard.superAdmin.api_rate_limits.create(
       connection,
       {

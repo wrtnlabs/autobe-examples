@@ -9,7 +9,7 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
-import { DiscussionBoardBanRecordTransformer } from "./DiscussionBoardBanRecordTransformer";
+import { DiscussionBoardBanRecordAtSummaryTransformer } from "./DiscussionBoardBanRecordAtSummaryTransformer";
 import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardBanAppealTransformer {
@@ -28,7 +28,7 @@ export namespace DiscussionBoardBanAppealTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        banRecord: DiscussionBoardBanRecordTransformer.select(),
+        banRecord: DiscussionBoardBanRecordAtSummaryTransformer.select(),
         user: DiscussionBoardUserAtSummaryTransformer.select(),
         reviewer: DiscussionBoardAdminAtSummaryTransformer.select(),
       },
@@ -41,21 +41,21 @@ export namespace DiscussionBoardBanAppealTransformer {
       id: input.id,
       appeal_reason: input.appeal_reason,
       status: input.status,
+      decision_reason: input.decision_reason ?? null,
       appealed_at: input.appealed_at.toISOString(),
-      banRecord: await DiscussionBoardBanRecordTransformer.transform(
+      reviewed_at: input.reviewed_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      banRecord: await DiscussionBoardBanRecordAtSummaryTransformer.transform(
         input.banRecord,
       ),
       user: await DiscussionBoardUserAtSummaryTransformer.transform(input.user),
-      decision_reason: input.decision_reason ?? null,
-      reviewed_at: input.reviewed_at?.toISOString() ?? null,
       reviewer: input.reviewer
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.reviewer,
           )
         : null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

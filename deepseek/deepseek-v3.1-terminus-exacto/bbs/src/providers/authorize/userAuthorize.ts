@@ -12,10 +12,11 @@ export async function userAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
+  // Query user record using id field (user is standalone actor)
   const user = await MyGlobal.prisma.discussion_board_users.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null, // Soft-delete check
     },
   });
 

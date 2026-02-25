@@ -15,7 +15,6 @@ export async function adminAuthorize(request: {
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 

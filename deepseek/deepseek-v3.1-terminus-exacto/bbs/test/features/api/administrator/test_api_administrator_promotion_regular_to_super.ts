@@ -1,7 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import type { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
+import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -17,88 +18,101 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { generate_random_discussion_board_admin_articles_create } from "../../../generate/generate_random_discussion_board_admin_articles_create";
+import { generate_random_discussion_board_super_admin_articles_create } from "../../../generate/generate_random_discussion_board_super_admin_articles_create";
+import { prepare_random_discussion_board_article } from "../../../prepare/prepare_random_discussion_board_article";
 
-/**
- * Test the scenario where a super administrator promotes a regular administrator to super administrator grade.
- * Verifies that the grade field changes from 'regular' to 'super', the grade_changed_at timestamp is updated,
- * and the administrator record now references super_admin authentication instead of regular admin authentication.
- */
 export async function test_api_administrator_promotion_regular_to_super(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate as super administrator
+  // 1. Create and authenticate super administrator
   const superAdminConnection: api.IConnection = { host: connection.host };
-  const superAdmin = await authorize_super_admin_join(superAdminConnection, {
+  await authorize_super_admin_join(superAdminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
-      privilege_level: "super_admin",
+      password: "password123",
+      href: "http://localhost:3000",
+      referrer: "http://localhost:3000",
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IDiscussionBoardSuperAdmin.IJoin,
   });
-  typia.assert(superAdmin);
-  // 2. Create a regular administrator account
+  // 2. Create and authenticate regular administrator
   const regularAdminConnection: api.IConnection = { host: connection.host };
-  const regularAdmin = await authorize_admin_join(regularAdminConnection, {
+  await authorize_admin_join(regularAdminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: "password123",
       display_name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
+      href: "http://localhost:3000",
+      referrer: "http://localhost:3000",
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IDiscussionBoardAdmin.IJoin,
   });
-  typia.assert(regularAdmin);
-  // Note: The actual promotion requires an existing administrator assignment record
-  // Since we don't have an API to create administrator assignments, we'll need to
-  // use an existing administrator ID or create one through the proper workflow
-  // For this test, we'll assume the regular admin account creates an administrator assignment
-  // and we'll promote that assignment. In a real scenario, there should be an endpoint
-  // to create administrator assignments or the system should auto-create them.
-  // 3. Promote the regular administrator to super administrator grade
-  // Using the admin ID as the administrator assignment ID (assuming they're linked)
-  const promotionResponse =
+  // 3. Verify regular admin can create articles (regular permissions work)
+  const regularAdminArticle =
+    await generate_random_discussion_board_admin_articles_create(
+      regularAdminConnection,
+      {
+        body: {
+          title: RandomGenerator.paragraph({ sentences: 1 }) satisfies string &
+            tags.MinLength<5> &
+            tags.MaxLength<200>,
+          content: RandomGenerator.paragraph({
+            sentences: 3,
+          }) satisfies string & tags.MinLength<50>,
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+        } satisfies IDiscussionBoardArticle.ICreate,
+      },
+    );
+  typia.assert(regularAdminArticle);
+  // 4. Promote regular admin to super admin
+  const promotionUpdate = {
+    permission_level: "super_admin",
+  } satisfies IDiscussionBoardSuperAdmin.IUpdate;
+  const promotedAdmin =
     await api.functional.discussionBoard.superAdmin.administrators.update(
       superAdminConnection,
       {
-        administratorId: regularAdmin.id,
-        body: {
-          grade: "super" satisfies "super",
-        } satisfies IDiscussionBoardAdministratorPromotionApproval.IUpdate,
+        administratorId: regularAdminArticle.author.id satisfies string &
+          tags.Format<"uuid"> as string & tags.Format<"uuid">,
+        body: promotionUpdate,
       },
     );
-  typia.assert(promotionResponse);
-  // 4. Validate the promotion response
+  typia.assert(promotedAdmin);
+  // 5. Verify promotion succeeded - promoted admin now has super admin permissions
+  const superAdminArticle =
+    await generate_random_discussion_board_super_admin_articles_create(
+      regularAdminConnection, // Now using the previously regular admin connection
+      {
+        body: {
+          title: RandomGenerator.paragraph({ sentences: 1 }) satisfies string &
+            tags.MinLength<5> &
+            tags.MaxLength<200>,
+          content: RandomGenerator.paragraph({
+            sentences: 3,
+          }) satisfies string & tags.MinLength<50>,
+          discussion_board_section_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+        } satisfies IDiscussionBoardArticle.ICreate,
+      },
+    );
+  typia.assert(superAdminArticle);
+  // Validate the promotion operation
   TestValidator.equals(
-    "grade should be super",
-    promotionResponse.grade,
-    "super",
+    "promoted admin should have updated permission level",
+    promotedAdmin.permission_level,
+    "super_admin",
   );
   TestValidator.predicate(
-    "grade_changed_at should be updated",
-    promotionResponse.grade_changed_at !== null,
+    "promoted admin should have valid assignment date",
+    promotedAdmin.assignment_date !== null,
   );
-  TestValidator.equals(
-    "admin should be null after promotion",
-    promotionResponse.admin,
-    null,
-  );
-  TestValidator.predicate(
-    "super_admin should be populated",
-    promotionResponse.super_admin !== null,
-  );
-  TestValidator.equals(
-    "is_active should remain true",
-    promotionResponse.is_active,
-    true,
-  );
-  TestValidator.predicate(
-    "promoted_at should be set",
-    promotionResponse.promoted_at !== null,
-  );
-  TestValidator.equals(
-    "id should match original admin",
-    promotionResponse.id,
-    regularAdmin.id,
+  TestValidator.notEquals(
+    "promoted admin record should differ from before",
+    promotedAdmin.id,
+    regularAdminArticle.author.id,
   );
 }

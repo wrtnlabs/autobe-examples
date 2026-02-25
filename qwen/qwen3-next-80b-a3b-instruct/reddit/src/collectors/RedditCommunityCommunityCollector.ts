@@ -10,19 +10,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCommunityCommunityCollector {
   export async function collect(props: {
     body: IRedditCommunityCommunity.ICreate;
-    redditCommunityCommunityOwners: IEntity;
+    redditCommunityMembers: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       name: props.body.name,
-      description: props.body.description ?? null,
+      description: props.body.description,
       icon_url: props.body.icon_url ?? null,
-      subscriber_count: 1,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      owner: { connect: { id: props.redditCommunityCommunityOwners.id } },
+      owner: { connect: { id: props.redditCommunityMembers.id } },
+      moderator: undefined,
+      moderators: undefined,
+      bans: undefined,
+      subscribers: undefined,
+      posts: undefined,
     } satisfies Prisma.reddit_community_communitiesCreateInput;
   }
 }

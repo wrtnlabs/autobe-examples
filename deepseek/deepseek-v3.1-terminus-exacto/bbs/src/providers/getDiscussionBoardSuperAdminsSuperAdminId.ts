@@ -1,3 +1,5 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -15,13 +17,12 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getDiscussionBoardSuperAdminsSuperAdminId(props: {
   superAdminId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSuperAdmin> {
-  const superAdmin =
-    await MyGlobal.prisma.discussion_board_super_admins.findUnique({
-      where: { id: props.superAdminId },
-      ...DiscussionBoardSuperAdminTransformer.select(),
-    });
-  if (!superAdmin) {
-    throw new HttpException("Super administrator not found", 404);
-  }
-  return await DiscussionBoardSuperAdminTransformer.transform(superAdmin);
+  const record =
+    await MyGlobal.prisma.discussion_board_section_administrators.findUniqueOrThrow(
+      {
+        where: { id: props.superAdminId },
+        ...DiscussionBoardSuperAdminTransformer.select(),
+      },
+    );
+  return await DiscussionBoardSuperAdminTransformer.transform(record);
 }

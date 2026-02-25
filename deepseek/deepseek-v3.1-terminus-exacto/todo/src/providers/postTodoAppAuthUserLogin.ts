@@ -9,72 +9,96 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { TodoAppUserTransformer } from "../transformers/TodoAppUserTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppAuthUserLogin(props: {
   body: ITodoAppUser.ILogin;
 }): Promise<ITodoAppUser.IAuthorized> {
-  // Find user by email with password_hash explicitly selected
+  // 1. Find user by email with password_hash
   const user = await MyGlobal.prisma.todo_app_users.findFirst({
     where: {
       email: props.body.email,
-      deleted_at: null, // Ensure user account is active
+      deleted_at: null, // Only active users can login
     },
     select: {
-      ...TodoAppUserTransformer.select().select,
+      id: true,
+      email: true,
+      display_name: true,
       password_hash: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  if (!user) throw new HttpException("Invalid credentials", 401);
-  // Verify password
+  // 2. Validate user exists - generic error per analysis requirements
+  if (!user) {
+    throw new HttpException("Invalid email or password", 401);
+  }
+  // 3. Verify password using PasswordUtil.verify()
   const isValid = await PasswordUtil.verify(
     props.body.password,
     user.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // Create JWT tokens first
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const tokenPayload = {
+  if (!isValid) {
+    throw new HttpException("Invalid email or password", 401);
+  }
+  // 4. Create new session (without storing tokens in DB)
+  const now = new Date();
+  const accessExpiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const sessionId = v4();
+  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
+    data: {
+      id: sessionId,
+      todo_app_user_id: user.id,
+      ip: "", // IP not provided in props - using empty string as placeholder
+      href: "", // URL not provided in props
+      referrer: "", // Referrer not provided in props
+      created_at: now,
+      expired_at: accessExpiresAt,
+      access_token: "", // Placeholder - JWT tokens stored client-side
+      refresh_token: "", // Placeholder - JWT tokens stored client-side
+    },
+  });
+  // 5. Generate JWT tokens
+  const jwtPayload = {
     type: "user",
     id: user.id,
-    session_id: v4(), // Generate session ID for tokens
-    created_at: new Date().toISOString(),
+    session_id: session.id,
+    created_at: now.toISOString(),
   };
-  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+  const accessToken = jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
     expiresIn: "1h",
     issuer: "autobe",
   });
   const refreshToken = jwt.sign(
-    { ...tokenPayload, tokenType: "refresh" },
+    { ...jwtPayload, tokenType: "refresh" },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // Create session with actual tokens
-  const session = await MyGlobal.prisma.todo_app_user_sessions.create({
-    data: {
-      id: tokenPayload.session_id,
-      todo_app_user_id: user.id,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      ip: "unknown", // Use default value since ip doesn't exist on ILogin
-      href: "", // Use default value since href doesn't exist on ILogin
-      referrer: "", // Use default value since referrer doesn't exist on ILogin
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
+  // 6. Construct response with proper type safety
+  const response: ITodoAppUser.IAuthorized = {
+    id: typia.assert<ITodoAppUser.IAuthorized["id"]>(user.id),
+    email: typia.assert<ITodoAppUser.IAuthorized["email"]>(user.email),
+    display_name: user.display_name,
+    created_at: toISOStringSafe(user.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(user.updated_at) as string &
+      tags.Format<"date-time">,
+    deleted_at: user.deleted_at
+      ? (toISOStringSafe(user.deleted_at) as string & tags.Format<"date-time">)
+      : null,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: typia.assert<IAuthorizationToken["expired_at"]>(
+        accessExpiresAt.toISOString(),
+      ),
+      refreshable_until: typia.assert<IAuthorizationToken["refreshable_until"]>(
+        refreshExpiresAt.toISOString(),
+      ),
     },
-  });
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // Return IAuthorized response
-  return {
-    ...(await TodoAppUserTransformer.transform(user)),
-    token,
-  } satisfies ITodoAppUser.IAuthorized;
+  return response;
 }

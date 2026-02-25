@@ -11,11 +11,12 @@ export namespace DiscussionBoardSystemMessageCollector {
   export async function collect(props: {
     body: IDiscussionBoardSystemMessage.ICreate;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      code: "",
-      message_text: "",
-      message_type: "",
+      id,
+      code: props.body.code,
+      message_text: props.body.messageText,
+      message_type: props.body.messageType,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

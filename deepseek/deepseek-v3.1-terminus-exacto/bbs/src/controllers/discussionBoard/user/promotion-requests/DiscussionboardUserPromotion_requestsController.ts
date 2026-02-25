@@ -2,7 +2,7 @@ import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IDiscussionBoardAdministratorPromotionRequest } from "../../../../api/structures/IDiscussionBoardAdministratorPromotionRequest";
+import { IDiscussionBoardAdministratorPromotionApproval } from "../../../../api/structures/IDiscussionBoardAdministratorPromotionApproval";
 import { UserAuth } from "../../../../decorators/UserAuth";
 import { UserPayload } from "../../../../decorators/payload/UserPayload";
 import { postDiscussionBoardUserPromotionRequests } from "../../../../providers/postDiscussionBoardUserPromotionRequests";
@@ -10,35 +10,35 @@ import { postDiscussionBoardUserPromotionRequests } from "../../../../providers/
 @Controller("/discussionBoard/user/promotion-requests")
 export class DiscussionboardUserPromotion_requestsController {
   /**
-   * Submit a request to become an administrator on the discussion board platform.
+   * Submit a new administrator promotion request for review by super administrators.
    *
-   * This operation allows authenticated users to request administrator privileges by providing a detailed justification explaining why they should be granted administrative access. The request includes a reason text that must be between 50 and 500 characters, providing sufficient detail for super administrators to evaluate the request.
+   * This operation allows regular users to request elevation to administrator status by providing a detailed justification. The request includes a mandatory reason text explaining why the user seeks administrator privileges, which must be between 50 and 500 characters as specified in the database schema constraints.
    *
-   * Upon submission, the promotion request is created with a 'pending' status and becomes visible to super administrators for review. Users can only have one active promotion request at a time, and previously rejected requests prevent new submissions for 30 days. The system validates user eligibility based on account age and contribution metrics before accepting the request.
+   * Upon submission, the promotion request is created with 'pending' status and routed to super administrators for review. The system automatically records submission timestamps and links the request to the authenticated user's identity. Super administrators will evaluate the request based on the provided justification and the user's platform activity history.
    *
-   * Administrator promotion requests follow a structured workflow where super administrators review each submission, considering the user's platform activity, content quality, and justification before making an approval or rejection decision. Approved requests elevate the user to regular administrator status with content moderation capabilities.
+   * Security considerations require that only authenticated regular users can submit promotion requests. The system validates request eligibility before allowing submission.
    *
-   * This operation integrates with the hierarchical administrator system, maintaining audit trails of all promotion activities and ensuring compliance with platform governance policies. Successful requests result in the creation of administrator assignment records linked to the user's base identity.
-   *
-   * The response includes comprehensive details of the created promotion request, including status tracking, timestamps, and reference information for future workflow management.
+   * Related operations include viewing pending requests (super administrators only), approving/rejecting requests, and checking promotion request status. Users can track their request status through separate API endpoints designed for promotion request management.
    *
    * @param connection
-   * @param body Promotion request creation data including justification text
+   * @param body Promotion request creation data including the required justification text
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor user
-   * @x-autobe-specification Create a new administrator promotion request in the discussion_board_administrator_promotion_requests table.
+   * @x-autobe-specification Create a new administrator promotion request record in the discussion_board_administrator_promotion_requests table.
    *
    * Validate that the requesting user exists and is not already an administrator.
-   * Ensure the reason text meets length requirements (50-500 characters).
-   * Set initial status to 'pending' and record creation timestamp.
-   * Link the request to the authenticated user automatically.
-   * Return the complete promotion request details including status tracking.
+   * Ensure the reason field meets the 50-500 character requirement as specified in the database schema.
+   * Set the initial status to 'pending' and populate timestamps for creation.
+   * Check if the user already has a pending promotion request to prevent duplicate submissions.
+   * Return the complete created promotion request entity with all fields populated.
    *
-   * Business rules:
-   * - Users can only have one pending promotion request at a time
-   * - Users must meet eligibility requirements (account age, contribution metrics)
-   * - Request must include valid reason text
-   * - Status transitions from pending to approved/rejected by super admins
+   * Business rules from requirements:
+   * - Users can submit only one pending promotion request at a time
+   * - After rejection, users must wait 30 days before submitting new requests
+   * - Minimum account age: 30 days
+   * - Minimum article contribution: 10 articles
+   * - Minimum comment contribution: 50 comments
+   * - No active bans or disciplinary actions
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -46,8 +46,8 @@ export class DiscussionboardUserPromotion_requestsController {
     @UserAuth()
     user: UserPayload,
     @TypedBody()
-    body: IDiscussionBoardAdministratorPromotionRequest.ICreate,
-  ): Promise<IDiscussionBoardAdministratorPromotionRequest> {
+    body: IDiscussionBoardAdministratorPromotionApproval.ICreate,
+  ): Promise<IDiscussionBoardAdministratorPromotionApproval> {
     try {
       return await postDiscussionBoardUserPromotionRequests({
         user,

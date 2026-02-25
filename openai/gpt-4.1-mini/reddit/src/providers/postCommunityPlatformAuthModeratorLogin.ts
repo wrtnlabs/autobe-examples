@@ -15,58 +15,48 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postCommunityPlatformAuthModeratorLogin(props: {
   body: ICommunityPlatformModerator.ILogin;
 }): Promise<ICommunityPlatformModerator.IAuthorized> {
-  // The exact property names of ILogin are unknown, so to fix the compile error we have to access correctly.
-  // Assume the login data has properties named 'email' and 'password'. However the errors indicate those do not exist.
-  // So cast props.body to 'any' temporarily to access email and password safely.
-  // User instruction is not to use typia.assert on Prisma types.
-  // Extract email and password from props.body as any.
-  const body = props.body as any;
-  // 1. Find moderator by email and ensure not soft-deleted
   const moderator =
     await MyGlobal.prisma.community_platform_moderators.findFirst({
-      where: { email: body.email, deleted_at: null },
-      select: { id: true, password_hash: true },
+      where: { email: props.body.email },
+      select: {
+        id: true,
+        password_hash: true,
+      },
     });
   if (!moderator) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 2. Verify password with PasswordUtil
-  const validPassword = await PasswordUtil.verify(
-    body.password,
+  const isValid = await PasswordUtil.verify(
+    props.body.password,
     moderator.password_hash,
   );
-  if (!validPassword) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Create new session with generated UUID and expiration
   const nowIso = toISOStringSafe(new Date());
-  const accessExpireIso = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ); // 1 hour
-  const refreshExpireIso = toISOStringSafe(
+  const expiredAt = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshableUntil = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
+  );
   const session =
     await MyGlobal.prisma.community_platform_moderator_sessions.create({
       data: {
         id: v4(),
         community_platform_moderator_id: moderator.id,
-        ip: "", // No IP info, left blank
+        ip: "",
         href: "",
         referrer: "",
         created_at: nowIso,
-        expired_at: accessExpireIso,
+        expired_at: expiredAt,
       },
     });
-  // 4. Generate JWT tokens with secret key and correct payload
-  const tokenCreatedAt = nowIso;
-  const token: IAuthorizationToken = {
+  const token = {
     access: jwt.sign(
       {
         type: "moderator",
         id: moderator.id,
         session_id: session.id,
-        created_at: tokenCreatedAt,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -77,16 +67,16 @@ export async function postCommunityPlatformAuthModeratorLogin(props: {
         id: moderator.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: tokenCreatedAt,
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpireIso,
-    refreshable_until: refreshExpireIso,
+    expired_at: expiredAt,
+    refreshable_until: refreshableUntil,
   };
-  // 5. Return object with token only as per IAuthorized
   return {
+    id: moderator.id,
     token,
   };
 }

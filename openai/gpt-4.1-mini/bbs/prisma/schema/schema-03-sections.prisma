@@ -31,11 +31,15 @@ model discussion_board_sections {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
   //----
   adminLogs discussion_board_section_admin_logs[]
   articles discussion_board_articles[]
   
+  //----
+  // INDEXES
+  //----
   @@unique([name])
 }
 
@@ -79,11 +83,15 @@ model discussion_board_section_admin_logs {
   deleted_at DateTime?
   
   //----
-  // RELATIONS
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
   //----
   administrator discussion_board_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
   section discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
   
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
   @@index([administrator_id, created_at], map: "discussion_board_section_admin_logs_administrator_id_c_f44d6870")
   @@index([section_id, created_at])

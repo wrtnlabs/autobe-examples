@@ -1,8 +1,6 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardAdministratorCapability } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorCapability";
-import { IDiscussionBoardAdministratorPromotionApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionApproval";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -12,53 +10,62 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { DiscussionBoardAdministratorCapabilityTransformer } from "../transformers/DiscussionBoardAdministratorCapabilityTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putDiscussionBoardSuperAdminAdministratorsAdministratorIdCapabilitiesCapabilityId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   administratorId: string & tags.Format<"uuid">;
   capabilityId: string & tags.Format<"uuid">;
   body: IDiscussionBoardAdministratorCapability.IUpdate;
 }): Promise<IDiscussionBoardAdministratorCapability> {
-  // Verify capability exists and belongs to specified administrator
+  // Verify capability exists and belongs to target administrator
   const existingCapability =
-    await MyGlobal.prisma.discussion_board_administrator_capabilities.findUnique(
+    await MyGlobal.prisma.discussion_board_administrator_capabilities.findFirstOrThrow(
       {
         where: {
           id: props.capabilityId,
           discussion_board_administrator_id: props.administratorId,
           deleted_at: null,
         },
+      },
+    );
+  // Check if update is needed
+  if (
+    props.body.permission_level === undefined ||
+    props.body.permission_level === existingCapability.permission_level
+  ) {
+    // No change needed, return current capability with transformer
+    const current =
+      await MyGlobal.prisma.discussion_board_administrator_capabilities.findUniqueOrThrow(
+        {
+          where: { id: props.capabilityId },
+          ...DiscussionBoardAdministratorCapabilityTransformer.select(),
+        },
+      );
+    return await DiscussionBoardAdministratorCapabilityTransformer.transform(
+      current,
+    );
+  }
+  // Update capability with new permission level
+  await MyGlobal.prisma.discussion_board_administrator_capabilities.update({
+    where: { id: props.capabilityId },
+    data: {
+      permission_level: props.body.permission_level,
+      updated_at: new Date(),
+    },
+  });
+  // Retrieve final capability with complete transformer selection
+  const finalCapability =
+    await MyGlobal.prisma.discussion_board_administrator_capabilities.findUniqueOrThrow(
+      {
+        where: { id: props.capabilityId },
         ...DiscussionBoardAdministratorCapabilityTransformer.select(),
       },
     );
-  if (!existingCapability) {
-    throw new HttpException("Capability assignment not found", 404);
-  }
-  // Prepare update data
-  const updateData: Prisma.discussion_board_administrator_capabilitiesUpdateInput =
-    {
-      updated_at: toISOStringSafe(new Date()),
-    };
-  // Update capability_type if provided
-  if (props.body.capability_type !== undefined) {
-    updateData.capability_type = props.body.capability_type;
-  }
-  // Update permission_level if provided
-  if (props.body.permission_level !== undefined) {
-    updateData.permission_level = props.body.permission_level;
-  }
-  // Perform update
-  const updatedCapability =
-    await MyGlobal.prisma.discussion_board_administrator_capabilities.update({
-      where: { id: props.capabilityId },
-      data: updateData,
-      ...DiscussionBoardAdministratorCapabilityTransformer.select(),
-    });
   return await DiscussionBoardAdministratorCapabilityTransformer.transform(
-    updatedCapability,
+    finalCapability,
   );
 }

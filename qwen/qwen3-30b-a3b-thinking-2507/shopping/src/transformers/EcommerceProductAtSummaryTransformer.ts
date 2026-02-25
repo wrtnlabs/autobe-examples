@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceCategoryAtSummaryTransformer } from "./EcommerceCategoryAtSummaryTransformer";
 
 export namespace EcommerceProductAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_productsGetPayload<
@@ -18,10 +19,8 @@ export namespace EcommerceProductAtSummaryTransformer {
         name: true,
         description: true,
         base_price: true,
-        category: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
+        category: EcommerceCategoryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_productsFindManyArgs;
   }
@@ -31,9 +30,12 @@ export namespace EcommerceProductAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
-      base_price: input.base_price,
-      category: input.category,
+      description: input.description ?? null,
+      base_price: Number(input.base_price),
+      category: await EcommerceCategoryAtSummaryTransformer.transform(
+        input.category,
+      ),
+      created_at: toISOStringSafe(input.created_at),
     };
   }
 }
