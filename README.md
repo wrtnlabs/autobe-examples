@@ -10,7 +10,6 @@ AI Model | Success | Score | FCSR | Status
 [`openai/gpt-4.1-mini`](#openaigpt-41-mini) | 1 | 96.13 | 83% | 🟡
 [`qwen/qwen3-next-80b-a3b-instruct`](#qwenqwen3-next-80b-a3b-instruct) | 0 | 95.17 | 71% | 🟡
 [`qwen/qwen3-30b-a3b-thinking-2507`](#qwenqwen3-30b-a3b-thinking-2507) | 0 | 92.92 | 75% | 🟡
-[`anthropic/claude-sonnet-4.5`](#anthropicclaude-sonnet-45) | 0 | 0 | 0% | ❌
 
 - FCSR: Function Calling Success Rate
 - Status:
@@ -478,14 +477,3 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Interface | `operations`: 80, `schemas`: 103 | 81.86M | 1h 58m 56s | 63%
 🟢 Test | `functions`: 147 | 39.54M | 1h 12m 31s | 89%
 🟡 Realize | `functions`: 126, `errors`: 27 | 34.95M | 2h 46m 51s | 78%
-
-
-## `anthropic/claude-sonnet-4.5`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-`todo` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-`bbs` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-`reddit` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-`shopping` | 0 | ❌ | ❌ | ❌ | ❌ | ❌
-
