@@ -13,19 +13,36 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallCustomerCartItemsCartItemId(props: {
   customer: CustomerPayload;
-  cartItemId: string;
+  cartItemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const cartItem = await MyGlobal.prisma.shopping_mall_cart_items.findUnique({
-    where: { id: props.cartItemId },
-    select: { shopping_customer_id: true },
-  });
-  if (
-    cartItem === null ||
-    cartItem.shopping_customer_id !== props.customer.id
-  ) {
-    throw new HttpException("Cart item not found", 404);
+  // Find the cart item with its cart to verify ownership
+  const cartItem =
+    await MyGlobal.prisma.shopping_mall_cart_items.findUniqueOrThrow({
+      where: { id: props.cartItemId },
+      select: {
+        id: true,
+        shopping_mall_cart_id: true,
+        cart: {
+          select: {
+            shopping_mall_customer_id: true,
+          },
+        },
+      },
+    });
+  // Verify ownership - cart must belong to authenticated customer
+  if (cartItem.cart.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  await MyGlobal.prisma.shopping_mall_cart_items.delete({
-    where: { id: props.cartItemId },
-  });
+  // Delete cart item and update cart timestamp atomically
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_cart_items.delete({
+      where: { id: props.cartItemId },
+    }),
+    MyGlobal.prisma.shopping_mall_carts.update({
+      where: { id: cartItem.shopping_mall_cart_id },
+      data: {
+        updated_at: new Date(),
+      },
+    }),
+  ]);
 }

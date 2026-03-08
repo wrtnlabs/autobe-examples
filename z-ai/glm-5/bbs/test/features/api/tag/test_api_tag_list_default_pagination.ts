@@ -10,47 +10,44 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 /**
- * Test basic tag listing with default pagination parameters.
+ * Test the tag listing endpoint with default pagination parameters.
  *
- * Scenario: A user browses the available tags on the discussion board
- * without any search criteria.
- *
- * Steps:
- * 1. Send a PATCH request to /discussionBoard/tags with an empty request body
- * 2. Verify the response returns a paginated list of tags
- * 3. Validate pagination metadata: current page should be 1, limit should default to 20
- * 4. Verify each tag contains 'id' (UUID) and 'value' (string) properties
- * 5. Confirm tags are sorted by value in ascending order (default sorting)
+ * Verifies that:
+ * - Default pagination is page=1, limit=20
+ * - Pagination metadata is correctly calculated
+ * - Tags are returned in alphabetical order by name
+ * - Response structure matches IDiscussionBoardTag.ISummary
  */
 export async function test_api_tag_list_default_pagination(
   connection: api.IConnection,
 ): Promise<void> {
-  // Call API with empty body to use default pagination
-  const result = await api.functional.discussionBoard.tags.index(connection, {
+  // Call the tags index endpoint with empty body (default pagination)
+  const response = await api.functional.discussionBoard.tags.index(connection, {
     body: {} satisfies IDiscussionBoardTag.IRequest,
   });
-  typia.assert(result);
-  // Validate pagination metadata defaults
+  typia.assert(response);
+  // Validate default pagination values
+  TestValidator.equals("default page is 1", response.pagination.current, 1);
+  TestValidator.equals("default limit is 20", response.pagination.limit, 20);
+  // Validate pagination calculations
+  const expectedPages = Math.ceil(
+    response.pagination.records / response.pagination.limit,
+  );
   TestValidator.equals(
-    "current page defaults to 1",
-    result.pagination.current,
-    1,
+    "pages calculation is correct",
+    response.pagination.pages,
+    expectedPages,
   );
-  TestValidator.equals("limit defaults to 20", result.pagination.limit, 20);
-  // Validate pagination metadata structure
+  // Validate records count is non-negative
   TestValidator.predicate(
-    "records is non-negative",
-    result.pagination.records >= 0,
+    "records count is non-negative",
+    response.pagination.records >= 0,
   );
-  TestValidator.predicate(
-    "pages is non-negative",
-    result.pagination.pages >= 0,
-  );
-  // Validate tags are sorted by value in ascending order (business logic)
-  for (let i = 1; i < result.data.length; i++) {
+  // Validate tags are sorted by name in ascending order
+  for (let i = 0; i < response.data.length - 1; i++) {
     TestValidator.predicate(
-      "tags sorted by value ascending",
-      result.data[i - 1].value <= result.data[i].value,
+      `tags sorted by name ascending at index ${i}`,
+      response.data[i].name.localeCompare(response.data[i + 1].name) <= 0,
     );
   }
 }

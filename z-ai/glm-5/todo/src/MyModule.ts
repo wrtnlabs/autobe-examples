@@ -1,20 +1,22 @@
 import { Module } from "@nestjs/common";
 
-import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
-import { TodoappUserProfileController } from "./controllers/todoApp/user/profile/TodoappUserProfileController";
-import { TodoappUserSessionsController } from "./controllers/todoApp/user/sessions/TodoappUserSessionsController";
-import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
-import { TodoappUserTodosHistoriesController } from "./controllers/todoApp/user/todos/histories/TodoappUserTodosHistoriesController";
-import { TodoappUserTrashController } from "./controllers/todoApp/user/trash/TodoappUserTrashController";
+import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
+import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
+import { TodoappGuestSessionsController } from "./controllers/todoApp/guest/sessions/TodoappGuestSessionsController";
+import { TodoappMemberProfileController } from "./controllers/todoApp/member/profile/TodoappMemberProfileController";
+import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
+import { TodoappMemberTodosHistoriesController } from "./controllers/todoApp/member/todos/histories/TodoappMemberTodosHistoriesController";
+import { TodoappMemberTrashController } from "./controllers/todoApp/member/trash/TodoappMemberTrashController";
 
 @Module({
   controllers: [
-    TodoappAuthUserController,
-    TodoappUserProfileController,
-    TodoappUserSessionsController,
-    TodoappUserTodosController,
-    TodoappUserTodosHistoriesController,
-    TodoappUserTrashController,
+    TodoappAuthGuestController,
+    TodoappAuthMemberController,
+    TodoappMemberProfileController,
+    TodoappGuestSessionsController,
+    TodoappMemberTodosController,
+    TodoappMemberTrashController,
+    TodoappMemberTodosHistoriesController,
   ],
 })
 export class MyModule {}

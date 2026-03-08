@@ -1,54 +1,28 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IDiscussionBoardComment } from "../../../../structures/IDiscussionBoardComment";
 import { IPageIDiscussionBoardComment } from "../../../../structures/IPageIDiscussionBoardComment";
 
 /**
- * Retrieve a paginated list of comments for a specific article.
+ * Retrieve a paginated list of comments for a specific article with search and filtering capabilities.
  *
- * This operation returns all non-deleted comments attached to the specified article, sorted chronologically from oldest to newest to maintain the natural flow of conversation. Each comment includes the author's display name, the comment content, creation timestamp, and an indicator if the comment has been edited.
+ * This operation allows members and guests to view all comments on a specific article in chronological order (oldest first), supporting content search and author filtering. Comments are presented in a flat, single-level structure without nested replies, making discussions easy to follow.
  *
- * The comment system supports single-level comments only - there are no nested replies or threaded discussions. Comments are displayed in strict chronological order to enable users to read discussions from beginning to end.
+ * The response includes comment content, creation timestamp, and author attribution (display name). Comments from banned users remain visible with their original attribution to maintain discussion continuity. Soft-deleted comments are excluded from results.
  *
- * Pagination is applied when an article has many comments, with 20 comments per page. The response includes pagination metadata for navigating between pages.
+ * Search functionality supports partial matching on comment content using the GIN trigram index for efficient text search. Filtering by author allows viewing all comments from a specific member. Date range filtering enables viewing comments from specific time periods.
  *
- * This endpoint is accessible to all users, including unauthenticated guests, as comments are public content. However, action buttons (edit, delete) are only shown to authorized users in the client application.
- *
- * Related operations:
- * - POST /discussionBoard/articles/{articleId}/comments - Create a new comment on the article
- * - PUT /discussionBoard/articles/{articleId}/comments/{commentId} - Edit an existing comment
- * - DELETE /discussionBoard/articles/{articleId}/comments/{commentId} - Delete a comment
+ * Pagination supports both offset-based navigation and configurable page sizes, with total record count for building pagination UI. Results are ordered chronologically (oldest first) to follow the natural flow of discussion.
  *
  * @param props.connection
- * @param props.articleId Target article's unique identifier
- * @param props.body Pagination and search criteria for comment listing
+ * @param props.articleId UUID of the article whose comments are being retrieved
+ * @param props.body Search criteria, filters, and pagination parameters for comment listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query discussion_board_comments table filtered by discussion_board_article_id matching the path parameter.
- *
- * Implementation steps:
- * 1. Validate articleId UUID format
- * 2. Verify article exists and is not deleted (discussion_board_articles.deleted_at IS NULL)
- * 3. Query comments WHERE discussion_board_article_id = articleId AND deleted_at IS NULL
- * 4. Sort by created_at ASC (oldest first) per comment system requirements
- * 5. Apply pagination with configurable page size (default 20)
- * 6. Join with discussion_board_users to retrieve author display_name
- * 7. Include edited indicator based on updated_at IS NOT NULL
- * 8. Return paginated results with total count
- *
- * Database query considerations:
- * - Use index on (discussion_board_article_id, created_at) for optimal performance
- * - Exclude soft-deleted comments (deleted_at IS NOT NULL)
- * - Handle case where article doesn't exist with 404 error
- * - Support cursor-based or offset-based pagination
- *
- * Response transformation:
- * - Format created_at as relative time (< 24h) or absolute date/time
- * - Set is_edited boolean based on updated_at presence
- * - Include author's display name as clickable reference
+ * @x-autobe-specification Query discussion_board_comments table for comments belonging to the specified article (discussion_board_article_id = articleId). Filter by: content search (using GIN trigram index), author (discussion_board_member_id), date range (created_at). Sort by created_at ascending (oldest first) as per requirements. Exclude soft-deleted comments (deleted_at IS NULL). Join with discussion_board_members to include author display_name. Join with discussion_board_articles to verify article exists and is not deleted. Include comment author info even if banned (comments from banned users remain visible). Support pagination with cursor or offset-based approach. Return total count for pagination UI.
  * @path /discussionBoard/articles/:articleId/comments
  * @accessor api.functional.discussionBoard.articles.comments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -78,12 +52,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Target article's unique identifier
+     * UUID of the article whose comments are being retrieved
      */
-    articleId: string;
+    articleId: string & tags.Format<"uuid">;
 
     /**
-     * Pagination and search criteria for comment listing
+     * Search criteria, filters, and pagination parameters for comment listing
      */
     body: IDiscussionBoardComment.IRequest;
   };
@@ -134,52 +108,34 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific comment by its unique identifier within an article's comment section.
+ * Retrieves a specific comment from an article by its unique identifier.
  *
- * This endpoint allows users to fetch detailed information about a single comment, including the author's display name, the comment content, creation timestamp, and an indication of whether the comment has been edited. The comment must belong to the specified article and must not be deleted.
+ * This endpoint allows any user (guest, member, or administrator) to view the full content of a comment posted on an article. Comments follow a flat, single-level structure without nested replies, keeping discussions straightforward. Each comment is permanently linked to its article and attributed to the member who created it.
  *
- * The response includes the comment's citizen_id for human-readable identification, the full content (up to 10,000 characters), and timestamps. If the comment has been edited, the updated_at timestamp will be present; otherwise, it will be null.
+ * The response includes the comment content, author's display name, creation timestamp, and last modification timestamp. Comments from banned members remain visible with their attribution intact.
  *
- * This operation is accessible to all users (both authenticated and unauthenticated) as per the discussion board's open viewing policy. Comments that have been soft-deleted will return a 404 Not Found error.
- *
- * Related operations:
- * - GET /articles/{articleId}/comments - List all comments on an article
- * - POST /articles/{articleId}/comments - Create a new comment
- * - PUT /articles/{articleId}/comments/{commentId} - Edit a comment
- * - DELETE /articles/{articleId}/comments/{commentId} - Delete a comment
+ * If the article or comment does not exist, or if the comment does not belong to the specified article, a 404 error is returned. Comments that have been soft-deleted are not accessible through this endpoint.
  *
  * @param props.connection
- * @param props.articleId Unique identifier of the article containing the comment
- * @param props.commentId Unique identifier of the comment to retrieve
+ * @param props.articleId The unique identifier of the article containing the comment
+ * @param props.commentId The unique identifier of the comment to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
+ * @x-autobe-specification Retrieve a specific comment by ID from an article.
  *
- * 1. Validate path parameters:
- *    - articleId must be a valid UUID format
- *    - commentId must be a valid UUID format
+ * 1. Validate both path parameters (articleId and commentId) are valid UUIDs
+ * 2. Query discussion_board_comments table with commentId, including joins:
+ *    - Join discussion_board_articles to verify article exists and is not deleted
+ *    - Join discussion_board_members to get author's display_name
+ * 3. Verify the comment belongs to the specified articleId
+ * 4. Check deleted_at is null on both comment and article
+ * 5. Return comment with author information
  *
- * 2. Query the database:
- *    - Find the comment by id = commentId
- *    - Verify the comment's discussion_board_article_id matches the provided articleId
- *    - Filter out soft-deleted comments (deleted_at IS NULL)
- *    - Include the author relation to fetch display_name
+ * Error handling:
+ * - 404 if article not found or deleted
+ * - 404 if comment not found, deleted, or doesn't belong to article
  *
- * 3. Handle error cases:
- *    - If article not found: Return 404 with error message
- *    - If comment not found or doesn't belong to article: Return 404
- *    - If comment is deleted: Return 404 (treat as non-existent)
- *
- * 4. Build response:
- *    - Map comment fields to IDiscussionBoardComment DTO
- *    - Include author information (id, display_name)
- *    - Include citizen_id for human-readable reference
- *    - Include created_at timestamp
- *    - Include updated_at (null if never edited)
- *
- * 5. Performance:
- *    - Use Prisma include for author relation to avoid N+1
- *    - Add database index on (discussion_board_article_id, created_at) for efficient queries
+ * Response includes: id, content, created_at, updated_at, author display name.
  * @path /discussionBoard/articles/:articleId/comments/:commentId
  * @accessor api.functional.discussionBoard.articles.comments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -208,14 +164,14 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the article containing the comment
+     * The unique identifier of the article containing the comment
      */
-    articleId: string;
+    articleId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the comment to retrieve
+     * The unique identifier of the comment to retrieve
      */
-    commentId: string;
+    commentId: string & tags.Format<"uuid">;
   };
   export type Response = IDiscussionBoardComment;
 

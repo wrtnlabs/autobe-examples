@@ -1,9 +1,0 @@
-export * as articles from "./articles/index";
-export * as sections from "./sections/index";
-export * as article_views from "./article_views/index";
-export * as admin from "./admin/index";
-export * as comments from "./comments/index";
-export * as banned_users from "./banned_users/index";
-export * as reports from "./reports/index";
-export * as analytics from "./analytics/index";
-export * as users from "./users/index";

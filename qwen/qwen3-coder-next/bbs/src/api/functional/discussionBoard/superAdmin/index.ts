@@ -1,10 +1,6 @@
-export * as sessions from "./sessions/index";
-export * as superAdmin from "./superAdmin/index";
+export * as actors from "./actors/index";
 export * as sections from "./sections/index";
 export * as articles from "./articles/index";
-export * as comments from "./comments/index";
-export * as admins from "./admins/index";
-export * as super_admins from "./super_admins/index";
-export * as admin_sessions from "./admin_sessions/index";
-export * as super_admin_sessions from "./super_admin_sessions/index";
+export * as admin from "./admin/index";
+export * as requests from "./requests/index";
 export * as bans from "./bans/index";

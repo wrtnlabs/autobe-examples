@@ -3,7 +3,6 @@ import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,35 +22,36 @@ export async function postShoppingMallSellerProducts(props: {
   seller: SellerPayload;
   body: IShoppingMallProduct.ICreate;
 }): Promise<IShoppingMallProduct> {
-  // Check name uniqueness within seller's active products
+  // Validate category exists and is not deleted
+  const category = await MyGlobal.prisma.shopping_mall_categories.findFirst({
+    where: {
+      id: props.body.categoryId,
+      deleted_at: null,
+    },
+  });
+  if (category === null) {
+    throw new HttpException("Category not found", 404);
+  }
+  // Check unique constraint: product name must be unique per seller
   const existingProduct =
     await MyGlobal.prisma.shopping_mall_products.findFirst({
       where: {
-        seller_id: props.seller.id,
+        shopping_mall_seller_id: props.seller.id,
         name: props.body.name,
         deleted_at: null,
       },
     });
   if (existingProduct !== null) {
-    throw new HttpException("Product name already exists in your catalog", 409);
-  }
-  // Verify category exists
-  const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
-    where: { id: props.body.category_id },
-  });
-  if (category === null) {
-    throw new HttpException("Category not found", 400);
+    throw new HttpException("Product name already exists for this seller", 409);
   }
   // Create product using collector
-  const productData = await ShoppingMallProductCollector.collect({
+  const createData = await ShoppingMallProductCollector.collect({
     body: props.body,
     shoppingMallSellers: { id: props.seller.id },
-    shoppingMallSellerSessions: { id: props.seller.session_id },
   });
-  // Create product and return via transformer
-  const created = await MyGlobal.prisma.shopping_mall_products.create({
-    data: productData,
+  const product = await MyGlobal.prisma.shopping_mall_products.create({
+    data: createData,
     ...ShoppingMallProductTransformer.select(),
   });
-  return await ShoppingMallProductTransformer.transform(created);
+  return await ShoppingMallProductTransformer.transform(product);
 }

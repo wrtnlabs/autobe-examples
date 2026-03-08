@@ -1,22 +1,26 @@
 import { Module } from "@nestjs/common";
 
-import { TodoappAuthUserController } from "./controllers/todoApp/auth/user/TodoappAuthUserController";
-import { TodoappEmail_verificationsController } from "./controllers/todoApp/email-verifications/TodoappEmail_verificationsController";
-import { TodoappPassword_resetsController } from "./controllers/todoApp/password-resets/TodoappPassword_resetsController";
-import { TodoappSessionsController } from "./controllers/todoApp/sessions/TodoappSessionsController";
-import { TodoappUserTodosController } from "./controllers/todoApp/user/todos/TodoappUserTodosController";
-import { TodoappUserTrashController } from "./controllers/todoApp/user/trash/TodoappUserTrashController";
-import { TodoappUsersController } from "./controllers/todoApp/users/TodoappUsersController";
+import { TodoappAuthAdminController } from "./controllers/todoApp/auth/admin/TodoappAuthAdminController";
+import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
+import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
+import { TodoappMemberProfileController } from "./controllers/todoApp/member/profile/TodoappMemberProfileController";
+import { TodoappMemberSessionsController } from "./controllers/todoApp/member/sessions/TodoappMemberSessionsController";
+import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
+import { TodoappMemberTodosHistoriesController } from "./controllers/todoApp/member/todos/histories/TodoappMemberTodosHistoriesController";
+import { TodoappMemberTodosHistoryController } from "./controllers/todoApp/member/todos/history/TodoappMemberTodosHistoryController";
+import { TodoappMemberTrashController } from "./controllers/todoApp/member/trash/TodoappMemberTrashController";
 
 @Module({
   controllers: [
-    TodoappAuthUserController,
-    TodoappUsersController,
-    TodoappSessionsController,
-    TodoappPassword_resetsController,
-    TodoappEmail_verificationsController,
-    TodoappUserTodosController,
-    TodoappUserTrashController,
+    TodoappAuthGuestController,
+    TodoappAuthMemberController,
+    TodoappAuthAdminController,
+    TodoappMemberSessionsController,
+    TodoappMemberProfileController,
+    TodoappMemberTodosController,
+    TodoappMemberTodosHistoryController,
+    TodoappMemberTodosHistoriesController,
+    TodoappMemberTrashController,
   ],
 })
 export class MyModule {}

@@ -1,0 +1,271 @@
+import { HttpError, IConnection } from "@nestia/fetcher";
+import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
+import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
+import typia, { tags } from "typia";
+
+import { IEcommerceMallReview } from "../../../../structures/IEcommerceMallReview";
+
+export * as dashboard from "./dashboard/index";
+
+/**
+ * Create a new product review with star rating and optional text content.
+ *
+ * This operation enables customers to express their satisfaction with a purchased product by submitting a star rating (1 to 5 stars) and optional written feedback. The system enforces several business rules to ensure review integrity and prevent abuse.
+ *
+ * **Review Eligibility Requirements:**
+ * - The customer must have purchased the product
+ * - The order item status must be "delivered" (customer must have received the product)
+ * - The customer must not have already written a review for this product
+ * - The rating must be a valid integer between 1 and 5 inclusive
+ *
+ * **Review Structure:**
+ * - Rating is mandatory and must be an integer from 1 (lowest satisfaction) to 5 (highest satisfaction)
+ * - Text content is optional and can be empty or null if the customer only provides a star rating
+ * - The review will be linked to the customer who wrote it and the product being reviewed
+ *
+ * **Duplicate Review Prevention:**
+ * The system enforces a one-review-per-customer-per-product rule to prevent duplicate submissions. If a customer has already written a review for the product, the system will reject the new review request and direct them to edit their existing review instead.
+ *
+ * **Post-Creation Behavior:**
+ * Upon successful review creation, the review is marked as active (is_active: true) and immediately visible on the product detail page. The product's average rating calculation will automatically include the new review.
+ *
+ * **Authorization:**
+ * Only authenticated customers can write reviews, and only for products they have purchased and received. The system validates ownership and purchase history before allowing review submission.
+ *
+ * **Related Operations:**
+ * - PATCH /reviews/{reviewId} - Edit an existing review (creates snapshot)
+ * - DELETE /reviews/{reviewId} - Delete your own review (preserves snapshot)
+ * - PATCH /products/{productId} - View product details with review summary and average rating
+ * - GET /reviews?productId={productId} - List all active reviews for a product
+ *
+ * @param props.connection
+ * @param props.body Review creation data containing the star rating and optional text content
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification 1. Validate request body: ensure rating is an integer between 1 and 5 inclusive
+ * 2. Verify customer authentication: extract customer_id from the authentication context
+ * 3. Verify product existence: check if product_id exists in ecommerce_mall_products
+ * 4. Verify purchase history: query ecommerce_mall_order_items to confirm the customer has an order item for this product
+ * 5. Verify delivery status: ensure at least one order item has item_status = 'delivered'
+ * 6. Check for duplicate review: query ecommerce_mall_reviews for existing review where customer_id AND product_id match
+ *    - If duplicate found: return 409 Conflict with error message directing user to edit existing review
+ * 7. Create the new review record:
+ *    - Set id: auto-generate UUID
+ *    - Set customer_id: from authentication context
+ *    - Set product_id: from request body
+ *    - Set rating: from request body
+ *    - Set text_content: from request body (can be null)
+ *    - Set is_active: true
+ *    - Set created_at: current timestamp
+ *    - Set updated_at: current timestamp
+ *    - Set deleted_at: null
+ * 8. Insert record into ecommerce_mall_reviews table
+ * 9. Return the created review object with all fields
+ *
+ * **Error Handling:**
+ * - 400 Bad Request: Invalid rating value (not 1-5, not an integer)
+ * - 401 Unauthorized: Customer not authenticated
+ * - 404 Not Found: Product does not exist
+ * - 409 Conflict: Customer has already reviewed this product
+ * - 422 Unprocessable Entity: Customer has not purchased the product, or purchase status is not 'delivered'
+ *
+ * **Performance Considerations:**
+ * - Use transaction to ensure atomicity of purchase verification and review creation
+ * - Index on (customer_id, product_id) unique constraint provides fast duplicate detection
+ * - Consider caching product average rating; recalculate after review creation
+ *
+ * **Audit Trail:**
+ * While review creation doesn't create a snapshot (snapshots are for edits and deletions), the review creation is logged in the ecommerce_mall_snapshot_audits table if the platform requires audit of all review operations.
+ * @path /ecommerceMall/customer/reviews
+ * @accessor api.functional.ecommerceMall.customer.reviews.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Review creation data containing the star rating and optional text content
+     */
+    body: IEcommerceMallReview.ICreate;
+  };
+  export type Body = IEcommerceMallReview.ICreate;
+  export type Response = IEcommerceMallReview;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/ecommerceMall/customer/reviews",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/ecommerceMall/customer/reviews";
+  export const random = (): IEcommerceMallReview =>
+    typia.random<IEcommerceMallReview>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update an existing customer product review's star rating or text content.
+ *
+ * This operation modifies a review owned by the authenticated customer, allowing changes to the star rating (1-5) and/or optional text content. Upon successful update, the system preserves the previous review state as an immutable snapshot for audit trail and dispute resolution purposes.
+ *
+ * The authenticated customer must be the original author of the review. The review's association with the customer and product cannot be modified through this operation. If the review has is_active set to false (inactive), it can be reactivated by updating.
+ *
+ * The update automatically refreshes the product's average rating calculation to exclude inactive reviews and include the new rating value.
+ *
+ * @param props.connection
+ * @param props.reviewId ID of the review to update. Must be owned by the authenticated customer.
+ * @param props.body Fields to update. At least one field must be provided.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification 1. Validate the authenticated customer owns this review by checking customer_id matches current user's ID.
+ * 2. Verify the review exists and is not permanently deleted.
+ * 3. Validate rating parameter if provided: must be integer 1-5 inclusive.
+ * 4. Validate text_content if provided: optional text, any length allowed.
+ * 5. If rating or text_content changes, create immutable snapshot record in ecommerce_mall_snapshot_audits table with:
+ *    - recordType: 'Review'
+ *    - recordId: review.id
+ *    - changes: array of changed field names
+ *    - oldValues: current rating and text_content values
+ *    - newValues: updated rating and text_content values
+ *    - changedAt: current timestamp
+ *    - changedBy: customer.id
+ * 6. Update review fields:
+ *    - Set rating to new value if provided
+ *    - Set text_content to new value if provided
+ *    - Update updated_at to current timestamp
+ * 7. If review was soft-deleted (is_active=false), reactivate it by setting is_active=true and clearing deleted_at.
+ * 8. Trigger recalculation of product's average rating by querying all active reviews for this product.
+ * 9. Return updated review entity.
+ * @path /ecommerceMall/customer/reviews/:reviewId
+ * @accessor api.functional.ecommerceMall.customer.reviews.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * ID of the review to update. Must be owned by the authenticated customer.
+     */
+    reviewId: string & tags.Format<"uuid">;
+
+    /**
+     * Fields to update. At least one field must be provided.
+     */
+    body: IEcommerceMallReview.IUpdate;
+  };
+  export type Body = IEcommerceMallReview.IUpdate;
+  export type Response = IEcommerceMallReview;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/ecommerceMall/customer/reviews/:reviewId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/customer/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
+  export const random = (): IEcommerceMallReview =>
+    typia.random<IEcommerceMallReview>();
+  export const simulate = (
+    connection: IConnection,
+    props: update.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: update.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("reviewId")(() => typia.assert(props.reviewId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}

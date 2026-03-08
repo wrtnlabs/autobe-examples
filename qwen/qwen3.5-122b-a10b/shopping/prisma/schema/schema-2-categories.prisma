@@ -1,0 +1,120 @@
+/// Product categories with hierarchical structure supporting one level of
+/// nesting (parent categories and subcategories). Categories organize
+/// products for customer browsing and filtering. Each category can have a
+/// parent category to create subcategories, but nesting is limited to one
+/// level. Categories are managed exclusively by administrators. Referenced
+/// by {@link ecommerce_mall_products} for product categorization.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for subcategory hierarchy. Null for top-level categories.
+  /// Enables one-level nesting structure (parent → subcategory). {@link
+  /// ecommerce_mall_categories.id}.
+  parent_id String?
+  
+  /// Category name. Must be unique across all categories. Used for display and
+  /// product filtering.
+  name String
+  
+  /// Optional category description providing additional context about the
+  /// category's purpose and product types.
+  description String?
+  
+  /// Timestamp when the category was created. Records the initial creation
+  /// time for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified. Updated on every edit
+  /// operation.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null for active categories.
+  /// Preserves category for historical product records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subcategories ecommerce_mall_categories[] @relation("recursive")
+  snapshots ecommerce_mall_category_snapshots[]
+  products ecommerce_mall_products[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([parent_id])
+}
+
+/// Immutable audit trail capturing all category modifications with
+/// before/after values. Preserves category change history for administrator
+/// oversight and dispute resolution as required by the snapshot principle.
+/// Each snapshot records the complete category state at the time of
+/// modification, including name, description, and parent relationship
+/// changes.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_category_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target category's {@link ecommerce_mall_categories.id}. The category
+  /// entity that was modified.
+  category_id String
+  
+  /// Administrator who made the modification. {@link ecommerce_mall_admins.id}.
+  admin_id String
+  
+  /// JSON string containing the category state before modification. Includes
+  /// name, description, and parentId fields as they existed prior to the
+  /// change.
+  previous_values String
+  
+  /// JSON string containing the category state after modification. Includes
+  /// name, description, and parentId fields as they exist after the change.
+  current_values String
+  
+  /// Timestamp when the category modification occurred and snapshot was
+  /// created.
+  created_at DateTime
+  
+  /// Timestamp when the snapshot record was last updated. Maintains schema
+  /// consistency with other entities.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Snapshots are typically immutable and preserved,
+  /// but this field maintains schema consistency with other entities.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  category ecommerce_mall_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([category_id, created_at])
+  @@index([admin_id])
+}

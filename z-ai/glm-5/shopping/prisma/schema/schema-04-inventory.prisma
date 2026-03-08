@@ -1,0 +1,95 @@
+/// Stock movement ledger for product variants using an additive approach.
+///
+/// Each record documents a quantity change (positive for restocks, negative
+/// for orders/adjustments) with a reason and timestamp. Current stock for
+/// any variant is calculated by summing all inventory records for that
+/// variant. Records are immutable and provide a complete audit trail for
+/// dispute resolution and transparency.
+///
+/// Supports manual restocking, manual adjustments, and automatic stock
+/// updates triggered by order placement, cancellations, and refunds. Each
+/// record tracks its source through optional foreign key references to
+/// orders, cancellation requests, refund requests, or sellers (for manual
+/// adjustments).
+///
+/// Relationships:
+/// - Belongs to {@link shopping_mall_product_variants} (the variant being
+/// adjusted)
+/// - Optionally references {@link shopping_mall_orders} (for order-triggered
+/// deductions)
+/// - Optionally references {@link shopping_mall_cancellation_requests} (for
+/// cancellation-triggered restorations)
+/// - Optionally references {@link shopping_mall_refund_requests} (for
+/// refund-triggered restorations)
+/// - Optionally references {@link shopping_mall_sellers} (for manual
+/// adjustments)
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant whose stock is being adjusted. References {@link
+  /// shopping_mall_product_variants.id}.
+  variant_id String
+  
+  /// Reference to the order that triggered this inventory deduction. Only
+  /// populated for automatic records created during order placement. Null for
+  /// manual adjustments, cancellations, and refunds.
+  order_id String?
+  
+  /// Reference to the cancellation request that triggered this stock
+  /// restoration. Only populated for automatic records created when a
+  /// cancellation is approved. Null for other record types.
+  cancellation_request_id String?
+  
+  /// Reference to the refund request that triggered this stock restoration.
+  /// Only populated for automatic records created when a refund is approved.
+  /// Null for other record types.
+  refund_request_id String?
+  
+  /// Reference to the seller who performed this manual inventory adjustment.
+  /// Only populated for manual restocking or adjustment records. Null for
+  /// automatic records (order, cancellation, refund triggered).
+  seller_id String?
+  
+  /// The quantity change for this inventory movement. Positive values indicate
+  /// stock additions (restocking, refund restoration). Negative values
+  /// indicate stock deductions (order placement, adjustments, losses). Zero
+  /// values allowed for correction entries.
+  quantity_change Int
+  
+  /// The reason for this inventory change. For manual entries, contains
+  /// seller-provided explanation (e.g., 'Initial stock', 'Damaged goods
+  /// adjustment'). For automatic entries, contains system-generated
+  /// description (e.g., 'Order placed', 'Cancellation approved', 'Refund
+  /// processed').
+  reason String
+  
+  /// Timestamp when this inventory record was created. Used for chronological
+  /// history tracking and audit trail purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  cancellationRequest shopping_mall_cancellation_requests? @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest shopping_mall_refund_requests? @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_id])
+  @@index([cancellation_request_id])
+  @@index([refund_request_id])
+  @@index([seller_id])
+  @@index([variant_id, created_at])
+}

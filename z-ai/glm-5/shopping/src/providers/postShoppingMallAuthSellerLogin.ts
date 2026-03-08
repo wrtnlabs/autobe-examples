@@ -15,7 +15,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthSellerLogin(props: {
   body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // 1. Find seller by email with password_hash
+  // 1. Find seller by email with password_hash explicitly selected
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: { email: props.body.email },
     select: {
@@ -24,18 +24,29 @@ export async function postShoppingMallAuthSellerLogin(props: {
       password_hash: true,
       shop_name: true,
       shop_description: true,
-      logo_url: true,
+      logo_image: true,
       approval_status: true,
       rejection_reason: true,
+      suspended: true,
+      banned: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
     },
   });
+  // 2. Validate seller exists and is not deleted
   if (!seller) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 2. Verify password
+  // 3. Check for deleted account (soft delete)
+  if (seller.deleted_at !== null) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 4. Check if account is banned
+  if (seller.banned) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 5. Verify password using constant-time comparison
   const isValid = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
@@ -43,76 +54,63 @@ export async function postShoppingMallAuthSellerLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Check approval status
-  if (seller.approval_status === "pending") {
-    throw new HttpException("Seller account is pending approval", 403);
-  }
-  if (seller.approval_status === "rejected") {
-    throw new HttpException(
-      `Seller account was rejected: ${seller.rejection_reason ?? "No reason provided"}`,
-      403,
-    );
-  }
-  if (seller.approval_status === "suspended") {
-    throw new HttpException("Seller account is suspended", 403);
-  }
-  // 4. Create session with tokens
+  // 6. Calculate token expiration times
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
-  const accessToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // 7. Create new session for this login
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
-      id: sessionId,
-      shopping_mall_seller_id: seller.id,
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      id: v4(),
+      seller_id: seller.id,
       ip: props.body.ip ?? "",
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
-      expired_at: refreshExpires,
+      created_at: now.toISOString(),
+      expired_at: accessExpires.toISOString(),
     },
   });
-  // 5. Return IAuthorized
+  // 8. Generate JWT tokens
   const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
   };
+  // 9. Return IAuthorized response with seller data and tokens
   return {
-    id: seller.id,
-    email: seller.email,
     shopName: seller.shop_name,
     shopDescription: seller.shop_description ?? null,
-    logoUrl: seller.logo_url ?? null,
-    approvalStatus: seller.approval_status,
-    rejectionReason: seller.rejection_reason ?? null,
-    createdAt: seller.created_at.toISOString(),
-    updatedAt: seller.updated_at.toISOString(),
-    deletedAt: seller.deleted_at?.toISOString() ?? null,
+    logoImage: seller.logo_image ?? null,
+    id: seller.id,
+    email: seller.email,
+    approval_status: seller.approval_status,
+    rejection_reason: seller.rejection_reason ?? null,
+    suspended: seller.suspended,
+    banned: seller.banned,
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
     token,
-  } satisfies IShoppingMallSeller.IAuthorized;
+  };
 }

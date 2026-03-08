@@ -18,23 +18,42 @@ export async function patchShoppingMallCategories(props: {
   body: IShoppingMallCategory.IRequest;
 }): Promise<IPageIShoppingMallCategory.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput = {
     deleted_at: null,
-    ...(props.body.parentId !== undefined && {
-      parent_id: props.body.parentId,
-    }),
     ...(props.body.name !== undefined && {
       name: { contains: props.body.name, mode: "insensitive" as const },
     }),
+    ...(props.body.topLevelOnly === true
+      ? { parent_id: null }
+      : props.body.parentId !== undefined
+        ? { parent_id: props.body.parentId }
+        : {}),
   } satisfies Prisma.shopping_mall_categoriesWhereInput;
+  const orderByInput =
+    props.body.sort === "name"
+      ? ({
+          name: "asc" as const,
+        } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
+      : props.body.sort === "-name"
+        ? ({
+            name: "desc" as const,
+          } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
+        : props.body.sort === "createdAt"
+          ? ({
+              created_at: "asc" as const,
+            } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
+          : ({
+              created_at: "desc" as const,
+            } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput);
+  const selectArgs = ShoppingMallCategoryAtSummaryTransformer.select();
   const data = await MyGlobal.prisma.shopping_mall_categories.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" as const },
-    ...ShoppingMallCategoryAtSummaryTransformer.select(),
+    orderBy: orderByInput,
+    select: selectArgs.select,
   });
   const total = await MyGlobal.prisma.shopping_mall_categories.count({
     where: whereInput,

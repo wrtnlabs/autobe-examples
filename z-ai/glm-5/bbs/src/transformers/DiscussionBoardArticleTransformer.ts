@@ -1,27 +1,23 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
-import { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
+import { IDiscussionBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleAttachment";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardArticleFileTransformer } from "./DiscussionBoardArticleFileTransformer";
-import { DiscussionBoardArticleImageTransformer } from "./DiscussionBoardArticleImageTransformer";
+import { DiscussionBoardArticleAttachmentTransformer } from "./DiscussionBoardArticleAttachmentTransformer";
+import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
 import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
-import { DiscussionBoardTagAtSummaryTransformer } from "./DiscussionBoardTagAtSummaryTransformer";
-import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
+import { DiscussionBoardTagTransformer } from "./DiscussionBoardTagTransformer";
 
 export namespace DiscussionBoardArticleTransformer {
-  // 1. Payload type first
   export type Payload = Prisma.discussion_board_articlesGetPayload<
     ReturnType<typeof select>
   >;
-  // 2. select() function second
   export function select() {
     return {
       select: {
@@ -30,16 +26,14 @@ export namespace DiscussionBoardArticleTransformer {
         content: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        author: DiscussionBoardUserAtSummaryTransformer.select(),
+        member: DiscussionBoardMemberAtSummaryTransformer.select(),
         section: DiscussionBoardSectionAtSummaryTransformer.select(),
-        files: DiscussionBoardArticleFileTransformer.select(),
-        images: DiscussionBoardArticleImageTransformer.select(),
         articleTags: {
           select: {
-            tag: DiscussionBoardTagAtSummaryTransformer.select(),
+            tag: DiscussionBoardTagTransformer.select(),
           },
         } satisfies Prisma.discussion_board_article_tagsFindManyArgs,
+        attachments: DiscussionBoardArticleAttachmentTransformer.select(),
         comments: {
           select: {
             id: true,
@@ -48,7 +42,6 @@ export namespace DiscussionBoardArticleTransformer {
       },
     } satisfies Prisma.discussion_board_articlesFindManyArgs;
   }
-  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardArticle> {
@@ -56,27 +49,22 @@ export namespace DiscussionBoardArticleTransformer {
       id: input.id,
       title: input.title,
       content: input.content,
-      author: await DiscussionBoardUserAtSummaryTransformer.transform(
-        input.author,
+      author: await DiscussionBoardMemberAtSummaryTransformer.transform(
+        input.member,
       ),
       section: await DiscussionBoardSectionAtSummaryTransformer.transform(
         input.section,
       ),
-      files: await ArrayUtil.asyncMap(
-        input.files,
-        DiscussionBoardArticleFileTransformer.transform,
-      ),
-      images: await ArrayUtil.asyncMap(
-        input.images,
-        DiscussionBoardArticleImageTransformer.transform,
-      ),
       tags: await ArrayUtil.asyncMap(input.articleTags, (at) =>
-        DiscussionBoardTagAtSummaryTransformer.transform(at.tag),
+        DiscussionBoardTagTransformer.transform(at.tag),
+      ),
+      attachments: await ArrayUtil.asyncMap(
+        input.attachments,
+        DiscussionBoardArticleAttachmentTransformer.transform,
       ),
       comments_count: input.comments.length,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

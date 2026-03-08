@@ -1,0 +1,231 @@
+/// Topic categorization sections that organize all articles in the
+/// discussion board.
+///
+/// This table defines the structural backbone of the board, allowing
+/// administrators to create topic areas where members can post articles.
+/// Each section has a unique name and optional description explaining its
+/// purpose.
+///
+/// Sections are created and managed exclusively by administrators. Members
+/// can browse sections and view articles within them, but cannot create or
+/// modify sections. When an article is created, it must be assigned to an
+/// existing section.
+///
+/// {@link economic_political_board_articles} articles belong to sections via
+/// sectionId foreign key.
+///
+/// **Example Usage**:
+/// - 'General Discussion' - Broad topic for general questions
+/// - 'Policy Debates' - Political and economic policy discussions
+/// - 'News Analysis' - Current events and news commentary
+///
+/// **Soft Delete**:
+/// - Sections use soft delete (deleted_at) to preserve historical article
+/// references
+/// - Banned sections are hidden from new article creation but existing
+/// articles remain visible
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name identifying this section. Used for URL slugs and section
+  /// identification.
+  name String
+  
+  /// Optional description explaining the section's purpose and scope.
+  description String?
+  
+  /// Timestamp when this section was created.
+  created_at DateTime
+  
+  /// Timestamp when this section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this section was soft deleted (hidden from new article
+  /// creation but preserved for historical references).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articles economic_political_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Administrator role escalation requests submitted by members seeking
+/// promotion to administrator privileges.
+///
+/// This table tracks the workflow of users requesting administrator access.
+/// Each request includes a reason for the escalation, status tracking
+/// (pending/approved/rejected), and review metadata when evaluated by
+/// existing administrators.
+///
+/// Key relationships:
+/// - {\@link economic_political_board_administrator_roles} - The member
+/// submitting the request (user_id foreign key)
+/// - {\@link economic_political_board_administrator_roles} - The
+/// administrator who reviews/approves the request (reviewed_by_admin_id
+/// foreign key)
+///
+/// Business workflow:
+/// 1. Member submits request with reason
+/// 2. Status set to 'pending'
+/// 3. Existing administrator reviews and changes status to 'approved' or
+/// 'rejected'
+/// 4. If approved, user gains administrator privileges via {\@link
+/// economic_political_board_administrator_roles}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Requesting member's {\@link
+  /// economic_political_board_administrator_roles.id} who submitted this
+  /// request.
+  user_id String
+  
+  /// Reviewing administrator's {\@link
+  /// economic_political_board_administrator_roles.id}. Nullable until request
+  /// is reviewed.
+  reviewed_by_admin_id String?
+  
+  /// Reason for administrator role escalation request.
+  reason String
+  
+  /// Request status: pending, approved, or rejected.
+  status String
+  
+  /// Timestamp when the request was reviewed by an administrator. Null until
+  /// reviewed.
+  reviewed_at DateTime?
+  
+  /// Administrator's review notes or comments on the request. Null until
+  /// reviewed.
+  review_notes String?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user economic_political_board_administrator_roles @relation("economic_political_board_administrator_requests_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewedByAdmin economic_political_board_administrator_roles? @relation("economic_political_board_administrator_requests_of_rev_5c00ff53", fields: [reviewed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([user_id, created_at], map: "economic_political_board_administrator_requests_user_i_6976a84c")
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_admin_id, reviewed_at], map: "economic_political_board_administrator_requests_review_396e5afa")
+}
+
+/// Administrator privilege levels (regular, super) for active administrators.
+///
+/// This actor table represents users who have been granted administrative
+/// access to the board system. Each administrator has a grade level that
+/// determines their capabilities:
+///
+/// - **regular** administrators can perform standard administrative duties
+/// - **super** administrators have elevated privileges including
+/// promotion/demotion authority
+///
+/// Key relationships:
+/// - Each administrator references a single user account via {\@link
+/// economic_political_board_administrator_roles.id} (self-referential for
+/// user identity)
+/// - Administrator grades are managed through the {\@link
+/// economic_political_board_administrator_requests} workflow where members
+/// submit requests for elevation
+/// - The {\@link economic_political_board_administrator_roles} table
+/// maintains the active set of administrators and their current privilege
+/// levels
+///
+/// This table is queried to determine user permissions and access control
+/// for administrative features. Users without an entry in this table have no
+/// administrative privileges.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_administrator_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User's {\@link economic_political_board_administrator_roles.id} who holds
+  /// this administrator role. Each user can have at most one administrator
+  /// role (one-to-one relationship).
+  user_id String
+  
+  /// User who promoted this administrator to their current grade. Tracks the
+  /// source of administrative privileges for audit purposes.
+  promoted_by_user_id String?
+  
+  /// Administrator grade level. 'regular' for standard administrative access,
+  /// 'super' for elevated privileges including role management capabilities.
+  grade String
+  
+  /// Timestamp when this administrator was promoted to their current grade
+  /// level. Nullable for existing administrators promoted before this field
+  /// was introduced.
+  promoted_at DateTime?
+  
+  /// Timestamp when this administrator role record was created.
+  created_at DateTime
+  
+  /// Timestamp when this administrator role record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user economic_political_board_administrator_roles @relation("economic_political_board_administrator_roles_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  promotedByUser economic_political_board_administrator_roles? @relation("economic_political_board_administrator_roles_of_promot_f732e9e8", fields: [promoted_by_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administratorRequests economic_political_board_administrator_requests[] @relation("economic_political_board_administrator_requests_of_user_id")
+  reviewedAdministratorRequests economic_political_board_administrator_requests[] @relation("economic_political_board_administrator_requests_of_rev_5c00ff53")
+  administratorRole economic_political_board_administrator_roles? @relation("economic_political_board_administrator_roles_of_user_id")
+  promotedAdministrators economic_political_board_administrator_roles[] @relation("economic_political_board_administrator_roles_of_promot_f732e9e8")
+  articles economic_political_board_articles[]
+  comments economic_political_board_comments[]
+  banRecords economic_political_board_ban_records[] @relation("economic_political_board_ban_records_of_user_id")
+  issuedBans economic_political_board_ban_records[] @relation("economic_political_board_ban_records_of_banned_by_admin_id")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([promoted_by_user_id], map: "economic_political_board_administrator_roles_promoted__aa982656")
+  @@unique([user_id])
+  @@index([grade])
+}

@@ -1,0 +1,176 @@
+/// Central file storage entity tracking all uploaded media including user
+/// avatars, community icons, and post images.
+///
+/// Stores file metadata including original name, storage path, MIME type,
+/// file size, and image dimensions. Uses file_type enum to classify file
+/// purpose and determine ownership association: avatar files link to
+/// members, icon files link to communities, and post_image files link to
+/// posts.
+///
+/// Supports soft deletion for retention policies and cascading deletion when
+/// parent entities are removed. Files are validated for format (JPEG, PNG,
+/// GIF, WebP), size constraints (avatar/icon: 2MB max, post_image: 20MB
+/// max), and virus scanned before acceptance.
+///
+/// Related display versions (thumbnails, optimized sizes) are stored in
+/// {@link community_platform_file_versions}.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member for avatar files. References {@link
+  /// community_platform_members.id}. Only populated when file_type is
+  /// 'avatar'. Enforces one active avatar per member.
+  member_id String?
+  
+  /// Owning community for icon files. References {@link
+  /// community_platform_communities.id}. Only populated when file_type is
+  /// 'icon'. Enforces one active icon per community.
+  community_id String?
+  
+  /// Owning post for post image files. References {@link
+  /// community_platform_posts.id}. Only populated when file_type is
+  /// 'post_image'. Multiple images allowed per post.
+  post_id String?
+  
+  /// Original filename provided by the user during upload. Sanitized to remove
+  /// special characters but preserves the original name for display purposes.
+  original_name String
+  
+  /// Unique storage path where the file is persisted. Uses generated unique
+  /// identifier to prevent path collisions and security issues.
+  storage_path String
+  
+  /// MIME type of the file content. Validated against allowed formats:
+  /// image/jpeg, image/png, image/gif, image/webp. Also verified to match
+  /// actual file content.
+  mime_type String
+  
+  /// File size in bytes. Used for validation against type-specific limits
+  /// (avatar/icon: 2MB, post_image: 20MB) and storage quota tracking.
+  file_size Int
+  
+  /// Image width in pixels. Used for dimension validation (avatar: 64-4096px,
+  /// icon: 64-4096px, post_image: 1-8192px) and display version generation.
+  width Int?
+  
+  /// Image height in pixels. Used for dimension validation and display version
+  /// generation. Null for non-image files.
+  height Int?
+  
+  /// Classification of file purpose: 'avatar' for user profile images, 'icon'
+  /// for community icons, 'post_image' for post attachments. Determines
+  /// ownership relationship and validation rules.
+  file_type String
+  
+  /// Timestamp when the file was uploaded. Used for retention policies,
+  /// cleanup jobs, and audit trails.
+  created_at DateTime
+  
+  /// Timestamp when file metadata was last modified. Updated when file is
+  /// replaced or metadata changes.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when file is marked for deletion. Enables
+  /// retention policy (delete within 24 hours) and cascade cleanup when parent
+  /// entities are removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members? @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities? @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post community_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postImages community_platform_post_images[]
+  versions community_platform_file_versions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id])
+  @@unique([member_id])
+  @@unique([community_id])
+  @@index([file_type, created_at])
+  @@index([deleted_at])
+}
+
+/// Display versions of uploaded files for responsive image serving across
+/// different UI contexts.
+///
+/// This table stores multiple renderings of the same source file at
+/// different sizes (thumbnail, medium, large, original) to enable efficient
+/// content delivery. When a file is uploaded, the system generates these
+/// versions automatically.
+///
+/// Each file can have up to four versions, one of each type. Thumbnails are
+/// used in feed previews and listings, medium sizes for embedded display,
+/// large for detail views, and original preserves the full-resolution
+/// source.
+///
+/// Relationship: Each version belongs to exactly one {@link
+/// community_platform_files} entry via the file_id foreign key. The unique
+/// constraint on [file_id, version_type] ensures no duplicate version types
+/// per file.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_file_versions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent file. Each file can have multiple display
+  /// versions for different UI contexts. {@link community_platform_files.id}
+  file_id String
+  
+  /// Display version type: 'thumbnail' for feed previews (small, ~150x150),
+  /// 'medium' for embedded display (~400x400), 'large' for detail views
+  /// (~800x800), 'original' for full-resolution source.
+  version_type String
+  
+  /// Storage path or URL where this version is accessible. Used to serve the
+  /// file to clients.
+  path String
+  
+  /// Image width in pixels for this version. Used by clients for responsive
+  /// image selection and layout calculations.
+  width Int
+  
+  /// Image height in pixels for this version. Used by clients for responsive
+  /// image selection and layout calculations.
+  height Int
+  
+  /// File size in bytes for this version. Used for bandwidth optimization and
+  /// loading priority decisions.
+  file_size Int
+  
+  /// Timestamp when this version was generated. Versions are created at upload
+  /// time and are immutable thereafter.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  file community_platform_files @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([file_id, version_type])
+}

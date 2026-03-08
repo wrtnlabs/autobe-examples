@@ -9,9 +9,17 @@ export function prepare_random_todo_app_todo(
   input?: DeepPartial<ITodoAppTodo.ICreate>,
 ): ITodoAppTodo.ICreate {
   return {
-    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
-    description: input?.description ?? null,
-    startDate: input?.startDate ?? null,
-    dueDate: input?.dueDate ?? null,
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 2 }),
+    description:
+      input?.description ??
+      RandomGenerator.content({
+        paragraphs: 1,
+        sentenceMin: 3,
+        sentenceMax: 5,
+      }),
+    startDate:
+      input?.startDate ?? typia.random<string & tags.Format<"date-time">>(),
+    dueDate:
+      input?.dueDate ?? typia.random<string & tags.Format<"date-time">>(),
   };
 }

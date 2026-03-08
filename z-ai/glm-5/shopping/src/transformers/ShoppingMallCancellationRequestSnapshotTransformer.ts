@@ -1,10 +1,19 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
 import { IShoppingMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequestSnapshot";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallCancellationRequestAtSummaryTransformer } from "./ShoppingMallCancellationRequestAtSummaryTransformer";
 
 export namespace ShoppingMallCancellationRequestSnapshotTransformer {
   export type Payload =
@@ -15,12 +24,11 @@ export namespace ShoppingMallCancellationRequestSnapshotTransformer {
     return {
       select: {
         id: true,
-        previous_status: true,
-        new_status: true,
         reason: true,
-        seller_response: true,
-        rejection_reason: true,
+        status: true,
         created_at: true,
+        cancellationRequest:
+          ShoppingMallCancellationRequestAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_cancellation_request_snapshotsFindManyArgs;
   }
@@ -29,12 +37,13 @@ export namespace ShoppingMallCancellationRequestSnapshotTransformer {
   ): Promise<IShoppingMallCancellationRequestSnapshot> {
     return {
       id: input.id,
-      previousStatus: input.previous_status ?? null,
-      newStatus: input.new_status,
       reason: input.reason,
-      sellerResponse: input.seller_response ?? null,
-      rejectionReason: input.rejection_reason ?? null,
-      createdAt: input.created_at.toISOString(),
+      status: input.status,
+      created_at: input.created_at.toISOString(),
+      cancellation_request:
+        await ShoppingMallCancellationRequestAtSummaryTransformer.transform(
+          input.cancellationRequest,
+        ),
     };
   }
 }

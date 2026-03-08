@@ -1,5 +1,5 @@
 import api from "@ORGANIZATION/PROJECT-api";
-import type { ICommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityMember";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -8,41 +8,24 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 /**
- * Test member profile retrieval for non-existent member.
+ * Test that requesting a non-existent member profile returns a 404 Not Found error.
  *
- * This test validates that the GET /community/members/{memberUsername} endpoint
- * correctly returns a 404 NOT FOUND error when querying for a username that
- * does not exist in the system. The endpoint is public (no authentication required)
- * and performs case-insensitive username lookup while excluding soft-deleted accounts.
- *
- * Expected behavior:
- * - Return 404 NOT FOUND for non-existent usernames
- * - Return 404 NOT FOUND for soft-deleted member accounts
- * - No authentication required for this public endpoint
+ * This test validates proper error handling when requesting a member profile
+ * that does not exist in the system. It generates a random UUID that statistically
+ * won't match any existing member and verifies the API returns HTTP 404.
  */
 export async function test_api_member_profile_not_found(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate a unique username that definitely does not exist
-  const nonExistentUsername = `nonexistent_user_${RandomGenerator.alphaNumeric(8)}`;
-  // Test: Requesting profile for non-existent username should return 404
+  // Generate a random UUID that does not correspond to any existing member
+  const nonExistentId = typia.random<string & tags.Format<"uuid">>();
+  // Verify that requesting this non-existent member returns HTTP 404
   await TestValidator.httpError(
-    "non-existent member profile should return 404",
+    "should return 404 for non-existent member",
     404,
     async () => {
-      await api.functional.community.members.getByMemberusername(connection, {
-        memberUsername: nonExistentUsername,
-      });
-    },
-  );
-  // Test with another random non-existent username to ensure consistent behavior
-  const anotherNonExistentUsername = `deleted_user_${RandomGenerator.alphaNumeric(8)}`;
-  await TestValidator.httpError(
-    "another non-existent member profile should return 404",
-    404,
-    async () => {
-      await api.functional.community.members.getByMemberusername(connection, {
-        memberUsername: anotherNonExistentUsername,
+      await api.functional.communityPlatform.members.at(connection, {
+        memberId: nonExistentId,
       });
     },
   );

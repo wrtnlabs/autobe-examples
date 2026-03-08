@@ -17,9 +17,9 @@ export namespace ShoppingMallCustomerTransformer {
         email: true,
         display_name: true,
         phone_number: true,
+        banned: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
       },
     } satisfies Prisma.shopping_mall_customersFindManyArgs;
   }
@@ -31,9 +31,9 @@ export namespace ShoppingMallCustomerTransformer {
       email: input.email,
       displayName: input.display_name ?? undefined,
       phoneNumber: input.phone_number ?? undefined,
+      banned: input.banned,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

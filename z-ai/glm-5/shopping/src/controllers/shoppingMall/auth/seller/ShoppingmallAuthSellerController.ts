@@ -10,23 +10,66 @@ import { postShoppingMallAuthSellerRefresh } from "../../../../providers/postSho
 @Controller("/shoppingMall/auth/seller")
 export class ShoppingmallAuthSellerController {
   /**
-   * Registers a new seller account on the e-commerce platform.
+   * Seller registration endpoint for creating new seller accounts on the e-commerce platform.
    *
-   * This endpoint handles seller registration by collecting essential account information including email address, password, and shop profile details. Upon successful registration, the seller account is created with approval_status set to 'pending', requiring administrator review before the seller can operate on the platform.
+   * This endpoint allows prospective sellers to register their shop by providing essential information including email address, password, and shop profile details. Upon successful registration, sellers receive authentication tokens that allow them to access the platform, though their account will remain in 'pending' approval status until an administrator reviews and approves their application.
    *
-   * The email field must be unique across all seller accounts. The password is securely hashed using bcrypt before storage. Shop profile information (shop_name, shop_description, logo_url) is captured at registration but can be modified later.
+   * **Registration Process:**
+   * The system validates the uniqueness of the provided email address across all existing seller accounts. The password is securely hashed before storage. The shop_name field is required and represents the display name visible to customers. Optional fields include shop_description (detailed information about the shop) and logo_image (URL to shop logo).
    *
-   * Security considerations: Password is never stored in plain text. Email uniqueness validation prevents duplicate accounts. The pending status prevents unauthorized sellers from listing products immediately.
+   * **Approval Workflow:**
+   * New seller accounts are created with approval_status='pending'. Administrators review pending applications and may approve or reject them. Sellers can check their approval status and view rejection reasons if applicable. Rejected sellers may submit new registration requests.
    *
-   * Related operations: After registration, sellers must wait for admin approval (GET /auth/seller/approval-status) before accessing seller features. Once approved, sellers can login via POST /auth/seller/login.
+   * **Authentication Tokens:**
+   * Upon successful registration, the system generates JWT access token and refresh token. The access token is used for authenticated API calls, while the refresh token allows obtaining new access tokens without re-authentication.
+   *
+   * **Security Considerations:**
+   * - Email uniqueness is enforced at database level with unique constraint
+   * - Passwords are never stored in plaintext
+   * - All tokens are signed with secure secret keys
+   * - Account is initially unapproved, limiting platform access until administrator approval
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Seller registration information including credentials and initial shop profile.
+   * @param body Seller registration information including credentials and shop profile
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation requires: 1) Validate email uniqueness by querying shopping_mall_sellers table where email matches input; 2) Hash the password using bcrypt with appropriate salt rounds; 3) Create new shopping_mall_sellers record with email, hashed password, shop_name, shop_description, logo_url (optional), approval_status='pending', and current timestamps; 4) Return success response with seller ID and pending status notification. The operation does NOT create a session since pending sellers cannot access seller features until approved by administrator.
+   * @x-autobe-specification ## Implementation Specification for Seller Registration
+   *
+   * ### Service Layer Logic
+   * 1. Validate request payload structure and field formats
+   * 2. Check email uniqueness by querying shopping_mall_sellers table
+   * 3. Validate password strength requirements (minimum length, complexity)
+   * 4. Hash password using secure algorithm (bcrypt/argon2)
+   * 5. Create new seller record with:
+   *    - email (from request)
+   *    - password_hash (hashed password)
+   *    - shop_name (from request)
+   *    - shop_description (from request, nullable)
+   *    - logo_image (from request, nullable)
+   *    - approval_status = 'pending' (default for new registrations)
+   *    - suspended = false
+   *    - banned = false
+   *    - created_at = current_timestamp
+   *    - updated_at = current_timestamp
+   * 6. Generate JWT access token and refresh token
+   * 7. Return IAuthorized response with tokens and seller information
+   *
+   * ### Database Operations
+   * - INSERT into shopping_mall_sellers table
+   * - Use transaction to ensure atomic operation
+   *
+   * ### Business Rules
+   * - Email must be unique across all sellers
+   * - Password must meet security requirements
+   * - New sellers start with approval_status='pending'
+   * - Rejected sellers can re-register with same email after previous account deletion
+   *
+   * ### Edge Cases
+   * - Duplicate email: Return 409 Conflict error
+   * - Invalid password format: Return 400 Bad Request
+   * - Database connection failure: Return 500 Internal Server Error
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -48,23 +91,72 @@ export class ShoppingmallAuthSellerController {
   }
 
   /**
-   * Authenticates a seller and creates a new session with JWT tokens.
+   * Seller authentication endpoint for logging into the e-commerce platform.
    *
-   * This endpoint validates seller credentials (email and password) and issues JWT tokens for API authentication. The response includes both an access token for API requests and a refresh token for session renewal. Multi-device sessions are supported through device tracking.
+   * This endpoint authenticates sellers using their email address and password. Upon successful authentication, sellers receive JWT tokens that grant access to protected seller-specific endpoints such as product management, inventory control, and order fulfillment.
    *
-   * The login process validates the approval_status before allowing access: pending accounts receive an approval-required error, rejected accounts see their rejection reason, and suspended accounts are denied access. Only approved sellers can successfully login.
+   * **Authentication Process:**
+   * The system validates the provided credentials against the stored seller records. The email is used to locate the seller account, and the password is verified against the stored password hash using secure comparison algorithms. Only accounts with valid credentials and acceptable account standing (not banned, not deleted) can successfully authenticate.
    *
-   * Security considerations: Failed login attempts should be rate-limited. Device context (IP, referrer) is logged for security auditing. Password validation uses secure bcrypt comparison. Session tokens are unique and cannot be reused.
+   * **Account Status Handling:**
+   * - **Banned accounts**: Cannot log in. Banned status is set by administrators for severe policy violations.
+   * - **Suspended accounts**: CAN log in but have restricted functionality. Suspended sellers cannot create or edit products but can still process existing orders.
+   * - **Pending approval**: CAN log in. New sellers can check their approval status while awaiting administrator review.
+   * - **Deleted accounts**: Cannot log in. Soft-deleted accounts are permanently inaccessible.
    *
-   * Related operations: Use POST /auth/seller/refresh to renew tokens before expiration. Session information can be managed through session management endpoints.
+   * **Token Generation:**
+   * Upon successful authentication, the system generates:
+   * - Access Token: Short-lived JWT for API authentication
+   * - Refresh Token: Long-lived token for obtaining new access tokens
+   *
+   * **Security Measures:**
+   * - Passwords are verified using constant-time comparison to prevent timing attacks
+   * - Failed login attempts are rate-limited to prevent brute force attacks
+   * - Generic error messages prevent account enumeration
+   * - All successful authentications are logged for audit purposes
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Seller login credentials for authentication.
+   * @param body Seller login credentials (email and password)
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation requires: 1) Query shopping_mall_sellers table for matching email; 2) Validate password by comparing bcrypt hash of input against stored password_hash; 3) Check approval_status - if 'pending', return error indicating approval required; if 'rejected', return error with rejection_reason; if 'suspended', return error indicating account suspended; 4) Generate JWT access_token (15-30 min expiration) and refresh_token (7-30 days expiration); 5) Create shopping_mall_seller_sessions record with seller_id, tokens, device context (ip from request, href, referrer, device_name from headers), and expiration timestamps; 6) Return tokens with seller profile information.
+   * @x-autobe-specification ## Implementation Specification for Seller Login
+   *
+   * ### Service Layer Logic
+   * 1. Validate request payload structure (email and password present)
+   * 2. Query shopping_mall_sellers table by email
+   * 3. If seller not found, return 401 Unauthorized
+   * 4. If seller.deleted_at is not null, return 401 Unauthorized (account deleted)
+   * 5. If seller.banned is true, return 401 Unauthorized (account banned)
+   * 6. Verify password hash against provided password
+   * 7. If password verification fails, return 401 Unauthorized
+   * 8. Generate JWT access token and refresh token
+   * 9. Create session record in shopping_mall_seller_sessions (if session tracking is used)
+   * 10. Return IAuthorized response with tokens and seller information
+   *
+   * ### Database Operations
+   * - SELECT from shopping_mall_sellers WHERE email = ?
+   * - Optional: INSERT into shopping_mall_seller_sessions for session tracking
+   *
+   * ### Business Rules
+   * - Banned accounts cannot log in
+   * - Deleted accounts (deleted_at not null) cannot log in
+   * - Suspended accounts CAN log in (they have limited functionality)
+   * - Account approval status does not prevent login (pending sellers can check status)
+   * - Failed login attempts should be logged for security monitoring
+   *
+   * ### Edge Cases
+   * - Invalid credentials: Return 401 Unauthorized with generic message
+   * - Account banned: Return 401 Unauthorized
+   * - Account deleted: Return 401 Unauthorized
+   * - Account suspended: Allow login but may have restricted access
+   * - Database connection failure: Return 500 Internal Server Error
+   *
+   * ### Security Considerations
+   * - Implement rate limiting to prevent brute force attacks
+   * - Use generic error messages to avoid account enumeration
+   * - Log failed attempts for security analysis
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -86,23 +178,79 @@ export class ShoppingmallAuthSellerController {
   }
 
   /**
-   * Renews authentication tokens using a valid refresh token.
+   * Token refresh endpoint for renewing expired access tokens.
    *
-   * This endpoint allows sellers to obtain new access and refresh tokens without re-entering credentials. The refresh token from a previous login or refresh operation is exchanged for a new token pair, extending the session seamlessly.
+   * This endpoint allows authenticated sellers to obtain new access tokens using their refresh token, without requiring re-authentication with email and password. This mechanism provides a seamless user experience while maintaining security through short-lived access tokens.
    *
-   * The operation validates that the refresh token exists in the sessions table and hasn't expired. The associated seller account must still have 'approved' status to receive new tokens. Expired refresh tokens require re-authentication through the login endpoint.
+   * **Token Refresh Process:**
+   * The system validates the provided refresh token by checking its signature, expiration status, and associated seller account. If valid, a new access token is generated. The refresh token itself may also be rotated (replaced with a new one) for enhanced security.
    *
-   * Security considerations: Each refresh generates new tokens and invalidates the previous refresh token, preventing token reuse attacks. Session expiration is extended with each refresh, up to the maximum session lifetime. Device context is preserved from the original login session.
+   * **Account Validation:**
+   * During token refresh, the system re-validates the seller account status:
+   * - **Banned accounts**: Token refresh is denied. The seller cannot obtain new tokens.
+   * - **Suspended accounts**: Token refresh is allowed. Suspended sellers maintain their session but have restricted functionality on other endpoints.
+   * - **Deleted accounts**: Token refresh is denied. Deleted accounts are permanently inaccessible.
+   * - **Approval status**: Does not affect token refresh. Pending sellers can continue to access their account.
    *
-   * Related operations: This endpoint is called automatically by clients when the access token approaches expiration. Full re-authentication via POST /auth/seller/login is required if the refresh token expires or becomes invalid.
+   * **Security Architecture:**
+   * - Access tokens are short-lived (typically minutes to hours)
+   * - Refresh tokens are long-lived (typically days to weeks)
+   * - Refresh token rotation invalidates used tokens, preventing replay attacks
+   * - All token operations are stateless (JWT-based) for scalability
+   *
+   * **Token Lifecycle:**
+   * 1. Seller authenticates via login → receives access token + refresh token
+   * 2. Access token expires → client uses refresh token to obtain new tokens
+   * 3. New tokens issued → refresh token may be rotated
+   * 4. Process repeats until refresh token expires or seller logs out
+   *
+   * **Error Handling:**
+   * Invalid or expired refresh tokens result in authentication failure, requiring the seller to re-authenticate via the login endpoint.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Valid refresh token from previous authentication.
+   * @param body Refresh token for obtaining new access tokens
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation requires: 1) Validate the refresh_token format and integrity; 2) Query shopping_mall_seller_sessions table to find session with matching refresh_token; 3) Check if session has expired (expired_at > current time); 4) If valid, retrieve the associated shopping_mall_sellers record; 5) Verify seller approval_status is still 'approved'; 6) Generate new access_token and refresh_token pair; 7) Update the session record with new tokens and extended expiration; 8) Return new tokens with seller profile. If refresh_token is invalid or expired, return 401 Unauthorized.
+   * @x-autobe-specification ## Implementation Specification for Token Refresh
+   *
+   * ### Service Layer Logic
+   * 1. Validate request payload contains refresh token
+   * 2. Verify refresh token signature and expiration
+   * 3. Extract seller ID from refresh token claims
+   * 4. Query shopping_mall_sellers table to verify account exists
+   * 5. If seller not found, return 401 Unauthorized (invalid token)
+   * 6. If seller.deleted_at is not null, return 401 Unauthorized (account deleted)
+   * 7. If seller.banned is true, return 401 Unauthorized (account banned)
+   * 8. Optionally verify refresh token is in valid session store (if session tracking is used)
+   * 9. Generate new JWT access token
+   * 10. Optionally generate new refresh token (rotation strategy)
+   * 11. Return IAuthorized response with new tokens
+   *
+   * ### Database Operations
+   * - SELECT from shopping_mall_sellers WHERE id = ?
+   * - Optional: Validate against shopping_mall_seller_sessions
+   *
+   * ### Business Rules
+   * - Refresh tokens must be valid (not expired, properly signed)
+   * - Banned accounts cannot refresh tokens
+   * - Deleted accounts cannot refresh tokens
+   * - Suspended accounts CAN refresh tokens (maintain session)
+   * - Approval status does not affect token refresh
+   *
+   * ### Edge Cases
+   * - Expired refresh token: Return 401 Unauthorized
+   * - Invalid refresh token signature: Return 401 Unauthorized
+   * - Account banned after token issuance: Return 401 Unauthorized
+   * - Account deleted after token issuance: Return 401 Unauthorized
+   * - Database connection failure: Return 500 Internal Server Error
+   *
+   * ### Security Considerations
+   * - Implement refresh token rotation for enhanced security
+   * - Consider refresh token blacklisting for logout functionality
+   * - Monitor for unusual refresh patterns (potential token theft)
+   * - Use short-lived access tokens with longer-lived refresh tokens
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

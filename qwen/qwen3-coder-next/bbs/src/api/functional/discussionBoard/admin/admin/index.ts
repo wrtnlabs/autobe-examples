@@ -1,1 +1,1 @@
-export * as sessions from "./sessions/index";
+export * as requests from "./requests/index";

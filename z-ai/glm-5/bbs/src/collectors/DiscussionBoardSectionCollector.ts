@@ -10,19 +10,25 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardSectionCollector {
   export async function collect(props: {
     body: IDiscussionBoardSection.ICreate;
-    discussionBoardUsers: IEntity;
+    discussionBoardAdmins: IEntity;
   }) {
     const id: string = v4();
+    // Query for the max sequence to determine display order
+    const maxSequence =
+      await MyGlobal.prisma.discussion_board_sections.aggregate({
+        _max: {
+          sequence: true,
+        },
+      });
+    const sequence = (maxSequence._max.sequence ?? -1) + 1;
     return {
       id,
       name: props.body.name,
       description: props.body.description,
+      sequence,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      creator: { connect: { id: props.discussionBoardUsers.id } },
-      modifier: undefined,
-      articles: undefined,
+      creator: { connect: { id: props.discussionBoardAdmins.id } },
     } satisfies Prisma.discussion_board_sectionsCreateInput;
   }
 }

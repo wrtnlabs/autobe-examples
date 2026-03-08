@@ -1,0 +1,58 @@
+/// Records all edits to todos with timestamps and changed field values.
+/// Automatically created on every todo edit, captures only fields that
+/// actually changed (title, description, start date, due date) with their
+/// previous and new values. Each edit creates exactly one history entry.
+/// History entries are immutable and sorted from most recent to oldest by
+/// timestamp.
+///
+/// @namespace EditHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_edit_history_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Edit record reference. {@link todo_app_todo_edits.id}.
+  todo_app_todo_edit_id String
+  
+  /// Edit timestamp when this history entry was created.
+  created_at DateTime
+  
+  /// Previous title value if title was changed, null otherwise.
+  previous_title String?
+  
+  /// New title value if title was changed, null otherwise.
+  new_title String?
+  
+  /// Previous description value if description was changed, null otherwise.
+  previous_description String?
+  
+  /// New description value if description was changed, null otherwise.
+  new_description String?
+  
+  /// Previous start date value if start date was changed, null otherwise.
+  previous_start_date DateTime?
+  
+  /// New start date value if start date was changed, null otherwise.
+  new_start_date DateTime?
+  
+  /// Previous due date value if due date was changed, null otherwise.
+  previous_due_date DateTime?
+  
+  /// New due date value if due date was changed, null otherwise.
+  new_due_date DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  edit todo_app_todo_edits @relation(fields: [todo_app_todo_edit_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([todo_app_todo_edit_id, created_at], map: "todo_app_edit_history_entries_todo_app_todo_edit_id_cr_eb21a129")
+}

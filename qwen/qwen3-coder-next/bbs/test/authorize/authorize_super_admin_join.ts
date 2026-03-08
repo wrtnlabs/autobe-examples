@@ -17,7 +17,13 @@ export async function authorize_super_admin_join(
   const joinInput = {
     email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body.password ?? RandomGenerator.alphaNumeric(16),
-    name: props.body.name,
+    display_name: props.body.display_name ?? RandomGenerator.name(),
+    bio:
+      props.body.bio ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 10, wordMax: 30 }),
+    href: props.body.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body.referrer ?? typia.random<string & tags.Format<"uri">>(),
   } satisfies IDiscussionBoardSuperAdmin.IJoin;
   return await api.functional.discussionBoard.auth.superAdmin.join(connection, {
     body: joinInput,

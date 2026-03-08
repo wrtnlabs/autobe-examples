@@ -13,38 +13,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardMemberArticlesArticleId(props: {
   member: MemberPayload;
-  articleId: string;
+  articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const article = await MyGlobal.prisma.discussion_board_articles.findFirst({
-    where: {
-      id: props.articleId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      author_id: true,
-    },
+  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
+    where: { id: props.articleId },
+    select: { author_id: true, deleted_at: true },
   });
-  if (article === null) {
+  if (!article || article.deleted_at !== null) {
     throw new HttpException("Article not found", 404);
   }
   if (article.author_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Cascade delete related records
-  await MyGlobal.prisma.discussion_board_article_files.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  await MyGlobal.prisma.discussion_board_article_images.deleteMany({
-    where: { article: { id: props.articleId } },
-  });
-  await MyGlobal.prisma.discussion_board_comments.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  await MyGlobal.prisma.discussion_board_article_tags.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  // Delete the article record
   await MyGlobal.prisma.discussion_board_articles.delete({
     where: { id: props.articleId },
   });

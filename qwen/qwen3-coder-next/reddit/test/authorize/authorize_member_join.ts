@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import type { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,20 +11,18 @@ import typia, { tags } from "typia";
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IRedditCloneMember.IJoin>;
+    body: IRedditLikeMember.IJoin;
   },
-): Promise<IRedditCloneMember.IAuthorized> {
+): Promise<IRedditLikeMember.IAuthorized> {
   const joinInput = {
-    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    username: props.body?.username ?? RandomGenerator.name(),
-    displayName: props.body?.displayName ?? null,
-    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
-    referrer:
-      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IRedditCloneMember.IJoin;
-  return await api.functional.redditClone.auth.member.join(connection, {
+    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
+    username: props.body.username ?? RandomGenerator.alphaNumeric(8),
+    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+    display_name: props.body.display_name ?? RandomGenerator.name(),
+    bio: props.body.bio ?? null,
+    avatar_url: props.body.avatar_url ?? null,
+  } satisfies IRedditLikeMember.IJoin;
+  return await api.functional.redditLike.auth.member.join(connection, {
     body: joinInput,
   });
 }

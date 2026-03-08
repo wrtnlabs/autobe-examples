@@ -1,0 +1,111 @@
+/// Discussion board sections organizing articles into topic categories with
+/// administrator-managed lifecycle states. Each section represents a
+/// distinct topic area (e.g., Politics, Economy, Current Affairs) and serves
+/// as the primary organizational structure for content browsing and
+/// filtering. Sections are created and managed exclusively by
+/// administrators, while all actors can browse and view articles within
+/// sections. {@link discussion_board_articles} belong to sections through a
+/// many-to-one relationship, and {@link discussion_board_admins} create and
+/// maintain sections.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who created this section. {@link
+  /// discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Unique section name identifying the topic category (e.g., 'Politics',
+  /// 'Economy', 'Technology'). Used for URL slugs and display purposes.
+  name String
+  
+  /// Detailed description explaining the section's topic focus and content
+  /// guidelines.
+  description String?
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft-deleted. Null indicates active
+  /// section.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  creator discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_section_snapshots[]
+  articles discussion_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([discussion_board_admin_id])
+  @@index([deleted_at])
+}
+
+/// Point-in-time snapshots of section data for audit trail and historical
+/// tracking. Captures denormalized section states at specific moments to
+/// enable historical reconstruction and compliance auditing. Each snapshot
+/// is immutable and append-only, recording the complete state of a {@link
+/// discussion_board_sections} entity at the time of capture.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced section's {@link discussion_board_sections.id}.
+  discussion_board_section_id String
+  
+  /// Section name denormalized from parent entity.
+  name String
+  
+  /// Section description denormalized from parent entity.
+  description String?
+  
+  /// Original section creation timestamp denormalized from parent entity.
+  section_created_at DateTime
+  
+  /// Original section last update timestamp denormalized from parent entity.
+  section_updated_at DateTime
+  
+  /// Original section soft-delete timestamp denormalized from parent entity.
+  section_deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was captured.
+  captured_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  discussionBoardSection discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, captured_at], map: "discussion_board_section_snapshots_discussion_board_se_dcd48015")
+}

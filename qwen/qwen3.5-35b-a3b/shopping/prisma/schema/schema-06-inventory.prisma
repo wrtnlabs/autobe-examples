@@ -1,0 +1,44 @@
+/// Append-only inventory history tracking all stock changes for product
+/// variants. Records every quantity change (positive for restocking,
+/// negative for orders/cancellations/refunds) with timestamps and reasons
+/// for stock calculation and audit trails. Referenced by
+/// product_variants.stock_quantity for current stock status, used in cart
+/// validation, order fulfillment, and inventory reports.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant's {@link ecommerce_mall_product_variants.id}. Tracks
+  /// which variant's stock was changed.
+  variant_id String
+  
+  /// Quantity change amount (positive for restocking, negative for
+  /// orders/cancellations/refunds). Used to calculate current stock by summing
+  /// all records.
+  quantity_change Int
+  
+  /// Reason for stock change: order_fulfillment, cancellation, refund,
+  /// restocking, adjustment. Categorizes the type of inventory operation.
+  reason String
+  
+  /// When the stock change occurred. Used for chronological history viewing
+  /// and stock calculation at specific points in time.
+  timestamp DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant ecommerce_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([variant_id, timestamp])
+}

@@ -15,59 +15,92 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthSuperAdminRefresh(props: {
   body: IDiscussionBoardSuperAdmin.IRefresh;
 }): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
+  // 1. Verify refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: "superadmin";
+  };
+  try {
+    decoded = typia.assert<{
+      id: string;
+      session_id: string;
+      type: "superadmin";
+    }>(
+      jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+        issuer: "autobe",
+      }),
+    );
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // 2. Validate type
+  if (decoded.type !== "superadmin") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  // 3. Validate session
   const session =
     await MyGlobal.prisma.discussion_board_super_admin_sessions.findFirst({
       where: {
-        refresh_token: props.body.refresh_token,
-        active: true,
-        expired_at: { gt: new Date() },
+        id: decoded.session_id,
+        discussion_board_super_admin_id: decoded.id,
       },
     });
   if (!session) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+    throw new HttpException("Session expired or revoked", 401);
   }
-  const accessExpires = new Date();
-  accessExpires.setHours(accessExpires.getHours() + 1);
-  const refreshExpires = new Date();
-  refreshExpires.setDate(refreshExpires.getDate() + 7);
-  const accessToken = jwt.sign(
+  // 4. Validate actor
+  const superAdmin =
+    await MyGlobal.prisma.discussion_board_super_admins.findUniqueOrThrow({
+      where: { id: decoded.id },
+    });
+  if (superAdmin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  // 5. Generate new tokens (SAME session_id)
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const access = jwt.sign(
     {
       type: "superadmin",
-      id: session.super_admin_id,
-      session_id: session.id,
-      created_at: accessExpires.toISOString(),
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refreshToken = jwt.sign(
+  const refresh = jwt.sign(
     {
       type: "superadmin",
-      id: session.super_admin_id,
-      session_id: session.id,
+      id: decoded.id,
+      session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: refreshExpires.toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  const admin =
-    await MyGlobal.prisma.discussion_board_super_admins.findUniqueOrThrow({
-      where: { id: session.super_admin_id },
-    });
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
+  };
+  // 6. Update session expiration
+  await MyGlobal.prisma.discussion_board_super_admin_sessions.update({
+    where: { id: decoded.session_id },
+    data: { expired_at: refreshExpires },
+  });
+  // 7. Return authorized response
   return {
-    id: admin.id,
-    email: admin.email,
-    isSuperAdmin: admin.is_super_admin,
-    canPromoteSuperAdmins: admin.can_promote_super_admins,
-    createdAt: admin.created_at.toISOString(),
-    updatedAt: admin.updated_at.toISOString(),
-    deletedAt: admin.deleted_at?.toISOString() ?? null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
-    },
+    id: superAdmin.id as string & tags.Format<"uuid">,
+    email: superAdmin.email as string & tags.Format<"email">,
+    display_name: superAdmin.display_name ?? null,
+    token,
+    authorizationActor: "superAdmin",
   };
 }

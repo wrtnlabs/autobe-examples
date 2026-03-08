@@ -6,43 +6,51 @@ import typia, { tags } from "typia";
 import { IPageIShoppingMallProductSnapshot } from "../../../../../structures/IPageIShoppingMallProductSnapshot";
 import { IShoppingMallProductSnapshot } from "../../../../../structures/IShoppingMallProductSnapshot";
 
+export * as skus from "./skus/index";
+
 /**
- * Retrieve a paginated list of product snapshots for a specific product, showing the complete modification history.
+ * Retrieve a paginated list of product snapshots showing the complete edit history of a product.
  *
- * This endpoint provides access to the immutable audit trail of product changes, implementing the snapshot principle requirement. Each snapshot captures the complete state of the product at a point in time, including denormalized product fields (name, description, base price), category assignment, and seller reference.
+ * This operation queries the shopping_mall_product_snapshots table to provide sellers and administrators with access to the historical record of product modifications. Each snapshot captures the product state at the exact moment of an edit, preserving name, description, base_price, and images as a JSON array. Snapshots serve as immutable audit records for dispute resolution and compliance purposes.
  *
- * The response includes nested variant snapshots that capture each variant's SKU code, price override, and option values at that moment. Image associations are also included through the snapshot image junction table.
+ * Sellers can view snapshots only for products they own (shopping_mall_product_snapshots.shopping_mall_product_id must reference a product owned by the authenticated seller). Administrators can view snapshots for any product on the platform. Snapshots are displayed in reverse chronological order by created_at (newest first) to show the most recent changes prominently.
  *
- * Sellers can view snapshots for their own products to track their product modification history. Administrators can view snapshots for any product on the platform for audit and dispute resolution purposes. The snapshots are preserved even after product deletion, ensuring complete historical records.
+ * This endpoint is essential for:
+ * - Sellers reviewing their product change history
+ * - Administrators investigating product-related disputes
+ * - Compliance and audit trail requirements
+ * - Understanding product evolution over time
+ *
+ * For detailed variant information within a snapshot, use the individual snapshot detail endpoint.
  *
  * @param props.connection
- * @param props.productId Target product's unique identifier (UUID format)
- * @param props.body Search criteria including pagination and date range filtering for product snapshots
+ * @param props.productId Unique identifier of the product whose snapshot history is being requested. The authenticated user must be the owner of this product (seller) or an administrator.
+ * @param props.body Pagination and optional filtering parameters for the snapshot list query
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_snapshots table filtering by shopping_mall_product_id matching the path parameter.
+ * @x-autobe-specification Query shopping_mall_product_snapshots table filtered by shopping_mall_product_id matching the path parameter productId.
  *
- * Join with shopping_mall_product_variant_snapshots to include variant states at each snapshot point. Also join with shopping_mall_product_snapshot_images to include image associations.
+ * Authorization checks:
+ * 1. If user is a seller, verify they own the product (check shopping_mall_products.shopping_mall_seller_id matches current user's seller ID)
+ * 2. If user is an administrator, allow access to any product's snapshots
+ * 3. Deny access if neither condition is met
  *
- * Apply search filters:
- * - created_at date range (from/to)
- * - Sort by created_at descending (newest first by default)
+ * Query execution:
+ * - Filter by shopping_mall_product_id
+ * - Support pagination with cursor or offset
+ * - Sort by created_at descending (newest first)
+ * - Include optional date range filtering
  *
- * Implement cursor-based pagination for efficient traversal of large snapshot histories.
+ * Response transformation:
+ * - For each snapshot, include basic fields (id, name, description, base_price, created_at)
+ * - Include first image URL from images JSON array as thumbnail
+ * - Include count of variant snapshots
+ * - Do NOT load full variant snapshots in list view (use summary for performance)
  *
- * Authorization:
- * - If requester is a seller, verify the product belongs to them via shopping_mall_products.seller_id
- * - If requester is an admin, allow access to any product
- * - Consider public read access for transparency (based on platform policy)
- *
- * The response should include:
- * - Basic snapshot info (id, created_at)
- * - Denormalized product fields (name, description, base_price)
- * - Category reference (if any)
- * - Count of variant snapshots
- * - Count of associated images
- *
- * For detailed variant and image information, provide a separate 'at' endpoint to fetch complete snapshot details.
+ * Edge cases:
+ * - Return empty list if product has no snapshots yet
+ * - Return 404 if product does not exist
+ * - Return 403 if seller tries to access another seller's product snapshots
  * @path /shoppingMall/seller/products/:productId/snapshots
  * @accessor api.functional.shoppingMall.seller.products.snapshots.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -72,12 +80,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Target product's unique identifier (UUID format)
+     * Unique identifier of the product whose snapshot history is being requested. The authenticated user must be the owner of this product (seller) or an administrator.
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria including pagination and date range filtering for product snapshots
+     * Pagination and optional filtering parameters for the snapshot list query
      */
     body: IShoppingMallProductSnapshot.IRequest;
   };
@@ -128,20 +136,61 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific product snapshot containing the complete historical state of a product at a point in time.
+ * Retrieve a specific product snapshot that preserves the complete product state at a point in time.
  *
- * This endpoint enables sellers and administrators to review the exact product details, variants, and images as they existed when the snapshot was created. Product snapshots are immutable records created automatically whenever a product is modified, serving as the authoritative audit trail for dispute resolution, compliance, and historical analysis.
+ * This operation provides access to historical product snapshots created automatically on every product edit. Each snapshot captures the product's complete state including name, description, base price, images, and all variant configurations (SKU code, option values, price overrides, and stock quantities) exactly as they existed at that moment.
  *
- * The snapshot includes denormalized product fields (name, description, base price, category reference), all associated images captured at that moment, and complete variant states with their SKU codes, option values, and price overrides. This enables verification of product information at the time of purchase or modification.
+ * **Access Control:**
+ * - **Sellers**: Can view snapshots of their own products only. The system verifies ownership by checking that the authenticated seller owns the product referenced by the snapshot. Sellers cannot access snapshots of products that have been deleted, even if they previously owned them.
+ * - **Administrators**: Can view snapshots of any product on the platform, including products that have been soft-deleted. Administrators have full platform-wide snapshot access for oversight and dispute resolution purposes.
+ * - **Customers**: Cannot access product snapshots. This operation is restricted to seller and administrator roles only.
  *
- * Access is restricted: sellers can only view snapshots of their own products, while administrators can view snapshots of any product on the platform. The snapshotId must correspond to a snapshot belonging to the specified productId.
+ * **Snapshot Contents:**
+ * The snapshot includes all product fields preserved at the time of edit: product name, description, base price, and the complete image array with display order. Additionally, all variant states are captured as skuSnapshots, preserving each variant's SKU code, option values (e.g., color and size combinations), price override (if different from base price), and stock quantity at that moment.
+ *
+ * **Immutability:**
+ * Snapshots are immutable records that cannot be modified or deleted. They serve as permanent historical evidence for audit trails, dispute resolution, and tracking product evolution over time. Even when the original product is deleted, its snapshots are preserved for administrative access.
+ *
+ * **Use Cases:**
+ * - Sellers reviewing their product's edit history for active products they own
+ * - Administrators investigating disputes requiring product state evidence
+ * - Tracking pricing and description changes over time for compliance
+ * - Resolving customer complaints about product details at time of purchase
  *
  * @param props.connection
- * @param props.productId UUID of the product whose snapshot is being retrieved
- * @param props.snapshotId UUID of the specific product snapshot to retrieve
+ * @param props.productId The unique identifier of the product whose snapshot is being retrieved. This parameter is used for authorization verification to ensure sellers can only access their own product snapshots. Administrators can specify any product ID.
+ * @param props.snapshotId The unique identifier of the specific product snapshot to retrieve. Each snapshot represents a point-in-time capture of the complete product state including all variants.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_product_snapshots table by ID, joining with shopping_mall_products to verify the snapshot belongs to the specified product. Include related data: shopping_mall_product_snapshot_images (junction to images), shopping_mall_product_variant_snapshots (each with their shopping_mall_product_variant_snapshot_option_values). Verify authorization: seller_id of the product must match the authenticated seller, or the user must be an administrator. Return 404 if snapshot not found or doesn't belong to product. Return 403 if seller attempts to view another seller's product snapshot.
+ * @x-autobe-specification Implementation steps:
+ *
+ * 1. **Authentication**: Verify the user is authenticated as a seller or administrator. Reject with 401 if not authenticated.
+ *
+ * 2. **Authorization**:
+ *    - If user is a seller: Query the product to verify ownership (shopping_mall_product_snapshots → shopping_mall_products → shopping_mall_seller_id matches authenticated seller's ID)
+ *    - If user is an administrator: Grant access regardless of product ownership
+ *    - Reject with 403 if the seller is trying to access another seller's product snapshot
+ *
+ * 3. **Resource Existence**:
+ *    - Verify the product exists and is not deleted (or administrators can still access deleted products)
+ *    - Verify the snapshot exists and belongs to the specified product
+ *    - Return 404 if either product or snapshot is not found
+ *
+ * 4. **Data Retrieval**:
+ *    - Query shopping_mall_product_snapshots table by snapshotId
+ *    - Include related skuSnapshots (shopping_mall_product_snapshot_skuses) ordered by created_at
+ *    - Parse JSON fields (images array, option_values object) for structured response
+ *
+ * 5. **Response Construction**:
+ *    - Return complete snapshot data including:
+ *      - id, name, description, base_price, images (parsed JSON array)
+ *      - created_at timestamp
+ *      - Associated variant snapshots (skuSnapshots) with their complete state
+ *
+ * 6. **Error Handling**:
+ *    - 401 Unauthorized: Not authenticated
+ *    - 403 Forbidden: Seller trying to access another seller's snapshot
+ *    - 404 Not Found: Product or snapshot does not exist
  * @path /shoppingMall/seller/products/:productId/snapshots/:snapshotId
  * @accessor api.functional.shoppingMall.seller.products.snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -170,14 +219,14 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * UUID of the product whose snapshot is being retrieved
+     * The unique identifier of the product whose snapshot is being retrieved. This parameter is used for authorization verification to ensure sellers can only access their own product snapshots. Administrators can specify any product ID.
      */
-    productId: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * UUID of the specific product snapshot to retrieve
+     * The unique identifier of the specific product snapshot to retrieve. Each snapshot represents a point-in-time capture of the complete product state including all variants.
      */
-    snapshotId: string;
+    snapshotId: string & tags.Format<"uuid">;
   };
   export type Response = IShoppingMallProductSnapshot;
 

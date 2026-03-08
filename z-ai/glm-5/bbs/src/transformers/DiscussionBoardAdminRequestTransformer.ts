@@ -1,12 +1,14 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminRequest";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
+import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
+import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
 
 export namespace DiscussionBoardAdminRequestTransformer {
   export type Payload = Prisma.discussion_board_admin_requestsGetPayload<
@@ -18,12 +20,11 @@ export namespace DiscussionBoardAdminRequestTransformer {
         id: true,
         reason: true,
         status: true,
-        review_notes: true,
         created_at: true,
         updated_at: true,
-        reviewed_at: true,
-        requester: DiscussionBoardUserAtSummaryTransformer.select(),
-        reviewer: DiscussionBoardUserAtSummaryTransformer.select(),
+        deleted_at: true,
+        member: DiscussionBoardMemberAtSummaryTransformer.select(),
+        reviewer: DiscussionBoardAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_admin_requestsFindManyArgs;
   }
@@ -33,19 +34,18 @@ export namespace DiscussionBoardAdminRequestTransformer {
     return {
       id: input.id,
       reason: input.reason,
-      status: input.status,
-      review_notes: input.review_notes ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      reviewed_at: input.reviewed_at?.toISOString() ?? null,
-      requester: await DiscussionBoardUserAtSummaryTransformer.transform(
-        input.requester,
+      status: input.status as "pending" | "approved" | "rejected",
+      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
+        input.member,
       ),
       reviewer: input.reviewer
-        ? await DiscussionBoardUserAtSummaryTransformer.transform(
+        ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.reviewer,
           )
         : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

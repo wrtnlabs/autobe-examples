@@ -13,25 +13,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardAdminArticlesArticleId(props: {
   admin: AdminPayload;
-  articleId: string;
+  articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  const now = new Date().toISOString() as string & tags.Format<"date-time">;
   const article =
     await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
     });
-  await MyGlobal.prisma.discussion_board_article_tags.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  await MyGlobal.prisma.discussion_board_comments.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  await MyGlobal.prisma.discussion_board_article_files.deleteMany({
-    where: { article_id: props.articleId },
-  });
-  await MyGlobal.prisma.discussion_board_article_images.deleteMany({
-    where: { article: { id: props.articleId } },
-  });
-  await MyGlobal.prisma.discussion_board_articles.delete({
+  await MyGlobal.prisma.discussion_board_articles.update({
     where: { id: props.articleId },
+    data: { deleted_at: now },
   });
 }

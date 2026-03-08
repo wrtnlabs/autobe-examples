@@ -1,0 +1,121 @@
+/// Stores unique tag names for content categorization and discovery across
+/// articles in the economic/political discussion board.
+///
+/// Tags provide a flexible keyword-based organization system that
+/// complements section-based categorization. Each tag represents a topic,
+/// theme, or subject that articles can be associated with, enabling users to
+/// discover related content through tag browsing and filtering.
+///
+/// Key characteristics:
+/// - Tag names are unique across the entire system (case-insensitive,
+/// lowercase normalized)
+/// - Tags are created automatically when users assign them to articles
+/// (free-text entry)
+/// - Tags persist even when untagged from articles, unless no articles
+/// reference them
+/// - Primary use case is article categorization and search discoverability
+///
+/// Relationships:
+/// - Many-to-many with {@link economic_political_board_articles} through
+/// {@link economic_political_board_article_tags} junction table
+/// - No direct actor ownership; tags are system-wide resources accessible to
+/// all users
+///
+/// Business rules:
+/// - Tag names must contain only letters, numbers, and hyphens
+/// - Names are automatically normalized to lowercase for consistency
+/// - Empty tag names are rejected
+/// - Duplicate tag creation is prevented by reusing existing tags
+/// - Soft delete supported via deleted_at field for archival
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The unique tag name used for content categorization. Must contain only
+  /// letters, numbers, and hyphens. Automatically normalized to lowercase for
+  /// consistency. Empty names are rejected.
+  name String
+  
+  /// Timestamp when the tag was first created in the system.
+  created_at DateTime
+  
+  /// Timestamp when the tag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the tag was soft deleted (null if not deleted). Used for
+  /// archival purposes.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleTags economic_political_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+}
+
+/// Junction table for many-to-many relationship between articles and tags.
+///
+/// This table enables articles to have multiple tags and tags to be
+/// associated with multiple articles. Each record represents a unique
+/// article-tag pairing that enables content categorization and discovery
+/// through the tagging system.
+///
+/// Key relationships:
+/// - {@link economic_political_board_articles} - Parent article that the tag
+/// is associated with
+/// - {@link economic_political_board_tags} - Parent tag that categorizes the
+/// article
+///
+/// Business rules:
+/// - Unique constraint prevents duplicate tag assignments to the same article
+/// - Cascade delete ensures data integrity when articles or tags are removed
+/// - Managed through parent entities (Article and Tag), not independently
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Article's {@link economic_political_board_articles.id}. Required foreign
+  /// key reference to the article this tag belongs to.
+  article_id String
+  
+  /// Tag's {@link economic_political_board_tags.id}. Required foreign key
+  /// reference to the tag that categorizes the article.
+  tag_id String
+  
+  /// Timestamp when this article-tag relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this article-tag relationship was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_political_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  tag economic_political_board_tags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([article_id, tag_id])
+  @@index([article_id])
+  @@index([tag_id])
+}

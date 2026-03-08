@@ -9,7 +9,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallSellerTransformer } from "../transformers/ShoppingMallSellerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -25,9 +24,9 @@ export async function postShoppingMallAuthSellerJoin(props: {
   }
   // 2. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Create seller record
-  const sellerId = v4();
+  // 3. Create seller
   const now = new Date();
+  const sellerId = v4();
   const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
     data: {
       id: sellerId,
@@ -35,17 +34,43 @@ export async function postShoppingMallAuthSellerJoin(props: {
       password_hash: passwordHash,
       shop_name: props.body.shop_name,
       shop_description: props.body.shop_description ?? null,
-      logo_url: props.body.logo_url ?? null,
+      logo_image: props.body.logo_image ?? null,
       approval_status: "pending",
-      rejection_reason: null,
+      suspended: false,
+      banned: false,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
-    ...ShoppingMallSellerTransformer.select(),
+    select: {
+      id: true,
+      email: true,
+      shop_name: true,
+      shop_description: true,
+      logo_image: true,
+      approval_status: true,
+      rejection_reason: true,
+      suspended: true,
+      banned: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
-  // 4. Generate JWT tokens
+  // 4. Create session (24 hour expiry)
   const sessionId = v4();
+  const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+    data: {
+      id: sessionId,
+      seller_id: sellerId,
+      ip: props.body.ip ?? "unknown",
+      href: props.body.href,
+      referrer: props.body.referrer ?? null,
+      created_at: now,
+      expired_at: expiredAt,
+    },
+  });
+  // 5. Generate JWT tokens
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
@@ -69,30 +94,25 @@ export async function postShoppingMallAuthSellerJoin(props: {
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 5. Create session record
-  await MyGlobal.prisma.shopping_mall_seller_sessions.create({
-    data: {
-      id: sessionId,
-      shopping_mall_seller_id: sellerId,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      ip: props.body.ip ?? "",
-      href: props.body.href,
-      referrer: props.body.referrer,
-      device_name: null,
-      created_at: now,
-      expired_at: refreshExpires,
-    },
-  });
-  // 6. Return IAuthorized
   const token: IAuthorizationToken = {
     access: accessToken,
     refresh: refreshToken,
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
   };
+  // 6. Return IAuthorized
   return {
-    ...(await ShoppingMallSellerTransformer.transform(seller)),
+    id: seller.id,
+    email: seller.email,
+    shopName: seller.shop_name,
+    shopDescription: seller.shop_description,
+    logoImage: seller.logo_image,
+    approval_status: seller.approval_status,
+    rejection_reason: seller.rejection_reason,
+    suspended: seller.suspended,
+    banned: seller.banned,
+    created_at: seller.created_at.toISOString(),
+    updated_at: seller.updated_at.toISOString(),
     token,
-  } satisfies IShoppingMallSeller.IAuthorized;
+  };
 }

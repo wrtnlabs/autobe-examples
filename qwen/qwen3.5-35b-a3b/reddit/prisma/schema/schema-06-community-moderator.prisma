@@ -1,0 +1,249 @@
+/// Tracks which users have moderator roles in which communities.
+///
+/// This table establishes the relationship between members and communities
+/// where specific members are granted moderator privileges. Moderators have
+/// elevated permissions within their assigned communities including the
+/// ability to delete posts and comments, ban/unban users, and handle content
+/// reports.
+///
+/// Related models: {@link reddit_platform_communities}, {@link
+/// reddit_platform_members}, {@link reddit_platform_moderation_audit_logs} -
+/// the audit log table tracks all moderator actions for compliance purposes.
+/// Community moderators are distinct from community owners and have limited
+/// authority within their assigned communities only.
+///
+/// @namespace CommunityModerator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community for which this user has moderator privileges. {@link
+  /// reddit_platform_communities.id}.
+  community_id String
+  
+  /// Member who holds the moderator role. {@link reddit_platform_members.id}.
+  user_id String
+  
+  /// Timestamp when this moderator appointment was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator appointment was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user reddit_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@unique([community_id, user_id])
+}
+
+/// Audit log table that tracks all moderator actions within communities for
+/// compliance and transparency purposes.
+///
+/// This table serves as a historical record of every moderation action taken
+/// by community moderators, including:
+///
+/// - Moderator appointment and removal actions (tracked in {@link
+/// reddit_platform_community_moderators})
+/// - Content deletion actions (posts and comments)
+/// - User ban and unban actions (tracked in {@link
+/// reddit_platform_community_bans})
+/// - Report handling actions (approving/dismissing reports)
+///
+/// Each audit log entry captures who performed the action, what was
+/// affected, when it occurred, and any relevant details. This enables:
+///
+/// - Compliance auditing and transparency reporting
+/// - Moderator performance tracking
+/// - Dispute resolution with verifiable action history
+/// - Analytics on moderation patterns across communities
+///
+/// The table uses polymorphic references (action_target_type,
+/// action_target_id) to track actions against different entity types (posts,
+/// comments, users) while maintaining referential integrity through specific
+/// foreign keys where possible.
+///
+/// @namespace CommunityModerator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_moderation_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Moderator who performed the action. {@link reddit_platform_members.id}
+  moderator_id String
+  
+  /// Community where the action occurred. {@link
+  /// reddit_platform_communities.id}
+  community_id String
+  
+  /// Target post when action was on a post. {@link reddit_platform_posts.id}
+  action_target_post_id String?
+  
+  /// Target comment when action was on a comment. {@link
+  /// reddit_platform_comments.id}
+  action_target_comment_id String?
+  
+  /// Target user when action was on a user (ban/unban). {@link
+  /// reddit_platform_members.id}
+  action_target_user_id String?
+  
+  /// Type of moderation action performed. Enum values: appoint_moderator,
+  /// remove_moderator, delete_post, delete_comment, ban_user, unban_user,
+  /// approve_report, dismiss_report
+  action_type String
+  
+  /// Polymorphic type of target entity: post, comment, or user. Used when
+  /// specific FK is not applicable.
+  action_target_type String
+  
+  /// Polymorphic ID reference to target entity when specific FK is not used
+  /// for cross-referencing.
+  action_target_id String?
+  
+  /// Optional reason or context provided for the moderation action by the
+  /// moderator.
+  action_reason String?
+  
+  /// JSON string containing additional structured details about the action
+  /// (e.g., previous moderator status, ban expiration, report ID).
+  action_details String?
+  
+  /// Timestamp when the audit log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for data retention and archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator reddit_platform_members @relation("reddit_platform_moderation_audit_logs_of_moderator_id", fields: [moderator_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  actionTargetPost reddit_platform_posts? @relation(fields: [action_target_post_id], references: [id], onDelete: Cascade)
+  actionTargetComment reddit_platform_comments? @relation(fields: [action_target_comment_id], references: [id], onDelete: Cascade)
+  actionTargetUser reddit_platform_members? @relation("reddit_platform_moderation_audit_logs_of_action_target_user_id", fields: [action_target_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "reddit_platform_moderation_audit_logs_community_id_cre_68de5b6e")
+  // spellchecker: ignore-next-line
+  @@index([moderator_id, created_at], map: "reddit_platform_moderation_audit_logs_moderator_id_cre_e79d85d3")
+  @@index([action_type])
+  @@index([action_target_post_id])
+  // spellchecker: ignore-next-line
+  @@index([action_target_comment_id], map: "reddit_platform_moderation_audit_logs_action_target_co_c2ba92d1")
+  @@index([action_target_user_id])
+}
+
+/// Historical audit records tracking moderator appointment and removal
+/// actions within communities.
+///
+/// This table maintains a complete history of all moderator role changes,
+/// including when users were appointed as moderators and when they were
+/// removed. The records serve multiple purposes:
+///
+/// - **Audit Trail**: Provides a compliance-ready record of all moderation
+/// role assignments for transparency and accountability
+/// - **Ownership Verification**: Enables verification of past moderator
+/// ownership for community administration purposes
+/// - **Historical Analysis**: Supports analytics on moderator tenure, action
+/// frequency, and community management patterns
+/// - **Governance Tracking**: Documents the evolution of community
+/// moderation teams over time
+///
+/// **Relationships**:
+/// - Belongs to a {@link reddit_platform_communities} community where the
+/// moderator role was assigned or removed
+/// - Records a change to a {@link reddit_platform_members} user's moderator
+/// privileges
+/// - Optionally tracked which {@link reddit_platform_members} or {@link
+/// reddit_platform_admins} actor performed the action (acted_by)
+///
+/// **Usage Patterns**:
+/// - Query by community to see all moderator history
+/// - Query by user to see their moderator appointment/removal history across
+/// all communities
+/// - Query by acted_by to audit specific admin/moderator actions
+/// - Never query for current moderator status (use
+/// reddit_platform_community_moderators for that)
+///
+/// **Data Characteristics**:
+/// - Append-only historical data (records are never modified after creation)
+/// - Soft deletion supported via deleted_at for compliance scenarios
+/// - Immutable action history (once created, the action record should not be
+/// changed)
+///
+/// @namespace CommunityModerator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_moderator_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where the moderator action occurred. {@link
+  /// reddit_platform_communities.id}.
+  community_id String
+  
+  /// User whose moderator role was affected. {@link
+  /// reddit_platform_members.id}.
+  user_id String
+  
+  /// User or admin who performed the moderator action. {@link
+  /// reddit_platform_members.id}.
+  acted_by_id String?
+  
+  /// Type of moderator action performed. Values: 'APPOINTED' (user was
+  /// appointed as moderator) or 'REMOVED' (user was removed as moderator).
+  action_type String
+  
+  /// Optional notes about the moderator action. Can include reasons for
+  /// appointment/removal or other context.
+  notes String?
+  
+  /// Timestamp when this history record was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for compliance and audit preservation.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user reddit_platform_members @relation("reddit_platform_moderator_histories_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  actedBy reddit_platform_members? @relation("reddit_platform_moderator_histories_of_acted_by_id", fields: [acted_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, user_id])
+  @@index([user_id, created_at])
+  @@index([community_id, created_at])
+  @@index([acted_by_id, created_at])
+}

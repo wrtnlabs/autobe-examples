@@ -1,121 +1,142 @@
-# Todo Application - Planning Documentation
+### Table of Contents
 
-## Document Overview
+**todoApp** is a backend service with the following actors and domain entities.
 
-This planning documentation defines the complete business requirements for a **private multi-user Todo application**. The system enables users to create, manage, and track their personal todo items with full privacy - each user's data is completely isolated and inaccessible to other users.
-
-### Project Scope
-
-The Todo application provides:
-- **User Account Management**: Registration, authentication, password management, and account deletion
-- **Profile Management**: Display name configuration with complete privacy
-- **Todo Operations**: Create, view, edit, complete, and delete todos
-- **Edit History**: Comprehensive audit trail for all todo modifications
-- **Trash System**: Soft delete with restore and permanent deletion capabilities
-- **List Management**: Pagination, filtering by completion status, and multiple sorting options
-
-### Core Design Principles
-
-1. **Privacy-First**: Complete data isolation between users
-2. **Full Audit Trail**: Every edit is tracked and viewable
-3. **Soft Delete**: Deleted items can be recovered from trash
-4. **Flexible Organization**: Multiple filtering and sorting options
+**Actors**: guest, member
+**Entities**: User, Todo, TodoHistory
 
 ---
 
-## Document Structure
+**Scope**
 
-The planning documentation is organized into the following categories:
+- **User**: email: email address, required, unique, password: hashed password, required, displayName: text, required | Relationships: has many Todos
+- **Todo**: title: text, required, description: text, optional, startDate: datetime, optional, dueDate: datetime, optional, completed: boolean, default false, deleted: boolean, default false (soft delete flag), createdAt: datetime | Relationships: belongs to User via userId, has many TodoHistories
+- **TodoHistory**: editedAt: datetime, titleChange: text, optional, descriptionChange: text, optional, startDateChange: datetime, optional, dueDateChange: datetime, optional | Relationships: belongs to Todo via todoId
 
-### Foundation Documents
-| Document | Purpose |
-|----------|--------|
-| [Service Overview](./01-service-overview.md) | Business vision, goals, and value proposition |
-| [Actors and Authentication](./02-actors-and-authentication.md) | User actor definitions and authentication system |
-
-### Core Feature Requirements
-| Document | Purpose |
-|----------|--------|
-| [User Profile Requirements](./03-user-profile-requirements.md) | Profile structure and privacy model |
-| [Todo Core Operations](./04-todo-core-operations.md) | Todo CRUD operations and completion management |
-| [Todo List Management](./05-todo-list-management.md) | Pagination, filtering, and sorting requirements |
-| [Edit History System](./06-edit-history-system.md) | History tracking and audit trail |
-| [Trash and Deletion](./07-trash-and-deletion.md) | Soft delete, restore, and permanent deletion |
-
-### Supporting Documentation
-| Document | Purpose |
-|----------|--------|
-| [User Scenarios](./08-user-scenarios.md) | Complete user journeys and workflows |
-| [Non-Functional Requirements](./09-non-functional-requirements.md) | Performance, security, and privacy standards |
-| [Business Rules](./10-business-rules.md) | Validation rules and business constraints |
+- **guest** (guest)
+- **member** (member)
 
 ---
 
-## Navigation Guide
+**Document Map**
 
-### Getting Started
+| File | Role | Downstream |
+|------|------|------------|
+| [00-toc.md](./00-toc.md) | Project summary, scope, glossary, and assumptions | project-setup |
+| [01-actors-and-auth.md](./01-actors-and-auth.md) | Actor definitions, permission matrix, authentication, session, account lifecycle | auth-middleware |
+| [02-domain-model.md](./02-domain-model.md) | Business concepts, relationships, and states from user perspective | database-design |
+| [03-functional-requirements.md](./03-functional-requirements.md) | What operations users can perform, use cases, business workflows | interface-design |
+| [04-business-rules.md](./04-business-rules.md) | Data isolation, business rules, filtering/sorting/pagination, error catalog | service-layer |
+| [05-non-functional.md](./05-non-functional.md) | Performance SLOs, security policies, data integrity, storage requirements | test-infra |
 
-1. Begin with the [Service Overview](./01-service-overview.md) to understand the business context
-2. Review [Actors and Authentication](./02-actors-and-authentication.md) for the user model
-3. Explore core feature documents in sequence:
-   - [User Profile Requirements](./03-user-profile-requirements.md)
-   - [Todo Core Operations](./04-todo-core-operations.md)
-   - [Todo List Management](./05-todo-list-management.md)
+**Section Navigation**
 
-### Feature Deep-Dive
+<!-- Load sections by ID: `process({ request: { type: "getAnalysisSections", sectionIds: [ID, ...] } })` -->
 
-For specific feature implementation:
-- **Todo editing and history**: See [Edit History System](./06-edit-history-system.md)
-- **Delete and recovery**: See [Trash and Deletion](./07-trash-and-deletion.md)
-- **User workflows**: See [User Scenarios](./08-user-scenarios.md)
+**[01-actors-and-auth.md](./01-actors-and-auth.md)**
+- [Actor Definitions](./01-actors-and-auth.md#actor-definitions)
+  - [1] [guest Actor](./01-actors-and-auth.md#guest-actor) — Define the guest actor's role and capabilities in business terms.
+  - [2] [member Actor](./01-actors-and-auth.md#member-actor) — Define the member actor's role and capabilities in business terms.
+- [Authentication Flows](./01-actors-and-auth.md#authentication-flows)
+  - [3] [Registration and Login](./01-actors-and-auth.md#registration-and-login) — Define user registration and login flows including validation and error handling.
+  - [4] [Session and Token Policy](./01-actors-and-auth.md#session-and-token-policy) — Define session duration, token refresh, and expiration policies.
+- [Account Lifecycle](./01-actors-and-auth.md#account-lifecycle)
+  - [5] [Account States and Transitions](./01-actors-and-auth.md#account-states-and-transitions) — Define account states (active, suspended, deleted) and valid transitions.
 
-### Quality and Standards
+**[02-domain-model.md](./02-domain-model.md)**
+- [Domain Concepts](./02-domain-model.md#domain-concepts)
+  - [6] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain, its purpose, and how users interact with it.
+  - [7] [Todo Concept](./02-domain-model.md#todo-concept) — Describe what Todo represents in the business domain, its purpose, and how users interact with it.
+  - [8] [TodoHistory Concept](./02-domain-model.md#todohistory-concept) — Describe what TodoHistory represents in the business domain, its purpose, and how users interact with it.
+- [Domain Relationships](./02-domain-model.md#domain-relationships)
+  - [9] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
+  - [10] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe business rules for concept lifecycle and data retention from a user perspective.
+- [Enums and State Machines](./02-domain-model.md#enums-and-state-machines)
+  - [11] [Enum Definitions](./02-domain-model.md#enum-definitions) — Define all enum types with their allowed values and descriptions.
+  - [12] [State Transitions](./02-domain-model.md#state-transitions) — Define valid state transition paths for stateful concepts.
 
-- **Performance targets**: See [Non-Functional Requirements](./09-non-functional-requirements.md)
-- **Validation rules**: See [Business Rules](./10-business-rules.md)
+**[03-functional-requirements.md](./03-functional-requirements.md)**
+- [Core Business Operations](./03-functional-requirements.md#core-business-operations)
+  - [13] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [14] [Todo Operations](./03-functional-requirements.md#todo-operations) — Define business operations for Todo: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [15] [TodoHistory Operations](./03-functional-requirements.md#todohistory-operations) — Define business operations for TodoHistory: what create, read, update, delete, and list operations must accomplish from a business perspective.
+- [Business Actions and Workflows](./03-functional-requirements.md#business-actions-and-workflows)
+  - [16] [User Actions](./03-functional-requirements.md#user-actions) — Define business actions and workflows for the User domain group from a functional requirements perspective.
+  - [17] [Todo Actions](./03-functional-requirements.md#todo-actions) — Define business actions and workflows for the Todo domain group from a functional requirements perspective.
+  - [18] [TodoHistory Actions](./03-functional-requirements.md#todohistory-actions) — Define business actions and workflows for the TodoHistory domain group from a functional requirements perspective.
+- [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
+  - [19] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
+  - [20] [Todo Error Scenarios](./03-functional-requirements.md#todo-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Todo operations.
+  - [21] [TodoHistory Error Scenarios](./03-functional-requirements.md#todohistory-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all TodoHistory operations.
+- [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
+  - [22] [User User Scenarios](./03-functional-requirements.md#user-user-scenarios) — Define end-to-end user scenarios involving User and related concepts, describing business flows from the user's perspective.
+  - [23] [Todo User Scenarios](./03-functional-requirements.md#todo-user-scenarios) — Define end-to-end user scenarios involving Todo and related concepts, describing business flows from the user's perspective.
+  - [24] [TodoHistory User Scenarios](./03-functional-requirements.md#todohistory-user-scenarios) — Define end-to-end user scenarios involving TodoHistory and related concepts, describing business flows from the user's perspective.
+
+**[04-business-rules.md](./04-business-rules.md)**
+- [Data Isolation and Ownership](./04-business-rules.md#data-isolation-and-ownership)
+  - [25] [Ownership and Isolation Rules](./04-business-rules.md#ownership-and-isolation-rules) — Define data ownership semantics and isolation boundaries for multi-user access.
+- [Domain Business Rules](./04-business-rules.md#domain-business-rules)
+  - [26] [User Rules](./04-business-rules.md#user-rules) — Define business rules, validation logic, and domain constraints for User.
+  - [27] [Todo Rules](./04-business-rules.md#todo-rules) — Define business rules, validation logic, and domain constraints for Todo.
+  - [28] [TodoHistory Rules](./04-business-rules.md#todohistory-rules) — Define business rules, validation logic, and domain constraints for TodoHistory.
+- [Detailed Validation Rules](./04-business-rules.md#detailed-validation-rules)
+  - [29] [User Validation Rules](./04-business-rules.md#user-validation-rules) — Define validation rules for User, including boundary values and format requirements.
+  - [30] [Todo Validation Rules](./04-business-rules.md#todo-validation-rules) — Define validation rules for Todo, including boundary values and format requirements.
+  - [31] [TodoHistory Validation Rules](./04-business-rules.md#todohistory-validation-rules) — Define validation rules for TodoHistory, including boundary values and format requirements.
+- [Filtering, Sorting, and Pagination](./04-business-rules.md#filtering-sorting-and-pagination)
+  - [32] [List Query Specifications](./04-business-rules.md#list-query-specifications) — Define filtering, sorting, and pagination rules for list operations.
+- [Error Conditions](./04-business-rules.md#error-conditions)
+  - [33] [Error Scenarios](./04-business-rules.md#error-scenarios) — Describe error conditions and expected system responses in natural language.
+
+**[05-non-functional.md](./05-non-functional.md)**
+- [Performance Requirements](./05-non-functional.md#performance-requirements)
+  - [34] [Performance SLOs](./05-non-functional.md#performance-slos) — Define response time targets, throughput limits, and scalability requirements.
+  - [35] [Rate Limiting and Throttling](./05-non-functional.md#rate-limiting-and-throttling) — Define rate limiting policies and abuse prevention requirements.
+- [Security Requirements](./05-non-functional.md#security-requirements)
+  - [36] [Security Policies](./05-non-functional.md#security-policies) — Define security policies including encryption, input validation, and compliance.
+  - [37] [Availability and Reliability](./05-non-functional.md#availability-and-reliability) — Define availability targets, reliability expectations, and failover policies.
+- [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage)
+  - [38] [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage-1) — Define backup policies, data retention, and storage tier requirements.
+  - [39] [Audit and Observability](./05-non-functional.md#audit-and-observability) — Define audit logging, monitoring, alerting, and observability requirements.
+- [Concurrency and Data Consistency](./05-non-functional.md#concurrency-and-data-consistency)
+  - [40] [Concurrency Control Policies](./05-non-functional.md#concurrency-control-policies) — Define optimistic/pessimistic locking strategies, conflict resolution, and retry semantics for concurrent operations.
+  - [41] [Data Consistency Guarantees](./05-non-functional.md#data-consistency-guarantees) — Define consistency models, transactional boundary requirements, and idempotency guarantees.
 
 ---
 
-## Document Dependencies
+**Canonical Sources**
 
-```mermaid
-graph LR
-    A["Service Overview"] --> B["Actors & Authentication"]
-    B --> C["User Profile"]
-    B --> D["Todo Core Operations"]
-    D --> E["Todo List Management"]
-    D --> F["Edit History System"]
-    D --> G["Trash & Deletion"]
-    C --> H["User Scenarios"]
-    D --> H
-    F --> H
-    G --> H
-    A --> I["Non-Functional Requirements"]
-    B --> I
-    A --> J["Business Rules"]
-    B --> J
-    C --> J
-    D --> J
-```
+Each type of information has one authoritative location. Other files should reference these canonical sources.
+
+| Information Type | Canonical File |
+|------------------|---------------|
+| Domain concepts | [02-domain-model.md](./02-domain-model.md) |
+| Error conditions | [04-business-rules.md](./04-business-rules.md) |
+| Permissions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
+| Actor definitions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
 
 ---
 
-## Quick Reference
+**Glossary**
 
-### User Actor
-- **Name**: `user`
-- **Type**: Authenticated member
-- **Scope**: Complete data privacy - can only access own data
-
-### Key Features
-| Feature | Description |
-|---------|------------|
-| Todo Management | Create, edit, complete, delete todos |
-| Edit History | Full audit trail of all modifications |
-| Trash System | Soft delete with restore capability |
-| Filtering | By completion status (all/complete/incomplete) |
-| Sorting | By creation date, start date, or due date |
+- **User**: email: email address, required, unique, password: hashed password, required, displayName: text, required
+- **Todo**: title: text, required, description: text, optional, startDate: datetime, optional, dueDate: datetime, optional, completed: boolean, default false, deleted: boolean, default false (soft delete flag), createdAt: datetime
+- **TodoHistory**: editedAt: datetime, titleChange: text, optional, descriptionChange: text, optional, startDateChange: datetime, optional, dueDateChange: datetime, optional
 
 ---
 
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+**Constraints**
+
+- File scope: Project summary, scope, glossary, and assumptions
+- Downstream phase: project-setup
+- File scope: Actor definitions, permission matrix, authentication, session, account lifecycle
+- Downstream phase: auth-middleware
+- File scope: Business concepts, relationships, and states from user perspective
+- Downstream phase: database-design
+- File scope: What operations users can perform, use cases, business workflows
+- Downstream phase: interface-design
+- File scope: Data isolation, business rules, filtering/sorting/pagination, error catalog
+- Downstream phase: service-layer
+- File scope: Performance SLOs, security policies, data integrity, storage requirements
+- Downstream phase: test-infra

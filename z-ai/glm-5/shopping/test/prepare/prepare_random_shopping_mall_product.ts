@@ -9,23 +9,18 @@ export function prepare_random_shopping_mall_product(
   input?: DeepPartial<IShoppingMallProduct.ICreate>,
 ): IShoppingMallProduct.ICreate {
   return {
-    base_price:
-      input?.base_price ??
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 3 }),
+    description:
+      input?.description ?? RandomGenerator.content({ paragraphs: 2 }),
+    categoryId:
+      input?.categoryId ?? typia.random<string & tags.Format<"uuid">>(),
+    basePrice:
+      input?.basePrice ??
       typia.random<
         number &
           tags.Type<"uint32"> &
-          tags.Minimum<1000> &
-          tags.Maximum<10000000>
+          tags.ExclusiveMinimum<0> &
+          tags.Maximum<1000000>
       >(),
-    category_id:
-      input?.category_id ?? typia.random<string & tags.Format<"uuid">>(),
-    description:
-      input?.description ??
-      RandomGenerator.content({
-        paragraphs: 2,
-        sentenceMin: 5,
-        sentenceMax: 10,
-      }),
-    name: input?.name ?? RandomGenerator.name(3),
   };
 }

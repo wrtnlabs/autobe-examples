@@ -1,7 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminRequest";
-import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -9,69 +10,70 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_user_join } from "../../../authorize/authorize_user_join";
-import { authorize_user_login } from "../../../authorize/authorize_user_login";
-import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
-import { generate_random_discussion_board_user_admin_requests_create } from "../../../generate/generate_random_discussion_board_user_admin_requests_create";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_discussion_board_member_admin_requests_create } from "../../../generate/generate_random_discussion_board_member_admin_requests_create";
 import { prepare_random_discussion_board_admin_request } from "../../../prepare/prepare_random_discussion_board_admin_request";
 
 /**
- * Test the primary success path where a regular authenticated member
- * successfully submits an administrator privilege request.
+ * Test successful administrator privilege request submission by an authenticated member.
+ *
+ * Scenario: A member who wants to contribute to platform moderation submits an admin request.
+ *
+ * Steps:
+ * 1. Register and authenticate as a new member via /discussionBoard/auth/member/join
+ * 2. Submit POST /discussionBoard/member/admin-requests with a meaningful reason
+ * 3. Verify response contains: id (UUID), reason (matching submitted text), status='pending',
+ *    member object with requester profile, reviewer=null, created_at, updated_at timestamps
+ * 4. Verify status is exactly 'pending' indicating the request is awaiting super administrator review
+ * 5. Verify member association correctly references the authenticated member's profile
+ *
+ * Business validations:
+ * - Request is created with pending status
+ * - Member information is correctly embedded in response
+ * - Reviewer field is null (not yet reviewed)
+ * - Timestamps are recorded accurately
  */
 export async function test_api_admin_request_submission_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create user connection and join
-  const userConnection: api.IConnection = { host: connection.host };
-  const user = await authorize_user_join(userConnection, {
+  // Step 1: Register and authenticate as a new member
+  const memberConnection: api.IConnection = { host: connection.host };
+  const authorizedMember = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       displayName: RandomGenerator.name(),
-      href: "https://example.com",
-      referrer: "https://google.com",
-    },
+      href: "https://example.com/join",
+      referrer: "https://example.com/",
+    } satisfies IDiscussionBoardMember.IJoin,
   });
-  typia.assert(user);
-  // 2. Create admin request with detailed reason (minimum 50 characters)
-  const reasonText = RandomGenerator.content({
-    paragraphs: 2,
-    sentenceMin: 10,
-    sentenceMax: 15,
-  });
+  typia.assert(authorizedMember);
+  // Step 2: Submit admin request with meaningful reason
+  const reason = RandomGenerator.paragraph({ sentences: 5 });
   const adminRequest =
-    await api.functional.discussionBoard.user.adminRequests.create(
-      userConnection,
+    await api.functional.discussionBoard.member.admin_requests.create(
+      memberConnection,
       {
         body: {
-          reason: reasonText,
+          reason: reason,
         } satisfies IDiscussionBoardAdminRequest.ICreate,
       },
     );
   typia.assert(adminRequest);
-  // 3. Validate response - status should be pending
+  // Step 3-5: Validate the response
   TestValidator.equals("status is pending", adminRequest.status, "pending");
-  // 4. Validate reason matches
-  TestValidator.equals("reason matches", adminRequest.reason, reasonText);
-  // 5. Validate requester matches authenticated user
-  TestValidator.equals(
-    "requester id matches user",
-    adminRequest.requester.id,
-    user.id,
-  );
-  TestValidator.equals(
-    "requester display name matches user",
-    adminRequest.requester.displayName,
-    user.displayName,
-  );
-  TestValidator.equals(
-    "requester email matches user",
-    adminRequest.requester.email,
-    user.email,
-  );
-  // 6. Validate review fields are null (not reviewed yet)
+  TestValidator.equals("reason matches", adminRequest.reason, reason);
   TestValidator.equals("reviewer is null", adminRequest.reviewer, null);
-  TestValidator.equals("review_notes is null", adminRequest.review_notes, null);
-  TestValidator.equals("reviewed_at is null", adminRequest.reviewed_at, null);
+  TestValidator.equals(
+    "member id matches",
+    adminRequest.member.id,
+    authorizedMember.id,
+  );
+  TestValidator.equals(
+    "member displayName matches",
+    adminRequest.member.displayName,
+    authorizedMember.displayName,
+  );
 }

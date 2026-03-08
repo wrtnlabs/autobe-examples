@@ -1,0 +1,226 @@
+/// Main todo entity storing task title, description, dates, completion
+/// status, and soft delete flag with user reference.
+///
+/// This table represents individual todo items in the private todo
+/// application. Each todo is owned by a single member user and can be
+/// viewed, edited, completed, and deleted (soft delete to trash) by its
+/// owner only.
+///
+/// Key relationships:
+/// - Belongs to a {@link todo_app_members} via member_id (1:N from user
+/// perspective)
+/// - Has many {@link todo_app_edit_histories} entries when edited
+///
+/// Behavioral notes:
+/// - Soft delete pattern: is_deleted flag marks deleted todos, which are
+/// moved to trash
+/// - Deleted todos have deleted_at timestamp set, others remain null
+/// - is_deleted todos don't appear in normal todo list, only in trash view
+/// - New todos are incomplete (is_complete: false) by default
+/// - Only the todo owner can view, edit, or delete their todos (privacy
+/// isolation)
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link todo_app_members.id}. Each todo belongs to exactly
+  /// one member user.
+  member_id String
+  
+  /// Task title. Required field, cannot be empty or whitespace.
+  title String
+  
+  /// Task description. Optional field that can be left empty.
+  description String?
+  
+  /// Planned start date for the task. Optional, can be left empty.
+  start_date DateTime?
+  
+  /// Deadline date for the task. Optional, can be left empty.
+  due_date DateTime?
+  
+  /// Completion status. false = incomplete (default for new todos), true =
+  /// complete. Simple toggle between two states.
+  is_complete Boolean
+  
+  /// Soft delete flag. false = active todo (visible in normal list), true =
+  /// deleted todo (moved to trash). Defaults to false for new todos.
+  is_deleted Boolean
+  
+  /// Timestamp when this todo was created.
+  created_at DateTime
+  
+  /// Timestamp when this todo was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this todo was soft deleted (moved to trash). Null if not
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, is_complete])
+  @@index([member_id, created_at])
+  @@index([member_id, start_date])
+  @@index([member_id, due_date])
+  @@index([member_id, is_deleted])
+}
+
+/// Edit history tracking every todo modification with previous and new
+/// values for all fields plus audit timestamp.
+///
+/// This is a subsidiary table that is automatically created when a todo is
+/// edited. Each entry records:
+/// - When the edit was made (created_at)
+/// - Which member made the edit (todo_app_member_id)
+/// - What the previous values were for each field
+/// - What the new values are for each field
+///
+/// Users can view the full edit history of any of their todos to see the
+/// complete audit trail of changes. History entries are immutable once
+/// created and are automatically deleted when their parent todo is
+/// permanently deleted.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Todo's {@link todo_app_todos.id} that this edit history entry belongs to.
+  todo_app_todos_id String
+  
+  /// Member's {@link todo_app_members.id} who made this edit.
+  todo_app_member_id String
+  
+  /// When this edit was made.
+  created_at DateTime
+  
+  /// Title value before this edit (if title was changed).
+  previous_title String?
+  
+  /// Title value after this edit (if title was changed).
+  new_title String?
+  
+  /// Description value before this edit (if description was changed).
+  previous_description String?
+  
+  /// Description value after this edit (if description was changed).
+  new_description String?
+  
+  /// Start date value before this edit (if start date was changed).
+  previous_start_date DateTime?
+  
+  /// Start date value after this edit (if start date was changed).
+  new_start_date DateTime?
+  
+  /// Due date value before this edit (if due date was changed).
+  previous_due_date DateTime?
+  
+  /// Due date value after this edit (if due date was changed).
+  new_due_date DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todos_id], references: [id], onDelete: Cascade)
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todos_id])
+  @@index([todo_app_member_id])
+  @@index([created_at])
+}
+
+/// User profile metadata table storing display name and validation
+/// timestamps for business rule enforcement.
+///
+/// This subsidiary table extends the member actor identity with
+/// profile-specific information required for the todo application's business
+/// logic. Each registered member (todo_app_member) has exactly one profile
+/// record that stores their public display name and tracks when it was last
+/// modified to enforce rate limiting policies (maximum one change per day).
+///
+/// The profile is a 1:1 relationship with todo_app_members - the FK has a
+/// unique constraint to ensure one profile per member. Display names are
+/// visible within the user's own todo list (e.g., in edit history) but
+/// cannot be viewed by other users since this is a private todo application.
+///
+/// Key business rules enforced at the application layer:
+/// - Display name must not be empty or contain only whitespace
+/// - Display name can be changed at most once per 24-hour period (validated
+/// using last_display_name_change_at)
+/// - Display name is private - no cross-user visibility
+///
+/// {@link todo_app_members} for the member actor identity.
+/// {@link todo_app_edit_histories} for edit history tracking that references
+/// user display names.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link todo_app_members.id}. Unique 1:1 relationship - each
+  /// member has exactly one profile.
+  todo_app_member_id String
+  
+  /// User's public display name visible in the todo application (e.g., in edit
+  /// history). Cannot be empty or contain only whitespace. Subject to 24-hour
+  /// change rate limiting.
+  display_name String
+  
+  /// Timestamp of the most recent display name change. Used to enforce the
+  /// rate limiting policy of maximum one change per 24-hour period. Nullable
+  /// for newly created profiles before any display name change.
+  last_display_name_change_at DateTime?
+  
+  /// Record creation timestamp. Automatically set by the database when the
+  /// profile is created.
+  created_at DateTime
+  
+  /// Record last update timestamp. Automatically updated by the database on
+  /// every profile modification.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_member_id])
+  @@index([display_name])
+}

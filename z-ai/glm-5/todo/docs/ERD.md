@@ -9,118 +9,166 @@
 
 ```mermaid
 erDiagram
-"todo_app_users" {
+"todo_app_guests" {
+  String id PK
+  String fingerprint "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"todo_app_guest_sessions" {
+  String id PK
+  String todo_app_guest_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at
+}
+"todo_app_members" {
   String id PK
   String email UK
   String password_hash
   String display_name
-  Int failed_attempt_count
-  DateTime locked_until "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"todo_app_user_sessions" {
+"todo_app_member_sessions" {
   String id PK
-  String todo_app_user_id FK
+  String todo_app_member_id FK
+  String token_identifier UK
   String ip
   String href
-  String referrer "nullable"
+  String referrer
   DateTime created_at
+  DateTime updated_at
   DateTime expired_at
 }
-"todo_app_user_sessions" }o--|| "todo_app_users" : user
+"todo_app_guest_sessions" }o--|| "todo_app_guests" : guest
+"todo_app_member_sessions" }o--|| "todo_app_members" : member
 ```
 
-### `todo_app_users`
+### `todo_app_guests`
 
-Authenticated user accounts with email/password credentials and profile
-information.
+Guest actor entity representing unauthenticated visitors before they
+register or log in. Each guest record serves as an identity anchor for
+tracking sessions and collecting analytics. Guests have limited
+capabilities restricted to registration and login functions - they cannot
+access any todo management features or user profiles.
 
-This table serves as the primary identity store for the Todo application.
-Each user has a unique email address for login, a securely hashed
-password, and a display name for personalization. The table tracks
-authentication security through failed login attempt counting and account
-lockout timestamps.
+The guest identity is established via device fingerprint when available,
+enabling detection of returning visitors across sessions. Once a guest
+completes registration, they transition to a member identity and their
+guest record becomes inactive.
 
-Key features:
-- Email-based authentication with unique constraint
-- Bcrypt-hashed passwords (cost factor 12+)
-- Account lockout after 5 consecutive failed attempts (15-minute lockout)
-- Soft delete capability for account recovery
-- Profile display name (defaults to email on registration)
+Related entities: [todo_app_guest_sessions](#todo_app_guest_sessions) tracks session tokens
+and connection metadata for guest visits.
 
-Relationships:
-- Has many [todo_app_user_sessions](#todo_app_user_sessions) for JWT session management
-- Owns all todos in the Todos domain component
-
-Properties as follows:
-
-- `id`: Primary Key. Unique identifier for the user account.
-- `email`
-  > User's email address used for authentication. Must be unique across all
-  > users. Stored in lowercase for case-insensitive comparison. Maximum
-  > length is 254 characters per RFC standards.
-- `password_hash`
-  > Bcrypt-hashed password with cost factor 12 or higher. The original
-  > password must meet complexity requirements: 8-128 characters with at
-  > least one uppercase letter, one lowercase letter, one digit, and one
-  > special character.
-- `display_name`
-  > User's chosen display name for personalization within the application.
-  > Initialized to the email address upon registration. Must be between 1 and
-  > 50 characters and cannot be blank. Not required to be unique across
-  > users.
-- `failed_attempt_count`
-  > Counter tracking consecutive failed login attempts. Account is locked
-  > after 5 failed attempts. Reset to 0 upon successful authentication.
-- `locked_until`
-  > Timestamp indicating when the account lockout expires. Account is locked
-  > for 15 minutes after 5 consecutive failed login attempts. Null when
-  > account is not locked.
-- `created_at`
-  > Timestamp when the user account was created. Set automatically upon
-  > registration.
-- `updated_at`
-  > Timestamp when the user account was last updated. Updated automatically
-  > on any profile or credential changes.
-- `deleted_at`
-  > Timestamp when the user account was soft-deleted. Null for active
-  > accounts. Used for account recovery scenarios.
-
-### `todo_app_user_sessions`
-
-User session tracking table for authentication and login auditing.
-
-Each session record captures a single login event for a {@link
-todo_app_users} actor, storing connection metadata including IP address,
-requested URL, and HTTP referrer header. Sessions have a defined
-expiration time for security purposes.
-
-Sessions are created during user authentication and referenced for audit
-trails and session management. Multiple active sessions may exist per
-user (e.g., logged in on multiple devices).
+Privacy: Guest data is used internally for analytics and rate limiting
+only. No guest data is exposed to other users.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_app_user_id`: The user who owns this session. [todo_app_users.id](#todo_app_users)
-- `ip`
-  > IP address from which the session was created, captured at authentication
-  > time.
-- `href`
-  > Full URL path including query parameters from the authentication request,
-  > used for tracking the login origin.
-- `referrer`
-  > HTTP Referer header value from the login request, indicating the source
-  > page that led to authentication. May be null if not provided by the
-  > client.
-- `created_at`
-  > Timestamp when the session was created, marking the moment of successful
-  > authentication.
-- `expired_at`
-  > Timestamp when the session expires and is no longer valid. Always set to
-  > enforce session lifetime limits for security.
+- `fingerprint`
+  > Device fingerprint for visitor identification. Used to detect returning
+  > visitors across sessions. May be null if fingerprint cannot be determined
+  > or is blocked by the user.
+- `created_at`: Timestamp when the guest record was created.
+- `updated_at`: Timestamp when the guest record was last updated.
+
+### `todo_app_guest_sessions`
+
+Temporary session tokens for guest access prior to authentication.
+
+This table tracks sessions for unauthenticated visitors (guests) before
+they register or login. Each session captures connection metadata
+including IP address, current URL, and referrer for audit and rate
+limiting purposes.
+
+Sessions have a defined lifecycle with expiration to ensure security.
+When a guest registers or logs in, their guest session transitions to a
+member session, and this temporary record may be cleaned up.
+
+Relationship: Each session belongs to exactly one [todo_app_guests](#todo_app_guests)
+actor.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_guest_id`: The guest actor who owns this session. [todo_app_guests.id](#todo_app_guests)
+- `ip`: IP address of the client connection for this guest session.
+- `href`: Current URL path the guest is accessing during this session.
+- `referrer`: Referrer URL indicating where the guest came from before this session.
+- `created_at`: Timestamp when this guest session was created.
+- `expired_at`: Timestamp when this guest session expires for security purposes.
+
+### `todo_app_members`
+
+Registered user accounts with email/password credentials and display name.
+
+This is the primary actor table for authenticated members of the todo
+application. Each member can create, manage, and track their private
+todos. The email serves as the unique authentication identifier, and the
+password_hash stores the securely hashed password.
+
+Members have complete ownership of their todos and associated edit
+histories. When a member account is deleted, all their todos (including
+those in trash) and edit histories are permanently removed.
+
+Related entities:
+- [todo_app_member_sessions](#todo_app_member_sessions) - Session tokens for authenticated access
+- [todo_app_todos](#todo_app_todos) - Private todos owned by the member
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `email`
+  > Email address used as the unique authentication identifier for the member
+  > account. Must be unique across all members.
+- `password_hash`
+  > Securely hashed password for authentication. The password is hashed using
+  > a secure algorithm and never stored in plain text.
+- `display_name`
+  > Display name shown in the member's profile. This is a private todo app so
+  > display names are not shared with other users.
+- `created_at`: Timestamp when the member account was created.
+- `updated_at`
+  > Timestamp when the member account was last updated (e.g., display name
+  > change, password change).
+
+### `todo_app_member_sessions`
+
+JWT session tokens tracking authenticated member sessions with connection
+context and temporal lifecycle management.
+
+Each session represents a single authentication event for a
+todo_app_members actor, storing the JWT token identifier, client
+connection metadata (IP, href, referrer), and timestamps for creation,
+last refresh, and expiration. Sessions enforce the
+single-active-session-per-user policy and are invalidated on logout,
+password change, or account deletion.
+
+Sessions are created upon successful authentication and provide the
+foundation for JWT-based access control. The token_identifier stores the
+JWT 'jti' claim for token validation and revocation support. The
+updated_at field tracks token refresh events, while expired_at defines
+the session's maximum validity period.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `todo_app_member_id`: The member who owns this session. [todo_app_members.id](#todo_app_members)
+- `token_identifier`
+  > Unique JWT token identifier (jti claim) for session validation and
+  > revocation support.
+- `ip`: Client IP address from which the session was initiated.
+- `href`: The URL endpoint accessed when creating the session.
+- `referrer`: HTTP referrer header from the authentication request.
+- `created_at`: Timestamp when the session was created upon successful authentication.
+- `updated_at`
+  > Timestamp when the session was last refreshed, tracking token refresh
+  > events.
+- `expired_at`: Timestamp when the session expires and must be re-authenticated.
 
 ## Todos
 
@@ -128,119 +176,122 @@ Properties as follows:
 erDiagram
 "todo_app_todos" {
   String id PK
-  String user_id FK
+  String todo_app_member_id FK
   String title
   String description "nullable"
   DateTime start_date "nullable"
   DateTime due_date "nullable"
-  Boolean is_completed
-  Boolean is_deleted
+  Boolean completed
+  DateTime deleted_at "nullable"
   DateTime created_at
   DateTime updated_at
 }
 "todo_app_todo_histories" {
   String id PK
-  String todo_app_todo_id FK
-  String title "nullable"
-  String description "nullable"
-  DateTime start_date "nullable"
-  DateTime due_date "nullable"
-  DateTime created_at
+  String todo_id FK
+  DateTime edited_at
+  String title_change "nullable"
+  String description_change "nullable"
+  DateTime start_date_change "nullable"
+  DateTime due_date_change "nullable"
 }
 "todo_app_todo_histories" }o--|| "todo_app_todos" : todo
 ```
 
 ### `todo_app_todos`
 
-Main todo entity storing user task information including title,
-description, dates, completion status, and soft delete flag.
+Main todo task entity for personal task management.
 
-Each todo is owned by exactly one user through the [todo_app_users](#todo_app_users)
-relationship, ensuring complete data isolation between users. Users can
-create, view, edit, complete, and delete their todos through dedicated
-API endpoints.
+Each todo represents a task owned exclusively by a single member,
+ensuring complete privacy and isolation between users. Todos support a
+full lifecycle including active state, completion tracking, soft deletion
+to trash, and permanent removal.
 
-The soft delete pattern (is_deleted flag) allows users to move todos to
-trash and restore them, with permanent deletion removing both the todo
-and its associated edit history entries from {@link
-todo_app_todo_histories}.
+Key features:
+- Title and optional description for task details
+- Optional start and due dates for scheduling
+- Completion status for progress tracking
+- Soft delete via deleted_at for trash and restore functionality
+- Edit history tracked through [todo_app_todo_histories](#todo_app_todo_histories)
+
+Users can only access their own todos. The deleted_at field enables trash
+functionality where deleted todos can be viewed separately and restored.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `user_id`
-  > Reference to the user who owns this todo. Each todo belongs to exactly
-  > one user, and users can only access their own todos. {@link
-  > todo_app_users.id}
+- `todo_app_member_id`
+  > Owner of the todo. References [todo_app_members.id](#todo_app_members). Each todo
+  > belongs exclusively to one member, ensuring complete privacy.
 - `title`
-  > The title of the todo. Required field with maximum length of 200
-  > characters. Leading and trailing whitespace is trimmed before storage.
+  > Title of the todo task. Required field that cannot be empty or contain
+  > only whitespace. Maximum length enforced by validation rules.
 - `description`
-  > Optional detailed description of the todo. Maximum length of 5000
-  > characters. Can be null if not provided. Formatting including line breaks
-  > and whitespace is preserved exactly as provided.
+  > Detailed description of the todo task. Optional field that can be left
+  > empty or cleared. Supports free-form text content.
 - `start_date`
-  > Optional start date for the todo. Stored as date only without time
-  > component. Can be null if not specified.
+  > Scheduled start date for the todo. Optional field indicating when work
+  > should begin. Must be equal to or earlier than due_date when both are
+  > set.
 - `due_date`
-  > Optional due date for the todo. Stored as date only without time
-  > component. Can be null if not specified. No validation constraint with
-  > start_date - start_date can be after due_date.
-- `is_completed`
-  > Completion status of the todo. Binary state: true for complete, false for
-  > incomplete. New todos default to incomplete (false). Toggling completion
-  > status does not create edit history entries.
-- `is_deleted`
-  > Soft delete flag for trash functionality. When true, the todo is in the
-  > trash and excluded from normal todo list queries. When false, the todo is
-  > active and visible in the normal list. Deleting a todo sets this to true
-  > without removing data.
+  > Deadline date for the todo. Optional field for tracking task deadlines.
+  > Must be equal to or later than start_date when both are set.
+- `completed`
+  > Completion status of the todo. Defaults to false (incomplete) on
+  > creation. Users can toggle between complete and incomplete states at any
+  > time.
+- `deleted_at`
+  > Soft delete timestamp. When set, the todo is considered deleted and moved
+  > to trash. Null for active todos. Enables trash and restore functionality.
 - `created_at`
-  > Timestamp when the todo was created. Set automatically on creation and
-  > immutable thereafter.
+  > Timestamp when the todo was created. Recorded automatically on creation
+  > and used for sorting and pagination.
 - `updated_at`
-  > Timestamp when the todo was last modified. Updated automatically on any
-  > edit to title, description, start_date, due_date, is_completed, or
-  > is_deleted.
+  > Timestamp when the todo was last updated (e.g., title change, description
+  > change, completion toggle). Recorded automatically on modification.
 
 ### `todo_app_todo_histories`
 
-Edit history entries tracking all modifications to todos.
+Immutable edit history entries tracking field-level changes to todos for
+audit trail purposes.
 
-Each history entry captures the state changes made during a todo edit
-operation. Records the timestamp of the edit and the new values for any
-changed fields (title, description, start_date, due_date). Fields that
-were not modified during an edit are stored as null to clearly
-distinguish between "not changed" and "changed to empty".
+Each history entry records a single edit operation on a todo, capturing
+the timestamp of the edit and what each field was changed to. Only fields
+that were actually modified during an edit are populated; unchanged
+fields remain null. History entries are automatically created when a user
+edits a todo's title, description, start date, or due date.
 
-History entries are automatically created whenever a user edits their
-todo. Entries are sorted from most recent to oldest for display. When a
-todo is permanently deleted, all associated history entries are cascade
-deleted to maintain referential integrity.
+History entries are permanently associated with their parent {@link
+todo_app_todos} and follow its lifecycle: preserved during
+soft-delete/restore operations, and permanently deleted only when the
+parent todo is permanently deleted from trash. History entries cannot be
+modified or individually deleted by users, maintaining a complete and
+trustworthy audit trail.
 
-This table supports the audit trail functionality, allowing users to
-review the complete modification history of their todos.
+The one-to-many relationship ensures each todo can have zero or more
+history entries, providing a complete timeline of how the todo has
+evolved over time. Entries are typically viewed in reverse chronological
+order (most recent first) based on the edited_at timestamp.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `todo_app_todo_id`
-  > The todo that this history entry belongs to. References {@link
-  > todo_app_todos.id}. When the parent todo is permanently deleted, this
-  > history entry is cascade deleted.
-- `title`
-  > The new title value after the edit. Null indicates the title was not
-  > modified during this edit operation.
-- `description`
-  > The new description value after the edit. Null indicates the description
-  > was not modified during this edit operation.
-- `start_date`
-  > The new start date value after the edit. Null indicates the start date
-  > was not modified during this edit operation.
-- `due_date`
-  > The new due date value after the edit. Null indicates the due date was
-  > not modified during this edit operation.
-- `created_at`
-  > Timestamp when this history entry was created, representing when the edit
-  > operation occurred. Used for sorting history entries from most recent to
-  > oldest.
+- `todo_id`: The parent todo that was edited. [todo_app_todos.id](#todo_app_todos).
+- `edited_at`
+  > The exact timestamp when the edit operation occurred. Used for
+  > chronological ordering of edit history with most recent entries displayed
+  > first.
+- `title_change`
+  > The new title value after the edit, if the title field was modified
+  > during this edit operation. Null if the title was not changed.
+- `description_change`
+  > The new description value after the edit, if the description field was
+  > modified during this edit operation. Null if the description was not
+  > changed.
+- `start_date_change`
+  > The new start date value after the edit, if the start date field was
+  > modified during this edit operation. Null if the start date was not
+  > changed.
+- `due_date_change`
+  > The new due date value after the edit, if the due date field was modified
+  > during this edit operation. Null if the due date was not changed.

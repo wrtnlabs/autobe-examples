@@ -1,5 +1,5 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
+import { DiscussionBoardGuestAtSummaryTransformer } from "./DiscussionBoardGuestAtSummaryTransformer";
 import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
 
 export namespace DiscussionBoardArticleAtSummaryTransformer {
@@ -19,16 +19,11 @@ export namespace DiscussionBoardArticleAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        content: true,
         created_at: true,
         updated_at: true,
-        author: DiscussionBoardMemberAtSummaryTransformer.select(),
+        deleted_at: true,
+        author: DiscussionBoardGuestAtSummaryTransformer.select(),
         section: DiscussionBoardSectionAtSummaryTransformer.select(),
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
       },
     } satisfies Prisma.discussion_board_articlesFindManyArgs;
   }
@@ -38,16 +33,15 @@ export namespace DiscussionBoardArticleAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
-      content: input.content,
-      author: await DiscussionBoardMemberAtSummaryTransformer.transform(
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      author: await DiscussionBoardGuestAtSummaryTransformer.transform(
         input.author,
       ),
       section: await DiscussionBoardSectionAtSummaryTransformer.transform(
         input.section,
       ),
-      commentCount: input._count.comments,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
     };
   }
 }

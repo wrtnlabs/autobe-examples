@@ -1,11 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallProductVariantAtOptionTransformer } from "./ShoppingMallProductVariantAtOptionTransformer";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 
 export namespace ShoppingMallProductVariantAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_product_variantsGetPayload<
@@ -16,33 +19,36 @@ export namespace ShoppingMallProductVariantAtSummaryTransformer {
       select: {
         id: true,
         sku_code: true,
+        option_values: true,
         price: true,
-        options: ShoppingMallProductVariantAtOptionTransformer.select(),
-        inventoryHistories: {
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        product: ShoppingMallProductAtSummaryTransformer.select(),
+        inventoryRecords: {
           select: {
             quantity_change: true,
           },
-        } satisfies Prisma.shopping_mall_product_inventory_historiesFindManyArgs,
+        } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductVariant.ISummary> {
-    const stock_quantity: number = input.inventoryHistories.reduce(
-      (sum, history) => sum + history.quantity_change,
-      0,
-    );
     return {
       id: input.id,
-      sku_code: input.sku_code,
-      price: input.price,
-      options: await ArrayUtil.asyncMap(
-        input.options,
-        ShoppingMallProductVariantAtOptionTransformer.transform,
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
       ),
-      stock_quantity: stock_quantity,
-      in_stock: stock_quantity > 0,
+      sku_code: input.sku_code,
+      option_values: JSON.parse(input.option_values),
+      price: input.price ?? undefined,
+      stock_quantity: input.inventoryRecords.reduce(
+        (sum, record) => sum + record.quantity_change,
+        0,
+      ),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

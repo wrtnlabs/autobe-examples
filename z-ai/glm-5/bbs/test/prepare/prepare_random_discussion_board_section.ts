@@ -9,13 +9,17 @@ export function prepare_random_discussion_board_section(
   input?: DeepPartial<IDiscussionBoardSection.ICreate>,
 ): IDiscussionBoardSection.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(2),
+    name:
+      input?.name ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 3, wordMax: 8 }),
     description:
       input?.description ??
       RandomGenerator.content({
         paragraphs: 2,
         sentenceMin: 3,
-        sentenceMax: 8,
+        sentenceMax: 5,
+        wordMin: 3,
+        wordMax: 8,
       }),
   };
 }

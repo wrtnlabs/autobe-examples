@@ -13,30 +13,30 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardSuperAdminSectionsSectionId(props: {
   superAdmin: SuperadminPayload;
-  sectionId: string;
+  sectionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const sectionId = props.sectionId as string & tags.Format<"uuid">;
-  const section =
-    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
-      where: {
-        id: sectionId,
-      },
-    });
+  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
+    where: { id: props.sectionId },
+    select: { id: true, name: true },
+  });
+  if (section === null) {
+    throw new HttpException("Section not found", 404);
+  }
   const articleCount = await MyGlobal.prisma.discussion_board_articles.count({
     where: {
-      section_id: sectionId,
+      section_id: props.sectionId,
       deleted_at: null,
     },
   });
   if (articleCount > 0) {
     throw new HttpException(
-      "Section contains articles. Move or delete articles first.",
-      409,
+      `Cannot delete section with ${articleCount} articles. Move or delete articles first.`,
+      400,
     );
   }
-  await MyGlobal.prisma.discussion_board_sections.delete({
-    where: {
-      id: sectionId,
-    },
+  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  await MyGlobal.prisma.discussion_board_sections.update({
+    where: { id: props.sectionId },
+    data: { deleted_at: now },
   });
 }

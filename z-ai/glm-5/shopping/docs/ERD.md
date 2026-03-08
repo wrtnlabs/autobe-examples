@@ -5,11 +5,12 @@
 - [Actors](#actors)
 - [Categories](#categories)
 - [Products](#products)
-- [Shopping](#shopping)
+- [Inventory](#inventory)
+- [Cart](#cart)
+- [Wishlist](#wishlist)
 - [Orders](#orders)
-- [Shipments](#shipments)
-- [Cancellations](#cancellations)
 - [Reviews](#reviews)
+- [Addresses](#addresses)
 
 ## Actors
 
@@ -21,19 +22,17 @@ erDiagram
   String password_hash
   String display_name "nullable"
   String phone_number "nullable"
+  Boolean banned
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_mall_customer_sessions" {
   String id PK
-  String shopping_mall_customer_id FK
-  String access_token
-  String refresh_token UK
-  String ip
+  String customer_id FK
+  String ip "nullable"
   String href "nullable"
   String referrer "nullable"
-  String user_agent "nullable"
   DateTime created_at
   DateTime expired_at
 }
@@ -51,444 +50,424 @@ erDiagram
   String password_hash
   String shop_name
   String shop_description "nullable"
-  String(80000) logo_url "nullable"
+  String(80000) logo_image "nullable"
   String approval_status
   String rejection_reason "nullable"
+  Boolean suspended
+  Boolean banned
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "shopping_mall_seller_sessions" {
   String id PK
-  String shopping_mall_seller_id FK
-  String access_token UK
-  String refresh_token UK
-  String ip
-  String href
-  String referrer
-  String device_name "nullable"
-  DateTime created_at
-  DateTime expired_at
-}
-"shopping_mall_seller_password_resets" {
-  String id PK
   String seller_id FK
-  String token
-  DateTime created_at
-  DateTime expired_at
-}
-"shopping_mall_admins" {
-  String id PK
-  String email UK
-  String password_hash
-  String grade
-  String name
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_admin_sessions" {
-  String id PK
-  String shopping_mall_admin_id FK
   String ip
   String href
   String referrer "nullable"
   DateTime created_at
   DateTime expired_at
 }
-"shopping_mall_admin_password_resets" {
+"shopping_mall_seller_password_resets" {
   String id PK
-  String shopping_mall_admin_id FK
-  String code UK
+  String seller_id FK
+  String token UK
   DateTime created_at
   DateTime expired_at
 }
-"shopping_mall_admin_audit_logs" {
+"shopping_mall_administrators" {
   String id PK
-  String shopping_mall_admin_id FK
-  String action
-  String target_type
-  String target_id "nullable"
-  String details "nullable"
-  String ip
+  String email UK
+  String password_hash
+  String grade
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_administrator_sessions" {
+  String id PK
+  String administrator_id FK
+  String ip
+  String href
+  String referrer "nullable"
+  DateTime created_at
+  DateTime expired_at
+}
+"shopping_mall_administrator_password_resets" {
+  String id PK
+  String shopping_mall_administrator_id FK
+  String code UK
+  DateTime expires_at
+  DateTime created_at
+  DateTime used_at "nullable"
 }
 "shopping_mall_customer_sessions" }o--|| "shopping_mall_customers" : customer
 "shopping_mall_customer_password_resets" }o--|| "shopping_mall_customers" : customer
 "shopping_mall_seller_sessions" }o--|| "shopping_mall_sellers" : seller
 "shopping_mall_seller_password_resets" }o--|| "shopping_mall_sellers" : seller
-"shopping_mall_admin_sessions" }o--|| "shopping_mall_admins" : admin
-"shopping_mall_admin_password_resets" }o--|| "shopping_mall_admins" : admin
-"shopping_mall_admin_audit_logs" }o--|| "shopping_mall_admins" : admin
+"shopping_mall_administrator_sessions" }o--|| "shopping_mall_administrators" : administrator
+"shopping_mall_administrator_password_resets" }o--|| "shopping_mall_administrators" : administrator
 ```
 
 ### `shopping_mall_customers`
 
-Customer accounts for the e-commerce platform.
+Registered customer accounts with email/password authentication, profile
+information, and account status.
 
-Represents registered buyers who can browse products, manage their
-wishlist and cart, place orders, write reviews, and manage their profile
-and addresses. Customers require authentication to access any platform
-features.
+Customers are the primary shoppers in the platform who browse products,
+manage carts, place orders, write reviews, and manage wishlists. Each
+customer has a unique email address for authentication and can maintain
+profile information including display name and phone number.
 
-**Account Management:**
-- Registration requires unique email and password
-- Profile contains optional display name and phone number
-- Supports soft deletion where orders and reviews are preserved for legal
-compliance
-- When deleted, reviews display as "deleted user"
+**Key Business Rules:**
+- Email must be unique across all customer accounts (case-insensitive)
+- Password is stored as secure hash, never in plaintext
+- Account deletion is soft delete; orders and reviews are preserved with
+'deleted user' attribution
+- Banned customers cannot log in to the platform
 
-**Related Entities:**
-- [shopping_mall_customer_sessions](#shopping_mall_customer_sessions) - Authentication sessions
-- [shopping_mall_customer_password_resets](#shopping_mall_customer_password_resets) - Password recovery tokens
-
-**Data Preservation:**
-When a customer deletes their account:
-- Profile information (display_name, phone_number) is deleted
-- Orders are preserved for seller records
-- Reviews are preserved and shown as "deleted user"
+**Relationships:**
+- Has many [shopping_mall_addresses](#shopping_mall_addresses) for shipping destinations
+- Has one [shopping_mall_carts](#shopping_mall_carts) for shopping cart
+- Has many [shopping_mall_wishlists](#shopping_mall_wishlists) for saved products
+- Has many [shopping_mall_orders](#shopping_mall_orders) for purchase history
+- Has many [shopping_mall_reviews](#shopping_mall_reviews) for product feedback
+- Has many [shopping_mall_customer_sessions](#shopping_mall_customer_sessions) for authentication
+sessions
+- Has many [shopping_mall_customer_password_resets](#shopping_mall_customer_password_resets) for password
+recovery
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Customer's email address used for authentication and communication. Must
-  > be unique across all customer accounts.
+  > Customer's email address used for authentication. Must be unique across
+  > all customer accounts. Case-insensitive comparison for uniqueness
+  > validation.
 - `password_hash`
-  > Hashed password for authentication. Stored using bcrypt or similar strong
-  > encryption algorithm.
+  > Securely hashed password for authentication. Never stored in plaintext.
+  > Uses one-way hashing algorithm for security.
 - `display_name`
-  > Customer's display name shown in reviews and order communications.
-  > Optional profile information that is deleted when account is
-  > soft-deleted.
+  > Customer's display name shown in reviews and public interactions. Maximum
+  > 50 characters. Can be edited by customer at any time without approval.
 - `phone_number`
-  > Customer's phone number for delivery contacts and notifications. Optional
-  > profile information that is deleted when account is soft-deleted.
-- `created_at`: Timestamp when the customer account was created.
-- `updated_at`: Timestamp when the customer account was last updated.
+  > Customer's phone number for contact purposes. Can be edited by customer
+  > at any time without approval.
+- `banned`
+  > Flag indicating whether customer account is banned by administrator.
+  > Banned customers cannot log in. Default is false.
+- `created_at`: Timestamp when customer account was created.
+- `updated_at`: Timestamp when customer account was last updated.
 - `deleted_at`
-  > Timestamp when the customer account was soft-deleted. When set, the
-  > account is considered deleted but orders and reviews are preserved for
-  > legal compliance. Null means the account is active.
+  > Timestamp when customer account was deleted (soft delete). Null if
+  > account is active. When deleted, orders and reviews are preserved with
+  > 'deleted user' attribution.
 
 ### `shopping_mall_customer_sessions`
 
-JWT session tokens for customer authentication supporting multi-device
-login with device tracking. Each session stores access and refresh tokens
-with expiration timestamps, connection metadata (IP, href, referrer), and
-user agent for device identification. Sessions are created on login and
-invalidated on logout or token expiration. Enables secure token refresh,
-multi-device session management, and session revocation capabilities.
+Customer authentication session records tracking login events with
+connection metadata. Each session represents a single authenticated login
+instance with IP address, request URL, and referrer information captured
+for security auditing. Sessions have expiration timestamps and are
+append-only records that cannot be modified after creation. Used for
+session management, security monitoring, and audit trail maintenance.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_customer_id`: Customer who owns this session. [shopping_mall_customers.id](#shopping_mall_customers)
-- `access_token`
-  > JWT access token for API authentication. Short-lived token (30-minute
-  > expiration) used for authenticating API requests.
-- `refresh_token`
-  > JWT refresh token for obtaining new access tokens. Long-lived token
-  > (14-day expiration) used to rotate access tokens without requiring
-  > re-login.
+- `customer_id`: Authenticated customer's [shopping_mall_customers.id](#shopping_mall_customers).
 - `ip`
-  > IP address from which the customer logged in. Used for security auditing
-  > and suspicious activity detection.
+  > IP address of the client that initiated the login session. Used for
+  > security auditing and anomaly detection.
 - `href`
-  > URL or page where the login was initiated. Captures the application
-  > context at login time.
+  > Request URL or endpoint that initiated the session. Captures the full URL
+  > including path and query parameters for session context.
 - `referrer`
-  > HTTP referrer header from the login request. Used for tracking login
-  > source and security analysis.
-- `user_agent`
-  > Browser user agent string for device identification. Enables multi-device
-  > session management and device recognition for security purposes.
+  > HTTP Referrer header value from the login request. Identifies the source
+  > page or application that directed to the authentication flow.
 - `created_at`
   > Timestamp when the session was created (login time). Used for session
-  > listing and audit trail.
+  > lifecycle management and audit trails.
 - `expired_at`
-  > Expiration timestamp for the refresh token. Session becomes invalid after
-  > this time and requires re-authentication.
+  > Timestamp when the session expires. Required for security to enforce
+  > session timeouts. Sessions are considered invalid after this timestamp.
 
 ### `shopping_mall_customer_password_resets`
 
-Password reset tokens for customer email-based password recovery.
-Contains unique token (hashed), expiration timestamp (typically 1 hour),
-and usage tracking. Automatically invalidated after use or expiration.
-When a customer successfully resets their password, all existing sessions
-are invalidated for security.
+Password reset tokens for customer account recovery with expiration
+tracking.
+
+This table stores secure password reset tokens that enable customers to
+recover access to their accounts when they forget their passwords. Each
+token has an expiration time and tracks whether it has been used,
+ensuring security and preventing token reuse.
+
+The token field stores a cryptographically secure hash of the reset
+token, not the plaintext token itself. This ensures that even if the
+database is compromised, attackers cannot use the stored values to reset
+passwords.
+
+Relationships:
+- Belongs to [shopping_mall_customers](#shopping_mall_customers) (many password resets per
+customer)
+- Referenced during the password reset verification flow
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_customer_id`
-  > The customer who requested password reset. {@link
+  > The customer requesting the password reset. {@link
   > shopping_mall_customers.id}.
 - `token`
-  > Unique password reset token (hashed) sent to customer's registered email
-  > address. Used to verify identity and authorize password change. Must be
-  > unique across all reset requests.
+  > Hashed password reset token used for verification during the account
+  > recovery process. This is a cryptographically secure hash, not the
+  > plaintext token sent to the customer's email.
 - `expires_at`
-  > Expiration timestamp for the reset token. Tokens typically expire after 1
-  > hour for security. Expired tokens cannot be used for password reset.
+  > Expiration timestamp for the password reset token. Tokens become invalid
+  > after this time for security purposes. Typically set to 1-24 hours from
+  > creation.
 - `used_at`
-  > Timestamp when the reset token was used. Null if not yet used. Used to
-  > prevent token reuse and track successful password resets.
+  > Timestamp when the token was successfully used to reset the password.
+  > Null if the token has not been used yet. Once set, the token is
+  > considered consumed and cannot be reused.
 - `created_at`
-  > Timestamp when the reset request was created. Used for audit trail and
-  > cleanup of old tokens.
+  > Timestamp when the password reset token was created. Used for audit
+  > trails and to identify the most recent reset request for a customer.
 
 ### `shopping_mall_sellers`
 
-Registered seller accounts with email/password credentials for
-authentication, shop profile information, and approval status management.
+Registered seller accounts with email/password authentication, shop
+profile information, approval workflow status, and account standing.
 
-Sellers operate as merchants on the platform after administrator
-approval. Each seller maintains a shop profile (name, description, logo)
-visible to customers. The approval workflow transitions seller accounts
-through pending → approved/rejected/suspended states.
+Sellers are authenticated actors who create and manage products, handle
+inventory, process shipments, and respond to cancellation/refund
+requests. They require administrator approval before they can sell on the
+platform.
 
-Account deletion is conditional: sellers cannot delete their account
-while pending orders or cancellation/refund requests exist. Upon
-deletion, products and inventory are removed while order history
-preserves the shop name for legal compliance.
+**Authentication**: Sellers log in with email and password. Password
+changes are supported through the password reset flow.
 
-Related sessions are tracked in [shopping_mall_seller_sessions](#shopping_mall_seller_sessions) and
-password resets in [shopping_mall_seller_password_resets](#shopping_mall_seller_password_resets).
+**Approval Workflow**: New seller registrations start with
+approval_status='pending'. Administrators review and approve or reject
+applications. Rejected sellers can view the rejection reason and submit
+new registration requests.
+
+**Account Standing**: Sellers can be suspended (temporary, products
+hidden but can process existing orders) or banned (cannot log in) by
+administrators. Suspended sellers cannot create new products but can
+fulfill existing orders.
+
+**Account Deletion**: Sellers can delete their account only if they have
+no pending order items (paid or shipped status) and no pending
+cancellation/refund requests. Upon deletion, their products are removed
+from listings, but order history and snapshots are preserved for legal
+and dispute resolution purposes.
+
+**Relationships**: Has many [shopping_mall_products](#shopping_mall_products), has many
+[shopping_mall_seller_sessions](#shopping_mall_seller_sessions), has many {@link
+shopping_mall_seller_password_resets}.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address used for seller login and authentication. Must be
-  > unique across all seller accounts.
+  > Seller's email address used for authentication. Must be unique across all
+  > seller accounts. Used for login identification.
 - `password_hash`
-  > Bcrypt-hashed password for secure authentication. Stored as hashed value,
-  > never in plain text.
+  > Hashed password for authentication. Stored using secure hashing algorithm
+  > (bcrypt/argon2). Never stored in plaintext.
 - `shop_name`
-  > Display name of the seller's shop visible to customers in product
-  > listings and seller profile. Also preserved in order history after
-  > account deletion.
+  > Display name of the seller's shop. Visible to customers on product
+  > listings and order details. Required for shop profile.
 - `shop_description`
-  > Optional detailed description of the seller's shop, business, or
-  > products. Displayed on seller profile page.
-- `logo_url`
-  > URL to the seller's shop logo image. Used in seller profile and product
-  > listings for brand visibility.
+  > Detailed description of the seller's shop. Optional field for providing
+  > additional shop information to customers.
+- `logo_image`
+  > URL to the seller's shop logo image. Displayed on product listings and
+  > seller profile page. Optional field.
 - `approval_status`
-  > Current approval status of the seller account. Valid values: 'pending'
-  > (awaiting admin review), 'approved' (active seller), 'rejected' (denied
-  > by admin), 'suspended' (temporarily blocked by admin).
+  > Current approval status of the seller account. Values: 'pending'
+  > (awaiting admin review), 'approved' (can sell products), 'rejected'
+  > (cannot sell, can reapply). New registrations default to 'pending'.
 - `rejection_reason`
   > Reason provided by administrator when rejecting a seller registration.
-  > Only populated when approval_status is 'rejected'.
-- `created_at`: Timestamp when the seller account was created (registration submitted).
-- `updated_at`: Timestamp when the seller account was last modified.
+  > Only populated when approval_status is 'rejected'. Visible to the
+  > rejected seller for improvement guidance.
+- `suspended`
+  > Whether the seller account is suspended by an administrator. Suspended
+  > sellers cannot create or edit products, but their existing products are
+  > hidden and they can still process existing orders. Defaults to false.
+- `banned`
+  > Whether the seller account is banned by an administrator. Banned sellers
+  > cannot log in to the platform. Used for severe policy violations.
+  > Defaults to false.
+- `created_at`
+  > Timestamp when the seller account was created. Recorded automatically on
+  > registration.
+- `updated_at`
+  > Timestamp when the seller account was last updated. Automatically updated
+  > on profile changes.
 - `deleted_at`
-  > Timestamp when the seller account was soft-deleted. Null for active
-  > accounts. Used for account deletion which is conditional on having no
-  > pending orders or requests.
+  > Timestamp when the seller account was soft-deleted. Null if account is
+  > active. Upon deletion, products are removed but order history and
+  > snapshots are preserved for legal purposes.
 
 ### `shopping_mall_seller_sessions`
 
-JWT session tokens for seller authentication supporting multi-device
-sessions with device tracking. Each session record contains access and
-refresh tokens, device information, and connection metadata (IP, href,
-referrer). Sessions are created upon successful seller login and expire
-based on token lifecycle. Supports concurrent sessions across multiple
-devices with individual session management.
+JWT session tokens for seller authentication tracking login sessions with
+connection context. Each session represents a single authentication event
+for a seller account, storing the connection metadata (IP, URLs) and
+temporal boundaries. Sessions support concurrent logins across multiple
+devices with a maximum duration of 24 hours. Sessions are automatically
+invalidated when the seller account is banned, suspended, or when
+password is changed, and can be manually invalidated on explicit logout.
 
 Properties as follows:
 
-- `id`: Primary Key.
-- `shopping_mall_seller_id`: The seller who owns this session. [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `access_token`
-  > JWT access token for seller authentication. Short-lived token (15-30
-  > minutes expiration) used for API requests.
-- `refresh_token`
-  > JWT refresh token for obtaining new access tokens. Long-lived token (7-30
-  > days expiration) used to refresh authentication without re-login.
+- `id`
+  > Primary Key. Unique session identifier used as the 'sid' claim in JWT
+  > tokens for seller authentication sessions.
+- `seller_id`
+  > Reference to the authenticated seller's account. Belonged seller's {@link
+  > shopping_mall_sellers.id}. This session is valid only for this specific
+  > seller account.
 - `ip`
-  > IP address from which the seller logged in. Used for security auditing
-  > and session tracking.
+  > IP address of the client at the time of session creation. Used for
+  > security auditing and session tracking to identify the source of
+  > authentication requests.
 - `href`
-  > Full URL path of the page from which login was initiated. Used for
-  > security tracking and session context.
+  > The URL (href) where the authentication was initiated. Captures the
+  > landing page or entry point for the seller's login session.
 - `referrer`
-  > HTTP referrer header value from the login request. Used for security
-  > auditing and session origin tracking.
-- `device_name`
-  > Human-readable name or identifier of the device used for login. Enables
-  > seller to identify and manage their active sessions across devices.
-- `created_at`: Timestamp when the session was created (seller logged in).
+  > HTTP referrer header value from the authentication request. Identifies
+  > the referring page that led to the login page for security tracking.
+- `created_at`
+  > Timestamp when this session was created. This is the login time and is
+  > recorded when authentication succeeds. Used for session duration tracking
+  > and audit purposes.
 - `expired_at`
-  > Timestamp when the session expires. Based on refresh token expiration
-  > time. Session is invalid after this time.
+  > Timestamp when this session expires. Maximum session duration is 24 hours
+  > from creation. Sessions must be invalidated after this time regardless of
+  > activity. NOT NULL by default for security enforcement.
 
 ### `shopping_mall_seller_password_resets`
 
-Password reset tokens for seller accounts enabling email-based password
-recovery. Each record contains a hashed reset token linked to a specific
-seller, with creation and expiration timestamps for security validation.
-Tokens are automatically invalidated after expiration (typically 15-30
-minutes) and can be used only once for password reset verification.
-Supports the seller authentication workflow as a subsidiary entity to the
-[shopping_mall_sellers](#shopping_mall_sellers) actor table.
+Password reset tokens for seller account recovery. Stores time-limited,
+unique tokens that allow sellers to securely reset their passwords.
+Tokens are created when a seller requests a password reset and expire
+after a defined period for security. Each token is single-use and
+invalidated after password change or expiration.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `seller_id`
-  > Reference to the seller account requesting password reset. {@link
-  > shopping_mall_sellers.id}
+  > The seller account requesting the password reset. References {@link
+  > shopping_mall_sellers.id}. A seller can have multiple password reset
+  > tokens (e.g., if they request multiple resets before using one).
 - `token`
-  > Hashed password reset token used for verification. Contains a securely
-  > hashed random code that is sent to the seller's email address. Must be
-  > verified before allowing password reset completion.
+  > Unique, cryptographically secure reset token used to authenticate
+  > password reset requests. Must be single-use and invalidated after
+  > password change or expiration.
 - `created_at`
-  > Timestamp when the password reset request was created. Used for audit
-  > trail and rate limiting purposes.
+  > Timestamp when the password reset token was created. Used for audit trail
+  > and token age validation.
 - `expired_at`
-  > Expiration timestamp for the reset token. Tokens become invalid after
-  > this time for security purposes. Typically set to 15-30 minutes after
-  > creation.
+  > Timestamp when the reset token expires. Tokens past this time are invalid
+  > and must not be accepted. Enforces time-limited access for security.
 
-### `shopping_mall_admins`
+### `shopping_mall_administrators`
 
-Administrator accounts with email/password credentials and grade level
-(regular/super) for elevated platform management permissions.
-
-Administrators oversee platform operations including seller approvals,
-category management, product oversight, order management, and user
-moderation. Super administrators have additional capabilities to manage
-other administrator accounts and cannot demote themselves.
-
-Related entities:
-- [shopping_mall_admin_sessions](#shopping_mall_admin_sessions) - Active login sessions for this
-administrator
-- [shopping_mall_admin_password_resets](#shopping_mall_admin_password_resets) - Password recovery tokens
-- [shopping_mall_admin_audit_logs](#shopping_mall_admin_audit_logs) - Administrative action audit trail
+Administrator accounts with email/password authentication and grade-based
+privilege management. Supports two grades: regular administrator (seller
+approval, category management, user banning, product oversight, forced
+order operations) and super administrator (all regular privileges plus
+administrator request review, promotion/demotion authority).
+Administrators are created through approval of AdministratorRequest
+submissions by super administrators. Account separation is maintained
+from customer/seller accounts when users hold multiple roles.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Administrator's email address used for authentication. Must be unique
-  > across all administrator accounts.
+  > Administrator email address used for authentication. Must be unique
+  > across all administrator accounts. Used as login identifier.
 - `password_hash`
-  > Bcrypt-hashed password for secure authentication. Never stored in plain
-  > text.
+  > Hashed password for administrator authentication. Must meet platform
+  > password complexity requirements (minimum length, uppercase, lowercase,
+  > numeric digit).
 - `grade`
-  > Administrator permission level. Valid values: "regular" (standard admin
-  > capabilities) or "super" (can manage other admins, cannot be demoted by
-  > self).
-- `name`
-  > Display name for the administrator. Used in admin panel and audit logs
-  > for identification.
-- `created_at`: Timestamp when the administrator account was created.
-- `updated_at`: Timestamp when the administrator account was last modified.
+  > Administrator privilege level. Valid values: 'regular' (standard
+  > administrative functions), 'super' (elevated privileges including
+  > administrator request approval, promotion/demotion authority). Super
+  > administrators cannot demote themselves. At least one super administrator
+  > must exist in the system.
+- `created_at`
+  > Timestamp when the administrator account was created. Set automatically
+  > on account creation.
+- `updated_at`
+  > Timestamp when the administrator account was last modified. Updated
+  > automatically on profile changes.
 - `deleted_at`
   > Timestamp when the administrator account was soft-deleted. Null for
-  > active accounts.
+  > active accounts. Preserves account record for audit trail when removed.
 
-### `shopping_mall_admin_sessions`
+### `shopping_mall_administrator_sessions`
 
-JWT session tokens for administrator authentication tracking login
-sessions with connection context. Supports multi-device sessions with
-device tracking via IP address, URL accessed, and referrer information.
-Sessions have expiration timestamps for security. Links to
-shopping_mall_admins actor for authentication flow.
+Administrator login session records tracking authentication sessions with
+connection metadata. Each session represents a single administrator login
+with IP address, requested URL path, referrer information, and expiration
+timestamp. Sessions are created upon successful authentication and used
+for JWT token validation and session management. Sessions support audit
+trails for administrator access patterns and can be invalidated on logout
+or security events. Related to [shopping_mall_administrators](#shopping_mall_administrators) via
+the administrator relationship.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_admin_id`: Administrator's [shopping_mall_admins.id](#shopping_mall_admins).
-- `ip`: IP address from which the administrator logged in.
+- `administrator_id`
+  > The administrator who owns this session. {@link
+  > shopping_mall_administrators.id}
+- `ip`: Client IP address from which the administrator logged in.
 - `href`
-  > URL accessed during login, capturing the entry point of the administrator
-  > session.
+  > URL path that the administrator accessed during authentication. Used for
+  > session tracking and redirect purposes.
 - `referrer`
-  > HTTP referrer header from the login request, indicating the source page
-  > that referred to the login page.
-- `created_at`: Timestamp when the session was created (login time).
+  > HTTP Referrer header indicating the previous page from which the
+  > administrator navigated to the login page. Optional as some browsers may
+  > not send this header.
+- `created_at`: Timestamp when the session was created upon successful authentication.
 - `expired_at`
-  > Timestamp when the session expires. Required for security - all sessions
-  > must have explicit expiration.
+  > Timestamp when the session expires. Used for JWT token validation and
+  > session timeout enforcement. Always set to enforce security limits.
 
-### `shopping_mall_admin_password_resets`
+### `shopping_mall_administrator_password_resets`
 
-Password reset tokens for administrator email-based password recovery.
-
-When an administrator requests a password reset, the system generates a
-unique reset code
-and stores it in this table with an expiration time. The administrator
-receives the code
-via email and can use it to reset their password within the validity period.
-
-Each reset token is linked to a specific administrator account and
-becomes invalid after
-expiration or after being used. Multiple reset tokens can exist for the
-same administrator
-(e.g., if they request multiple resets), but typically only the most
-recent one is valid.
+Password reset tokens for administrator account recovery with expiration
+tracking. Each token is uniquely identified by a code and links to a
+specific administrator account. Tokens expire after a defined period for
+security, and usage is tracked through the used_at timestamp. This entity
+supports the administrator password reset workflow and is managed through
+administrator-related operations.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_admin_id`
-  > The administrator account this password reset token belongs to. {@link
-  > shopping_mall_admins.id}
+- `shopping_mall_administrator_id`
+  > Administrator account requesting password reset. {@link
+  > shopping_mall_administrators.id}.
 - `code`
-  > Unique password reset code/token sent to the administrator's email. Used
-  > to verify the reset request authenticity.
-- `created_at`: Timestamp when the password reset request was created.
-- `expired_at`
-  > Timestamp when the reset token expires. After this time, the token is no
-  > longer valid for password reset.
-
-### `shopping_mall_admin_audit_logs`
-
-Audit trail records of all administrative actions performed on the
-platform for security compliance, accountability, and dispute resolution.
-
-Each record captures which administrator performed what action, on which
-target entity, at what time, from which IP address. Supports
-investigation of administrative actions including seller approvals,
-product removals, user bans, force-cancellations, and configuration
-changes.
-
-References the administrator who performed the action via {@link
-shopping_mall_admins.id}. This table is append-only - records are never
-modified or deleted to maintain complete audit history.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_admin_id`
-  > The administrator who performed this action. References {@link
-  > shopping_mall_admins.id}.
-- `action`
-  > Type of administrative action performed. Examples: 'seller_approve',
-  > 'seller_reject', 'seller_suspend', 'product_delete',
-  > 'order_force_cancel', 'order_force_refund', 'customer_ban',
-  > 'customer_unban', 'category_create', 'category_update',
-  > 'category_delete', 'admin_promote', 'admin_demote'.
-- `target_type`
-  > Category of the entity that was acted upon. Examples: 'seller',
-  > 'customer', 'product', 'order', 'category', 'admin'. Used in conjunction
-  > with target_id to identify the affected entity.
-- `target_id`
-  > UUID of the specific entity that was acted upon. References the ID of the
-  > entity identified by target_type. Can be null for actions that don't
-  > target a specific entity (e.g., system configuration changes).
-- `details`
-  > Additional contextual details about the action in JSON format. Stores
-  > action-specific information such as rejection reasons, ban durations,
-  > refund amounts, or other relevant metadata that varies by action type.
-- `ip`
-  > IP address from which the administrative action was performed. Used for
-  > security auditing and detecting suspicious activity patterns.
-- `created_at`: Timestamp when the administrative action was performed.
+  > Unique password reset token code used for verification during the reset
+  > process. Must be cryptographically secure and single-use.
+- `expires_at`
+  > Expiration timestamp for the reset token. Tokens cannot be used after
+  > this time for security reasons.
+- `created_at`: Timestamp when the password reset token was created.
+- `used_at`
+  > Timestamp when the reset token was used, if applicable. Null if the token
+  > has not been used yet or expired unused.
 
 ## Categories
 
@@ -497,7 +476,7 @@ erDiagram
 "shopping_mall_categories" {
   String id PK
   String parent_id FK "nullable"
-  String name
+  String name UK
   String description "nullable"
   DateTime created_at
   DateTime updated_at
@@ -508,34 +487,43 @@ erDiagram
 
 ### `shopping_mall_categories`
 
-Product categories organized in a two-level hierarchy managed by
-administrators. Parent categories have null parent_id while subcategories
-reference their parent category via parent_id. Each category contains a
-unique name (unique among siblings within the same parent) and an
-optional description. Categories classify products for browsing and
-search functionality. When deleted, products become uncategorized rather
-than cascade deleted. The two-level hierarchy limit (category and
-subcategory only) is enforced at the application layer.
+Product categories with optional parent-child hierarchy for organizing
+products.
+
+Categories provide the primary organizational structure for the product
+catalog. Each category can have an optional parent category, enabling one
+level of nesting (subcategory). Categories are created and managed
+exclusively by administrators and are browsable by all customers.
+
+When a category is deleted, products belonging to that category become
+uncategorized. Categories are non-transactional metadata and do not
+require snapshot tracking.
+
+Key relationships:
+- Self-referential parent-child relationship for subcategories
+- Referenced by [shopping_mall_products](#shopping_mall_products) for product categorization
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `parent_id`
-  > Reference to parent category for subcategory hierarchy. Null for
-  > top-level categories. Enables two-level category structure where
-  > subcategories reference their parent category.
+  > Parent category reference for subcategory relationship. When set, this
+  > category is a subcategory of the referenced parent. Only one level of
+  > nesting is allowed (parent must be a top-level category). Null for
+  > top-level categories.
 - `name`
-  > Category name, unique among siblings within the same parent category.
-  > Used for display and identification in product listings and navigation.
+  > Unique category name displayed to customers and used for product
+  > categorization. Required field that must be unique across all categories.
 - `description`
-  > Optional detailed description of the category purpose and scope. Helps
-  > administrators and users understand category contents.
+  > Optional detailed description of the category, its purpose, and the types
+  > of products it contains. May be null for categories without detailed
+  > descriptions.
 - `created_at`: Timestamp when the category was created by an administrator.
 - `updated_at`: Timestamp when the category was last modified.
 - `deleted_at`
   > Timestamp when the category was soft-deleted. Null for active categories.
-  > Soft deletion preserves product references while removing category from
-  > active listings.
+  > Soft delete preserves referential integrity while hiding from customer
+  > view.
 
 ## Products
 
@@ -543,20 +531,11 @@ Properties as follows:
 erDiagram
 "shopping_mall_products" {
   String id PK
-  String seller_id FK
-  String category_id FK "nullable"
+  String shopping_mall_seller_id FK
+  String shopping_mall_category_id FK
   String name
   String description
   Float base_price
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"shopping_mall_product_variants" {
-  String id PK
-  String shopping_mall_product_id FK
-  String sku_code UK
-  Float price "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -564,533 +543,513 @@ erDiagram
 "shopping_mall_product_images" {
   String id PK
   String shopping_mall_product_id FK
-  String(80000) url
-  Int order
+  String(80000) image_url
+  Int display_order
+  DateTime created_at
+}
+"shopping_mall_product_variants" {
+  String id PK
+  String shopping_mall_product_id FK
+  String sku_code UK
+  String option_values
+  Float price "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
 "shopping_mall_product_snapshots" {
   String id PK
   String shopping_mall_product_id FK
-  String shopping_mall_seller_id FK
-  String shopping_mall_category_id FK "nullable"
   String name
   String description
   Float base_price
+  String images
   DateTime created_at
 }
-"shopping_mall_product_variant_snapshots" {
+"shopping_mall_product_snapshot_skuses" {
   String id PK
   String shopping_mall_product_snapshot_id FK
-  String shopping_mall_product_variant_id FK
   String sku_code
-  Float price_override "nullable"
+  String option_values
+  Float price "nullable"
+  Int stock_quantity
   DateTime created_at
 }
-"shopping_mall_product_inventory_histories" {
-  String id PK
-  String shopping_mall_product_variant_id FK
-  Int quantity_change
-  String reason
-  DateTime created_at
-}
-"shopping_mall_product_variant_options" {
-  String id PK
-  String shopping_mall_product_variant_id FK
-  String key
-  String value
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_product_snapshot_images" {
-  String id PK
-  String shopping_mall_product_snapshot_id FK
-  String shopping_mall_product_image_id FK
-  DateTime created_at
-}
-"shopping_mall_product_variant_snapshot_option_values" {
-  String id PK
-  String shopping_mall_product_variant_snapshot_id FK
-  String option_key
-  String option_value
-  DateTime created_at
-}
-"shopping_mall_product_variants" }o--|| "shopping_mall_products" : product
 "shopping_mall_product_images" }o--|| "shopping_mall_products" : product
+"shopping_mall_product_variants" }o--|| "shopping_mall_products" : product
 "shopping_mall_product_snapshots" }o--|| "shopping_mall_products" : product
-"shopping_mall_product_variant_snapshots" }o--|| "shopping_mall_product_snapshots" : productSnapshot
-"shopping_mall_product_variant_snapshots" }o--|| "shopping_mall_product_variants" : variant
-"shopping_mall_product_inventory_histories" }o--|| "shopping_mall_product_variants" : variant
-"shopping_mall_product_variant_options" }o--|| "shopping_mall_product_variants" : variant
-"shopping_mall_product_snapshot_images" }o--|| "shopping_mall_product_snapshots" : snapshot
-"shopping_mall_product_snapshot_images" }o--|| "shopping_mall_product_images" : image
-"shopping_mall_product_variant_snapshot_option_values" }o--|| "shopping_mall_product_variant_snapshots" : snapshot
+"shopping_mall_product_snapshot_skuses" }o--|| "shopping_mall_product_snapshots" : snapshot
 ```
 
 ### `shopping_mall_products`
 
-Main product listings created by sellers, containing name, description,
-category reference, base price, and soft-delete support.
+Product catalog entries created by sellers, containing name, description,
+base price, and category assignment. Each product belongs to exactly one
+seller who owns and manages it. Products must be assigned to exactly one
+category (top-level or subcategory). Products must have at least one
+variant to be purchasable. Products are soft-deletable with snapshots
+preserved for dispute resolution. Sellers can edit their products, with
+each edit creating an immutable snapshot. Product deletion is blocked if
+any variant has pending order items (paid/shipped) or pending
+cancellation/refund requests.
 
-Products are the primary sellable entities in the marketplace. Each
-product belongs to exactly one seller and can optionally be assigned to a
-category. Products support soft deletion to preserve order history
-references and enable potential recovery.
-
-Products require at least one variant with stock to be purchasable. When
-a product is deleted, all variants and images are removed, but snapshots
-are preserved for audit purposes.
-
-Key relationships:
-- [shopping_mall_sellers](#shopping_mall_sellers) - Seller who owns this product
-- [shopping_mall_categories](#shopping_mall_categories) - Optional category assignment
-- [shopping_mall_product_variants](#shopping_mall_product_variants) - SKU variants with pricing and
-stock
-- [shopping_mall_product_images](#shopping_mall_product_images) - Product images with ordering
-- [shopping_mall_product_snapshots](#shopping_mall_product_snapshots) - Immutable state history
+Key Relationships:
+- Belongs to [shopping_mall_sellers](#shopping_mall_sellers) (owner)
+- Belongs to [shopping_mall_categories](#shopping_mall_categories) (category assignment)
+- Has many [shopping_mall_product_images](#shopping_mall_product_images) (product images)
+- Has many [shopping_mall_product_variants](#shopping_mall_product_variants) (product variants/SKUs)
+- Has many [shopping_mall_product_snapshots](#shopping_mall_product_snapshots) (edit history)
+- Referenced by [shopping_mall_wishlist_items](#shopping_mall_wishlist_items) (customer wishlists)
+- Referenced by [shopping_mall_reviews](#shopping_mall_reviews) (customer reviews)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `seller_id`
-  > Seller who owns this product. Every product must have exactly one seller.
-  > [shopping_mall_sellers.id](#shopping_mall_sellers)
-- `category_id`
-  > Category this product belongs to. Can be null if product is
-  > uncategorized. Products become uncategorized when their category is
-  > deleted. [shopping_mall_categories.id](#shopping_mall_categories)
+- `shopping_mall_seller_id`
+  > Owner seller of this product. References {@link
+  > shopping_mall_sellers.id}. Products are created and managed by sellers.
+  > When seller is suspended, products are hidden from search and category
+  > listings.
+- `shopping_mall_category_id`
+  > Category assignment for this product. References {@link
+  > shopping_mall_categories.id}. Each product must be assigned to exactly
+  > one category (top-level or subcategory). When assigned to subcategory,
+  > product appears in both subcategory and parent category listings.
 - `name`
-  > Product name displayed in listings and search results. Required field
-  > that must be unique within the seller's products.
+  > Product name displayed in search results and product detail pages.
+  > Required field for all products. Used in product search functionality
+  > with full-text search support.
 - `description`
   > Detailed product description explaining features, specifications, and
-  > usage. Supports rich text formatting.
+  > usage. Required field for all products. Displayed on product detail page.
 - `base_price`
-  > Base price for the product in the platform's currency. Individual
-  > variants can override this price. Must be a positive value.
-- `created_at`: Timestamp when the product was created. Automatically set on creation.
+  > Base price for the product in the platform's currency. Required field.
+  > Must be a positive value. Variants can override this price with their own
+  > pricing.
+- `created_at`
+  > Timestamp when the product was created. Set automatically on product
+  > creation.
 - `updated_at`
-  > Timestamp when the product was last updated. Automatically updated on any
-  > modification.
+  > Timestamp when the product was last updated. Updated automatically on
+  > every edit. Used to determine when snapshots should be created.
 - `deleted_at`
   > Timestamp when the product was soft-deleted. Null if product is active.
-  > Preserves order history references when product is removed.
-
-### `shopping_mall_product_variants`
-
-Product variants/SKUs representing specific purchasable combinations of a
-product. Each variant has a unique SKU code, optional price override from
-the product's base price, and is linked to a parent product. Variant
-options (such as color, size) are stored as normalized key-value pairs in
-the child table shopping_mall_product_variant_options. Stock quantity is
-tracked through inventory history records, not stored directly. Variants
-cannot be deleted if pending orders or cancellation/refund requests
-exist.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_id`: Product that this variant belongs to. [shopping_mall_products.id](#shopping_mall_products)
-- `sku_code`
-  > Unique SKU code identifying this variant. Must be unique across all
-  > products in the system.
-- `price`
-  > Price override for this variant. If null, uses the parent product's base
-  > price. Allows different pricing for different variant combinations.
-- `created_at`: Timestamp when this variant was created.
-- `updated_at`: Timestamp when this variant was last updated.
-- `deleted_at`
-  > Timestamp for soft delete. When set, variant is considered deleted but
-  > preserved for order history and audit purposes. Cannot be deleted if
-  > pending orders or requests exist.
+  > Deleted products are removed from search and category listings but
+  > snapshots are preserved for dispute resolution.
 
 ### `shopping_mall_product_images`
 
-Product images attached to products with ordering support for display
-sequence management.
-
-Each product can have multiple images, and the image with the lowest
-order value (typically order=1) serves as the main/thumbnail image
-displayed in product listings and search results. Images are managed
-through their parent [shopping_mall_products](#shopping_mall_products) entity and are
-deleted when the parent product is deleted.
-
-When product images change (add, delete, reorder), the changes are
-captured in [shopping_mall_product_snapshots](#shopping_mall_product_snapshots) for audit trail
-purposes per the snapshot principle. Images support seller product
-management workflows including upload, reordering, and deletion
-operations.
+Product images serving as visual representations of products in the
+catalog. Each product can have multiple images with controlled display
+order, where the first image (lowest display_order value) serves as the
+main thumbnail shown in search results and category listings. Images are
+managed by sellers through product operations and are included in product
+snapshots when products are edited for historical preservation. Supports
+JPEG, PNG, and WebP formats with secure URL protocols.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_product_id`
-  > Product to which this image belongs. References {@link
-  > shopping_mall_products.id}.
-- `url`
-  > URL path to the image file. Stored as a URI pointing to the image
-  > location in the storage system (e.g., CDN or object storage).
-- `order`
-  > Display order of the image within the product's image gallery. Lower
-  > values appear first. The image with the lowest order value serves as the
-  > main/thumbnail image for product listings and search results. Enables
-  > drag-and-drop reordering functionality for sellers.
-- `created_at`: Timestamp when the image was uploaded and attached to the product.
-- `updated_at`
-  > Timestamp when the image metadata (e.g., order) was last modified.
-  > Updated when seller reorders images.
+  > The product this image belongs to. Images cascade delete when the parent
+  > product is deleted. References [shopping_mall_products.id](#shopping_mall_products).
+- `image_url`
+  > URL pointing to the product image file. Must use secure protocols (HTTPS)
+  > and point to an accessible location. Supports JPEG, PNG, and WebP image
+  > formats.
+- `display_order`
+  > Numerical display order determining the image's position in the product
+  > gallery. Lower values appear first. The image with the lowest
+  > display_order is used as the main thumbnail in product listings and
+  > search results. Must be unique within the same product.
+- `created_at`
+  > Timestamp when the image was uploaded. Used as secondary sorting
+  > criterion when multiple images have the same display order value, and for
+  > audit trail purposes.
+
+### `shopping_mall_product_variants`
+
+Specific SKU configurations for products with unique SKU codes, option
+values (color, size, etc.), and optional price overrides. Each variant
+represents a distinct purchasable combination of product options and has
+its stock quantity managed through inventory records.
+
+Sellers create and manage variants for their products, defining option
+combinations like 'Red / Large' or 'Blue / Small'. Customers select
+specific variants when adding items to their cart. The variant's price
+can override the product's base price, and stock availability is
+calculated by summing all associated inventory records.
+
+When a variant is deleted, it is soft-deleted and no longer appears in
+product listings. Variants with pending orders or requests cannot be
+deleted. Every edit to a variant creates a snapshot for audit trail
+purposes.
+
+Relationships:
+- Belongs to [shopping_mall_products](#shopping_mall_products) (required)
+- Has many [shopping_mall_inventory_records](#shopping_mall_inventory_records) for stock tracking
+- Referenced by [shopping_mall_cart_items](#shopping_mall_cart_items) and {@link
+shopping_mall_order_items}
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_product_id`
+  > The product this variant belongs to. Each product can have multiple
+  > variants representing different option combinations. {@link
+  > shopping_mall_products.id}
+- `sku_code`
+  > Unique identifier for the variant across the entire platform. Must be
+  > 3-50 characters, alphanumeric and hyphens only, cannot start or end with
+  > hyphen, and no consecutive hyphens. This code is used for inventory
+  > tracking and order processing.
+- `option_values`
+  > JSON object containing the variant's option attributes as key-value pairs
+  > (e.g., {"color": "Red", "size": "Large"}). Each variant must have at
+  > least one option attribute, with a maximum of 5 attributes. Attribute
+  > names are 1-30 characters, values are 1-50 characters. The combination of
+  > option values must be unique within each product.
+- `price`
+  > Optional price that overrides the product's base price for this specific
+  > variant. If not set, the product's base price is used. Must be between
+  > 0.01 and 999,999.99 with up to 2 decimal places when specified.
+- `created_at`: Timestamp when the variant was created.
+- `updated_at`: Timestamp when the variant was last updated.
+- `deleted_at`
+  > Timestamp when the variant was soft-deleted. Deleted variants are not
+  > displayed in product listings but data is preserved for historical
+  > records and audit trails.
 
 ### `shopping_mall_product_snapshots`
 
-Immutable product snapshots preserving complete product state at the
-point-in-time of any product modification.
+Historical snapshots of product state created automatically on every
+product edit, preserving the complete product information including name,
+description, base price, and images at a specific point in time.
 
-This table implements the snapshot principle for products, ensuring
-complete audit trails for all product modifications. Each snapshot
-captures the denormalized product fields including name, description,
-base price, category reference, and seller reference at the moment of
-creation or update.
+These snapshots serve critical business purposes:
+- Audit Trail: Provides complete history of product modifications for
+accountability
+- Dispute Resolution: Serves as legal evidence in customer-seller
+disputes regarding product details at time of purchase
+- Version Control: Allows tracking of product evolution over time
+- Data Integrity: Ensures historical accuracy even when products are
+deleted or heavily modified
 
-The snapshot principle requires that:
-- Snapshots are immutable and cannot be deleted
-- Each snapshot records the complete state at a point in time
-- Snapshots enable dispute resolution and historical tracking
-- Even when products are deleted, snapshots are preserved
+Each snapshot captures the product state exactly as it existed when the
+edit was made. Snapshots are immutable and cannot be modified or deleted,
+preserving the integrity of historical records.
 
-Variant states at snapshot time are captured separately in {@link
-shopping_mall_product_variant_snapshots} and can be correlated via
-shopping_mall_product_id and created_at timestamp.
-
-Image states at snapshot time are captured separately in {@link
-shopping_mall_product_snapshot_images} to maintain normalized structure
-while preserving the complete product state including images.
+Related entities:
+- Belongs to [shopping_mall_products](#shopping_mall_products) (the product being snapshotted)
+- Has many [shopping_mall_product_snapshot_skuses](#shopping_mall_product_snapshot_skuses) (variant states
+at time of snapshot)
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_product_id`
-  > Reference to the product being snapshotted. Points to {@link
-  > shopping_mall_products.id}. Multiple snapshots exist for each product
-  > over its lifecycle, creating a complete modification history.
-- `shopping_mall_seller_id`
-  > Seller who owned the product at snapshot time. Points to {@link
-  > shopping_mall_sellers.id}. Enables efficient querying of a seller's
-  > product modification history and preserves seller association even if
-  > product is deleted.
-- `shopping_mall_category_id`
-  > Category the product belonged to at snapshot time. Points to {@link
-  > shopping_mall_categories.id}. Preserves category assignment for
-  > historical accuracy and audit purposes, enabling analysis of product
-  > categorization over time.
+  > The product whose state is preserved in this snapshot. References {@link
+  > shopping_mall_products.id}.
 - `name`
-  > Product name at the time of snapshot. Stored denormalized to preserve
-  > exact wording even if product is later modified or deleted. Used for
-  > audit trails and dispute resolution.
+  > Product name at the time of snapshot creation. Preserved exactly as it
+  > appeared when the product was edited.
 - `description`
-  > Product description at the time of snapshot. Stored denormalized to
-  > preserve exact content including formatting and details at that point in
-  > time.
+  > Product description at the time of snapshot creation. Preserves the full
+  > text content for historical reference and dispute resolution.
 - `base_price`
-  > Base price of the product at snapshot time in the platform's currency.
-  > Stored denormalized to track pricing history and enable price change
-  > analysis. Actual selling price may vary by variant.
+  > Base price of the product at the time of snapshot creation. Stored as
+  > decimal to preserve exact pricing for transaction records and dispute
+  > resolution.
+- `images`
+  > JSON array of product image URLs at the time of snapshot creation.
+  > Preserves complete image state including display order. First image in
+  > array represents the main/thumbnail image. Stored as JSON to maintain
+  > exact image configuration as it existed.
 - `created_at`
-  > Timestamp when this snapshot was created, marking the point-in-time of
-  > the product modification. Used for chronological ordering and time-based
-  > queries. Immutable once created.
+  > Timestamp when this snapshot was created, marking the exact moment of
+  > product edit. Used for chronological ordering of product history.
 
-### `shopping_mall_product_variant_snapshots`
+### `shopping_mall_product_snapshot_skuses`
 
-Immutable snapshots preserving the complete state of product variants at
-the point-in-time of product modification. Each snapshot captures the SKU
-code and price override of a variant, enabling complete audit trails for
-dispute resolution and version control.
+Historical snapshot of product variant state embedded within product
+snapshots. Captures SKU code, option values, price override, and stock
+quantity at the exact moment of product edit creation. Part of the
+complete product state preservation system that ensures transaction
+integrity for dispute resolution and historical tracking.
 
-Created automatically when a product is modified, these snapshots are
-linked to a parent product snapshot via {@link
-shopping_mall_product_snapshots.id}. The combination of product snapshot
-and variant is unique, ensuring each variant's state is captured exactly
-once per product modification event.
-
-Option values are stored in a normalized child table {@link
-shopping_mall_product_variant_snapshot_option_values} for proper
-atomicity and queryability. Each option (e.g., color, size) is stored as
-a separate key-value pair.
-
-These snapshots serve as the authoritative historical record of variant
-configurations, supporting compliance requirements and enabling sellers
-and administrators to review the complete evolution of product variants
-over time.
+Each snapshot SKU record is immutable and linked to its parent product
+snapshot. Preserves variant information exactly as it existed, even if
+the original variant is later modified or deleted. Supports complete
+historical reconstruction of any product's variant configuration at any
+point in time.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_product_snapshot_id`
-  > The parent product snapshot this variant snapshot belongs to. Links to
-  > [shopping_mall_product_snapshots.id](#shopping_mall_product_snapshots).
-- `shopping_mall_product_variant_id`
-  > The source variant whose state is captured in this snapshot. Links to
-  > [shopping_mall_product_variants.id](#shopping_mall_product_variants).
+  > Reference to the parent product snapshot. Each variant snapshot belongs
+  > to exactly one product snapshot, preserving the complete product state at
+  > a point in time.
 - `sku_code`
-  > The SKU code of the variant at the time of snapshot creation. Unique
-  > identifier for inventory tracking.
-- `price_override`
-  > The variant's price override at the time of snapshot. Null if the variant
-  > uses the product's base price. When present, this price takes precedence
-  > over the product's base_price.
+  > SKU code of the product variant at the moment of snapshot creation.
+  > Preserved exactly as it existed when the product was edited, serving as a
+  > unique identifier for the variant configuration at that time.
+- `option_values`
+  > JSON representation of variant option values (e.g.,
+  > {"color":"Red","size":"Large"}). Preserved at the moment of snapshot
+  > creation for historical accuracy. Stored as JSON string to capture
+  > complete option configuration.
+- `price`
+  > Price override of the variant at snapshot time. Nullable if the variant
+  > uses the product's base price instead of a custom override. Preserved for
+  > accurate price history tracking in dispute resolution.
+- `stock_quantity`
+  > Stock quantity of the variant at the exact moment of snapshot creation.
+  > Preserved for inventory history tracking and to show availability context
+  > at the time of product edit.
 - `created_at`
-  > Timestamp when this variant snapshot was created. Marks the point-in-time
-  > when the variant state was captured.
+  > Timestamp when this variant snapshot was created. Matches the parent
+  > product snapshot's creation time for consistency.
 
-### `shopping_mall_product_inventory_histories`
-
-Inventory history records tracking stock level changes per product variant.
-
-Each record represents a single stock movement with quantity change
-(positive for restocks/refunds, negative for orders/adjustments), reason
-for the change, and timestamp. Current stock for any variant is
-calculated by summing all quantity_change values for that variant.
-
-This is an append-only audit trail used for inventory tracking and
-dispute resolution. Stock is never stored directly; it's always computed
-from the sum of all history records.
-
-**Change Types:**
-- Positive: Restock, Cancellation refund, Refund return
-- Negative: Order placement, Inventory adjustment/loss
-
-**Related Entities:**
-- [shopping_mall_product_variants](#shopping_mall_product_variants) - The variant whose stock is
-being tracked
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > Reference to the product variant whose inventory is being tracked. {@link
-  > shopping_mall_product_variants.id}
-- `quantity_change`
-  > Quantity change in stock. Positive values indicate stock additions
-  > (restock, cancellation refund, refund return). Negative values indicate
-  > stock deductions (order placement, inventory adjustment/loss). Current
-  > stock equals the sum of all history records for a variant.
-- `reason`
-  > Reason for the inventory change. Examples: 'restock', 'order',
-  > 'adjustment', 'cancellation', 'refund', 'loss'. Provides audit trail
-  > context for each stock movement.
-- `created_at`
-  > Timestamp when the inventory change occurred. Used for chronological
-  > ordering of stock movements and audit trail purposes.
-
-### `shopping_mall_product_variant_options`
-
-Normalized key-value pairs for product variant options, enabling 1NF
-compliance by decomposing complex option attributes into atomic units.
-
-Each record represents a single attribute of a product variant (e.g.,
-color="Red", size="Large"). This decomposition replaces JSON storage in
-the parent variant table, enabling proper querying and filtering by
-option type and value.
-
-**Key Features:**
-- One record per option attribute per variant
-- Unique constraint ensures each variant has only one value per option key
-- Supports arbitrary option types (color, size, material, etc.)
-- Enables efficient filtering and searching by option values
-
-**Relationships:**
-- Belongs to [shopping_mall_product_variants](#shopping_mall_product_variants) (many options per
-variant)
-- Referenced when creating variant snapshots for order items
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_variant_id`
-  > The product variant this option belongs to. Links the key-value pair to
-  > its parent variant for product configuration. {@link
-  > shopping_mall_product_variants.id}
-- `key`
-  > The option attribute name (e.g., "color", "size", "material", "pattern").
-  > Defines the category of the variant option. Used as the key in the
-  > key-value pair structure.
-- `value`
-  > The option attribute value (e.g., "Red", "Large", "Cotton", "Striped").
-  > The actual value for the specified option key. Subject to full-text
-  > search for filtering products by option values.
-- `created_at`
-  > Timestamp when this variant option was created. Automatically set upon
-  > record creation.
-- `updated_at`
-  > Timestamp when this variant option was last updated. Automatically
-  > updated when the option value changes.
-
-### `shopping_mall_product_snapshot_images`
-
-Junction table linking product snapshots to product images, capturing
-which images were attached to a product at the time of snapshot creation.
-
-This table implements the snapshot principle requirement that product
-snapshots include all fields including images. When a product snapshot is
-created, all images attached to that product are linked through this
-junction table, preserving the complete visual state of the product at
-that moment.
-
-Being a subsidiary entity, this table is managed through parent snapshot
-operations and does not require independent API endpoints. The immutable
-nature of snapshots means these image associations are never modified
-after creation.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_snapshot_id`
-  > The product snapshot to which this image belongs. References {@link
-  > shopping_mall_product_snapshots.id}. Each snapshot can have multiple
-  > images attached.
-- `shopping_mall_product_image_id`
-  > The product image linked to this snapshot. References {@link
-  > shopping_mall_product_images.id}. Captures which specific images were
-  > attached to the product at snapshot creation time.
-- `created_at`
-  > Timestamp when this image was linked to the product snapshot during
-  > snapshot creation. Records the moment of association for audit purposes.
-
-### `shopping_mall_product_variant_snapshot_option_values`
-
-Normalized key-value pairs for variant snapshot option values, enabling
-1NF-compliant storage of variant attributes at the point-in-time of
-snapshot creation.
-
-Each record represents a single atomic attribute of a product variant
-(e.g., color='Red', size='Large') captured in a variant snapshot. This
-decomposition replaces storing option_values as JSON or serialized
-strings, enabling proper querying by option type and value for historical
-analysis and inventory reporting.
-
-This table is essential for the snapshot principle, ensuring that variant
-option configurations at the time of purchase or modification are
-preserved immutably for dispute resolution, order fulfillment
-verification, and audit trail purposes.
-
-Relationship: Multiple option values belong to a single {@link
-shopping_mall_product_variant_snapshots} record, representing the
-complete option configuration of that variant at the snapshot moment.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_product_variant_snapshot_id`
-  > The variant snapshot to which this option value belongs. Each snapshot
-  > can have multiple option values representing the complete variant
-  > configuration. [shopping_mall_product_variant_snapshots.id](#shopping_mall_product_variant_snapshots)
-- `option_key`
-  > The type or category of the option attribute (e.g., 'color', 'size',
-  > 'material', 'style'). Stored in lowercase for consistent querying. Used
-  > for grouping and filtering variant options by category.
-- `option_value`
-  > The specific value for this option attribute (e.g., 'Red', 'Large',
-  > 'Cotton', 'Vintage'). Preserves the exact value at the moment of snapshot
-  > creation for historical accuracy and order verification.
-- `created_at`
-  > Timestamp when this option value record was created. Inherited from the
-  > parent snapshot creation time for consistency.
-
-## Shopping
+## Inventory
 
 ```mermaid
 erDiagram
-"shopping_mall_wishlists" {
+"shopping_mall_inventory_records" {
   String id PK
-  String customer_id FK
-  String product_id FK
+  String variant_id FK
+  String order_id FK "nullable"
+  String cancellation_request_id FK "nullable"
+  String refund_request_id FK "nullable"
+  String seller_id FK "nullable"
+  Int quantity_change
+  String reason
+  DateTime created_at
+}
+```
+
+### `shopping_mall_inventory_records`
+
+Stock movement ledger for product variants using an additive approach.
+
+Each record documents a quantity change (positive for restocks, negative
+for orders/adjustments) with a reason and timestamp. Current stock for
+any variant is calculated by summing all inventory records for that
+variant. Records are immutable and provide a complete audit trail for
+dispute resolution and transparency.
+
+Supports manual restocking, manual adjustments, and automatic stock
+updates triggered by order placement, cancellations, and refunds. Each
+record tracks its source through optional foreign key references to
+orders, cancellation requests, refund requests, or sellers (for manual
+adjustments).
+
+Relationships:
+- Belongs to [shopping_mall_product_variants](#shopping_mall_product_variants) (the variant being
+adjusted)
+- Optionally references [shopping_mall_orders](#shopping_mall_orders) (for order-triggered
+deductions)
+- Optionally references [shopping_mall_cancellation_requests](#shopping_mall_cancellation_requests) (for
+cancellation-triggered restorations)
+- Optionally references [shopping_mall_refund_requests](#shopping_mall_refund_requests) (for
+refund-triggered restorations)
+- Optionally references [shopping_mall_sellers](#shopping_mall_sellers) (for manual
+adjustments)
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `variant_id`
+  > The product variant whose stock is being adjusted. References {@link
+  > shopping_mall_product_variants.id}.
+- `order_id`
+  > Reference to the order that triggered this inventory deduction. Only
+  > populated for automatic records created during order placement. Null for
+  > manual adjustments, cancellations, and refunds.
+- `cancellation_request_id`
+  > Reference to the cancellation request that triggered this stock
+  > restoration. Only populated for automatic records created when a
+  > cancellation is approved. Null for other record types.
+- `refund_request_id`
+  > Reference to the refund request that triggered this stock restoration.
+  > Only populated for automatic records created when a refund is approved.
+  > Null for other record types.
+- `seller_id`
+  > Reference to the seller who performed this manual inventory adjustment.
+  > Only populated for manual restocking or adjustment records. Null for
+  > automatic records (order, cancellation, refund triggered).
+- `quantity_change`
+  > The quantity change for this inventory movement. Positive values indicate
+  > stock additions (restocking, refund restoration). Negative values
+  > indicate stock deductions (order placement, adjustments, losses). Zero
+  > values allowed for correction entries.
+- `reason`
+  > The reason for this inventory change. For manual entries, contains
+  > seller-provided explanation (e.g., 'Initial stock', 'Damaged goods
+  > adjustment'). For automatic entries, contains system-generated
+  > description (e.g., 'Order placed', 'Cancellation approved', 'Refund
+  > processed').
+- `created_at`
+  > Timestamp when this inventory record was created. Used for chronological
+  > history tracking and audit trail purposes.
+
+## Cart
+
+```mermaid
+erDiagram
+"shopping_mall_carts" {
+  String id PK
+  String shopping_mall_customer_id FK,UK
   DateTime created_at
   DateTime updated_at
 }
 "shopping_mall_cart_items" {
   String id PK
-  String shopping_customer_id FK
-  String shopping_product_variant_id FK
+  String shopping_mall_cart_id FK
+  String shopping_mall_product_variant_id FK
   Int quantity
-  Float unit_price
+  Boolean unavailable
   DateTime created_at
   DateTime updated_at
 }
+"shopping_mall_cart_items" }o--|| "shopping_mall_carts" : cart
+```
+
+### `shopping_mall_carts`
+
+Customer shopping cart sessions with one-to-one relationship to customers
+for managing product selections before checkout. Tracks creation and
+modification timestamps for session persistence across logins. Cart is
+cleared after successful order placement but not deleted, remaining
+available for future shopping sessions.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_customer_id`
+  > Customer who owns this cart. Enforces one-to-one relationship where each
+  > customer has exactly one cart. [shopping_mall_customers.id](#shopping_mall_customers)
+- `created_at`
+  > Timestamp when the cart was created. Used for session tracking and
+  > persistence across customer logins.
+- `updated_at`
+  > Timestamp when the cart was last modified. Updated when cart items are
+  > added, modified, or removed. Used for session management and cleanup
+  > policies.
+
+### `shopping_mall_cart_items`
+
+Individual items in shopping carts referencing specific product variants
+with quantity.
+
+Each cart item represents a customer's selection of a specific product
+variant (SKU) added to their cart for purchase. The quantity field tracks
+how many units of the variant the customer intends to buy. When the same
+variant is added again, quantities are merged into a single cart item
+rather than creating duplicates.
+
+The unavailable flag marks items whose variants have been deleted by
+sellers or are out of stock. Unavailable items remain in the cart to
+preserve product information for customer reference but cannot be checked
+out until removed or restocked.
+
+Cart items are automatically removed when orders are successfully placed,
+converting each item into an order item with its preserved product and
+pricing information.
+
+**Relationships:**
+- Belongs to [shopping_mall_carts](#shopping_mall_carts) (many items per cart)
+- References [shopping_mall_product_variants](#shopping_mall_product_variants) for the selected SKU
+- Indirectly references shopping_mall_products through the variant
+- Indirectly references shopping_mall_sellers for seller association
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_cart_id`
+  > The cart this item belongs to. Each cart can have multiple items, each
+  > referencing a different product variant. [shopping_mall_carts.id](#shopping_mall_carts)
+- `shopping_mall_product_variant_id`
+  > The specific product variant (SKU) selected for purchase. Customers must
+  > select a variant when adding to cart, not just the product. {@link
+  > shopping_mall_product_variants.id}
+- `quantity`
+  > Number of units of the variant selected for purchase. Must be a positive
+  > integer (minimum 1). When the same variant is added to cart again,
+  > quantities are merged by adding to the existing quantity rather than
+  > creating a duplicate item.
+- `unavailable`
+  > Flag indicating whether this item's variant is unavailable (deleted by
+  > seller or out of stock). Unavailable items remain in the cart to preserve
+  > product information but cannot be checked out. When stock becomes
+  > available again, this flag is cleared.
+- `created_at`
+  > Timestamp when the item was first added to the cart. Used for sorting
+  > cart items and tracking customer shopping behavior.
+- `updated_at`
+  > Timestamp when the item was last modified, such as when quantities are
+  > merged when the same variant is added to cart again. Tracks all changes
+  > to the cart item's state.
+
+## Wishlist
+
+```mermaid
+erDiagram
+"shopping_mall_wishlists" {
+  String id PK
+  String shopping_mall_customer_id FK,UK
+  DateTime created_at
+  DateTime updated_at
+}
+"shopping_mall_wishlist_items" {
+  String id PK
+  String shopping_mall_wishlist_id FK
+  String shopping_mall_product_id FK
+  DateTime created_at
+}
+"shopping_mall_wishlist_items" }o--|| "shopping_mall_wishlists" : wishlist
 ```
 
 ### `shopping_mall_wishlists`
 
-Customer wishlist entries tracking products at the product level (not
-specific variants). Each entry links a customer to a product they are
-interested in, enabling quick access and monitoring of desired items.
-
-Supports a maximum of 200 products per customer (enforced in service
-layer). Entries are automatically removed when the referenced product is
-deleted by the seller. Unlike order items, wishlists track product-level
-interest without variant specification or pricing information.
-
-Relationships:
-- Each wishlist entry belongs to exactly one [shopping_mall_customers](#shopping_mall_customers)
-- Each wishlist entry references exactly one [shopping_mall_products](#shopping_mall_products)
-- Unique constraint ensures one entry per customer-product pair
+Main wishlist entity providing one-to-one relationship with customers for
+managing their saved product collections. Each customer has exactly one
+wishlist that can contain multiple products for future consideration.
+Serves as a monitoring list rather than a purchase intent, separate from
+the active shopping cart workflow.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `customer_id`
-  > The customer who added this product to their wishlist. References {@link
-  > shopping_mall_customers.id}.
-- `product_id`
-  > The product added to the wishlist. References {@link
-  > shopping_mall_products.id}. Automatically removed when product is deleted
-  > by seller.
-- `created_at`: Timestamp when the product was added to the wishlist.
-- `updated_at`: Timestamp of the last modification to the wishlist entry.
+- `shopping_mall_customer_id`
+  > The customer who owns this wishlist. Each customer has exactly one
+  > wishlist. [shopping_mall_customers.id](#shopping_mall_customers).
+- `created_at`: Timestamp when the wishlist was created.
+- `updated_at`
+  > Timestamp when the wishlist was last updated (e.g., when items were added
+  > or removed).
 
-### `shopping_mall_cart_items`
+### `shopping_mall_wishlist_items`
 
-Customer shopping cart items storing specific product variants with
-quantities for purchase preparation.
-
-Each cart item represents a single product variant (SKU) that a customer
-intends to purchase. The unit_price field captures the variant's price at
-the time of addition, enabling price change detection during checkout to
-alert customers if prices have changed.
-
-Business constraints enforced at service layer:
-- Maximum 99 units per cart item
-- Maximum 50 distinct variants per customer cart
-- Automatic combination of duplicate variant additions (sum quantities)
-
-Cart items are transient and removed upon successful order placement.
-When variants are deleted or become out of stock, cart items are marked
-as unavailable but preserved for customer visibility.
-
-References [shopping_mall_customers](#shopping_mall_customers) for cart ownership and {@link
-shopping_mall_product_variants} for the specific SKU being purchased.
+Individual product entries stored in customer wishlists for future
+consideration. Each entry references a product at the product level (not
+variant-specific), with creation timestamp for sorting by most recently
+added. Enforces uniqueness constraint to prevent duplicate products per
+wishlist. Automatically removed when referenced product is deleted by
+seller.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_customer_id`
-  > The customer who owns this cart item. References {@link
-  > shopping_mall_customers.id}.
-- `shopping_product_variant_id`
-  > The specific product variant (SKU) in the cart. References {@link
-  > shopping_mall_product_variants.id}.
-- `quantity`
-  > Number of units of this variant in the cart. Maximum allowed is 99 units
-  > per item. When the same variant is added multiple times, quantities are
-  > combined into a single cart item.
-- `unit_price`
-  > Price per unit at the time the item was added to cart. Used to detect
-  > price changes during checkout - if the current variant price differs from
-  > this stored value, the customer is notified of the price change. Stored
-  > as decimal for monetary precision.
+- `shopping_mall_wishlist_id`
+  > The wishlist this item belongs to. Each customer has exactly one
+  > wishlist. [shopping_mall_wishlists.id](#shopping_mall_wishlists)
+- `shopping_mall_product_id`
+  > The product saved in the wishlist. References products at the product
+  > level only, not variant-specific. [shopping_mall_products.id](#shopping_mall_products)
 - `created_at`
-  > Timestamp when the cart item was first added. Used for cart item ordering
-  > and pagination.
-- `updated_at`: Timestamp when the cart item was last modified (quantity change, etc.).
+  > Timestamp when the product was added to the wishlist. Used for sorting
+  > wishlist items by most recently added first.
 
 ## Orders
 
@@ -1098,531 +1057,487 @@ Properties as follows:
 erDiagram
 "shopping_mall_orders" {
   String id PK
-  String shopping_mall_customer_id FK
+  String shopping_mall_customer_id FK "nullable"
   String order_number UK
   Float total_price
   String status
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_order_addresses" {
-  String id PK
-  String shopping_mall_order_id FK,UK
-  String recipient_name
-  String phone
-  String street
-  String city
-  String state
-  String postal_code
-  String country
-  DateTime created_at
-}
-"shopping_mall_order_items" {
-  String id PK
-  String shopping_mall_order_id FK
-  String shopping_mall_seller_id FK
-  String shopping_mall_product_id FK "nullable"
-  String shopping_mall_product_variant_id FK "nullable"
-  String product_name
-  String product_description
-  String product_category_name
-  Float product_base_price
-  String(80000) product_thumbnail_url
-  String variant_sku_code
-  Float variant_price
-  String seller_shop_name
-  String seller_shop_description "nullable"
-  String(80000) seller_logo_url "nullable"
-  Int quantity
-  Float unit_price
-  String status
-  DateTime created_at
-}
-"shopping_mall_order_shipments" {
-  String id PK
-  String shopping_mall_seller_id FK
-  String carrier_name
-  String tracking_number
-  DateTime shipped_at
-  DateTime delivered_at "nullable"
-  String delivery_confirmation_method "nullable"
+  String shipping_recipient_name
+  String shipping_phone_number
+  String shipping_street_address
+  String shipping_city
+  String shipping_state_province
+  String shipping_postal_code
+  String shipping_country
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"shopping_mall_order_item_variant_options" {
+"shopping_mall_order_items" {
   String id PK
-  String shopping_mall_order_item_id FK
-  String key
-  String value
+  String shopping_mall_order_id FK
+  String shopping_mall_product_id FK
+  String shopping_mall_product_variant_id FK
+  String shopping_mall_seller_id FK
+  String shopping_mall_shipment_id FK "nullable"
+  Int quantity
+  Float price
+  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_order_item_snapshots" {
+  String id PK
+  String order_item_id FK,UK
+  String product_name
+  String product_description
+  Float price
+  String seller_shop_name
+  String(80000) seller_logo_image "nullable"
   DateTime created_at
 }
-"shopping_mall_order_addresses" |o--|| "shopping_mall_orders" : order
+"shopping_mall_shipments" {
+  String id PK
+  String seller_id FK
+  String order_id FK
+  String carrier_name
+  String tracking_number
+  DateTime shipped_at
+  DateTime delivered_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"shopping_mall_cancellation_requests" {
+  String id PK
+  String shopping_mall_order_item_id FK,UK
+  String shopping_mall_seller_id FK "nullable"
+  String reason
+  String status
+  DateTime created_at
+  DateTime updated_at
+  DateTime responded_at "nullable"
+}
+"shopping_mall_cancellation_request_snapshots" {
+  String id PK
+  String shopping_mall_cancellation_request_id FK
+  String reason
+  String status
+  DateTime created_at
+}
+"shopping_mall_refund_requests" {
+  String id PK
+  String shopping_mall_order_item_id FK,UK
+  String reason
+  String status
+  DateTime created_at
+  DateTime responded_at "nullable"
+}
+"shopping_mall_refund_request_snapshots" {
+  String id PK
+  String shopping_mall_refund_request_id FK
+  String reason
+  String status
+  DateTime created_at
+}
+"shopping_mall_order_item_snapshot_variant_options" {
+  String id PK
+  String order_item_snapshot_id FK
+  String option_key
+  String option_value
+  DateTime created_at
+}
 "shopping_mall_order_items" }o--|| "shopping_mall_orders" : order
-"shopping_mall_order_item_variant_options" }o--|| "shopping_mall_order_items" : orderItem
+"shopping_mall_order_items" }o--o| "shopping_mall_shipments" : shipment
+"shopping_mall_order_item_snapshots" |o--|| "shopping_mall_order_items" : orderItem
+"shopping_mall_shipments" }o--|| "shopping_mall_orders" : order
+"shopping_mall_cancellation_requests" |o--|| "shopping_mall_order_items" : orderItem
+"shopping_mall_cancellation_request_snapshots" }o--|| "shopping_mall_cancellation_requests" : cancellationRequest
+"shopping_mall_refund_requests" |o--|| "shopping_mall_order_items" : orderItem
+"shopping_mall_refund_request_snapshots" }o--|| "shopping_mall_refund_requests" : refundRequest
+"shopping_mall_order_item_snapshot_variant_options" }o--|| "shopping_mall_order_item_snapshots" : snapshot
 ```
 
 ### `shopping_mall_orders`
 
-Main order records representing completed transactions in the e-commerce
-platform.
+Customer purchase transactions created at checkout with unique order
+number, total price, derived status, and immutable shipping address.
+Orders aggregate order items from potentially multiple sellers, and
+status is derived from individual item statuses. Order history is
+preserved even after customer account deletion for seller records and
+legal purposes.
 
-Each order is created after successful payment and contains multiple
-order items from potentially different sellers. The order status is
-derived from the statuses of its constituent items according to business
-rules: 'paid' when all items are paid, 'shipped' when any item is
-shipped, 'delivered' when all items are delivered, 'cancelled' when all
-items are cancelled, 'refunded' when all items are refunded, and
-'partially_completed' for mixed statuses.
-
-Orders are preserved indefinitely for legal compliance and audit
-purposes. The shipping address is captured in an immutable snapshot (via
-[shopping_mall_order_addresses](#shopping_mall_order_addresses)) at the time of order placement.
-Each order item maintains its own status and references
-product/variant/seller snapshots from the purchase time.
-
-References:
-- Customer: [shopping_mall_customers.id](#shopping_mall_customers)
-- Address snapshot: [shopping_mall_order_addresses](#shopping_mall_order_addresses)
-- Order items: [shopping_mall_order_items](#shopping_mall_order_items)
+Each order captures the complete shipping address as individual immutable
+fields at checkout time, preserving the destination details exactly as
+they were provided regardless of subsequent changes to the customer's
+address book.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_customer_id`
-  > Customer who placed this order. References {@link
-  > shopping_mall_customers.id}.
+  > Customer who placed the order. May be null if customer account is
+  > deleted, as orders are preserved for seller records and legal purposes.
+  > [shopping_mall_customers.id](#shopping_mall_customers)
 - `order_number`
-  > Unique order identifier for customer reference and tracking.
-  > Auto-generated in format like 'ORD-2024-001234'.
+  > Unique order identifier generated at order creation. Used for customer
+  > reference and order lookup.
 - `total_price`
-  > Total price of the order calculated as the sum of all order item prices
-  > (quantity × unit price). Stored as decimal for monetary precision.
+  > Total price of all order items at the time of purchase. Sum of (item
+  > price × quantity) for all items.
 - `status`
-  > Derived order status computed from constituent order item statuses.
-  > Values: 'paid' (all items paid), 'shipped' (any item shipped),
-  > 'delivered' (all items delivered), 'cancelled' (all items cancelled),
-  > 'refunded' (all items refunded), 'partially_completed' (mixed statuses).
-- `created_at`: Timestamp when the order was created after successful payment.
+  > Order status derived from order items: 'paid' (all items paid), 'shipped'
+  > (any shipped), 'delivered' (all delivered), 'cancelled' (all cancelled),
+  > 'refunded' (all refunded), or 'partially_completed' (mixed states).
+  > Cached for efficient querying.
+- `shipping_recipient_name`
+  > Recipient name for the shipping address as captured at checkout.
+  > Immutable after order creation.
+- `shipping_phone_number`
+  > Phone number for delivery contact as captured at checkout. Immutable
+  > after order creation.
+- `shipping_street_address`
+  > Street address for delivery as captured at checkout. Immutable after
+  > order creation.
+- `shipping_city`: City for delivery as captured at checkout. Immutable after order creation.
+- `shipping_state_province`
+  > State or province for delivery as captured at checkout. Immutable after
+  > order creation.
+- `shipping_postal_code`
+  > Postal code for delivery as captured at checkout. Immutable after order
+  > creation.
+- `shipping_country`
+  > Country for delivery as captured at checkout. Immutable after order
+  > creation.
+- `created_at`: Timestamp when order was created after successful payment.
 - `updated_at`
-  > Timestamp when the order was last updated, such as when order item
-  > statuses changed.
-
-### `shopping_mall_order_addresses`
-
-Immutable shipping address snapshots captured at order placement time for
-legal compliance and audit trail purposes.
-
-Each address record preserves the complete shipping information exactly
-as it was when the customer placed the order, ensuring that historical
-orders maintain accurate delivery records even if customers modify or
-delete addresses from their address book.
-
-Contains recipient name, phone number, street address, city,
-state/province, postal code, and country. Records are append-only and
-never modified after creation to maintain data integrity for dispute
-resolution and legal compliance.
-
-References [shopping_mall_orders](#shopping_mall_orders) via unique foreign key,
-establishing a one-to-one relationship where each order has exactly one
-shipping address snapshot.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_id`
-  > Reference to the order this shipping address belongs to. Each order has
-  > exactly one shipping address snapshot. [shopping_mall_orders.id](#shopping_mall_orders)
-- `recipient_name`
-  > Full name of the person designated to receive the shipment at the
-  > delivery address.
-- `phone`
-  > Contact phone number for the recipient, used for delivery coordination
-  > and shipping notifications.
-- `street`: Street address including house/apartment number for the delivery location.
-- `city`: City or locality name for the delivery address.
-- `state`: State, province, or administrative region for the delivery address.
-- `postal_code`: Postal or ZIP code for the delivery address.
-- `country`: Country name or ISO country code for the delivery address.
-- `created_at`
-  > Timestamp when this shipping address snapshot was created at order
-  > placement. Immutable - no updated_at field as records are never modified.
+  > Timestamp when order was last updated, typically when derived status
+  > changes due to order item status changes.
+- `deleted_at`
+  > Timestamp for soft deletion, used when customer deletes account. Orders
+  > are preserved with null customer reference.
 
 ### `shopping_mall_order_items`
 
-Individual order items representing specific product variants purchased
-by customers. Each item maintains independent status tracking (paid,
-shipped, delivered, cancelled, refunded) enabling item-level
-cancellation/refund and multi-seller order handling. Contains complete
-snapshot data for product, variant, and seller at time of purchase for
-historical accuracy and dispute resolution. References the parent {@link
-shopping_mall_orders} and the selling [shopping_mall_sellers](#shopping_mall_sellers).
-Product and variant references may become null if source entities are
-deleted, but snapshot data is preserved for order history integrity.
+Individual purchased product variants within customer orders, tracking
+quantity, price at purchase time, and independent fulfillment status.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_id`
-  > The order this item belongs to. References {@link
-  > shopping_mall_orders.id}.
-- `shopping_mall_seller_id`
-  > The seller who sold this item. References {@link
-  > shopping_mall_sellers.id}.
-- `shopping_mall_product_id`
-  > The original product at time of purchase. May be null if product is
-  > deleted. References [shopping_mall_products.id](#shopping_mall_products).
-- `shopping_mall_product_variant_id`
-  > The original variant at time of purchase. May be null if variant is
-  > deleted. References [shopping_mall_product_variants.id](#shopping_mall_product_variants).
-- `product_name`
-  > Product name at time of purchase. Snapshot value preserved for historical
-  > accuracy even if product is later edited or deleted.
-- `product_description`
-  > Product description at time of purchase. Snapshot value preserved for
-  > historical accuracy.
-- `product_category_name`
-  > Product category name at time of purchase. Snapshot value for order
-  > history display.
-- `product_base_price`
-  > Product base price at time of purchase. Snapshot value preserved for
-  > price dispute resolution.
-- `product_thumbnail_url`
-  > Product main image URL at time of purchase. Snapshot value for order
-  > history display.
-- `variant_sku_code`
-  > Variant SKU code at time of purchase. Unique identifier for the specific
-  > product configuration.
-- `variant_price`
-  > Variant price at time of purchase (may override product base price).
-  > Snapshot value preserved for historical accuracy.
-- `seller_shop_name`
-  > Seller shop name at time of purchase. Snapshot value preserved for order
-  > history even if seller profile is later edited or account is deleted.
-- `seller_shop_description`
-  > Seller shop description at time of purchase. Snapshot value for
-  > historical accuracy.
-- `seller_logo_url`
-  > Seller logo image URL at time of purchase. Snapshot value for order
-  > history display.
-- `quantity`
-  > Number of units purchased for this variant. Multiple quantities of the
-  > same variant are combined into a single order item.
-- `unit_price`
-  > Price per unit at time of purchase. Derived from variant price or product
-  > base price. Total for this item = quantity * unit_price.
-- `status`
-  > Current status of this order item. Valid values: 'paid' (awaiting
-  > shipment), 'shipped' (in transit), 'delivered' (received by customer),
-  > 'cancelled' (cancelled before shipping), 'refunded' (refunded after
-  > delivery). Each item has independent status enabling item-level
-  > operations.
-- `created_at`
-  > Timestamp when this order item was created. Set at order placement time
-  > and immutable thereafter.
-
-### `shopping_mall_order_shipments`
-
-Shipment records created by sellers containing carrier information,
-tracking details, and delivery confirmation data. Each shipment bundles
-one or more order items from the same seller into a single package with
-one tracking number. Created when seller ships items, triggering status
-change to 'shipped' for all included order items. Delivery confirmation
-can be manual (customer confirms) or automatic (14 days after shipment).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_seller_id`
-  > Seller who created and shipped this package. {@link
-  > shopping_mall_sellers.id}
-- `carrier_name`: Name of the shipping carrier (e.g., 'FedEx', 'UPS', 'Korea Post').
-- `tracking_number`: Tracking number provided by the carrier for shipment tracking.
-- `shipped_at`: Timestamp when the shipment was created and items were shipped.
-- `delivered_at`
-  > Timestamp when delivery was confirmed (either by customer manually or
-  > automatically after 14 days). Null until delivery is confirmed.
-- `delivery_confirmation_method`
-  > Method of delivery confirmation: 'manual' for customer-initiated, 'auto'
-  > for automatic confirmation after 14 days. Null until delivery is
-  > confirmed.
-- `created_at`: Timestamp when the shipment record was created.
-- `updated_at`: Timestamp when the shipment record was last updated.
-- `deleted_at`: Timestamp for soft deletion. Null if shipment is active.
-
-### `shopping_mall_order_item_variant_options`
-
-Normalized key-value pairs capturing variant option values for order
-items at the point of purchase.
-
-Each record stores a single option attribute (e.g., key='color',
-value='red') as an atomic unit, enabling proper 1NF compliance by
-avoiding JSON or serialized string storage in the parent order item
-table. This decomposition allows efficient querying by option type and
-value, and preserves the exact variant configuration that the customer
-purchased.
-
-Created automatically when an order is placed, copying the option values
-from the selected product variant. Part of the snapshot principle
-implementation ensuring complete audit trails for dispute resolution.
-
-References [shopping_mall_order_items.id](#shopping_mall_order_items) as the parent entity.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_item_id`
-  > The order item for which this variant option was captured. References
-  > [shopping_mall_order_items.id](#shopping_mall_order_items).
-- `key`
-  > The option attribute name (e.g., 'color', 'size', 'material'). Represents
-  > the type of variant option being specified.
-- `value`
-  > The option attribute value (e.g., 'Red', 'Large', 'Cotton'). The specific
-  > choice for this variant option.
-- `created_at`
-  > Timestamp when this variant option record was created. Set automatically
-  > when the order is placed.
-
-## Shipments
-
-```mermaid
-erDiagram
-"shopping_mall_order_shipment_items" {
-  String id PK
-  String shopping_mall_order_shipment_id FK
-  String shopping_mall_order_item_id FK,UK
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_order_shipment_audit_logs" {
-  String id PK
-  String shopping_mall_order_shipment_id FK
-  String event_type
-  String old_status "nullable"
-  String new_status
-  String actor_type
-  String actor_id "nullable"
-  String ip "nullable"
-  String href "nullable"
-  String notes "nullable"
-  DateTime created_at
-}
-```
-
-### `shopping_mall_order_shipment_items`
-
-Junction table linking order shipments to order items, enabling sellers
-to bundle multiple items from the same seller into a single shipment with
-one tracking number.
-
-This table implements the many-to-one relationship between shipments and
-order items, where:
-- A shipment can contain multiple order items (same seller bundling)
-- An order item can belong to exactly one shipment (unique constraint)
-
-When a seller creates a shipment and selects order items to ship, records
-are created in this junction table. The shipment's carrier name and
-tracking number apply to all bundled items.
-
-Relationships:
-- References [shopping_mall_order_shipments](#shopping_mall_order_shipments) for the shipment record
-- References [shopping_mall_order_items](#shopping_mall_order_items) for the individual order
-items
-
-The unique constraint on order_item_id ensures each order item is shipped
-exactly once, preventing duplicate shipment assignments.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_shipment_id`
-  > Reference to the shipment that contains this order item. Links to {@link
-  > shopping_mall_order_shipments.id} to associate the order item with
-  > carrier and tracking information.
-- `shopping_mall_order_item_id`
-  > Reference to the order item being shipped. Links to {@link
-  > shopping_mall_order_items.id}. Unique constraint ensures each order item
-  > can only be assigned to one shipment.
-- `created_at`
-  > Timestamp when the order item was assigned to this shipment. Records the
-  > moment the seller included this item in the shipment.
-- `updated_at`
-  > Timestamp when this shipment item assignment was last modified. Typically
-  > matches created_at as assignments are usually not modified after
-  > creation.
-
-### `shopping_mall_order_shipment_audit_logs`
-
-Immutable audit trail for shipment lifecycle events capturing creation,
-status transitions, delivery confirmations (both manual by customer and
-automatic after 14 days), and administrative interventions. Each log
-entry records the event type, previous and new status, responsible actor
-(seller, customer, admin, or system), connection context (IP, URL), and
-timestamp. Provides complete traceability for dispute resolution and
-compliance. References [shopping_mall_order_shipments](#shopping_mall_order_shipments) for shipment
-association.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `shopping_mall_order_shipment_id`
-  > Reference to the shipment being audited. {@link
-  > shopping_mall_order_shipments.id}.
-- `event_type`
-  > Type of shipment lifecycle event. Values: 'created' (shipment created by
-  > seller), 'status_changed' (manual status update), 'delivered_manually'
-  > (customer confirmed delivery), 'delivered_auto' (automatic delivery after
-  > 14 days), 'admin_override' (administrator intervention).
-- `old_status`
-  > Previous shipment status before the event. Null for 'created' events
-  > which have no prior state. Values: 'preparing', 'shipped', 'delivered'.
-- `new_status`
-  > New shipment status after the event. Values: 'preparing' (initial),
-  > 'shipped' (carrier has package), 'delivered' (received by customer).
-- `actor_type`
-  > Type of actor who performed the action. Values: 'seller' (merchant
-  > shipping items), 'customer' (buyer confirming delivery), 'admin'
-  > (administrator override), 'system' (automatic process for 14-day
-  > delivery).
-- `actor_id`
-  > UUID of the actor who performed the action. References
-  > shopping_mall_sellers.id, shopping_mall_customers.id, or
-  > shopping_mall_admins.id based on actor_type. Null for 'system' actor
-  > type.
-- `ip`
-  > IP address of the client that triggered the event. Used for security
-  > audit and fraud detection. Null for system-triggered events.
-- `href`
-  > URL path of the API endpoint that triggered the event. Provides context
-  > for understanding which operation caused the status change. Null for
-  > system-triggered events.
-- `notes`
-  > Optional additional context or reason for the event. Used for admin
-  > override explanations, automatic delivery confirmation details, or other
-  > relevant information.
-- `created_at`
-  > Timestamp when the audit log entry was created. Represents the exact
-  > moment the shipment event occurred. Used for chronological ordering and
-  > time-based analysis.
-
-## Cancellations
-
-```mermaid
-erDiagram
-"shopping_mall_cancellation_requests" {
-  String id PK
-  String order_item_id FK,UK
-  String customer_id FK
-  String reason
-  String status
-  String seller_response "nullable"
-  String rejection_reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"shopping_mall_cancellation_request_snapshots" {
-  String id PK
-  String shopping_mall_cancellation_request_id FK
-  String previous_status "nullable"
-  String new_status
-  String reason
-  String seller_response "nullable"
-  String rejection_reason "nullable"
-  DateTime created_at
-}
-"shopping_mall_cancellation_request_snapshots" }o--|| "shopping_mall_cancellation_requests" : cancellationRequest
-```
-
-### `shopping_mall_cancellation_requests`
-
-Customer-initiated cancellation requests for order items with 'paid' status.
-
-Customers can request cancellation for order items that have not yet been
-shipped (status: paid). Each request captures the customer's reason,
-tracks the approval workflow through pending/approved/rejected statuses,
-and records seller responses including rejection reasons when applicable.
+Each order item represents a specific product variant purchased by a
+customer, with its own lifecycle through paid, shipped, delivered,
+cancelled, or refunded states. Order items enable independent processing
+per item, allowing customers to cancel individual items before shipment
+or request refunds for delivered items.
 
 Key relationships:
-- References [shopping_mall_order_items.id](#shopping_mall_order_items) for the item being
-cancelled (1:1 - one request per item)
-- References [shopping_mall_customers.id](#shopping_mall_customers) for the requesting customer
-- Seller context is derived through the order item's seller association
+- Belongs to [shopping_mall_orders](#shopping_mall_orders) for order context
+- References [shopping_mall_products](#shopping_mall_products) for product identity
+- References [shopping_mall_product_variants](#shopping_mall_product_variants) for specific SKU
+configuration
+- References [shopping_mall_sellers](#shopping_mall_sellers) for seller attribution and
+fulfillment responsibility
+- Optionally references [shopping_mall_shipments](#shopping_mall_shipments) when shipped
+(null until shipped)
 
-Business rules:
-- Only order items with 'paid' status can have cancellation requests
-- Approved cancellations trigger automatic refund and stock restoration
-- All state changes are captured in {@link
-shopping_mall_cancellation_request_snapshots} for audit
+Price is captured at purchase time to preserve transaction value
+regardless of subsequent product price changes. Status progresses
+independently per item, enabling mixed order states where some items ship
+while others are cancelled.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_order_id`: The order this item belongs to. [shopping_mall_orders.id](#shopping_mall_orders)
+- `shopping_mall_product_id`: The product purchased. [shopping_mall_products.id](#shopping_mall_products)
+- `shopping_mall_product_variant_id`
+  > The specific variant (SKU) purchased with its option configuration.
+  > [shopping_mall_product_variants.id](#shopping_mall_product_variants)
+- `shopping_mall_seller_id`
+  > The seller responsible for fulfilling this item. Enables seller-specific
+  > order views and multi-seller order distribution. {@link
+  > shopping_mall_sellers.id}
+- `shopping_mall_shipment_id`
+  > The shipment this item is included in. Null until the seller creates a
+  > shipment. Items from the same seller can be bundled into one shipment or
+  > shipped separately. [shopping_mall_shipments.id](#shopping_mall_shipments)
+- `quantity`
+  > Number of units purchased for this product variant. If the same variant
+  > is purchased multiple times, quantities are consolidated into a single
+  > order item.
+- `price`
+  > Unit price at time of purchase. Captured from the product variant's price
+  > (or product base price if no variant override) to preserve transaction
+  > value for historical accuracy and dispute resolution.
+- `status`
+  > Current fulfillment status of this item. Values: 'paid' (awaiting
+  > shipment), 'shipped' (in transit), 'delivered' (received by customer),
+  > 'cancelled' (cancelled before shipment with refund), 'refunded' (refunded
+  > after delivery). Each item tracks status independently within an order.
+- `created_at`: Timestamp when this order item was created during order placement.
+- `updated_at`: Timestamp when this order item was last modified, such as status changes.
+- `deleted_at`
+  > Timestamp for soft delete. Set when order data is archived or removed
+  > from active view while preserving transaction history.
+
+### `shopping_mall_order_item_snapshots`
+
+Immutable purchase-time records that preserve the complete product,
+variant, and seller state at the moment of purchase for transaction
+integrity and dispute resolution.
+
+When a customer successfully places an order, this snapshot captures the
+product name, product description, exact price paid, seller shop name,
+and seller logo image exactly as they existed at purchase time. This
+creates a permanent historical record that cannot be modified or deleted,
+ensuring customers and sellers have authoritative evidence of transaction
+terms for dispute resolution.
+
+The snapshot remains unchanged even if the original product is modified,
+variant is deleted, or seller changes their shop profile. Links to {@link
+shopping_mall_order_items.id} for complete purchase context. Variant
+options are stored in normalized child table {@link
+shopping_mall_order_item_snapshot_variant_options} for proper 1NF
+compliance.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `order_item_id`
-  > The order item being cancelled. References {@link
-  > shopping_mall_order_items.id}. Only one cancellation request allowed per
-  > order item.
-- `customer_id`
-  > The customer who initiated the cancellation request. References {@link
-  > shopping_mall_customers.id}.
-- `reason`: Customer's explanation for why they want to cancel this order item.
+  > The order item this snapshot preserves. Each order item has exactly one
+  > snapshot capturing purchase-time state. {@link
+  > shopping_mall_order_items.id}
+- `product_name`
+  > Product name exactly as displayed to the customer at purchase time.
+  > Preserved character-for-character without modification.
+- `product_description`
+  > Complete product description in full text format as shown during
+  > purchase. Preserves all formatting and content from the original product
+  > description.
+- `price`
+  > Exact price the customer paid for this item at purchase. Uses variant
+  > override price if defined, otherwise product base price. Preserved
+  > unchanged regardless of subsequent price changes.
+- `seller_shop_name`
+  > Seller shop name as it existed at the time of purchase. Preserved
+  > independently from seller profile changes.
+- `seller_logo_image`
+  > URL of seller logo image as it appeared at purchase time. Preserved for
+  > historical reference even if seller updates their logo.
+- `created_at`
+  > Timestamp when the order item snapshot was created, marking the exact
+  > moment of purchase completion.
+
+### `shopping_mall_shipments`
+
+Shipment packages created by sellers for order fulfillment.
+
+Represents a physical package shipped by a seller containing one or more
+order items from the same seller. When a seller ships items, they create
+a shipment with carrier name and tracking number. All items in the same
+shipment share the same tracking information.
+
+Key behaviors:
+- Sellers create shipments when shipping order items
+- Sellers enter carrier name and tracking number
+- Items can be bundled into a single shipment or shipped individually
+- Customers view tracking information per shipment
+- Delivery is confirmed by customer or automatically after 14 days
+- When delivery is confirmed, all items in the shipment change to
+'delivered' status
+
+The shipment groups order items from the same seller for the same order.
+Order items reference the shipment they belong to via {@link
+shopping_mall_order_items.shipment_id}.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `seller_id`
+  > The seller who created this shipment. References {@link
+  > shopping_mall_sellers.id}.
+- `order_id`
+  > The order containing the items in this shipment. Enables efficient
+  > querying of shipments for customer order views. References {@link
+  > shopping_mall_orders.id}.
+- `carrier_name`
+  > Name of the shipping carrier (e.g., FedEx, UPS, DHL). Entered by the
+  > seller when creating the shipment.
+- `tracking_number`
+  > Tracking number provided by the carrier. Used by customers to track
+  > shipment status on the carrier's website.
+- `shipped_at`
+  > Timestamp when the shipment was created and the items were marked as
+  > shipped. Set automatically when the seller creates the shipment.
+- `delivered_at`
+  > Timestamp when delivery was confirmed. Set either by customer
+  > confirmation or automatically 14 days after shipping if not confirmed by
+  > customer.
+- `created_at`: Record creation timestamp.
+- `updated_at`: Record last modification timestamp.
+- `deleted_at`
+  > Soft deletion timestamp. Set when the shipment record is marked as
+  > deleted.
+
+### `shopping_mall_cancellation_requests`
+
+Customer requests to cancel individual order items before shipment. Each
+request includes a reason for cancellation, tracks status through
+pending/approved/rejected states, and records when the seller responds.
+Only one active cancellation request can exist per order item. When
+approved, the order item status changes to cancelled and stock is
+restored. Linked to [shopping_mall_cancellation_request_snapshots](#shopping_mall_cancellation_request_snapshots)
+for audit trail preservation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_order_item_id`
+  > The order item being requested for cancellation. Must have 'paid' status
+  > (not yet shipped). One active cancellation request per order item. {@link
+  > shopping_mall_order_items.id}.
+- `shopping_mall_seller_id`
+  > The seller who responds to the cancellation request. Null until seller
+  > approves or rejects. Must match the seller of the order item. {@link
+  > shopping_mall_sellers.id}.
+- `reason`
+  > Customer's explanation for requesting cancellation. Required text field
+  > explaining why the order item should be cancelled.
 - `status`
-  > Current state of the cancellation request: pending (awaiting seller
-  > review), approved (seller accepted, refund initiated), or rejected
-  > (seller declined with reason provided).
-- `seller_response`
-  > Seller's response message when approving or rejecting the request.
-  > Optional additional context from the seller.
-- `rejection_reason`
-  > Reason provided by seller when rejecting the cancellation request.
-  > Required when status is 'rejected'.
-- `created_at`: Timestamp when the cancellation request was created.
+  > Current status of the cancellation request. 'pending' - awaiting seller
+  > response, 'approved' - seller accepted cancellation, 'rejected' - seller
+  > declined cancellation. Transitions: pending → approved or pending →
+  > rejected.
+- `created_at`: Timestamp when the cancellation request was created by the customer.
 - `updated_at`
-  > Timestamp when the cancellation request was last modified (status change,
-  > seller response, etc.).
+  > Timestamp when the cancellation request was last updated. Tracks status
+  > transitions and seller response.
+- `responded_at`
+  > Timestamp when the seller responded to the request. Null until seller
+  > approves or rejects.
 
 ### `shopping_mall_cancellation_request_snapshots`
 
-Immutable snapshots preserving complete state of cancellation requests at
-each stage of their lifecycle. Created automatically when a cancellation
-request is submitted and when a seller responds (approve/reject). Records
-the transition from previous status to new status, along with the
-customer's reason for cancellation, seller's response, and rejection
-reason if applicable. Provides complete audit trail for dispute
-resolution and legal compliance as required by the snapshot principle.
-Each snapshot represents a single state transition and cannot be modified
-or deleted.
+Immutable snapshots of cancellation request state created when a seller
+responds to a cancellation request by approving or rejecting it. Captures
+the customer's original reason text, the seller's decision status, and
+the exact timestamp of response for permanent audit trail and dispute
+resolution.
 
-Related to [shopping_mall_cancellation_requests](#shopping_mall_cancellation_requests) for the parent
-cancellation request entity.
+This table serves as authoritative evidence for resolving disputes
+between customers and sellers regarding cancellation handling. Each
+snapshot represents a distinct point in the cancellation request timeline
+and cannot be modified or deleted after creation. Multiple snapshots may
+exist for a single cancellation request if the seller provides multiple
+responses over time.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `shopping_mall_cancellation_request_id`
-  > The cancellation request this snapshot captures. {@link
-  > shopping_mall_cancellation_requests.id}
-- `previous_status`
-  > The status of the cancellation request before this state change. Null for
-  > initial submission snapshots.
-- `new_status`
-  > The status of the cancellation request after this state change. Values:
-  > 'pending' for initial submission, 'approved' when seller approves,
-  > 'rejected' when seller rejects.
+  > The cancellation request that this snapshot captures at the moment of
+  > seller response. [shopping_mall_cancellation_requests.id](#shopping_mall_cancellation_requests)
 - `reason`
-  > Customer's explanation for why they want to cancel the order item.
-  > Captured at the time of snapshot creation to preserve the exact wording.
-- `seller_response`
-  > Seller's response or explanation when approving or rejecting the
-  > cancellation request. Null for initial submission snapshots, populated
-  > when seller responds.
-- `rejection_reason`
-  > Seller's explanation for rejecting the cancellation request. Null for
-  > approved or pending statuses, populated only when seller rejects the
-  > request.
+  > The original cancellation reason text provided by the customer when they
+  > submitted the cancellation request. Preserved exactly as entered without
+  > modification to maintain historical accuracy for dispute resolution.
+- `status`
+  > The status assigned by the seller's response. Valid values are 'approved'
+  > (seller authorized the cancellation) or 'rejected' (seller denied the
+  > cancellation). Snapshots are only created upon seller response, so this
+  > value is never 'pending'.
 - `created_at`
-  > Timestamp when this snapshot was created, representing when the state
-  > transition occurred.
+  > The exact timestamp when the seller responded to the cancellation request
+  > and this snapshot was created. Serves as the official record of when the
+  > cancellation decision was made.
+
+### `shopping_mall_refund_requests`
+
+Customer requests to refund delivered order items within the 7-day
+eligibility window. Each request is associated with exactly one order
+item and can only be created for items with 'delivered' status. The
+seller who owns the product can approve or reject the request, triggering
+stock restoration and order status recalculation upon approval. All state
+changes are preserved in shopping_mall_refund_request_snapshots for audit
+trail and dispute resolution.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_order_item_id`
+  > The order item being requested for refund. Must have 'delivered' status
+  > and be within 7 days of delivery. Each order item can have at most one
+  > active (pending) refund request. [shopping_mall_order_items.id](#shopping_mall_order_items)
+- `reason`
+  > Customer's explanation for requesting the refund. Required field with
+  > minimum 10 characters and maximum 1000 characters. Preserved exactly as
+  > submitted in snapshots for dispute resolution.
+- `status`
+  > Current status of the refund request. Values: 'pending' (awaiting seller
+  > response), 'approved' (seller approved, refund processed), 'rejected'
+  > (seller declined). Initial status is always 'pending'. Status transitions
+  > are one-way: pending → approved or pending → rejected.
+- `created_at`
+  > Timestamp when the refund request was submitted by the customer. Used to
+  > validate the 7-day eligibility window from the order item's delivery
+  > date.
+- `responded_at`
+  > Timestamp when the seller responded to the request (approved or
+  > rejected). Null until seller responds. Preserved in snapshots for audit
+  > trail.
+
+### `shopping_mall_refund_request_snapshots`
+
+Immutable snapshots of refund request state changes, capturing reason and
+status when seller responds for audit trail and dispute resolution.
+
+Each snapshot preserves the complete state of a refund request at a
+specific point in time, typically when the seller approves or rejects the
+request. These snapshots ensure transaction integrity and provide
+evidence for dispute resolution between customers and sellers.
+
+Snapshots are append-only records that cannot be modified or deleted,
+maintaining a permanent audit trail of all refund request state
+transitions.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_refund_request_id`
+  > Reference to the refund request being snapshotted. {@link
+  > shopping_mall_refund_requests.id}
+- `reason`
+  > The reason text for the refund request at the time of this snapshot.
+  > Preserves the customer's explanation for requesting a refund.
+- `status`
+  > The status of the refund request at the time of this snapshot. Valid
+  > values: 'pending', 'approved', or 'rejected'.
+- `created_at`
+  > Timestamp when this snapshot was created, typically when the seller
+  > responded to the refund request.
+
+### `shopping_mall_order_item_snapshot_variant_options`
+
+Normalized child table for storing variant option key-value pairs at
+purchase time, decomposing variant configuration into atomic values for
+1NF compliance. Each row captures one option (e.g., color=Red,
+size=Large) preserving the exact variant state when the customer placed
+their order. Supports dispute resolution by providing clear evidence of
+what the customer purchased.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `order_item_snapshot_id`
+  > Reference to the order item snapshot that contains this variant option.
+  > [shopping_mall_order_item_snapshots.id](#shopping_mall_order_item_snapshots)
+- `option_key`
+  > Name of the variant option, such as "color", "size", or "material".
+  > Preserved exactly as defined at purchase time for dispute resolution.
+- `option_value`
+  > Value of the variant option, such as "Red", "Large", or "Cotton".
+  > Captures the exact customer selection at purchase time.
+- `created_at`
+  > Timestamp when this variant option record was created. Matches the order
+  > item snapshot creation time for consistency.
 
 ## Reviews
 
@@ -1630,9 +1545,9 @@ Properties as follows:
 erDiagram
 "shopping_mall_reviews" {
   String id PK
-  String customer_id FK
-  String product_id FK
-  String order_id FK
+  String shopping_mall_customer_id FK
+  String shopping_mall_product_id FK
+  String shopping_mall_order_id FK
   Int rating
   String content "nullable"
   DateTime created_at
@@ -1642,10 +1557,8 @@ erDiagram
 "shopping_mall_review_snapshots" {
   String id PK
   String shopping_mall_review_id FK
-  Int previous_rating
-  Int new_rating
-  String previous_content "nullable"
-  String new_content "nullable"
+  Int rating
+  String content "nullable"
   DateTime created_at
 }
 "shopping_mall_review_snapshots" }o--|| "shopping_mall_reviews" : review
@@ -1653,80 +1566,142 @@ erDiagram
 
 ### `shopping_mall_reviews`
 
-Customer reviews and ratings for purchased products, containing rating
-(1-5 stars), optional text content, and references to customer, product,
-and order for purchase verification.
+Customer reviews for delivered products with rating (1-5 stars) and
+optional text content.
 
-Supports soft delete to preserve reviews when customers delete accounts,
-displaying as 'deleted user' while maintaining review content for product
-rating calculations. Enforces one review per product per order constraint
-to prevent duplicate reviews.
+Reviews are linked to customer, product, and order for purchase
+verification and to enforce the one-review-per-product-per-order
+constraint. Reviews can only be written after the order item status
+becomes 'delivered'. Customers can edit their reviews (creating snapshots
+via [shopping_mall_review_snapshots](#shopping_mall_review_snapshots)) or soft-delete them.
+Soft-deleted reviews are preserved and displayed as 'deleted user' for
+historical transparency.
 
-Reviews can only be written for delivered order items. When customers
-edit their reviews, snapshots are created separately in {@link
-shopping_mall_review_snapshots} for audit trails and dispute resolution.
+Reviews are displayed on product detail pages sorted by newest first, and
+contribute to the product's average rating calculation.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `customer_id`
-  > Customer who wrote this review. Referenced as 'deleted user' when
-  > customer account is deleted. References {@link
-  > shopping_mall_customers.id}.
-- `product_id`
-  > Product being reviewed. Used for product-level rating calculation and
-  > filtering. References [shopping_mall_products.id](#shopping_mall_products).
-- `order_id`
-  > Order through which the product was purchased. Used for purchase
-  > verification and enforcing one-review-per-product-per-order constraint.
-  > References [shopping_mall_orders.id](#shopping_mall_orders).
+- `shopping_mall_customer_id`: The customer who wrote this review. [shopping_mall_customers.id](#shopping_mall_customers).
+- `shopping_mall_product_id`: The product being reviewed. [shopping_mall_products.id](#shopping_mall_products).
+- `shopping_mall_order_id`
+  > The order through which this product was purchased. Used for purchase
+  > verification and enforcing one review per product per order. {@link
+  > shopping_mall_orders.id}.
 - `rating`
-  > Rating value from 1 to 5 stars. Required for all reviews. Used to
-  > calculate product average rating.
+  > Star rating from 1 to 5. Required field representing the customer's
+  > overall satisfaction with the product.
 - `content`
-  > Optional text content of the review. Supports full-text search via GIN
-  > index. Maximum 2000 characters.
+  > Optional text content of the review. Can contain detailed feedback about
+  > the product.
 - `created_at`: Timestamp when the review was created.
-- `updated_at`
-  > Timestamp when the review was last updated. Used for snapshot creation
-  > triggers.
+- `updated_at`: Timestamp when the review was last modified.
 - `deleted_at`
-  > Soft delete timestamp. When set, review is hidden from display but
-  > preserved for rating calculations and audit. Used when customer deletes
-  > account - review displays as 'deleted user'.
+  > Timestamp when the review was soft-deleted. Soft-deleted reviews are
+  > preserved and displayed as 'deleted user' for historical transparency.
 
 ### `shopping_mall_review_snapshots`
 
-Immutable snapshot records of review edits preserving previous and new
-rating values and text content. Created automatically when customers
-modify their reviews to maintain complete edit history for dispute
-resolution and audit purposes.
+Immutable snapshots of review state preserved when reviews are edited,
+supporting audit trails, dispute resolution, and edit history tracking.
 
-Each snapshot captures the state transition from previous to new values,
-recording when the change occurred and what values changed. Snapshots are
-never deleted even if the parent review is soft-deleted, ensuring
-permanent audit trails for the snapshot principle.
+Each snapshot captures the complete state of a review (rating and
+content) at the moment before an edit is applied. Snapshots are created
+automatically when customers modify their reviews and cannot be modified
+or deleted by any actor, including administrators.
 
-Supports the platform's financial accountability model where customer
-feedback disputes may require historical evidence of what was originally
-written versus current state.
+The snapshot ensures accountability and transparency in the review system
+by preserving evidence of all changes, preventing review manipulation,
+and providing historical proof for dispute resolution. Even when the
+parent review is deleted, all associated snapshots are retained
+indefinitely for compliance and audit purposes.
+
+Relationships:
+- Belongs to [shopping_mall_reviews](#shopping_mall_reviews) (1:N - one review can have
+multiple snapshots)
+- Maintains indirect relationship to customer, product, and order through
+the parent review
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `shopping_mall_review_id`: The review that was edited. References [shopping_mall_reviews.id](#shopping_mall_reviews).
-- `previous_rating`
-  > The rating value (1-5 stars) before this edit was made. Captures the
-  > previous state for audit comparison.
-- `new_rating`
-  > The rating value (1-5 stars) after this edit was made. Captures the new
-  > state for audit comparison.
-- `previous_content`
-  > The text content before this edit was made. Null if the review had no
-  > text content originally.
-- `new_content`
-  > The text content after this edit was made. Null if the customer removed
-  > all text content.
+- `shopping_mall_review_id`
+  > Parent review's [shopping_mall_reviews.id](#shopping_mall_reviews). Links snapshot to the
+  > review whose state was captured before an edit.
+- `rating`
+  > Star rating value (1-5) as it existed before the edit. Preserved to show
+  > the customer's original assessment before modification.
+- `content`
+  > Text content of the review as it existed before the edit. May be null if
+  > the review had no text content at the time of the snapshot. Preserved
+  > exactly without modification for dispute resolution.
 - `created_at`
-  > Timestamp when this snapshot was created, coinciding with when the review
-  > edit was submitted.
+  > Timestamp when the snapshot was created, marking the exact moment when
+  > the review was edited. Used to establish chronological order of edit
+  > history.
+
+## Addresses
+
+```mermaid
+erDiagram
+"shopping_mall_addresses" {
+  String id PK
+  String shopping_mall_customer_id FK
+  String recipient_name
+  String phone_number
+  String street_address
+  String city
+  String state_province
+  String postal_code
+  String country
+  Boolean is_default
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+```
+
+### `shopping_mall_addresses`
+
+Customer shipping addresses with complete destination information for
+order delivery.
+
+Each address contains recipient name, phone number, street address, city,
+state/province, postal code, and country. Customers can have multiple
+addresses with one designated as default for checkout convenience.
+
+Addresses are copied to orders at checkout rather than referenced,
+preserving the address state at time of purchase through the order's
+shipping_address field. This ensures historical accuracy even if
+customers modify or delete addresses later.
+
+Key relationships:
+- Belongs to [shopping_mall_customers](#shopping_mall_customers) (many addresses per customer)
+
+Soft deletion via deleted_at allows addresses to be removed from
+customer's active list while preserving any historical references in past
+orders.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `shopping_mall_customer_id`
+  > Owner customer's [shopping_mall_customers.id](#shopping_mall_customers). Each customer can
+  > have multiple shipping addresses.
+- `recipient_name`: Name of the person who will receive the package at this address.
+- `phone_number`: Contact phone number for delivery coordination at this address.
+- `street_address`: Street address including house/building number and street name.
+- `city`: City or locality name for the shipping address.
+- `state_province`: State, province, or region name for the shipping address.
+- `postal_code`: Postal or ZIP code for the shipping address.
+- `country`: Country name for the shipping address.
+- `is_default`
+  > Whether this address is the customer's default shipping address. Only one
+  > address per customer can be default. Used for automatic selection at
+  > checkout.
+- `created_at`: Timestamp when the address was created.
+- `updated_at`: Timestamp when the address was last updated.
+- `deleted_at`
+  > Timestamp when the address was soft-deleted. Null for active addresses.
+  > Soft deletion preserves address history for past orders.

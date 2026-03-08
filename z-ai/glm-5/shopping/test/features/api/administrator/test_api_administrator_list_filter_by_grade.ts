@@ -2,73 +2,126 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallAdmin";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import type { IPageIShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallAdministrator";
+import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_administrator_join } from "../../../authorize/authorize_administrator_join";
+import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
+import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
 
-/**
- * Test administrator account listing with grade filtering capability.
- *
- * This test validates:
- * 1. Grade filter accepts exact match values of 'regular' or 'super'
- * 2. When filtering by grade='regular', only regular administrators are returned
- * 3. When filtering by grade='super', only super administrators are returned
- * 4. The response structure remains consistent with pagination metadata
- * 5. Other admins with different grades are excluded from results when grade filter is applied
- */
 export async function test_api_administrator_list_filter_by_grade(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create an admin connection for authentication
+  // Create super administrator connection for testing
+  // Note: In test environment, the first administrator may have elevated privileges
+  // or there may be a seeded super admin account
   const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {});
-  // Create additional regular admins for test data
-  await ArrayUtil.asyncRepeat(3, async () => {
-    const tempConnection: api.IConnection = { host: connection.host };
-    await authorize_admin_join(tempConnection, {});
+  const superAdmin = await authorize_administrator_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    },
   });
-  // Test 1: Filter by 'regular' grade
-  const regularResult = await api.functional.shoppingMall.admin.admins.index(
-    adminConnection,
-    {
-      body: { grade: "regular" } satisfies IShoppingMallAdmin.IRequest,
-    },
-  );
-  typia.assert(regularResult);
-  // Validate all returned admins have 'regular' grade
+  typia.assert(superAdmin);
+  // Create multiple regular administrators for testing grade filtering
+  const regularAdmins = await ArrayUtil.asyncRepeat(3, async () => {
+    const conn: api.IConnection = { host: connection.host };
+    const admin = await authorize_administrator_join(conn, {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+      },
+    });
+    typia.assert(admin);
+    return admin;
+  });
+  // Test 1: Filter by grade='regular'
+  const regularFilterResult =
+    await api.functional.shoppingMall.administrator.administrators.index(
+      adminConnection,
+      {
+        body: {
+          grade: "regular",
+        } satisfies IShoppingMallAdministrator.IRequest,
+      },
+    );
+  typia.assert(regularFilterResult);
+  // Verify all returned administrators have grade='regular'
   TestValidator.predicate(
-    "all admins with regular filter have regular grade",
-    regularResult.data.every((admin) => admin.grade === "regular"),
+    "all returned admins have regular grade when filtered by regular",
+    regularFilterResult.data.every((admin) => admin.grade === "regular"),
   );
-  // Validate at least one regular admin exists (we created some)
+  // Test 2: Filter by grade='super'
+  const superFilterResult =
+    await api.functional.shoppingMall.administrator.administrators.index(
+      adminConnection,
+      {
+        body: {
+          grade: "super",
+        } satisfies IShoppingMallAdministrator.IRequest,
+      },
+    );
+  typia.assert(superFilterResult);
+  // Verify all returned administrators have grade='super'
   TestValidator.predicate(
-    "at least one regular admin exists",
-    regularResult.data.length > 0,
+    "all returned admins have super grade when filtered by super",
+    superFilterResult.data.every((admin) => admin.grade === "super"),
   );
-  // Test 2: Filter by 'super' grade
-  const superResult = await api.functional.shoppingMall.admin.admins.index(
-    adminConnection,
-    {
-      body: { grade: "super" } satisfies IShoppingMallAdmin.IRequest,
-    },
+  // Test 3: No grade filter (null/undefined) - should return all administrators
+  const allAdminsResult =
+    await api.functional.shoppingMall.administrator.administrators.index(
+      adminConnection,
+      {
+        body: {} satisfies IShoppingMallAdministrator.IRequest,
+      },
+    );
+  typia.assert(allAdminsResult);
+  // Verify that unfiltered results include at least some regular administrators
+  const hasRegularAdmins = allAdminsResult.data.some(
+    (admin) => admin.grade === "regular",
   );
-  typia.assert(superResult);
-  // Validate all returned admins have 'super' grade
   TestValidator.predicate(
-    "all admins with super filter have super grade",
-    superResult.data.every((admin) => admin.grade === "super"),
+    "unfiltered results include regular admins",
+    hasRegularAdmins,
   );
-  // Validate no regular admins appear in super filter results
+  // Test 4: Verify grade filter results are mutually exclusive
+  // Regular filter results should not contain any super admins
+  const regularIds = new Set(regularFilterResult.data.map((admin) => admin.id));
+  const superAdminIds = new Set(
+    superFilterResult.data.map((admin) => admin.id),
+  );
+  // Verify no overlap between regular and super filter results
+  const regularFilterHasSuperAdmins = regularFilterResult.data.some((admin) =>
+    superAdminIds.has(admin.id),
+  );
   TestValidator.predicate(
-    "no regular admins in super filter results",
-    !superResult.data.some((admin) => admin.grade === "regular"),
+    "regular filter results don't include super admins",
+    !regularFilterHasSuperAdmins,
+  );
+  const superFilterHasRegularAdmins = superFilterResult.data.some((admin) =>
+    regularIds.has(admin.id),
+  );
+  TestValidator.predicate(
+    "super filter results don't include regular admins",
+    !superFilterHasRegularAdmins,
+  );
+  // Test 5: Verify that our created regular admins appear in regular filter results
+  const createdRegularIds = new Set(regularAdmins.map((admin) => admin.id));
+  const regularFilterIncludesCreated = regularFilterResult.data.some((admin) =>
+    createdRegularIds.has(admin.id),
+  );
+  TestValidator.predicate(
+    "created regular admins appear in regular filter results",
+    regularFilterIncludesCreated,
   );
 }

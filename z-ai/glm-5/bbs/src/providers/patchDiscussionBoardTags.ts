@@ -17,22 +17,20 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchDiscussionBoardTags(props: {
   body: IDiscussionBoardTag.IRequest;
 }): Promise<IPageIDiscussionBoardTag.ISummary> {
-  const page = typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-    props.body.page ?? 1,
-  );
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const search = props.body.search?.trim();
   const whereInput = {
-    ...(search && search.length > 0
-      ? { value: { contains: search.toLowerCase() } }
-      : {}),
+    deleted_at: null,
+    ...(props.body.search && {
+      name: { contains: props.body.search, mode: "insensitive" as const },
+    }),
   } satisfies Prisma.discussion_board_tagsWhereInput;
   const data = await MyGlobal.prisma.discussion_board_tags.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { value: "asc" },
+    orderBy: { created_at: "desc" as const },
     ...DiscussionBoardTagAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.discussion_board_tags.count({

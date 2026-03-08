@@ -1,0 +1,138 @@
+/// Main category entity for hierarchical product catalog organization.
+/// Categories can be nested with parent-child relationships (one level of
+/// nesting as specified) to organize products into a tree structure.
+/// Administrators create, edit, and delete categories to manage product
+/// organization. Customers browse categories to discover products.
+///
+/// Categories have a name that must be unique within their parent level (or
+/// at root if no parent). The is_leaf flag indicates whether a category has
+/// no children (leaf node) or may contain subcategories. Root categories
+/// have null parent_category, while child categories reference their parent
+/// via parent_category_id.
+///
+/// This table is referenced by the ecommerce_mall_products table for product
+/// categorization. Category changes are audited via
+/// ecommerce_mall_category_snapshots.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link ecommerce_mall_categories.id}. Null for root
+  /// categories. Enables hierarchical tree structure.
+  parent_category_id String?
+  
+  /// Category name. Must be unique within the same parent level (or at root).
+  /// Used for customer browsing and product organization.
+  name String
+  
+  /// Optional category description providing context for product browsing.
+  description String?
+  
+  /// Whether this category has no child subcategories. True for leaf nodes,
+  /// false for parent categories that may contain children.
+  is_leaf Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children ecommerce_mall_categories[] @relation("recursive")
+  snapshots ecommerce_mall_category_snapshots[]
+  products ecommerce_mall_products[]
+  productSnapshots ecommerce_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name, parent_category_id])
+  @@index([parent_category_id])
+  @@index([is_leaf])
+  @@index([created_at])
+}
+
+/// Immutable audit snapshots of categories preserved on every edit to track
+/// changes for dispute resolution and change history.
+///
+/// This table stores point-in-time states of category entities, capturing
+/// all field values at the moment of each edit. Snapshots are created
+/// automatically when a category is modified, providing an immutable record
+/// of historical changes.
+///
+/// Key relationships:
+/// - Referenced by {@link ecommerce_mall_categories} via snapshot history
+/// - Each snapshot represents a specific version of a category at a point in
+/// time
+/// - Used for audit trails, dispute resolution, and change history viewing
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_category_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original category {@link ecommerce_mall_categories.id}
+  /// whose edit history is being captured.
+  ecommerce_mall_category_id String
+  
+  /// Creation timestamp for this snapshot record (when the snapshot was
+  /// created)
+  snapshot_created_at DateTime
+  
+  /// Category name at the time of this snapshot
+  name String
+  
+  /// Category description at the time of this snapshot
+  description String?
+  
+  /// Flag indicating if this category is a leaf node (has no children) at the
+  /// time of this snapshot
+  is_leaf Boolean
+  
+  /// Creation timestamp recorded in the snapshot (when the category was
+  /// originally created)
+  created_at DateTime
+  
+  /// Last update timestamp recorded in the snapshot (when the category was
+  /// last modified)
+  updated_at DateTime
+  
+  /// Reference to parent category {@link ecommerce_mall_categories.id} at the
+  /// time of this snapshot (allows hierarchy tracking through history)
+  parent_category_id String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_category_id, snapshot_created_at], map: "ecommerce_mall_category_snapshots_ecommerce_mall_categ_5bafbf0f")
+}

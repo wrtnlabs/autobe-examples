@@ -14,8 +14,8 @@ export namespace ShoppingMallProductImageAtSummaryTransformer {
     return {
       select: {
         id: true,
-        url: true,
-        order: true,
+        image_url: true,
+        display_order: true,
         created_at: true,
       },
     } satisfies Prisma.shopping_mall_product_imagesFindManyArgs;
@@ -25,8 +25,8 @@ export namespace ShoppingMallProductImageAtSummaryTransformer {
   ): Promise<IShoppingMallProductImage.ISummary> {
     return {
       id: input.id,
-      url: input.url,
-      order: input.order,
+      image_url: input.image_url,
+      display_order: input.display_order,
       created_at: input.created_at.toISOString(),
     };
   }

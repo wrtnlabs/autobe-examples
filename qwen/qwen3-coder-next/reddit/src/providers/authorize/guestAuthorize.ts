@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
@@ -9,17 +9,17 @@ export async function guestAuthorize(request: {
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
-    throw new UnauthorizedException("Invalid token type");
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.reddit_clone_guests.findFirst({
+  const guest = await MyGlobal.prisma.reddit_like_guests.findFirst({
     where: {
       id: payload.id,
     },
   });
 
   if (guest === null) {
-    throw new ForbiddenException("You're not enrolled as a guest");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

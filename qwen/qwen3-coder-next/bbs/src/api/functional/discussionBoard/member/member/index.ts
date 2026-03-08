@@ -1,1 +1,1 @@
-export * as sessions from "./sessions/index";
+export * as activity from "./activity/index";

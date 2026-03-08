@@ -13,7 +13,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardSuperAdminArticlesArticleId(props: {
   superAdmin: SuperadminPayload;
-  articleId: string;
+  articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
   await MyGlobal.prisma.discussion_board_articles.delete({
     where: { id: props.articleId },

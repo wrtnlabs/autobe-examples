@@ -10,18 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardAdminRequestCollector {
   export async function collect(props: {
     body: IDiscussionBoardAdminRequest.ICreate;
-    discussionBoardUsers: IEntity;
+    discussionBoardMembers: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       reason: props.body.reason,
       status: "pending",
-      review_notes: null,
       created_at: new Date(),
       updated_at: new Date(),
-      reviewed_at: null,
-      requester: { connect: { id: props.discussionBoardUsers.id } },
+      deleted_at: null,
+      member: { connect: { id: props.discussionBoardMembers.id } },
       reviewer: undefined,
     } satisfies Prisma.discussion_board_admin_requestsCreateInput;
   }

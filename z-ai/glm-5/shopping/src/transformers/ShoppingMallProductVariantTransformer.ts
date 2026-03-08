@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -9,7 +9,6 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
-import { ShoppingMallProductVariantOptionTransformer } from "./ShoppingMallProductVariantOptionTransformer";
 
 export namespace ShoppingMallProductVariantTransformer {
   export type Payload = Prisma.shopping_mall_product_variantsGetPayload<
@@ -20,12 +19,17 @@ export namespace ShoppingMallProductVariantTransformer {
       select: {
         id: true,
         sku_code: true,
+        option_values: true,
         price: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         product: ShoppingMallProductAtSummaryTransformer.select(),
-        options: ShoppingMallProductVariantOptionTransformer.select(),
+        inventoryRecords: {
+          select: {
+            quantity_change: true,
+          },
+        } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_variantsFindManyArgs;
   }
@@ -34,18 +38,18 @@ export namespace ShoppingMallProductVariantTransformer {
   ): Promise<IShoppingMallProductVariant> {
     return {
       id: input.id,
-      skuCode: input.sku_code,
-      price: input.price ?? null,
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      options: await ArrayUtil.asyncMap(
-        input.options,
-        ShoppingMallProductVariantOptionTransformer.transform,
+      skuCode: input.sku_code,
+      optionValues: JSON.parse(input.option_values),
+      price: input.price ?? undefined,
+      stockQuantity: input.inventoryRecords.reduce(
+        (sum, record) => sum + record.quantity_change,
+        0,
       ),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

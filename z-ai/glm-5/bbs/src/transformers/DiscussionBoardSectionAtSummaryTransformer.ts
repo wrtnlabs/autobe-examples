@@ -1,12 +1,10 @@
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
 
 export namespace DiscussionBoardSectionAtSummaryTransformer {
   export type Payload = Prisma.discussion_board_sectionsGetPayload<
@@ -18,12 +16,7 @@ export namespace DiscussionBoardSectionAtSummaryTransformer {
         id: true,
         name: true,
         description: true,
-        _count: {
-          select: {
-            articles: true,
-          },
-        },
-        creator: DiscussionBoardUserAtSummaryTransformer.select(),
+        sequence: true,
       },
     } satisfies Prisma.discussion_board_sectionsFindManyArgs;
   }
@@ -34,10 +27,7 @@ export namespace DiscussionBoardSectionAtSummaryTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      articles_count: input._count.articles,
-      creator: await DiscussionBoardUserAtSummaryTransformer.transform(
-        input.creator,
-      ),
+      sequence: input.sequence,
     };
   }
 }

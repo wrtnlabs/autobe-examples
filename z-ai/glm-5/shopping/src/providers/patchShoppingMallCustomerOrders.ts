@@ -1,3 +1,4 @@
+import { IEShoppingMallOrderStatus } from "@ORGANIZATION/PROJECT-api/lib/structures/IEShoppingMallOrderStatus";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrder";
@@ -12,7 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { ShoppingMallOrderAtSummaryTransformer } from "../transformers/ShoppingMallOrderAtSummaryTransformer";
+import { ShoppingMallCustomerAtSummaryTransformer } from "../transformers/ShoppingMallCustomerAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,68 +22,56 @@ export async function patchShoppingMallCustomerOrders(props: {
   body: IShoppingMallOrder.IRequest;
 }): Promise<IPageIShoppingMallOrder.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build WHERE clause
-  const whereInput: Prisma.shopping_mall_ordersWhereInput = {
+  const whereInput = {
     shopping_mall_customer_id: props.customer.id,
-  };
-  // Status filter (exact match)
-  if (props.body.status !== undefined) {
-    whereInput.status = props.body.status;
-  }
-  // Order number filter (case-insensitive partial match)
-  if (props.body.order_number !== undefined) {
-    whereInput.order_number = {
-      contains: props.body.order_number,
-      mode: "insensitive",
-    };
-  }
-  // Date range filter (handle both bounds correctly)
-  const createdAtFilter: Prisma.DateTimeFilter = {};
-  if (props.body.created_at_from !== undefined) {
-    createdAtFilter.gte = new Date(props.body.created_at_from);
-  }
-  if (props.body.created_at_to !== undefined) {
-    createdAtFilter.lte = new Date(props.body.created_at_to);
-  }
-  if (Object.keys(createdAtFilter).length > 0) {
-    whereInput.created_at = createdAtFilter;
-  }
-  // Price range filter (handle both bounds correctly)
-  const priceFilter: Prisma.FloatFilter = {};
-  if (props.body.total_price_min !== undefined) {
-    priceFilter.gte = props.body.total_price_min;
-  }
-  if (props.body.total_price_max !== undefined) {
-    priceFilter.lte = props.body.total_price_max;
-  }
-  if (Object.keys(priceFilter).length > 0) {
-    whereInput.total_price = priceFilter;
-  }
-  // Query orders with pagination
-  const data = await MyGlobal.prisma.shopping_mall_orders.findMany({
+    deleted_at: null,
+    ...(props.body.search && {
+      order_number: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.status &&
+      props.body.status.length > 0 && {
+        status: { in: props.body.status },
+      }),
+  } satisfies Prisma.shopping_mall_ordersWhereInput;
+  const orders = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
-    ...ShoppingMallOrderAtSummaryTransformer.select(),
+    orderBy: { created_at: "desc" as const },
+    select: {
+      id: true,
+      order_number: true,
+      total_price: true,
+      status: true,
+      created_at: true,
+      customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+    },
   });
-  // Count total matching records
   const total = await MyGlobal.prisma.shopping_mall_orders.count({
     where: whereInput,
   });
-  // Transform and return paginated result
+  const data = await ArrayUtil.asyncMap(orders, async (order) => ({
+    id: order.id,
+    order_number: order.order_number,
+    total_price: order.total_price,
+    status: order.status,
+    created_at: order.created_at.toISOString(),
+    customer: order.customer
+      ? await ShoppingMallCustomerAtSummaryTransformer.transform(order.customer)
+      : null,
+  }));
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallOrderAtSummaryTransformer.transform,
-    ),
+    data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIShoppingMallOrder.ISummary;
 }

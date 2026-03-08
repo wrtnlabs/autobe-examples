@@ -1,0 +1,76 @@
+/// User-community subscription relationships tracking which communities each
+/// user has subscribed to.
+///
+/// This model represents the join relationship between users and
+/// communities, enabling:
+/// - Users to subscribe/unsubscribe from communities
+/// - Communities to track their subscriber count and member list
+/// - Efficient querying of a user's subscribed communities
+/// - Efficient querying of a community's subscribers
+///
+/// **Relationships:**
+/// - Belongs to a {@link reddit_platform_members} user as subscriber
+/// - Belongs to a {@link reddit_platform_communities} community as member
+/// - Unique constraint on (user_id, community_id) prevents duplicate
+/// subscriptions
+///
+/// **Business Rules:**
+/// - A user can subscribe to multiple communities
+/// - A community can have multiple subscribers
+/// - Each user-community pair can have only one subscription record
+/// - Subscriptions are tracked with a subscribed_at timestamp
+/// - Soft delete supported for proper subscription lifecycle management
+///
+/// **Use Cases:**
+/// - Display list of communities subscribed by current user
+/// - Show subscriber count and list for a community
+/// - Process subscription/unsubscription actions
+/// - Audit subscription history
+///
+/// @namespace CommunitySubscription
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced member's {@link reddit_platform_members.id}. Identifies which
+  /// user subscribed to this community.
+  reddit_platform_member_id String
+  
+  /// Referenced community's {@link reddit_platform_communities.id}. Identifies
+  /// which community the user subscribed to.
+  reddit_platform_community_id String
+  
+  /// Timestamp when the subscription was created.
+  subscribed_at DateTime
+  
+  /// Record creation timestamp for audit purposes.
+  created_at DateTime
+  
+  /// Record update timestamp for tracking changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when active, populated when subscription is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id], map: "reddit_platform_community_subscriptions_reddit_platfor_c46ff3f4")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_member_id, reddit_platform_community_id], map: "reddit_platform_community_subscriptions_reddit_platfor_fa0b3f8a")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_member_id], map: "reddit_platform_community_subscriptions_reddit_platfor_d984efcd")
+}

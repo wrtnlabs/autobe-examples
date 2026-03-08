@@ -15,101 +15,107 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthMemberRefresh(props: {
   body: IDiscussionBoardMember.IRefresh;
 }): Promise<IDiscussionBoardMember.IAuthorized> {
-  // 1. Verify refresh token
+  // Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: "member";
+    created_at: string;
   };
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate type
+  // Validate type
   if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session
+  // Get current time as proper ISO string
+  const nowIso = toISOStringSafe(new Date());
+  // Validate session
   const session =
     await MyGlobal.prisma.discussion_board_member_sessions.findFirst({
       where: {
         id: decoded.session_id,
         discussion_board_member_id: decoded.id,
+        invalidated_at: null,
+        expired_at: { gte: nowIso },
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate member
+  // Validate member
   const member =
     await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
       where: { id: decoded.id },
     });
-  if (!member.is_active) {
-    throw new HttpException("Account has been disabled", 403);
+  if (member.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const access = jwt.sign(
+  if (member.is_banned) {
+    throw new HttpException("Account is banned", 403);
+  }
+  // Calculate expiration times
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 15 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  );
+  // Generate new tokens
+  const newAccessToken = jwt.sign(
     {
-      type: decoded.type,
+      type: "member" as const,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: toISOStringSafe(now),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30m", issuer: "autobe" },
+    { expiresIn: "15m", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
+  const newRefreshToken = jwt.sign(
     {
-      type: decoded.type,
+      type: "member" as const,
       id: decoded.id,
       session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "30d", issuer: "autobe" },
   );
-  // 6. Update session expiration
+  // Update session with new tokens and expiration
   await MyGlobal.prisma.discussion_board_member_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    data: {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken,
+      expired_at: refreshExpires,
+    },
   });
-  // 7. Build response
-  return {
+  // Convert member data to response format
+  const memberData: IDiscussionBoardMember.IAuthorized = {
     id: member.id,
     email: member.email,
-    displayName: member.display_name,
+    display_name: member.display_name,
     bio: member.bio,
-    isActive: member.is_active,
-    isAdmin: member.is_admin,
-    isSuperAdmin: member.is_super_admin,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    access_token: access,
-    member: {
-      id: member.id as string & tags.Format<"uuid">,
-      email: member.email as string & tags.Format<"email">,
-      display_name: member.display_name,
-      bio: member.bio,
-      is_active: member.is_active,
-      is_admin: member.is_admin,
-      is_super_admin: member.is_super_admin,
-      created_at: toISOStringSafe(member.created_at),
-      updated_at: toISOStringSafe(member.updated_at),
-    } satisfies IDiscussionBoardMember.ISummary,
-    refresh_token: refresh,
+    role: typia.assert<"guest" | "member" | "admin" | "superAdmin">(
+      member.role,
+    ),
+    is_banned: member.is_banned,
+    ban_reason: member.ban_reason,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
     token: {
-      access: access,
-      refresh: refresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    } satisfies IAuthorizationToken,
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
+  return memberData;
 }

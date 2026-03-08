@@ -7,18 +7,39 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallCategoryAtSummaryTransformer {
-  export type Payload = Prisma.shopping_mall_categoriesGetPayload<
-    ReturnType<typeof select>
-  >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        parent_id: true,
-      },
-    } satisfies Prisma.shopping_mall_categoriesFindManyArgs;
+  // Explicit recursive type for category with parent relation
+  type CategoryResult = {
+    id: string;
+    name: string;
+    description: string | null;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date | null;
+    parent: CategoryResult | null;
+    children: {
+      id: string;
+    }[];
+    products: {
+      id: string;
+    }[];
+  };
+  export type Payload = CategoryResult;
+  export function select(): Prisma.shopping_mall_categoriesFindManyArgs {
+    const recursiveSelect =
+      (): Prisma.shopping_mall_categoriesFindManyArgs => ({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          parent: recursiveSelect(),
+          children: { select: { id: true } },
+          products: { select: { id: true } },
+        },
+      });
+    return recursiveSelect();
   }
   export async function transform(
     input: Payload,
@@ -26,8 +47,9 @@ export namespace ShoppingMallCategoryAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
-      parentId: input.parent_id,
+      description: input.description ?? null,
+      parent: input.parent ? await transform(input.parent) : null,
+      created_at: toISOStringSafe(input.created_at),
     };
   }
 }

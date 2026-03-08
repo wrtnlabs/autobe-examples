@@ -1,4 +1,7 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -15,11 +18,11 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardArticlesArticleId(props: {
-  articleId: string;
+  articleId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardArticle> {
   const article =
     await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
-      where: { id: props.articleId as string & tags.Format<"uuid"> },
+      where: { id: props.articleId },
       ...DiscussionBoardArticleTransformer.select(),
     });
   return await DiscussionBoardArticleTransformer.transform(article);

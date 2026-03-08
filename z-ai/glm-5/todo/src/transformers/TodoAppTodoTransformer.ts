@@ -1,12 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
-import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { TodoAppUserAtSummaryTransformer } from "./TodoAppUserAtSummaryTransformer";
 
 export namespace TodoAppTodoTransformer {
   export type Payload = Prisma.todo_app_todosGetPayload<
@@ -20,11 +18,10 @@ export namespace TodoAppTodoTransformer {
         description: true,
         start_date: true,
         due_date: true,
-        is_completed: true,
-        is_deleted: true,
+        completed: true,
+        deleted_at: true,
         created_at: true,
         updated_at: true,
-        user: TodoAppUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.todo_app_todosFindManyArgs;
   }
@@ -35,9 +32,8 @@ export namespace TodoAppTodoTransformer {
       description: input.description ?? null,
       startDate: input.start_date?.toISOString() ?? null,
       dueDate: input.due_date?.toISOString() ?? null,
-      isCompleted: input.is_completed,
-      isDeleted: input.is_deleted,
-      user: await TodoAppUserAtSummaryTransformer.transform(input.user),
+      completed: input.completed,
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
     };

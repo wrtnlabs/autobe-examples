@@ -1,6 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,95 +21,127 @@ export async function postShoppingMallCustomerCartItems(props: {
   customer: CustomerPayload;
   body: IShoppingMallCartItem.ICreate;
 }): Promise<IShoppingMallCartItem> {
-  // Step 1: Verify variant exists and get product/seller info for validation
+  const now = new Date();
+  // 1. Find or create cart for customer
+  let cart = await MyGlobal.prisma.shopping_mall_carts.findUnique({
+    where: { shopping_mall_customer_id: props.customer.id },
+  });
+  if (!cart) {
+    cart = await MyGlobal.prisma.shopping_mall_carts.create({
+      data: {
+        id: v4(),
+        customer: { connect: { id: props.customer.id } },
+        created_at: now,
+        updated_at: now,
+      },
+    });
+  }
+  // 2. Validate variant with product and seller joins
   const variant =
-    await MyGlobal.prisma.shopping_mall_product_variants.findFirstOrThrow({
-      where: { id: props.body.variantId, deleted_at: null },
+    await MyGlobal.prisma.shopping_mall_product_variants.findUnique({
+      where: { id: props.body.variant_id },
       select: {
         id: true,
+        sku_code: true,
+        option_values: true,
         price: true,
+        deleted_at: true,
+        created_at: true,
         product: {
           select: {
             id: true,
+            name: true,
+            description: true,
             base_price: true,
-            deleted_at: true,
             seller: {
               select: {
                 id: true,
-                approval_status: true,
+                email: true,
+                shop_name: true,
+                logo_image: true,
+                suspended: true,
+                banned: true,
+                deleted_at: true,
               },
             },
           },
         },
-      },
-    });
-  // Step 2: Business validation - product not deleted, seller not suspended
-  if (variant.product.deleted_at !== null) {
-    throw new HttpException("Product is no longer available", 410);
-  }
-  if (variant.product.seller.approval_status === "suspended") {
-    throw new HttpException("Seller is currently suspended", 403);
-  }
-  // Step 3: Check for existing cart item (unique constraint on customer+variant)
-  const existingItem =
-    await MyGlobal.prisma.shopping_mall_cart_items.findUnique({
-      where: {
-        shopping_customer_id_shopping_product_variant_id: {
-          shopping_customer_id: props.customer.id,
-          shopping_product_variant_id: props.body.variantId,
+        inventoryRecords: {
+          select: { quantity_change: true },
         },
       },
-      select: {
-        id: true,
-        quantity: true,
-        unit_price: true,
-      },
     });
-  let cartItem: Prisma.shopping_mall_cart_itemsGetPayload<
-    ReturnType<typeof ShoppingMallCartItemTransformer.select>
-  >;
+  if (!variant) {
+    throw new HttpException("Variant not found", 404);
+  }
+  if (variant.deleted_at !== null) {
+    throw new HttpException("This variant is no longer available", 400);
+  }
+  // 3. Calculate stock
+  const stockQuantity = variant.inventoryRecords.reduce(
+    (sum, record) => sum + record.quantity_change,
+    0,
+  );
+  if (stockQuantity <= 0) {
+    throw new HttpException("This variant is currently out of stock", 400);
+  }
+  // 4. Validate seller status
+  const seller = variant.product.seller;
+  if (seller.suspended || seller.banned || seller.deleted_at !== null) {
+    throw new HttpException("Seller is not available", 400);
+  }
+  // 5. Self-purchase prevention
+  const customer = await MyGlobal.prisma.shopping_mall_customers.findUnique({
+    where: { id: props.customer.id },
+    select: { email: true },
+  });
+  if (customer && customer.email === seller.email) {
+    throw new HttpException("Cannot purchase your own products", 400);
+  }
+  // 6. Check for existing cart item (using unique constraint)
+  const existingItem = await MyGlobal.prisma.shopping_mall_cart_items.findFirst(
+    {
+      where: {
+        shopping_mall_cart_id: cart.id,
+        shopping_mall_product_variant_id: props.body.variant_id,
+      },
+    },
+  );
+  let cartItemRecord;
   if (existingItem) {
-    // Step 4a: Update existing item - combine quantities, cap at 99
-    const newQuantity = Math.min(
-      existingItem.quantity + props.body.quantity,
-      99,
-    );
-    cartItem = await MyGlobal.prisma.shopping_mall_cart_items.update({
+    // Merge quantities
+    const newQuantity = existingItem.quantity + props.body.quantity;
+    const unavailable = newQuantity > stockQuantity;
+    cartItemRecord = await MyGlobal.prisma.shopping_mall_cart_items.update({
       where: { id: existingItem.id },
       data: {
         quantity: newQuantity,
-        updated_at: new Date(),
+        unavailable,
+        updated_at: now,
       },
       ...ShoppingMallCartItemTransformer.select(),
     });
   } else {
-    // Step 4b: Check 50-item limit for new items
-    const currentCount = await MyGlobal.prisma.shopping_mall_cart_items.count({
-      where: { shopping_customer_id: props.customer.id },
-    });
-    if (currentCount >= 50) {
-      throw new HttpException(
-        "Cart cannot contain more than 50 different items",
-        400,
-      );
-    }
-    // Calculate unit price for new cart item
-    const unitPrice = variant.price ?? variant.product.base_price;
-    // Step 5: Create new cart item
-    const created = await MyGlobal.prisma.shopping_mall_cart_items.create({
+    // Create new cart item
+    const unavailable = props.body.quantity > stockQuantity;
+    cartItemRecord = await MyGlobal.prisma.shopping_mall_cart_items.create({
       data: {
         id: v4(),
-        shopping_customer_id: props.customer.id,
-        shopping_product_variant_id: props.body.variantId,
         quantity: props.body.quantity,
-        unit_price: unitPrice,
-        created_at: new Date(),
-        updated_at: new Date(),
+        unavailable,
+        created_at: now,
+        updated_at: now,
+        cart: { connect: { id: cart.id } },
+        variant: { connect: { id: props.body.variant_id } },
       },
       ...ShoppingMallCartItemTransformer.select(),
     });
-    cartItem = created;
   }
-  // Step 6: Return using transformer
-  return await ShoppingMallCartItemTransformer.transform(cartItem);
+  // 7. Update cart's updated_at timestamp
+  await MyGlobal.prisma.shopping_mall_carts.update({
+    where: { id: cart.id },
+    data: { updated_at: now },
+  });
+  // 8. Transform and return
+  return await ShoppingMallCartItemTransformer.transform(cartItemRecord);
 }

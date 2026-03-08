@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { MemberPayload } from "../../decorators/payload/MemberPayload";
@@ -9,10 +9,10 @@ export async function memberAuthorize(request: {
   const payload: MemberPayload = jwtAuthorize({ request }) as MemberPayload;
 
   if (payload.type !== "member") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new UnauthorizedException("Invalid token type");
   }
 
-  const member = await MyGlobal.prisma.reddit_clone_members.findFirst({
+  const member = await MyGlobal.prisma.reddit_like_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

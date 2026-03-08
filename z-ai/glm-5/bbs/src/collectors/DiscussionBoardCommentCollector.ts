@@ -11,24 +11,18 @@ export namespace DiscussionBoardCommentCollector {
   export async function collect(props: {
     body: IDiscussionBoardComment.ICreate;
     discussionBoardArticles: IEntity;
-    discussionBoardUsers: IEntity;
-    discussionBoardUserSessions: IEntity;
+    discussionBoardMembers: IEntity;
+    discussionBoardMemberSessions: IEntity;
   }) {
-    const citizenId: string = v4();
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       content: props.body.content,
       created_at: new Date(),
-      updated_at: null,
+      updated_at: new Date(),
       deleted_at: null,
-      citizen: {
-        create: {
-          id: citizenId,
-          created_at: new Date(),
-        },
-      },
       article: { connect: { id: props.discussionBoardArticles.id } },
-      author: { connect: { id: props.discussionBoardUsers.id } },
+      author: { connect: { id: props.discussionBoardMembers.id } },
     } satisfies Prisma.discussion_board_commentsCreateInput;
   }
 }

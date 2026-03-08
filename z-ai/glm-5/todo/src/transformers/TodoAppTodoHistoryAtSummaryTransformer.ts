@@ -1,10 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
 import { ITodoAppTodoHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodoHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { TodoAppTodoAtSummaryTransformer } from "./TodoAppTodoAtSummaryTransformer";
 
 export namespace TodoAppTodoHistoryAtSummaryTransformer {
   export type Payload = Prisma.todo_app_todo_historiesGetPayload<
@@ -14,11 +16,12 @@ export namespace TodoAppTodoHistoryAtSummaryTransformer {
     return {
       select: {
         id: true,
-        created_at: true,
-        title: true,
-        description: true,
-        start_date: true,
-        due_date: true,
+        edited_at: true,
+        title_change: true,
+        description_change: true,
+        start_date_change: true,
+        due_date_change: true,
+        todo: TodoAppTodoAtSummaryTransformer.select(),
       },
     } satisfies Prisma.todo_app_todo_historiesFindManyArgs;
   }
@@ -27,11 +30,12 @@ export namespace TodoAppTodoHistoryAtSummaryTransformer {
   ): Promise<ITodoAppTodoHistory.ISummary> {
     return {
       id: input.id,
-      created_at: input.created_at.toISOString(),
-      title: input.title,
-      description: input.description,
-      start_date: input.start_date?.toISOString() ?? null,
-      due_date: input.due_date?.toISOString() ?? null,
+      todo: await TodoAppTodoAtSummaryTransformer.transform(input.todo),
+      edited_at: input.edited_at.toISOString(),
+      title_change: input.title_change,
+      description_change: input.description_change,
+      start_date_change: input.start_date_change?.toISOString() ?? null,
+      due_date_change: input.due_date_change?.toISOString() ?? null,
     };
   }
 }

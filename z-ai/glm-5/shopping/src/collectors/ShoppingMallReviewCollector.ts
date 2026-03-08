@@ -11,7 +11,6 @@ export namespace ShoppingMallReviewCollector {
   export async function collect(props: {
     body: IShoppingMallReview.ICreate;
     shoppingMallCustomers: IEntity;
-    shoppingMallCustomerSessions: IEntity;
   }) {
     return {
       id: v4(),
@@ -21,8 +20,8 @@ export namespace ShoppingMallReviewCollector {
       updated_at: new Date(),
       deleted_at: null,
       customer: { connect: { id: props.shoppingMallCustomers.id } },
-      product: { connect: { id: props.body.product_id } },
-      order: { connect: { id: props.body.order_id } },
+      product: { connect: { id: props.body.shopping_mall_product_id } },
+      order: { connect: { id: props.body.shopping_mall_order_id } },
     } satisfies Prisma.shopping_mall_reviewsCreateInput;
   }
 }

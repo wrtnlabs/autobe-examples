@@ -15,70 +15,79 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthSuperAdminJoin(props: {
   body: IDiscussionBoardSuperAdmin.IJoin;
 }): Promise<IDiscussionBoardSuperAdmin.IAuthorized> {
-  // Check duplicate email
+  // 1. Check duplicate email
   const existing =
     await MyGlobal.prisma.discussion_board_super_admins.findFirst({
       where: { email: props.body.email },
     });
   if (existing) throw new HttpException("Email already registered", 409);
-  // Create super admin with bcrypt-hashed password
-  const superAdmin = await MyGlobal.prisma.discussion_board_super_admins.create(
-    {
+  // 2. Create super admin
+  const admin = await MyGlobal.prisma.discussion_board_super_admins.create({
+    data: {
+      id: v4(),
+      email: props.body.email,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: props.body.display_name ?? null,
+      bio: props.body.bio ?? null,
+      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
+      updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
+    },
+  });
+  // 3. Create session
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session =
+    await MyGlobal.prisma.discussion_board_super_admin_sessions.create({
       data: {
         id: v4(),
-        email: props.body.email,
-        password_hash: await PasswordUtil.hash(props.body.password),
-        is_super_admin: true,
-        can_promote_super_admins: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
+        discussion_board_super_admin_id: admin.id,
+        access_token: "",
+        refresh_token: "",
+        ip: "",
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: new Date().toISOString() as string &
+          tags.Format<"date-time">,
+        expired_at: accessExpires.toISOString() as string &
+          tags.Format<"date-time">,
       },
-      select: {
-        id: true,
-        email: true,
-        is_super_admin: true,
-        can_promote_super_admins: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    },
-  );
-  // Create email verification token
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-  await MyGlobal.prisma.discussion_board_super_admin_email_verifications.create(
-    {
-      data: {
-        id: v4(),
-        super_admin_id: superAdmin.id,
-        token: v4(),
-        expires_at: expiresAt,
-        verified_at: null,
-        ip_address: null,
-        user_agent: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    },
-  );
-  // Build response with proper type conversion
-  const response: IDiscussionBoardSuperAdmin.IAuthorized = {
-    id: superAdmin.id,
-    email: superAdmin.email,
-    isSuperAdmin: superAdmin.is_super_admin,
-    canPromoteSuperAdmins: superAdmin.can_promote_super_admins,
-    createdAt: toISOStringSafe(superAdmin.created_at),
-    updatedAt: toISOStringSafe(superAdmin.updated_at),
-    deletedAt: superAdmin.deleted_at
-      ? toISOStringSafe(superAdmin.deleted_at)
-      : null,
-    token: {
-      access: "",
-      refresh: "",
-      expired_at: "",
-      refreshable_until: "",
-    },
+    });
+  // 4. Generate JWT tokens
+  const tokenPayload = {
+    type: "superAdmin",
+    id: admin.id,
+    session_id: session.id,
+    created_at: new Date().toISOString() as string & tags.Format<"date-time">,
   };
-  return response;
+  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
+  });
+  const refresh = jwt.sign(
+    {
+      ...tokenPayload,
+      tokenType: "refresh",
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
+  };
+  // 5. Return authorized response
+  return {
+    id: admin.id,
+    email: admin.email,
+    display_name: admin.display_name,
+    token,
+    authorizationActor: "superAdmin" as const,
+  } satisfies IDiscussionBoardSuperAdmin.IAuthorized;
 }

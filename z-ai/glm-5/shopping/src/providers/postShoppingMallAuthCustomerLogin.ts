@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallCustomerTransformer } from "../transformers/ShoppingMallCustomerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,24 +20,20 @@ export async function postShoppingMallAuthCustomerLogin(props: {
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: { email: props.body.email },
     select: {
-      id: true,
-      email: true,
-      display_name: true,
-      phone_number: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+      ...ShoppingMallCustomerTransformer.select().select,
       password_hash: true,
+      deleted_at: true,
     },
   });
-  if (!customer) {
+  // 2. Validate customer exists and is not deleted
+  if (!customer || customer.deleted_at !== null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 2. Check if account is deleted
-  if (customer.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
+  // 3. Check if banned
+  if (customer.banned) {
+    throw new HttpException("Account is banned", 403);
   }
-  // 3. Verify password
+  // 4. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     customer.password_hash,
@@ -44,63 +41,60 @@ export async function postShoppingMallAuthCustomerLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Calculate expiration times
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-  // 5. Generate JWT tokens
-  const sessionId = v4();
-  const accessToken = jwt.sign(
-    {
-      type: "customer",
-      id: customer.id,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30m", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "customer",
-      id: customer.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "14d", issuer: "autobe" },
-  );
-  // 6. Create session record
-  await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+  // 5. Create new session
+  const now = new Date().toISOString();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+  const refreshExpires = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString(); // 7 days
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
     data: {
-      id: sessionId,
-      shopping_mall_customer_id: customer.id,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      ip: props.body.ip ?? "",
+      id: v4(),
+      customer_id: customer.id,
+      ip: props.body.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      user_agent: null,
       created_at: now,
-      expired_at: refreshExpires,
+      expired_at: accessExpires,
     },
   });
-  // 7. Return IAuthorized response
+  // 6. Generate JWT tokens
   const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    access: jwt.sign(
+      {
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
+  // 7. Return IAuthorized using transformer
+  const transformedCustomer =
+    await ShoppingMallCustomerTransformer.transform(customer);
   return {
-    id: customer.id,
-    email: customer.email,
-    displayName: customer.display_name ?? null,
-    phoneNumber: customer.phone_number ?? null,
-    createdAt: toISOStringSafe(customer.created_at),
-    updatedAt: toISOStringSafe(customer.updated_at),
-    deletedAt: null,
+    id: transformedCustomer.id,
+    email: transformedCustomer.email,
+    displayName: transformedCustomer.displayName ?? null,
+    phoneNumber: transformedCustomer.phoneNumber ?? null,
+    banned: transformedCustomer.banned,
+    createdAt: transformedCustomer.createdAt,
+    updatedAt: transformedCustomer.updatedAt,
     token,
   } satisfies IShoppingMallCustomer.IAuthorized;
 }

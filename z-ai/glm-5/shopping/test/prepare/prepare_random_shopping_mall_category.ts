@@ -9,7 +9,7 @@ export function prepare_random_shopping_mall_category(
   input?: DeepPartial<IShoppingMallCategory.ICreate>,
 ): IShoppingMallCategory.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.paragraph({ sentences: 2 }),
+    name: input?.name ?? RandomGenerator.name(2),
     description:
       input?.description ??
       RandomGenerator.content({
@@ -17,6 +17,6 @@ export function prepare_random_shopping_mall_category(
         sentenceMin: 2,
         sentenceMax: 4,
       }),
-    parentId: input?.parentId ?? typia.random<string & tags.Format<"uuid">>(),
+    parent_id: input?.parent_id ?? null,
   };
 }

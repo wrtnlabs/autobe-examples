@@ -14,10 +14,8 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
     return {
       select: {
         id: true,
-        previous_rating: true,
-        new_rating: true,
-        previous_content: true,
-        new_content: true,
+        rating: true,
+        content: true,
         created_at: true,
       },
     } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs;
@@ -27,11 +25,9 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
   ): Promise<IShoppingMallReviewSnapshot.ISummary> {
     return {
       id: input.id,
-      previousRating: input.previous_rating,
-      newRating: input.new_rating,
-      previousContent: input.previous_content,
-      newContent: input.new_content,
-      createdAt: input.created_at.toISOString(),
+      rating: input.rating,
+      content: input.content,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

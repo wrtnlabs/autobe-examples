@@ -1,0 +1,56 @@
+/// Records of user bans issued by administrators, including the ban reason,
+/// timestamp, and audit trail.
+///
+/// This table enforces access control by tracking when users are banned from
+/// the system. Each ban record references the banned user via userId and the
+/// administrator who issued the ban via bannedByAdminId. Ban records are
+/// permanent audit entries and are never deleted to maintain accountability.
+///
+/// Key relationships:
+/// - {\@link economic_political_board_administrator_roles}: The banned
+/// user's account (via userId)
+/// - {\@link economic_political_board_administrator_roles}: The
+/// administrator who issued the ban (via bannedByAdminId)
+///
+/// Business behavior:
+/// - Ban records are append-only (never deleted)
+/// - A user may have multiple ban records over time (for historical tracking)
+/// - Admins can unban users by removing ban status, but the record remains
+/// for audit
+///
+/// @namespace BanRecords
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned user's {\@link economic_political_board_administrator_roles.id}.
+  user_id String
+  
+  /// Administrator's {\@link economic_political_board_administrator_roles.id}
+  /// who issued this ban.
+  banned_by_admin_id String
+  
+  /// The reason for the ban. Must be specific and documented.
+  reason String
+  
+  /// Timestamp when the ban was issued.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user economic_political_board_administrator_roles @relation("economic_political_board_ban_records_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  bannedByAdmin economic_political_board_administrator_roles @relation("economic_political_board_ban_records_of_banned_by_admin_id", fields: [banned_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([banned_by_admin_id])
+  @@index([created_at])
+  @@index([user_id, created_at])
+}

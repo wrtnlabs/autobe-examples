@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
@@ -17,9 +18,9 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallReviewsReviewId(props: {
-  reviewId: string;
+  reviewId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallReview> {
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findFirstOrThrow({
     where: {
       id: props.reviewId,
       deleted_at: null,

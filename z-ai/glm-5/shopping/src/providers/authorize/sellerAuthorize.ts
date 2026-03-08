@@ -16,12 +16,13 @@ export async function sellerAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
+      banned: false,
       approval_status: "approved",
     },
   });
 
   if (seller === null) {
-    throw new ForbiddenException("You're not enrolled or approved");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

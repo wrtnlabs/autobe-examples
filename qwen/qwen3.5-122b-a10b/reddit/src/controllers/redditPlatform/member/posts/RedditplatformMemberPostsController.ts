@@ -1,0 +1,304 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IRedditPlatformPost } from "../../../../api/structures/IRedditPlatformPost";
+import { IRedditPlatformPostVote } from "../../../../api/structures/IRedditPlatformPostVote";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { deleteRedditPlatformMemberPostsPostId } from "../../../../providers/deleteRedditPlatformMemberPostsPostId";
+import { patchRedditPlatformMemberPostsPostIdVote } from "../../../../providers/patchRedditPlatformMemberPostsPostIdVote";
+import { postRedditPlatformMemberPosts } from "../../../../providers/postRedditPlatformMemberPosts";
+import { putRedditPlatformMemberPostsPostId } from "../../../../providers/putRedditPlatformMemberPostsPostId";
+
+@Controller("/redditPlatform/member/posts")
+export class RedditplatformMemberPostsController {
+  /**
+   * Create a new post in a target community.
+   *
+   * This operation allows authenticated members to create posts within communities they are subscribed to. Posts can be of three types: text posts with content, link posts with URLs, or image posts with uploaded media files.
+   *
+   * **Subscription Requirement**: The requesting member must be subscribed to the target community before post creation is allowed. This is enforced by checking for an active subscription record in the community subscriptions table.
+   *
+   * **Post Type Validation**: The post_type field determines which content field must be populated:
+   * - Text posts (post_type='text'): text_content field is required
+   * - Link posts (post_type='link'): url field is required with valid URL format
+   * - Image posts (post_type='image'): file_id field is required referencing an uploaded image file
+   *
+   * **Ownership and Association**: The post is automatically associated with the authenticated member as the author and the specified community. The creation timestamp is recorded for feed sorting purposes.
+   *
+   * **Transaction Consistency**: The post record creation and community post count update must occur within a single database transaction to maintain data integrity.
+   *
+   * **Related Operations**: Before creating a post, users should verify their subscription status via GET /communities/{communityId}/subscription or PATCH /communities/{communityId}/subscribe. Image posts require prior file upload via the file management API to obtain a valid file_id.
+   *
+   * @param connection
+   * @param body Post creation information including target community, title, post type, and type-specific content.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Service layer implementation for post creation:
+   *
+   * 1. Authentication: Extract member_id from JWT session token. Reject with 401 if not authenticated.
+   *
+   * 2. Subscription Verification: Query reddit_platform_community_subscriptions table for record where member_id matches authenticated user, community_id matches request, and deleted_at is null. Return 403 Forbidden if no active subscription exists.
+   *
+   * 3. Ban Status Check: Query reddit_platform_community_bans table for record where member_id matches authenticated user, community_id matches request, and deleted_at is null. Return 403 Forbidden if banned.
+   *
+   * 4. Content Validation:
+   *    - Validate title is non-empty string (min 1 char, max 300 chars)
+   *    - Validate post_type is one of: 'text', 'link', 'image'
+   *    - For text posts: validate text_content is non-empty (min 1 char, max 10000 chars)
+   *    - For link posts: validate url is valid URL format and non-empty
+   *    - For image posts: validate file_id exists in reddit_platform_files table, owner_type='post', deleted_at is null
+   *
+   * 5. File Ownership Validation (for image posts): Verify file_id's owner_id matches the new post's intended ID (will be assigned) or allow orphaned file that gets linked after post creation.
+   *
+   * 6. Database Transaction:
+   *    - Begin transaction
+   *    - Insert new record into reddit_platform_posts table with: community_id, author_id (from authenticated member), file_id (if image post), title, post_type, text_content (if text post), url (if link post), created_at=now(), updated_at=now()
+   *    - Get generated post ID
+   *    - Update reddit_platform_communities table: SET post_count = post_count + 1 WHERE id = community_id
+   *    - Commit transaction
+   *
+   * 7. Concurrency Handling: Use optimistic locking on community table (version column) or database-level row locking to prevent race conditions on post_count update.
+   *
+   * 8. Response: Return 201 Created with full post object including generated ID, timestamps, and computed vote_score=0, comment_count=0.
+   *
+   * 9. Error Cases:
+   *    - 401 Unauthorized: No valid session token
+   *    - 403 Forbidden: Not subscribed to community or banned
+   *    - 400 Bad Request: Invalid post_type, missing required content field, invalid URL format, invalid file_id
+   *    - 404 Not Found: Community does not exist or is deleted
+   *    - 409 Conflict: Transaction conflict on community post_count update (retry logic)
+   *    - 500 Internal Server Error: Database error, rollback all changes
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IRedditPlatformPost.ICreate,
+  ): Promise<IRedditPlatformPost> {
+    try {
+      return await postRedditPlatformMemberPosts({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing post's title and content within the Reddit platform.
+   *
+   * This operation allows authenticated members to modify their own posts after creation. The post must exist, must not be soft-deleted, and the requesting member must be the original author. Only the post author can perform this update operation; attempts by other members will be rejected.
+   *
+   * **Post Type Immutability**
+   *
+   * The post type (text, link, or image) is determined at creation time and cannot be changed. This constraint preserves data integrity across the platform:
+   * - Text posts: content stored in text_content field
+   * - Link posts: URL stored in url field
+   * - Image posts: file reference stored in file_id field
+   *
+   * Attempting to change the post_type will result in a 400 Bad Request error.
+   *
+   * **Field Update Rules**
+   *
+   * - **title**: Required for all post types. Must be non-empty string with maximum 500 characters. Used for display in feeds and post lists.
+   * - **text_content**: Required only for text posts. Must be non-empty with maximum 10000 characters. First 200 characters shown in feed previews.
+   * - **url**: Required only for link posts. Must be valid URL format with protocol and domain. Maximum 80000 characters. Domain extracted for display.
+   * - **file_id**: Cannot be modified for image posts. Image uploads are handled through separate file management operations.
+   *
+   * **Soft Delete Behavior**
+   *
+   * Posts that have been soft-deleted (deleted_at is populated) cannot be updated. The deleted_at timestamp is set when a post is deleted by the author or a community moderator. To restore a deleted post, contact a moderator or use the post restoration workflow if available.
+   *
+   * **Vote Score and Comment Count**
+   *
+   * The response includes vote_score and comment_count fields that are calculated in real-time from related tables:
+   * - vote_score: Sum of all votes from reddit_platform_post_votes (+1 for upvote, -1 for downvote)
+   * - comment_count: Count of non-deleted comments from reddit_platform_comments
+   *
+   * **Authorization Requirements**
+   *
+   * The requesting member must be authenticated via session token and must be the original author (author_id matches authenticated member_id). Community moderators cannot update posts they did not author; they can only delete posts through separate moderation operations.
+   *
+   * **Related Operations**
+   *
+   * - `GET /redditPlatform/member/posts/{postId}`: Retrieve detailed post information before updating
+   * - `POST /redditPlatform/member/posts`: Create a new post (where post type is initially set)
+   * - `DELETE /redditPlatform/member/posts/{postId}`: Soft-delete a post (sets deleted_at timestamp)
+   *
+   * **Error Handling**
+   *
+   * - 404 Not Found: Post does not exist or has been soft-deleted
+   * - 403 Forbidden: Requesting member is not the post author
+   * - 400 Bad Request: Validation errors (missing title, invalid URL format, post_type change attempt)
+   * - 409 Conflict: Concurrent edit detected (updated_at timestamp changed between read and write)
+   *
+   * @param connection
+   * @param postId Target post's unique identifier (global scope)
+   * @param body Post update information including title and content fields based on post type
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1. Authenticate the requesting member and extract member ID from session token.
+   * 2. Query reddit_platform_posts table by postId (UUID).
+   * 3. Verify post exists and is not soft-deleted (deleted_at IS NULL).
+   * 4. Verify author_id matches authenticated member ID. Return 403 Forbidden if not author.
+   * 5. Validate request body:
+   *    - title: required, non-empty string, max length validation
+   *    - text_content: required if post_type is 'text', non-empty
+   *    - url: required if post_type is 'link', validate URL format
+   *    - Cannot change post_type after creation
+   * 6. Update the post record with new title and appropriate content field.
+   * 7. Set updated_at to current timestamp.
+   * 8. Return the updated post entity with all fields including vote score and comment count (calculated from related tables).
+   * 9. Handle soft delete: if post is deleted, return 404 Not Found.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":postId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformPost.IUpdate,
+  ): Promise<IRedditPlatformPost> {
+    try {
+      return await putRedditPlatformMemberPostsPostId({
+        member,
+        postId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a post from the platform using soft deletion.
+   *
+   * This operation allows authenticated members to delete posts they authored, or moderators to delete any post within their community. The post is marked as deleted via the deleted_at timestamp rather than physically removed from the database, preserving historical data integrity.
+   *
+   * **Authorization Requirements**:
+   *
+   * - Post authors can delete their own posts at any time
+   * - Community moderators can delete any post within their moderated community, regardless of authorship
+   * - Both author and moderator status are validated against the authenticated member's identity
+   *
+   * **Deletion Behavior**:
+   *
+   * When a post is deleted, all associated content is cascade removed:
+   * - All comments on the post are deleted
+   * - All votes on the post are removed
+   * - The post becomes invisible in all feeds and search results
+   *
+   * The post record remains in the database with a deleted_at timestamp for audit trail purposes, but is excluded from all user-facing queries.
+   *
+   * **Related Operations**:
+   *
+   * - `GET /posts/{postId}` - Retrieve post details before deletion
+   * - `PATCH /posts` - List and search posts
+   * - `POST /posts` - Create a new post
+   * - `PUT /posts/{postId}` - Update post title or content
+   *
+   * **Error Conditions**:
+   *
+   * - 401 Unauthorized: User is not authenticated
+   * - 403 Forbidden: User is neither the post author nor a community moderator
+   * - 404 Not Found: Post does not exist or has already been deleted
+   *
+   * @param connection
+   * @param postId Unique identifier of the post to delete (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1. Validate postId exists and is not already deleted (deleted_at IS NULL). 2. Fetch post with community_id and author_id. 3. Check authorization: either author_id matches authenticated member OR authenticated member is a moderator in the post's community (query reddit_platform_community_moderators where reddit_platform_community_id = post.community_id AND reddit_platform_member_id = authenticated_member_id AND deleted_at IS NULL). 4. If unauthorized, return 403 Forbidden. 5. If post not found or already deleted, return 404 Not Found. 6. Set deleted_at to current timestamp (soft delete). 7. Cascade delete will automatically remove related comments and votes via foreign key constraints (onDelete: Cascade). 8. Return 204 No Content.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":postId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteRedditPlatformMemberPostsPostId({
+        member,
+        postId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cast, change, or remove a vote on a specific post. This operation allows authenticated members to upvote or downvote posts, change their existing vote, or remove their vote entirely.
+   *
+   * The system enforces a strict one-vote-per-user-per-post rule through a unique composite index on (member_id, post_id). When a user attempts to vote on content they have already voted on, the system will either update their existing vote type or reject the request based on the new vote type.
+   *
+   * Vote operations are processed atomically to ensure vote score consistency across all users viewing the same post. The vote score is calculated as the difference between upvotes (+1) and downvotes (-1), and is updated immediately when a vote is cast, changed, or removed.
+   *
+   * **Authorization Requirements:**
+   * - Member authentication is required (guest users cannot vote)
+   * - Users cannot vote on their own posts (self-vote prevention)
+   * - Users banned from a community cannot vote on posts within that community
+   * - Users cannot vote on deleted posts
+   *
+   * **Vote State Management:**
+   * - Upvote: Cast or change to upvote (+1 score impact)
+   * - Downvote: Cast or change to downvote (-1 score impact)
+   * - Remove: Delete existing vote record (reverts score by previous vote value)
+   *
+   * **Related Operations:**
+   * - `GET /posts/{postId}`: Retrieve post details including current vote score
+   * - `PATCH /posts/{postId}`: Update post content (author only)
+   * - `PATCH /posts`: List posts with vote scores in feed
+   *
+   * @param connection
+   * @param postId Target post's unique identifier (UUID scope)
+   * @param body Vote action and type specification
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Handle vote cast, change, or removal on a post with the following logic:
+   *
+   * 1. Validate authentication: Extract member ID from JWT token, reject if not authenticated
+   * 2. Verify post exists and is not deleted (check deleted_at is null)
+   * 3. Check if member is banned from the post's community (query community_bans table)
+   * 4. Check if member is the post author (prevent self-voting)
+   * 5. Query existing vote record for this member-post pair:
+   *    - If vote exists: Update vote type (upvote→downvote: -2 score, downvote→upvote: +2 score)
+   *    - If no vote exists: Insert new vote record (+1 or -1 score)
+   *    - If vote exists and type is 'remove': Delete vote record, subtract vote value from score
+   * 6. Use database transaction with row-level locking on vote table to prevent concurrent vote conflicts
+   * 7. Return updated vote record with current vote score
+   * 8. Handle concurrency conflicts by returning 409 with current vote state for retry
+   * 9. Log vote operation for audit trail
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch(":postId/vote")
+  public async vote(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformPostVote.IRequest,
+  ): Promise<IRedditPlatformPostVote> {
+    try {
+      return await patchRedditPlatformMemberPostsPostIdVote({
+        member,
+        postId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

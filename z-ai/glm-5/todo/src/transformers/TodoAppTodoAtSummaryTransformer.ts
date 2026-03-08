@@ -15,9 +15,10 @@ export namespace TodoAppTodoAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        is_completed: true,
+        completed: true,
         start_date: true,
         due_date: true,
+        deleted_at: true,
         created_at: true,
       },
     } satisfies Prisma.todo_app_todosFindManyArgs;
@@ -28,9 +29,10 @@ export namespace TodoAppTodoAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
-      is_completed: input.is_completed,
+      completed: input.completed,
       start_date: input.start_date?.toISOString() ?? null,
       due_date: input.due_date?.toISOString() ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       created_at: input.created_at.toISOString(),
     };
   }

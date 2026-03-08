@@ -1,12 +1,14 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdminRequest";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardUserAtSummaryTransformer } from "./DiscussionBoardUserAtSummaryTransformer";
+import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
+import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
 
 export namespace DiscussionBoardAdminRequestAtSummaryTransformer {
   export type Payload = Prisma.discussion_board_admin_requestsGetPayload<
@@ -16,14 +18,11 @@ export namespace DiscussionBoardAdminRequestAtSummaryTransformer {
     return {
       select: {
         id: true,
-        reason: true,
         status: true,
-        review_notes: true,
+        reason: true,
         created_at: true,
-        updated_at: true,
-        reviewed_at: true,
-        requester: DiscussionBoardUserAtSummaryTransformer.select(),
-        reviewer: DiscussionBoardUserAtSummaryTransformer.select(),
+        member: DiscussionBoardMemberAtSummaryTransformer.select(),
+        reviewer: DiscussionBoardAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_admin_requestsFindManyArgs;
   }
@@ -32,16 +31,14 @@ export namespace DiscussionBoardAdminRequestAtSummaryTransformer {
   ): Promise<IDiscussionBoardAdminRequest.ISummary> {
     return {
       id: input.id,
-      reason: input.reason,
       status: input.status,
-      review_notes: input.review_notes,
+      reason: input.reason,
       created_at: input.created_at.toISOString(),
-      reviewed_at: input.reviewed_at ? input.reviewed_at.toISOString() : null,
-      requester: await DiscussionBoardUserAtSummaryTransformer.transform(
-        input.requester,
+      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
+        input.member,
       ),
       reviewer: input.reviewer
-        ? await DiscussionBoardUserAtSummaryTransformer.transform(
+        ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.reviewer,
           )
         : null,

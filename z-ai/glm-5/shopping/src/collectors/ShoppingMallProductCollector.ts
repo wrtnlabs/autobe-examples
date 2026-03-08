@@ -11,23 +11,22 @@ export namespace ShoppingMallProductCollector {
   export async function collect(props: {
     body: IShoppingMallProduct.ICreate;
     shoppingMallSellers: IEntity;
-    shoppingMallSellerSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       name: props.body.name,
       description: props.body.description,
-      base_price: props.body.base_price,
+      base_price: props.body.basePrice,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       seller: { connect: { id: props.shoppingMallSellers.id } },
-      category: { connect: { id: props.body.category_id } },
-      variants: undefined,
+      category: { connect: { id: props.body.categoryId } },
       images: undefined,
+      variants: undefined,
       snapshots: undefined,
-      wishlists: undefined,
+      wishlistItems: undefined,
       orderItems: undefined,
       reviews: undefined,
     } satisfies Prisma.shopping_mall_productsCreateInput;

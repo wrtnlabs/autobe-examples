@@ -6,32 +6,18 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_todo_app_todo(
-  input?: DeepPartial<ITodoAppTodo.ICreate> | undefined,
+  input?: DeepPartial<ITodoAppTodo.ICreate>,
 ): ITodoAppTodo.ICreate {
   return {
-    title:
-      input?.title ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 3, wordMax: 6 }),
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
     description:
       input?.description ??
-      (Math.random() < 0.5
-        ? RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 10 })
+      (Math.random() > 0.3
+        ? RandomGenerator.paragraph({ sentences: 2 })
         : null),
-    startDate:
-      input?.startDate ??
-      (Math.random() < 0.5
-        ? RandomGenerator.date(
-            new Date(),
-            1000 * 60 * 60 * 24 * 30,
-          ).toISOString()
-        : null),
-    dueDate:
-      input?.dueDate ??
-      (Math.random() < 0.5
-        ? RandomGenerator.date(
-            new Date(),
-            1000 * 60 * 60 * 24 * 60,
-          ).toISOString()
-        : null),
+    start_date:
+      input?.start_date ?? typia.random<string & tags.Format<"date-time">>(),
+    due_date:
+      input?.due_date ?? typia.random<string & tags.Format<"date-time">>(),
   };
 }

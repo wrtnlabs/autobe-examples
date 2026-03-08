@@ -1,6 +1,5 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -16,11 +15,10 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthAdminRefresh(props: {
   body: IDiscussionBoardAdmin.IRefresh;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  // 1. Verify refresh token
+  // Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
-    type: "admin";
   };
   try {
     decoded = jwt.verify(
@@ -31,11 +29,7 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate type
-  if (decoded.type !== "admin") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  // 3. Validate session
+  // Validate session exists and is active
   const session =
     await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
       where: {
@@ -46,65 +40,61 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate admin not deleted
+  // Check if session is expired by comparing expired_at with current time
+  const now = new Date();
+  if (new Date(session.expired_at) <= now) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  // Validate admin account is not banned
   const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
     {
       where: { id: decoded.id },
     },
   );
-  if (admin.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
+  if (admin.is_banned) {
+    throw new HttpException("Admin account is banned", 403);
   }
-  // 5. Generate new tokens (same session_id)
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const token = {
-    access: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
-  // 6. Update session expiration
+  // Generate new tokens
+  const accessExpires = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
+  const refreshExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const newAccessToken = jwt.sign(
+    {
+      type: "admin" as const,
+      id: admin.id,
+      session_id: session.id,
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "15m", issuer: "autobe" },
+  );
+  const newRefreshToken = jwt.sign(
+    {
+      type: "admin" as const,
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh" as const,
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "30d", issuer: "autobe" },
+  );
+  // Update session with new refresh token
   await MyGlobal.prisma.discussion_board_admin_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    where: { id: session.id },
+    data: {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken,
+      expired_at: refreshExpires,
+      updated_at: now,
+    },
   });
-  // 7. Build response
   return {
     id: admin.id,
-    display_name: admin.display_name,
-    email: admin.email,
-    is_super_admin: admin.is_super_admin,
-    is_active: admin.is_active,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
-    promoted_by_id: admin.promoted_by_id ?? null,
     token: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: token.expired_at,
-      refreshable_until: token.refreshable_until,
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
     },
   };
 }

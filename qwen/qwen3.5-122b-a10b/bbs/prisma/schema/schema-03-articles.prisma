@@ -1,0 +1,267 @@
+/// Core article entities representing user-generated content with title,
+/// body text, and metadata. Each article belongs to exactly one section for
+/// categorization and is owned by one member who has full control over
+/// editing and deletion. Articles support soft deletion to preserve content
+/// history while removing them from public views. The article body and title
+/// are indexed for full-text search capabilities, enabling users to discover
+/// content through keyword matching. Article attachments (files and images)
+/// are managed through separate junction tables to maintain normalization
+/// principles. Comment counts are computed dynamically rather than stored to
+/// ensure data consistency.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section that categorizes this article. {@link
+  /// discussion_board_sections.id}. Articles must belong to exactly one
+  /// section for organizational purposes.
+  discussion_board_section_id String
+  
+  /// Member who owns and authored this article. {@link
+  /// discussion_board_members.id}. Only the owner can edit or delete the
+  /// article, unless an administrator performs moderation actions.
+  discussion_board_member_id String
+  
+  /// Article title displayed in lists and article pages. Required for article
+  /// creation with maximum character limit enforcement for display purposes.
+  /// Used for search indexing.
+  title String
+  
+  /// Main content text of the article. Required for article creation with
+  /// minimum and maximum character length validation. Used for search
+  /// indexing.
+  body String
+  
+  /// Timestamp when the article was originally published. Preserved throughout
+  /// article lifecycle and editing operations.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified. Updated whenever title,
+  /// body, or metadata changes.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft-deleted. When null, article is
+  /// visible; when set, article is hidden from lists but preserved for audit
+  /// purposes. Administrators can permanently remove articles.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleTags discussion_board_article_tags[]
+  snapshots discussion_board_article_snapshots[]
+  comments discussion_board_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_articles_discussion_board_section_id__cb7d94c3")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_articles_discussion_board_member_id_c_f434e708")
+}
+
+/// Tag definitions for article categorization and search. Tags are reusable
+/// across multiple articles enabling flexible content organization and
+/// filtering. Each tag has a unique name and optional description for
+/// context.
+///
+/// Tags support:
+/// - Article categorization through M:N relationship with {@link
+/// discussion_board_articles}
+/// - Search and filtering across articles
+/// - Independent tag management and discovery
+///
+/// See {@link discussion_board_article_tags} for the junction table linking
+/// tags to articles.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique tag name used for article categorization and search filtering.
+  name String
+  
+  /// Optional description providing context about the tag's purpose and usage.
+  description String?
+  
+  /// Timestamp when the tag was created.
+  created_at DateTime
+  
+  /// Timestamp when the tag was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the tag was soft-deleted for archival purposes.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleTags discussion_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Junction table linking articles to tags in a many-to-many relationship
+/// for flexible categorization and search.
+///
+/// This table enables articles to have multiple tags and tags to be
+/// associated with multiple articles. Each row represents a single
+/// article-tag association, allowing for efficient filtering and browsing by
+/// tag categories.
+///
+/// Key relationships:
+/// - References {@link discussion_board_articles.id} for article ownership
+/// - References {@link discussion_board_tags.id} for tag categorization
+/// - Composite unique constraint prevents duplicate article-tag associations
+///
+/// Business behavior:
+/// - Created when tags are assigned to articles during creation or editing
+/// - Deleted when tags are removed from articles or when articles are
+/// deleted (cascade)
+/// - Supports efficient tag-based article queries and tag popularity
+/// calculations
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Referenced tag's {@link discussion_board_tags.id}.
+  discussion_board_tag_id String
+  
+  /// Record creation timestamp for audit trail.
+  created_at DateTime
+  
+  /// Record last update timestamp for modification tracking.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for logical removal while preserving historical
+  /// data.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_tag_id])
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of articles capturing historical states for audit
+/// trail and version history tracking. Each snapshot records the complete
+/// article data at a specific moment, enabling reconstruction of article
+/// states over time and compliance with data retention policies. Snapshots
+/// are created automatically when articles are created, updated, or deleted
+/// to preserve immutable historical records. References {@link
+/// discussion_board_articles} for the current article state and {@link
+/// discussion_board_members} for article ownership.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target article's {@link discussion_board_articles.id}. Links this
+  /// snapshot to its parent article for historical tracking.
+  discussion_board_article_id String
+  
+  /// Section identifier where the article was categorized at snapshot time.
+  /// Denormalized from {@link discussion_board_sections.id} for historical
+  /// accuracy.
+  discussion_board_section_id String
+  
+  /// Article owner's member identifier at snapshot time. Denormalized from
+  /// {@link discussion_board_members.id} for ownership audit trail.
+  discussion_board_member_id String
+  
+  /// Article title captured at snapshot time. Preserves historical title even
+  /// if article is later edited.
+  title String
+  
+  /// Article body content captured at snapshot time. Preserves historical
+  /// content for version comparison and audit purposes.
+  body String
+  
+  /// Comma-separated tag list at snapshot time. Preserves historical
+  /// categorization for search and filtering audit trails.
+  tags String?
+  
+  /// Number of file attachments at snapshot time. Tracks attachment history
+  /// for storage audit.
+  file_count Int
+  
+  /// Number of image attachments at snapshot time. Tracks image history for
+  /// storage audit.
+  image_count Int
+  
+  /// Snapshot creation timestamp. Records when this historical state was
+  /// captured.
+  created_at DateTime
+  
+  /// Last update timestamp for the snapshot record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for snapshot records. Allows archival while
+  /// preserving audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  discussionBoardArticle discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_snapshots_discussion_board_ar_12be945f")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_article_snapshots_discussion_board_me_a0cc21ca")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_article_snapshots_discussion_board_se_f2ef0f8a")
+}

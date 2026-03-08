@@ -1,0 +1,140 @@
+/// Core article content entity representing posts in the economic/political
+/// discussion board. Each article contains a title and body content,
+/// authored by a User and categorized within a Section. Articles support
+/// file attachments via the {\@link economic_political_board_attachments}
+/// table and comments via the {\@link economic_political_board_comments}
+/// table. Articles can be tagged for content organization through the
+/// many-to-many relationship with {\@link economic_political_board_tags}.
+/// This table represents the primary content storage for user-generated
+/// discussion posts and supports soft deletion for audit trail purposes.
+///
+/// Key relationships:
+/// - {\@link economic_political_board_administrator_roles}: Article author
+/// (author_id foreign key) - member/admin who created the article
+/// - {\@link economic_political_board_sections}: Section/topic assignment
+/// (section_id foreign key)
+/// - {\@link economic_political_board_attachments}: File attachments
+/// (many-to-one)
+/// - {\@link economic_political_board_comments}: Discussion comments
+/// (one-to-many)
+/// - {\@link economic_political_board_tags}: Content categorization
+/// (many-to-many via junction table)
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {\@link economic_political_board_administrator_roles.id} -
+  /// Member or administrator who created this article.
+  author_id String
+  
+  /// Section's {\@link economic_political_board_sections.id} - Topic category
+  /// for this article.
+  section_id String
+  
+  /// Article title - required for content identification.
+  title String
+  
+  /// Article body content - main text of the discussion post.
+  content String
+  
+  /// Timestamp when article was created.
+  created_at DateTime
+  
+  /// Timestamp when article was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when article was soft-deleted (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author economic_political_board_administrator_roles @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  section economic_political_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  attachments economic_political_board_attachments[]
+  comments economic_political_board_comments[]
+  articleTags economic_political_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([author_id])
+  @@index([section_id])
+  @@index([created_at])
+}
+
+/// File attachments (images and documents) associated with articles in the
+/// economic/political discussion board.
+///
+/// This table stores metadata and storage references for all files uploaded
+/// with articles, supporting both image and document attachments. Each
+/// attachment is owned by exactly one article and is automatically deleted
+/// when the parent article is deleted (cascade delete). Soft delete support
+/// via deleted_at for audit trail.
+///
+/// **Key Relationships**:
+/// - Belongs to {@link economic_political_board_articles} via article_id
+/// - File metadata includes URL, filename, and type classification
+///
+/// **Usage**:
+/// - Images: article illustrations, charts, screenshots
+/// - Documents: PDF reports, spreadsheets, presentation files
+/// - Public download access for authenticated users
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model economic_political_board_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article's {@link economic_political_board_articles.id}. Cascade
+  /// delete ensures orphaned attachments are removed when articles are
+  /// deleted.
+  article_id String
+  
+  /// URL path to the stored file in object storage or CDN.
+  file_url String
+  
+  /// Original filename provided by the user (e.g., 'report.pdf', 'chart.png').
+  /// Preserves user-facing name for download display.
+  file_name String
+  
+  /// Categorization of the attachment: 'image' for image files (PNG, JPG, GIF,
+  /// etc.) or 'file' for documents and other non-image types.
+  file_type String
+  
+  /// Timestamp when this attachment was created and uploaded.
+  created_at DateTime
+  
+  /// Timestamp when this attachment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this attachment was soft-deleted. NULL means active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article economic_political_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([article_id])
+}

@@ -13,7 +13,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSectionsSectionId(props: {
-  sectionId: string;
+  sectionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSection> {
   const section =
     await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({

@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallReview";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
@@ -18,54 +19,65 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallProductsProductIdReviews(props: {
-  productId: string;
+  productId: string & tags.Format<"uuid">;
   body: IShoppingMallReview.IRequest;
 }): Promise<IPageIShoppingMallReview.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = Math.min(props.body.limit ?? 10, 100);
   const skip = (page - 1) * limit;
-  const whereInput = {
-    product_id: props.productId,
-    deleted_at: null,
-    ...(props.body.customer_id && { customer_id: props.body.customer_id }),
-    ...(props.body.rating_min !== undefined && {
-      rating: { gte: props.body.rating_min },
+  // Build WHERE clause with all filters
+  const whereInput: Prisma.shopping_mall_reviewsWhereInput = {
+    shopping_mall_product_id: props.productId,
+    ...(props.body.includeDeleted !== true && { deleted_at: null }),
+    ...(props.body.customerId && {
+      shopping_mall_customer_id: props.body.customerId,
     }),
-    ...(props.body.rating_max !== undefined && {
-      rating: { lte: props.body.rating_max },
+    ...(props.body.orderId && { shopping_mall_order_id: props.body.orderId }),
+    ...(props.body.ratingMin !== undefined && {
+      rating: { gte: props.body.ratingMin },
     }),
-    ...(props.body.search && { content: { contains: props.body.search } }),
-  } satisfies Prisma.shopping_mall_reviewsWhereInput;
-  const order: "asc" | "desc" = (props.body.order ?? "desc") satisfies
-    | "asc"
-    | "desc" as "asc" | "desc";
-  const orderByInput = (
-    props.body.sort === "rating"
-      ? { rating: order }
-      : props.body.sort === "updated_at"
-        ? { updated_at: order }
-        : { created_at: order }
-  ) satisfies Prisma.shopping_mall_reviewsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.shopping_mall_reviews.findMany({
+    ...(props.body.ratingMax !== undefined && {
+      rating: {
+        ...(props.body.ratingMin !== undefined
+          ? { gte: props.body.ratingMin }
+          : {}),
+        lte: props.body.ratingMax,
+      },
+    }),
+    ...(props.body.createdFrom && {
+      created_at: { gte: new Date(props.body.createdFrom) },
+    }),
+    ...(props.body.createdTo && {
+      created_at: { lte: new Date(props.body.createdTo) },
+    }),
+    ...(props.body.search && {
+      content: { contains: props.body.search, mode: "insensitive" },
+    }),
+  };
+  // Query reviews with pagination
+  const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: { created_at: "desc" },
     ...ShoppingMallReviewAtSummaryTransformer.select(),
   });
+  // Count total matching records
   const total = await MyGlobal.prisma.shopping_mall_reviews.count({
     where: whereInput,
   });
+  // Transform results using transformer
+  const data = await ArrayUtil.asyncMap(
+    reviews,
+    ShoppingMallReviewAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallReviewAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data,
   } satisfies IPageIShoppingMallReview.ISummary;
 }

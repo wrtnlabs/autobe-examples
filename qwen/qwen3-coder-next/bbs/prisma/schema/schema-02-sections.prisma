@@ -1,0 +1,247 @@
+/// Main sections table storing topic categories with name, description, and
+/// creation metadata.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section name used for categorizing articles.
+  name String
+  
+  /// Detailed description of the section's purpose and content focus.
+  description String
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_section_snapshots[]
+  articles discussion_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Point-in-time snapshots for audit trail of section changes. Captures
+/// historical states of sections including name, description, and metadata
+/// at the time of modification. Enables tracking of who made changes and
+/// when, supporting compliance and rollback capabilities.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original section that was snapshotted. {@link
+  /// discussion_board_sections.id}.
+  section_id String
+  
+  /// Reference to the administrator who triggered this snapshot
+  /// (created/edited section).
+  snapshot_actor_id String
+  
+  /// Timestamp when this snapshot was captured (point-in-time state of
+  /// section).
+  snapshot_timestamp DateTime
+  
+  /// Name of the section at the time of snapshot (denormalized for historical
+  /// record).
+  section_name String
+  
+  /// Description of the section at the time of snapshot (denormalized for
+  /// historical record).
+  section_description String?
+  
+  /// Timestamp when the original section was created.
+  created_at DateTime
+  
+  /// Timestamp when the original section was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  snapshotActor discussion_board_admins @relation(fields: [snapshot_actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([section_id, snapshot_timestamp], map: "discussion_board_section_snapshots_section_id_snapshot_37a956f4")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_actor_id, snapshot_timestamp], map: "discussion_board_section_snapshots_snapshot_actor_id_s_4cac4af7")
+  @@index([created_at])
+}
+
+/// Main articles table storing topic discussions with title, content, author
+/// reference, section assignment, and timestamps for creation tracking.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The author of the article. {@link discussion_board_members.id} or {@link
+  /// discussion_board_admins.id} or {@link discussion_board_super_admins.id}
+  /// or {@link discussion_board_guests.id}.
+  author_id String
+  
+  /// The section this article belongs to. {@link discussion_board_sections.id}.
+  section_id String
+  
+  /// The article title. Maximum 500 characters. Required field.
+  title String
+  
+  /// The article content in text format. No maximum length but must not be
+  /// empty.
+  content String
+  
+  /// UTC timestamp when the article was first created. Immutable after
+  /// creation.
+  created_at DateTime
+  
+  /// UTC timestamp when the article was last modified. Updated on each edit.
+  updated_at DateTime?
+  
+  /// UTC timestamp when the article was soft-deleted. Null if article is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author discussion_board_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  files discussion_board_article_files[]
+  taggings discussion_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([section_id, created_at])
+  @@index([author_id, created_at])
+  @@index([created_at])
+}
+
+/// File attachments for articles with metadata. Each record represents a
+/// single file uploaded to an article, storing the filename, URL, size,
+/// type, and upload timestamp. File attachments are managed exclusively
+/// through their parent articles and never created independently by users.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Original filename as uploaded by the user.
+  file_name String
+  
+  /// URL where the file is stored for download access.
+  file_url String
+  
+  /// Size of the file in bytes.
+  file_size Int
+  
+  /// MIME type of the file (e.g., image/jpeg, application/pdf).
+  file_type String
+  
+  /// Timestamp when the file was uploaded.
+  uploaded_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp for soft delete support.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_article_id])
+  @@index([uploaded_at])
+}
+
+/// Junction table for many-to-many relationship between articles and tags.
+/// This table records when tags are assigned to articles, enabling content
+/// classification and tag-based discovery. Each record links exactly one
+/// article to exactly one tag and includes a timestamp of when the
+/// association was created.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the article being tagged. {@link
+  /// discussion_board_articles.id}.
+  article_id String
+  
+  /// When this tag was assigned to the article.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([article_id])
+  @@index([article_id, created_at])
+}

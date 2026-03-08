@@ -3,7 +3,6 @@ import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -11,8 +10,8 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
-import { ShoppingMallProductImageTransformer } from "./ShoppingMallProductImageTransformer";
-import { ShoppingMallProductVariantTransformer } from "./ShoppingMallProductVariantTransformer";
+import { ShoppingMallProductImageAtSummaryTransformer } from "./ShoppingMallProductImageAtSummaryTransformer";
+import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallProductTransformer {
@@ -28,14 +27,14 @@ export namespace ShoppingMallProductTransformer {
         base_price: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        variants: ShoppingMallProductVariantTransformer.select(),
-        images: ShoppingMallProductImageTransformer.select(),
+        images: ShoppingMallProductImageAtSummaryTransformer.select(),
+        variants: ShoppingMallProductVariantAtSummaryTransformer.select(),
         reviews: {
           select: {
             rating: true,
+            deleted_at: true,
           },
         } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
       },
@@ -44,37 +43,35 @@ export namespace ShoppingMallProductTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProduct> {
+    const activeReviews = input.reviews.filter((r) => r.deleted_at === null);
     const averageRating =
-      input.reviews.length > 0
-        ? input.reviews.reduce((sum, r) => sum + r.rating, 0) /
-          input.reviews.length
-        : 0;
+      activeReviews.length > 0
+        ? activeReviews.reduce((sum, r) => sum + r.rating, 0) /
+          activeReviews.length
+        : null;
     return {
       id: input.id,
-      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
-        input.seller,
-      ),
-      category: input.category
-        ? await ShoppingMallCategoryAtSummaryTransformer.transform(
-            input.category,
-          )
-        : null,
       name: input.name,
       description: input.description,
       base_price: input.base_price,
-      variants: await ArrayUtil.asyncMap(
-        input.variants,
-        ShoppingMallProductVariantTransformer.transform,
+      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
+      category: await ShoppingMallCategoryAtSummaryTransformer.transform(
+        input.category,
       ),
       images: await ArrayUtil.asyncMap(
         input.images,
-        ShoppingMallProductImageTransformer.transform,
+        ShoppingMallProductImageAtSummaryTransformer.transform,
+      ),
+      variants: await ArrayUtil.asyncMap(
+        input.variants,
+        ShoppingMallProductVariantAtSummaryTransformer.transform,
       ),
       average_rating: averageRating,
-      review_count: input.reviews.length,
+      total_review_count: activeReviews.length,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

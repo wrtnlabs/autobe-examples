@@ -1,1 +1,1 @@
-export * as redditClone from "./redditClone/index";
+export * as redditLike from "./redditLike/index";

@@ -1,5 +1,4 @@
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
@@ -21,9 +20,10 @@ export async function patchDiscussionBoardSections(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Build WHERE clause with optional filters
   const whereInput = {
-    deleted_at: null,
-    ...(props.body.search && {
+    // Search filter - case-insensitive partial match on name OR description
+    ...(props.body.search !== undefined && {
       OR: [
         { name: { contains: props.body.search, mode: "insensitive" as const } },
         {
@@ -34,14 +34,28 @@ export async function patchDiscussionBoardSections(props: {
         },
       ],
     }),
+    // Date range filters - combine gte and lte properly
+    ...((props.body.createdFrom !== undefined ||
+      props.body.createdTo !== undefined) && {
+      created_at: {
+        ...(props.body.createdFrom !== undefined && {
+          gte: new Date(props.body.createdFrom),
+        }),
+        ...(props.body.createdTo !== undefined && {
+          lte: new Date(props.body.createdTo),
+        }),
+      },
+    }),
   } satisfies Prisma.discussion_board_sectionsWhereInput;
+  // Fetch paginated data sorted by sequence ascending
   const data = await MyGlobal.prisma.discussion_board_sections.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { name: "asc" },
+    orderBy: { sequence: "asc" },
     ...DiscussionBoardSectionAtSummaryTransformer.select(),
   });
+  // Get total count for pagination
   const total = await MyGlobal.prisma.discussion_board_sections.count({
     where: whereInput,
   });

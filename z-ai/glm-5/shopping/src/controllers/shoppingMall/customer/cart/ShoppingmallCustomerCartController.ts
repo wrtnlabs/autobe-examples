@@ -1,220 +1,78 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IPageIShoppingMallCartItem } from "../../../../api/structures/IPageIShoppingMallCartItem";
-import { IShoppingMallCartItem } from "../../../../api/structures/IShoppingMallCartItem";
+import { IShoppingMallCart } from "../../../../api/structures/IShoppingMallCart";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
-import { patchShoppingMallCustomerCart } from "../../../../providers/patchShoppingMallCustomerCart";
-import { postShoppingMallCustomerCart } from "../../../../providers/postShoppingMallCustomerCart";
-import { putShoppingMallCustomerCartCartItemId } from "../../../../providers/putShoppingMallCustomerCartCartItemId";
+import { getShoppingMallCustomerCart } from "../../../../providers/getShoppingMallCustomerCart";
 
 @Controller("/shoppingMall/customer/cart")
 export class ShoppingmallCustomerCartController {
   /**
-   * Add a product variant to the authenticated customer's shopping cart.
+   * Retrieve the authenticated customer's shopping cart contents.
    *
-   * This operation allows authenticated customers to add specific product variants (SKUs) to their shopping cart with a desired quantity. The cart stores the variant reference and quantity, along with the unit price at the time of addition for price change detection during checkout.
+   * This endpoint returns the customer's single shopping cart with all its items, providing a complete view of selected products and variants before checkout. Each cart item includes the product name, variant options (such as color and size), unit price, quantity, and calculated subtotal. The total price of all items is also provided.
    *
-   * When the same variant is added multiple times, the system automatically combines the quantities into a single cart item instead of creating duplicates. The total quantity is capped at 99 units per variant.
+   * The shopping_mall_carts table enforces a one-to-one relationship with customers, ensuring each customer has exactly one cart. Items reference specific product variants (SKU codes) through shopping_mall_cart_items.
    *
-   * **Business Rules:**
-   * - Customer must be authenticated (JWT token required)
-   * - Variant must exist and not be deleted
-   * - Product must exist and not be deleted
-   * - Product's seller must not be suspended
-   * - Quantity must be between 1 and 99
-   * - If variant already in cart, quantities are combined
+   * Cart items display stock availability status through the unavailable flag. Items marked as unavailable (due to variant deletion by seller or zero stock) remain in cart for customer reference but cannot be checked out until removed or restocked.
    *
-   * **Stock Validation:**
-   * Stock is not validated at add time. Customers can add items even if stock is insufficient. Stock warnings are displayed during cart viewing and checkout validation.
+   * Items are sorted by their creation timestamp (oldest first) to maintain the order in which customers added products to their cart.
    *
-   * @param connection
-   * @param body Cart item creation data including the variant to add and quantity
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+   * This endpoint is accessible only to authenticated customers and returns only the requesting customer's own cart. Empty carts return an empty items array with zero total price.
    *
-   * 1. Extract authenticated customer ID from JWT token
-   * 2. Validate request body: variantId (valid UUID), quantity (integer 1-99)
-   * 3. Query shopping_mall_product_variants to verify variant exists and is not deleted (deleted_at IS NULL)
-   * 4. Query shopping_mall_products to verify product exists, is not deleted, and seller is not suspended
-   * 5. Get variant price: use variant.price if set, otherwise product.base_price
-   * 6. Check if cart item already exists for this customer+variant combination (unique constraint)
-   * 7. If exists:
-   *    - Add new quantity to existing quantity
-   *    - Cap total at 99 if exceeds maximum
-   *    - Update updated_at timestamp
-   *    - Keep existing unit_price (original price when first added)
-   * 8. If not exists:
-   *    - Create new cart item with customer_id, variant_id, quantity, unit_price
-   *    - Set created_at and updated_at to current timestamp
-   * 9. Return the created/updated cart item with variant and product details
-   *
-   * **Database Operations:**
-   * - SELECT shopping_mall_product_variants WHERE id = variantId AND deleted_at IS NULL
-   * - SELECT shopping_mall_products WHERE id = variant.product_id AND deleted_at IS NULL
-   * - SELECT shopping_mall_sellers WHERE id = product.seller_id
-   * - SELECT/UPDATE/INSERT shopping_mall_cart_items
-   *
-   * **Error Responses:**
-   * - 401 Unauthorized: Invalid or missing JWT token
-   * - 400 Bad Request: Invalid variantId format or quantity out of range
-   * - 404 Not Found: Variant does not exist or is deleted
-   * - 400 Bad Request: Product deleted or seller suspended
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post()
-  public async create(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallCartItem.ICreate,
-  ): Promise<IShoppingMallCartItem> {
-    try {
-      return await postShoppingMallCustomerCart({
-        customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a paginated list of cart items for the authenticated customer with comprehensive search, filter, and sorting capabilities.
-   *
-   * This operation provides customers with full visibility into their shopping cart contents, including detailed product and variant information, current pricing, stock availability status, and calculated subtotals. Each cart item represents a specific product variant (SKU) with its quantity and the unit price at the time of addition.
-   *
-   * The cart display supports multiple availability status indicators: items with sufficient stock are marked as 'In Stock', items with limited stock show 'Only X available', out-of-stock items display 'Out of Stock', and deleted or unavailable items show appropriate unavailable status. These status indicators help customers make informed decisions before proceeding to checkout.
-   *
-   * Cart items are linked to shopping_mall_product_variants table via shopping_product_variant_id, and each belongs to a specific customer via shopping_customer_id. The unit_price field captures the variant's price at addition time, enabling price change detection during checkout.
-   *
-   * Maximum constraints: 50 distinct variants per cart and 99 units per item. When viewing cart, customers can search by product name, filter by stock status or price range, and sort by date added, price, or quantity.
+   * Related operations:
+   * - PATCH /cart/items: Add or update cart items
+   * - DELETE /cart/items/{cartItemId}: Remove a specific item from cart
+   * - POST /checkout: Proceed to checkout from cart
    *
    * @param connection
-   * @param body Search criteria including search terms, stock status filters, price range filters, pagination parameters, and sorting options
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_cart_items table for the authenticated customer with pagination and filtering.
+   * @x-autobe-specification Implementation Steps:
    *
-   * Service layer implementation:
-   * 1. Extract customer ID from JWT authentication token
-   * 2. Query cart_items where shopping_customer_id matches the authenticated customer
-   * 3. Join with shopping_mall_product_variants to get variant details
-   * 4. Join with shopping_mall_products to get product name and base_price
-   * 5. Join with shopping_mall_sellers to get shop information
-   * 6. Calculate current stock by summing inventory history records for each variant
-   * 7. Determine availability status for each cart item based on stock level vs requested quantity
-   * 8. Apply search filters (product name contains, stock status, price range)
-   * 9. Apply sorting (created_at, unit_price, quantity)
-   * 10. Implement cursor-based pagination for consistent results
-   * 11. Calculate line totals (unit_price * quantity) and cart grand total
-   * 12. Return paginated results with stock warnings for insufficient availability
+   * 1. AUTHENTICATION: Extract customer ID from JWT token. Return 401 Unauthorized if not authenticated.
    *
-   * Edge cases:
-   * - Empty cart returns empty data array with zero pagination
-   * - Deleted variants are flagged as unavailable with appropriate status
-   * - Products from suspended sellers show 'Temporarily Unavailable' status
-   * - Price changes since addition are detected by comparing stored unit_price with current variant price
+   * 2. CART RETRIEVAL: Query shopping_mall_carts table by customer ID. If no cart exists, return an empty cart structure with items array and zero total price (do not create placeholder carts per requirements).
+   *
+   * 3. CART ITEMS QUERY: If cart exists, query shopping_mall_cart_items joined with:
+   *    - shopping_mall_product_variants (for variant details, price override)
+   *    - shopping_mall_products (for product name, base price)
+   *    Filter out items where variant.deleted_at IS NOT NULL.
+   *
+   * 4. STOCK CALCULATION: For each cart item's variant, calculate current stock by summing quantity_change from shopping_mall_inventory_records. Mark unavailable flag based on:
+   *    - Variant deleted (deleted_at IS NOT NULL)
+   *    - Stock quantity less than cart item quantity
+   *
+   * 5. PRICE RESOLUTION: For each item, use variant.price if not null, otherwise use product.base_price.
+   *
+   * 6. SUBTOTAL CALCULATION: Calculate each item's subtotal as resolved_price × quantity.
+   *
+   * 7. TOTAL CALCULATION: Sum all item subtotals for cart total.
+   *
+   * 8. SORTING: Order items by created_at ascending (oldest first).
+   *
+   * 9. RESPONSE CONSTRUCTION: Build IShoppingMallCart response with:
+   *    - Cart ID and timestamps
+   *    - Array of IShoppingMallCartItem.ISummary objects
+   *    - Calculated total price
+   *
+   * Business Rules:
+   * - Each customer has exactly one cart (enforced by unique constraint on customer_id)
+   * - Unavailable items are flagged but remain in cart
+   * - Cart is not deleted after checkout, allowing future shopping sessions
+   * - No placeholder carts created until first item added
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Get()
+  public async at(
     @CustomerAuth()
     customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallCartItem.IRequest,
-  ): Promise<IPageIShoppingMallCartItem.ISummary> {
+  ): Promise<IShoppingMallCart> {
     try {
-      return await patchShoppingMallCustomerCart({
+      return await getShoppingMallCustomerCart({
         customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update the quantity of a specific item in the customer's shopping cart.
-   *
-   * This operation allows authenticated customers to modify the quantity of a product variant already in their cart. The quantity must be between 1 and 99 units per item. If the customer has multiple of the same variant, they are already combined into a single cart item with aggregated quantity.
-   *
-   * **Security and Authorization:**
-   * Only the customer who owns the cart item can update it. The operation verifies that the cartItemId belongs to the authenticated customer before performing the update. Attempting to update another customer's cart item returns a 404 Not Found error to prevent information disclosure.
-   *
-   * **Quantity Validation:**
-   * - Minimum quantity: 1 unit
-   * - Maximum quantity: 99 units per item
-   * - Quantities outside this range return a validation error
-   *
-   * **Business Logic:**
-   * When the quantity is updated, the updated_at timestamp is automatically refreshed. The unit_price remains unchanged from when the item was originally added to the cart. This enables price change detection during checkout.
-   *
-   * **Unavailable Items:**
-   * Even if the associated product variant has been deleted or is out of stock, the cart item can still be updated. Such items are marked as unavailable during cart retrieval operations, but the update operation itself succeeds. This allows customers to adjust quantities before deciding whether to proceed with checkout or remove unavailable items.
-   *
-   * **Related Operations:**
-   * - GET /cart - View the complete cart with all items and availability status
-   * - POST /cart - Add a new variant to the cart
-   * - DELETE /cart/{cartItemId} - Remove an item from the cart
-   *
-   * @param connection
-   * @param cartItemId Unique identifier of the cart item to update. Must belong to the authenticated customer.
-   * @param body New quantity value for the cart item (must be between 1 and 99)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update cart item quantity with customer ownership verification.
-   *
-   * **Implementation Steps:**
-   *
-   * 1. **Authentication & Authorization:**
-   *    - Extract customerId from JWT token
-   *    - Query cart item by id and shopping_customer_id
-   *    - Return 404 if cart item not found or doesn't belong to customer
-   *
-   * 2. **Validation:**
-   *    - Validate quantity is between 1 and 99
-   *    - Return 400 Bad Request with error message if validation fails
-   *
-   * 3. **Update Operation:**
-   *    - Update the quantity field with the new value
-   *    - Update the updated_at timestamp to current time
-   *    - Do NOT modify unit_price or any other fields
-   *
-   * 4. **Database Transaction:**
-   *    - Execute within a transaction for data consistency
-   *    - Return the updated cart item with all fields
-   *
-   * 5. **Response Construction:**
-   *    - Include cart item id, quantity, unit_price, updated_at
-   *    - Include related variant information (joined from shopping_mall_product_variants)
-   *    - Include product information (joined through variant relationship)
-   *
-   * **Error Handling:**
-   * - 401 Unauthorized: Customer not authenticated
-   * - 404 Not Found: Cart item not found or doesn't belong to customer
-   * - 400 Bad Request: Invalid quantity (not 1-99)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":cartItemId")
-  public async update(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("cartItemId")
-    cartItemId: string,
-    @TypedBody()
-    body: IShoppingMallCartItem.IUpdate,
-  ): Promise<IShoppingMallCartItem> {
-    try {
-      return await putShoppingMallCustomerCartCartItemId({
-        customer,
-        cartItemId,
-        body,
       });
     } catch (error) {
       console.log(error);

@@ -3,7 +3,6 @@ import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,103 +22,81 @@ export async function putShoppingMallSellerProductsProductId(props: {
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProduct.IUpdate;
 }): Promise<IShoppingMallProduct> {
-  // 1. Fetch product and verify ownership
+  // Find product and verify ownership
   const product =
     await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
       select: {
         id: true,
-        seller_id: true,
-        category_id: true,
+        shopping_mall_seller_id: true,
+        shopping_mall_category_id: true,
         name: true,
         description: true,
         base_price: true,
         deleted_at: true,
       },
     });
-  if (product.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
+  // Check product is not deleted
   if (product.deleted_at !== null) {
     throw new HttpException("Product not found", 404);
   }
-  // 2. Validation
+  // Verify ownership
+  if (product.shopping_mall_seller_id !== props.seller.id) {
+    throw new HttpException("Access denied", 403);
+  }
+  // Check seller is not suspended
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
+    where: { id: props.seller.id },
+    select: { suspended: true },
+  });
+  if (seller.suspended) {
+    throw new HttpException("Seller account is suspended", 403);
+  }
+  // Validate category if provided
+  if (props.body.shopping_mall_category_id !== undefined) {
+    const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
+      where: { id: props.body.shopping_mall_category_id },
+      select: { id: true, deleted_at: true },
+    });
+    if (!category || category.deleted_at !== null) {
+      throw new HttpException("Category not found", 404);
+    }
+  }
+  // Validate name uniqueness if name is being changed
   if (props.body.name !== undefined) {
     const existingProduct =
       await MyGlobal.prisma.shopping_mall_products.findFirst({
         where: {
-          seller_id: props.seller.id,
+          shopping_mall_seller_id: props.seller.id,
           name: props.body.name,
           id: { not: props.productId },
           deleted_at: null,
         },
       });
-    if (existingProduct !== null) {
-      throw new HttpException(
-        "Product name must be unique within your catalog",
-        409,
-      );
+    if (existingProduct) {
+      throw new HttpException("Product name already exists", 409);
     }
   }
-  if (props.body.category_id !== undefined && props.body.category_id !== null) {
-    const category = await MyGlobal.prisma.shopping_mall_categories.findFirst({
-      where: {
-        id: props.body.category_id,
-        deleted_at: null,
-      },
-    });
-    if (category === null) {
-      throw new HttpException("Category not found", 404);
-    }
-  }
-  // 3. Create snapshot before update
-  const variants =
-    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
+  // Get current images for snapshot
+  const currentImages =
+    await MyGlobal.prisma.shopping_mall_product_images.findMany({
       where: { shopping_mall_product_id: props.productId },
+      orderBy: { display_order: "asc" },
+      select: { image_url: true },
     });
-  const images = await MyGlobal.prisma.shopping_mall_product_images.findMany({
-    where: { shopping_mall_product_id: props.productId },
-  });
-  const snapshotId = v4();
+  // Create snapshot BEFORE update
   await MyGlobal.prisma.shopping_mall_product_snapshots.create({
     data: {
-      id: snapshotId,
-      shopping_mall_product_id: product.id,
-      shopping_mall_seller_id: product.seller_id,
-      shopping_mall_category_id: product.category_id,
+      id: v4(),
+      shopping_mall_product_id: props.productId,
       name: product.name,
       description: product.description,
       base_price: product.base_price,
+      images: JSON.stringify(currentImages.map((img) => img.image_url)),
       created_at: new Date(),
     },
   });
-  await Promise.all(
-    variants.map((variant) =>
-      MyGlobal.prisma.shopping_mall_product_variant_snapshots.create({
-        data: {
-          id: v4(),
-          shopping_mall_product_snapshot_id: snapshotId,
-          shopping_mall_product_variant_id: variant.id,
-          sku_code: variant.sku_code,
-          price_override: variant.price,
-          created_at: new Date(),
-        },
-      }),
-    ),
-  );
-  await Promise.all(
-    images.map((image) =>
-      MyGlobal.prisma.shopping_mall_product_snapshot_images.create({
-        data: {
-          id: v4(),
-          shopping_mall_product_snapshot_id: snapshotId,
-          shopping_mall_product_image_id: image.id,
-          created_at: new Date(),
-        },
-      }),
-    ),
-  );
-  // 4. Update product
+  // Update product
   await MyGlobal.prisma.shopping_mall_products.update({
     where: { id: props.productId },
     data: {
@@ -127,16 +104,16 @@ export async function putShoppingMallSellerProductsProductId(props: {
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
-      ...(props.body.category_id !== undefined && {
-        category_id: props.body.category_id,
-      }),
       ...(props.body.base_price !== undefined && {
         base_price: props.body.base_price,
+      }),
+      ...(props.body.shopping_mall_category_id !== undefined && {
+        shopping_mall_category_id: props.body.shopping_mall_category_id,
       }),
       updated_at: new Date(),
     },
   });
-  // 5. Return updated product using transformer
+  // Fetch and return updated product with transformer
   const updated =
     await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
       where: { id: props.productId },

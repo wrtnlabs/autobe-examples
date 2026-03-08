@@ -1,0 +1,215 @@
+/// Administrator privilege elevation requests submitted by members seeking
+/// admin status.
+///
+/// Represents a formal application process where members submit requests
+/// with a written reason for administrative privileges. Super administrators
+/// review pending requests and approve or reject them. The status lifecycle
+/// is: pending (awaiting review) → approved (user becomes regular admin) or
+/// rejected (user remains member). The system maintains complete history of
+/// all requests for audit purposes.
+///
+/// Key relationships:
+/// - Requester: {@link discussion_board_members.id} - member who submitted
+/// the request
+/// - Reviewer: {@link discussion_board_admins.id} - super admin who reviewed
+/// (null if pending)
+///
+/// Business rules:
+/// - Only one pending request per member at any time
+/// - Rejected requests allow resubmission
+/// - Approved requests grant regular administrator privileges immediately
+/// - Complete history preserved for audit
+///
+/// @namespace AdminRequests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who submitted this administrator privilege request. References
+  /// {@link discussion_board_members.id}.
+  member_id String
+  
+  /// The super administrator who reviewed and decided on this request. Null
+  /// while request is pending. References {@link discussion_board_admins.id}.
+  admin_id String?
+  
+  /// The written explanation provided by the requesting member explaining why
+  /// they should be granted administrator privileges. Required field - request
+  /// submission fails if empty or whitespace.
+  reason String
+  
+  /// Current status of the administrator request. Lifecycle: pending (awaiting
+  /// review) → approved (granted admin status) or rejected (user remains
+  /// member). Valid values: 'pending', 'approved', 'rejected'. Status
+  /// transitions are one-way only - approved/rejected requests cannot change
+  /// status.
+  status String
+  
+  /// Timestamp when the admin request was submitted by the member.
+  created_at DateTime
+  
+  /// Timestamp when the request was last modified (e.g., status changed from
+  /// pending to approved/rejected).
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Admin request records are preserved for
+  /// audit purposes even after deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  auditLogs discussion_board_admin_audit_logs[]
+  histories discussion_board_admin_request_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([admin_id])
+  @@unique([member_id, status])
+  @@index([status])
+}
+
+/// Audit trail preserving the complete history of admin request status
+/// transitions.
+///
+/// Each record captures a point-in-time state change for an administrator
+/// privilege request, including the new status, the super administrator who
+/// performed the action (if applicable), and the timestamp of the change.
+/// This enables historical tracking of the request lifecycle from submission
+/// through approval or rejection.
+///
+/// Relationships:
+/// - Belongs to {@link discussion_board_admin_requests} as the request being
+/// tracked
+/// - Reviewer references {@link discussion_board_admins} (the super
+/// administrator who approved/rejected)
+///
+/// Business Rules:
+/// - Initial 'pending' status has null reviewer (set on request creation)
+/// - 'approved' or 'rejected' status records include the reviewing super admin
+/// - Records are append-only and never modified after creation
+///
+/// @namespace AdminRequests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_request_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The admin request whose status change is being recorded. {@link
+  /// discussion_board_admin_requests.id}
+  discussion_board_admin_request_id String
+  
+  /// The super administrator who reviewed and changed the request status. Null
+  /// for initial 'pending' status when the request is first created. {@link
+  /// discussion_board_admins.id}
+  reviewer_id String?
+  
+  /// The status of the admin request at this point in time. Valid values:
+  /// 'pending' (awaiting review), 'approved' (accepted by super admin),
+  /// 'rejected' (declined by super admin).
+  status String
+  
+  /// Timestamp when this history record was created, marking when the status
+  /// change occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  adminRequest discussion_board_admin_requests @relation(fields: [discussion_board_admin_request_id], references: [id], onDelete: Cascade)
+  reviewer discussion_board_admins? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_request_id, created_at], map: "discussion_board_admin_request_histories_discussion_bo_ba275b05")
+}
+
+/// Audit trail of administrator grade changes recording promotions to super
+/// administrator and demotions to regular administrator.
+///
+/// This table captures grade change events performed by super administrators
+/// outside the admin request workflow. When a super administrator directly
+/// promotes a regular administrator to super administrator grade, or demotes
+/// another super administrator to regular administrator grade, the action is
+/// recorded here with complete audit information.
+///
+/// The table preserves the complete history of all grade changes including
+/// the target administrator, the acting super administrator who performed
+/// the action, the action type, the previous and new grades, and the
+/// timestamp. This supports compliance requirements and administrative
+/// oversight of privilege changes.
+///
+/// @namespace AdminRequests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_grade_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator whose grade was changed. {@link
+  /// discussion_board_admins.id}. This is the target of the promotion or
+  /// demotion action.
+  admin_id String
+  
+  /// The super administrator who performed the grade change action. {@link
+  /// discussion_board_admins.id}. Only super administrators can promote or
+  /// demote other administrators.
+  acted_by String
+  
+  /// The type of grade change action performed. Valid values are 'promotion'
+  /// (regular to super) or 'demotion' (super to regular). This field
+  /// categorizes the administrative action for filtering and reporting.
+  action String
+  
+  /// The administrator's grade before this change. Valid values are 'regular'
+  /// for regular administrators or 'super' for super administrators. This
+  /// preserves the state before the action for audit trail completeness.
+  previous_grade String
+  
+  /// The administrator's grade after this change. Valid values are 'regular'
+  /// for regular administrators or 'super' for super administrators. This
+  /// records the resulting state after the action.
+  new_grade String
+  
+  /// The timestamp when the grade change action was performed. This is the
+  /// audit record creation time and should not be modified after initial
+  /// creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin discussion_board_admins @relation("discussion_board_administrator_grade_histories_of_admin_id", fields: [admin_id], references: [id], onDelete: Cascade)
+  actor discussion_board_admins @relation("discussion_board_administrator_grade_histories_of_acted_by", fields: [acted_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([admin_id, created_at], map: "discussion_board_administrator_grade_histories_admin_i_164f26ac")
+  @@index([acted_by])
+  @@index([created_at])
+}

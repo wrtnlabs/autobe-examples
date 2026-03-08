@@ -1,10 +1,11 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityComment";
-import type { ICommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityCommentVote";
-import type { ICommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityCommunity";
-import type { ICommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityMember";
-import type { ICommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPost";
+import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
+import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import type { ICommunityPlatformSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformSubscription";
+import type { ICommunityPlatformVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformVote";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -15,92 +16,90 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_community_member_comments_vote } from "../../../generate/generate_random_community_member_comments_vote";
-import { generate_random_community_member_communities_create } from "../../../generate/generate_random_community_member_communities_create";
-import { generate_random_community_member_communities_posts_create } from "../../../generate/generate_random_community_member_communities_posts_create";
-import { generate_random_community_member_posts_comments_create } from "../../../generate/generate_random_community_member_posts_comments_create";
-import { prepare_random_community_comment } from "../../../prepare/prepare_random_community_comment";
-import { prepare_random_community_comment_vote } from "../../../prepare/prepare_random_community_comment_vote";
-import { prepare_random_community_community } from "../../../prepare/prepare_random_community_community";
-import { prepare_random_community_post } from "../../../prepare/prepare_random_community_post";
+import { generate_random_community_platform_member_communities_create } from "../../../generate/generate_random_community_platform_member_communities_create";
+import { generate_random_community_platform_member_posts_comments_create } from "../../../generate/generate_random_community_platform_member_posts_comments_create";
+import { generate_random_community_platform_member_posts_create } from "../../../generate/generate_random_community_platform_member_posts_create";
+import { generate_random_community_platform_member_subscriptions_create } from "../../../generate/generate_random_community_platform_member_subscriptions_create";
+import { prepare_random_community_platform_comment } from "../../../prepare/prepare_random_community_platform_comment";
+import { prepare_random_community_platform_community } from "../../../prepare/prepare_random_community_platform_community";
+import { prepare_random_community_platform_post } from "../../../prepare/prepare_random_community_platform_post";
+import { prepare_random_community_platform_subscription } from "../../../prepare/prepare_random_community_platform_subscription";
 
 export async function test_api_comment_vote_upvote_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Test the primary success path for upvoting a comment.
-  // Member A authenticates, then Member B creates a community, post, and comment.
-  // Member A then upvotes the comment and we validate the results.
-  // 1. Member A joins (the voter)
-  const voterConnection: api.IConnection = { host: connection.host };
-  const voter = await authorize_member_join(voterConnection, {});
-  typia.assert(voter);
-  // 2. Member B joins (the comment author)
+  // Step 1: Create comment author member
   const authorConnection: api.IConnection = { host: connection.host };
   const author = await authorize_member_join(authorConnection, {});
   typia.assert(author);
-  // 3. Store initial karma of the comment author
-  const initialAuthorKarma = author.karma;
-  // 4. Member B creates a community
-  const community = await generate_random_community_member_communities_create(
-    authorConnection,
-    {},
-  );
+  // Step 2: Create a community (owned by author)
+  const community =
+    await generate_random_community_platform_member_communities_create(
+      authorConnection,
+      {},
+    );
   typia.assert(community);
-  // 5. Member B creates a text post in the community
-  const post = await generate_random_community_member_communities_posts_create(
+  // Step 3: Create voter member (different from comment author)
+  const voterConnection: api.IConnection = { host: connection.host };
+  const voter = await authorize_member_join(voterConnection, {});
+  typia.assert(voter);
+  // Step 4: Comment author subscribes to the community (required for posting)
+  const subscription =
+    await generate_random_community_platform_member_subscriptions_create(
+      authorConnection,
+      { body: { community_id: community.id } },
+    );
+  typia.assert(subscription);
+  // Step 5: Comment author creates a post in the community
+  const post = await generate_random_community_platform_member_posts_create(
     authorConnection,
     {
-      params: { communityName: community.name },
       body: {
+        communityId: community.id,
+        contentType: "text",
         title: RandomGenerator.paragraph({ sentences: 2 }),
-        post_type: "TEXT",
-        text_content: RandomGenerator.content({ paragraphs: 2 }),
+        textContent: RandomGenerator.content({ paragraphs: 2 }),
+        linkUrl: null,
+        imageUrl: null,
       },
     },
   );
   typia.assert(post);
-  // 6. Member B creates a comment on the post
-  const comment = await generate_random_community_member_posts_comments_create(
-    authorConnection,
-    {
-      params: { postId: post.id },
-      body: {
-        content: RandomGenerator.paragraph({ sentences: 3 }),
+  // Step 6: Comment author creates a comment on that post
+  const comment =
+    await generate_random_community_platform_member_posts_comments_create(
+      authorConnection,
+      {
+        params: { postId: post.id },
       },
-    },
-  );
+    );
   typia.assert(comment);
-  // Store initial vote metrics
-  const initialVoteScore = comment.voteScore;
-  const initialUpvoteCount = comment.upvoteCount;
-  // 7. Member A upvotes the comment
-  const vote = await generate_random_community_member_comments_vote(
-    voterConnection,
-    {
-      params: { commentId: comment.id },
-      body: { vote: 1 },
-    },
-  );
-  typia.assert(vote);
-  // 8. Validate vote record
-  TestValidator.equals("vote direction is upvote", vote.direction, true);
+  // Record initial comment score before upvote
+  const initialCommentScore = comment.score;
+  // Step 7: Voter upvotes the comment (voteType='upvote')
+  const upvotedComment =
+    await api.functional.communityPlatform.member.comments.vote(
+      voterConnection,
+      {
+        commentId: comment.id,
+        body: { voteType: "upvote" } satisfies ICommunityPlatformVote.IRequest,
+      },
+    );
+  typia.assert(upvotedComment);
+  // Validate comment score increased by 1
   TestValidator.equals(
-    "vote references correct comment",
-    vote.comment.id,
-    comment.id,
+    "comment score after upvote",
+    upvotedComment.score,
+    initialCommentScore + 1,
   );
-  TestValidator.equals(
-    "vote references correct voter",
-    vote.author.id,
-    voter.id,
-  );
-  // 9. Validate comment vote metrics increased
-  TestValidator.predicate(
-    "comment vote score increased by 1",
-    vote.comment.vote_score === initialVoteScore + 1,
-  );
-  TestValidator.predicate(
-    "comment upvote count increased by 1",
-    vote.comment.upvote_count === initialUpvoteCount + 1,
-  );
+  // Step 8: Verify self-voting prevention - author cannot upvote their own comment
+  await TestValidator.error("self-voting should be forbidden", async () => {
+    await api.functional.communityPlatform.member.comments.vote(
+      authorConnection,
+      {
+        commentId: comment.id,
+        body: { voteType: "upvote" } satisfies ICommunityPlatformVote.IRequest,
+      },
+    );
+  });
 }

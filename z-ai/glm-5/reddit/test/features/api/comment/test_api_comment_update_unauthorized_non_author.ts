@@ -1,10 +1,10 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { ICommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityComment";
-import type { ICommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityCommunity";
-import type { ICommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityMember";
-import type { ICommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPost";
-import type { ICommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunitySubscription";
+import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
+import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import type { ICommunityPlatformSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformSubscription";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -15,72 +15,83 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_community_member_communities_create } from "../../../generate/generate_random_community_member_communities_create";
-import { generate_random_community_member_communities_posts_create } from "../../../generate/generate_random_community_member_communities_posts_create";
-import { generate_random_community_member_posts_comments_create } from "../../../generate/generate_random_community_member_posts_comments_create";
-import { prepare_random_community_comment } from "../../../prepare/prepare_random_community_comment";
-import { prepare_random_community_community } from "../../../prepare/prepare_random_community_community";
-import { prepare_random_community_post } from "../../../prepare/prepare_random_community_post";
+import { generate_random_community_platform_member_communities_create } from "../../../generate/generate_random_community_platform_member_communities_create";
+import { generate_random_community_platform_member_posts_comments_create } from "../../../generate/generate_random_community_platform_member_posts_comments_create";
+import { generate_random_community_platform_member_posts_create } from "../../../generate/generate_random_community_platform_member_posts_create";
+import { generate_random_community_platform_member_subscriptions_create } from "../../../generate/generate_random_community_platform_member_subscriptions_create";
+import { prepare_random_community_platform_comment } from "../../../prepare/prepare_random_community_platform_comment";
+import { prepare_random_community_platform_community } from "../../../prepare/prepare_random_community_platform_community";
+import { prepare_random_community_platform_post } from "../../../prepare/prepare_random_community_platform_post";
+import { prepare_random_community_platform_subscription } from "../../../prepare/prepare_random_community_platform_subscription";
 
-/**
- * Test that non-authors cannot edit comments owned by other users.
- *
- * Authorization requirement: Only the comment author can edit their own comments.
- * Expected error: 403 Forbidden with COMMENT_EDIT_UNAUTHORIZED error code.
- */
 export async function test_api_comment_update_unauthorized_non_author(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create Member A (comment author) connection
-  const memberAConnection: api.IConnection = { host: connection.host };
-  await authorize_member_join(memberAConnection, {});
-  // 2. Member A creates a community
-  const community = await generate_random_community_member_communities_create(
-    memberAConnection,
-    {},
-  );
-  typia.assert(community);
-  // 3. Member A creates a post in the community
-  const post = await generate_random_community_member_communities_posts_create(
-    memberAConnection,
+  // 1. First member setup - creates community, post, and comment
+  const firstMemberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(firstMemberConnection, {});
+  // 2. First member creates community
+  const community =
+    await generate_random_community_platform_member_communities_create(
+      firstMemberConnection,
+      {},
+    );
+  // 3. First member subscribes to their community (required for posting)
+  await generate_random_community_platform_member_subscriptions_create(
+    firstMemberConnection,
     {
-      params: { communityName: community.name },
+      body: {
+        community_id: community.id,
+      },
     },
   );
-  typia.assert(post);
-  // 4. Member A creates a comment on the post
-  const originalComment =
-    await generate_random_community_member_posts_comments_create(
-      memberAConnection,
+  // 4. First member creates post
+  const post = await generate_random_community_platform_member_posts_create(
+    firstMemberConnection,
+    {
+      body: {
+        communityId: community.id,
+      },
+    },
+  );
+  // 5. First member creates comment
+  const comment =
+    await generate_random_community_platform_member_posts_comments_create(
+      firstMemberConnection,
       {
-        params: { postId: post.id },
+        params: {
+          postId: post.id,
+        },
       },
     );
-  typia.assert(originalComment);
-  const originalContent = originalComment.content;
-  // 5. Create Member B (different user) connection
-  const memberBConnection: api.IConnection = { host: connection.host };
-  await authorize_member_join(memberBConnection, {});
-  // 6. Member B subscribes to the community
-  await api.functional.community.member.communities.subscribe(
-    memberBConnection,
+  // 6. Second member setup
+  const secondMemberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(secondMemberConnection, {});
+  // 7. Second member subscribes to the same community (for visibility)
+  await generate_random_community_platform_member_subscriptions_create(
+    secondMemberConnection,
     {
-      communityName: community.name,
+      body: {
+        community_id: community.id,
+      },
     },
   );
-  // 7. Member B attempts to edit Member A's comment - should fail with 403
-  const newContent = RandomGenerator.paragraph({ sentences: 3 });
+  // 8. Second member attempts to update first member's comment
+  // Expected: HTTP 403 Forbidden (non-author cannot update)
   await TestValidator.httpError(
-    "non-author cannot edit another user's comment",
+    "non-author cannot update comment",
     403,
-    async () =>
-      await api.functional.community.member.comments.update(memberBConnection, {
-        commentId: originalComment.id,
-        body: { content: newContent } satisfies ICommunityComment.IUpdate,
-      }),
+    async () => {
+      await api.functional.communityPlatform.member.posts.comments.update(
+        secondMemberConnection,
+        {
+          postId: post.id,
+          commentId: comment.id,
+          body: {
+            content: RandomGenerator.paragraph({ sentences: 3 }),
+          } satisfies ICommunityPlatformComment.IUpdate,
+        },
+      );
+    },
   );
-  // 8. Verify the original comment content is unchanged
-  // Note: We cannot fetch the comment directly without a GET endpoint,
-  // but the error being thrown confirms the update was rejected.
-  // The test passes if we reach here without the update succeeding.
 }

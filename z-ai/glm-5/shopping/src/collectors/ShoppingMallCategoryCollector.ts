@@ -11,15 +11,16 @@ export namespace ShoppingMallCategoryCollector {
   export async function collect(props: {
     body: IShoppingMallCategory.ICreate;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       name: props.body.name,
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      parent: props.body.parentId
-        ? { connect: { id: props.body.parentId } }
+      parent: props.body.parent_id
+        ? { connect: { id: props.body.parent_id } }
         : undefined,
     } satisfies Prisma.shopping_mall_categoriesCreateInput;
   }

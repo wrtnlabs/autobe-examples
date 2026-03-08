@@ -1,4 +1,7 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardGuest";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -7,6 +10,8 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { DiscussionBoardArticleFileTransformer } from "./DiscussionBoardArticleFileTransformer";
+import { DiscussionBoardArticleTagAtSummaryTransformer } from "./DiscussionBoardArticleTagAtSummaryTransformer";
 import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
 import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
 
@@ -25,22 +30,8 @@ export namespace DiscussionBoardArticleTransformer {
         deleted_at: true,
         author: DiscussionBoardMemberAtSummaryTransformer.select(),
         section: DiscussionBoardSectionAtSummaryTransformer.select(),
-        comments: {
-          select: { id: true },
-        } satisfies Prisma.discussion_board_commentsFindManyArgs,
-        files: {
-          select: { file_path: true, original_filename: true },
-        } satisfies Prisma.discussion_board_article_filesFindManyArgs,
-        images: {
-          select: { stored_path: true, original_filename: true },
-        } satisfies Prisma.discussion_board_article_imagesFindManyArgs,
-        tags: {
-          select: {
-            tag: {
-              select: { tag_name: true },
-            },
-          },
-        } satisfies Prisma.discussion_board_article_tagsFindManyArgs,
+        files: DiscussionBoardArticleFileTransformer.select(),
+        taggings: DiscussionBoardArticleTagAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_articlesFindManyArgs;
   }
@@ -51,19 +42,23 @@ export namespace DiscussionBoardArticleTransformer {
       id: input.id,
       title: input.title,
       content: input.content,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       author: await DiscussionBoardMemberAtSummaryTransformer.transform(
         input.author,
       ),
       section: await DiscussionBoardSectionAtSummaryTransformer.transform(
         input.section,
       ),
-      tags: input.tags.map((at) => at.tag.tag_name).join(", "),
-      files: input.files.map((file) => file.file_path).join(", "),
-      images: input.images.map((image) => image.stored_path).join(", "),
-      comments_count: input.comments.length,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      files: await Promise.all(
+        input.files.map(DiscussionBoardArticleFileTransformer.transform),
+      ),
+      taggings: await Promise.all(
+        input.taggings.map((tag) =>
+          DiscussionBoardArticleTagAtSummaryTransformer.transform(tag),
+        ),
+      ),
     };
   }
 }

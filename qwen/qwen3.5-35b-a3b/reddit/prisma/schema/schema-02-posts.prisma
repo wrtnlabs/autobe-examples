@@ -1,0 +1,394 @@
+/// Core post entity supporting text, link, and image post types with voting
+/// and engagement metrics.
+///
+/// This table represents the primary content creation unit in the
+/// Reddit-style platform. Each post belongs to a community
+/// (reddit_platform_communities) and is authored by a member
+/// (reddit_platform_members). Posts have three types: TEXT (with content
+/// body), LINK (with external URL), and IMAGE (with uploaded image).
+///
+/// Relationships:
+/// - Author: {@link reddit_platform_members} - The member who created this post
+/// - Community: {@link reddit_platform_communities} - The community where
+/// this post is published
+/// - Votes: {@link reddit_platform_post_votes} - Individual vote records for
+/// this post
+/// - Snapshots: {@link reddit_platform_post_snapshots} - Historical versions
+/// for audit
+/// - Images: {@link reddit_platform_post_images} - Uploaded image files for
+/// IMAGE posts
+/// - Engagement: {@link reddit_platform_post_engagement_stats} - View and
+/// engagement metrics
+///
+/// Post Type Rules:
+/// - TEXT: title + content required, url and image_url null
+/// - LINK: title + url required, content and image_url null
+/// - IMAGE: title + image_url required, content and url null
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_platform_members.id}. Member who created this post.
+  reddit_platform_member_id String
+  
+  /// Parent community's {@link reddit_platform_communities.id}. Community
+  /// where this post is published.
+  reddit_platform_community_id String
+  
+  /// Post title. Required for all post types. Max 300 characters.
+  title String
+  
+  /// Post content body for TEXT posts. Nullable for LINK and IMAGE posts.
+  content String?
+  
+  /// Post type: TEXT (content body), LINK (external URL), IMAGE (uploaded
+  /// image).
+  post_type String
+  
+  /// External URL for LINK posts. Nullable for TEXT and IMAGE posts.
+  url String?
+  
+  /// Uploaded image URL for IMAGE posts. Nullable for TEXT and LINK posts.
+  image_url String?
+  
+  /// Net vote score (upvotes minus downvotes). Defaults to 0.
+  vote_score Int
+  
+  /// Total number of comments on this post. Defaults to 0.
+  comment_count Int
+  
+  /// When this post was created.
+  created_at DateTime
+  
+  /// When this post was last updated.
+  updated_at DateTime
+  
+  /// When this post was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postVotes reddit_platform_post_votes[]
+  snapshots reddit_platform_post_snapshots[]
+  images reddit_platform_post_images[]
+  engagementStats reddit_platform_post_engagement_stats[]
+  comments reddit_platform_comments[]
+  moderationAuditLogs reddit_platform_moderation_audit_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id, created_at], map: "reddit_platform_posts_reddit_platform_community_id_cre_d81e29a9")
+  @@index([reddit_platform_member_id, created_at])
+  @@index([vote_score])
+}
+
+/// Reddit-style upvote/downvote system for posts.
+///
+/// Tracks individual user votes on posts with support for vote changing
+/// (UPVOTE → DOWNVOTE → NULL removal). Each member can cast exactly one vote
+/// per post, enforced via unique constraint. Vote changes update the
+/// vote_type field rather than creating new records, maintaining a clean
+/// audit trail.
+///
+/// This table is referenced by:
+/// - {@link reddit_platform_members} - members who cast votes
+/// - {@link reddit_platform_posts} - posts receiving votes
+/// - {@link reddit_platform_post_engagement_stats} - aggregate vote scores
+///
+/// Key behavioral notes:
+/// - Vote changes are atomic updates to vote_type field
+/// - NULL vote_type indicates vote removal (soft delete, not actual deletion)
+/// - Real-time score calculation sums UPVOTE (+1) and DOWNVOTE (-1)
+/// - Feed algorithms use created_at for new/hot ranking
+/// - Never deleted from table - vote history preserved
+/// - Soft delete via deleted_at for audit trail compliance
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast this vote. {@link reddit_platform_members.id}
+  user_id String
+  
+  /// Post receiving this vote. {@link reddit_platform_posts.id}
+  post_id String
+  
+  /// Vote type: UPVOTE (+1), DOWNVOTE (-1), or NULL (vote removed). Always
+  /// present - vote removal updates to NULL rather than deleting the record.
+  vote_type String
+  
+  /// Timestamp when this vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when this vote was last modified (vote change).
+  updated_at DateTime
+  
+  /// Timestamp when this vote was soft-deleted (vote removed from active
+  /// consideration). Soft deletion preserves audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id, post_id])
+  @@index([post_id, created_at])
+}
+
+/// Point-in-time snapshots of posts for audit trails and content history
+/// tracking.
+///
+/// Captures the state of a post at specific moments in time for:
+/// - Audit trails of post modifications
+/// - Content history and rollback capabilities
+/// - Compliance requirements (sections 161, 169)
+///
+/// **Relationships:**
+/// - Belongs to a {@link reddit_platform_posts} parent post via
+/// reddit_platform_post_id
+/// - References the original author via author_id for audit when post author
+/// is deleted
+/// - Each snapshot represents a unique version of the post content
+///
+/// **Behavioral Notes:**
+/// - Immutable historical records - never modified once created
+/// - Append-only design - new snapshots created on post create, edit, or delete
+/// - Used for audit trails, compliance, and potential content restoration
+/// - Snapshot types: CREATE (initial post), EDIT (modification), DELETE
+/// (removal marker)
+///
+/// **Key Design Decisions:**
+/// - All post fields denormalized at time of snapshot (no FK to post content)
+/// - Author stored as snapshot field in case original user account is deleted
+/// - No soft-delete field (snapshots themselves are the history, they
+/// persist forever)
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original post's {@link reddit_platform_posts.id}. References the post
+  /// this snapshot belongs to.
+  reddit_platform_post_id String
+  
+  /// Post author's {@link reddit_platform_members.id} at time of snapshot.
+  /// Preserves author reference even if original user account is deleted.
+  author_id String
+  
+  /// Post title at time of snapshot. Maximum 300 characters.
+  title String
+  
+  /// Post content body (for TEXT posts). Null for LINK and IMAGE posts.
+  content String?
+  
+  /// Post type enumeration value: TEXT, LINK, or IMAGE.
+  post_type String
+  
+  /// URL for LINK posts. Null for TEXT and IMAGE posts.
+  url String?
+  
+  /// Image URL for IMAGE posts. Null for TEXT and LINK posts.
+  image_url String?
+  
+  /// Vote score at time of snapshot. Can be negative.
+  vote_score Int
+  
+  /// Number of comments on the post at time of snapshot.
+  comment_count Int
+  
+  /// Type of snapshot: CREATE (initial post), EDIT (modification), DELETE
+  /// (removal marker).
+  snapshot_type String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  author reddit_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_post_id, created_at], map: "reddit_platform_post_snapshots_reddit_platform_post_id_341ea95f")
+  @@index([author_id, created_at])
+}
+
+/// Uploaded image files for image posts, storing file metadata and access
+/// paths.
+///
+/// This subsidiary table tracks all image files associated with image-type
+/// posts in the reddit platform. Each file record contains metadata
+/// including original filename, MIME type, file size in bytes, and storage
+/// path for CDN access.
+///
+/// **Key Relationships:**
+/// - Belongs to {@link reddit_platform_posts} - Each image is associated
+/// with a single post
+/// - Managed through posts - Files are created, accessed, and deleted via
+/// post operations
+///
+/// **Business Rules:**
+/// - Files are only accessible through their parent post
+/// - Image posts can have multiple associated images (1:N relationship)
+/// - File deletion requires parent post to exist (cascade delete on post
+/// deletion)
+/// - File size limits enforced at application layer (max 10MB per image)
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_platform_posts.id}. Image file belongs to
+  /// this post.
+  post_id String
+  
+  /// Original filename of the uploaded image (e.g., 'vacation.jpg'). Stored
+  /// without path information.
+  filename String
+  
+  /// MIME type of the image file (e.g., 'image/jpeg', 'image/png',
+  /// 'image/gif'). Used for content validation and CDN serving.
+  mime_type String
+  
+  /// File size in bytes. Used for storage quota tracking and CDN bandwidth
+  /// calculations.
+  file_size Int
+  
+  /// Storage path to the file (e.g.,
+  /// 'uploads/posts/123e4567-e89b-12d3-a456-426614174000/vacation.jpg'). Used
+  /// for CDN access and file retrieval.
+  file_path String
+  
+  /// Timestamp when the image file was uploaded and created.
+  created_at DateTime
+  
+  /// Timestamp when the image file metadata was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates the image has been deleted but
+  /// record preserved for audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([post_id, filename])
+  @@index([post_id])
+  @@index([created_at])
+}
+
+/// Post engagement statistics for analytics and feed algorithm ranking.
+///
+/// Tracks view counts, upvote/downvote counts, and timestamps to support
+/// feed algorithms:
+/// - **Hot feed**: Weighted by time (last_viewed_at) + vote activity
+/// - **New feed**: Sorted by created_at (derived from parent post)
+/// - **Top feed**: Sorted by total votes (upvote_count - downvote_count)
+/// - **Controversial feed**: High ratio of opposing votes (upvote_count ≈
+/// downvote_count)
+///
+/// Referenced by the parent {@link reddit_platform_posts} table which owns
+/// the post content. Engagement stats are updated on view and vote actions,
+/// and deleted when the associated post is soft-deleted.
+///
+/// **Aggregation purpose**: This denormalized table provides read-optimized
+/// metrics for feed ranking without requiring expensive real-time
+/// aggregation queries on vote tables.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_engagement_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {@link reddit_platform_posts.id}.
+  post_id String
+  
+  /// Total number of times this post has been viewed.
+  view_count Int
+  
+  /// Total number of upvotes received by this post.
+  upvote_count Int
+  
+  /// Total number of downvotes received by this post.
+  downvote_count Int
+  
+  /// Timestamp of the most recent view, used for time-weighted feed ranking
+  /// algorithms.
+  last_viewed_at DateTime
+  
+  /// Creation timestamp of this engagement record.
+  created_at DateTime
+  
+  /// Last update timestamp of this engagement record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for tracking post deletion. NULL indicates active
+  /// record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id])
+  @@index([last_viewed_at])
+  @@index([deleted_at])
+}

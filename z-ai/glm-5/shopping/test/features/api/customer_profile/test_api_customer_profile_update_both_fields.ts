@@ -13,78 +13,74 @@ import { authorize_customer_login } from "../../../authorize/authorize_customer_
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
 
 /**
- * Test customer profile update with both display name and phone number.
+ * Test successful customer profile update when both display name and phone number are provided.
  *
- * This test validates the primary success path for customer profile update
- * where an authenticated customer updates both display name and phone number
- * in a single request.
+ * **Preconditions:**
+ * - Customer account exists and is authenticated
+ * - Customer is not banned
  *
- * Test Flow:
- * 1. Create a new customer account via join endpoint
- * 2. Update the profile with valid display name and phone number (E.164 format)
- * 3. Verify the response contains the updated fields
- * 4. Verify the updated_at timestamp has changed
- * 5. Verify email remains unchanged
+ * **Test Steps:**
+ * 1. Authenticate as a customer via join endpoint
+ * 2. Store original customer data for comparison
+ * 3. Call PUT /shoppingMall/customer/profile with valid display_name and phone_number
+ * 4. Verify response returns IShoppingMallCustomer with updated displayName and phoneNumber
+ * 5. Verify updatedAt timestamp is more recent than createdAt
+ * 6. Verify other fields (id, email, banned) remain unchanged
+ *
+ * **Expected Results:**
+ * - Response contains updated display_name and phone_number values
+ * - updatedAt timestamp reflects the update time
+ * - Other fields remain unchanged
  */
 export async function test_api_customer_profile_update_both_fields(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create customer account via join endpoint
+  // 1. Customer setup - authenticate via join endpoint
   const customerConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_customer_join(customerConnection, {
-    body: {
-      displayName: null,
-      phone: null,
-    },
-  });
-  typia.assert(authorized);
-  // Store original data for comparison
-  const originalUpdatedAt = authorized.updatedAt;
-  const originalEmail = authorized.email;
-  // 2. Update profile with both display name and phone number
-  const updateBody = {
-    displayName: "John Doe",
-    phoneNumber: "+1234567890",
+  const authorizedCustomer = await authorize_customer_join(
+    customerConnection,
+    {},
+  );
+  typia.assert(authorizedCustomer);
+  // Store original data for verification
+  const originalId = authorizedCustomer.id;
+  const originalEmail = authorizedCustomer.email;
+  const originalBanned = authorizedCustomer.banned;
+  const originalCreatedAt = authorizedCustomer.createdAt;
+  // 2. Update profile with both display_name and phone_number
+  const updateData = {
+    display_name: "John Doe",
+    phone_number: "+1-555-123-4567",
   } satisfies IShoppingMallCustomer.IUpdate;
   const updatedCustomer =
-    await api.functional.shoppingMall.customer.customers.me.update(
+    await api.functional.shoppingMall.customer.profile.update(
       customerConnection,
-      { body: updateBody },
+      { body: updateData },
     );
   typia.assert(updatedCustomer);
-  // 3. Verify the response contains the updated fields
+  // 3. Verify updated displayName and phoneNumber
   TestValidator.equals(
-    "display name should be updated",
+    "displayName updated",
     updatedCustomer.displayName,
     "John Doe",
   );
   TestValidator.equals(
-    "phone number should be updated",
+    "phoneNumber updated",
     updatedCustomer.phoneNumber,
-    "+1234567890",
+    "+1-555-123-4567",
   );
-  // 4. Verify the updated_at timestamp has changed
-  TestValidator.notEquals(
-    "updated_at timestamp should change after update",
-    updatedCustomer.updatedAt,
-    originalUpdatedAt,
+  // 4. Verify updatedAt is more recent than createdAt
+  TestValidator.predicate(
+    "updatedAt is more recent than createdAt",
+    new Date(updatedCustomer.updatedAt).getTime() >=
+      new Date(originalCreatedAt).getTime(),
   );
-  // 5. Verify email remains unchanged (identity preserved)
+  // 5. Verify other fields remain unchanged
+  TestValidator.equals("id unchanged", updatedCustomer.id, originalId);
+  TestValidator.equals("email unchanged", updatedCustomer.email, originalEmail);
   TestValidator.equals(
-    "email should remain unchanged",
-    updatedCustomer.email,
-    originalEmail,
-  );
-  // 6. Verify customer ID is preserved
-  TestValidator.equals(
-    "customer ID should remain unchanged",
-    updatedCustomer.id,
-    authorized.id,
-  );
-  // 7. Verify account is not soft-deleted
-  TestValidator.equals(
-    "account should not be deleted",
-    updatedCustomer.deletedAt,
-    null,
+    "banned unchanged",
+    updatedCustomer.banned,
+    originalBanned,
   );
 }

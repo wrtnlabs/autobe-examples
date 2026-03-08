@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
@@ -22,53 +23,45 @@ export async function putShoppingMallCustomerReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IShoppingMallReview.IUpdate;
 }): Promise<IShoppingMallReview> {
-  // Find the existing review
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+  // Step 1: Find the review and verify ownership
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUnique({
     where: { id: props.reviewId },
     select: {
       id: true,
-      customer_id: true,
-      product_id: true,
+      shopping_mall_customer_id: true,
       rating: true,
       content: true,
       deleted_at: true,
     },
   });
-  // Check ownership
-  if (review.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Check if deleted
-  if (review.deleted_at !== null) {
+  if (review === null) {
     throw new HttpException("Review not found", 404);
   }
-  // Create snapshot before update
+  if (review.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (review.deleted_at !== null) {
+    throw new HttpException("Review is deleted", 409);
+  }
+  // Step 2: Create a snapshot of current review state before update
   await MyGlobal.prisma.shopping_mall_review_snapshots.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       shopping_mall_review_id: review.id,
-      previous_rating: review.rating,
-      new_rating: props.body.rating,
-      previous_content: review.content,
-      new_content: props.body.content ?? null,
+      rating: review.rating,
+      content: review.content,
       created_at: new Date(),
     },
   });
-  // Update the review
-  await MyGlobal.prisma.shopping_mall_reviews.update({
+  // Step 3: Update the review with new values
+  const updated = await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
     data: {
-      rating: props.body.rating,
-      content: props.body.content ?? null,
+      ...(props.body.rating !== undefined && { rating: props.body.rating }),
+      ...(props.body.content !== undefined && { content: props.body.content }),
       updated_at: new Date(),
     },
+    ...ShoppingMallReviewTransformer.select(),
   });
-  // Fetch and return the updated review with relations
-  const updated = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow(
-    {
-      where: { id: props.reviewId },
-      ...ShoppingMallReviewTransformer.select(),
-    },
-  );
   return await ShoppingMallReviewTransformer.transform(updated);
 }

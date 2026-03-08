@@ -1,0 +1,413 @@
+/// Main order transaction records representing completed customer purchases.
+/// Each order contains a unique order number, references the purchasing
+/// customer, tracks total price at purchase time, and maintains overall
+/// order status derived from individual OrderItem statuses.
+///
+/// Business Context:
+/// - Orders are created during checkout when customer completes payment
+/// - Orders remain soft-deleted for order history preservation (section
+/// 04-business-rules: Order Rules - Order History Preservation)
+/// - Overall status is derived from OrderItem statuses
+/// (paid/shipped/delivered/cancelled/refunded/partiallyCompleted) per
+/// section 02-domain-model Order Concept
+/// - Contains OrderItems (referenced in ecommerce_mall_order_items table)
+/// and Shipments (referenced in ecommerce_mall_shipments table)
+///
+/// Key Relationships:
+/// - Belongs to: {@link ecommerce_mall_customers} (customer placed order)
+/// - Contains: {@link ecommerce_mall_order_items} (order items with purchase
+/// snapshots)
+/// - Has: {@link ecommerce_mall_shipments} (delivery tracking per seller)
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who placed this order. {@link ecommerce_mall_customers.id}
+  customer_id String
+  
+  /// Unique order identifier (e.g., ORD-20240307-001234) for customer-facing
+  /// order tracking and reference.
+  order_number String
+  
+  /// Total order price at time of purchase, calculated from OrderItem unit
+  /// prices and quantities.
+  total_price Float
+  
+  /// Overall order status derived from OrderItem statuses. Values:
+  /// paid|shipped|delivered|cancelled|refunded|partiallyCompleted. Status
+  /// changes as OrderItems transition through fulfillment stages.
+  overall_status String
+  
+  /// Timestamp when order was created at checkout.
+  created_at DateTime
+  
+  /// Timestamp of last order status or metadata update.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for order history preservation. NULL when order is
+  /// active, set when order is logically deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems ecommerce_mall_order_items[]
+  shipments ecommerce_mall_shipments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_number])
+  @@index([customer_id, created_at])
+  @@index([overall_status])
+  @@index([customer_id, overall_status])
+}
+
+/// Individual products within an order with purchase-time snapshots, item
+/// status tracking, and quantity information. Each order item represents a
+/// unique product variant purchased in an order, with denormalized snapshots
+/// of product, variant, and seller profile data at the time of purchase.
+/// Items progress through status workflow: paid → shipped → delivered →
+/// (optional) cancelled or refunded. Supports individual item cancellation
+/// and refund operations independent of other items in the same order. Total
+/// price should be computed in queries (unit_price × quantity) rather than
+/// stored.
+///
+/// **Key relationships**: Belongs to {@link ecommerce_mall_orders},
+/// references {@link ecommerce_mall_products} and {@link
+/// ecommerce_mall_product_variants} with snapshots preserved at purchase
+/// time.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link ecommerce_mall_orders.id}. Links order item to
+  /// its parent order transaction.
+  ecommerce_mall_order_id String
+  
+  /// Referenced product's {@link ecommerce_mall_products.id}. The product that
+  /// was purchased (snapshot preserved at purchase time).
+  ecommerce_mall_product_id String
+  
+  /// Referenced product variant's {@link ecommerce_mall_product_variants.id}.
+  /// The specific variant options purchased (snapshot preserved at purchase
+  /// time).
+  ecommerce_mall_product_variant_id String
+  
+  /// Current status of the order item. Values: 'paid' (payment confirmed,
+  /// awaiting shipment), 'shipped' (seller created shipment), 'delivered'
+  /// (customer confirmed or 14 days auto-confirmed), 'cancelled' (customer
+  /// cancellation approved), 'refunded' (refund request approved).
+  /// Transitions: paid→shipped→delivered→cancelled|refunded.
+  item_status String
+  
+  /// Number of units of this variant purchased. Quantities are combined if
+  /// same variant added multiple times to cart before checkout (section 183).
+  quantity Int
+  
+  /// Price per unit at the time of purchase. Immutable snapshot preserved even
+  /// if variant price changes later.
+  unit_price Float
+  
+  /// Immutable product data snapshot at time of purchase. Contains product
+  /// name, description, category, base price, and images as JSON string.
+  /// Preserved even if original product is deleted (section 186).
+  product_snapshot String
+  
+  /// Immutable variant data snapshot at time of purchase. Contains SKU code,
+  /// option values, and price as JSON string. Preserved even if variant is
+  /// deleted or modified (section 186).
+  variant_snapshot String
+  
+  /// Immutable seller profile snapshot at time of purchase. Contains shop name
+  /// and logo as JSON string. Preserved even if seller profile is modified
+  /// (section 186).
+  seller_profile_snapshot String
+  
+  /// Timestamp when this order item was created (order placed).
+  created_at DateTime
+  
+  /// Timestamp of the last status change or update.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion if the order item was removed. NULL if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  statusSnapshots ecommerce_mall_order_item_snapshots[]
+  shipmentItem ecommerce_mall_shipment_items?
+  cancellationRequests ecommerce_mall_cancellation_requests[]
+  refundRequests ecommerce_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_order_items_ecommerce_mall_product_vari_eb246768")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_order_items_ecommerce_mall_order_id_eco_f13cbbf0")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_id, item_status], map: "ecommerce_mall_order_items_ecommerce_mall_order_id_ite_b7776b83")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, item_status], map: "ecommerce_mall_order_items_ecommerce_mall_product_id_i_5f2afec5")
+  @@index([item_status, created_at])
+}
+
+/// Shipment records created by sellers for tracking delivery of order items.
+/// Each shipment contains one or more order items from the same seller and
+/// is associated with an order. Shipment tracking includes carrier name and
+/// tracking number for customer visibility. Shipments trigger the 14-day
+/// auto-delivery process when items are not manually confirmed.
+///
+/// Key relationships:
+/// - Belongs to one {@link ecommerce_mall_orders} (the order containing
+/// items in this shipment)
+/// - Created by one {@link ecommerce_mall_sellers} (the seller shipping the
+/// items)
+/// - Contains multiple {@link ecommerce_mall_order_items} via {@link
+/// ecommerce_mall_shipment_items} junction table
+///
+/// Behavioral notes:
+/// - Once created, shipment status is 'shipped' and tracking information is
+/// immutable
+/// - All order items in a shipment share the same carrier and tracking number
+/// - 14-day auto-delivery: if customer doesn't confirm delivery, items
+/// automatically marked as 'delivered' after 14 days
+/// - Delivery confirmation happens at shipment level, updating all items in
+/// that shipment to 'delivered' status
+/// - Sellers can create multiple shipments for their order items if they
+/// wish to ship items separately
+///
+/// API Requirements:
+/// - Independent CRUD operations for shipment management
+/// - Search and filter shipments by order, seller, status
+/// - Display tracking information to customers
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order's {@link ecommerce_mall_orders.id} that contains the order items in
+  /// this shipment.
+  order_id String
+  
+  /// Seller's {@link ecommerce_mall_sellers.id} who created this shipment.
+  seller_id String
+  
+  /// Name of the shipping carrier (e.g., USPS, FedEx, DHL). Required for
+  /// shipment creation.
+  carrier_name String
+  
+  /// Tracking number provided by the carrier for package tracking. Required
+  /// for shipment creation. Immutable after shipment creation.
+  tracking_number String
+  
+  /// Shipment creation timestamp. Used to track the 14-day auto-delivery
+  /// period.
+  created_at DateTime
+  
+  /// Last update timestamp for the shipment record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. NULL means the shipment is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems ecommerce_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([tracking_number])
+  @@index([order_id, seller_id])
+  @@index([created_at])
+  @@index([seller_id])
+}
+
+/// Immutable audit snapshots of order item status changes triggered by
+/// cancellation or refund request approvals/rejections. Preserves
+/// before-after status values for dispute resolution and historical
+/// tracking.
+///
+/// Each snapshot records:
+/// - The order item that underwent a status change
+/// - The old status before the change
+/// - The new status after the change
+/// - The triggering request (cancellation or refund)
+/// - The seller who processed the change
+/// - Timestamp of the change
+///
+/// This table supports order item status history tracking, dispute
+/// resolution by preserving exact status states at each change point, and
+/// audit trails for compliance requirements.
+///
+/// Referenced by: {@link ecommerce_mall_order_items}, {@link
+/// ecommerce_mall_cancellation_requests}, {@link
+/// ecommerce_mall_refund_requests}, {@link ecommerce_mall_sellers}
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item whose status changed. {@link
+  /// ecommerce_mall_order_items.id}.
+  order_item_id String
+  
+  /// Optional: Cancellation request that triggered this status change. {@link
+  /// ecommerce_mall_cancellation_requests.id}. Null if triggered by refund
+  /// request.
+  cancellation_request_id String?
+  
+  /// Optional: Refund request that triggered this status change. {@link
+  /// ecommerce_mall_refund_requests.id}. Null if triggered by cancellation
+  /// request.
+  refund_request_id String?
+  
+  /// The seller who processed the cancellation or refund request. {@link
+  /// ecommerce_mall_sellers.id}.
+  changed_by_seller_id String
+  
+  /// The order item status before the change. Enum values: 'paid', 'shipped',
+  /// 'delivered', 'cancelled', 'refunded'.
+  old_status String
+  
+  /// The order item status after the change. Enum values: 'paid', 'shipped',
+  /// 'delivered', 'cancelled', 'refunded'.
+  new_status String
+  
+  /// Reason for the status change, captured when the cancellation or refund
+  /// request is processed.
+  change_reason String?
+  
+  /// Timestamp when this snapshot was created (status change occurred).
+  created_at DateTime
+  
+  /// Timestamp of the last update to this snapshot (should match created_at
+  /// for immutable snapshots).
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Snapshots are typically never deleted, but this
+  /// field is provided for consistency with other tables.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  cancellationRequest ecommerce_mall_cancellation_requests? @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest ecommerce_mall_refund_requests? @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  changedBySeller ecommerce_mall_sellers @relation(fields: [changed_by_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id], map: "ecommerce_mall_order_item_snapshots_cancellation_reque_25bf3d77")
+  @@index([refund_request_id])
+  // spellchecker: ignore-next-line
+  @@unique([order_item_id, cancellation_request_id], map: "ecommerce_mall_order_item_snapshots_order_item_id_canc_4eaab5e3")
+  // spellchecker: ignore-next-line
+  @@unique([order_item_id, refund_request_id], map: "ecommerce_mall_order_item_snapshots_order_item_id_refu_7c212237")
+  // spellchecker: ignore-next-line
+  @@index([order_item_id, created_at], map: "ecommerce_mall_order_item_snapshots_order_item_id_crea_ce456eaa")
+  // spellchecker: ignore-next-line
+  @@index([changed_by_seller_id, created_at], map: "ecommerce_mall_order_item_snapshots_changed_by_seller__44658fe2")
+  @@index([new_status, created_at])
+}
+
+/// Junction table for the many-to-one relationship between shipments and
+/// order items. Each order item belongs to exactly one shipment for delivery
+/// tracking purposes. This table is managed through the parent shipment and
+/// order_item entities and does not require independent CRUD operations.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment's {@link ecommerce_mall_shipments.id}. References the delivery
+  /// shipment containing this order item.
+  shipment_id String
+  
+  /// Order item's {@link ecommerce_mall_order_items.id}. References the order
+  /// item being shipped. Unique constraint ensures each order item belongs to
+  /// exactly one shipment.
+  order_item_id String
+  
+  /// Timestamp when the shipment-item association was created.
+  created_at DateTime
+  
+  /// Timestamp when the shipment-item association was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the shipment-item association was soft deleted (nullable).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([shipment_id, order_item_id])
+}

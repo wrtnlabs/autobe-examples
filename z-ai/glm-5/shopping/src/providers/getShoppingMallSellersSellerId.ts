@@ -8,19 +8,19 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallSellerAtSummaryTransformer } from "../transformers/ShoppingMallSellerAtSummaryTransformer";
+import { ShoppingMallSellerTransformer } from "../transformers/ShoppingMallSellerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallSellersSellerId(props: {
   sellerId: string & tags.Format<"uuid">;
-}): Promise<IShoppingMallSeller.ISummary> {
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirstOrThrow({
+}): Promise<IShoppingMallSeller> {
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: {
       id: props.sellerId,
       deleted_at: null,
     },
-    ...ShoppingMallSellerAtSummaryTransformer.select(),
+    ...ShoppingMallSellerTransformer.select(),
   });
-  return await ShoppingMallSellerAtSummaryTransformer.transform(seller);
+  return await ShoppingMallSellerTransformer.transform(seller);
 }

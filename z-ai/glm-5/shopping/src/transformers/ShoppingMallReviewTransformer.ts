@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
@@ -25,7 +26,6 @@ export namespace ShoppingMallReviewTransformer {
         content: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         product: ShoppingMallProductAtSummaryTransformer.select(),
         order: ShoppingMallOrderAtSummaryTransformer.select(),
@@ -37,15 +37,15 @@ export namespace ShoppingMallReviewTransformer {
   ): Promise<IShoppingMallReview> {
     return {
       id: input.id,
-      rating: input.rating,
-      content: input.content ?? null,
-      author: await ShoppingMallCustomerAtSummaryTransformer.transform(
+      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      rating: input.rating,
+      content: input.content ?? undefined,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
     };

@@ -3,73 +3,77 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IShoppingMallProduct } from "../../../../../structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMallProductImage";
 
 /**
- * Reorder product images by updating their display sequence.
+ * Upload a new image for a product.
  *
- * This operation allows sellers to change the order in which product images appear in the gallery. The image with the lowest order value (after reordering) becomes the main/thumbnail image displayed in product listings, search results, and category pages.
+ * This endpoint allows authenticated sellers to add images to products they own. Each product can have multiple images, and the image with the lowest display_order value serves as the main thumbnail displayed in product listings and search results.
  *
- * When images are reordered, the system creates a product snapshot preserving the complete product state including image associations for audit trail purposes. This ensures complete history tracking as required by the snapshot principle.
+ * The image_url field must point to an accessible image file using HTTPS protocol. Supported image formats include JPEG, PNG, and WebP. The display_order determines the image's position in the product gallery - lower values appear first.
  *
- * The operation performs validation to ensure:
- * - The seller owns the product
- * - All image IDs in the request belong to the specified product
- * - Order values are unique within the request
+ * Authorization:
+ * - Only sellers can upload images to their own products
+ * - Suspended sellers cannot upload images
+ * - Administrators have read-only access to view product images for oversight purposes
  *
- * The first image in the ordered list (lowest order value) will be designated as the main image used for thumbnails across the platform.
+ * Business Rules:
+ * - Display order must be unique within the same product (enforced by database constraint)
+ * - When a product is deleted, all its images are cascade deleted
+ * - Product ownership is validated before allowing image upload
+ * - Images are included in product snapshots when products are edited
+ *
+ * Related Operations:
+ * - GET /products/{productId} - View product details including all images
+ * - PUT /products/{productId}/images/{imageId} - Update image display order
+ * - DELETE /products/{productId}/images/{imageId} - Delete an image
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose images are being reordered (UUID format)
- * @param props.body Array of image order updates specifying the new display sequence for product images
+ * @param props.productId The unique identifier of the product to add the image to. The authenticated seller must own this product.
+ * @param props.body Image upload information including the image URL and display order position.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps:
+ * @x-autobe-specification Implementation Steps:
  *
- * 1. **Authentication & Authorization**:
- *    - Extract seller ID from JWT token
- *    - Verify seller account status is 'approved'
+ * 1. Authentication & Authorization:
+ *    - Extract authenticated user from JWT token
+ *    - Validate user is either a seller or administrator
+ *    - If seller: verify the seller owns the product (shopping_mall_products.shopping_mall_seller_id matches seller.id)
+ *    - If seller: verify seller is not suspended (seller.suspended === false)
+ *    - If administrator: allow access for oversight purposes
  *
- * 2. **Ownership Verification**:
- *    - Query shopping_mall_products table to verify seller_id matches authenticated seller
- *    - Return 403 Forbidden if seller does not own the product
- *    - Return 404 Not Found if product does not exist or is deleted (deleted_at is not null)
+ * 2. Input Validation:
+ *    - Validate productId is a valid UUID format
+ *    - Validate imageUrl is a valid HTTPS URL
+ *    - Validate displayOrder is a non-negative integer
+ *    - Check product exists and is not soft-deleted
+ *    - Check display_order is unique within the product (query shopping_mall_product_images for same productId and displayOrder)
  *
- * 3. **Request Validation**:
- *    - Validate request body contains at least one image order entry
- *    - Retrieve all existing images for the product from shopping_mall_product_images
- *    - Verify all image IDs in request exist and belong to the product
- *    - Verify order values are unique within the request
- *    - Return 400 Bad Request with specific error message if validation fails
+ * 3. Image Creation:
+ *    - Generate new UUID for image id
+ *    - Set created_at to current timestamp
+ *    - Insert new record into shopping_mall_product_images table
  *
- * 4. **Capture Previous State**:
- *    - Query current image order from shopping_mall_product_images
- *    - Prepare previous state data for snapshot
+ * 4. Response:
+ *    - Return created image with id, productId, imageUrl, displayOrder, createdAt
+ *    - HTTP status 201 on success
  *
- * 5. **Database Transaction**:
- *    - Begin transaction
- *    - Update order field for each specified image in shopping_mall_product_images
- *    - Create product snapshot in shopping_mall_product_snapshots capturing:
- *      - Previous image order
- *      - New image order
- *      - Timestamp
- *      - Changed fields indicator
- *    - Commit transaction
- *
- * 6. **Response**:
- *    - Return updated product with reordered images
- *    - Include success confirmation
+ * 5. Error Handling:
+ *    - 401: Not authenticated
+ *    - 403: Not authorized (not product owner or suspended seller)
+ *    - 404: Product not found
+ *    - 409: Display order already exists for this product
+ *    - 400: Invalid input data
  * @path /shoppingMall/seller/products/:productId/images
- * @accessor api.functional.shoppingMall.seller.products.images.reorder
+ * @accessor api.functional.shoppingMall.seller.products.images.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function reorder(
+export async function create(
   connection: IConnection,
-  props: reorder.Props,
-): Promise<reorder.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? reorder.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -79,30 +83,30 @@ export async function reorder(
           },
         },
         {
-          ...reorder.METADATA,
-          path: reorder.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace reorder {
+export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the product whose images are being reordered (UUID format)
+     * The unique identifier of the product to add the image to. The authenticated seller must own this product.
      */
-    productId: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Array of image order updates specifying the new display sequence for product images
+     * Image upload information including the image URL and display order position.
      */
-    body: IShoppingMallProductImage.IOrder;
+    body: IShoppingMallProductImage.ICreate;
   };
-  export type Body = IShoppingMallProductImage.IOrder;
-  export type Response = IShoppingMallProduct;
+  export type Body = IShoppingMallProductImage.ICreate;
+  export type Response = IShoppingMallProductImage;
 
   export const METADATA = {
-    method: "PATCH",
+    method: "POST",
     path: "/shoppingMall/seller/products/:productId/images",
     request: {
       type: "application/json",
@@ -116,16 +120,16 @@ export namespace reorder {
 
   export const path = (props: Omit<Props, "body">) =>
     `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images`;
-  export const random = (): IShoppingMallProduct =>
-    typia.random<IShoppingMallProduct>();
+  export const random = (): IShoppingMallProductImage =>
+    typia.random<IShoppingMallProductImage>();
   export const simulate = (
     connection: IConnection,
-    props: reorder.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: reorder.path(props),
+      path: create.path(props),
       contentType: "application/json",
     });
     try {
@@ -145,321 +149,53 @@ export namespace reorder {
 }
 
 /**
- * Retrieve detailed information about a specific product image.
+ * Permanently removes a specific image from a product's image gallery.
  *
- * This operation returns the complete metadata for a single product image, including its URL path to the image file in storage, display order within the product's gallery, and creation/update timestamps.
+ * This operation allows sellers to delete individual images from their products. The seller must be the owner of the product. If the deleted image was the main thumbnail (the image with display_order = 1), the next image in the sequence automatically becomes the new main thumbnail for the product.
  *
- * **Security**: This endpoint requires seller authentication. The operation verifies that the authenticated seller owns the product containing the requested image before returning data.
+ * Product snapshots that contain this image are preserved for historical and dispute resolution purposes. Deleting all images from a product is allowed; the product will then display without an image in search results and category listings.
  *
- * The image's order field determines its position in the product's image gallery, where lower values appear first. The image with the lowest order value serves as the main/thumbnail image for product listings and search results.
- *
- * Product images are managed through their parent products by sellers. When a product is soft-deleted (deleted_at is set), associated images remain but are inaccessible through this endpoint. When a product is permanently deleted, all associated images are automatically removed via cascade deletion.
- *
- * Related operations:
- * - Use PATCH /shoppingMall/seller/products/{productId}/images to manage image ordering
- * - Use POST /shoppingMall/seller/products/{productId}/images to add new images
+ * This operation is available only to the seller who owns the product. Sellers with suspended accounts cannot delete product images.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product containing the image
- * @param props.imageId Unique identifier of the image to retrieve
+ * @param props.productId Unique identifier of the product containing the image to delete. The product must belong to the authenticated seller and must not have any variants with pending order items, cancellation requests, or refund requests.
+ * @param props.imageId Unique identifier of the product image to delete. The image must belong to the specified product. Cannot be the last remaining image for the product.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
  * @x-autobe-specification Implementation steps:
  *
- * 1. Validate path parameters:
- *    - productId must be a valid UUID
- *    - imageId must be a valid UUID
+ * 1. Authentication & Authorization:
+ *    - Extract authenticated seller from JWT token
+ *    - Verify seller account is active (not suspended, not banned)
  *
- * 2. Query shopping_mall_product_images table:
- *    - Find image record where id = imageId AND shopping_mall_product_id = productId
- *    - Include join with shopping_mall_products to verify product exists and is not soft-deleted
+ * 2. Product Validation:
+ *    - Query shopping_mall_products where id = productId
+ *    - Verify product exists and deleted_at is null
+ *    - Verify product.shopping_mall_seller_id equals authenticated seller's id
+ *    - Check for blocking conditions: no variants with pending order items (status 'paid' or 'shipped'), no pending cancellation requests, no pending refund requests
  *
- * 3. Handle edge cases:
- *    - If product not found or soft-deleted, return 404 NOT_FOUND
- *    - If image not found or doesn't belong to specified product, return 404 NOT_FOUND
- *    - No authentication required - public endpoint
+ * 3. Image Validation:
+ *    - Query shopping_mall_product_images where id = imageId
+ *    - Verify image exists
+ *    - Verify image.shopping_mall_product_id equals productId
+ *    - Count total images for this product - if this is the last image, reject deletion
  *
- * 4. Return mapped response:
- *    - Map database record to IShoppingMallProductImage type
- *    - Include all fields: id, url, order, createdAt, updatedAt
- * @path /shoppingMall/seller/products/:productId/images/:imageId
- * @accessor api.functional.shoppingMall.seller.products.images.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the product containing the image
-     */
-    productId: string;
-
-    /**
-     * Unique identifier of the image to retrieve
-     */
-    imageId: string;
-  };
-  export type Response = IShoppingMallProductImage;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/shoppingMall/seller/products/:productId/images/:imageId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
-  export const random = (): IShoppingMallProductImage =>
-    typia.random<IShoppingMallProductImage>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("imageId")(() => typia.assert(props.imageId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update a product image's display order.
+ * 4. Deletion Process:
+ *    - Store the deleted image's display_order value
+ *    - Delete the image record from shopping_mall_product_images
+ *    - For remaining images with display_order > deleted_image's display_order:
+ *      - Decrement their display_order by 1
+ *    - This automatically handles main thumbnail promotion: if deleted image had display_order = 1, the next image (now display_order = 1) becomes the main thumbnail
  *
- * This operation allows authenticated sellers to modify the display order of a specific product image. The 'order' field determines the image's position in the product's gallery, with lower values appearing first. The image with the lowest order value serves as the main/thumbnail image displayed in product listings and search results.
+ * 5. Create Product Snapshot:
+ *    - Create a new shopping_mall_product_snapshots record
+ *    - Include current product state with updated image list
+ *    - Include snapshots of all variants
  *
- * When an image's order is modified, the system automatically creates a product snapshot to preserve the complete state of the product and all its images at that moment for audit trail purposes, as required by the snapshot principle. This ensures complete accountability for all product modifications.
+ * 6. Response:
+ *    - Return the deleted image information
  *
- * Authorization: Only the seller who owns the product can update its images. The operation validates that the authenticated seller is the owner of the product before allowing any modification.
- *
- * Business Rules:
- * - Each product can have multiple images with unique order values per product (enforced by @@unique([shopping_mall_product_id, order]))
- * - Order changes trigger automatic snapshot creation for audit purposes
- * - The first image (lowest order) becomes the main/thumbnail image
- *
- * @param props.connection
- * @param props.productId Target product's unique identifier (UUID format). The product must be owned by the authenticated seller.
- * @param props.imageId Target image's unique identifier (UUID format). The image must belong to the specified product.
- * @param props.body Image update data containing the new display order value
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps:
- *
- * 1. **Authentication & Authorization**:
- *    - Extract seller ID from JWT token
- *    - Query shopping_mall_products to verify seller_id matches authenticated seller
- *    - Return 403 Forbidden if seller does not own the product
- *
- * 2. **Image Validation**:
- *    - Query shopping_mall_product_images to verify image exists and belongs to the specified product
- *    - Return 404 Not Found if image does not exist or does not belong to product
- *
- * 3. **Order Conflict Check**:
- *    - Check if the new order value conflicts with existing images of the same product
- *    - The @@unique([shopping_mall_product_id, order]) constraint ensures no duplicate order values
- *    - If conflict exists, consider auto-shifting other images or return appropriate error
- *
- * 4. **Capture Previous State (Snapshot Preparation)**:
- *    - Query the complete product state including all images and variants
- *    - Store this state for snapshot creation
- *
- * 5. **Update Image**:
- *    - Update the shopping_mall_product_images record with new order value
- *    - Update the updated_at timestamp
- *
- * 6. **Create Product Snapshot**:
- *    - Create shopping_mall_product_snapshots record capturing the complete product state
- *    - Include all images with their updated order values
- *    - Include all variants at their current state
- *    - Record which fields changed (image order)
- *
- * 7. **Return Response**:
- *    - Return the updated image record with all fields
- * @path /shoppingMall/seller/products/:productId/images/:imageId
- * @accessor api.functional.shoppingMall.seller.products.images.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Target product's unique identifier (UUID format). The product must be owned by the authenticated seller.
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * Target image's unique identifier (UUID format). The image must belong to the specified product.
-     */
-    imageId: string & tags.Format<"uuid">;
-
-    /**
-     * Image update data containing the new display order value
-     */
-    body: IShoppingMallProductImage.IUpdate;
-  };
-  export type Body = IShoppingMallProductImage.IUpdate;
-  export type Response = IShoppingMallProductImage;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/seller/products/:productId/images/:imageId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
-  export const random = (): IShoppingMallProductImage =>
-    typia.random<IShoppingMallProductImage>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("imageId")(() => typia.assert(props.imageId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Delete a specific product image from a seller's product.
- *
- * This operation allows authenticated sellers to remove images from their own products. The seller must be the owner of the product containing the image; otherwise, the operation will be rejected with an authorization error.
- *
- * When an image is deleted, the system automatically creates a product snapshot to preserve the audit trail of product image changes, in compliance with the platform's snapshot principle. This ensures that historical product information remains available for dispute resolution and compliance purposes.
- *
- * If the deleted image was the main/thumbnail image (lowest order value), sellers should reorder remaining images to designate a new main image. Images deleted from products are permanently removed from the storage system.
- *
- * The operation will fail if:
- * - The product does not belong to the authenticated seller
- * - The product ID does not exist
- * - The image ID does not exist or does not belong to the specified product
- *
- * @param props.connection
- * @param props.productId Unique identifier of the product containing the image to delete. The authenticated seller must own this product.
- * @param props.imageId Unique identifier of the product image to delete. Must belong to the specified product.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation Steps:
- *
- * 1. **Authentication & Authorization**
- *    - Verify seller authentication via JWT token
- *    - Extract seller_id from token payload
- *
- * 2. **Ownership Verification**
- *    - Query shopping_mall_products table where id = productId
- *    - Verify product.seller_id matches authenticated seller's ID
- *    - Return 403 Forbidden if ownership mismatch
- *    - Return 404 Not Found if product doesn't exist
- *
- * 3. **Image Existence Check**
- *    - Query shopping_mall_product_images table where id = imageId AND shopping_mall_product_id = productId
- *    - Return 404 Not Found if image doesn't exist or doesn't belong to this product
- *
- * 4. **Delete Image**
- *    - Delete record from shopping_mall_product_images (cascade deletion will handle storage cleanup)
- *    - Capture deleted image data for response and snapshot
- *
- * 5. **Snapshot Creation**
- *    - Create new shopping_mall_product_snapshots record capturing current product state
- *    - Include remaining images in the snapshot
- *    - Record that an image was deleted (image ID and URL for audit)
- *
- * 6. **Response**
- *    - Return deleted image information (id, url, order)
- *
- * **Database Queries:**
- * - SELECT * FROM shopping_mall_products WHERE id = $productId
- * - SELECT * FROM shopping_mall_product_images WHERE id = $imageId AND shopping_mall_product_id = $productId
- * - DELETE FROM shopping_mall_product_images WHERE id = $imageId
- * - INSERT INTO shopping_mall_product_snapshots (...) VALUES (...)
- *
- * **Edge Cases:**
- * - Product soft-deleted (deleted_at not null): Allow deletion if seller owns it
- * - Last image deletion: Allowed, product will show as having no images
- * - Image was main image (order=1): Delete succeeds, seller should reorder
+ * Transaction boundary: All database operations in single transaction to ensure atomicity.
  * @path /shoppingMall/seller/products/:productId/images/:imageId
  * @accessor api.functional.shoppingMall.seller.products.images.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -488,14 +224,14 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the product containing the image to delete. The authenticated seller must own this product.
+     * Unique identifier of the product containing the image to delete. The product must belong to the authenticated seller and must not have any variants with pending order items, cancellation requests, or refund requests.
      */
-    productId: string;
+    productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the product image to delete. Must belong to the specified product.
+     * Unique identifier of the product image to delete. The image must belong to the specified product. Cannot be the last remaining image for the product.
      */
-    imageId: string;
+    imageId: string & tags.Format<"uuid">;
   };
 
   export const METADATA = {

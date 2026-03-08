@@ -15,33 +15,7 @@ export namespace DiscussionBoardAdminAtSummaryTransformer {
       select: {
         id: true,
         display_name: true,
-        email: true,
-        password_hash: true,
-        is_super_admin: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        promotedBy: {
-          select: {
-            id: true,
-          },
-        },
-        sessions: {
-          select: {
-            id: true,
-          },
-        },
-        passwordResets: {
-          select: {
-            id: true,
-          },
-        },
-        emailVerification: {
-          select: {
-            id: true,
-          },
-        },
+        role: true,
       },
     } satisfies Prisma.discussion_board_adminsFindManyArgs;
   }
@@ -51,12 +25,7 @@ export namespace DiscussionBoardAdminAtSummaryTransformer {
     return {
       id: input.id,
       display_name: input.display_name,
-      email: input.email,
-      is_super_admin: input.is_super_admin,
-      is_active: input.is_active,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      role: typia.assert<"admin" | "super_admin">(input.role),
     };
   }
 }

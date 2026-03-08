@@ -1,0 +1,267 @@
+/// Immutable audit snapshots of administrative access requests that preserve
+/// state changes when requests are approved or rejected by super
+/// administrators.
+///
+/// This table captures point-in-time state of {@link
+/// ecommerce_mall_admin_request_requests} for dispute resolution, audit
+/// trails, and change history tracking. Each snapshot records the reason,
+/// request status, and creation timestamp at the moment of status change
+/// (approval or rejection).
+///
+/// Business context:
+/// - Created when admin requests transition from pending to approved or
+/// rejected
+/// - Used for compliance, dispute resolution, and historical analysis
+/// - Immutable records that cannot be modified or deleted
+///
+/// Relationships:
+/// - Belongs to: {@link ecommerce_mall_admin_request_requests} - one
+/// snapshot per status change event
+/// - Modified by: {@link ecommerce_mall_admins} (nullable) - super
+/// administrator who approved or rejected the request
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin request's {@link ecommerce_mall_admin_request_requests.id}.
+  ecommerce_mall_admin_request_request_id String
+  
+  /// Super administrator who approved or rejected the request. {@link
+  /// ecommerce_mall_admins.id}.
+  changed_by String?
+  
+  /// Original reason text for the administrative access request as recorded at
+  /// the time of the snapshot.
+  reason String
+  
+  /// Request status (pending|approved|rejected) as of when this snapshot was
+  /// created.
+  request_status String
+  
+  /// Timestamp when the original admin request was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was created (typically when status changed
+  /// to approved or rejected).
+  changed_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  adminRequest ecommerce_mall_admin_request_requests @relation(fields: [ecommerce_mall_admin_request_request_id], references: [id], onDelete: Cascade)
+  changedBy ecommerce_mall_admins? @relation(fields: [changed_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([changed_by])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_admin_request_request_id], map: "ecommerce_mall_admin_request_snapshots_ecommerce_mall__06f88d35")
+}
+
+/// Administrative access requests from users (customers or sellers)
+/// requesting admin privileges.
+///
+/// This table represents the core admin request entity that initiates the
+/// privilege escalation workflow. Users submit requests with a reason, which
+/// are then reviewed by super administrators for approval or rejection.
+///
+/// ### Relationships
+///
+/// - {@link ecommerce_mall_admins} - Request is linked to admin actor via FK
+/// - {@link ecommerce_mall_admin_request_request_of_customers} - Requester
+/// is a customer (1:1 relationship)
+/// - {@link ecommerce_mall_admin_request_request_of_sellers} - Requester is
+/// a seller (1:1 relationship)
+/// - {@link ecommerce_mall_admin_request_snapshots} - Immutable snapshots of
+/// status changes
+///
+/// ### Status Workflow
+///
+/// - pending: Initial state after submission, awaiting super admin review
+/// - approved: Super administrator approved, user granted admin privileges
+/// - rejected: Super administrator rejected, user may resubmit
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_request_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin actor's {@link ecommerce_mall_admins.id} who created the request.
+  ecommerce_mall_admin_id String
+  
+  /// The reason why the user is requesting administrative access. Required
+  /// field explaining the need for elevated privileges.
+  reason String
+  
+  /// Current status of the admin request. Enum values: pending, approved,
+  /// rejected.
+  request_status String
+  
+  /// Timestamp when the admin request was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin request was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for administrative request records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin ecommerce_mall_admins @relation(fields: [ecommerce_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_admin_request_snapshots[]
+  customerRequests ecommerce_mall_admin_request_request_of_customers?
+  sellerRequests ecommerce_mall_admin_request_request_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_admin_id], map: "ecommerce_mall_admin_request_requests_ecommerce_mall_a_33149136")
+  // spellchecker: ignore-next-line
+  @@index([request_status, updated_at], map: "ecommerce_mall_admin_request_requests_request_status_u_b072a9c7")
+}
+
+/// Subtype table linking admin requests to customer requesters.
+///
+/// This table implements the polymorphic ownership pattern for AdminRequest
+/// entities, where requests can originate from either customers or sellers.
+/// It stores the relationship between an admin request and the requesting
+/// customer account.
+///
+/// **Relationships**:
+/// - Belongs to a single admin request via adminRequest (1:1)
+/// - Belongs to a single customer from the Actors component
+///
+/// **Usage**:
+/// - Used by AdminRequest to determine the requester type
+/// - Enables seller-specific and customer-specific workflows
+/// - Maintains audit trail of which customer submitted each request
+///
+/// **References**:
+/// - Admin request: {@link ecommerce_mall_admin_request_requests.id}
+/// - Customer: {@link ecommerce_mall_customers.id}
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_request_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin request's {@link ecommerce_mall_admin_request_requests.id} this
+  /// customer request is associated with.
+  admin_request_id String
+  
+  /// Customer's {@link ecommerce_mall_customers.id} who submitted the admin
+  /// access request.
+  customer_id String
+  
+  /// Timestamp when this customer request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer request record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  adminRequest ecommerce_mall_admin_request_requests @relation(fields: [admin_request_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([customer_id], map: "ecommerce_mall_admin_request_request_of_customers_cust_90e9cff6")
+  // spellchecker: ignore-next-line
+  @@unique([admin_request_id], map: "ecommerce_mall_admin_request_request_of_customers_admi_72081379")
+}
+
+/// Links admin requests to seller requesters with a 1:1 relationship.
+///
+/// This table stores the seller-side context for administrative access
+/// requests, enabling the polymorphic AdminRequest entity to reference
+/// either a customer or seller requester. Each admin request is linked to
+/// exactly one seller when the requester is a seller.
+///
+/// Relationships:
+/// - {@link ecommerce_mall_admin_request_requests}: 1:1 relationship - each
+/// record references exactly one admin request
+/// - {@link ecommerce_mall_sellers}: 1:1 relationship - each record
+/// references exactly one seller
+///
+/// Behavioral Notes:
+/// - Created when an admin request is submitted by a seller
+/// - Seller session tracking for audit purposes
+/// - Part of the Administration component for admin access governance
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_request_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin request's {@link ecommerce_mall_admin_request_requests.id} that
+  /// this seller requested access for.
+  admin_request_id String
+  
+  /// Requesting seller's {@link ecommerce_mall_sellers.id} who submitted the
+  /// admin access request.
+  seller_id String
+  
+  /// Seller's {@link ecommerce_mall_seller_sessions.id} session context when
+  /// the admin request was made.
+  seller_session_id String?
+  
+  /// Timestamp when this seller-request linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  adminRequest ecommerce_mall_admin_request_requests @relation(fields: [admin_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  sellerSession ecommerce_mall_seller_sessions? @relation(fields: [seller_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([seller_session_id], map: "ecommerce_mall_admin_request_request_of_sellers_seller_23563fba")
+  // spellchecker: ignore-next-line
+  @@unique([admin_request_id], map: "ecommerce_mall_admin_request_request_of_sellers_admin__c40fe349")
+  @@unique([seller_id])
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "ecommerce_mall_admin_request_request_of_sellers_seller_7c573997")
+}

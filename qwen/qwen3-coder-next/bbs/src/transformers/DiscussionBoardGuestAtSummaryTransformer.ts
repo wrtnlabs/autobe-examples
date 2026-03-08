@@ -14,8 +14,7 @@ export namespace DiscussionBoardGuestAtSummaryTransformer {
     return {
       select: {
         id: true,
-        ip_address: true,
-        device_fingerprint: true,
+        session_token: true,
         created_at: true,
       },
     } satisfies Prisma.discussion_board_guestsFindManyArgs;
@@ -25,8 +24,7 @@ export namespace DiscussionBoardGuestAtSummaryTransformer {
   ): Promise<IDiscussionBoardGuest.ISummary> {
     return {
       id: input.id,
-      ip_address: input.ip_address,
-      device_fingerprint: input.device_fingerprint,
+      session_token: input.session_token,
       created_at: input.created_at.toISOString(),
     };
   }

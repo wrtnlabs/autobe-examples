@@ -6,60 +6,74 @@ import typia, { tags } from "typia";
 import { IShoppingMallRefundRequest } from "../../../../structures/IShoppingMallRefundRequest";
 
 /**
- * Approve a pending refund request for an order item that was delivered.
+ * Allows sellers to respond to pending refund requests by approving or rejecting them.
  *
- * This endpoint allows sellers to approve refund requests submitted by customers for delivered items. When approved, the system changes the order item status to 'refunded', creates a positive inventory record to restore stock for the refunded variant, and initiates the refund process for the item's total amount (price × quantity).
+ * This operation is exclusively for sellers who own the product associated with the order item. When a seller approves a refund request, the system automatically processes the refund payment, changes the order item status to 'refunded', and restores the stock quantity for the product variant through an inventory record. The approval triggers a complete refund workflow including payment processing and inventory restoration.
  *
- * **Business Rules:**
- * - The refund request must belong to an order item for a product sold by the authenticated seller
- * - The refund request must be in 'pending' status
- * - The order item must have 'delivered' status
- * - The refund request must be within the 7-day refund window from delivery confirmation
+ * When a seller rejects a refund request, the order item status remains 'delivered' and no stock modifications occur. The customer is notified of the rejection.
  *
- * **Effects of Approval:**
- * 1. Refund request status changes from 'pending' to 'approved'
- * 2. Order item status changes to 'refunded'
- * 3. Positive inventory record created to restore stock
- * 4. Refund process initiated for the item's total amount
- * 5. Customer notification sent regarding approval
+ * All responses (both approvals and rejections) create an immutable snapshot of the request state for audit trail and dispute resolution purposes. The snapshot captures the original reason text, the final status, and the response timestamp.
  *
- * This action is irreversible and creates a permanent snapshot for audit trail and dispute resolution purposes. If all items in an order are refunded, the order status becomes 'refunded'.
+ * Status transitions are one-way: a pending request can only transition to 'approved' or 'rejected'. Once resolved, the status cannot be modified further. If a seller attempts to respond to an already-resolved request, the operation is rejected with an error.
+ *
+ * This operation requires seller authentication. Only the seller who owns the product for the specific order item can approve or reject the refund request. Other sellers, customers, and administrators cannot perform this operation. Suspended sellers can still respond to refund requests for their products, but banned sellers are denied access.
  *
  * @param props.connection
- * @param props.refundRequestId Unique identifier of the refund request to approve (global scope)
+ * @param props.refundRequestId Unique identifier of the refund request to respond to (UUID format)
+ * @param props.body Seller's response to the refund request containing approval or rejection decision
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps:
+ * @x-autobe-specification Implementation Steps:
  *
- * 1. Authenticate seller via JWT token
- * 2. Validate refundRequestId as UUID format
- * 3. Query shopping_mall_refund_requests table for the request
- * 4. Verify the refund request exists and is in 'pending' status
- * 5. Verify the seller owns the product (via order_item -> seller relationship)
- * 6. Verify the order item has 'delivered' status
- * 7. Verify the 7-day refund window from delivery confirmation
- * 8. Create a snapshot of the current refund request state
- * 9. Update refund request status to 'approved'
- * 10. Update order item status to 'refunded'
- * 11. Create positive inventory record for stock restoration:
- *     - variant_id from order item
- *     - quantity_change: +[quantity]
- *     - reason: 'Order refund approved - [order number]'
- * 12. Calculate order status if all items are refunded
- * 13. Return the approved refund request details
+ * 1. Validate Path Parameter:
+ *    - Retrieve refund request by refundRequestId
+ *    - Return 404 if not found
  *
- * Transaction required: All updates must be atomic.
- * Snapshot must capture: request ID, order item ID, customer reason, status before/after, timestamp, actor (seller).
- * @path /shoppingMall/seller/refund-requests/:refundRequestId/approve
- * @accessor api.functional.shoppingMall.seller.refund_requests.approve
+ * 2. Authorization Check:
+ *    - Get authenticated seller from context
+ *    - Retrieve order item and its associated product
+ *    - Verify seller owns the product (shopping_mall_product.seller_id matches authenticated seller)
+ *    - Return 403 if seller does not own the product
+ *
+ * 3. Status Validation:
+ *    - Verify refund request status is 'pending'
+ *    - Return 400 if status is 'approved' or 'rejected' (status finality)
+ *
+ * 4. Validate Request Body:
+ *    - decision must be 'approve' or 'reject'
+ *
+ * 5. Process Response:
+ *    - Update status to 'approved' or 'rejected'
+ *    - Set responded_at to current timestamp
+ *
+ * 6. Create Snapshot:
+ *    - Create IShoppingMallRefundRequestSnapshot with:
+ *      - reason (from original request)
+ *      - status (new status)
+ *      - created_at (current timestamp)
+ *      - Reference to refund request
+ *
+ * 7. If Approved:
+ *    - Update order item status to 'refunded'
+ *    - Create positive inventory record for the product variant
+ *    - Trigger refund payment processing
+ *    - Recalculate parent order status
+ *
+ * 8. If Rejected:
+ *    - Order item status remains 'delivered'
+ *    - No inventory changes
+ *
+ * 9. Return updated refund request entity
+ * @path /shoppingMall/seller/refund-requests/:refundRequestId
+ * @accessor api.functional.shoppingMall.seller.refund_requests.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function approve(
+export async function update(
   connection: IConnection,
-  props: approve.Props,
-): Promise<approve.Response> {
+  props: update.Props,
+): Promise<update.Response> {
   return true === connection.simulate
-    ? approve.simulate(connection, props)
+    ? update.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -69,49 +83,60 @@ export async function approve(
           },
         },
         {
-          ...approve.METADATA,
-          path: approve.path(props),
+          ...update.METADATA,
+          path: update.path(props),
           status: null,
         },
+        props.body,
       );
 }
-export namespace approve {
+export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the refund request to approve (global scope)
+     * Unique identifier of the refund request to respond to (UUID format)
      */
     refundRequestId: string & tags.Format<"uuid">;
+
+    /**
+     * Seller's response to the refund request containing approval or rejection decision
+     */
+    body: IShoppingMallRefundRequest.IUpdate;
   };
+  export type Body = IShoppingMallRefundRequest.IUpdate;
   export type Response = IShoppingMallRefundRequest;
 
   export const METADATA = {
     method: "PUT",
-    path: "/shoppingMall/seller/refund-requests/:refundRequestId/approve",
-    request: null,
+    path: "/shoppingMall/seller/refund-requests/:refundRequestId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Props) =>
-    `/shoppingMall/seller/refund-requests/${encodeURIComponent(props.refundRequestId ?? "null")}/approve`;
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/seller/refund-requests/${encodeURIComponent(props.refundRequestId ?? "null")}`;
   export const random = (): IShoppingMallRefundRequest =>
     typia.random<IShoppingMallRefundRequest>();
   export const simulate = (
     connection: IConnection,
-    props: approve.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: approve.path(props),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("refundRequestId")(() =>
         typia.assert(props.refundRequestId),
       );
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

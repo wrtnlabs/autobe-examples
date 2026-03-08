@@ -1,184 +1,106 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
+import type { IShoppingMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAddress";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCheckout";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import type { IShoppingMallOrderAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderAddress";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import type { IShoppingMallOrderItemVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemVariantOption";
-import type { IShoppingMallOrderShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderShipment";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
 import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_customer_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_cart_items_create";
-import { generate_random_shopping_mall_customer_orders_create } from "../../../generate/generate_random_shopping_mall_customer_orders_create";
-import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
-import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
-import { generate_random_shopping_mall_seller_sellers_me_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_sellers_me_shipments_create";
-import { prepare_random_shopping_mall_cart_item } from "../../../prepare/prepare_random_shopping_mall_cart_item";
-import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
-import { prepare_random_shopping_mall_order_shipment } from "../../../prepare/prepare_random_shopping_mall_order_shipment";
-import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
-import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
-import { prepare_random_shopping_mall_product_variant_option } from "../../../prepare/prepare_random_shopping_mall_product_variant_option";
+import { generate_random_shopping_mall_customer_addresses_create } from "../../../generate/generate_random_shopping_mall_customer_addresses_create";
+import { generate_random_shopping_mall_customer_checkout_create } from "../../../generate/generate_random_shopping_mall_customer_checkout_create";
+import { generate_random_shopping_mall_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_shipments_create";
+import { prepare_random_shopping_mall_address } from "../../../prepare/prepare_random_shopping_mall_address";
+import { prepare_random_shopping_mall_checkout } from "../../../prepare/prepare_random_shopping_mall_checkout";
+import { prepare_random_shopping_mall_shipment } from "../../../prepare/prepare_random_shopping_mall_shipment";
 
 export async function test_api_shipment_delivery_confirmation_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // ============================================================
-  // SETUP: Create all required actors and test data
-  // ============================================================
-  // 1. Customer registers and authenticates
+  /**
+   * Test successful delivery confirmation where a customer confirms receipt of a shipment.
+   *
+   * Setup Steps:
+   * 1. Register and authenticate as a customer
+   * 2. Create a shipping address for the customer
+   * 3. Create an order through checkout
+   * 4. Register and authenticate as a seller
+   * 5. Create a shipment for order items
+   *
+   * Test: Customer confirms delivery of the shipment
+   */
+  // Step 1: Register and authenticate as customer
   const customerConnection: api.IConnection = { host: connection.host };
-  const customer = await authorize_customer_join(customerConnection, {});
-  typia.assert(customer);
-  // 2. Seller registers
-  const sellerConnection: api.IConnection = { host: connection.host };
-  const seller = await authorize_seller_join(sellerConnection, {});
-  typia.assert(seller);
-  // 3. Admin registers and authenticates
-  const adminConnection: api.IConnection = { host: connection.host };
-  const admin = await authorize_admin_join(adminConnection, {});
-  typia.assert(admin);
-  // 4. Admin approves the seller
-  await api.functional.shoppingMall.admin.sellers.approve(adminConnection, {
-    sellerId: seller.id,
-  });
-  // 5. Seller creates product with category
-  const product = await generate_random_shopping_mall_seller_products_create(
-    sellerConnection,
-    {
-      body: {
-        name: RandomGenerator.name(),
-        description: RandomGenerator.paragraph({ sentences: 3 }),
-        base_price: typia.random<number & tags.Minimum<1000>>(),
-        category_id: typia.random<string & tags.Format<"uuid">>(),
-      },
-    },
+  const customerAuth = await authorize_customer_join(customerConnection, {});
+  typia.assert(customerAuth);
+  // Step 2: Create shipping address
+  const address = await generate_random_shopping_mall_customer_addresses_create(
+    customerConnection,
+    {},
   );
-  typia.assert(product);
-  // 6. Seller creates variant with initial stock
-  const variant =
-    await generate_random_shopping_mall_seller_products_variants_create(
-      sellerConnection,
-      {
-        params: { productId: product.id },
-        body: {
-          skuCode: RandomGenerator.alphaNumeric(8).toUpperCase(),
-          optionValues: [{ key: "color", value: "Red" }],
-          stockQuantity: 100,
-        },
-      },
-    );
-  typia.assert(variant);
-  // 7. Customer adds variant to cart
-  const cartItem =
-    await generate_random_shopping_mall_customer_cart_items_create(
-      customerConnection,
-      {
-        body: {
-          variantId: variant.id,
-          quantity: 1,
-        },
-      },
-    );
-  typia.assert(cartItem);
-  // 8. Customer places order
-  const order = await generate_random_shopping_mall_customer_orders_create(
+  typia.assert(address);
+  // Step 3: Create order via checkout
+  const order = await generate_random_shopping_mall_customer_checkout_create(
     customerConnection,
     {
       body: {
-        address_id: typia.random<string & tags.Format<"uuid">>(),
+        address_id: address.id,
       },
     },
   );
   typia.assert(order);
-  // Get order item ID from the order
-  const orderItemId = order.orderItems[0].id;
-  // ============================================================
-  // PRE-CONDITION: Seller creates shipment (items become 'shipped')
-  // ============================================================
-  // 9. Seller creates shipment with tracking info
-  const shipment =
-    await generate_random_shopping_mall_seller_sellers_me_shipments_create(
-      sellerConnection,
+  // Step 4: Register and authenticate as seller
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerAuth = await authorize_seller_join(sellerConnection, {});
+  typia.assert(sellerAuth);
+  // Step 5: Create shipment - use generate function to handle creation
+  // The generate function will create a valid shipment with proper order items
+  const shipment = await generate_random_shopping_mall_seller_shipments_create(
+    sellerConnection,
+    {},
+  );
+  typia.assert(shipment);
+  // Test: Customer confirms delivery
+  const confirmedShipment =
+    await api.functional.shoppingMall.customer.shipments.delivery.confirmDelivery(
+      customerConnection,
       {
-        body: {
-          orderItemIds: [orderItemId],
-          carrierName: "FedEx",
-          trackingNumber: RandomGenerator.alphaNumeric(12).toUpperCase(),
-        },
+        shipmentId: shipment.id,
       },
     );
-  typia.assert(shipment);
-  // Verify shipment was created with shipped_at
-  TestValidator.predicate(
-    "shipment has shipped_at timestamp",
-    shipment.shipped_at !== null,
-  );
-  TestValidator.predicate(
-    "shipment has no delivered_at yet",
-    shipment.delivered_at === null,
-  );
-  // ============================================================
-  // TEST: Customer confirms delivery
-  // ============================================================
-  // 10. Customer confirms delivery
-  const confirmedShipment =
-    await api.functional.shoppingMall.customer.shipments.confirm_delivery.confirmDelivery(
-      customerConnection,
-      { shipmentId: shipment.id },
-    );
   typia.assert(confirmedShipment);
-  // ============================================================
-  // VALIDATION: Verify delivery confirmation results
-  // ============================================================
-  // 11. Validate delivered_at is set
+  // Validations
   TestValidator.predicate(
-    "delivered_at timestamp is set",
+    "delivered_at is set",
     confirmedShipment.delivered_at !== null,
   );
-  // 12. Validate delivery_confirmation_method is 'manual'
   TestValidator.equals(
-    "delivery_confirmation_method is manual",
-    confirmedShipment.delivery_confirmation_method,
-    "manual",
-  );
-  // 13. Validate shipment ID remains the same
-  TestValidator.equals(
-    "shipment ID unchanged",
+    "shipment id matches",
     confirmedShipment.id,
     shipment.id,
   );
-  // 14. Validate carrier and tracking info preserved
-  TestValidator.equals(
-    "carrier name preserved",
-    confirmedShipment.carrier_name,
-    shipment.carrier_name,
+  TestValidator.predicate(
+    "has carrier name",
+    confirmedShipment.carrier_name.length > 0,
   );
-  TestValidator.equals(
-    "tracking number preserved",
-    confirmedShipment.tracking_number,
-    shipment.tracking_number,
+  TestValidator.predicate(
+    "has tracking number",
+    confirmedShipment.tracking_number.length > 0,
   );
 }

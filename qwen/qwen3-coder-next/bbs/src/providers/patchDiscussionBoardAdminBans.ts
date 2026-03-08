@@ -1,7 +1,9 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardMember";
+import { IPageIDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardBanRecord";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,79 +13,43 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { DiscussionBoardBanRecordAtSummaryTransformer } from "../transformers/DiscussionBoardBanRecordAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdminBans(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardMember.IRequest;
-}): Promise<IPageIDiscussionBoardMember.ISummary> {
+  body: IDiscussionBoardBanRecord.IRequest;
+}): Promise<IPageIDiscussionBoardBanRecord.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build where clause for banned users with optional filters
-  const whereInput: Prisma.discussion_board_membersWhereInput = {
-    is_active: false,
-    ...(props.body.search && {
-      OR: [
-        { display_name: { contains: props.body.search, mode: "insensitive" } },
-        { email: { contains: props.body.search, mode: "insensitive" } },
-      ],
-    }),
-    ...(typeof props.body.isAdmin === "boolean" && {
-      is_admin: props.body.isAdmin,
-    }),
-    ...(typeof props.body.isSuperAdmin === "boolean" && {
-      is_super_admin: props.body.isSuperAdmin,
+  const where: Prisma.discussion_board_ban_recordsWhereInput = {
+    deleted_at: null,
+    ...(props.body.discussion_board_member_id && {
+      discussion_board_member_id: props.body.discussion_board_member_id,
     }),
   };
-  // Fetch paginated banned users
-  const data = await MyGlobal.prisma.discussion_board_members.findMany({
-    where: whereInput,
+  const data = await MyGlobal.prisma.discussion_board_ban_records.findMany({
+    where,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
-    select: {
-      id: true,
-      email: true,
-      display_name: true,
-      bio: true,
-      is_active: true,
-      is_admin: true,
-      is_super_admin: true,
-      created_at: true,
-      updated_at: true,
-    },
+    orderBy: { banned_at: "desc" },
+    ...DiscussionBoardBanRecordAtSummaryTransformer.select(),
   });
-  // Fetch total count for pagination
-  const total = await MyGlobal.prisma.discussion_board_members.count({
-    where: whereInput,
+  const total = await MyGlobal.prisma.discussion_board_ban_records.count({
+    where,
   });
-  // Transform to response format
-  const transformedData: IDiscussionBoardMember.ISummary[] = data.map(
-    (record) => {
-      const result: IDiscussionBoardMember.ISummary = {
-        id: record.id,
-        email: record.email,
-        display_name: record.display_name,
-        bio: record.bio ?? null,
-        is_active: record.is_active,
-        is_admin: record.is_admin,
-        is_super_admin: record.is_super_admin,
-        created_at: toISOStringSafe(record.created_at),
-        updated_at: toISOStringSafe(record.updated_at),
-      };
-      return result;
-    },
-  );
-  const pagination: IPage.IPagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  };
   return {
-    pagination,
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      DiscussionBoardBanRecordAtSummaryTransformer.transform,
+    ),
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

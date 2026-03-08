@@ -9,62 +9,167 @@ import { IShoppingMallReview } from "../../../../structures/IShoppingMallReview"
 export * as snapshots from "./snapshots/index";
 
 /**
- * Search and retrieve a paginated list of customer reviews with advanced filtering capabilities.
+ * Create a new review for a purchased product.
  *
- * This operation provides public access to product reviews, enabling customers to research products before purchase. Reviews are filtered to exclude soft-deleted entries (where deleted_at is null) to ensure only active reviews are displayed.
+ * This operation allows authenticated customers to submit a review for a product they have purchased through a delivered order. The review includes a mandatory star rating from 1 to 5 and optional text content providing detailed feedback about the product.
  *
- * **Filtering Capabilities:**
- * - Filter by product ID to view all reviews for a specific product
- * - Filter by customer ID to view reviews written by a specific customer
- * - Filter by rating range (minimum and/or maximum rating)
- * - Full-text search on review content using the GIN index
- * - Sort by creation date (newest first by default) or rating
+ * The system enforces several business rules to ensure review authenticity and fairness. Customers can only review products they have actually purchased, verified through the order reference. Each customer may write only one review per product per order, preventing review manipulation. Reviews can only be submitted after the order item has been delivered, ensuring customers have received and can evaluate the product.
  *
- * **Review Data Structure:**
- * Each review references the shopping_mall_reviews table, which contains:
- * - Rating (1-5 stars, required field used for product average rating calculation)
- * - Content (optional text up to 2000 characters, supports full-text search)
- * - Customer reference (displays as "deleted user" if customer account is deleted)
- * - Product reference (for product-level rating aggregation)
- * - Order reference (for purchase verification)
- * - Timestamps for creation and last update
+ * This operation references the shopping_mall_reviews table which stores the customer reference, product reference, order reference for purchase verification, rating value, and optional text content. The unique constraint on customer_id, product_id, and order_id ensures one review per product per order.
  *
- * **Related Operations:**
- * - GET /products/{id} - Product detail page shows reviews for that product
- * - POST /customers/me/reviews - Authenticated customers can create reviews for delivered items
- * - PUT /customers/me/reviews/{id} - Customers can edit their own reviews
+ * Related operations include GET /products/{productId}/reviews for viewing reviews on a product page, PUT /reviews/{reviewId} for editing an existing review (which creates a snapshot), and DELETE /reviews/{reviewId} for soft-deleting a review (snapshots are preserved).
  *
  * @param props.connection
- * @param props.body Search criteria including product ID, customer ID, rating range, text search, and pagination parameters
+ * @param props.body Review creation data including product, order for verification, rating, and optional content
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_reviews table with filtering and pagination.
+ * @x-autobe-specification Implementation steps:
  *
- * **Query Logic:**
- * 1. Filter by deleted_at IS NULL to exclude soft-deleted reviews
- * 2. Apply optional filters:
- *    - product_id: exact match on shopping_mall_product_id
- *    - customer_id: exact match on shopping_mall_customer_id (join with shopping_mall_customers to show display_name or "deleted user")
- *    - rating_min/rating_max: range filter on rating field (1-5)
- *    - search: full-text search on content field using GIN index
- * 3. Apply sorting: created_at DESC (default), rating DESC/ASC, updated_at DESC
- * 4. Apply pagination with cursor-based or offset-based approach
+ * 1. Authenticate customer from JWT token
+ * 2. Validate request body fields:
+ *    - productId: must reference existing product
+ *    - orderId: must reference existing order belonging to the authenticated customer
+ *    - rating: must be integer between 1 and 5
+ *    - content: optional string, max length validation if provided
+ * 3. Verify purchase eligibility:
+ *    - Query shopping_mall_order_items to find items matching the order and product
+ *    - Verify at least one order item exists with status 'delivered'
+ *    - If no delivered item found, return 400 error indicating product not delivered
+ * 4. Check unique constraint:
+ *    - Query shopping_mall_reviews for existing review with same customer_id, product_id, and order_id
+ *    - If exists, return 400 error indicating review already exists for this product in this order
+ * 5. Create review record:
+ *    - Insert into shopping_mall_reviews with customer_id, product_id, order_id, rating, content, created_at, updated_at
+ *    - deleted_at is null (active review)
+ * 6. Fetch customer display_name for response
+ * 7. Return created review with customer display name, product info, and timestamps
+ * @path /shoppingMall/customer/reviews
+ * @accessor api.functional.shoppingMall.customer.reviews.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Review creation data including product, order for verification, rating, and optional content
+     */
+    body: IShoppingMallReview.ICreate;
+  };
+  export type Body = IShoppingMallReview.ICreate;
+  export type Response = IShoppingMallReview;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/customer/reviews",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/customer/reviews";
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a filtered and paginated list of product reviews.
  *
- * **Joins Required:**
- * - JOIN shopping_mall_customers to get customer display_name (handle deleted customers)
- * - JOIN shopping_mall_products to get product name for display
- * - JOIN shopping_mall_product_images to get product thumbnail
+ * This operation provides comprehensive search capabilities for review management, enabling customers to view their review history and administrators to moderate platform reviews. Reviews are linked to specific product purchases through order references, ensuring authenticity and preventing fake reviews.
  *
- * **Response Fields:**
- * - id, rating, content (truncated for summary), created_at
- * - customer: { id, displayName or "deleted user" }
- * - product: { id, name, thumbnailUrl }
- * - Helpful indicators (optional future feature)
+ * The shopping_mall_reviews table stores customer feedback with ratings (1-5 stars) and optional text content. Each review references the customer who wrote it, the product being reviewed, and the order through which the product was purchased. This structure enforces the one-review-per-product-per-order constraint through a unique constraint on (shopping_mall_customer_id, shopping_mall_product_id, shopping_mall_order_id).
  *
- * **Performance Considerations:**
- * - Use GIN index for content search
- * - Use existing indexes: [product_id, created_at], [customer_id, created_at]
- * - Limit page size (default 20, max 100)
+ * Reviews support soft deletion via the deleted_at field. When a customer deletes a review, the deleted_at timestamp is set but the review record is preserved for historical transparency. Soft-deleted reviews display as 'deleted user' in public contexts.
+ *
+ * Filtering options include product-specific review listings, customer review history, rating ranges for quality analysis, date ranges for temporal review browsing, and full-text content search. The default sort order is newest first, as specified in the review display requirements.
+ *
+ * Access permissions differ by actor: customers can only view their own reviews (authenticated customer_id filter applied automatically), while administrators can view all reviews including deleted ones for moderation purposes. Sellers can view reviews on their products but cannot modify or delete them.
+ *
+ * @param props.connection
+ * @param props.body Search criteria including product ID, customer ID, rating range, date range, content search, and pagination parameters
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_reviews table with pagination and filtering capabilities.
+ *
+ * Implementation steps:
+ * 1. Build WHERE clause from IRequest filters:
+ *    - shopping_mall_product_id: exact match if provided
+ *    - shopping_mall_customer_id: exact match if provided (for customer's own review history)
+ *    - rating: filter by rating range (min/max) if provided
+ *    - created_at: filter by date range (from/to) if provided
+ *    - content: full-text search using gin_trgm_ops index if provided
+ *    - deleted_at: include/exclude soft-deleted reviews based on flag
+ *
+ * 2. Apply sorting:
+ *    - Default: created_at DESC (newest first per requirement [380])
+ *    - Allow sorting by created_at ASC, rating ASC/DESC
+ *
+ * 3. Execute paginated query:
+ *    - Use cursor-based pagination for large result sets
+ *    - Include total count in pagination metadata
+ *
+ * 4. Join related tables for display:
+ *    - shopping_mall_customers for reviewer display_name
+ *    - shopping_mall_products for product name
+ *    - Handle deleted customers/products gracefully (show 'deleted user' or 'deleted product')
+ *
+ * 5. Return IPageIShoppingMallReview.ISummary with:
+ *    - Review summary data
+ *    - Pagination metadata
+ *    - Customer and product references
+ *
+ * Access control:
+ * - Customers can only view their own reviews (filter by authenticated customer_id)
+ * - Administrators can view all reviews
+ * - Filter out deleted reviews by default unless explicitly requested
  * @path /shoppingMall/customer/reviews
  * @accessor api.functional.shoppingMall.customer.reviews.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -94,7 +199,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria including product ID, customer ID, rating range, text search, and pagination parameters
+     * Search criteria including product ID, customer ID, rating range, date range, content search, and pagination parameters
      */
     body: IShoppingMallReview.IRequest;
   };
@@ -145,46 +250,69 @@ export namespace index {
 /**
  * Update an existing product review written by the authenticated customer.
  *
- * This operation allows customers to modify their review's rating and text content. Only the customer who originally wrote the review can perform this update. Deleted reviews cannot be edited.
+ * This operation allows customers to modify their existing review's rating and text content. Reviews can only be edited by the customer who originally wrote them. Each edit automatically creates a snapshot preserving the previous state, ensuring a complete audit trail for dispute resolution and historical reference.
  *
- * When an update is submitted, the system automatically creates an immutable snapshot of the previous state before applying changes. This snapshot preserves the original rating and content values for audit trails, dispute resolution, and the platform's financial accountability model.
+ * The shopping_mall_reviews table stores review data including rating (1-5 stars), optional text content, and timestamps. The shopping_mall_review_snapshots table maintains immutable historical records of each edit for accountability and transparency in the review system.
  *
- * The rating field is required and must be an integer between 1 and 5 stars. The text content is optional but must not exceed 2,000 characters if provided. Reviews can be edited at any time after creation, regardless of order status or product availability.
+ * **Authentication:**
+ * - Requires authenticated customer session
+ * - Only the review author can edit (shopping_mall_reviews.shopping_mall_customer_id must match authenticated customer)
  *
- * After a successful update, the product's average rating is recalculated in real-time to reflect the new rating value. The review's updated_at timestamp is set to the current time.
+ * **Constraints:**
+ * - Review must exist and not be deleted
+ * - Rating must be between 1 and 5 (stored in shopping_mall_reviews.rating as Integer)
+ * - Content is optional text (stored in shopping_mall_reviews.content)
+ * - Each edit creates a snapshot preserving previous state
+ *
+ * **Related Operations:**
+ * - POST /reviews - Create a new review
+ * - GET /products/{productId}/reviews - List reviews for a product
+ * - DELETE /reviews/{reviewId} - Delete a review
+ *
+ * **Database Reference:**
+ * - shopping_mall_reviews.id - Primary key (UUID)
+ * - shopping_mall_reviews.rating - Star rating 1-5 (required)
+ * - shopping_mall_reviews.content - Text content (optional)
+ * - shopping_mall_reviews.updated_at - Last modification timestamp
+ * - shopping_mall_review_snapshots - Edit history table
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the review to update. Must be a valid UUID referencing an existing review in shopping_mall_reviews table. The authenticated customer must be the owner of this review.
- * @param props.body Updated review data containing the new rating value and optional text content. Rating is required (1-5 stars), content is optional (max 2000 characters).
+ * @param props.reviewId Unique identifier of the review to update. Must be a valid UUID referencing an existing review owned by the authenticated customer.
+ * @param props.body Review update data containing the new rating and optional text content.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation steps:
+ * @x-autobe-specification Update an existing customer review for a delivered product.
  *
- * 1. **Authentication & Authorization**: Extract customer ID from JWT token. Query shopping_mall_reviews table by reviewId and verify customer_id matches the authenticated user.
+ * **Service Logic:**
+ * 1. Authenticate the customer from JWT token
+ * 2. Query review by reviewId from shopping_mall_reviews table
+ * 3. Verify review exists and belongs to authenticated customer
+ * 4. Verify review is not deleted (deleted_at is null)
+ * 5. Create a snapshot of current review state in shopping_mall_review_snapshots:
+ *    - Capture current rating and content
+ *    - Set created_at to current timestamp
+ *    - Link snapshot to review via shopping_mall_review_id
+ * 6. Update review with new rating and content from request
+ * 7. Update updated_at timestamp to current time
+ * 8. Return updated review entity
  *
- * 2. **Deletion Check**: Verify review.deleted_at is null. If set, return 404 Not Found (review no longer exists for editing).
+ * **Database Operations:**
+ * - SELECT review by id with customer ownership check
+ * - INSERT snapshot record before update
+ * - UPDATE review with new values
  *
- * 3. **Validation**:
- *    - Validate rating is integer between 1-5 inclusive
- *    - If content provided, validate length <= 2000 characters
- *    - Sanitize content for XSS prevention
+ * **Business Rules:**
+ * - Only the review author can edit
+ * - Rating must be integer between 1 and 5
+ * - Content is optional text (can be null or empty string)
+ * - Each edit creates an immutable snapshot for audit trail
+ * - Deleted reviews cannot be edited
  *
- * 4. **Snapshot Creation**: Before updating, create a record in shopping_mall_review_snapshots with:
- *    - shopping_mall_review_id = review.id
- *    - previous_rating = current review.rating
- *    - new_rating = request.rating
- *    - previous_content = current review.content
- *    - new_content = request.content
- *    - created_at = current timestamp
- *
- * 5. **Update Review**: Update the shopping_mall_reviews record:
- *    - Set rating = request.rating
- *    - Set content = request.content
- *    - Set updated_at = current timestamp
- *
- * 6. **Recalculate Product Rating**: Query all non-deleted reviews for the product and recalculate average rating.
- *
- * 7. **Return Response**: Return the updated review entity with populated relations.
+ * **Error Handling:**
+ * - 404 if review not found
+ * - 403 if not review owner
+ * - 409 if review is deleted
+ * - 400 for invalid rating (not 1-5)
  * @path /shoppingMall/customer/reviews/:reviewId
  * @accessor api.functional.shoppingMall.customer.reviews.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -214,12 +342,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the review to update. Must be a valid UUID referencing an existing review in shopping_mall_reviews table. The authenticated customer must be the owner of this review.
+     * Unique identifier of the review to update. Must be a valid UUID referencing an existing review owned by the authenticated customer.
      */
     reviewId: string & tags.Format<"uuid">;
 
     /**
-     * Updated review data containing the new rating value and optional text content. Rating is required (1-5 stars), content is optional (max 2000 characters).
+     * Review update data containing the new rating and optional text content.
      */
     body: IShoppingMallReview.IUpdate;
   };
@@ -270,67 +398,26 @@ export namespace update {
 }
 
 /**
- * Delete a customer's review for a purchased product.
+ * Remove a customer's review from public display through soft deletion.
  *
- * This endpoint allows authenticated customers to delete their own reviews. When a review is deleted, it is soft-deleted by setting the deleted_at timestamp on the shopping_mall_reviews record. The review data is preserved in the database for audit trails and dispute resolution, but it is excluded from product rating calculations and hidden from all customer-facing displays.
+ * This operation allows customers to delete reviews they have written for purchased products. The deletion is implemented as a soft delete, preserving the review record in the database while marking it as deleted via the deleted_at timestamp.
  *
- * **Authorization Requirements:**
- * - The customer must be authenticated
- * - Only the review owner (the customer who created the review) can delete it
- * - Administrators cannot delete customer reviews on behalf of customers
+ * Only the original author (customer) can delete a review. Sellers are explicitly prohibited from deleting customer reviews of their products. If a seller has concerns about a review, they must contact an administrator for review moderation.
  *
- * **Deletion Behavior:**
- * - The review record is soft-deleted (deleted_at timestamp is set)
- * - All review snapshots (edit history) are preserved in shopping_mall_review_snapshots
- * - The review is immediately excluded from the product's average rating calculation
- * - The review no longer appears on the product detail page
+ * When a review is deleted, the following effects apply:
+ * - The review is removed from the product detail page display
+ * - The review is excluded from the product's average rating calculation
+ * - The review is excluded from the total review count
+ * - All associated review snapshots are preserved for audit purposes
+ * - Historical records remain available for dispute resolution
  *
- * **Related Operations:**
- * - POST /reviews - Create a new review (requires delivered order item)
- * - PUT /reviews/{reviewId} - Edit an existing review (creates snapshot)
- *
- * **After Deletion:**
- * - The soft-deleted review is hidden from the customer's view and product displays
- * - The review content is preserved in the database for audit purposes
- * - If a customer wishes to review the same product again, they must have another delivered order item for that product and create a new review
+ * The deleted review's information may still appear in administrative views and historical records for audit and dispute resolution purposes.
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the review to delete
+ * @param props.reviewId Unique identifier of the review to delete (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation steps:
- *
- * 1. **Authentication Check**: Verify the customer is authenticated via JWT token. Return 401 Unauthorized if not authenticated.
- *
- * 2. **Review Lookup**: Query shopping_mall_reviews table by reviewId. Return 404 Not Found if the review does not exist.
- *
- * 3. **Ownership Verification**: Compare the review's customer_id with the authenticated customer's ID. Return 403 Forbidden if they don't match (only the review owner can delete).
- *
- * 4. **Already Deleted Check**: Check if deleted_at is already set. Return 404 Not Found or appropriate error if already deleted.
- *
- * 5. **Soft Delete Execution**: Update the review record:
- *    - Set deleted_at = current timestamp
- *    - Update updated_at = current timestamp
- *    - Do NOT delete the record from the database
- *
- * 6. **Rating Recalculation**: Trigger recalculation of the product's average rating:
- *    - Query all non-deleted reviews for the product (WHERE product_id = ? AND deleted_at IS NULL)
- *    - Calculate new average: SUM(rating) / COUNT(*)
- *    - Update or cache the product's average rating
- *
- * 7. **Response**: Return the updated review entity with deleted_at set.
- *
- * **Database Operations:**
- * - SELECT shopping_mall_reviews WHERE id = reviewId
- * - UPDATE shopping_mall_reviews SET deleted_at = NOW(), updated_at = NOW() WHERE id = reviewId
- * - SELECT/UPDATE product rating aggregation
- *
- * **Error Handling:**
- * - 401: Not authenticated
- * - 403: Not the review owner
- * - 404: Review not found or already deleted
- *
- * **Transaction**: Not strictly required as this is a single-entity update, but recommended for consistency with rating recalculation.
+ * @x-autobe-specification Verify that the authenticated customer is the original author of the review by matching the customer ID with shopping_mall_reviews.shopping_mall_customer_id. If not authorized, reject with 403 Forbidden. Perform soft delete by setting deleted_at to current timestamp. Do NOT permanently remove the record from storage. Preserve all associated shopping_mall_review_snapshots records. After deletion, the review will be excluded from product detail page display and average rating calculations. Sellers cannot delete reviews - this must be enforced at the authorization layer.
  * @path /shoppingMall/customer/reviews/:reviewId
  * @accessor api.functional.shoppingMall.customer.reviews.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -359,7 +446,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the review to delete
+     * Unique identifier of the review to delete (UUID format)
      */
     reviewId: string & tags.Format<"uuid">;
   };

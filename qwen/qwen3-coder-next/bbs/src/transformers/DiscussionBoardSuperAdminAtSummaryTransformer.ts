@@ -15,7 +15,15 @@ export namespace DiscussionBoardSuperAdminAtSummaryTransformer {
       select: {
         id: true,
         email: true,
+        password_hash: true,
+        display_name: true,
+        bio: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        sessions: true,
+        passwordResets: true,
+        processedAdministratorRequests: true,
       },
     } satisfies Prisma.discussion_board_super_adminsFindManyArgs;
   }
@@ -25,7 +33,8 @@ export namespace DiscussionBoardSuperAdminAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      created_at: input.created_at.toISOString(),
+      display_name: input.display_name ?? null,
+      bio: input.bio ?? null,
     };
   }
 }

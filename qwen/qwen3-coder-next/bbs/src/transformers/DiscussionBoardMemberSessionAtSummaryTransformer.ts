@@ -1,3 +1,6 @@
+import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import { IDiscussionBoardAdministratorRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorRequest";
+import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMemberSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -15,14 +18,12 @@ export namespace DiscussionBoardMemberSessionAtSummaryTransformer {
   export function select() {
     return {
       select: {
-        id: true,
-        expired_at: true,
-        created_at: true,
-        updated_at: true,
-        last_active_at: true,
-        ip: true,
-        headers: true,
         member: DiscussionBoardMemberAtSummaryTransformer.select(),
+        id: true,
+        created_at: true,
+        referrer: true,
+        user_agent: true,
+        invalidated_at: true,
       },
     } satisfies Prisma.discussion_board_member_sessionsFindManyArgs;
   }
@@ -30,16 +31,9 @@ export namespace DiscussionBoardMemberSessionAtSummaryTransformer {
     input: Payload,
   ): Promise<IDiscussionBoardMemberSession.ISummary> {
     return {
-      id: input.id,
-      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
-        input.member,
-      ),
-      expiredAt: input.expired_at.toISOString(),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      lastActiveAt: input.last_active_at.toISOString(),
-      ip: input.ip,
-      headers: input.headers,
+      banRecords: [],
+      administratorRequests: [],
+      sessionActivity: [],
     };
   }
 }

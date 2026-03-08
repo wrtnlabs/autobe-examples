@@ -1,549 +1,702 @@
-# Multi-User Todo Application Requirements Specification
+**todoApp — Data isolation, business rules, filtering/sorting/pagination, error catalog**
 
-## Overview
+Data isolation, business rules, filtering/sorting/pagination, error catalog
 
-This document provides comprehensive requirements for a multi-user Todo application where each user maintains private, isolated todo lists. The system supports user account management, todo creation and management, edit history tracking, trash functionality with restore capability, and comprehensive filtering and sorting options. All user data is completely private with no cross-user visibility.
+# Data Isolation and Ownership
 
-The application serves individuals who need personal task management with robust features for tracking progress, managing deadlines, and maintaining a clean workspace through deletion and restoration workflows.
+Data ownership rules and tenant/user-level isolation policies.
 
-### Service Vision
+## Ownership and Isolation Rules
 
-Enable users to efficiently manage their personal tasks with powerful organization tools while maintaining complete privacy and data control. Users should be able to create, edit, track, and organize their todos with sophisticated filtering and historical tracking capabilities.
+Define data ownership semantics and isolation boundaries for multi-user access.
 
-### Target Users
+### User Ownership of Todos
 
-- **Individual Task Managers**: Users who need personal todo management without sharing complexity
-- **Productivity Enthusiasts**: Users who value detailed tracking and historical context
-- **Privacy-Conscious Individuals**: Users who require complete data isolation and control
+WHEN a user creates a todo, THE system SHALL assign that todo to the creating user as its owner.
 
-### Core Features
+THE system SHALL ensure that every todo is owned by exactly one user.
 
-- **User Account Management**: Secure registration, login, and account maintenance
-- **Todo CRUD Operations**: Create, read, update, and delete personal todos
-- **Edit History Tracking**: Complete history of all todo modifications
-- **Trash Management**: Soft-delete functionality with restore capability
-- **Advanced Filtering**: Filter todos by completion status
-- **Flexible Sorting**: Sort by multiple date fields with configurable direction
-- **Privacy-First Design**: Complete user data isolation
+WHILE a todo exists, THE system SHALL maintain its association with its owner user.
 
-### Business Goals
+IF a user deletes their account, THE system SHALL permanently remove all todos owned by that user, including those in trash.
 
-1. Provide a private, personal todo management solution
-2. Enable sophisticated todo organization through filtering and sorting
-3. Maintain complete data privacy with user isolation
-4. Support comprehensive edit history for accountability
-5. Offer flexible trash management with restore options
-6. Deliver reliable performance with proper pagination
+THE system SHALL prevent any user from accessing, viewing, editing, or deleting todos owned by another user.
 
-### Success Metrics
+### Data Isolation Across Users
 
-- 100% user data isolation with zero cross-user visibility
-- Complete edit history preservation for all todo modifications
-- Fast response times for pagination, filtering, and sorting operations
-- Zero data loss for active todos or edit history
-- Reliable trash management with successful restoration rates
+WHEN a user queries their todo list, THE system SHALL filter results to include only todos owned by that user.
 
-## User Requirements
+THE system SHALL isolate all todo-related data (including edit history and trash entries) at the user level.
 
-### User Account Requirements
+IF a user attempts to access another user's todo data, THE system SHALL reject the request.
 
-#### Registration and Authentication
+THE system SHALL ensure that deleted todos cannot be accessed by any user other than their original owner.
 
-WHEN a new user registers with an email address and password, THE system SHALL require a valid email format containing the @ symbol and domain portion. WHILE the registration form is displayed, THE system SHALL validate that the password field contains at least 8 characters. IF the email format is invalid, THEN THE system SHALL display "Invalid email format. Please enter a valid email address."
+WHILE processing any request involving todos, THE system SHALL automatically enforce user-level data isolation.
 
-WHEN a user attempts to register with an email address that already exists in the system, THE system SHALL reject the registration request and return a descriptive error message without revealing whether the account exists.
+### Tenant-Level Scope Definition
 
-WHEN a user attempts to log in with credentials, THE system SHALL require both email and password fields to be provided. IF the password length is less than 8 characters, THEN THE system SHALL return "Password must be at least 8 characters."
+In this system, each user constitutes a separate tenant.
 
-#### Account Information Management
+THE system SHALL enforce strict tenant boundaries where no tenant can access data belonging to another tenant.
 
-WHEN a user accesses their profile, THE system SHALL display only the user's display name. WHILE the profile is displayed, THE system SHALL exclude all account-related information such as email address, password, and account creation date.
+WHEN a user signs up, THE system SHALL create a new tenant namespace for that user.
 
-WHERE a user attempts to view another user's profile, THE system SHALL return "Access denied. You can only view your own profile."
+ALL todo operations (create, view, edit, delete) SHALL be scoped to the user's own tenant namespace.
 
-#### Password Management
+THE system SHALL treat tenant separation as a fundamental security requirement, not an implementation detail.
 
-WHEN a user requests to change their password, THE system SHALL require the user to provide their current password for verification. WHILE password verification is performed, THE system SHALL compare the provided current password with the stored hashed password. IF the current password verification fails, THEN THE system SHALL return "Current password verification failed."
+### Multi-User Access Control
 
-#### Account Deletion
+GUESTS cannot view any todos, even their own, because they must first authenticate.
 
-WHEN a user requests to delete their account, THE system SHALL require explicit confirmation from the user before proceeding. WHILE account deletion is initiated, THE system SHALL permanently delete all of the user's todos including those in trash, and all associated edit history entries. IF account deletion succeeds, THEN THE system SHALL remove all user data from the system.
+MEMBERS can only view, create, edit, and delete their own todos.
 
-### Todo Creation Requirements
+NO member can access another member's todos under any circumstances.
 
-WHEN a user creates a new todo, THE system SHALL require the title field to be provided and non-empty. WHILE a todo is created, THE system SHALL allow description, start date, and due date fields to be empty or omitted without validation errors.
+THE system SHALL prevent cross-user data enumeration through error handling—responding with generic errors when accessing non-owned resources.
 
-WHERE a user creates a todo with only a title and empty other fields, THE system SHALL create the todo with incomplete status and null values for optional fields.
+Admin roles do not exist in this system; all users are isolated peers.
 
-IF a user attempts to create a todo with an invalid date format for start date or due date, THEN THE system SHALL return "Invalid date format. Please use YYYY-MM-DD format."
+### Data Access Constraints
 
-### Todo View Requirements
+WHEN a user views their todo list, THE system SHALL apply user-level filtering to return only that user's todos.
 
-#### List View
+THE system SHALL apply user-level isolation to all edit history queries, ensuring users can only see history for their own todos.
 
-WHEN a user requests their todo list, THE system SHALL return only todos belonging to the authenticated user. WHILE pagination is applied, THE system SHALL include total count, current page, and page size in the response.
+WHEN restoring a todo from trash, THE system SHALL verify that the todo belongs to the requesting user before performing the operation.
 
-WHERE no pagination parameters are provided, THE system SHALL default to page 1 with 20 items per page.
+IF a user attempts to permanently delete a todo from trash, THE system SHALL confirm ownership before deletion.
 
-IF a user requests a page number beyond available data, THEN THE system SHALL return an empty list rather than an error.
+All data access operations SHALL include automatic user context validation before processing.
 
-#### Single Todo View
+### Error Conditions for Violations
 
-WHEN a user requests a specific todo, THE system SHALL return all todo details including full description. WHILE the todo is returned, THE system SHALL include status information indicating whether the todo is complete or incomplete.
+THE system SHALL reject requests when a user attempts to access a todo not owned by them.
 
-IF a user requests a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+THE system SHALL reject requests when a user attempts to view another user's profile.
 
-### Todo Completion Requirements
+THE system SHALL reject requests when a user attempts to edit or delete a todo not owned by them.
 
-WHEN a user marks a todo as complete, THE system SHALL update the todo's status to complete. WHILE completion is recorded, THE system SHALL preserve all other todo data including title, description, and dates.
+THE system SHALL reject requests when a user attempts to view edit history for a todo not owned by them.
 
-WHEN a user marks a todo as incomplete, THE system SHALL update the todo's status to incomplete. WHILE incompleteness is recorded, THE system SHALL preserve all other todo data.
+When data access violations occur, THE system SHALL return generic error responses that do not reveal the existence of the requested resource.
 
-IF a user attempts to change completion status of a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+# Domain Business Rules
 
-### Todo Editing Requirements
+Per-concept business rules, validation logic, and domain constraints.
 
-WHEN a user edits a todo, THE system SHALL allow updating title, description, start date, and due date fields. WHILE editing occurs, THE system SHALL create an edit history entry only if at least one field has actually changed.
+## User Rules
 
-WHERE a user edits a todo but provides empty values for optional fields, THE system SHALL preserve existing values for those fields.
+Users register with a unique email address and a secure password. Once registered, users must verify their email before accessing the system. Users can change their password at any time by providing their current password. Account deletion is permanent and irreversible—deleted accounts cannot be restored. Only one active account exists per email address; duplicate registrations are blocked. Users cannot log in until their email is verified. Password recovery is available for lost credentials. Users can cancel their account at any time, triggering an immediate irreversible deletion process.
 
-IF a user attempts to edit a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+### User Registration Rules
 
-### Edit History Requirements
+WHEN a new user registers, THE system SHALL require a unique email address.
 
-WHEN a user requests edit history for a todo, THE system SHALL return all history entries sorted from most recent to oldest. WHILE history entries are returned, THE system SHALL include timestamps, changed fields, and previous values for each entry.
+WHEN a user attempts to register with an email that already exists, THE system SHALL reject the registration.
 
-WHERE a todo has no edit history, THE system SHALL return an empty list rather than an error.
+IF the email format is invalid, THE system SHALL reject the registration.
 
-IF a user requests history for a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+IF the password does not meet complexity requirements, THE system SHALL reject the registration.
 
-### Todo Deletion Requirements
+WHEN a user registers, THE system SHALL send a verification email.
 
-WHEN a user deletes a todo, THE system SHALL mark the todo as deleted rather than permanently removing it from the database. WHILE deletion occurs, THE system SHALL exclude the todo from normal todo list queries.
+WHILE a user's email is unverified, THE system SHALL prevent login.
 
-WHERE a user attempts to delete a todo that does not belong to them, THE system SHALL return "Todo not found."
+WHEN a user clicks the verification link, THE system SHALL mark the email as verified.
 
-### Trash Requirements
+### User Account Management Rules
 
-#### Trash List View
+WHEN a user requests a password change, THE system SHALL require authentication with the current password.
 
-WHEN a user requests their trash list, THE system SHALL return only deleted todos belonging to the authenticated user. WHILE pagination is applied, THE system SHALL include total count, current page, and page size in the response.
+WHEN a user requests account deletion, THE system SHALL permanently delete the account and all associated data.
 
-IF a user requests a page number beyond available trash data, THEN THE system SHALL return an empty list rather than an error.
+WHEN a user's account is deleted, THE system SHALL remove all todos associated with the account.
 
-#### Todo Restoration
+WHEN a user's account is deleted, THE system SHALL permanently delete the user's edit history.
 
-WHEN a user requests to restore a deleted todo from trash, THE system SHALL verify the todo belongs to the authenticated user. WHILE restoration occurs, THE system SHALL mark the todo as active and remove it from the trash.
+THE system SHALL NOT restore deleted accounts under any circumstances.
 
-IF a user attempts to restore a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+WHEN a user forgets their password, THE system SHALL provide a password recovery mechanism.
 
-IF a todo was already permanently deleted, THEN THE system SHALL return "Todo not found."
+WHEN a password recovery link is used, THE system SHALL allow the user to set a new password.
 
-#### Permanent Deletion
+## Profile Rules
 
-WHEN a user permanently deletes a todo from trash, THE system SHALL verify the todo belongs to the authenticated user. WHILE permanent deletion occurs, THE system SHALL remove the todo record and all associated edit history entries.
+Each active user has exactly one profile containing their display name. Display names must be between 1 and 100 characters and can be updated at any time. Profiles are private—users cannot view other users' profiles. Profile data is deleted when the associated user account is deleted. Display names cannot be empty or consist solely of whitespace. Only the profile's owner can view or edit profile information. Profile updates are not recorded in history. Profile is automatically created during account registration.
 
-IF a user attempts to permanently delete a todo that does not belong to them, THEN THE system SHALL return "Todo not found."
+### Profile Creation and Ownership
 
-### Filtering Requirements
+THE system SHALL ensure each user has exactly one profile.
 
-WHEN a user filters todos by completion status, THE system SHALL accept values "all", "complete", and "incomplete" only. IF an invalid filter value is provided, THEN THE system SHALL default to "all".
+WHEN a user account is created, THE system SHALL automatically create a profile for that user.
 
-WHERE no filter is specified, THE system SHALL default to "all" status.
+WHEN a user account is deleted, THE system SHALL automatically delete the associated profile.
 
-IF a user attempts to filter todos by an invalid status value, THEN THE system SHALL log the invalid input and default to "all".
+IF a user attempts to create a second profile, THE system SHALL reject the request.
 
-### Sorting Requirements
+### Profile Privacy
 
-#### Date Field Sorting
+WHEN a user attempts to view another user's profile, THE system SHALL reject the request.
 
-WHEN a user sorts todos by creation date, THE system SHALL accept "asc" and "desc" directions only. IF an invalid direction is provided, THEN THE system SHALL default to "desc".
+THE system SHALL ensure profiles are completely private and never visible to other users.
 
-WHEN a user sorts todos by start date, THE system SHALL sort with "null" start dates appearing at the end regardless of sort direction. WHILE start date sorting is applied, THE system SHALL handle todos without start dates gracefully.
+WHILE the application is in private mode, THE system SHALL prevent any cross-user profile access.
 
-WHEN a user sorts todos by due date, THE system SHALL sort with "null" due dates appearing at the end regardless of sort direction. WHILE due date sorting is applied, THE system SHALL handle todos without due dates gracefully.
+### Display Name editing and Format Requirements
 
-IF a user attempts to sort by an invalid field or direction, THEN THE system SHALL default to "desc" by creation date.
+WHEN a user edits their display name, THE system SHALL:
+1. Require the new display name to be between 1 and 100 characters
+2. Reject empty strings
+3. Reject strings consisting solely of whitespace
+4. Update the profile with the new value
 
-#### Combined Sorting
+IF the display name does not meet the format requirements, THE system SHALL reject the request.
 
-THE system SHALL support combining multiple sort criteria in order of priority. WHILE combined sorting is applied, THE system SHALL maintain proper handling of null date values.
+### Profile Edit Rights and Access Control
 
-## Functional Requirements
+WHEN a user attempts to edit their display name, THE system SHALL:
+1. Verify the user owns the profile being edited
+2. Allow the edit if ownership is confirmed
+3. Reject the request if ownership cannot be verified
 
-### Account Management
+WHEN a user attempts to view profile information, THE system SHALL:
+1. Verify the user owns the profile being viewed
+2. Return the profile data if ownership is confirmed
+3. Reject the request if ownership cannot be verified
 
-#### User Registration
+## Todo Rules
 
-WHEN a user submits registration with email and password, THE system SHALL validate email format and password length. IF validation fails, THEN THE system SHALL return appropriate error message. IF validation passes, THEN THE system SHALL create a new user account and return success confirmation.
+Todos are created with a required title between 1 and 500 characters. Descriptions are optional and may be left empty. Start dates and due dates are both optional and independent of each other. New todos are always created in an incomplete state. Users can only create todos for themselves—cross-user creation is not allowed. Todos cannot be created with a due date earlier than the start date when both are provided. Each todo belongs to exactly one user and inherits privacy from the user account. Todos remain owned by the user who created them even after all other data is cleared.
 
-#### User Login
+### Required Title with Length Limit
 
-WHEN a user submits login credentials, THE system SHALL verify email and password match an existing account. IF credentials are valid, THEN THE system SHALL generate authentication token and return success response. IF credentials are invalid, THEN THE system SHALL return generic "Invalid credentials" message.
+WHEN a user creates or edits a todo, THE system SHALL:
+1. Require a title with length between 1 and 500 characters inclusive
+2. Reject the request when the title is missing or empty
+3. Reject the request when the title exceeds 500 characters
+4. Reject the request when the title contains only whitespace characters
 
-#### Profile Access
+IF the title does not meet length requirements, THE system SHALL reject the request with a validation error.
 
-WHEN a user accesses their profile, THE system SHALL return only display name information. IF a user attempts to access another user's profile, THEN THE system SHALL return access denied error.
+### Optional Description Handling
 
-#### Password Change
+WHEN a user creates or edits a todo, THE system SHALL:
+1. Accept a description that is optionally provided
+2. Allow the description to be explicitly set to null or an empty string
+3. Store the description exactly as provided without modification
+4. Preserve the existing description when not included in an edit request
 
-WHEN a user requests password change, THE system SHALL verify current password before allowing new password. IF verification fails, THEN THE system SHALL deny the request. IF verification succeeds, THEN THE system SHALL update password and return success confirmation.
+WHERE the description is provided, THE system SHALL allow up to 5000 characters.
 
-#### Account Deletion
+### Independent Optional Dates
 
-WHEN a user requests account deletion with confirmation, THE system SHALL delete all user data including todos, trash entries, and edit history. IF deletion succeeds, THEN THE system SHALL remove user account completely.
+WHEN a user creates or edits a todo, THE system SHALL:
+1. Accept start date as an optional field
+2. Accept due date as an optional field
+3. Treat start date and due date as independent of each other
+4. Allow either date to be set while leaving the other unset
+5. Store dates exactly as provided without modification
 
-### Todo Management
+WHERE both start date and due date are provided, THE system SHALL apply date validity validation (defined in Date Validity Validation).
 
-#### Todo Creation
+### Initial Incomplete Status
 
-WHEN a user creates a todo with title, description, start date, and due date, THE system SHALL validate required fields and create the todo. IF title is missing, THEN THE system SHALL return error. IF dates are invalid format, THEN THE system SHALL return error. IF creation succeeds, THEN THE system SHALL return created todo with unique identifier.
+WHEN a user creates a new todo, THE system SHALL:
+1. Set the completion status to incomplete by default
+2. Ensure isComplete is explicitly false at creation time
+3. Prevent automatic completion regardless of date values
+4. Allow the user to change completion status only through explicit toggle operations
 
-#### Todo Listing
+WHERE a todo is created from trash restoration, THE system SHALL:
+1. Preserve the original completion status from before deletion
 
-WHEN a user requests todo list with pagination parameters, THE system SHALL return user's todos filtered by pagination and sorted by creation date descending. IF pagination parameters are invalid, THEN THE system SHALL return default pagination.
+### User-Only Ownership
 
-#### Todo Retrieval
+WHEN a user creates a todo, THE system SHALL:
+1. Automatically associate the todo with the creating user
+2. Reject any attempt to specify a different user as owner
+3. Prevent cross-user todo creation
+4. Ensure the todo is permanently tied to the creating user
 
-WHEN a user requests a specific todo by ID, THE system SHALL verify ownership and return todo details. IF todo does not exist or belongs to another user, THEN THE system SHALL return todo not found error.
+WHERE a user attempts to create a todo for another user, THE system SHALL reject the request.
 
-#### Todo Completion Toggle
+WHERE a user attempts to modify the ownership of an existing todo, THE system SHALL reject the request.
 
-WHEN a user marks a todo complete or incomplete, THE system SHALL toggle status and return updated todo. IF todo does not belong to user, THEN THE system SHALL return todo not found error.
+### Date Validity Validation
 
-#### Todo Editing
+WHEN a user creates or edits a todo with both start date and due date provided, THE system SHALL:
+1. Validate that the due date is not earlier than the start date
+2. Reject the request when due date precedes start date
+3. Allow the request when dates are equal or due date follows start date
+4. Allow requests where only one date is provided without validation
 
-WHEN a user edits a todo, THE system SHALL validate input fields and update todo. IF title is empty, THEN THE system SHALL preserve existing title. IF edit changes fields, THEN THE system SHALL create edit history entry. IF todo does not belong to user, THEN THE system SHALL return todo not found error.
+WHERE only start date is provided without due date, THE system SHALL accept the request.
+WHERE only due date is provided without start date, THE system SHALL accept the request.
+WHERE neither date is provided, THE system SHALL accept the request.
 
-### Edit History Management
+### Private Todo Isolation
 
-#### History Viewing
+WHEN a user performs any operation on todos, THE system SHALL:
+1. Restrict access to only the user's own todos
+2. Filter all todo queries to exclude todos belonging to other users
+3. Prevent direct access to todos created by other users
+4. Maintain complete data isolation between users
 
-WHEN a user requests edit history for a todo, THE system SHALL verify ownership and return history entries sorted by timestamp descending. IF no history exists, THEN THE system SHALL return empty list. IF todo does not belong to user, THEN THE system SHALL return todo not found error.
+WHERE a user attempts to view, edit, or delete another user's todo, THE system SHALL reject the request.
 
-### Trash Management
+WHERE a user attempts to query todos with filters that might expose other users' data, THE system SHALL automatically apply user-based isolation filtering.
 
-#### Trash Listing
+### Creation-Time Ownership
 
-WHEN a user requests trash list with pagination, THE system SHALL return deleted todos belonging to user with pagination metadata. IF user has no deleted todos, THEN THE system SHALL return empty list.
+WHEN a todo is created, THE system SHALL:
+1. Bind the ownership permanently to the creating user at creation time
+2. Ensure ownership cannot be modified after creation
+3. Preserve ownership through all lifecycle operations (editing, completing, deleting)
+4. Maintain ownership even if the user's account status changes
 
-#### Todo Restoration
+WHERE the creating user deletes their account, THE system SHALL:
+1. Permanently delete all todos owned by that user
+2. Include edit history entries in the cascade deletion
+3. Not transfer ownership to any other user
 
-WHEN a user requests todo restoration from trash, THE system SHALL verify ownership, mark todo as active, and remove from trash. IF restoration succeeds, THEN THE system SHALL return restored todo. IF todo does not belong to user, THEN THE system SHALL return todo not found error.
+WHERE a user's account is deactivated or suspended, THE system SHALL:
+1. Maintain the original ownership bindings
+2. Prevent any other user from accessing the todos
 
-#### Permanent Deletion
+## EditHistory Rules
 
-WHEN a user permanently deletes a todo from trash, THE system SHALL verify ownership, remove todo record, and delete all associated edit history entries. IF deletion succeeds, THEN THE system SHALL return success confirmation. IF todo does not belong to user, THEN THE system SHALL return todo not found error.
+Edit history entries are created automatically whenever a todo's title, description, start date, or due date is modified. Each history record captures the exact timestamp of the edit and the values before and after the change. Users can view the complete edit history for any of their todos. History entries are always ordered from most recent to oldest. When a todo is permanently deleted from trash, its entire edit history is also removed. History is only maintained for todos that exist in the trash or active lists. Users cannot manually create, edit, or delete history entries. Only changes to tracked fields generate new history entries.
 
-### Filtering and Sorting
+### Automatic History Creation
 
-#### Completion Status Filtering
+WHEN a todo's title, description, start date, or due date is modified, THE system SHALL automatically create an edit history entry.
 
-WHEN a user filters todos by completion status, THE system SHALL return only matching todos. IF filter value is invalid, THEN THE system SHALL default to "all". IF filter is applied, THEN THE system SHALL include all todos or only complete/incomplete as specified.
+THE system SHALL NOT create a history entry if none of these tracked fields have changed during an update.
 
-#### Date-Based Sorting
+WHEN a todo is created, THE system SHALL NOT create an edit history entry.
 
-WHEN a user sorts todos by creation date, THE system SHALL sort with null dates at the end. IF sort direction is invalid, THEN THE system SHALL default to descending. IF combined sorting is requested, THEN THE system SHALL apply criteria in priority order.
+IF a user attempts to manually create, edit, or delete an edit history entry, THE system SHALL reject the request.
 
-## Business Rules and Validation
+### Timestamped Edit Records
 
-### Data Validation Rules
+WHEN an edit history entry is created, THE system SHALL record the exact timestamp of the edit.
 
-#### User Account Validation
+THE timestamp SHALL be in chronological order relative to other edits on the same todo.
 
-WHEN a user registers with an email address, THE system SHALL validate that the email follows standard email format (contains @ symbol and domain portion). IF the email format is invalid, THEN THE system SHALL display "Invalid email format. Please enter a valid email address."
+WHEN viewing edit history, THE system SHALL display timestamps in a human-readable format.
 
-WHEN a user attempts to register with an email that already exists in the system, THE system SHALL reject the registration and return a descriptive error without revealing whether the account exists.
+IF a user queries history entries, THE system SHALL return timestamps in the same format regardless of query parameters.
 
-WHEN a user attempts to log in, THE system SHALL require both email and password to be provided and SHALL validate password length is at least 8 characters. IF password is less than 8 characters, THEN THE system SHALL return "Password must be at least 8 characters."
+### Change Value Capture
 
-#### Todo Validation Requirements
+WHEN an edit history entry is created for a title change, THE system SHALL record both the previous title and new title.
 
-WHEN a user creates a todo, THE system SHALL require title to be provided and SHALL reject creation IF title is empty or contains only whitespace. WHILE a todo is being created, THE system SHALL allow description, start date, and due date to be empty or omitted without validation errors.
+WHEN an edit history entry is created for a description change, THE system SHALL record both the previous description and new description.
 
-WHEN a user attempts to edit a todo, THE system SHALL validate that the title field, if provided, cannot be empty or whitespace-only. IF a user attempts to edit a todo's title with empty value, THEN THE system SHALL preserve the existing title.
+WHEN an edit history entry is created for a start date change, THE system SHALL record both the previous start date and new start date.
 
-IF a user attempts to create a todo with an invalid date format for start date or due date, THEN THE system SHALL return "Invalid date format. Please use YYYY-MM-DD format."
+WHEN an edit history entry is created for a due date change, THE system SHALL record both the previous due date and new due date.
 
-#### Edit History Validation
+IF no change occurred for a field during an update, THE system SHALL NOT record that field in the history entry.
 
-WHEN a todo is edited, THE system SHALL create an edit history entry only IF at least one field has actually changed from its previous value. IF no fields have changed during an edit operation, THEN THE system SHALL NOT create a new edit history entry.
+### Most-Recent-First Ordering
 
-#### Trash Validation
+WHEN a user views edit history for a todo, THE system SHALL return entries sorted from most recent to oldest.
 
-WHEN a user requests to restore a todo from trash, THE system SHALL verify the todo exists and belongs to the user. IF the todo was permanently deleted, THEN THE system SHALL return "Todo not found."
+IF two or more history entries share the same timestamp, THE system SHALL sort them by their internal creation ID in descending order.
 
-### Permission Logic
+THE system SHALL maintain this ordering when pagination is applied to edit history results.
 
-#### User Account Permissions
+### History Deletion with Todo
 
-THE system SHALL allow users to view and edit only their own profile information. WHILE a user is authenticated, THE system SHALL automatically include user's ID in all profile-related requests to prevent unauthorized access.
+WHEN a user permanently deletes a todo from trash, THE system SHALL also delete all associated edit history entries.
 
-THE system SHALL prevent any user from viewing, accessing, or modifying another user's account information. IF a user attempts to access another user's profile, THEN THE system SHALL return "Access denied. You can only view your own profile."
+THE system SHALL NOT delete edit history entries when a todo is moved to trash (soft delete).
 
-#### Todo Access Control
+IF a user restores a todo from trash, THE system SHALL restore all associated edit history entries.
 
-THE system SHALL ensure that users can view, create, edit, and delete only their own todos. WHEN a todo request is made, THE system SHALL automatically filter results to include only todos belonging to the authenticated user.
+THE system SHALL preserve edit history entries during todo completion toggles, title changes, and other edits while in active or trash state.
 
-IF a user attempts to access a todo that does not belong to them, THEN THE system SHALL return "Todo not found." WHERE a user attempts to access a non-existent todo, THEN THE system SHALL return "Todo not found."
+### User-Only History Access
 
-### Privacy Enforcement Rules
+A user SHALL ONLY view edit history for todos they own.
 
-#### Data Isolation
+IF a user attempts to view edit history for a todo belonging to another user, THE system SHALL reject the request.
 
-THE system SHALL implement complete data isolation between users. WHILE any operation is performed, THE system SHALL automatically include user ID in all database queries to prevent cross-user data access.
+Guest users SHALL NOT be able to access any edit history entries.
 
-THE system SHALL never expose user email addresses or other account information to other users. WHILE any user profile is accessed, THE system SHALL exclude sensitive account information from responses.
+WHEN a user account is deleted, THE system SHALL permanently delete all associated todo edit history entries.
 
-#### Soft Delete Implementation
+### Immutable History Records
 
-WHEN a user deletes a todo, THE system SHALL mark the todo as deleted rather than permanently removing it from the database. WHILE a todo is marked as deleted, THE system SHALL exclude it from normal todo list queries.
+WHEN an edit history entry is created, THE system SHALL prevent any modification to its contents.
 
-THE system SHALL maintain soft-deleted todos in the database for potential restoration. WHILE a todo is in trash, THE system SHALL preserve all associated edit history data.
+IF a user or system process attempts to update, delete, or alter a history entry, THE system SHALL reject the request.
 
-### Edit History Business Logic
+THE system SHALL maintain history entries exactly as recorded at the time of creation, preserving all field values including timestamps.
 
-#### History Entry Creation
+### Field-Change Triggering
 
-WHEN a todo is edited and at least one field changes, THE system SHALL create a new edit history entry with timestamps and field-level change information. WHILE an edit history entry is created, THE system SHALL record the user who performed the edit.
+WHEN a todo's title is changed, THE system SHALL trigger creation of an edit history entry.
 
-THE system SHALL store all edit history entries in chronological order with timestamps. WHILE edit history is retrieved, THE system SHALL return entries sorted from most recent to oldest.
+WHEN a todo's description is changed, THE system SHALL trigger creation of an edit history entry.
 
-#### History Preservation
+WHEN a todo's start date is changed, THE system SHALL trigger creation of an edit history entry.
 
-WHEN a todo is permanently deleted, THE system SHALL delete all associated edit history entries. WHILE permanent deletion occurs, THE system SHALL execute related data cleanup as part of the same transaction.
+WHEN a todo's due date is changed, THE system SHALL trigger creation of an edit history entry.
 
-THE system SHALL maintain referential integrity between todos and their edit history. WHILE edit history entries exist, THE system SHALL ensure todos referencing them are still accessible.
+IF a user updates a todo without changing any of these four tracked fields, THE system SHALL NOT trigger creation of an edit history entry.
 
-### Trash Management Rules
+# Detailed Validation Rules
 
-#### Trash Access and Navigation
+Detailed validation rules with boundary values and format requirements.
 
-WHEN a user requests their trash list, THE system SHALL return only todos that belong to the authenticated user and are marked as deleted. WHILE trash list is retrieved, THE system SHALL apply pagination to limit results per page.
+## User Validation Rules
 
-THE system SHALL return appropriate pagination information including total count, current page, and page size. WHERE a user requests a specific page number beyond available data, THEN THE system SHALL return empty list rather than error.
+Users register with an email address that must be unique among active accounts. Duplicate or already-deleted emails are rejected during registration. Email addresses must follow standard format rules (local-part@domain.tld). Passwords must meet minimum security requirements including length, character diversity, and complexity. Password change attempts preserve account status while updating credentials. Account deletion permanently removes all associated data including todos and edit history.
 
-### Filtering & Sorting Rules
+### Email Format Validation
 
-#### Completion Status Filtering
+WHEN a user provides an email address for registration or profile update, THE system SHALL validate that the email follows the standard format: local-part@domain.tld.
 
-WHEN a user filters todos by completion status, THE system SHALL accept values "all", "complete", and "incomplete" only. IF an invalid filter value is provided, THEN THE system SHALL default to "all".
+IF the email does not contain an '@' symbol, THE system SHALL reject the request.
+IF the email has an '@' symbol but lacks a valid domain part after it, THE system SHALL reject the request.
+IF the email contains invalid characters (outside alphanumeric, '.', '_', '-', '@'), THE system SHALL reject the request.
 
-THE system SHALL return todos filtered by the specified completion status. WHILE completion status filter is applied, THE system SHALL maintain all other filters and sorting.
+### Email Uniqueness Check
 
-#### Date-based Sorting
+WHEN a user registers with an email address, THE system SHALL verify that no active account exists with the same email.
 
-WHEN a user sorts todos by start date, THE system SHALL sort with "null" start dates appearing at the end regardless of sort direction. WHILE start date sorting is applied, THE system SHALL handle todos without start dates gracefully.
+IF the email is already associated with another active account, THE system SHALL reject the registration request.
 
-WHEN a user sorts todos by due date, THE system SHALL sort with "null" due dates appearing at the end regardless of sort direction. WHILE due date sorting is applied, THE system SHALL handle todos without due dates gracefully.
+A deleted account's email MAY be reused for new registration after account deletion is complete.
 
-THE system SHALL support combining multiple sort criteria. WHILE combined sorting is applied, THE system SHALL apply criteria in order of priority.
+### Password Complexity Requirements
 
-## Workflow Overview
+WHEN a user sets or changes their password, THE system SHALL enforce the following requirements:
 
-### User Registration and Login Workflow
+1. Minimum length of 8 characters
+2. Must contain at least one uppercase letter (A-Z)
+3. Must contain at least one lowercase letter (a-z)
+4. Must contain at least one numeric digit (0-9)
+5. Must contain at least one special character from the set: !@#$%^&*()_+-=[]{}|;:'",.<>?/~`
 
-The user registration workflow begins when a user accesses the registration page and provides their email address and password. The system validates that the email follows standard format and the password meets minimum length requirements. If validation passes, the system creates a new user account with the provided credentials. If the email already exists, the system returns an error without revealing whether the account exists.
+IF any requirement is not met, THE system SHALL reject the password update request and provide specific feedback about which requirement failed.
 
-After successful registration, users can log in by providing their email and password. The system verifies the credentials against stored account information. If valid, the system generates an authentication token and returns a success response. If credentials are invalid, the system returns a generic "Invalid credentials" message.
+### Duplicate Email Handling
 
-### Todo Creation Workflow
+THE system SHALL reject registration requests when the provided email matches an existing active account.
 
-Users create todos by accessing the create todo interface and providing a title (required) along with optional description, start date, and due date fields. The system validates that the title is provided and non-empty, and that any provided dates follow the correct format. If validation passes, the system creates a new todo record associated with the authenticated user and marks it as incomplete by default.
+WHEN an account is deleted, THE system SHALL mark the email as available for reuse.
 
-### Todo Management Workflow
+IF a user attempts to register with an email previously used by a deleted account, THE system SHALL allow the registration and create a new account.
 
-Users manage their todos through viewing, editing, and status updates. When viewing the todo list, the system returns all active todos belonging to the authenticated user with pagination support. Users can select individual todos to view complete details including full description and edit history.
+WHEN duplicate email detection fails due to concurrent registration attempts, THE system SHALL resolve the conflict by keeping the first successful registration and rejecting the second with a clear message.
 
-For editing, users provide updated values for any combination of title, description, start date, and due date fields. The system validates inputs and creates edit history entries only when fields actually change. For completion status, users can toggle between complete and incomplete states with immediate effect.
+### Password Security Policy
 
-### Edit History Workflow
+THE system SHALL hash all passwords using a strong cryptographic algorithm before storage.
 
-Every time a user edits a todo with actual field changes, the system creates an edit history entry that captures the timestamp of the edit, which fields were modified, and their previous values. These history entries are stored in chronological order and sorted from most recent to oldest when retrieved.
+WHEN a user changes their password, THE system SHALL verify their current password before accepting the new one.
 
-Users can view the complete edit history for any of their todos by requesting the history endpoint. The system returns all history entries with full details, including field-level change information. If no edits have been made, the system returns an empty list.
+IF a password change request lacks verification of the current password, THE system SHALL reject the request.
 
-### Trash Management Workflow
+THE system SHALL NOT store passwords in plain text or in a reversibly encrypted format.
 
-When a user deletes a todo, the system performs a soft delete by marking the todo as deleted while preserving all data. The deleted todo is excluded from normal todo lists but remains accessible in the trash view.
+## Profile Validation Rules
 
-In the trash interface, users can view all their deleted todos with pagination support. From the trash list, users can choose to restore deleted todos (returning them to active status) or permanently delete them. When restoring, the system marks the todo as active and removes it from trash. When permanently deleting, the system removes both the todo record and all associated edit history entries.
+Display names must be between 1 and 100 characters long. Empty or whitespace-only display names are rejected during profile creation. Display names cannot contain markup or special control characters. Users can update their display name at any time, but changes must pass the same validation rules. Profile records are created automatically when users register and cannot be manually deleted.
 
-## Detailed Workflow Specifications
+### Display Name Length and Format Validation
 
-### Creating a Todo
+WHEN a user creates or updates their profile, THE system SHALL:
+1. Require a display name between 1 and 100 characters long
+2. Reject requests where the display name is exactly 0 characters
+3. Reject requests where the display name exceeds 100 characters
 
-1. User navigates to create todo interface
-2. User enters title (required) and optional fields
-3. System validates title is provided and non-empty
-4. System validates date formats if provided
-5. System creates todo record with authenticated user ID
-6. System returns success confirmation with created todo data
+WHILE a display name contains only whitespace characters, THE system SHALL reject the request.
 
-### Viewing Todo List
+IF the display name contains markup (e.g., HTML or XML tags) or control characters, THE system SHALL reject the request.
 
-1. User requests todo list with optional pagination parameters
-2. System validates pagination parameters
-3. System retrieves authenticated user's active todos
-4. System applies filtering by completion status if specified
-5. System applies sorting by specified fields
-6. System returns paginated results with metadata
+IF the display name contains characters outside the allowed Unicode printable range, THE system SHALL reject the request.
 
-### Completing/Uncompleting Todo
+WHERE profile creation is automatic during user registration, THE system SHALL apply the same validation rules as manual updates.
 
-1. User selects todo and requests status change
-2. System verifies todo belongs to authenticated user
-3. System toggles completion status
-4. System returns updated todo with new status
+IF the display name does not meet validation criteria, THE system SHALL prevent the profile from being saved and return an appropriate error.
 
-### Editing Todo
+## Todo Validation Rules
 
-1. User selects todo and requests edit interface
-2. User provides updated values for fields to change
-3. System validates input data
-4. System compares new values with existing values
-5. If changes occurred, system creates edit history entry
-6. System updates todo record with new values
-7. System returns updated todo data
+Todo titles must contain between 1 and 500 characters. Empty titles are not allowed and are rejected at creation time. Description fields are optional and can be left empty without error. Start dates must be valid calendar dates and cannot be set to future dates beyond system limits. Due dates must be valid calendar dates and cannot precede the start date when both are set. Dates without values are treated as null during validation.
 
-### Deleting Todo
+### Todo Title Validation
 
-1. User selects todo and requests deletion
-2. System verifies todo belongs to authenticated user
-3. System marks todo as deleted (soft delete)
-4. System returns success confirmation
+WHEN a user creates or edits a todo, THE system SHALL:
+1. Require the title to contain between 1 and 500 characters
+2. Reject requests where the title is empty or contains only whitespace
+3. Reject requests where the title exceeds 500 characters
+4. Trim leading and trailing whitespace from the title before validation
 
-### Viewing Edit History
+IF the title is missing, THE system SHALL reject the request with an error.
+IF the title is empty (0 characters) or contains only whitespace characters, THE system SHALL reject the request.
+IF the title exceeds 500 characters, THE system SHALL reject the request.
 
-1. User selects todo and requests edit history
-2. System verifies todo belongs to authenticated user
-3. System retrieves all edit history entries for todo
-4. System sorts entries from most recent to oldest
-5. System returns history entries with full details
+### Todo Description Validation
 
-### Deleting from Trash
+WHEN a user creates or edits a todo, THE system SHALL:
+1. Accept descriptions that are empty or omitted without error
+2. Allow descriptions up to the maximum text length (defined in domain model)
+3. Preserve null or empty description values without conversion
 
-1. User selects todo from trash and requests permanent deletion
-2. System verifies todo belongs to authenticated user
-3. System removes todo record from database
-4. System deletes all associated edit history entries
-5. System returns success confirmation
+WHERE the description field is omitted, THE system SHALL store the value as null or empty.
+IF the description exceeds the maximum allowed length, THE system SHALL reject the request.
 
-## Privacy and Security
+### Todo Start Date Validation
 
-### User Privacy Requirements
+WHEN a user sets or updates a todo's start date, THE system SHALL:
+1. Accept empty or omitted start dates without error
+2. Validate the start date as a valid calendar date when provided
+3. Reject start dates that are in the future beyond the system's allowable time window
 
-Each user's todo data is completely private with no cross-user visibility. Users can only access, modify, or delete their own todos. The system implements complete data isolation through automatic user ID inclusion in all database queries related to todo operations.
+WHERE the start date is omitted, THE system SHALL store the value as null.
+IF the start date is not a valid calendar date, THE system SHALL reject the request.
+IF the start date is set to a future time exceeding system limits, THE system SHALL reject the request.
 
-User profile information is strictly limited to display name only. Account-related information such as email address, password hashes, and account creation timestamps are never exposed to other users or returned in user-facing responses.
+### Todo Due Date Relative to Start Date Validation
 
-### Authentication Security
+WHEN a user creates or edits a todo with both start date and due date, THE system SHALL:
+1. Ensure the due date is not earlier than the start date
+2. Accept todos where only the due date is set (without start date)
+3. Accept todos where neither date is set
 
-The system requires authentication for all user-specific operations. Users authenticate using email and password credentials. After successful login, the system generates authentication tokens that must be included in subsequent requests.
+IF both start date and due date are provided and the due date precedes the start date, THE system SHALL reject the request.
+IF only the due date is provided (start date is null), THE system SHALL accept the request.
+IF neither date is provided, THE system SHALL accept the request.
 
-Password security requirements include minimum length of 8 characters and validation of password format during registration and change operations. The system never returns user passwords or password-related information in API responses.
+## EditHistory Validation Rules
 
-### Data Access Controls
+Each edit history entry records the exact timestamp when the edit occurred. History entries store the previous and new values only when those fields were actually changed during an edit operation. Fields that remain unchanged during an edit are not stored in the history entry. History entries cannot be manually created or modified—only triggered by valid todo edits. Edit timestamps are stored with full precision and sorted chronologically from newest to oldest.
 
-The system enforces strict access controls through automatic user ID verification on all operations. When a user performs any todo-related operation, the system automatically filters results to include only data belonging to the authenticated user.
+### History Entry Timestamping
 
-For operations that involve accessing specific resources, the system verifies ownership before allowing the operation to proceed. If a user attempts to access data belonging to another user, the system returns a generic "Not found" error that does not reveal whether the resource exists.
+WHEN a todo is edited, THE system SHALL record the exact timestamp when the edit operation completes.
 
-### Soft Delete Implementation
+THE system SHALL use server-generated timestamps with full precision (including milliseconds).
 
-The system implements soft deletion for todos where deleted records are marked with a deleted flag rather than physically removed from the database. This approach allows for todo restoration while maintaining data integrity.
+IF multiple edits occur within the same millisecond, THE system SHALL ensure each history entry receives a unique, incrementing sequence number for ordering purposes.
 
-When a todo is deleted, the system updates the todo record to mark it as deleted and excludes it from normal queries. The deleted todo remains in the database and becomes accessible only through the trash interface.
+THE timestamp SHALL be stored in UTC format and converted to local timezone only for display purposes.
 
-### Data Encryption
+THE system SHALL NOT accept client-provided timestamps for edit history entries.
 
-All user passwords are stored using industry-standard hashing algorithms. Authentication tokens are stored securely and expire after a defined period. The system implements proper token refresh mechanisms to maintain user sessions.
+### Change Detection Logic
 
-## Performance Requirements
+WHEN a todo is edited, THE system SHALL compare the new values against the current values of all editable fields.
 
-### Response Time Requirements
+THE system SHALL create a history entry ONLY when at least one field's value has actually changed.
 
-The system targets sub-second response times for all user-facing operations. Todo list retrieval with pagination should complete within 500 milliseconds for typical dataset sizes. Todo creation, editing, and deletion operations should complete within 300 milliseconds.
+IF no fields have changed during an edit operation, THE system SHALL NOT create a history entry.
 
-Edit history retrieval should complete within 200 milliseconds even for todos with extensive editing histories. Trash list retrieval should complete within 400 milliseconds with pagination support.
+THE system SHALL detect changes by comparing the previous value to the new value for title, description, start date, and due date fields.
 
-### Loading Experience
+A field change is detected when the previous value differs from the new value according to type-specific comparison rules (string comparison for text, datetime comparison for dates).
 
-Users should experience smooth loading when navigating between different sections of the application. Todo lists should load quickly with clear loading indicators for larger datasets. Edit history and trash views should provide visual feedback during loading.
+### Unchanged Field Exclusion
 
-### Pagination Performance
+WHEN creating a history entry after an edit, THE system SHALL include a field's previous and new values ONLY if that field was actually changed.
 
-The system supports efficient pagination for todo lists and trash views. When pagination is applied, the system calculates total counts efficiently and returns appropriate page metadata. The system handles edge cases like requesting pages beyond available data gracefully.
+IF a field's value was not changed during an edit operation, THE system SHALL set that field's previous and new values to null in the history entry.
 
-### Filtering and Sorting Speed
+The system SHALL track the following fields for change detection: title, description, start date, and due date.
 
-Filtering by completion status should have minimal performance impact and return results within the target response times. Sorting by date fields should maintain performance even with large dataset sizes.
+For example, if only the description was changed, the history entry SHALL include previousDescription and newDescription with actual values, while previousTitle, newTitle, previousStartDate, newStartDate, previousDueDate, and newDueDate SHALL be set to null.
 
-### Error Recovery Time
+### History Entry Immutability
 
-When errors occur, the system should return appropriate error messages within the response time targets. The system should provide clear error information to help users understand and recover from error conditions.
+WHEN a history entry is created, THE system SHALL make it permanently immutable—no updates or deletions are allowed after creation.
 
-## Error Handling
+THE system SHALL reject any request to manually create, update, or delete history entries.
 
-### Validation Errors
+History entries SHALL only be created automatically as a direct result of valid todo edit operations.
 
-The system returns HTTP 400 Bad Request for validation errors with descriptive error messages. Common validation scenarios include invalid email formats, insufficient password length, empty required fields, and invalid date formats.
+IF a user attempts to directly manipulate history entries through any interface, THE system SHALL return an error.
 
-For filtering and sorting parameters, the system applies sensible defaults for invalid values rather than returning errors. For example, invalid filter values default to "all" status and invalid sort directions default to descending order.
+THE system SHALL prevent all direct database modifications to the edit history table through any means other than the controlled edit process.
 
-### Authentication Errors
+### Timestamp Sorting Order
 
-The system returns HTTP 401 Unauthorized for authentication failures including missing or invalid tokens, expired tokens, and invalid credentials. Authentication error messages are designed to prevent user enumeration attacks by providing generic error descriptions.
+WHEN displaying edit history for a todo, THE system SHALL sort entries from most recent to oldest.
 
-### Access Control Errors
+Sorting SHALL be based first on the edit timestamp in descending order.
 
-The system returns HTTP 403 Forbidden for authorization failures when users attempt to access resources they do not own. The system also returns HTTP 404 Not Found for cases where the resource does not exist, using the same generic error messages to prevent information disclosure.
+WHEN timestamps are identical, sorting SHALL use the sequence number in descending order to ensure deterministic ordering.
 
-### Data Processing Errors
+THE system SHALL always display the most recently created history entry at the top of the list.
 
-The system handles database errors gracefully and returns appropriate HTTP status codes. For transaction failures, the system provides clear error messages indicating the nature of the failure. The system maintains data integrity through proper transaction handling.
+The chronological order SHALL be preserved across all interfaces that display edit history, including the full edit history view and summary displays.
 
-## Exception Scenarios
+# Filtering, Sorting, and Pagination
 
-### User Registration Failures
+List query specifications for filtering, sorting, and pagination.
 
-If a user attempts to register with an email that already exists, the system returns a generic error that does not reveal whether the account exists. If validation fails for email format or password requirements, the system returns specific error messages indicating what needs to be corrected.
+## List Query Specifications
 
-### Authentication Failures
+Define filtering, sorting, and pagination rules for list operations.
 
-If a user attempts to log in with invalid credentials, the system returns a generic "Invalid credentials" message that does not reveal whether the email exists in the system. If authentication tokens expire, the system returns appropriate error messages prompting re-authentication.
+### Todo List Filtering
 
-### Data Access Exceptions
+WHEN a user requests their todo list, THE system SHALL support filtering by completion status.
 
-If a user attempts to access a todo that does not belong to them, the system returns a generic "Todo not found" message rather than revealing ownership information. If a user attempts to access trash without proper authentication, the system denies access completely.
+THE system SHALL support the following filter options:
+1. All todos (default filter)
+2. Only complete todos
+3. Only incomplete todos
 
-### Edit History Exceptions
+WHEN a filter is applied, THE system SHALL exclude todos that do not match the selected filter criteria.
 
-If a user attempts to view edit history for a todo that does not belong to them, the system returns "Todo not found" rather than revealing whether the todo exists. If edit history retrieval encounters technical issues, the system returns appropriate error messages.
+WHEN filtering is applied, THE system SHALL return only todos owned by the requesting user.
 
-### Trash Management Exceptions
+THE system SHALL apply filters regardless of whether todos are in the trash (deleted todos remain excluded from the active list).
 
-If a user attempts to restore a todo that was already permanently deleted, the system returns "Todo not found" rather than revealing deletion status. If permanent deletion encounters errors, the system provides clear error information for troubleshooting.
+IF an invalid filter value is provided, THE system SHALL reject the request and return an appropriate error.
 
-## Success Criteria
+### Todo List Sorting
 
-The multi-user Todo application implementation must satisfy the following success criteria:
+WHEN a user requests their todo list, THE system SHALL support sorting by creation date, start date, and due date.
 
-1. **Complete Data Isolation**: Users can only access their own data with zero cross-user visibility
-2. **Full Edit History**: All todo modifications are tracked with complete historical records
-3. **Reliable Trash Management**: Soft deletion works flawlessly with successful restoration capabilities
-4. **Performance Targets**: All operations complete within specified response time requirements
-5. **Privacy Protection**: User data is never exposed to other users through any operation
-6. **Error Resilience**: System handles all error scenarios gracefully with appropriate messages
-7. **Data Integrity**: No data loss occurs during normal operations including deletions and restorations
-8. **Pagination Accuracy**: Total counts and page metadata reflect only authenticated user's data
+THE system SHALL support both ascending and descending sort order for each field.
 
-## Implementation Notes
+WHEN sorting by start date, THE system SHALL place todos without a start date at the end of the list regardless of sort order.
 
-This requirements specification provides the complete functional requirements for the multi-user Todo application. The system must implement all user account management features, todo CRUD operations with proper ownership verification, comprehensive edit history tracking, and robust trash management functionality with restore capabilities.
+WHEN sorting by due date, THE system SHALL place todos without a due date at the end of the list regardless of sort order.
 
-All operations must enforce complete data isolation between users, with automatic user ID filtering applied to all database queries. The system must handle all specified error scenarios gracefully with appropriate HTTP status codes and user-friendly error messages.
+WHEN sorting by creation date, THE system SHALL sort todos by their creation timestamp in the specified order.
 
-The implementation must support all filtering and sorting requirements with proper handling of null date values. Pagination must be implemented efficiently with accurate total counts for user-specific data.
+THE system SHALL apply sorting after filtering and before pagination.
 
-This document serves as the complete requirements specification for the backend implementation of the multi-user Todo application.
+WHEN no sort order is specified, THE system SHALL sort by creation date in descending order (newest first).
+
+### Pagination Requirements
+
+WHEN a user requests their todo list, THE system SHALL support pagination to return results in manageable chunks.
+
+THE system SHALL support two pagination parameters: page number and page size.
+
+THE system SHALL default to page 1 and a page size of 20 items if not specified.
+
+WHEN the requested page number is greater than the total available pages, THE system SHALL return an empty result set.
+
+WHEN the requested page size exceeds 100 items, THE system SHALL limit the result to 100 items and return an error.
+
+THE system SHALL provide total count information in the response to enable pagination UI.
+
+WHEN a user is viewing their trash, THE system SHALL apply the same pagination requirements as the active todo list.
+
+### Cursor and Query Handling
+
+WHEN a user requests filtered, sorted, and paginated todo data, THE system SHALL process the query as a single operation.
+
+THE system SHALL construct the query by applying the specified filters, sort order, and pagination in the correct sequence.
+
+THE system SHALL ensure that all query operations respect user ownership isolation.
+
+WHEN executing a query, THE system SHALL apply all three operations (filter, sort, paginate) atomically.
+
+IF conflicting pagination parameters are provided (e.g., both page number and cursor), THE system SHALL reject the request.
+
+WHEN sorting is applied before pagination, THE system SHALL ensure consistent ordering across pages.
+
+THE system SHALL ensure that queries return only the requesting user's todos, even when complex filtering and sorting are applied.
+
+# Error Conditions
+
+Business error scenarios and how the system should respond.
+
+## Error Scenarios
+
+Describe error conditions and expected system responses in natural language.
+
+### User Account Errors
+
+THE system SHALL reject account registration when the provided email is already registered.
+
+THE system SHALL reject login attempts when the email does not exist in the system.
+
+THE system SHALL reject login attempts when the provided password does not match the stored password hash.
+
+WHILE deleting an account, THE system SHALL verify that the account exists before proceeding with deletion.
+
+IF the account does not exist during deletion, THE system SHALL return an appropriate error without disclosing whether the email was registered.
+
+### Profile Errors
+
+THE system SHALL reject profile display name updates when the provided display name exceeds 100 characters.
+
+THE system SHALL reject profile display name updates when the display name contains only whitespace.
+
+THE system SHALL reject profile display name updates when the display name is empty or null.
+
+WHILE attempting to view another user's profile, THE system SHALL return an error indicating profile access is restricted.
+
+### Todo Creation Errors
+
+WHEN a user creates a todo, THE system SHALL reject the request if the title is empty or missing.
+
+THE system SHALL reject todo creation when the title exceeds 500 characters.
+
+WHEN a user creates a todo, THE system SHALL reject the request if the start date is provided but the due date is earlier than the start date.
+
+WHERE both start date and due date are provided, THE system SHALL validate that the due date is on or after the start date.
+
+### Todo Access and Ownership Errors
+
+WHEN a user attempts to view a specific todo, THE system SHALL reject the request if the todo does not exist.
+
+WHEN a user attempts to view a todo, THE system SHALL reject the request if the todo belongs to a different user.
+
+WHEN a user attempts to view their todo list, THE system SHALL return only todos belonging to the authenticated user.
+
+THE system SHALL ensure that a user cannot view, access, or receive another user's todos through any query or operation.
+
+### Todo Modification Errors
+
+WHEN a user attempts to edit a todo, THE system SHALL reject the request if the todo does not exist.
+
+WHEN a user attempts to edit a todo, THE system SHALL reject the request if the todo belongs to a different user.
+
+WHEN a user attempts to mark a todo as complete or incomplete, THE system SHALL reject the request if the todo does not exist.
+
+WHEN a user attempts to mark a todo as complete or incomplete, THE system SHALL reject the request if the todo belongs to a different user.
+
+### Todo Deletion and Trash Errors
+
+WHEN a user attempts to delete a todo, THE system SHALL reject the request if the todo does not exist.
+
+WHEN a user attempts to delete a todo, THE system SHALL reject the request if the todo belongs to a different user.
+
+WHEN a user attempts to restore a todo from trash, THE system SHALL reject the request if the todo does not exist in their trash.
+
+WHEN a user attempts to permanently delete a todo from trash, THE system SHALL reject the request if the todo does not exist in their trash.
+
+WHEN a user attempts to view their trash, THE system SHALL return only todos that belong to the authenticated user and have been soft-deleted.
+
+### Edit History Access Errors
+
+WHEN a user attempts to view a todo's edit history, THE system SHALL reject the request if the todo does not exist.
+
+WHEN a user attempts to view a todo's edit history, THE system SHALL reject the request if the todo belongs to a different user.
+
+WHEN a user attempts to view a todo's edit history, THE system SHALL return an empty list if no edits have been made to the todo.
+
+### Filtering and Sorting Errors
+
+THE system SHALL reject list queries with invalid completion status filter values (not 'all', 'complete', or 'incomplete').
+
+THE system SHALL reject list queries with invalid sort field values (not 'createdAt', 'startDate', or 'dueDate').
+
+THE system SHALL reject list queries with invalid sort direction values (not 'asc' or 'desc').
+
+THE system SHALL reject pagination requests with invalid page numbers (negative or zero).
+
+THE system SHALL reject cursor-based pagination requests with invalid cursor formats.

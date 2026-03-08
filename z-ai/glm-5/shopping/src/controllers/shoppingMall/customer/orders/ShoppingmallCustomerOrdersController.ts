@@ -1,221 +1,44 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IPageIShoppingMallOrder } from "../../../../api/structures/IPageIShoppingMallOrder";
 import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrder";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { getShoppingMallCustomerOrdersOrderId } from "../../../../providers/getShoppingMallCustomerOrdersOrderId";
 import { patchShoppingMallCustomerOrders } from "../../../../providers/patchShoppingMallCustomerOrders";
-import { postShoppingMallCustomerOrders } from "../../../../providers/postShoppingMallCustomerOrders";
 
 @Controller("/shoppingMall/customer/orders")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Create a new order for the authenticated customer after successful payment processing.
+   * Retrieve a paginated list of orders for the authenticated customer.
    *
-   * This operation finalizes the checkout process by creating a complete order record with all associated data. It should only be called after payment has been successfully processed through the external payment gateway. The system performs atomic operations to ensure data consistency.
-   *
-   * **Order Creation Process:**
-   * 1. Validates that all cart items are available (not deleted, sufficient stock)
-   * 2. Creates an order record with a unique order number (format: ORD-YYYY-NNNNNN)
-   * 3. Creates order item records for each purchased variant with complete snapshot data including product name, description, category, thumbnail, variant SKU code and options, seller shop information, quantity, and unit price
-   * 4. Creates an immutable shipping address snapshot from the customer's selected address
-   * 5. Creates negative inventory records to decrease stock for each purchased variant
-   * 6. Removes all purchased items from the customer's shopping cart
-   * 7. Sets initial order status to 'paid' and all order item statuses to 'paid'
-   *
-   * **Snapshot Data Preservation:**
-   * All order items preserve complete snapshot data at the time of purchase, ensuring historical accuracy even if products are edited, variants are modified, or seller profiles are changed. This enables accurate order history display and supports dispute resolution with verifiable purchase records.
-   *
-   * **Multi-Seller Orders:**
-   * A single order can contain items from multiple sellers. Each order item references the seller who provided that product, enabling sellers to manage only their own items within multi-seller orders.
-   *
-   * **Business Rules:**
-   * - Customer must be authenticated
-   * - Selected address must belong to the customer
-   * - All cart items must be available with sufficient stock
-   * - Payment must have been successfully processed before calling this endpoint
-   * - Order number is auto-generated and unique across the platform
-   * - Orders cannot be deleted (preserved for legal compliance)
-   *
-   * **Related Operations:**
-   * - GET /customers/me/cart - View cart contents before checkout
-   * - POST /customers/me/checkout/prepare - Validate cart and prepare checkout
-   * - GET /customers/me/orders - View order history
-   * - GET /customers/me/orders/{id} - View order details
-   *
-   * @param connection
-   * @param body Order creation details including selected shipping address
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement order creation as an atomic transaction with the following steps:
-   *
-   * 1. **Authentication & Authorization:**
-   *    - Extract customer ID from JWT token
-   *    - Verify customer account is active (not deleted, not banned)
-   *
-   * 2. **Input Validation:**
-   *    - Validate addressId is provided and references an address owned by the customer
-   *    - Validate the address exists and is not soft-deleted
-   *
-   * 3. **Cart Retrieval & Validation:**
-   *    - Query shopping_mall_cart_items joined with shopping_mall_product_variants and shopping_mall_products
-   *    - For each cart item:
-   *      - Verify variant is not deleted
-   *      - Verify product is not deleted
-   *      - Verify variant stock >= cart item quantity
-   *      - Verify variant is associated with an approved seller
-   *    - If any item is unavailable, return 400 error with specific unavailable items
-   *    - If cart is empty, return 400 error
-   *
-   * 4. **Order Number Generation:**
-   *    - Generate unique order number in format: ORD-YYYY-NNNNNN
-   *    - Use database sequence or atomic counter to ensure uniqueness
-   *    - Example: ORD-2024-000001
-   *
-   * 5. **Calculate Total Price:**
-   *    - Sum of (quantity * unit_price) for all cart items
-   *    - Use variant price or product base price as unit price
-   *
-   * 6. **Database Transaction (atomic):**
-   *    a. Create shopping_mall_orders record:
-   *       - shopping_mall_customer_id = authenticated customer ID
-   *       - order_number = generated order number
-   *       - total_price = calculated total
-   *       - status = 'paid'
-   *       - created_at, updated_at = current timestamp
-   *
-   *    b. For each cart item, create shopping_mall_order_items record:
-   *       - shopping_mall_order_id = new order ID
-   *       - shopping_mall_seller_id = variant's product's seller ID
-   *       - shopping_mall_product_id = product ID (may become null later)
-   *       - shopping_mall_product_variant_id = variant ID (may become null later)
-   *       - product_name = snapshot from product
-   *       - product_description = snapshot from product
-   *       - product_category_name = snapshot from product's category
-   *       - product_base_price = snapshot from product
-   *       - product_thumbnail_url = snapshot from product's first image
-   *       - variant_sku_code = snapshot from variant
-   *       - variant_price = snapshot from variant
-   *       - seller_shop_name = snapshot from seller
-   *       - seller_shop_description = snapshot from seller
-   *       - seller_logo_url = snapshot from seller
-   *       - quantity = from cart item
-   *       - unit_price = from cart item
-   *       - status = 'paid'
-   *       - created_at = current timestamp
-   *
-   *    c. For each order item, create shopping_mall_order_item_variant_options records:
-   *       - Copy option key-value pairs from the variant's options
-   *
-   *    d. Create shopping_mall_order_addresses record:
-   *       - shopping_mall_order_id = new order ID
-   *       - recipient_name, phone, street, city, state, postal_code, country = from selected address
-   *       - created_at = current timestamp
-   *
-   *    e. For each cart item, create inventory history record:
-   *       - Query or create shopping_mall_product_inventory_histories
-   *       - Record negative quantity change
-   *       - Reason: "Order placed - Order #[order number]"
-   *
-   *    f. Delete all cart items for this customer:
-   *       - DELETE from shopping_mall_cart_items WHERE shopping_customer_id = customer ID
-   *
-   * 7. **Response Construction:**
-   *    - Return complete order with nested order items and address
-   *    - Include all snapshot data in order items
-   *    - HTTP 201 Created with Location header
-   *
-   * **Error Handling:**
-   * - 401 Unauthorized: Invalid or missing JWT token
-   * - 400 Bad Request: Invalid address ID, empty cart, unavailable items
-   * - 404 Not Found: Address not found
-   * - 409 Conflict: Insufficient stock (race condition)
-   * - 500 Internal Server Error: Transaction failure
-   *
-   * **Concurrency Considerations:**
-   * - Use optimistic locking or SELECT FOR UPDATE on variants during stock check
-   * - Handle race conditions where stock becomes insufficient between validation and commit
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post()
-  public async create(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallOrder.ICreate,
-  ): Promise<IShoppingMallOrder> {
-    try {
-      return await postShoppingMallCustomerOrders({
-        customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a filtered and paginated list of orders for the authenticated customer.
-   *
-   * This operation allows customers to search and browse their order history with advanced filtering capabilities including status filtering, date range filtering, and order number search. Results are sorted by creation date in descending order (newest first) to help customers quickly find recent orders.
+   * This operation provides customers with access to their complete order history, displaying all orders they have placed on the platform. Each order in the list includes essential information for quick reference: the unique order number, order date, total price, and current status.
    *
    * **Order Status Values:**
-   * - 'paid': All items are awaiting shipment
-   * - 'shipped': At least one item is in transit
-   * - 'delivered': All items have been delivered
-   * - 'cancelled': All items were cancelled
-   * - 'refunded': All items were refunded
-   * - 'partially_completed': Items have mixed statuses
+   * - `paid`: All items are paid and awaiting seller shipment
+   * - `shipped`: At least one item has been shipped
+   * - `delivered`: All items have been delivered
+   * - `cancelled`: All items have been cancelled
+   * - `refunded`: All items have been refunded
+   * - `partially_completed`: Mixed states (some items delivered, some cancelled/refunded, etc.)
    *
-   * **Response Structure:**
-   * The response includes pagination information (current page, total pages, total count) and a data array of order summaries. Each order summary contains the order number (unique identifier like 'ORD-2024-001234'), creation timestamp, total price, and derived order status.
+   * **Search and Filtering:**
+   * Customers can search orders by order number for quick lookup, or filter by status to view only orders in a specific state. The results are paginated with a default sort of newest orders first.
    *
-   * **Authorization:**
-   * This endpoint requires customer authentication. Only orders belonging to the authenticated customer are returned. The customer_id is automatically inferred from the JWT token - do not include it in the request body.
+   * **Data Isolation:**
+   * This endpoint returns only orders belonging to the authenticated customer. Order history is preserved even if the customer deletes their account, but deleted customers cannot access this endpoint.
+   *
+   * **Related Operations:**
+   * - Use GET /orders/{orderId} to view detailed order information including items and shipments
+   * - Order items within each order can be individually cancelled (before shipment) or refunded (after delivery)
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering orders. Customer ID is automatically inferred from authentication token.
+   * @param body Search criteria and pagination parameters for order listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table with pagination and filtering for the authenticated customer.
-   *
-   * **Implementation Steps:**
-   * 1. Extract customer_id from JWT token in request headers
-   * 2. Build Prisma query with WHERE clause filtering by shopping_mall_customer_id
-   * 3. Apply optional filters:
-   *    - status: Exact match on order status field
-   *    - order_number: Partial match using contains (case-insensitive)
-   *    - created_at_from: Greater than or equal comparison
-   *    - created_at_to: Less than or equal comparison
-   *    - total_price_min: Greater than or equal comparison
-   *    - total_price_max: Less than or equal comparison
-   * 4. Apply sorting: ORDER BY created_at DESC (newest first)
-   * 5. Apply pagination using cursor-based or offset-based pagination
-   * 6. Return IPageIShoppingMallOrder.ISummary structure with:
-   *    - pagination: { current_page, total_pages, total_count, limit }
-   *    - data: Array of order summaries
-   *
-   * **Database Query:**
-   * ```prisma
-   * const orders = await prisma.shopping_mall_orders.findMany({
-   *   where: {
-   *     shopping_mall_customer_id: customerId,
-   *     // Additional filters from request body
-   *   },
-   *   orderBy: { created_at: 'desc' },
-   *   skip: (page - 1) * limit,
-   *   take: limit,
-   * });
-   * ```
-   *
-   * **Edge Cases:**
-   * - If no orders found, return empty data array with pagination
-   * - Validate date ranges: created_at_from should be <= created_at_to
-   * - Validate price ranges: total_price_min should be <= total_price_max
-   * - Default limit should be applied if not specified (e.g., 20)
+   * @x-autobe-specification Query shopping_mall_orders table filtering by the authenticated customer's ID (shopping_mall_customer_id). Join with shopping_mall_order_items to include item count and status breakdown if needed for UI. Apply search filters: exact or partial match on order_number, filter by status enum values. Support pagination with cursor-based approach for large result sets. Sort by created_at descending (newest first) as default. Exclude soft-deleted orders (deleted_at IS NULL). Return paginated results with order summaries including order_number, created_at date, total_price, and status. Consider adding a search query parameter for order number lookup, and status filter array for filtering by order status. The implementation should ensure the customer can only see their own orders through the authentication context.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -229,6 +52,84 @@ export class ShoppingmallCustomerOrdersController {
       return await patchShoppingMallCustomerOrders({
         customer,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves detailed information about a specific order for the authenticated customer.
+   *
+   * This endpoint returns the complete order details including all order items with their purchase-time snapshots, the locked shipping address, and shipment tracking information. Customers use this endpoint to review their purchase details, track delivery status, and initiate cancellation or refund requests for eligible items.
+   *
+   * The order includes preserved product information (name, description, variant options, price) and seller information (shop name, logo) captured at the moment of purchase. This historical data remains unchanged even if the original product or seller profile is modified or deleted afterward.
+   *
+   * Order status is derived from individual item statuses: 'paid' when all items are paid, 'shipped' when any item is shipped, 'delivered' when all items are delivered, 'cancelled' when all items are cancelled, 'refunded' when all items are refunded, or 'partially_completed' for mixed states.
+   *
+   * Each order item independently tracks its fulfillment status, enabling customers to see which items have been shipped, delivered, cancelled, or refunded. Shipments group items from the same seller and provide carrier and tracking information.
+   *
+   * Customers can only view their own orders. The order_number field serves as a unique human-readable identifier for customer support and reference purposes.
+   *
+   * Security: Requires customer authentication. Order ownership is validated against the authenticated customer ID. Administrators have access to all orders.
+   *
+   * @param connection
+   * @param orderId Unique identifier of the order to retrieve. Must be a valid UUID.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Implementation Flow:
+   *
+   * 1. Authentication Validation:
+   *    - Extract customer ID from JWT token
+   *    - Validate customer is authenticated (member role required)
+   *
+   * 2. Order Retrieval:
+   *    - Query shopping_mall_orders table by orderId (UUID)
+   *    - Join with shopping_mall_customers to verify ownership
+   *    - Return 404 if order not found
+   *    - Return 403 Forbidden if order belongs to different customer (unless administrator)
+   *
+   * 3. Order Items and Snapshots:
+   *    - Query shopping_mall_order_items where shopping_mall_order_id = orderId
+   *    - For each item, join shopping_mall_order_item_snapshots (one-to-one)
+   *    - Join shopping_mall_order_item_snapshot_variant_options for variant options
+   *    - Include product_id, variant_id, seller_id references
+   *
+   * 4. Shipments Retrieval:
+   *    - Query shopping_mall_shipments where order_id = orderId
+   *    - Group order items by their shipment_id
+   *    - Items with null shipment_id are 'awaiting shipment'
+   *
+   * 5. Response Assembly:
+   *    - Build IShoppingMallOrder response with:
+   *      - Basic order info (id, order_number, total_price, status, created_at)
+   *      - Shipping address (from order fields: shipping_recipient_name, shipping_phone_number, etc.)
+   *      - Order items array with embedded snapshot data
+   *      - Shipments array with tracking info and associated item IDs
+   *
+   * 6. Status Derivation:
+   *    - Order status is stored as cached value, updated whenever item status changes
+   *    - Verify derived status matches stored status, recalculate if needed
+   *
+   * Business Rules:
+   * - Order must belong to authenticated customer (ownership validation)
+   * - Administrator override: can view any order
+   * - Order customer_id may be null if customer account deleted (order preserved)
+   * - Soft-deleted orders (deleted_at not null) should not be accessible to customers
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":orderId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("orderId")
+    orderId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallOrder> {
+    try {
+      return await getShoppingMallCustomerOrdersOrderId({
+        customer,
+        orderId,
       });
     } catch (error) {
       console.log(error);

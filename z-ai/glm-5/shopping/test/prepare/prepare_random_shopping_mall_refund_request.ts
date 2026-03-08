@@ -9,8 +9,10 @@ export function prepare_random_shopping_mall_refund_request(
   input?: DeepPartial<IShoppingMallRefundRequest.ICreate>,
 ): IShoppingMallRefundRequest.ICreate {
   return {
+    orderItemId:
+      input?.orderItemId ?? typia.random<string & tags.Format<"uuid">>(),
     reason:
       input?.reason ??
-      RandomGenerator.paragraph({ sentences: 5, wordMin: 4, wordMax: 10 }),
+      RandomGenerator.paragraph({ sentences: 5, wordMin: 4, wordMax: 8 }),
   };
 }

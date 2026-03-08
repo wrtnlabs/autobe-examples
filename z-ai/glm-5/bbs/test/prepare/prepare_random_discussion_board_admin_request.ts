@@ -9,6 +9,6 @@ export function prepare_random_discussion_board_admin_request(
   input?: DeepPartial<IDiscussionBoardAdminRequest.ICreate>,
 ): IDiscussionBoardAdminRequest.ICreate {
   return {
-    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 5 }),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
   };
 }

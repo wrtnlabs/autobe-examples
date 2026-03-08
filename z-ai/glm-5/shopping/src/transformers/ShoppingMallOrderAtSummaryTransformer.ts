@@ -29,13 +29,15 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
   ): Promise<IShoppingMallOrder.ISummary> {
     return {
       id: input.id,
-      orderNumber: input.order_number,
-      totalPrice: input.total_price,
+      order_number: input.order_number,
+      total_price: input.total_price,
       status: input.status,
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      createdAt: input.created_at.toISOString(),
+      customer: input.customer
+        ? await ShoppingMallCustomerAtSummaryTransformer.transform(
+            input.customer,
+          )
+        : null,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

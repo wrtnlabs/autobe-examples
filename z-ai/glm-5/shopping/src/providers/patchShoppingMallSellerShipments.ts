@@ -1,8 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIShoppingMallOrderShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrderShipment";
-import { IShoppingMallOrderShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderShipment";
+import { IPageIShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallShipment";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -12,22 +14,21 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
-import { ShoppingMallOrderShipmentAtSummaryTransformer } from "../transformers/ShoppingMallOrderShipmentAtSummaryTransformer";
+import { ShoppingMallShipmentAtSummaryTransformer } from "../transformers/ShoppingMallShipmentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallSellerShipments(props: {
   seller: SellerPayload;
-  body: IShoppingMallOrderShipment.IRequest;
-}): Promise<IPageIShoppingMallOrderShipment.ISummary> {
+  body: IShoppingMallShipment.IRequest;
+}): Promise<IPageIShoppingMallShipment.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput = {
-    shopping_mall_seller_id: props.seller.id,
+    seller_id: props.seller.id,
     deleted_at: null,
-    ...(props.body.status === "shipped" && { delivered_at: null }),
-    ...(props.body.status === "delivered" && { delivered_at: { not: null } }),
+    ...(props.body.orderId && { order_id: props.body.orderId }),
     ...(props.body.carrierName && {
       carrier_name: {
         contains: props.body.carrierName,
@@ -35,75 +36,67 @@ export async function patchShoppingMallSellerShipments(props: {
       },
     }),
     ...(props.body.trackingNumber && {
-      tracking_number: {
-        contains: props.body.trackingNumber,
-        mode: "insensitive" as const,
-      },
+      tracking_number: props.body.trackingNumber,
     }),
-    ...(props.body.customerName && {
-      items: {
-        some: {
-          orderItem: {
-            order: {
-              customer: {
-                display_name: {
-                  contains: props.body.customerName,
-                  mode: "insensitive" as const,
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-    ...(props.body.shippedAtFrom || props.body.shippedAtTo
+    ...(props.body.shippedFrom || props.body.shippedTo
       ? {
           shipped_at: {
-            ...(props.body.shippedAtFrom && {
-              gte: new Date(props.body.shippedAtFrom),
+            ...(props.body.shippedFrom && {
+              gte: new Date(props.body.shippedFrom),
             }),
-            ...(props.body.shippedAtTo && {
-              lte: new Date(props.body.shippedAtTo),
+            ...(props.body.shippedTo && {
+              lte: new Date(props.body.shippedTo),
             }),
           },
         }
       : {}),
-    ...(props.body.deliveredAtFrom !== undefined ||
-    props.body.deliveredAtTo !== undefined
+    ...(props.body.deliveredFrom || props.body.deliveredTo
       ? {
           delivered_at: {
-            ...(props.body.deliveredAtFrom !== undefined &&
-              props.body.deliveredAtFrom !== null && {
-                gte: new Date(props.body.deliveredAtFrom),
-              }),
-            ...(props.body.deliveredAtTo !== undefined &&
-              props.body.deliveredAtTo !== null && {
-                lte: new Date(props.body.deliveredAtTo),
-              }),
+            ...(props.body.deliveredFrom && {
+              gte: new Date(props.body.deliveredFrom),
+            }),
+            ...(props.body.deliveredTo && {
+              lte: new Date(props.body.deliveredTo),
+            }),
           },
         }
       : {}),
-  } satisfies Prisma.shopping_mall_order_shipmentsWhereInput;
-  const data = await MyGlobal.prisma.shopping_mall_order_shipments.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { shipped_at: "desc" as const },
-    ...ShoppingMallOrderShipmentAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.shopping_mall_order_shipments.count({
-    where: whereInput,
-  });
+    ...(props.body.createdFrom || props.body.createdTo
+      ? {
+          created_at: {
+            ...(props.body.createdFrom && {
+              gte: new Date(props.body.createdFrom),
+            }),
+            ...(props.body.createdTo && {
+              lte: new Date(props.body.createdTo),
+            }),
+          },
+        }
+      : {}),
+    ...(props.body.delivered === true && { delivered_at: { not: null } }),
+    ...(props.body.delivered === false && { delivered_at: null }),
+  } satisfies Prisma.shopping_mall_shipmentsWhereInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_shipments.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+      ...ShoppingMallShipmentAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_shipments.count({ where: whereInput }),
+  ]);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallOrderShipmentAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallShipmentAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIShoppingMallShipment.ISummary;
 }

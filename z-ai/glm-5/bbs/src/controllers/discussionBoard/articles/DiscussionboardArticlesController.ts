@@ -6,41 +6,65 @@ import { IDiscussionBoardArticle } from "../../../api/structures/IDiscussionBoar
 import { IPageIDiscussionBoardArticle } from "../../../api/structures/IPageIDiscussionBoardArticle";
 import { getDiscussionBoardArticlesArticleId } from "../../../providers/getDiscussionBoardArticlesArticleId";
 import { patchDiscussionBoardArticles } from "../../../providers/patchDiscussionBoardArticles";
-import { patchDiscussionBoardArticlesSearch } from "../../../providers/patchDiscussionBoardArticlesSearch";
 
 @Controller("/discussionBoard/articles")
 export class DiscussionboardArticlesController {
   /**
-   * Retrieve a paginated, searchable, and filterable list of articles across the discussion board.
+   * Retrieve a paginated and filtered list of articles from the discussion board.
    *
-   * This endpoint provides comprehensive article discovery capabilities for all users (guests and authenticated users). The search function queries across both article titles and content fields, supporting partial text matching. Users can filter results by section to browse within a specific topic category, by author to view a specific user's contributions, and by tags for topic-based filtering.
+   * This operation provides comprehensive article discovery capabilities, allowing users to browse, search, and filter articles across all sections. Guests, members, and administrators can all access this endpoint to discover content.
    *
-   * The response returns article summaries optimized for list display, including the title (the primary clickable element), author display name, associated tags, comment count for engagement indication, and creation timestamp. The full article content is not included in list responses; users must access the article detail endpoint for complete content.
+   * **Search and Filtering Capabilities:**
+   * - **Section Filter**: Narrow results to specific topic sections such as Politics, Economy, or Current Affairs
+   * - **Tag Filter**: Find articles tagged with specific keywords for cross-section topic discovery
+   * - **Keyword Search**: Full-text search across article titles and content using PostgreSQL trigram indexes for fuzzy matching
+   * - **Author Filter**: View all articles by a specific member
+   * - **Date Range Filter**: Browse articles created within a specific time period
+   * - **Sorting Options**: Order results by creation date, update date, or title
    *
-   * Pagination follows a cursor-based approach with configurable page sizes up to 20 items per page. Sorting options include newest-first (default) and oldest-first ordering based on creation timestamp. Tag filtering supports multiple tags with OR logic, returning articles that have any of the specified tags.
+   * **Pagination:**
+   * Results are paginated with configurable page size. The response includes pagination metadata (total count, current page, total pages) for UI navigation.
    *
-   * Articles that have been soft-deleted (deleted_at is not null) are automatically excluded from results. Search queries require a minimum of 2 characters to execute; shorter queries will return a validation error.
+   * **Access Control:**
+   * All users including unauthenticated guests can access this endpoint. Soft-deleted articles (where deleted_at is not null) are automatically excluded from results. Articles from banned members remain visible for content continuity.
+   *
+   * **Related Operations:**
+   * - Use GET /articles/{articleId} to retrieve full article details
+   * - Use GET /sections to list available sections for filtering
+   * - Use PATCH /sections/{sectionId}/articles to browse articles within a specific section
    *
    * @param connection
-   * @param body Search criteria, filters, and pagination parameters for article discovery
+   * @param body Search criteria, filters, and pagination parameters for article listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query discussion_board_articles table with LEFT JOIN to discussion_board_article_tags and discussion_board_tags for tag information, LEFT JOIN to discussion_board_users for author display names, and COUNT aggregation on discussion_board_comments for comment counts.
+   * @x-autobe-specification Query discussion_board_articles table with pagination, filtering, and sorting support.
    *
-   * Implementation steps:
-   * 1. Apply soft-delete filter: WHERE deleted_at IS NULL
-   * 2. Apply search filter on title and content using ILIKE for case-insensitive partial matching
-   * 3. Apply section filter by discussion_board_section_id if provided
-   * 4. Apply author filter by discussion_board_user_id if provided
-   * 5. Apply tag filter: JOIN with discussion_board_article_tags WHERE discussion_board_tag_id IN (provided tag IDs) - use OR logic for multiple tags
-   * 6. Apply sorting: ORDER BY created_at DESC (newest first) or ASC (oldest first)
-   * 7. Apply pagination using LIMIT/OFFSET or cursor-based approach
-   * 8. Return total count for pagination metadata
+   * **Database Operations:**
+   * 1. Base query filters out soft-deleted articles (WHERE deleted_at IS NULL)
+   * 2. Apply section filter: WHERE section_id IN (provided section IDs)
+   * 3. Apply tag filter: JOIN discussion_board_article_tags, WHERE discussion_board_tag_id IN (provided tag IDs)
+   * 4. Apply keyword search: Use GIN trigram indexes on title and content for full-text search (ILIKE or full-text search)
+   * 5. Apply author filter: WHERE member_id = (provided author ID)
+   * 6. Apply date range filter: WHERE created_at BETWEEN startDate AND endDate
+   * 7. Apply sorting: ORDER BY created_at DESC (default) or specified sort field
+   * 8. Apply pagination: LIMIT and OFFSET based on page and limit parameters
    *
-   * Performance considerations:
-   * - Use GIN index on title for trigram search (already defined in schema)
-   * - Consider caching popular section/article lists
-   * - Ensure tag filter queries use the existing index on discussion_board_tag_id
+   * **Joins Required:**
+   * - LEFT JOIN discussion_board_sections for section name
+   * - LEFT JOIN discussion_board_members for author display_name
+   * - LEFT JOIN discussion_board_article_tags + discussion_board_tags for tag list
+   *
+   * **Response Construction:**
+   * - Map database results to IDiscussionBoardArticle.ISummary objects
+   * - Include author info (id, display_name) from members table
+   * - Include section info (id, name) from sections table
+   * - Include tags array from junction table
+   * - Calculate pagination metadata (total count, total pages, current page)
+   *
+   * **Performance Considerations:**
+   * - Leverage existing indexes: (member_id, created_at), (section_id, created_at), title GIN, content GIN
+   * - Use cursor-based pagination for large datasets if needed
+   * - Cache frequently accessed sections/tags metadata
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -59,44 +83,61 @@ export class DiscussionboardArticlesController {
   }
 
   /**
-   * Retrieve a single article with complete details including title, full content, author profile, section information, file and image attachments, associated tags, and comment count.
+   * Retrieve a single article with its complete content and associated metadata.
    *
-   * This operation provides the comprehensive article detail view for users browsing the discussion board. It returns all information needed to display an article page, including metadata for downloading attachments and navigating to related entities (author profile, section, tags).
+   * This endpoint returns the full article content along with author information, section details, associated tags, file attachments, and comment count. It is accessible to all users including unauthenticated guests, enabling public discussion board content visibility.
    *
-   * The response includes:
-   * - Article metadata (title, content, timestamps)
-   * - Author display name for profile navigation
-   * - Section name and description for section context
-   * - File attachments with download metadata (filename, size, MIME type)
-   * - Image attachments with display metadata (dimensions, file size)
-   * - Associated tags for tag-based navigation
-   * - Comment count for discussion engagement
+   * The article's author is identified by their member account, and the section provides topic categorization. Tags enable cross-section topic discovery, while attachments provide supplementary files and images. The comment count indicates discussion activity without loading all comments.
    *
-   * Access is available to all users (guests, authenticated users, administrators). Articles marked as deleted (deleted_at is not null) return a 404 error. For article authors and administrators, additional action permissions (edit, delete) are indicated through separate authorization checks.
+   * **Authentication**: Not required - public endpoint accessible by all actors (guest, member, admin).
+   *
+   * **Business Rules**:
+   * - Only non-deleted articles are returned (deleted_at must be null)
+   * - Soft-deleted articles result in 404 Not Found
+   * - All users can view articles regardless of ownership
+   *
+   * **Related Operations**:
+   * - GET /sections/{sectionId}/articles - List articles in a section
+   * - PATCH /articles - Search articles with filters
+   * - GET /articles/{articleId}/comments - View comments on this article
+   *
+   * **Database Reference**: Primary table is discussion_board_articles with relationships to discussion_board_members (author), discussion_board_sections (section), discussion_board_article_tags/discussion_board_tags (tags), discussion_board_article_attachments (attachments), and discussion_board_comments (for count).
    *
    * @param connection
-   * @param articleId Unique identifier of the article to retrieve (UUID format). The article must exist and not be soft-deleted.
+   * @param articleId Unique identifier of the article to retrieve. Must be a valid UUID referencing an existing, non-deleted article in the discussion_board_articles table.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+   * @x-autobe-specification Implement single article retrieval with the following steps:
    *
-   * 1. Query discussion_board_articles table by id where deleted_at is null
-   * 2. Join with discussion_board_users to get author display_name and citizen_id
-   * 3. Join with discussion_board_sections to get section name and description
-   * 4. Left join discussion_board_article_files ordered by created_at for file attachments
-   * 5. Left join discussion_board_article_images ordered by created_at for image attachments
-   * 6. Left join discussion_board_article_tags with discussion_board_tags to get tag values
-   * 7. Count discussion_board_comments where article_id matches and deleted_at is null for comment count
-   * 8. Map results to IDiscussionBoardArticle response DTO
+   * 1. **Query the article**: SELECT from discussion_board_articles WHERE id = {articleId} AND deleted_at IS NULL
    *
-   * Error handling:
-   * - Return 404 if article not found or is soft-deleted
-   * - Include article title and identifiers in error logs for debugging
+   * 2. **Validation**:
+   *    - Return 404 if article not found or deleted_at is not null
    *
-   * Performance considerations:
-   * - Use single query with joins for efficiency
-   * - Consider lazy loading attachments if they become large
-   * - Index on article.id already provides O(1) lookup
+   * 3. **Fetch related data** (parallel or joined queries):
+   *    - Author: JOIN with discussion_board_members to get display_name and bio
+   *    - Section: JOIN with discussion_board_sections to get name and description
+   *    - Tags: Query discussion_board_article_tags JOIN discussion_board_tags to get all tag names
+   *    - Attachments: Query discussion_board_article_attachments for file metadata (id, type, name, extension, size, path)
+   *    - Comment count: COUNT from discussion_board_comments WHERE discussion_board_article_id = {articleId} AND deleted_at IS NULL
+   *
+   * 4. **Authorization check**: None required - public read access
+   *
+   * 5. **Response construction**:
+   *    - article.id, title, content, created_at, updated_at
+   *    - author.id, author.display_name, author.bio (from members)
+   *    - section.id, section.name, section.description (from sections)
+   *    - tags[] array of {id, name}
+   *    - attachments[] array of {id, type, name, extension, size, path}
+   *    - comment_count (integer)
+   *
+   * 6. **Error responses**:
+   *    - 404: Article not found or has been deleted
+   *
+   * 7. **Performance considerations**:
+   *    - Use LEFT JOIN for attachments and tags to include articles with no tags/attachments
+   *    - Consider caching frequently accessed articles
+   *    - Use prepared statements for SQL injection prevention
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":articleId")
@@ -107,63 +148,6 @@ export class DiscussionboardArticlesController {
     try {
       return await getDiscussionBoardArticlesArticleId({
         articleId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Search for articles across all sections by matching text in the title or content fields of the discussion_board_articles table.
-   *
-   * This operation provides full-text search capabilities across the entire discussion board, enabling users to discover articles containing specific keywords or phrases. The search scans both article titles and content bodies for matches, returning a paginated list of matching articles with summary information.
-   *
-   * Results can be filtered by one or more tags using OR logic - articles matching ANY of the specified tags will be included in results. Tag filtering is implemented through the discussion_board_article_tags junction table, which links articles to entries in the discussion_board_tags master table. When combining search query with tag filters, articles must match the search text AND have at least one of the specified tags.
-   *
-   * The search requires a minimum of 2 characters in the query string to prevent overly broad results. Results are sorted by the created_at timestamp from discussion_board_articles, either newest first (default) or oldest first, and are paginated with a maximum of 20 articles per page.
-   *
-   * Each result entry includes the article title, author display name from discussion_board_users, associated tags from discussion_board_tags, comment count from discussion_board_comments (excluding soft-deleted comments), and posting timestamp. Clicking on a result navigates to the full article detail view. Empty results display an appropriate message with suggestions for refining the search query.
-   *
-   * Public access is granted to all users including guests, allowing content discovery without authentication requirements. The operation respects soft-deletion status by excluding articles where the deleted_at field is set.
-   *
-   * @param connection
-   * @param body Search criteria including query text, pagination, sorting, and tag filters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement full-text search on discussion_board_articles table using PostgreSQL full-text search capabilities on title and content columns.
-   *
-   * Query construction:
-   * 1. Filter articles where deleted_at IS NULL to exclude soft-deleted content
-   * 2. Apply full-text search using PostgreSQL tsvector on title and content
-   * 3. If tag filters provided, join discussion_board_article_tags and discussion_board_tags to filter by tag values (OR logic)
-   * 4. Apply sorting by created_at (DESC for newest, ASC for oldest)
-   * 5. Apply pagination using LIMIT/OFFSET based on request parameters
-   *
-   * Database queries:
-   * - Use LEFT JOIN with discussion_board_users for author display_name
-   * - Use LEFT JOIN with discussion_board_article_tags and discussion_board_tags for tag aggregation
-   * - Use subquery to count comments per article from discussion_board_comments where deleted_at IS NULL
-   *
-   * Performance considerations:
-   * - Add GIN index on title column for trigram search (already exists per schema)
-   * - Consider caching popular search queries
-   * - Return results within 2 seconds as per non-functional requirements
-   *
-   * Validation:
-   * - Minimum query length: 2 characters (return validation error if shorter)
-   * - Maximum page size: 20 items
-   * - Default sort: newest first (created_at DESC)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch("search")
-  public async search(
-    @TypedBody()
-    body: IDiscussionBoardArticle.IRequest,
-  ): Promise<IPageIDiscussionBoardArticle.ISummary> {
-    try {
-      return await patchDiscussionBoardArticlesSearch({
-        body,
       });
     } catch (error) {
       console.log(error);

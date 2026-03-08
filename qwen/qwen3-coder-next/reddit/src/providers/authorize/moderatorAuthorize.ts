@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { ModeratorPayload } from "../../decorators/payload/ModeratorPayload";
@@ -9,10 +9,10 @@ export async function moderatorAuthorize(request: {
   const payload: ModeratorPayload = jwtAuthorize({ request }) as ModeratorPayload;
 
   if (payload.type !== "moderator") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new UnauthorizedException("Invalid token type");
   }
 
-  const moderator = await MyGlobal.prisma.reddit_clone_moderators.findFirst({
+  const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -20,7 +20,7 @@ export async function moderatorAuthorize(request: {
   });
 
   if (moderator === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Moderator not found or deleted");
   }
 
   return payload;

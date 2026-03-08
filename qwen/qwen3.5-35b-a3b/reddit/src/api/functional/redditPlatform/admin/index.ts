@@ -1,0 +1,11 @@
+export * as admins from "./admins/index";
+export * as audit_logs from "./audit_logs/index";
+export * as reports from "./reports/index";
+export * as communities from "./communities/index";
+export * as bans from "./bans/index";
+export * as histories from "./histories/index";
+export * as webhooks from "./webhooks/index";
+export * as circuit_breakers from "./circuit_breakers/index";
+export * as dashboard from "./dashboard/index";
+export * as monitoring from "./monitoring/index";
+export * as moderation from "./moderation/index";

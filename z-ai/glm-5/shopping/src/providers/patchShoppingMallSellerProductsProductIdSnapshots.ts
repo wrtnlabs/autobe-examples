@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallProductSnapshot";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,36 +20,39 @@ export async function patchShoppingMallSellerProductsProductIdSnapshots(props: {
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProductSnapshot.IRequest;
 }): Promise<IPageIShoppingMallProductSnapshot.ISummary> {
-  // Verify product ownership
-  const product =
-    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { seller_id: true },
-    });
-  if (product.seller_id !== props.seller.id) {
+  // Verify product exists and check ownership
+  // Note: Sellers can view snapshots even for soft-deleted products they own
+  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
+    where: { id: props.productId },
+    select: { id: true, shopping_mall_seller_id: true },
+  });
+  if (product === null) {
+    throw new HttpException("Product not found", 404);
+  }
+  if (product.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Pagination params
+  // Build pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with proper date range handling
+  // Build where clause with optional date filters
   const whereInput = {
     shopping_mall_product_id: props.productId,
-    ...(props.body.from !== undefined &&
-      props.body.to !== undefined && {
+    ...(props.body.from_date !== undefined &&
+      props.body.to_date !== undefined && {
         created_at: {
-          gte: new Date(props.body.from),
-          lte: new Date(props.body.to),
+          gte: new Date(props.body.from_date),
+          lte: new Date(props.body.to_date),
         },
       }),
-    ...(props.body.from !== undefined &&
-      props.body.to === undefined && {
-        created_at: { gte: new Date(props.body.from) },
+    ...(props.body.from_date !== undefined &&
+      props.body.to_date === undefined && {
+        created_at: { gte: new Date(props.body.from_date) },
       }),
-    ...(props.body.from === undefined &&
-      props.body.to !== undefined && {
-        created_at: { lte: new Date(props.body.to) },
+    ...(props.body.to_date !== undefined &&
+      props.body.from_date === undefined && {
+        created_at: { lte: new Date(props.body.to_date) },
       }),
   } satisfies Prisma.shopping_mall_product_snapshotsWhereInput;
   // Query snapshots
@@ -62,11 +64,11 @@ export async function patchShoppingMallSellerProductsProductIdSnapshots(props: {
       orderBy: { created_at: "desc" },
       ...ShoppingMallProductSnapshotAtSummaryTransformer.select(),
     });
-  // Count total
+  // Count total records
   const total = await MyGlobal.prisma.shopping_mall_product_snapshots.count({
     where: whereInput,
   });
-  // Transform and return
+  // Transform and return paginated results
   return {
     data: await ArrayUtil.asyncMap(
       snapshots,

@@ -1,7 +1,7 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardArticle";
@@ -20,80 +20,96 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchDiscussionBoardArticles(props: {
   body: IDiscussionBoardArticle.IRequest;
 }): Promise<IPageIDiscussionBoardArticle.ISummary> {
-  const page = Math.max(1, props.body.page ?? 1);
-  const limit = Math.max(1, Math.min(100, props.body.limit ?? 20));
+  const body = props.body;
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Parse tags if provided
-  const tagValues = props.body.tags
-    ? props.body.tags
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter(Boolean)
-    : [];
-  // Build WHERE clause
-  const whereInput = {
+  // Build WHERE conditions
+  const whereInput: Prisma.discussion_board_articlesWhereInput = {
     deleted_at: null,
-    ...(props.body.search &&
-      props.body.search.length >= 2 && {
-        OR: [
-          {
-            title: {
-              contains: props.body.search,
-              mode: "insensitive" as const,
-            },
-          },
-          {
-            content: {
-              contains: props.body.search,
-              mode: "insensitive" as const,
-            },
-          },
-        ],
-      }),
-    ...(props.body.sectionId && {
-      discussion_board_section_id: props.body.sectionId,
-    }),
-    ...(tagValues.length > 0 && {
-      articleTags: {
-        some: {
-          tag: {
-            value: { in: tagValues },
-          },
-        },
+  };
+  // Keyword search on title and content (case-insensitive)
+  if (body.search !== undefined && body.search !== null && body.search !== "") {
+    whereInput.OR = [
+      { title: { contains: body.search, mode: "insensitive" } },
+      { content: { contains: body.search, mode: "insensitive" } },
+    ];
+  }
+  // Section filter (OR logic for multiple sections)
+  if (
+    body.sectionIds !== undefined &&
+    body.sectionIds !== null &&
+    body.sectionIds.length > 0
+  ) {
+    whereInput.section_id = { in: body.sectionIds };
+  }
+  // Tag filter via junction table
+  if (
+    body.tagIds !== undefined &&
+    body.tagIds !== null &&
+    body.tagIds.length > 0
+  ) {
+    whereInput.articleTags = {
+      some: {
+        discussion_board_tag_id: { in: body.tagIds },
       },
-    }),
-  } satisfies Prisma.discussion_board_articlesWhereInput;
-  // Determine sort order
-  const orderByInput = (
-    props.body.sort === "oldest"
-      ? { created_at: "asc" as const }
-      : { created_at: "desc" as const }
-  ) satisfies Prisma.discussion_board_articlesOrderByWithRelationInput;
-  // Query articles
-  const data = await MyGlobal.prisma.discussion_board_articles.findMany({
+    };
+  }
+  // Author filter
+  if (body.memberId !== undefined && body.memberId !== null) {
+    whereInput.member_id = body.memberId;
+  }
+  // Date range filter - build filter object separately to avoid type narrowing issues
+  const dateFilter: Prisma.DateTimeFilter<"discussion_board_articles"> = {};
+  if (body.createdFrom !== undefined && body.createdFrom !== null) {
+    dateFilter.gte = new Date(body.createdFrom);
+  }
+  if (body.createdTo !== undefined && body.createdTo !== null) {
+    dateFilter.lte = new Date(body.createdTo);
+  }
+  if (dateFilter.gte !== undefined || dateFilter.lte !== undefined) {
+    whereInput.created_at = dateFilter;
+  }
+  // Parse and validate sort parameter
+  const sortParts = (body.sort ?? "created_at:desc").split(":");
+  const sortField = sortParts[0] ?? "created_at";
+  const sortDirection = (sortParts[1] ?? "desc") as "asc" | "desc";
+  const validSortFields = ["created_at", "updated_at", "title"];
+  const validSortField = validSortFields.includes(sortField)
+    ? sortField
+    : "created_at";
+  const orderBy: Prisma.discussion_board_articlesOrderByWithRelationInput =
+    validSortField === "title"
+      ? { title: sortDirection }
+      : validSortField === "updated_at"
+        ? { updated_at: sortDirection }
+        : { created_at: sortDirection };
+  // Query articles with pagination
+  const articles = await MyGlobal.prisma.discussion_board_articles.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy,
     ...DiscussionBoardArticleAtSummaryTransformer.select(),
   });
-  // Count total matching articles
+  // Get total count for pagination
   const total = await MyGlobal.prisma.discussion_board_articles.count({
     where: whereInput,
   });
-  // Transform to DTO
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
+  // Transform results using transformer
+  const data = await ArrayUtil.asyncMap(
+    articles,
     DiscussionBoardArticleAtSummaryTransformer.transform,
   );
-  // Return paginated response
+  // Build pagination metadata
+  const pages = limit > 0 ? Math.ceil(total / limit) : 0;
   return {
-    data: transformedData,
+    data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages,
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIDiscussionBoardArticle.ISummary;
 }

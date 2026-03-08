@@ -16,13 +16,12 @@ export namespace ShoppingMallCustomerSessionTransformer {
     return {
       select: {
         id: true,
+        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         ip: true,
         href: true,
         referrer: true,
-        user_agent: true,
         created_at: true,
         expired_at: true,
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_customer_sessionsFindManyArgs;
   }
@@ -34,13 +33,11 @@ export namespace ShoppingMallCustomerSessionTransformer {
       customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
-      ip: input.ip,
-      href: input.href ?? null,
-      referrer: input.referrer ?? null,
-      userAgent: input.user_agent ?? null,
-      createdAt: input.created_at.toISOString(),
-      expiredAt: input.expired_at.toISOString(),
-      validity: new Date() < input.expired_at,
+      ip: input.ip ?? undefined,
+      href: input.href ?? undefined,
+      referrer: input.referrer ?? undefined,
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
     };
   }
 }

@@ -1,11 +1,10 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
-import type { IDiscussionBoardArticleFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleFile";
-import type { IDiscussionBoardArticleImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleImage";
+import type { IDiscussionBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleAttachment";
+import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import type { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
-import type { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -13,63 +12,38 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_user_join } from "../../../authorize/authorize_user_join";
-import { authorize_user_login } from "../../../authorize/authorize_user_login";
-import { authorize_user_refresh } from "../../../authorize/authorize_user_refresh";
-import { generate_random_discussion_board_user_articles_create } from "../../../generate/generate_random_discussion_board_user_articles_create";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_discussion_board_member_articles_create } from "../../../generate/generate_random_discussion_board_member_articles_create";
 import { prepare_random_discussion_board_article } from "../../../prepare/prepare_random_discussion_board_article";
-import { prepare_random_discussion_board_article_file } from "../../../prepare/prepare_random_discussion_board_article_file";
-import { prepare_random_discussion_board_article_image } from "../../../prepare/prepare_random_discussion_board_article_image";
+import { prepare_random_discussion_board_article_attachment } from "../../../prepare/prepare_random_discussion_board_article_attachment";
 
 /**
- * Test that an article author can successfully delete their own article,
- * triggering complete cascade deletion of all related entities.
+ * Test that a member can successfully delete their own article.
+ *
+ * This test validates:
+ * 1. Article authors can delete their own articles
+ * 2. Deletion is performed successfully for the article owner
  */
 export async function test_api_article_deletion_by_author(
   connection: api.IConnection,
-): Promise<void> {
-  // 1. Create a new user account
-  const userConnection: api.IConnection = { host: connection.host };
-  const user = await authorize_user_join(userConnection, {});
-  typia.assert(user);
-  // 2. Create an article with optional attachments to verify cascade deletion
-  const article = await generate_random_discussion_board_user_articles_create(
-    userConnection,
-    {
-      body: {
-        title: RandomGenerator.paragraph({ sentences: 3 }),
-        content: RandomGenerator.content({ paragraphs: 3 }),
-        files: [
-          {
-            original_filename: "document.pdf",
-            storage_path: "file://uploads/document.pdf",
-            file_size: 1024,
-            mime_type: "application/pdf",
-          } satisfies IDiscussionBoardArticleFile.ICreate,
-        ],
-        images: [
-          {
-            original_filename: "image.png",
-            storage_path: "file://uploads/image.png",
-            file_size: 2048,
-            mime_type: "image/png",
-            width: 800,
-            height: 600,
-          } satisfies IDiscussionBoardArticleImage.ICreate,
-        ],
-        tags: ["cascade-test", "deletion-verification"],
-      },
-    },
+) {
+  // 1. Setup: Create a member connection and authenticate
+  const memberConnection: api.IConnection = { host: connection.host };
+  const member = await authorize_member_join(memberConnection, {});
+  typia.assert(member);
+  // 2. Create an article authored by the member
+  const article = await generate_random_discussion_board_member_articles_create(
+    memberConnection,
+    {},
   );
   typia.assert(article);
-  // 3. Delete the article using the author's authentication
-  await api.functional.discussionBoard.user.articles.erase(userConnection, {
+  // Verify the member is the author
+  TestValidator.equals("author is the member", article.author.id, member.id);
+  // 3. Delete the article by the author
+  // If this fails (wrong author, banned user, article not found), it will throw an error
+  await api.functional.discussionBoard.member.articles.erase(memberConnection, {
     articleId: article.id,
   });
-  // 4. Verify cascade deletion - attempting to delete non-existent article returns 404
-  await TestValidator.httpError("deleted article should return 404", 404, () =>
-    api.functional.discussionBoard.user.articles.erase(userConnection, {
-      articleId: article.id,
-    }),
-  );
 }

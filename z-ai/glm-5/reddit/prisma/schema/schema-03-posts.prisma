@@ -1,0 +1,229 @@
+/// Primary content entity created by members within communities, supporting
+/// three content types (text, link, image). Posts are the main discussion
+/// units that receive votes, comments, and can be reported. Each post has a
+/// vote score (upvotes minus downvotes), comment count, and belongs to
+/// exactly one community. Authors must be subscribed to the community to
+/// create posts. Posts support soft deletion to preserve thread context and
+/// audit trails.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where the post was created. Author must have an active
+  /// subscription to this community. {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// Member who created the post. The author's karma is affected by votes on
+  /// this post. {@link community_platform_members.id}.
+  author_id String
+  
+  /// Post title, required for all content types. Displayed in feeds and as the
+  /// primary identifier for the post.
+  title String
+  
+  /// Content type determining which content field is populated: 'text'
+  /// (text_content), 'link' (link_url), or 'image' (image_url). Immutable
+  /// after creation.
+  content_type String
+  
+  /// Text content for text-type posts. Null for link and image posts. Can be
+  /// edited by the author.
+  text_content String?
+  
+  /// URL for link-type posts. Null for text and image posts. Domain name is
+  /// displayed in feed summaries.
+  link_url String?
+  
+  /// Primary image URL for image-type posts. Null for text and link posts.
+  /// Multiple images are stored via post_images table.
+  image_url String?
+  
+  /// Vote score calculated as upvotes minus downvotes. Can be negative.
+  /// Updated in real-time as votes are cast, changed, or removed.
+  score Int
+  
+  /// Total count of comments and nested replies on this post. Updated as
+  /// comments are added or deleted.
+  comment_count Int
+  
+  /// Timestamp when the post was created. Used for sorting (New) and relative
+  /// time display.
+  created_at DateTime
+  
+  /// Timestamp when the post was last edited. Same as created_at if never
+  /// edited.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Null if the post is active.
+  /// Soft deletion preserves thread context and enables karma adjustment.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author community_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postImages community_platform_post_images[]
+  snapshots community_platform_post_snapshots[]
+  comments community_platform_comments[]
+  postReports community_platform_report_posts[]
+  votes community_platform_votes[]
+  imageFiles community_platform_files[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([created_at])
+  @@index([score, created_at])
+}
+
+/// Stores multiple images associated with a single post, enabling ordered
+/// image galleries for image-type posts. Each image references a file in the
+/// Files component for metadata tracking. Images are displayed in ascending
+/// order based on the order field. This table is a subsidiary entity managed
+/// through the parent post - users add or remove images when creating or
+/// editing posts, not through independent operations.
+///
+/// Relationships:
+/// - Each image belongs to exactly one {@link community_platform_posts}
+/// - Each image references exactly one {@link community_platform_files} for
+/// storage metadata
+///
+/// Usage: When displaying an image post, query images ordered by the order
+/// field to show the gallery in the intended sequence.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post this image belongs to. Each post can have multiple images
+  /// displayed as a gallery. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// The file record containing storage metadata for this image. References
+  /// the centralized file storage system. {@link community_platform_files.id}
+  community_platform_file_id String
+  
+  /// Display order of this image within the post's gallery. Images are shown
+  /// in ascending order (0, 1, 2...). Lower numbers appear first.
+  order Int
+  
+  /// Timestamp when this image was added to the post. Used for audit trail and
+  /// chronological tracking.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  file community_platform_files @relation(fields: [community_platform_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_platform_file_id])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, order], map: "community_platform_post_images_community_platform_post_fabdb32c")
+}
+
+/// Point-in-time snapshots of post content capturing the state after each
+/// edit for audit trail and edit history. Each snapshot represents a version
+/// of the post at a specific moment in time, preserving the content as it
+/// existed after a modification was made. The snapshot captures all editable
+/// fields including title, content type, type-specific content fields,
+/// score, comment count, and tracks the editor who made the change.
+/// Snapshots are append-only and maintain a complete history of all
+/// modifications to a post, enabling users and moderators to track content
+/// changes and attribute edits to specific users. References the parent
+/// {@link community_platform_posts.id} and the editor {@link
+/// community_platform_members.id} for complete audit trail.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for the post snapshot record.
+  id String @id
+  
+  /// Reference to the post that was snapshotted. Links this historical version
+  /// to the parent {@link community_platform_posts.id}.
+  post_id String
+  
+  /// Reference to the member who made the edit that triggered this snapshot.
+  /// Enables audit trail attribution of changes to specific users. Links to
+  /// {@link community_platform_members.id}.
+  editor_id String
+  
+  /// The title of the post at this point in time, as stored in the snapshot
+  /// for edit history.
+  title String
+  
+  /// The content type of the post (text, link, or image) at this point in
+  /// time. Content type cannot be changed during edits, so this reflects the
+  /// original type.
+  content_type String
+  
+  /// The text content for text-type posts at this point in time. Null for
+  /// non-text posts.
+  text_content String?
+  
+  /// The URL for link-type posts at this point in time. Null for non-link
+  /// posts.
+  link_url String?
+  
+  /// The image URL for image-type posts at this point in time. Null for
+  /// non-image posts.
+  image_url String?
+  
+  /// The vote score (upvotes minus downvotes) of the post at the time this
+  /// snapshot was created, preserved for historical record.
+  score Int
+  
+  /// The number of comments on the post at the time this snapshot was created,
+  /// preserved for historical record.
+  comment_count Int
+  
+  /// Timestamp when the parent post was last updated at the time of this
+  /// snapshot, serving as the version timestamp for this edit.
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was created, marking the moment the post
+  /// state was captured for edit history.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  editor community_platform_members @relation(fields: [editor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([editor_id])
+  @@index([post_id, created_at])
+}

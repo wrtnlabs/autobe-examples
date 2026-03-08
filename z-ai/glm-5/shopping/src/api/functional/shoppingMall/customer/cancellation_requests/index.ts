@@ -6,56 +6,182 @@ import typia, { tags } from "typia";
 import { IPageIShoppingMallCancellationRequest } from "../../../../structures/IPageIShoppingMallCancellationRequest";
 import { IShoppingMallCancellationRequest } from "../../../../structures/IShoppingMallCancellationRequest";
 
-export * as snapshots from "./snapshots/index";
-
 /**
- * Retrieve a filtered and paginated list of cancellation requests for order items belonging to the authenticated seller's products.
+ * Create a new cancellation request for an order item.
  *
- * This endpoint enables sellers to view and manage cancellation requests submitted by customers for their products. The operation automatically scopes results to only show cancellation requests for order items sold by the authenticated seller, ensuring proper data isolation between different sellers.
+ * This endpoint allows customers to request cancellation of individual order items that have not yet been shipped. The order item must have 'paid' status to be eligible for cancellation. Each order item can have only one active cancellation request at a time.
  *
- * Sellers can filter requests by status to focus on pending requests requiring action, or review historical approved and rejected requests. Each result includes essential order information, product details, customer reason, and current status to support seller decision-making for approval or rejection.
+ * The cancellation request captures the customer's reason for cancellation and initializes the status to 'pending'. The request then awaits response from the seller who owns the product associated with the order item. The seller can either approve or reject the cancellation request.
  *
- * Related operations:
- * - GET /sellers/me/dashboard shows pending cancellation count
- * - PUT /sellers/me/cancellations/{id}/approve to approve a request
- * - PUT /sellers/me/cancellations/{id}/reject to reject a request
+ * If the cancellation is approved by the seller, the order item status changes to 'cancelled', stock is restored via an inventory record, and a refund is processed for that item. The remaining items in the order continue processing normally. If all items in an order become cancelled, the entire order status becomes 'cancelled'.
  *
- * Business rules enforced:
- * - Results are automatically filtered to seller's own products
- * - Cancellation requests are only for items with 'paid' status
- * - Each request includes customer-provided reason for seller review
+ * When a seller responds to the cancellation request, a snapshot is automatically created to preserve the request state for audit trail and dispute resolution purposes.
+ *
+ * **Prerequisites**:
+ * - The customer must be authenticated
+ * - The order item must belong to the authenticated customer
+ * - The order item must have 'paid' status (not yet shipped)
+ * - No existing cancellation request for this order item
+ *
+ * **Related Operations**:
+ * - GET /cancellation-requests/{cancellationRequestId} - View cancellation request details
+ * - PUT /cancellation-requests/{cancellationRequestId}/approve - Seller approves cancellation
+ * - PUT /cancellation-requests/{cancellationRequestId}/reject - Seller rejects cancellation
  *
  * @param props.connection
- * @param props.body Search criteria for filtering cancellation requests including status and pagination parameters
+ * @param props.body Cancellation request creation data including the order item ID and reason for cancellation
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation steps:
+ * @x-autobe-specification Create a cancellation request for an order item.
  *
- * 1. Authentication & Authorization:
- *    - Verify JWT token and extract seller ID
- *    - Ensure user has SELLER role
- *    - Verify seller account is approved (approval_status = 'approved')
+ * **Validation Steps**:
+ * 1. Verify authenticated user is a customer
+ * 2. Verify the order item exists and belongs to the authenticated customer (join through orders table)
+ * 3. Verify the order item status is 'paid' (not shipped, delivered, cancelled, or refunded)
+ * 4. Verify no existing cancellation request exists for this order item (unique constraint on order_item_id)
+ * 5. Validate reason text is not empty
  *
- * 2. Query Building:
- *    - Start from shopping_mall_cancellation_requests table
- *    - JOIN with shopping_mall_order_items on order_item_id
- *    - JOIN with shopping_mall_sellers on shopping_mall_seller_id
- *    - Filter WHERE shopping_mall_sellers.id = authenticated seller ID
- *    - Apply optional status filter from request body
- *    - Apply pagination (limit/offset based on request parameters)
+ * **Database Operations**:
+ * 1. Begin transaction
+ * 2. Insert new record into shopping_mall_cancellation_requests table with:
+ *    - id: generated UUID
+ *    - shopping_mall_order_item_id: from request body
+ *    - shopping_mall_seller_id: null (set when seller responds)
+ *    - reason: from request body
+ *    - status: 'pending'
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ *    - responded_at: null
+ * 3. Commit transaction
+ * 4. Return created cancellation request with related order item and product information
  *
- * 3. Response Construction:
- *    - SELECT fields for summary: request id, order number, product name, variant SKU, quantity, customer reason, status, created_at, updated_at
- *    - JOIN with shopping_mall_orders for order_number
- *    - Include total count for pagination metadata
+ * **Response includes**:
+ * - Cancellation request details
+ * - Associated order item information
+ * - Product and variant details
+ * - Seller information
+ * @path /shoppingMall/customer/cancellation-requests
+ * @accessor api.functional.shoppingMall.customer.cancellation_requests.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Cancellation request creation data including the order item ID and reason for cancellation
+     */
+    body: IShoppingMallCancellationRequest.ICreate;
+  };
+  export type Body = IShoppingMallCancellationRequest.ICreate;
+  export type Response = IShoppingMallCancellationRequest;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/customer/cancellation-requests",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/customer/cancellation-requests";
+  export const random = (): IShoppingMallCancellationRequest =>
+    typia.random<IShoppingMallCancellationRequest>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a filtered and paginated list of cancellation requests for order items.
  *
- * 4. Data Transformation:
- *    - Map results to ISummary format
- *    - Calculate pagination metadata (current_page, total_pages, total_count)
+ * This operation provides comprehensive search capabilities for cancellation requests across the platform. Cancellation requests are created by customers to cancel individual order items before shipment (items with 'paid' status). Each request includes the customer's reason for cancellation and tracks its status through pending, approved, and rejected states.
  *
- * 5. Error Handling:
- *    - Return empty result set if no requests match filters
- *    - Validate status filter values (must be 'pending', 'approved', or 'rejected')
+ * **Access Control and Visibility**
+ *
+ * Access to cancellation requests is determined by user role:
+ * - Customers can only view their own cancellation requests, filtered through their order history
+ * - Sellers can view cancellation requests for products they own, enabling them to review and respond to customer requests
+ * - Administrators have full visibility across all cancellation requests for platform oversight
+ *
+ * **Search and Filtering Capabilities**
+ *
+ * The operation supports advanced filtering including status filtering (pending, approved, rejected), date range filtering for creation and response times, seller-specific filtering, and order item reference filtering. This enables efficient navigation through cancellation request history for all user types.
+ *
+ * **Relationship to Related Entities**
+ *
+ * Each cancellation request is linked to a specific order item (shopping_mall_order_items) that the customer wishes to cancel. The seller who responds to the request is recorded when they approve or reject. When a seller responds, a snapshot of the request state is automatically created (shopping_mall_cancellation_request_snapshots) for audit trail purposes.
+ *
+ * **Response Structure**
+ *
+ * Results are paginated and include summary information optimized for list displays. Each summary includes the request identifier, current status, reason text, creation timestamp, response timestamp (if applicable), and references to the related order item, seller, and product. Use GET /cancellation-requests/{cancellationRequestId} to retrieve full details of a specific cancellation request.
+ *
+ * @param props.connection
+ * @param props.body Search criteria and pagination parameters for cancellation request listing
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Query shopping_mall_cancellation_requests table with joins to shopping_mall_order_items, shopping_mall_sellers, shopping_mall_customers, and shopping_mall_products for comprehensive result data.
+ *
+ * Implementation steps:
+ * 1. Apply role-based data isolation: authenticated customer → filter by customer_id via order_items; authenticated seller → filter by seller_id; administrator → no filter (all requests visible)
+ * 2. Apply search filters from request body: status (exact match or array contains), shopping_mall_seller_id (exact), shopping_mall_order_item_id (exact), created_at range (from/to), responded_at range (from/to), reason text search (partial match)
+ * 3. Join with order_items to get product and customer references
+ * 4. Join with sellers to get shop_name for the responding seller
+ * 5. Join with products to get product name for the cancelled item
+ * 6. Calculate pagination with cursor-based approach for consistency
+ * 7. Sort by created_at descending (newest first) by default, with configurable sort options
+ * 8. Return summary objects with: cancellation request id, status, reason (possibly truncated), created_at, responded_at, order item reference, seller shop name, product name
+ *
+ * Edge cases:
+ * - seller_id is null for pending requests (no response yet)
+ * - Handle deleted products/sellers gracefully (show 'deleted' placeholders)
+ * - Validate date range filters (from <= to)
+ * - Ensure pagination parameters are within bounds
  * @path /shoppingMall/customer/cancellation-requests
  * @accessor api.functional.shoppingMall.customer.cancellation_requests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -85,7 +211,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria for filtering cancellation requests including status and pagination parameters
+     * Search criteria and pagination parameters for cancellation request listing
      */
     body: IShoppingMallCancellationRequest.IRequest;
   };
@@ -134,45 +260,41 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific cancellation request including its current status, reason, seller response, and complete snapshot history.
+ * Retrieve detailed information about a specific cancellation request for the authenticated customer.
  *
- * This endpoint provides comprehensive cancellation request details for authorized users. The cancellation request system allows customers to request cancellation for order items that have not yet been shipped (status: paid). Each cancellation request captures the customer's reason, tracks the approval workflow through pending/approved/rejected statuses, and records seller responses.
+ * This endpoint allows customers to view their own cancellation requests submitted for order items in their orders. The response includes the cancellation request details: the reason text provided by the customer, current status (pending, approved, or rejected), creation timestamp, and seller response timestamp if applicable.
  *
- * Access is granted to:
- * - The customer who initiated the cancellation request
- * - The seller who owns the order item being cancelled
- * - Platform administrators with oversight permissions
+ * **Authorization**
+ * Only the customer who owns the order containing the order item can access this cancellation request. The system verifies ownership through the relationship chain: cancellation request → order item → order → customer.
  *
- * The response includes the cancellation request details along with related order item information (product name, variant details, quantity) and all snapshots recording state transitions for audit and dispute resolution purposes.
+ * **Related Operations**
+ * Sellers view cancellation requests for their products through seller-specific endpoints. Administrators access all cancellation requests through administrator endpoints for dispute investigation and audit purposes.
  *
- * Related operations:
- * - POST /customers/me/order-items/{orderItemId}/cancellation - Create cancellation request
- * - PUT /sellers/me/cancellations/{cancellationRequestId}/approve - Seller approves request
- * - PUT /sellers/me/cancellations/{cancellationRequestId}/reject - Seller rejects request
+ * **Database References**
+ * The cancellation request (shopping_mall_cancellation_requests) references the order item (shopping_mall_order_items) being cancelled and optionally the seller (shopping_mall_sellers) who responds with approval or rejection. The order item links to the order (shopping_mall_orders), establishing customer ownership.
  *
  * @param props.connection
  * @param props.cancellationRequestId Unique identifier of the cancellation request to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_cancellation_requests table by ID, joining with shopping_mall_cancellation_request_snapshots (ordered by created_at ASC) and shopping_mall_order_items to include order item context.
+ * @x-autobe-specification Retrieve a single cancellation request by ID with full details.
  *
- * Authorization logic:
- * 1. Verify the requesting user has permission to view this request:
- *    - If customer: check customer_id matches authenticated customer
- *    - If seller: check order_item's seller_id matches authenticated seller
- *    - If admin: always allow access
+ * Implementation steps:
+ * 1. Validate the cancellationRequestId parameter as valid UUID format
+ * 2. Query shopping_mall_cancellation_requests table by primary key
+ * 3. If not found, return 404 Not Found error
+ * 4. Verify authorization:
+ *    - For customers: check if the cancellation request belongs to an order item in their order (via order → customer relationship)
+ *    - For sellers: check if they own the product associated with the order item
+ *    - For administrators: allow access
+ * 5. Join with shopping_mall_order_items to get order item details
+ * 6. Join with shopping_mall_orders to get order context
+ * 7. Join with shopping_mall_sellers to get seller response information
+ * 8. Return the complete cancellation request data with all related entity references
  *
- * Return 404 if cancellation request not found.
- * Return 403 if user lacks permission to view this request.
- *
- * Response payload should include:
- * - All cancellation request fields (id, reason, status, seller_response, rejection_reason, created_at, updated_at)
- * - Related order item summary (product name, variant SKU, quantity, unit price)
- * - Array of snapshots sorted chronologically (earliest first)
- *
- * Database query should use Prisma include for relations:
- * - Include orderItem with select for display fields
- * - Include snapshots with orderBy created_at ASC
+ * Error handling:
+ * - 404 if cancellation request not found
+ * - 403 if user lacks permission to view this request
  * @path /shoppingMall/customer/cancellation-requests/:cancellationRequestId
  * @accessor api.functional.shoppingMall.customer.cancellation_requests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

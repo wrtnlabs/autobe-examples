@@ -14,9 +14,11 @@ import { ShoppingMallCustomerSessionTransformer } from "../transformers/Shopping
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function getShoppingMallCustomerSessionsSessionId(props: {
   customer: CustomerPayload;
-  sessionId: string;
+  sessionId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCustomerSession> {
   const session =
     await MyGlobal.prisma.shopping_mall_customer_sessions.findUniqueOrThrow({
@@ -25,6 +27,9 @@ export async function getShoppingMallCustomerSessionsSessionId(props: {
     });
   if (session.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
+  }
+  if (new Date() > session.expired_at) {
+    throw new HttpException("Session expired", 401);
   }
   return await ShoppingMallCustomerSessionTransformer.transform(session);
 }

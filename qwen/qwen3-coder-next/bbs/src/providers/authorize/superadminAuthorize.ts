@@ -12,10 +12,10 @@ export async function superadminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using appropriate field based on schema
   const superadmin = await MyGlobal.prisma.discussion_board_super_admins.findFirst({
     where: {
-      id: payload.id, // Standalone actor - direct ID lookup
+      id: payload.id,
+      deleted_at: null,
     },
   });
 

@@ -14,7 +14,8 @@ export namespace DiscussionBoardTagAtSummaryTransformer {
     return {
       select: {
         id: true,
-        value: true,
+        name: true,
+        created_at: true,
       },
     } satisfies Prisma.discussion_board_tagsFindManyArgs;
   }
@@ -23,7 +24,8 @@ export namespace DiscussionBoardTagAtSummaryTransformer {
   ): Promise<IDiscussionBoardTag.ISummary> {
     return {
       id: input.id,
-      value: input.value,
+      name: input.name,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

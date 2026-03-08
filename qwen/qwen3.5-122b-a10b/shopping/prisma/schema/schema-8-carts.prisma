@@ -1,0 +1,55 @@
+/// Shopping cart items linking customers to product variants with quantities
+/// and availability status. Customers can add specific variants to their
+/// cart, update quantities, and receive stock warnings. Cart items are
+/// removed after successful order placement. This table supports the
+/// pre-purchase product selection and quantity management workflow.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who owns this cart item. {@link ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Product variant added to cart. {@link ecommerce_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Quantity of this variant in the cart. Must be positive integer.
+  quantity Int
+  
+  /// Whether the variant is still available (in stock and not deleted). Set to
+  /// false when variant goes out of stock or is deleted by seller.
+  is_available Boolean
+  
+  /// Timestamp when this item was added to the cart.
+  added_at DateTime
+  
+  /// Timestamp when this cart item record was created.
+  created_at DateTime
+  
+  /// Timestamp when the quantity was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was soft-deleted (e.g., during checkout or
+  /// manual removal).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_variant_id])
+  @@unique([customer_id, product_variant_id])
+  @@index([customer_id, added_at])
+}

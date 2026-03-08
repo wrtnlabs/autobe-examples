@@ -1,0 +1,145 @@
+/// User applications for elevated administrator privileges with status
+/// tracking.
+///
+/// This table stores administrator privilege requests submitted by members
+/// who want to become administrators.
+/// Each request includes a reason text explaining the user's qualification
+/// and motivation.
+///
+/// Key characteristics:
+/// - Only members (regular users) can submit administrator requests
+/// - Requests follow a status workflow: pending → approved or rejected
+/// - Super administrators can approve requests to grant administrator
+/// privileges
+/// - Self-protection prevents users from approving their own requests
+/// - A user can have only one active (pending) request at a time
+/// - All requests are visible to super administrators for review
+///
+/// Relationships:
+/// - Belongs to discussion_board_members (the requesting user)
+/// - Optionally processed by discussion_board_super_admins (the approving
+/// super admin)
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who submitted the administrator request. {@link
+  /// discussion_board_members.id}.
+  submitter_member_id String
+  
+  /// Super administrator who processed the request (approval or rejection).
+  /// {@link discussion_board_super_admins.id}.
+  processed_by_super_admin_id String?
+  
+  /// User's explanation for why they should become administrator. Must be
+  /// non-empty.
+  reason String
+  
+  /// Current status of the administrator request (pending, approved, or
+  /// rejected).
+  status String
+  
+  /// Timestamp when the administrator request was submitted. Always required.
+  submitted_at DateTime
+  
+  /// Timestamp when the request was processed (approved or rejected). Nullable
+  /// if pending.
+  processed_at DateTime?
+  
+  /// Reason provided by super administrator when rejecting the request.
+  /// Nullable for pending or approved requests.
+  rejection_reason String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  submitter discussion_board_members @relation(fields: [submitter_member_id], references: [id], onDelete: Cascade)
+  processor discussion_board_super_admins? @relation(fields: [processed_by_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([processed_by_super_admin_id], map: "discussion_board_administrator_requests_processed_by_s_4556a281")
+  // spellchecker: ignore-next-line
+  @@unique([submitter_member_id, status], map: "discussion_board_administrator_requests_submitter_memb_655d53d4")
+  @@index([submitted_at])
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([submitter_member_id, submitted_at], map: "discussion_board_administrator_requests_submitter_memb_83fc1955")
+}
+
+/// User banning actions with reason, timestamp, and status tracking. Records
+/// when users are banned by administrators, including ban duration and
+/// reasons. Banned users cannot log in but their existing content remains
+/// visible. This is a primary table with full CRUD operations for
+/// administrative workflows.
+///
+/// @namespace Administrative
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user being banned. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// The administrator who created this ban record. {@link
+  /// discussion_board_admins.id}.
+  administrator_id String
+  
+  /// Reason for the user ban. Required field with detailed explanation from
+  /// the administrator.
+  ban_reason String
+  
+  /// Reason for unban when user is unbanned. Optional field explaining why the
+  /// ban was lifted.
+  unban_reason String?
+  
+  /// Timestamp when the ban was created. Required field indicating when the
+  /// user was banned.
+  banned_at DateTime
+  
+  /// Timestamp when the user was unbanned. Optional field indicating when the
+  /// ban was lifted.
+  unbanned_at DateTime?
+  
+  /// Record creation timestamp. Standard field for tracking when this record
+  /// was first created.
+  created_at DateTime
+  
+  /// Record last update timestamp. Standard field for tracking when this
+  /// record was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Nullable field indicating when this record was
+  /// soft deleted, if ever.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  administrator discussion_board_admins @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id, deleted_at], map: "discussion_board_ban_records_discussion_board_member_i_3d624ca2")
+  @@index([discussion_board_member_id])
+  @@index([administrator_id])
+  @@index([banned_at])
+  @@index([created_at])
+}
