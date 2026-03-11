@@ -14,83 +14,74 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardAuthAdminJoin(props: {
+  ip: string;
   body: IDiscussionBoardAdmin.IJoin;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  // Check for duplicate email
+  // Check for existing admin with same email
   const existing = await MyGlobal.prisma.discussion_board_admins.findFirst({
     where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // Extract IP address from body or use default
-  const ip = props.body.ip ?? "0.0.0.0";
-  const now = new Date();
+  // Create admin record with default 'regular' grade
   const adminId = v4();
-  // Create administrator record
+  const now = new Date().toISOString();
   const admin = await MyGlobal.prisma.discussion_board_admins.create({
     data: {
       id: adminId,
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
-      display_name: props.body.display_name,
-      created_at: now,
-      updated_at: now,
+      admin_grade: "regular",
+      created_at: new Date(now),
+      updated_at: new Date(now),
       deleted_at: null,
     },
     ...DiscussionBoardAdminTransformer.select(),
   });
-  // Calculate token expiration times
+  // Create session record
+  const sessionId = v4();
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const sessionId = v4();
-  // Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "admin",
-      id: admin.id,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "admin",
-      id: admin.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // Create session record with actual tokens using relation connection
-  await MyGlobal.prisma.discussion_board_admin_sessions.create({
+  const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
     data: {
       id: sessionId,
-      admin: { connect: { id: admin.id } },
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      ip: ip,
-      user_agent: props.body.href,
-      referrer: props.body.referrer ?? null,
-      created_at: now,
+      discussion_board_admin_id: adminId,
+      access_token: "", // Will be set by JWT
+      refresh_token: "", // Will be set by JWT
+      ip: props.ip,
+      href: "/discussionBoard/auth/admin/join", // Set the endpoint path
+      referrer: null,
+      user_agent: null,
+      created_at: new Date(now),
+      updated_at: new Date(now),
       expired_at: accessExpires,
-      last_accessed_at: now,
     },
   });
-  // Transform admin data and return IAuthorized response
-  const transformedAdmin =
-    await DiscussionBoardAdminTransformer.transform(admin);
+  // Generate JWT tokens
+  const tokenPayload = {
+    type: "admin",
+    id: adminId,
+    session_id: sessionId,
+    created_at: now,
+  };
+  const token = {
+    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "1h",
+      issuer: "autobe",
+    }),
+    refresh: jwt.sign(
+      { ...tokenPayload, tokenType: "refresh" },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  };
+  // Return IAuthorized response
+  const adminData = await DiscussionBoardAdminTransformer.transform(admin);
   return {
-    ...transformedAdmin,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
-    },
-  } satisfies IDiscussionBoardAdmin.IAuthorized;
+    ...adminData,
+    token,
+  };
 }

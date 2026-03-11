@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -21,28 +20,30 @@ export async function postEconomicPoliticalBoardAdminSections(props: {
   admin: AdminPayload;
   body: IEconomicPoliticalBoardSection.ICreate;
 }): Promise<IEconomicPoliticalBoardSection> {
-  const trimmedName = props.body.name.trim();
-  if (trimmedName.length === 0) {
-    throw new HttpException("Section name cannot be empty", 400);
+  // Validate name is not empty or whitespace-only
+  if (!props.body.name || props.body.name.trim().length === 0) {
+    throw new HttpException("Name cannot be empty or whitespace-only", 400);
   }
-  const existingSection =
+  // Validate description is present (required field per operation specification)
+  if (props.body.description === undefined) {
+    throw new HttpException("Description is required", 400);
+  }
+  // Check for duplicate section name (case-sensitive unique constraint)
+  const existing =
     await MyGlobal.prisma.economic_political_board_sections.findUnique({
-      where: { name: trimmedName },
+      where: { name: props.body.name },
     });
-  if (existingSection !== null && existingSection.deleted_at === null) {
+  if (existing !== null) {
     throw new HttpException("Section name already exists", 409);
   }
-  const createdSection =
+  // Create section using collector for data transformation
+  const created =
     await MyGlobal.prisma.economic_political_board_sections.create({
       data: await EconomicPoliticalBoardSectionCollector.collect({
-        body: {
-          name: trimmedName,
-          description: props.body.description,
-        },
+        body: props.body,
       }),
       ...EconomicPoliticalBoardSectionTransformer.select(),
     });
-  return await EconomicPoliticalBoardSectionTransformer.transform(
-    createdSection,
-  );
+  // Transform database record to API response
+  return await EconomicPoliticalBoardSectionTransformer.transform(created);
 }

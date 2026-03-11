@@ -15,57 +15,37 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEconomicPoliticalBoardAuthGuestRefresh(props: {
   body: IEconomicPoliticalBoardGuest.IRefresh;
 }): Promise<IEconomicPoliticalBoardGuest.IAuthorized> {
-  // 1. Verify refresh token
-  const verifyResult = typia.assert<{
+  let decoded: {
     id: string;
     session_id: string;
-    type: string;
-    created_at: string;
-  }>(
-    jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+    type: "guest";
+  };
+  try {
+    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }),
-  );
-  const decoded: {
-    id: string;
-    session_id: string;
-    type: string;
-    created_at: string;
-  } = verifyResult;
-  // 2. Validate type is guest
+    }) as {
+      id: string;
+      session_id: string;
+      type: "guest";
+    };
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 401);
   }
-  // 3. Check if user is banned
-  const banRecord =
-    await MyGlobal.prisma.economic_political_board_ban_records.findFirst({
-      where: {
-        user_id: decoded.id,
-      },
-    });
-  if (banRecord !== null) {
-    throw new HttpException("User account has been banned", 401);
-  }
-  // 4. Verify user exists
-  await MyGlobal.prisma.economic_political_board_administrator_roles.findUniqueOrThrow(
-    {
-      where: { id: decoded.id },
-    },
-  );
-  // 5. Generate new tokens (SAME session_id)
   const accessExpires: string & tags.Format<"date-time"> = new Date(
     Date.now() + 15 * 60 * 1000,
   ).toISOString();
   const refreshExpires: string & tags.Format<"date-time"> = new Date(
     Date.now() + 7 * 24 * 60 * 60 * 1000,
   ).toISOString();
-  const now: string & tags.Format<"date-time"> = new Date().toISOString();
   const access: string = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now,
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "15m", issuer: "autobe" },
@@ -76,20 +56,19 @@ export async function postEconomicPoliticalBoardAuthGuestRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now,
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Return response
   return {
-    id: decoded.id as string & tags.Format<"uuid">,
-    expired_at: accessExpires,
+    id: decoded.id,
     token: {
       access,
       refresh,
-      refreshable_until: refreshExpires,
       expired_at: accessExpires,
-    } satisfies IAuthorizationToken,
-  } satisfies IEconomicPoliticalBoardGuest.IAuthorized;
+      refreshable_until: refreshExpires,
+    },
+    authorized: true,
+  } as IEconomicPoliticalBoardGuest.IAuthorized;
 }

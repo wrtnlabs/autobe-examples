@@ -1,0 +1,905 @@
+/// Main table storing user applications to become administrators.
+///
+/// Each record represents a single request submitted by a member user
+/// seeking administrator privileges. The request includes a reason text
+/// explaining why the user wants to become an administrator and tracks the
+/// current status of the request (pending, approved, or rejected).
+///
+/// When a user submits an admin request, it remains in pending status until
+/// a super administrator reviews and makes a decision. Approved requests
+/// lead to administrator role assignment, while rejected requests are closed
+/// with the reason recorded in the decision table. Users can only have one
+/// active pending request at a time, enforced at application level.
+///
+/// All requests maintain audit trail with creation timestamps and support
+/// soft deletion for user withdrawal or administrative cleanup.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member user who submitted the admin request. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reason text provided by the member explaining why they want to become an
+  /// administrator. Required for submission and used by super administrators
+  /// during review.
+  reason String
+  
+  /// Current status of the admin request. Valid values: 'pending' (awaiting
+  /// review), 'approved' (request granted), 'rejected' (request denied).
+  status String
+  
+  /// Timestamp when the admin request was submitted by the member user.
+  created_at DateTime
+  
+  /// Timestamp when the admin request was last modified, including status
+  /// changes or updates.
+  updated_at DateTime
+  
+  /// Timestamp when the admin request was soft deleted, either by user
+  /// withdrawal or administrative cleanup. Null indicates active request.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decision discussion_board_admin_request_decisions?
+  administrativeHistories discussion_board_administrative_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_admin_requests_discussion_board_membe_27ee4b1e")
+  @@index([status, created_at])
+}
+
+/// Captures super administrator decisions on admin requests submitted by
+/// users seeking administrator privileges. Each record represents a final
+/// decision (approval or rejection) on an admin request, with timestamp and
+/// optional rejection justification. This table serves as the official
+/// governance record for administrator promotion decisions and provides
+/// audit trail for platform leadership transitions.
+///
+/// The decision records are maintained separately from the requests
+/// themselves to preserve immutable audit history. Super administrators
+/// exercise ultimate authority over administrator promotions as described in
+/// the governance transition mechanism. Each decision must reference exactly
+/// one admin request and the super administrator who made the decision,
+/// ensuring accountability and transparency in platform leadership changes.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_admin_request_decisions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The admin request being decided upon. {@link
+  /// discussion_board_admin_requests.id}
+  admin_request_id String
+  
+  /// Super administrator who made the decision. {@link
+  /// discussion_board_super_admins.id}
+  super_admin_id String
+  
+  /// The decision made on the admin request. Must be either 'approved' or
+  /// 'rejected' as specified in the administrator request approval workflow
+  /// requirements. Approval grants regular administrator privileges, rejection
+  /// keeps the user as regular member.
+  decision String
+  
+  /// Optional reason text for rejection decisions. Only populated when
+  /// decision is 'rejected', providing explanation for the denial of
+  /// administrator promotion request. Required when rejecting to maintain
+  /// transparency and guidance for future requests.
+  rejection_reason String?
+  
+  /// Timestamp when the decision was recorded. Captures the exact date and
+  /// time the super administrator made the final decision on the admin
+  /// request, serving as official decision timestamp for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the decision record was last updated. Tracks any
+  /// modifications to the decision metadata, though decisions should be
+  /// immutable after creation to preserve audit integrity.
+  updated_at DateTime
+  
+  /// Timestamp when the decision record was soft-deleted. Enables soft
+  /// deletion capability while preserving audit trail integrity for historical
+  /// compliance.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  adminRequest discussion_board_admin_requests @relation(fields: [admin_request_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([admin_request_id])
+  // spellchecker: ignore-next-line
+  @@index([super_admin_id, created_at], map: "discussion_board_admin_request_decisions_super_admin_i_7806f0ed")
+  // spellchecker: ignore-next-line
+  @@index([decision, created_at], map: "discussion_board_admin_request_decisions_decision_crea_371477b6")
+}
+
+/// Records of user bans including reason, duration, banning administrator,
+/// and ban status.
+///
+/// This table tracks all user bans within the platform, supporting both
+/// temporary bans with expiration dates and permanent bans. Each ban
+/// includes the banned user reference, banning administrator, detailed
+/// reason text, and timing information. The table maintains the current
+/// status of each ban (active, expired, manually removed) and provides
+/// comprehensive audit trail for administrative oversight.
+///
+/// User bans prevent login access while preserving existing content
+/// visibility. Administrators can view the ban reason, duration, and banning
+/// details for each banned user. {@link discussion_board_members.id}
+/// references the banned user, while {@link discussion_board_admins.id} or
+/// {@link discussion_board_super_admins.id} references the administrator who
+/// performed the ban.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_user_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned member's identity. {@link discussion_board_members.id}.
+  member_id String
+  
+  /// Administrator who performed the ban action. {@link
+  /// discussion_board_admins.id} for regular administrators or {@link
+  /// discussion_board_super_admins.id} for super administrators.
+  admin_id String
+  
+  /// Detailed explanation for why the user was banned, visible to
+  /// administrators for review and audit purposes.
+  reason String
+  
+  /// Current status of the ban: 'active' (currently preventing login),
+  /// 'expired' (duration-based ban that has ended), 'removed' (manually
+  /// un-banned by administrator).
+  status String
+  
+  /// Timestamp when the ban was initially imposed and became effective.
+  banned_at DateTime
+  
+  /// Expiration timestamp for temporary bans; null indicates a permanent ban
+  /// with no automatic expiration.
+  expires_at DateTime?
+  
+  /// Timestamp when an active ban was manually removed by an administrator;
+  /// null for bans that have not been manually lifted.
+  unbanned_at DateTime?
+  
+  /// Timestamp when this ban record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this ban record was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail preservation; null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administrativeHistories discussion_board_administrative_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, status, banned_at])
+  @@index([admin_id, banned_at])
+  @@index([status, expires_at, banned_at])
+}
+
+/// Tracks administrator role assignments and role transitions between
+/// member, administrator, and super administrator statuses.
+///
+/// Each assignment records the role change with previous and new roles,
+/// assignment type, reason, and temporal audit information. This table
+/// serves as an audit trail for platform governance decisions and supports
+/// tracking of administrator promotions, demotions, and initial assignments.
+/// It works in conjunction with {@link discussion_board_admin_requests} for
+/// request-based promotions and {@link discussion_board_audit_logs} for
+/// comprehensive administrative auditing.
+///
+/// Uses polymorphic ownership pattern with subtype tables for different
+/// actor relationships.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user's role before this assignment. Possible values: 'member',
+  /// 'admin', 'super_admin'. For initial administrator assignments from
+  /// member, this would be 'member'.
+  old_role String
+  
+  /// The user's role after this assignment. Possible values: 'member',
+  /// 'admin', 'super_admin'. This reflects the actual role change that
+  /// occurred.
+  new_role String
+  
+  /// The type of assignment performed. Values: 'promotion' (moving to higher
+  /// role), 'demotion' (moving to lower role), 'initial' (first-time
+  /// assignment to admin), 'system' (system-initiated change).
+  assignment_type String
+  
+  /// The rationale for the role change, similar to ban reasons. Should
+  /// document why this assignment was made.
+  reason String?
+  
+  /// Timestamp when this assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this assignment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this assignment record was soft-deleted. Allows
+  /// maintaining audit trail while removing from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administrativeHistories discussion_board_administrative_histories[]
+  memberAdministratorAssignment discussion_board_administrator_assignment_to_members?
+  assignmentToAdmin discussion_board_administrator_assignment_to_admins?
+  assignmentToSuperAdmin discussion_board_administrator_assignment_to_super_admins?
+  assignmentByMember discussion_board_administrator_assignment_by_members?
+  performedByAdmin discussion_board_administrator_assignment_by_admins?
+  assignerSuperAdmin discussion_board_administrator_assignment_by_super_admins?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([old_role, new_role, created_at], map: "discussion_board_administrator_assignments_old_role_ne_b2d71dbb")
+  @@index([created_at])
+}
+
+/// Comprehensive audit trail of all administrative actions performed by
+/// administrators and super administrators.
+///
+/// Records every administrative action including section management, content
+/// moderation, user banning, admin request decisions, and administrator role
+/// changes. Each entry tracks the actor who performed the action, the
+/// targeted entity, action specifics, and contextual details like IP address
+/// and user agent. Supports full audit capability for platform governance
+/// oversight, compliance tracking, and administrator performance evaluation.
+///
+/// Audit logs are immutable records that provide complete visibility into
+/// administrative decision-making processes. They enable super
+/// administrators to review regular administrator activities, ensure
+/// consistent application of platform policies, and maintain accountability
+/// for all governance actions. Each log entry preserves the context in which
+/// decisions were made, including timestamps, actor identification, and
+/// action rationale.
+///
+/// **Key Relationships:**
+/// - References {@link discussion_board_admins} and {@link
+/// discussion_board_super_admins} as actors via polymorphic
+/// actor_type+actor_id
+/// - References administrative targets via polymorphic target_type+target_id
+/// to entities like {@link discussion_board_sections}, {@link
+/// discussion_board_articles}, {@link discussion_board_comments}, {@link
+/// discussion_board_members}, etc.
+/// - Linked to {@link discussion_board_administrative_histories} for
+/// comprehensive governance timeline
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of administrator who performed the action. Values: "admin" for
+  /// regular administrators, "super_admin" for super administrators.
+  /// Determines which actor table to reference via actor_id.
+  actor_type String
+  
+  /// Identifier of the administrator who performed the action. References
+  /// either {@link discussion_board_admins.id} or {@link
+  /// discussion_board_super_admins.id} based on actor_type.
+  actor_id String
+  
+  /// Type of entity that was affected by the administrative action. Values:
+  /// "section", "article", "comment", "user", "admin_request",
+  /// "administrator_assignment", "user_ban". Determines which target table to
+  /// reference via target_id.
+  target_type String
+  
+  /// Identifier of the entity that was affected by the administrative action.
+  /// References the appropriate target entity based on target_type.
+  target_id String
+  
+  /// Type of administrative action performed. Values: "create_section",
+  /// "edit_section", "delete_section", "delete_article", "delete_comment",
+  /// "ban_user", "unban_user", "approve_admin_request",
+  /// "reject_admin_request", "promote_administrator", "demote_administrator".
+  /// Categorizes the nature of the administrative action for querying and
+  /// reporting.
+  action_type String
+  
+  /// Detailed description or rationale for the administrative action. Includes
+  /// reason for banning, justification for content deletion, or explanation
+  /// for admin request decision. Provides context for audit review and policy
+  /// compliance assessment.
+  action_details String?
+  
+  /// IP address from which the administrative action was performed. Used for
+  /// security auditing and identifying suspicious patterns across multiple
+  /// administrators or locations.
+  ip_address String?
+  
+  /// User agent string of the client used to perform the administrative
+  /// action. Helps identify the device, browser, and operating system used for
+  /// governance activities.
+  user_agent String?
+  
+  /// URL or endpoint where the administrative action was triggered from.
+  /// Provides technical context about the administrative interface used for
+  /// the action.
+  href String?
+  
+  /// Timestamp when the administrative action was recorded. Represents when
+  /// the governance decision was implemented in the system.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated. Typically matches
+  /// created_at as audit logs are immutable, but preserved for consistency
+  /// with temporal field patterns.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administrativeHistory discussion_board_administrative_histories?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([actor_type, actor_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([target_type, target_id, created_at], map: "discussion_board_audit_logs_target_type_target_id_crea_f1d99661")
+  @@index([action_type, created_at])
+  @@index([created_at])
+}
+
+/// Comprehensive historical record of all administrative decisions, status
+/// changes, and role transitions for platform governance oversight.
+///
+/// This table serves as the audit trail for administrative actions across
+/// the platform, capturing changes to admin requests, user bans,
+/// administrator assignments, and other administrative states. Each record
+/// represents a point-in-time change in administrative status, allowing
+/// super administrators to review decision history, track role transitions,
+/// and monitor platform governance activities.
+///
+/// Key relationships include {@link discussion_board_admin_requests} for
+/// request status changes, {@link discussion_board_user_bans} for ban
+/// modifications, {@link discussion_board_administrator_assignments} for
+/// role transitions, and {@link discussion_board_audit_logs} for action
+/// correlation.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrative_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action referenced in this historical
+  /// record. {@link discussion_board_admins.id}.
+  administrator_id String
+  
+  /// Admin request that was subject to the status change, if applicable. Can
+  /// be null for non-request-related actions. {@link
+  /// discussion_board_admin_requests.id}.
+  admin_request_id String?
+  
+  /// User ban record that was subject to modification, if applicable. Can be
+  /// null for non-ban-related actions. {@link discussion_board_user_bans.id}.
+  user_ban_id String?
+  
+  /// Administrator assignment record that was created or modified, if
+  /// applicable. Can be null for non-assignment-related actions. {@link
+  /// discussion_board_administrator_assignments.id}.
+  administrator_assignment_id String?
+  
+  /// Corresponding audit log entry for this historical action, providing
+  /// additional context. {@link discussion_board_audit_logs.id}.
+  audit_log_id String?
+  
+  /// Type of administrative action performed (e.g., 'request_approval',
+  /// 'request_rejection', 'user_ban', 'user_unban', 'role_promotion',
+  /// 'role_demotion', 'status_change').
+  action_type String
+  
+  /// Type of entity that was the target of this action (e.g., 'admin_request',
+  /// 'user_ban', 'administrator', 'system_config').
+  target_type String
+  
+  /// UUID identifier of the target entity, used in conjunction with
+  /// target_type to reference specific records.
+  target_id String
+  
+  /// Detailed description of the administrative action and its context for
+  /// historical reference.
+  description String
+  
+  /// Previous status/value before the administrative action was taken.
+  /// Provides historical context for the change.
+  previous_status String?
+  
+  /// New status/value after the administrative action was taken. Captures the
+  /// outcome of the administrative decision.
+  new_status String?
+  
+  /// Timestamp when this historical record was created. Represents when the
+  /// administrative action was logged.
+  created_at DateTime
+  
+  /// Timestamp when this historical record was last updated. Maintains data
+  /// freshness for oversight activities.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator discussion_board_admins @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  adminRequest discussion_board_admin_requests? @relation(fields: [admin_request_id], references: [id], onDelete: Cascade)
+  userBan discussion_board_user_bans? @relation(fields: [user_ban_id], references: [id], onDelete: Cascade)
+  administratorAssignment discussion_board_administrator_assignments? @relation(fields: [administrator_assignment_id], references: [id], onDelete: Cascade)
+  auditLog discussion_board_audit_logs? @relation(fields: [audit_log_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([audit_log_id])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "discussion_board_administrative_histories_administrato_a0c9202f")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "discussion_board_administrative_histories_action_type__5f2f520e")
+  // spellchecker: ignore-next-line
+  @@index([target_type, target_id], map: "discussion_board_administrative_histories_target_type__dc0e92b3")
+  // spellchecker: ignore-next-line
+  @@index([admin_request_id, created_at], map: "discussion_board_administrative_histories_admin_reques_543068d0")
+  // spellchecker: ignore-next-line
+  @@index([user_ban_id, created_at], map: "discussion_board_administrative_histories_user_ban_id__3a0a9038")
+  // spellchecker: ignore-next-line
+  @@index([administrator_assignment_id, created_at], map: "discussion_board_administrative_histories_administrato_1f5a41a4")
+}
+
+/// Subtype table implementing polymorphic ownership pattern for
+/// administrator assignments where the assignment recipient is a member
+/// actor. Links administrator assignments to member accounts and their
+/// authentication sessions.
+///
+/// This table serves as a concrete subtype in the polymorphic ownership
+/// design, establishing the specific relationship between an administrator
+/// assignment and the member actor who receives the role assignment. Each
+/// record corresponds to exactly one administrator assignment instance and
+/// exactly one member actor, with the foreign key to member sessions
+/// providing audit trail context for when the assignment was created or
+/// modified.
+///
+/// Used by the system to track role transitions for community members who
+/// have been promoted to administrator status through the admin request
+/// approval process. Maintains 1:1 relationship with the parent {@link
+/// discussion_board_administrator_assignments} table while linking to the
+/// specific actor type in the authentication system.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_to_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent administrator assignment record. {@link
+  /// discussion_board_administrator_assignments.id}
+  discussion_board_administrator_assignment_id String
+  
+  /// Reference to the member actor who receives the administrator assignment.
+  /// {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the member session active when this assignment record was
+  /// created or modified. Provides audit trail context. {@link
+  /// discussion_board_member_sessions.id}
+  discussion_board_member_session_id String
+  
+  /// Timestamp when this assignment subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this assignment subtype record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  assignment discussion_board_administrator_assignments @relation(fields: [discussion_board_administrator_assignment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_administrator_assignment_to_members_d_afe9872e")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_assignment_id], map: "discussion_board_administrator_assignment_to_members_d_fa40b205")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_administrator_assignment_to_members_d_847e36e1")
+}
+
+/// Subtype table linking administrator assignments to admin actors who
+/// receive role assignments.
+///
+/// This table implements the polymorphic ownership pattern for administrator
+/// assignments where the recipient is an admin actor. Each record
+/// establishes a 1:1 relationship between an administrator assignment and a
+/// specific admin account receiving administrative privileges. The table
+/// contains admin-specific metadata and session context for role assignment
+/// auditing and tracking.
+///
+/// Admin actors in this context are regular administrators who have already
+/// been promoted to administrative roles and are now receiving additional
+/// privilege assignments or role transitions. The 1:1 constraint ensures
+/// each administrator assignment references exactly one admin recipient
+/// while allowing the main assignment table to support multiple
+/// administrator assignment types through the polymorphic pattern.
+///
+/// {@link discussion_board_administrator_assignments.id} provides the core
+/// assignment metadata, while {@link discussion_board_admins.id} identifies
+/// the specific admin actor receiving the assignment.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_to_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced administrator assignment's {@link
+  /// discussion_board_administrator_assignments.id}.
+  administrator_assignment_id String
+  
+  /// Admin actor receiving the role assignment's {@link
+  /// discussion_board_admins.id}.
+  admin_id String
+  
+  /// Admin session context during assignment's {@link
+  /// discussion_board_admin_sessions.id}.
+  admin_session_id String?
+  
+  /// Timestamp when the administrator assignment was applied to the admin
+  /// actor.
+  assigned_at DateTime
+  
+  /// Timestamp when this subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorAssignment discussion_board_administrator_assignments @relation(fields: [administrator_assignment_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  adminSession discussion_board_admin_sessions? @relation(fields: [admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([administrator_assignment_id], map: "discussion_board_administrator_assignment_to_admins_ad_07eda050")
+  // spellchecker: ignore-next-line
+  @@index([admin_id, assigned_at], map: "discussion_board_administrator_assignment_to_admins_ad_10364879")
+  // spellchecker: ignore-next-line
+  @@index([admin_session_id, assigned_at], map: "discussion_board_administrator_assignment_to_admins_ad_bad03ccf")
+}
+
+/// Subtype table implementing polymorphic ownership for administrator
+/// assignments targeting super admin actors (those receiving role
+/// assignments).
+///
+/// This table establishes a 1:1 relationship between administrator
+/// assignments and super admin actors who are being assigned administrative
+/// roles or receiving promotions. It follows the polymorphic ownership
+/// pattern by separating actor-specific references into subtype tables,
+/// avoiding nullable actor foreign keys in the main assignment table.
+///
+/// Each record links a specific administrator assignment to exactly one
+/// super admin actor, maintaining referential integrity while supporting the
+/// complex role assignment system. The 1:1 constraint ensures each
+/// assignment has exactly one recipient super admin, and each super admin
+/// can receive multiple assignments over time.
+///
+/// {@link discussion_board_administrator_assignments} for the main
+/// assignment record.
+/// {@link discussion_board_super_admins} for the super admin actor receiving
+/// the assignment.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_to_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main administrator assignment record. {@link
+  /// discussion_board_administrator_assignments.id}
+  discussion_board_administrator_assignment_id String
+  
+  /// Reference to the super admin actor receiving the assignment. {@link
+  /// discussion_board_super_admins.id}
+  discussion_board_super_admin_id String
+  
+  /// Timestamp when this subtype assignment relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype assignment relationship was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorAssignment discussion_board_administrator_assignments @relation(fields: [discussion_board_administrator_assignment_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_assignment_id], map: "discussion_board_administrator_assignment_to_super_adm_d9b370f6")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_administrator_assignment_to_super_adm_6ef074f0")
+}
+
+/// Subtype table implementing polymorphic ownership for administrator
+/// assignments performed by member actors.
+///
+/// This table establishes a 1:1 relationship with {@link
+/// discussion_board_administrator_assignments} to track which member actor
+/// performed a specific administrator assignment action. It follows the
+/// polymorphic ownership pattern by providing subtype-specific references to
+/// member accounts and sessions for audit trail and accountability purposes.
+///
+/// Each record links a single administrator assignment to the member actor
+/// who executed it, along with their session context at the time of
+/// assignment. This enables audit trails, permission verification, and
+/// accountability tracking for administrative role assignment actions
+/// performed by regular members.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_by_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main administrator assignment record. {@link
+  /// discussion_board_administrator_assignments.id}
+  discussion_board_administrator_assignment_id String
+  
+  /// Reference to the member actor who performed the assignment. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the member session active during the assignment. {@link
+  /// discussion_board_member_sessions.id}
+  discussion_board_member_session_id String
+  
+  /// Timestamp when this subtype assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype assignment record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorAssignment discussion_board_administrator_assignments @relation(fields: [discussion_board_administrator_assignment_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_administrator_assignment_by_members_d_7aab7b10")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_assignment_id], map: "discussion_board_administrator_assignment_by_members_d_88bd83e5")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_administrator_assignment_by_members_d_40b38ff3")
+}
+
+/// Subtype table implementing polymorphic ownership pattern for
+/// administrator assignments performed by admin actors.
+///
+/// Establishes a 1:1 relationship between {@link
+/// discussion_board_administrator_assignments} and {@link
+/// discussion_board_admins}, tracking which admin actors performed
+/// administrator role assignments. This table enables the system to maintain
+/// audit trails and ownership information for administrative actions within
+/// the platform governance framework.
+///
+/// The table follows the subtype pattern to avoid multiple nullable foreign
+/// keys in the main assignment table, ensuring data integrity and supporting
+/// query optimization through explicit actor-type relationships.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_by_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main administrator assignment record. This table
+  /// implements a 1:1 relationship constraint ensuring each assignment
+  /// performed by an admin actor has exactly one corresponding subtype record.
+  /// {@link discussion_board_administrator_assignments.id}
+  discussion_board_administrator_assignment_id String
+  
+  /// Reference to the admin actor who performed the administrator assignment.
+  /// Establishes the ownership relationship between the administrative action
+  /// and the actor responsible. {@link discussion_board_admins.id}
+  discussion_board_admin_id String
+  
+  /// Timestamp when this subtype relationship was created. Records when the
+  /// admin actor was linked to the administrator assignment action.
+  created_at DateTime
+  
+  /// Timestamp when this subtype relationship was last updated. Tracks
+  /// modifications to the actor-assignment linkage.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorAssignment discussion_board_administrator_assignments @relation(fields: [discussion_board_administrator_assignment_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_assignment_id], map: "discussion_board_administrator_assignment_by_admins_di_3c42e3fe")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_administrator_assignment_by_admins_di_28398fdf")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "discussion_board_administrator_assignment_by_admins_cr_3eb0dd36")
+}
+
+/// Subtype table linking administrator assignments to super admin actors who
+/// performed the assignment.
+///
+/// This table implements the polymorphic ownership pattern for the
+/// "assigner" side of administrator assignments, specifically for super
+/// administrator actors. Each record establishes a 1:1 relationship between
+/// a main {@link discussion_board_administrator_assignments} record and the
+/// super administrator actor (from {@link discussion_board_super_admins})
+/// who performed the assignment, along with their session context (from
+/// {@link discussion_board_super_admin_sessions}) for comprehensive audit
+/// trail.
+///
+/// This table completes the administrator assignment tracking system,
+/// allowing all three actor types (members, admins, and super admins) to be
+/// properly tracked as assigners with appropriate session context and audit
+/// capabilities.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_assignment_by_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main administrator assignment record. This establishes
+  /// the 1:1 relationship with {@link
+  /// discussion_board_administrator_assignments.id}.
+  discussion_board_administrator_assignment_id String
+  
+  /// Reference to the super administrator actor who performed the assignment.
+  /// Links to {@link discussion_board_super_admins.id} for identity
+  /// verification.
+  discussion_board_super_admin_id String
+  
+  /// Session context of the super administrator when performing the
+  /// assignment. References {@link discussion_board_super_admin_sessions.id}
+  /// for audit trail completeness.
+  discussion_board_super_admin_session_id String
+  
+  /// Timestamp when this super admin assigner record was created.
+  created_at DateTime
+  
+  /// Timestamp when this super admin assigner record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  assignment discussion_board_administrator_assignments @relation(fields: [discussion_board_administrator_assignment_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  superAdminSession discussion_board_super_admin_sessions @relation(fields: [discussion_board_super_admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_session_id], map: "discussion_board_administrator_assignment_by_super_adm_126073c1")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_assignment_id], map: "discussion_board_administrator_assignment_by_super_adm_92f717be")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_administrator_assignment_by_super_adm_958a4a3f")
+}

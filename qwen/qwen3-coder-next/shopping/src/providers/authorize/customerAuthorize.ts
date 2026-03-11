@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { CustomerPayload } from "../../decorators/payload/CustomerPayload";
@@ -9,10 +9,10 @@ export async function customerAuthorize(request: {
   const payload: CustomerPayload = jwtAuthorize({ request }) as CustomerPayload;
 
   if (payload.type !== "customer") {
-    throw new UnauthorizedException("Invalid token type");
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
+  const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

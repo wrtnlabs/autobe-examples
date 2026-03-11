@@ -6,25 +6,45 @@ import { IDiscussionBoardAuditLog } from "../../../../api/structures/IDiscussion
 import { IPageIDiscussionBoardAuditLog } from "../../../../api/structures/IPageIDiscussionBoardAuditLog";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminAuditLogsAuditLogId } from "../../../../providers/getDiscussionBoardAdminAuditLogsAuditLogId";
+import { getDiscussionBoardAdminAuditLogsLogId } from "../../../../providers/getDiscussionBoardAdminAuditLogsLogId";
 import { patchDiscussionBoardAdminAuditLogs } from "../../../../providers/patchDiscussionBoardAdminAuditLogs";
 
 @Controller("/discussionBoard/admin/audit-logs")
 export class DiscussionboardAdminAudit_logsController {
   /**
-   * Retrieve a filtered and paginated list of audit log records for system monitoring and investigation purposes.
+   * Search and retrieve audit trail records with comprehensive filtering capabilities.
    *
-   * This operation provides advanced search capabilities across the audit trail, allowing authorized administrators to investigate system activities including user actions, content modifications, administrative operations, and security events. Filters include action types, actor types, target entity IDs, time ranges based on created_at and updated_at fields, success status, and text search of description field.
+   * This operation provides administrators with powerful search functionality to review platform activities, administrative actions, and system events. Administrators can filter audit logs by actor type (regular administrators, super administrators, members), action type (content moderation, user management, system configuration), target entity type (sections, articles, comments, users), date ranges, and IP addresses.
    *
-   * The audit trail records all system events based on the discussion_board_audit_logs table schema. Each record includes action details, actor information, target entities, timestamps, and outcome status. Operations permanently remove records from the database when deletion is performed through appropriate administrative endpoints.
+   * The search supports text-based filtering on action descriptions and rationale fields, enabling administrators to find specific audit entries based on contextual information. Results are paginated for efficient browsing of large audit datasets, with default sorting by timestamp (most recent first) to prioritize recent activities.
    *
-   * Access requires administrative authorization. Response includes pagination controls for efficiently browsing large result sets while maintaining system performance.
+   * This audit log search capability is essential for platform governance, compliance tracking, security incident investigation, and administrative oversight. It enables super administrators to monitor regular administrator activities, review content moderation decisions, and ensure consistent application of platform policies.
+   *
+   * Access to audit logs is restricted to administrators only, with super administrators having full visibility across all audit types and regular administrators having access to audit logs relevant to their administrative scope.
+   *
+   * The system implements soft deletion for audit logs using the deleted_at field, preserving historical records while allowing for compliance with data retention policies.
+   *
+   * Related operations include viewing detailed audit log entries and exporting audit data for compliance reporting.
    *
    * @param connection
-   * @param body Audit log search criteria including filters, pagination, and sorting parameters
+   * @param body Search criteria and pagination parameters for audit log retrieval
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_audit_logs table with comprehensive filtering capabilities. Apply filters based on action_type, actor_type, target entity IDs (user, admin, super_admin, article, comment, section), timestamp ranges (created_at, updated_at), success status, and text search on description field. Join with related tables if specific entity details are requested. Implement cursor-based pagination for efficient large result set handling. Ensure proper authorization - this endpoint should only be accessible to administrators. Validate all filter parameters and handle edge cases where no filters are provided (return all logs with pagination).
+   * @x-autobe-specification Query both discussion_board_audit_logs and discussion_board_system_audit_logs tables with comprehensive filtering capabilities.
+   *
+   * Implement search with the following filters:
+   * - Actor type (admin, super_admin, member, system)
+   * - Action type (specific action categories)
+   * - Target type (section, article, comment, user, admin_request, etc.)
+   * - Date range filtering (created_at)
+   * - IP address filtering
+   * - Action description text search
+   *
+   * Combine results from both tables into a unified response with proper pagination. Sort results by created_at descending by default to show most recent audit entries first.
+   *
+   * Handle complex filtering logic with proper SQL joins and indexing. Ensure performance optimization for large audit datasets using appropriate database indexes.
+   *
+   * Return paginated results with metadata including total count, page size, and navigation information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -46,41 +66,34 @@ export class DiscussionboardAdminAudit_logsController {
   }
 
   /**
-   * Retrieve detailed information about a specific audit log record.
+   * Retrieve detailed information about a specific administrative audit log entry from the discussion_board_audit_logs table.
    *
-   * This operation provides access to comprehensive audit trail information for administrative review and investigation purposes. Each audit log record captures detailed information about significant actions performed within the discussion board platform, including user activities, administrative actions, and system events.
+   * This operation provides access to the complete audit trail record for governance oversight and compliance tracking. Each audit log entry captures critical information about administrative actions including the actor who performed the action (actor_type and actor_id), the targeted entity (target_type and target_id), specific action type, and contextual details such as IP address and user agent.
    *
-   * The response includes complete audit log details such as actor identification, action type and subtype, target entity information, timestamps, IP address, user agent, success status, and any associated error messages. The metadata field contains JSON-formatted additional information specific to the action type.
+   * Audit logs are immutable records that preserve the complete context of administrative decision-making. They enable super administrators to review platform governance activities, ensure policy compliance, and maintain accountability for all administrative actions. The detailed action_details field provides the rationale and justification for each governance decision.
    *
-   * This operation is essential for compliance monitoring, security investigation, system debugging, and maintaining user accountability across the platform. Audit logs serve as an immutable record of all significant platform activities.
+   * Access to audit logs is restricted to super administrators only, as these records contain sensitive information about platform governance and administrative activities. Regular administrators and other users cannot view audit logs to maintain the integrity of the oversight system.
    *
-   * Access to audit logs is restricted to authorized administrators and super administrators due to the sensitive nature of the information contained within these records.
+   * The operation retrieves all fields from the discussion_board_audit_logs table including timestamps, action metadata, and contextual information for comprehensive audit review.
    *
    * @param connection
-   * @param auditLogId Unique identifier of the audit log record to retrieve
+   * @param logId Unique identifier of the audit log entry to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a specific audit log record by its UUID identifier.
-   *
-   * Query the discussion_board_audit_logs table using the provided auditLogId parameter.
-   * Return the complete audit log record with all fields including actor information, action details, target entities, timestamps, and metadata.
-   *
-   * Authorization: This operation should be restricted to administrators and super administrators only, as audit logs contain sensitive system information.
-   *
-   * Error handling: Return appropriate error responses if the audit log ID is invalid or the record does not exist.
+   * @x-autobe-specification Retrieve a specific audit log entry by its unique identifier from the discussion_board_audit_logs table. Validate that the requesting user has super administrator privileges before allowing access to audit logs. Return the complete audit log record including all fields: actor_type, actor_id, target_type, target_id, action_type, action_details, ip_address, user_agent, href, and timestamps. Handle cases where the log ID does not exist by returning a 404 error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":auditLogId")
+  @TypedRoute.Get(":logId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("auditLogId")
-    auditLogId: string & tags.Format<"uuid">,
+    @TypedParam("logId")
+    logId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardAuditLog> {
     try {
-      return await getDiscussionBoardAdminAuditLogsAuditLogId({
+      return await getDiscussionBoardAdminAuditLogsLogId({
         admin,
-        auditLogId,
+        logId,
       });
     } catch (error) {
       console.log(error);

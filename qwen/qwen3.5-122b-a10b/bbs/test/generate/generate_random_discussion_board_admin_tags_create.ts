@@ -12,12 +12,14 @@ import { prepare_random_discussion_board_tag } from "../prepare/prepare_random_d
 export async function generate_random_discussion_board_admin_tags_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardTag.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardTag.ICreate>;
   },
 ): Promise<IDiscussionBoardTag> {
   const prepared: IDiscussionBoardTag.ICreate =
     prepare_random_discussion_board_tag(props.body);
-  return await api.functional.discussionBoard.admin.tags.create(connection, {
-    body: prepared,
-  });
+  const result: IDiscussionBoardTag =
+    await api.functional.discussionBoard.admin.tags.create(connection, {
+      body: prepared,
+    });
+  return result;
 }

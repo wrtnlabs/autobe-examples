@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallProductImage } from "../../../../api/structures/IShoppingMallProductImage";
 import { getShoppingMallProductsProductIdImagesImageId } from "../../../../providers/getShoppingMallProductsProductIdImagesImageId";
@@ -9,90 +9,61 @@ import { patchShoppingMallProductsProductIdImages } from "../../../../providers/
 @Controller("/shoppingMall/products/:productId/images")
 export class ShoppingmallProductsImagesController {
   /**
-   * Updates the display order of multiple product images in a single batch operation.
+   * Batch reorder product images for a specific product owned by the authenticated seller.
    *
-   * This endpoint allows sellers to reorder their product images, which determines the sequence in which images appear in the product gallery and identifies the main thumbnail image. The image with the lowest display_order value becomes the main thumbnail shown in search results and category listings.
+   * This operation allows sellers to update the display order of multiple product images in a single request. The display order determines the sequence in which images appear in the product gallery, with lower values appearing first. The image with the lowest display_order value is automatically used as the main thumbnail displayed in search results and category listings.
    *
-   * The shopping_mall_product_images table stores each image with a display_order value that determines its position in the product gallery. Each product can have multiple images, and sellers can reorder them at any time. The first image (lowest display_order) serves as the main thumbnail displayed in product listings and search results. Images are stored with URLs pointing to the image files, and each image belongs to exactly one product.
+   * **Ownership Validation**: Only the seller who owns the product can reorder its images. Attempts to modify images belonging to another seller's product will result in an access denied error.
    *
-   * **Authorization**: Only the seller who owns the product can reorder its images. Suspended sellers cannot perform this operation. The seller ID is verified against the product's owner in shopping_mall_products table. If a seller attempts to modify images belonging to another seller's product, the system rejects the operation with an access denied error.
+   * **Conflict Resolution**: When reordering results in duplicate display_order values, the system automatically reassigns sequential display orders to resolve conflicts. The system maintains consistent display order values without gaps in the sequence. If gaps are created during reordering, the system automatically compacts the sequence.
    *
-   * **Validation Rules**:
-   * - All image IDs must exist and belong to the specified product
-   * - Display order values must be non-negative integers
-   * - If the operation results in duplicate display_order values, the system automatically resolves conflicts by reassigning sequential orders based on original upload order (created_at)
-   * - The system maintains consistent display_order values without gaps in the sequence
+   * **Thumbnail Update**: If reordering changes which image has the lowest display_order, the main thumbnail shown in product listings and search results is automatically updated to reflect the new first image.
    *
-   * **Product Snapshot Creation**:
-   * When images are reordered, the system creates a product snapshot to preserve the new image sequence for historical accuracy. This snapshot captures the complete product state including name, description, base price, all images in their new order, and all variant configurations. This ensures that the image sequence at any point in time can be reconstructed for audit trails, dispute resolution, and customer purchase verification purposes.
-   *
-   * **Business Rules**:
-   * - The main thumbnail is automatically determined by the lowest display_order value after reordering
-   * - If the main thumbnail image (first image) is reordered to a different position, the new first image becomes the main thumbnail
-   * - Gaps in display_order sequence are automatically compacted during the update
-   * - Product snapshots preserve the image sequence state for historical reference and dispute resolution
-   *
-   * **Related Operations**:
-   * - POST /products/{productId}/images - Upload a new product image
-   * - DELETE /products/{productId}/images/{imageId} - Delete a product image
-   * - GET /products/{productId} - View product details including all images
+   * **Use Case**: Sellers use this operation to arrange product images in the most effective order for customer viewing, ensuring the most representative image appears as the main thumbnail.
    *
    * @param connection
-   * @param productId Unique identifier of the product whose images are being reordered. Must be a valid UUID. The authenticated seller must own this product to perform the operation. The product must exist and not be deleted.
-   * @param body Array of image display order updates. Each item contains the image ID and its new display order position. All images must belong to the specified product. The request must contain at least one image update.
+   * @param productId Unique identifier of the product whose images are being reordered (UUID format)
+   * @param body Batch update data containing image IDs and their new display order positions
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation:
+   * @x-autobe-specification Implementation steps:
    *
-   * 1. Authentication & Authorization:
-   *    - Extract seller ID from JWT token
-   *    - Query shopping_mall_products to verify product exists (id = productId AND deleted_at IS NULL)
-   *    - Verify product.shopping_mall_seller_id matches authenticated seller ID
-   *    - If not owner, return 403 Forbidden with message "You can only reorder images for your own products"
-   *    - If product not found, return 404 Not Found
-   *    - Check if seller is suspended (seller.suspended = true) - if suspended, return 403 Forbidden
+   * 1. **Authentication**: Verify seller is authenticated via session token.
    *
-   * 2. Input Validation:
-   *    - Validate request body array is not empty (at least one image update required)
-   *    - Validate each item has: id (UUID format), display_order (non-negative integer)
-   *    - Query all image IDs from request in shopping_mall_product_images WHERE shopping_mall_product_id = productId
-   *    - If any image ID not found or doesn't belong to product, return 400 Bad Request with list of invalid image IDs
-   *    - Validate no duplicate image IDs in request
+   * 2. **Ownership Validation**: Query shopping_mall_products table to verify the product with {productId} belongs to the authenticated seller (shopping_mall_seller_id matches). Return 403 Forbidden if ownership check fails.
    *
-   * 3. Display Order Update Logic:
-   *    - Begin database transaction
-   *    - For each image in request body:
-   *      - UPDATE shopping_mall_product_images SET display_order = :display_order WHERE id = :id
-   *    - Handle display order conflicts after update:
-   *      - Query all images for product ordered by display_order ASC, created_at ASC
-   *      - If any duplicate display_order values exist:
-   *        - Reassign sequential display_order values (0, 1, 2, ...) based on the query order
-   *      - This ensures the unique constraint on (shopping_mall_product_id, display_order) is maintained
-   *    - Commit transaction
+   * 3. **Product Status Check**: Verify product is not deleted (deleted_at IS NULL). Return 404 Not Found if deleted.
    *
-   * 4. Response Construction:
-   *    - Query all images for the product: SELECT * FROM shopping_mall_product_images WHERE shopping_mall_product_id = :productId ORDER BY display_order ASC, created_at ASC
-   *    - Build response array with: id, image_url, display_order, created_at
-   *    - Return 200 OK with image array
+   * 4. **Input Validation": Validate each item in request body:
+   *    - Image ID must exist and belong to the specified product
+   *    - displayOrder must be a non-negative integer
+   *    - Return 400 Bad Request for validation failures
    *
-   * 5. Error Handling:
-   *    - 401 Unauthorized: Invalid or missing JWT token
-   *    - 403 Forbidden: Not the product owner or seller is suspended
-   *    - 404 Not Found: Product does not exist or is deleted
-   *    - 400 Bad Request: Invalid image IDs, empty request body, or validation errors
+   * 5. **Conflict Resolution**: Process display order updates:
+   *    - Collect all display_order values being set
+   *    - If duplicates exist, apply conflict resolution logic based on original upload order
+   *    - Ensure no gaps in the final sequence
+   *    - Reassign sequential display_order values as needed
    *
-   * 6. Concurrency Considerations:
-   *    - Use database transaction to ensure atomic updates
-   *    - The unique constraint on (shopping_mall_product_id, display_order) prevents concurrent conflicts
+   * 6. **Database Update": Execute transactional update:
+   *    - Update display_order for all specified images
+   *    - Use optimistic locking if concurrent updates are possible
+   *    - Record updated_at timestamp
+   *
+   * 7. **Response Generation**: Query and return updated images:
+   *    - SELECT all images for the product ordered by display_order
+   *    - Include id, image_url, display_order, created_at fields
+   *
+   * 8. **Thumbnail Cache Invalidation**: If display_order of first image changed, invalidate any cached thumbnail references for the product.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async updateImages(
+  public async update(
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedBody()
     body: IShoppingMallProductImage.IUpdate,
-  ): Promise<IShoppingMallProductImage.ISummary> {
+  ): Promise<IShoppingMallProductImage> {
     try {
       return await patchShoppingMallProductsProductIdImages({
         productId,
@@ -107,51 +78,50 @@ export class ShoppingmallProductsImagesController {
   /**
    * Retrieve detailed information about a specific product image.
    *
-   * This operation allows authenticated users to view the metadata of an individual product image, including its URL, display order position, and creation timestamp. Product images serve as visual representations of products in the catalog, helping customers understand product appearance and features before making purchase decisions.
+   * This operation allows customers, sellers, and administrators to view individual product image details including the image URL and display order. The image must belong to the specified product in the path, otherwise a not found error is returned.
    *
-   * The image must exist and belong to the specified product. If the image belongs to a different product, the operation returns a not found error. The display_order field indicates the image's position in the product's gallery, where lower values appear first and the image with the lowest display_order serves as the main thumbnail in product listings and search results.
+   * Product images are visual representations of products that help customers understand the product's appearance, features, and details. Each product can have multiple images with controlled display order, where the image with the lowest display_order value serves as the main thumbnail shown in search results and category listings.
    *
-   * This endpoint is useful for:
-   * - Customers viewing individual images in a product gallery
-   * - Sellers managing their product images
-   * - Administrators overseeing product content
+   * The response includes the image's unique identifier, the URL pointing to the image file (using secure HTTPS protocol), the numerical display order determining the image's position in the product gallery, and the timestamp when the image was uploaded.
    *
-   * Related Operations:
-   * - GET /products/{productId} - View the full product with all images
-   * - GET /products?search=... - Search products with main thumbnail images in listings
+   * Related operations:
+   * - GET /products/{productId} - Retrieve full product details with all images
+   * - POST /seller/products/{productId}/images - Upload new product images (seller only)
+   * - DELETE /seller/products/{productId}/images/{imageId} - Delete product image (seller only)
    *
    * @param connection
-   * @param productId Unique identifier of the product that owns the image (UUID format)
-   * @param imageId Unique identifier of the product image to retrieve (UUID format)
+   * @param productId Unique identifier of the product whose image is being retrieved.
+   * @param imageId Unique identifier of the product image to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve a single product image record by its ID, verifying the image belongs to the specified product.
+   * @x-autobe-specification Query the shopping_mall_product_images table by primary key (id) to retrieve the image record.
    *
-   * Database Operations:
-   * 1. Query shopping_mall_products table to verify the product exists (check id = productId)
-   * 2. Query shopping_mall_product_images table for the specific image (id = imageId)
-   * 3. Verify image.shopping_mall_product_id equals productId - return 404 if mismatch
-   * 4. Return the image record with all fields: id, image_url, display_order, created_at, and product reference
+   * Implementation steps:
+   * 1. Validate both path parameters are valid UUIDs
+   * 2. Query shopping_mall_product_images table WHERE id = imageId
+   * 3. Verify the retrieved image's shopping_mall_product_id matches the productId path parameter
+   * 4. If no image found or product mismatch, return 404 Not Found error
+   * 5. Return the complete image record including id, image_url, display_order, and created_at
    *
-   * Authorization:
-   * - All authenticated users (customers, sellers, administrators) can access
-   * - No ownership verification needed as product images are publicly visible
+   * Database query:
+   * ```sql
+   * SELECT id, shopping_mall_product_id, image_url, display_order, created_at
+   * FROM shopping_mall_product_images
+   * WHERE id = $imageId AND shopping_mall_product_id = $productId
+   * ```
    *
-   * Edge Cases:
-   * - Product not found: Return 404
-   * - Image not found: Return 404
-   * - Image exists but belongs to different product: Return 404
-   * - Product is soft-deleted: Return image data (images preserved for historical reference)
-   *
-   * Response includes the product reference for context, allowing clients to navigate back to the product.
+   * Edge cases:
+   * - Image not found: Return 404 with message "Product image not found"
+   * - Image belongs to different product: Return 404 with message "Product image not found for this product"
+   * - Product is soft-deleted: Image is still accessible (cascade delete handled by database)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":imageId")
   public async at(
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedParam("imageId")
-    imageId: string & tags.Format<"uuid">,
+    imageId: string,
   ): Promise<IShoppingMallProductImage> {
     try {
       return await getShoppingMallProductsProductIdImagesImageId({

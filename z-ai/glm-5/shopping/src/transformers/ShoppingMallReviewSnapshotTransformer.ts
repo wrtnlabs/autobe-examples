@@ -1,10 +1,17 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallReviewAtSummaryTransformer } from "./ShoppingMallReviewAtSummaryTransformer";
 
 export namespace ShoppingMallReviewSnapshotTransformer {
   export type Payload = Prisma.shopping_mall_review_snapshotsGetPayload<
@@ -14,9 +21,9 @@ export namespace ShoppingMallReviewSnapshotTransformer {
     return {
       select: {
         id: true,
-        shopping_mall_review_id: true,
         rating: true,
         content: true,
+        review: ShoppingMallReviewAtSummaryTransformer.select(),
         created_at: true,
       },
     } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs;
@@ -26,9 +33,11 @@ export namespace ShoppingMallReviewSnapshotTransformer {
   ): Promise<IShoppingMallReviewSnapshot> {
     return {
       id: input.id,
-      review_id: input.shopping_mall_review_id,
       rating: input.rating,
-      content: input.content ?? null,
+      content: input.content,
+      review: await ShoppingMallReviewAtSummaryTransformer.transform(
+        input.review,
+      ),
       created_at: input.created_at.toISOString(),
     };
   }

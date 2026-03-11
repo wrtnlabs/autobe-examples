@@ -1,53 +1,46 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallCancellationRequestSnapshot } from "../../../../structures/IPageIShoppingMallCancellationRequestSnapshot";
 import { IShoppingMallCancellationRequestSnapshot } from "../../../../structures/IShoppingMallCancellationRequestSnapshot";
 
 /**
- * Retrieve a filtered and paginated list of cancellation request snapshots for audit trail and dispute resolution purposes.
+ * Retrieve a filtered and paginated list of cancellation request snapshots for administrator oversight and dispute resolution.
  *
- * Cancellation request snapshots are immutable records created when sellers respond to customer cancellation requests. Each snapshot captures the customer's original cancellation reason, the seller's decision (approved or rejected), and the exact timestamp of response. These records serve as authoritative evidence for resolving disputes between customers and sellers regarding cancellation handling.
+ * This operation provides administrators with comprehensive access to all cancellation request snapshots across the platform, enabling investigation of disputes between customers and sellers regarding cancellation handling. Each snapshot represents an immutable record of a seller's response to a cancellation request, capturing the customer's original reason text, the seller's decision status (approved or rejected), and the exact timestamp when the response was recorded.
  *
- * This operation provides comprehensive search capabilities including filtering by specific cancellation request, response status, date ranges, and text search within cancellation reasons. The response includes paginated results optimized for audit review and historical analysis.
+ * The snapshots serve as authoritative evidence for dispute resolution, preserving the complete state of cancellation requests at the moment of seller response. Multiple snapshots may exist for a single cancellation request if the seller provides multiple responses over time, providing a complete audit trail of the cancellation handling process.
  *
- * **Access Control:**
- * - Administrators can view all snapshots across the platform for oversight purposes
- * - Sellers can view snapshots for cancellation requests they responded to
- * - Customers can view snapshots for their own cancellation requests
+ * Administrators can filter snapshots by status (approved/rejected) to focus on specific types of responses, search by date range to investigate cancellation handling within a specific time period, or search by reason text to find cancellation requests with specific customer explanations. The search supports partial text matching on reason fields for flexible investigation.
  *
- * **Use Cases:**
- * - Administrator reviewing dispute evidence for a specific cancellation request
- * - Seller viewing response history for their handled cancellations
- * - Customer tracking the resolution timeline of their cancellation requests
- * - Platform audit and compliance reporting
+ * Access is restricted to administrators only, with both regular and super administrators having read-only access. This endpoint cannot modify or delete snapshots - all snapshot records are permanently preserved for audit and dispute resolution purposes regardless of subsequent changes to related cancellation requests, order items, or seller accounts.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for cancellation request snapshots
+ * @param props.body Search criteria and pagination parameters for filtering cancellation request snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table with comprehensive filtering and pagination.
+ * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table with pagination and filtering.
  *
- * Authorization rules:
- * - Administrators: Full access to all snapshots across platform for oversight and dispute resolution
- * - Sellers: Access only to snapshots for cancellation requests where they are the respondent (shopping_mall_seller_id matches)
- * - Customers: Access only to snapshots for their own cancellation requests (via order item → order → customer chain)
+ * Apply search filters:
+ * - Filter by shopping_mall_cancellation_request_id (UUID) to see all snapshots for a specific cancellation request
+ * - Filter by status ('approved' or 'rejected') to focus on specific decision types
+ * - Filter by created_at date range (from/to) for time-based investigation
+ * - Full-text search on reason field using GIN trigram index for partial matching
  *
- * Filtering logic:
- * 1. By cancellationRequestId: Direct lookup of snapshots for a specific cancellation request
- * 2. By status: Filter 'approved' or 'rejected' snapshots
- * 3. By createdAt range: Date/time range filtering for audit purposes
- * 4. By reason text: Full-text search using gin_trgm_ops index on reason field
+ * Join with shopping_mall_cancellation_requests to include cancellation request details
+ * Join with shopping_mall_order_items to provide order context
+ * Join with shopping_mall_sellers (respondent) to show which seller made the decision
  *
- * Join with shopping_mall_cancellation_requests to access seller_id and order_item context.
- * Join with shopping_mall_order_items → shopping_mall_orders to determine customer ownership.
+ * Return cursor-based pagination with configurable page sizes.
+ * Default sort: created_at descending (most recent first)
+ * Alternative sort options: status, cancellation_request_id
  *
- * Pagination uses cursor-based approach for consistent results.
- * Sort options: created_at (newest/oldest), status.
+ * Return summary data optimized for list display, with key fields: id, cancellation_request_id, reason (truncated if needed), status, created_at, and related entity references.
  *
- * Response includes snapshot summary with reason preview (truncated), status, created_at timestamp, and parent cancellation request reference.
+ * Authorization: Administrator only (both regular and super administrators have read access).
+ * Immutability: This operation MUST NOT provide any modification capabilities. Snapshots are permanently read-only.
  * @path /shoppingMall/customer/cancellation-request-snapshots
  * @accessor api.functional.shoppingMall.customer.cancellation_request_snapshots.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -77,7 +70,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for cancellation request snapshots
+     * Search criteria and pagination parameters for filtering cancellation request snapshots
      */
     body: IShoppingMallCancellationRequestSnapshot.IRequest;
   };
@@ -128,27 +121,59 @@ export namespace index {
 }
 
 /**
- * Retrieve an immutable snapshot of a cancellation request's state at the moment of seller response.
+ * Retrieve a specific cancellation request snapshot by its unique identifier.
  *
- * This operation provides access to the permanent audit record created when a seller approves or rejects a cancellation request. The snapshot captures the customer's original cancellation reason text exactly as submitted, the seller's decision status (approved or rejected), and the precise timestamp of response. These records serve as authoritative evidence for dispute resolution between customers and sellers.
+ * This operation provides access to an immutable snapshot record that captures the state of a cancellation request at the moment a seller responded. Snapshots are created automatically when sellers approve or reject cancellation requests, preserving the customer's original reason text, the seller's decision status ('approved' or 'rejected'), and the exact timestamp of response.
  *
- * Snapshots are automatically created by the system when sellers respond to cancellation requests and cannot be modified or deleted afterward. Multiple snapshots may exist for a single cancellation request if the seller provides multiple responses over time, creating a complete audit trail of the cancellation request's lifecycle.
+ * The snapshot serves as authoritative evidence for dispute resolution between customers and sellers regarding cancellation handling. Each snapshot represents a distinct point in the cancellation request timeline and cannot be modified or deleted after creation, ensuring audit trail integrity.
  *
- * Access is restricted based on user role: customers can only view snapshots for cancellation requests they created, sellers can only view snapshots for requests they responded to, and administrators have full access to all snapshots across the platform for oversight purposes.
+ * Authorization is enforced based on actor type:
+ * - Customers may only view snapshots for cancellation requests they originally submitted
+ * - Sellers may only view snapshots for cancellation requests on their own order items
+ * - Administrators have full read access to all snapshots for platform oversight
+ *
+ * Related operations:
+ * - GET /cancellation-requests/{requestId} - View the parent cancellation request
+ * - GET /cancellation-requests/{requestId}/snapshots - List all snapshots for a request
  *
  * @param props.connection
- * @param props.cancellationRequestSnapshotId Unique identifier of the cancellation request snapshot to retrieve.
+ * @param props.snapshotId Unique identifier of the cancellation request snapshot to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_cancellation_request_snapshots table by primary key ID to retrieve the snapshot record. Join with shopping_mall_cancellation_requests to obtain the related cancellation request context. Join through shopping_mall_order_items to shopping_mall_orders to identify the customer who created the request. Also join with shopping_mall_sellers to identify the respondent seller.
+ * @x-autobe-specification Implementation steps:
  *
- * Authorization enforcement:
- * - If the authenticated user is a customer: verify they own the order (via orders.customer_id) associated with the cancellation request
- * - If the authenticated user is a seller: verify they are the respondent (cancellation_requests.seller_id matches their seller ID)
- * - If the authenticated user is an administrator: grant full access regardless of ownership
+ * 1. Validate path parameter snapshotId is a valid UUID format
  *
- * Return 404 Not Found if the snapshot does not exist. Return 403 Forbidden if the user lacks authorization to view the snapshot. Return the complete snapshot object with all fields on success.
- * @path /shoppingMall/customer/cancellation-request-snapshots/:cancellationRequestSnapshotId
+ * 2. Query shopping_mall_cancellation_request_snapshots table by primary key id
+ *
+ * 3. If snapshot not found, return 404 Not Found
+ *
+ * 4. Authorization check based on current user role:
+ *    - For customer: Load the related cancellation_request, then the order_item, then the order. Verify the order belongs to the current customer (shopping_mall_orders.shopping_mall_customer_id matches authenticated customer)
+ *    - For seller: Load the related cancellation_request, then the order_item. Verify the order_item's shopping_mall_seller_id matches the authenticated seller
+ *    - For administrator: Grant access (all administrators have read-only oversight)
+ *
+ * 5. If authorization fails, return 403 Forbidden
+ *
+ * 6. Return the snapshot with its related cancellation request information:
+ *    - Include: id, reason, status, created_at
+ *    - Include: cancellation_request.id, cancellation_request.status
+ *
+ * 7. Join with shopping_mall_cancellation_requests to include parent request details
+ *
+ * Database query:
+ * ```sql
+ * SELECT s.*, cr.id as request_id, cr.status as request_status
+ * FROM shopping_mall_cancellation_request_snapshots s
+ * JOIN shopping_mall_cancellation_requests cr ON s.shopping_mall_cancellation_request_id = cr.id
+ * WHERE s.id = $snapshotId
+ * ```
+ *
+ * Error handling:
+ * - 404: Snapshot not found
+ * - 403: Unauthorized access (user does not own related order/seller mismatch)
+ * - 400: Invalid UUID format for snapshotId
+ * @path /shoppingMall/customer/cancellation-request-snapshots/:snapshotId
  * @accessor api.functional.shoppingMall.customer.cancellation_request_snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -176,15 +201,15 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the cancellation request snapshot to retrieve.
+     * Unique identifier of the cancellation request snapshot to retrieve
      */
-    cancellationRequestSnapshotId: string & tags.Format<"uuid">;
+    snapshotId: string;
   };
   export type Response = IShoppingMallCancellationRequestSnapshot;
 
   export const METADATA = {
     method: "GET",
-    path: "/shoppingMall/customer/cancellation-request-snapshots/:cancellationRequestSnapshotId",
+    path: "/shoppingMall/customer/cancellation-request-snapshots/:snapshotId",
     request: null,
     response: {
       type: "application/json",
@@ -193,7 +218,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/customer/cancellation-request-snapshots/${encodeURIComponent(props.cancellationRequestSnapshotId ?? "null")}`;
+    `/shoppingMall/customer/cancellation-request-snapshots/${encodeURIComponent(props.snapshotId ?? "null")}`;
   export const random = (): IShoppingMallCancellationRequestSnapshot =>
     typia.random<IShoppingMallCancellationRequestSnapshot>();
   export const simulate = (
@@ -207,9 +232,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("cancellationRequestSnapshotId")(() =>
-        typia.assert(props.cancellationRequestSnapshotId),
-      );
+      assert.param("snapshotId")(() => typia.assert(props.snapshotId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

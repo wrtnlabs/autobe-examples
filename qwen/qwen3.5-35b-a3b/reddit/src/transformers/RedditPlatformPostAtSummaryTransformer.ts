@@ -45,7 +45,7 @@ export namespace RedditPlatformPostAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
-      post_type: input.post_type,
+      post_type: typia.assert<"TEXT" | "LINK" | "IMAGE">(input.post_type),
       vote_score: input.vote_score,
       comment_count: input.comment_count,
       author: await RedditPlatformMemberAtSummaryTransformer.transform(
@@ -54,8 +54,7 @@ export namespace RedditPlatformPostAtSummaryTransformer {
       community: await RedditPlatformCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      created_at: input.created_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
     };
   }
 }

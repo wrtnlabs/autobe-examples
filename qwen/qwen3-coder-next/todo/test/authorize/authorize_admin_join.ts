@@ -17,9 +17,10 @@ export async function authorize_admin_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    href: props.body?.href,
-    referrer: props.body?.referrer,
-    ip: props.body?.ip,
+    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies ITodoAppAdminSession.IJoin;
   return await api.functional.todoApp.auth.admin.join(connection, {
     body: joinInput,

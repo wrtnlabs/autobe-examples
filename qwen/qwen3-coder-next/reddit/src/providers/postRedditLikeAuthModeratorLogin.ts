@@ -12,23 +12,19 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function postRedditLikeAuthModeratorLogin(props: {
   ip: string;
   body: IRedditLikeModerator.ILogin;
 }): Promise<IRedditLikeModerator.IAuthorized> {
   // 1. Find moderator by email with password_hash
   const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
+      display_name: true,
+      karma_score: true,
       password_hash: true,
-      email_verified_at: true,
-      deleted_at: true,
-      created_at: true,
-      updated_at: true,
     },
   });
   if (!moderator) {
@@ -42,77 +38,52 @@ export async function postRedditLikeAuthModeratorLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Check email verification
-  if (!moderator.email_verified_at) {
-    throw new HttpException("Email not verified", 403);
-  }
-  // 4. Check account status
-  if (moderator.deleted_at) {
-    throw new HttpException("Account deleted", 403);
-  }
-  // 5. Create new session
-  const accessExpires = new Date();
-  accessExpires.setMinutes(accessExpires.getMinutes() + 15);
-  const refreshExpires = new Date();
-  refreshExpires.setDate(refreshExpires.getDate() + 7);
+  // 3. Create new session record
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.reddit_like_moderator_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       reddit_like_moderator_id: moderator.id,
       ip: props.ip,
       href: "/",
       referrer: null,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
+      created_at: now.toISOString(),
+      expired_at: accessExpires.toISOString(),
     },
   });
-  // 6. Generate JWT tokens
+  // 4. Generate JWT tokens
   const accessPayload = {
-    type: "moderator" as const,
+    type: "moderator",
     id: moderator.id,
     session_id: session.id,
-    created_at: toISOStringSafe(new Date()),
+    created_at: now.toISOString(),
   };
   const refreshPayload = {
-    type: "moderator" as const,
-    id: moderator.id,
-    session_id: session.id,
-    tokenType: "refresh" as const,
-    created_at: toISOStringSafe(new Date()),
+    ...accessPayload,
+    tokenType: "refresh",
   };
-  const access = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "15m",
-    issuer: "autobe",
-  });
-  const refresh = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-  const token = {
-    access,
-    refresh,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  } satisfies IAuthorizationToken;
-  // 7. Return authorized moderator
+  const token: IAuthorizationToken = {
+    access: jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "1h",
+      issuer: "autobe",
+    }),
+    refresh: jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "7d",
+      issuer: "autobe",
+    }),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  };
+  // 5. Return moderator data + token
   return {
-    id: moderator.id,
-    email: moderator.email,
-    username: "",
-    display_name: "",
-    bio: "",
-    avatar_url: "",
-    karma_score: 0,
-    email_verified_at: (moderator.email_verified_at
-      ? toISOStringSafe(moderator.email_verified_at)
-      : null) satisfies (string & tags.Format<"date-time">) | null as string &
-      tags.Format<"date-time">,
-    deleted_at: (moderator.deleted_at
-      ? toISOStringSafe(moderator.deleted_at)
-      : null) satisfies (string & tags.Format<"date-time">) | null as string &
-      tags.Format<"date-time">,
-    created_at: toISOStringSafe(moderator.created_at),
-    updated_at: toISOStringSafe(moderator.updated_at),
+    id: moderator.id as string & tags.Format<"uuid">,
+    email: moderator.email as string & tags.Format<"email">,
+    display_name: moderator.display_name as string & tags.MaxLength<100>,
+    karma_score: moderator.karma_score as number &
+      tags.Type<"int32"> &
+      tags.Minimum<0>,
     token,
   } satisfies IRedditLikeModerator.IAuthorized;
 }

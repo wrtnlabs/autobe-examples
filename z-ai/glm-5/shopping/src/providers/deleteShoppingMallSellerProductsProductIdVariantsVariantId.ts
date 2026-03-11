@@ -13,47 +13,31 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallSellerProductsProductIdVariantsVariantId(props: {
   seller: SellerPayload;
-  productId: string & tags.Format<"uuid">;
-  variantId: string & tags.Format<"uuid">;
+  productId: string;
+  variantId: string;
 }): Promise<void> {
-  // Fetch variant with product
-  const variant =
-    await MyGlobal.prisma.shopping_mall_product_variants.findUnique({
-      where: { id: props.variantId },
-      select: {
-        id: true,
-        shopping_mall_product_id: true,
-        deleted_at: true,
-        product: {
-          select: {
-            id: true,
-            shopping_mall_seller_id: true,
-            deleted_at: true,
-          },
-        },
-      },
+  // 1. Authorization: Verify product exists and belongs to seller
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { id: true, shopping_mall_seller_id: true },
     });
-  // Verify variant exists
-  if (variant === null) {
-    throw new HttpException("Variant not found", 404);
+  if (product.shopping_mall_seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Verify variant belongs to product
+  // 2. Verify variant exists and belongs to this product
+  const variant =
+    await MyGlobal.prisma.shopping_mall_product_variants.findUniqueOrThrow({
+      where: { id: props.variantId },
+      select: { id: true, shopping_mall_product_id: true, deleted_at: true },
+    });
   if (variant.shopping_mall_product_id !== props.productId) {
     throw new HttpException("Variant does not belong to this product", 400);
   }
-  // Verify variant is not already deleted
   if (variant.deleted_at !== null) {
-    throw new HttpException("Variant not found", 404);
+    throw new HttpException("Variant already deleted", 400);
   }
-  // Verify product is not deleted
-  if (variant.product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  // Check authorization: seller owns product
-  if (variant.product.shopping_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Check constraint: no pending order items (paid/shipped status)
+  // 3. Constraint: Check for pending order items (paid or shipped status)
   const pendingOrderItems =
     await MyGlobal.prisma.shopping_mall_order_items.count({
       where: {
@@ -62,54 +46,57 @@ export async function deleteShoppingMallSellerProductsProductIdVariantsVariantId
       },
     });
   if (pendingOrderItems > 0) {
-    throw new HttpException("Cannot delete variant with pending orders", 400);
+    throw new HttpException(
+      "Cannot delete variant while orders are pending",
+      400,
+    );
   }
-  // Check constraint: no pending cancellation requests
-  const pendingCancellationRequests =
+  // 4. Constraint: Check for pending cancellation requests
+  const pendingCancellations =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
       where: {
+        status: "pending",
         orderItem: {
           shopping_mall_product_variant_id: props.variantId,
         },
-        status: "pending",
       },
     });
-  if (pendingCancellationRequests > 0) {
+  if (pendingCancellations > 0) {
     throw new HttpException(
-      "Cannot delete variant with pending cancellation requests",
+      "Cannot delete variant while cancellation requests are pending",
       400,
     );
   }
-  // Check constraint: no pending refund requests
-  const pendingRefundRequests =
+  // 5. Constraint: Check for pending refund requests
+  const pendingRefunds =
     await MyGlobal.prisma.shopping_mall_refund_requests.count({
       where: {
+        status: "pending",
         orderItem: {
           shopping_mall_product_variant_id: props.variantId,
         },
-        status: "pending",
       },
     });
-  if (pendingRefundRequests > 0) {
+  if (pendingRefunds > 0) {
     throw new HttpException(
-      "Cannot delete variant with pending refund requests",
+      "Cannot delete variant while refund requests are pending",
       400,
     );
   }
-  // Generate timestamp for soft delete
-  const now = toISOStringSafe(new Date());
-  // Soft delete variant
-  await MyGlobal.prisma.shopping_mall_product_variants.update({
-    where: { id: props.variantId },
-    data: {
-      deleted_at: now,
-      updated_at: now,
-    },
-  });
-  // Delete from all shopping carts
-  await MyGlobal.prisma.shopping_mall_cart_items.deleteMany({
-    where: {
-      shopping_mall_product_variant_id: props.variantId,
-    },
-  });
+  // 6. Perform deletion in transaction
+  await MyGlobal.prisma.$transaction([
+    // Soft delete the variant
+    MyGlobal.prisma.shopping_mall_product_variants.update({
+      where: { id: props.variantId },
+      data: {
+        deleted_at: new Date(),
+      },
+    }),
+    // Delete all cart items referencing this variant
+    MyGlobal.prisma.shopping_mall_cart_items.deleteMany({
+      where: {
+        shopping_mall_product_variant_id: props.variantId,
+      },
+    }),
+  ]);
 }

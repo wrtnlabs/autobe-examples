@@ -14,99 +14,125 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditPlatformAuthGuestJoin(props: {
+  ip: string;
   body: IRedditPlatformGuest.IJoin;
 }): Promise<IRedditPlatformGuest.IAuthorized> {
-  const now = new Date();
-  const accessExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // Check for duplicate email
+  const {
+    email,
+    password,
+    username,
+    display_name,
+    bio,
+    avatar_url,
+    href,
+    referrer,
+  } = props.body;
   const existing = await MyGlobal.prisma.reddit_platform_guests.findFirst({
-    where: { email: props.body.email },
+    where: { email: email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  const guestId: string & tags.Format<"uuid"> = v4();
-  // Create guest record
+  const usernameExisting =
+    await MyGlobal.prisma.reddit_platform_guests.findFirst({
+      where: { username: username },
+    });
+  if (usernameExisting) {
+    throw new HttpException("Username already taken", 409);
+  }
+  const ip = props.body.ip ?? props.ip;
+  const created_at = new Date().toISOString() as string &
+    tags.Format<"date-time">;
+  const updated_at = created_at;
+  const deleted_at: (string & tags.Format<"date-time">) | null = null;
+  const id = v4() as string & tags.Format<"uuid">;
+  const password_hash = await PasswordUtil.hash(password);
   const guest = await MyGlobal.prisma.reddit_platform_guests.create({
     data: {
-      id: guestId,
-      email: props.body.email,
-      password_hash: await PasswordUtil.hash(props.body.password),
-      username: props.body.username,
-      display_name: props.body.display_name,
-      bio: props.body.bio ?? null,
-      avatar_url: "",
+      id,
+      email,
+      password_hash,
+      username,
+      display_name,
+      bio: bio ?? null,
+      avatar_url: avatar_url ?? null,
       karma: 0,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
+      created_at,
+      updated_at,
+      deleted_at,
     },
   });
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  // Create session
+  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session_id = v4() as string & tags.Format<"uuid">;
+  const session_created_at = new Date().toISOString() as string &
+    tags.Format<"date-time">;
+  const session_expired_at = accessExpires.toISOString() as string &
+    tags.Format<"date-time">;
   const session = await MyGlobal.prisma.reddit_platform_guest_sessions.create({
     data: {
-      id: sessionId,
+      id: session_id,
       reddit_platform_guest_id: guest.id,
-      ip: props.body.ip ?? "0.0.0.0",
-      referrer: props.body.referrer ?? null,
-      href: props.body.href,
-      created_at: now,
-      expired_at: accessExpires,
+      ip,
+      referrer: referrer ?? null,
+      href,
+      created_at: session_created_at,
+      expired_at: session_expired_at,
     },
   });
-  // Generate JWT tokens
-  const token: IAuthorizationToken = {
+  const token = {
     access: jwt.sign(
       {
         type: "guest",
         id: guest.id,
-        session_id: session.id,
-        created_at: now.toISOString(),
-      } as const,
+        session_id,
+        created_at,
+      },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1d", issuer: "autobe" },
+      { expiresIn: "30m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "guest",
         id: guest.id,
-        session_id: session.id,
+        session_id,
         tokenType: "refresh",
-        created_at: now.toISOString(),
-      } as const,
+        created_at,
+      },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
   };
-  // Fetch sessions
-  const sessions =
-    await MyGlobal.prisma.reddit_platform_guest_sessions.findMany({
-      where: { reddit_platform_guest_id: guest.id },
-    });
   return {
     id: guest.id,
     email: guest.email,
     username: guest.username,
     display_name: guest.display_name,
     bio: guest.bio,
-    avatar_url: guest.avatar_url ?? null,
+    avatar_url: guest.avatar_url,
     karma: guest.karma,
-    created_at: now.toISOString(),
-    updated_at: now.toISOString(),
-    deleted_at: null,
-    sessions: sessions.map((s) => ({
-      id: s.id,
-      reddit_platform_guest_id: s.reddit_platform_guest_id,
-      ip: s.ip,
-      referrer: s.referrer,
-      href: s.href,
-      created_at: s.created_at.toISOString(),
-      expired_at: s.expired_at.toISOString(),
-    })),
+    created_at: guest.created_at.toISOString() as string &
+      tags.Format<"date-time">,
+    updated_at: guest.updated_at.toISOString() as string &
+      tags.Format<"date-time">,
+    deleted_at,
+    sessions: [
+      {
+        id: session.id,
+        reddit_platform_guest_id: session.reddit_platform_guest_id,
+        href: session.href,
+        referrer: session.referrer,
+        ip: session.ip,
+        created_at: session.created_at.toISOString() as string &
+          tags.Format<"date-time">,
+        expired_at: session.expired_at.toISOString() as string &
+          tags.Format<"date-time">,
+      },
+    ],
     token,
   } satisfies IRedditPlatformGuest.IAuthorized;
 }

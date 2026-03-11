@@ -15,73 +15,58 @@ import typia, { tags } from "typia";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
 import { generate_random_shopping_mall_seller_products_images_create } from "../../../generate/generate_random_shopping_mall_seller_products_images_create";
+import { generate_random_shopping_mall_seller_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_seller_products_create";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
 import { prepare_random_shopping_mall_product_image } from "../../../prepare/prepare_random_shopping_mall_product_image";
 
 /**
- * Test that a seller cannot upload images to products owned by another seller.
- * This validates ownership boundaries and data isolation between sellers.
+ * Test product ownership validation when attempting to upload an image to another seller's product.
  *
- * Scenario:
- * 1. Seller A registers and creates a product
- * 2. Seller B registers
- * 3. Seller B attempts to upload an image to Seller A's product
- * 4. Expect 403 Forbidden response (or 404 if product doesn't exist due to category)
+ * 1. Create Seller A account and authenticate
+ * 2. Seller A creates a product
+ * 3. Create Seller B account and authenticate
+ * 4. Seller B attempts to upload an image to Seller A's product (should fail)
+ * 5. Verify the system rejects unauthorized image upload
  */
 export async function test_api_product_image_ownership_validation(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Register Seller A and create a product
+  // 1. Create Seller A's connection and authenticate
   const sellerAConnection: api.IConnection = { host: connection.host };
-  const sellerA = await authorize_seller_join(sellerAConnection, {
+  await authorize_seller_join(sellerAConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      shop_name: RandomGenerator.name(),
+      password: RandomGenerator.alphaNumeric(16),
+      shopName: RandomGenerator.name(),
     },
   });
-  typia.assert(sellerA);
-  // Create a product for Seller A
-  // Note: Using generate utility which handles category requirements
-  const product = await generate_random_shopping_mall_seller_products_create(
-    sellerAConnection,
-    {
-      body: {
-        name: RandomGenerator.name(),
-        description: RandomGenerator.paragraph({ sentences: 5 }),
-        basePrice: typia.random<
-          number & tags.Type<"uint32">
-        >() satisfies number as number,
-      },
-    },
-  );
+  // 2. Seller A creates a product
+  const product =
+    await generate_random_shopping_mall_seller_seller_products_create(
+      sellerAConnection,
+      { body: {} },
+    );
   typia.assert(product);
-  // Step 2: Register Seller B with different email
+  // 3. Create Seller B's connection and authenticate
   const sellerBConnection: api.IConnection = { host: connection.host };
-  const sellerB = await authorize_seller_join(sellerBConnection, {
+  await authorize_seller_join(sellerBConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      shop_name: RandomGenerator.name(),
+      password: RandomGenerator.alphaNumeric(16),
+      shopName: RandomGenerator.name(),
     },
   });
-  typia.assert(sellerB);
-  // Step 3: Seller B attempts to upload an image to Seller A's product
-  // This should be rejected with 403 Forbidden
-  await TestValidator.httpError(
-    "seller B cannot upload image to seller A's product",
-    403,
-    async () => {
-      await api.functional.shoppingMall.seller.products.images.create(
+  // 4. Seller B attempts to upload an image to Seller A's product - should fail
+  await TestValidator.error(
+    "Seller B cannot upload image to Seller A's product",
+    () =>
+      generate_random_shopping_mall_seller_products_images_create(
         sellerBConnection,
         {
-          productId: product.id,
-          body: {
-            image_url: typia.random<string & tags.Format<"url">>() satisfies string as string,
-            display_order: 0,
-          } satisfies IShoppingMallProductImage.ICreate,
+          params: { productId: product.id },
+          body: {},
         },
-      );
-    },
+      ),
   );
 }

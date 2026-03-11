@@ -4,61 +4,62 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallAdminAuditLog } from "../../../../structures/IEcommerceMallAdminAuditLog";
-import { IEcommerceMallCustomer } from "../../../../structures/IEcommerceMallCustomer";
 import { IPageIEcommerceMallAdminAuditLog } from "../../../../structures/IPageIEcommerceMallAdminAuditLog";
 
 /**
- * Retrieve a filtered and paginated list of admin audit log entries for security monitoring, compliance auditing, and administrative oversight.
+ * Retrieve a filtered and paginated list of administrative action audit logs for security monitoring and compliance purposes.
  *
- * This operation provides comprehensive search capabilities for auditing administrator activities across the system. Admins can filter log entries by administrator identity, action type, affected entities, date ranges, IP addresses, and request correlation IDs.
+ * This operation provides super administrators with comprehensive audit log querying capabilities, including filtering by admin user, action type, target entity type, date ranges, and result status. The endpoint supports advanced search through text search on changes and new_values fields, enabling investigation of specific events.
  *
- * The audit trail includes complete context of each admin action: which admin performed the action, what type of operation was executed, which entity was affected, and the before/after state changes for dispute resolution and compliance verification.
+ * Response includes paginated audit log summaries optimized for admin dashboard displays, with each entry showing the action performed, affected entity, performing administrator, and timestamp. All audit logs are immutable and preserved for a minimum of 7 years for legal compliance.
  *
- * Supports advanced pagination with configurable page sizes, cursor-based navigation for large result sets, and sorting by timestamp, admin identity, or action type.
- *
- * All log entries are immutable and read-only, preserving the complete audit history for a minimum of 7 years as required by compliance standards.
+ * SUPER ADMINISTRATORS have full access to all audit logs. Regular administrators do not have access to this endpoint. The operation requires super administrator authentication and role verification before returning any data.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for audit log retrieval
+ * @param props.body Search criteria and pagination parameters for audit log queries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_admin_audit_logs table with pagination and filtering.
  *
- * Apply search filters on:
- * - admin_id (specific admin's actions)
- * - action_type (e.g., 'user_ban', 'category_create', 'seller_approve')
- * - target_entity_type (e.g., 'ecommerce_mall_customers', 'ecommerce_mall_sellers')
- * - target_entity_id (specific affected entity)
- * - created_at range (timestamp bounds)
- * - ip_address (partial match)
- * - request_id (correlation tracking)
+ * Service Layer Logic:
+ * 1. Verify requesting user has super administrator grade using admin grade check
+ * 2. Reject with 403 Forbidden if user is not super administrator
+ * 3. Build dynamic query based on provided search filters:
+ *    - admin_id: Filter logs by specific admin's actions
+ *    - action_type: Filter by action type (e.g., "user_ban", "seller_approve")
+ *    - target_entity_type: Filter by affected entity type
+ *    - target_entity_id: Filter by specific entity ID
+ *    - date_range: Filter by created_at timestamp range (start_date, end_date)
+ *    - ip_address: Filter by IP address
+ *    - text_search: Full-text search on changes and new_values JSON fields using PostgreSQL GIN index
+ * 4. Apply sorting: default by created_at DESC, allow custom sort fields
+ * 5. Apply pagination: cursor-based for large result sets, with configurable page size
+ * 6. Execute query and map results to AuditLogSummary DTO
+ * 7. Calculate pagination metadata: total count, page info, next/prev cursors
+ * 8. Return paginated response with audit log summaries
  *
- * Sort results by:
- * - created_at (default: descending)
- * - admin_id
- * - action_type
+ * Database Query:
+ * - Use indexed columns for efficient filtering: admin_id+created_at composite index, target_entity_type+target_entity_id index
+ * - Use GIN indexes on changes and new_values JSON fields for text search
+ * - Apply row-level security implicitly through admin grade check
+ * - No soft delete handling required (logs are immutable)
  *
- * Pagination:
- * - Cursor-based for large result sets
- * - Default page size: 50 entries
- * - Maximum page size: 200 entries
- * - Include total count and pagination metadata
+ * Validation Rules:
+ * - All date range values must be valid ISO 8601 timestamps
+ * - Page size must be between 10 and 100 (prevent excessive data transfer)
+ * - Sort field must be one of: created_at, updated_at, admin_id, action_type, target_entity_type
+ * - If text_search provided, use trigram search for fuzzy matching
  *
- * Security:
- * - Only super administrators can access all logs
- * - Regular administrators can access logs filtered by their own admin_id only
- * - Log entries are immutable - no write operations allowed
+ * Edge Cases:
+ * - No results found: Return empty data array with pagination metadata showing 0 total
+ * - Invalid filter values: Reject with 400 Bad Request
+ * - Concurrent access: No locking needed (read-only operation)
  *
- * Response includes:
- * - Paginated list of audit log summaries
- * - Each summary contains: id, admin_id, action_type, target_entity_type, target_entity_id, created_at, ip_address
- * - Pagination metadata: page, pageSize, totalItems, totalPages, hasMore
- *
- * Edge cases:
- * - Return empty array if no matching entries found
- * - Handle date range overlaps gracefully
- * - Ensure IP address partial matching is case-insensitive
- * - Truncate changes/previous_values/new_values in list view (return full details only on 'at' operation)
+ * Error Handling:
+ * - 401 Unauthorized: Not authenticated
+ * - 403 Forbidden: User is not super administrator
+ * - 400 Bad Request: Invalid filter parameters or pagination values
+ * - 500 Internal Server Error: Database query failure
  * @path /ecommerceMall/admin/audit-logs
  * @accessor api.functional.ecommerceMall.admin.audit_logs.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -88,7 +89,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for audit log retrieval
+     * Search criteria and pagination parameters for audit log queries
      */
     body: IEcommerceMallAdminAuditLog.IRequest;
   };
@@ -137,36 +138,38 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific administrator audit log entry by its unique identifier for security investigation and compliance monitoring.
+ * Retrieve a specific administrator audit log entry by its unique identifier.
  *
- * This operation provides access to the complete audit trail of a specific administrative action, including the administrator who performed the action, the type of action, the entity affected, and the before-after state changes. Audit logs are immutable records that preserve the full context of system changes for security forensics, dispute resolution, and regulatory compliance.
+ * This endpoint provides read-only access to immutable audit log records that track all administrator actions for security monitoring and compliance purposes. Each audit log entry contains complete context of the action performed, including which administrator performed it, what type of action was executed, which entity was affected, and before-after state tracking in JSON format.
  *
- * The returned audit log includes metadata about the client request (IP address, user agent), correlation information (request_id), and the complete state snapshot of the affected entity before and after the action. This information is critical for investigating security incidents, tracking policy violations, and maintaining an immutable audit trail of all privileged operations.
+ * Audit logs are critical for security incident investigation, compliance audits, and change history tracking. The logs cannot be modified or deleted under any circumstances, ensuring complete audit trail integrity.
  *
- * Access to audit logs is restricted to administrators with appropriate clearance levels. Regular administrators can typically view their own actions and recent audit entries, while super administrators have access to the complete audit history across all system activities.
+ * Only administrators and auditors have access to audit logs. Account owners can view their own logs, while administrators can view all logs across the system. Based on the audit logging requirements, super administrators have exclusive access to export logs in CSV format for administrative reporting.
  *
- * **Related Operations**:
- *
- * `PATCH /ecommerceMall/admin/audit-logs` must be used to search and list all audit log entries. This operation retrieves detailed information for a specific log entry identified by the UUID in the path parameter.
+ * This operation returns a single audit log entry with all associated metadata including the performing admin's identity, action type, target entity information, state changes, request tracking ID, client IP address, user agent, and timestamps.
  *
  * @param props.connection
- * @param props.logId Unique identifier of the audit log entry to retrieve.
+ * @param props.auditLogId Unique identifier of the audit log entry to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table for the audit log entry matching the provided logId UUID. Retrieve all fields including admin_id, action_type, target_entity_type, target_entity_id, changes (JSON string), previous_values (JSON string), new_values (JSON string), request_id, ip_address, user_agent, created_at, and updated_at.
+ * @x-autobe-specification Retrieve a single audit log entry from ecommerce_mall_admin_audit_logs table by UUID.
  *
- * Validate that the logId exists in the database. If not found, return 404 Not Found with appropriate error message.
+ * Implementation steps:
+ * 1. Validate auditLogId parameter is a valid UUID format
+ * 2. Query ecommerce_mall_admin_audit_logs table where id = auditLogId
+ * 3. Verify the requesting user has administrator or auditor role
+ * 4. Join with ecommerce_mall_admins table to get admin details (name, email, grade) if needed
+ * 5. Return the complete audit log entry with all fields
+ * 6. If not found, return 404 Not Found
+ * 7. If unauthorized, return 403 Forbidden
  *
- * Perform authorization check to verify the requesting admin has permission to access this specific audit log entry. Super administrators have access to all logs. Regular administrators may be restricted to viewing only logs of their own actions or a limited timeframe.
- *
- * Parse the JSON string fields (changes, previous_values, new_values) and return them as parsed JSON objects rather than raw strings.
- *
- * Return the complete audit log entry with all fields populated. Include the linked admin entity information (admin name, email) if the admin record still exists in the system.
- *
- * Sort the result by created_at descending (single record, so deterministic ordering). Ensure proper JSON serialization of DateTime fields as ISO 8601 format strings.
- *
- * Handle edge cases: admin who performed action may have been deleted (return null for linked admin), target entity may have been deleted (return null for entity details but preserve audit data).
- * @path /ecommerceMall/admin/audit-logs/:logId
+ * Business rules:
+ * - Audit logs are immutable - no modifications allowed
+ * - Verify admin access level before returning logs
+ * - Include all JSON fields (changes, previous_values, new_values) as-is from database
+ * - Handle null values for optional fields (target_entity_id, changes, previous_values, new_values, request_id, ip_address, user_agent)
+ * - Audit log entries are created automatically by the system when admin actions occur - never manually created
+ * @path /ecommerceMall/admin/audit-logs/:auditLogId
  * @accessor api.functional.ecommerceMall.admin.audit_logs.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -194,15 +197,15 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the audit log entry to retrieve.
+     * Unique identifier of the audit log entry to retrieve
      */
-    logId: string & tags.Format<"uuid">;
+    auditLogId: string & tags.Format<"uuid">;
   };
-  export type Response = IEcommerceMallCustomer.IAdminAuditLog;
+  export type Response = IEcommerceMallAdminAuditLog;
 
   export const METADATA = {
     method: "GET",
-    path: "/ecommerceMall/admin/audit-logs/:logId",
+    path: "/ecommerceMall/admin/audit-logs/:auditLogId",
     request: null,
     response: {
       type: "application/json",
@@ -211,9 +214,9 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/ecommerceMall/admin/audit-logs/${encodeURIComponent(props.logId ?? "null")}`;
-  export const random = (): IEcommerceMallCustomer.IAdminAuditLog =>
-    typia.random<IEcommerceMallCustomer.IAdminAuditLog>();
+    `/ecommerceMall/admin/audit-logs/${encodeURIComponent(props.auditLogId ?? "null")}`;
+  export const random = (): IEcommerceMallAdminAuditLog =>
+    typia.random<IEcommerceMallAdminAuditLog>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -225,7 +228,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("logId")(() => typia.assert(props.logId));
+      assert.param("auditLogId")(() => typia.assert(props.auditLogId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

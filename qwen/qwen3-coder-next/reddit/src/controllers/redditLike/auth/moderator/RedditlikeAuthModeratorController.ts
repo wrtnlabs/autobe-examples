@@ -10,70 +10,32 @@ import { postRedditLikeAuthModeratorRefresh } from "../../../../providers/postRe
 @Controller("/redditLike/auth/moderator")
 export class RedditlikeAuthModeratorController {
   /**
-   * Moderator registration endpoint for creating new moderator accounts with elevated permissions for community content management.
+   * Create new moderator account for community management.
    *
-   * ## Purpose and Functionality
+   * This endpoint registers a new moderator actor in the system, creating the foundational account structure needed for community moderation capabilities. The operation validates that the provided email address and username are unique across all moderator accounts before proceeding with account creation.
    *
-   * This endpoint allows new moderators to register accounts for managing community content. It handles the complete registration workflow including email verification token generation and secure password storage.
+   * Upon successful validation, the system securely hashes the moderator's password using bcrypt for secure storage, then creates the moderator record in the database with initial values: karma_score set to 0 (to be incremented through content contributions), and email_verified_at set to null (since new accounts require email verification).
    *
-   * ## Authentication Flow
+   * The system automatically generates an email verification token and stores it in the reddit_like_moderator_email_verifications table with a SHA-256 hash of the token (never storing the raw token for security). This token is sent to the moderator's email address for verification.
    *
-   * The registration process follows these steps:
+   * After successful account creation, the system immediately authenticates the new moderator by generating both an access token (short-lived for API requests) and a refresh token (long-lived for session management). These tokens enable the moderator to begin using the system immediately after registration.
    *
-   * 1. **Input Validation**: Validates email format, username uniqueness, password strength requirements (minimum length, complexity), and required field presence
+   * The operation supports the following fields:
    *
-   * 2. **Password Security**: Applies strong hashing algorithm (bcrypt) to store passwords securely in the `password_hash` field of the `reddit_like_moderators` table
+   * - email: Unique email address for authentication and communication
+   * - password: Secure password that will be hashed using bcrypt
+   * - username: Unique username for moderator profile and mentions
+   * - display_name: Public display name shown in the UI
    *
-   * 3. **Unique Constraints**: Enforces unique email and username constraints from the database schema. Returns 409 Conflict if email or username already exists
-   *
-   * 4. **Email Verification**: Generates secure random token, stores hashed version in `reddit_like_moderator_email_verifications` table, and sends verification email with expiration timestamp
-   *
-   * 5. **Account Creation**: Creates moderator record in `reddit_like_moderators` table with default karma_score (0) and initial timestamps
-   *
-   * 6. **Response**: Returns success indicator without exposing sensitive information about the verification process
-   *
-   * ## Database Integration
-   *
-   * - Uses `reddit_like_moderators` table for moderator records
-   * - Creates corresponding entry in `reddit_like_moderator_email_verifications` table
-   * - Stores password as hashed value in `password_hash` field (never plain text)
-   * - Uses UUID primary keys for all records
-   * - Applies proper timestamp fields (created_at, updated_at)
-   *
-   * ## Security Considerations
-   *
-   * - Passwords are never stored in plain text
-   * - Email verification tokens are hashed before storage
-   * - Token expiration is enforced (typically 24-48 hours)
-   * - Rate limiting prevents registration abuse
-   * - Session tokens are not generated during registration (email verification required first)
-   *
-   * ## Error Handling
-   *
-   * - 400 Bad Request: Invalid input format, missing required fields, password strength violations
-   * - 409 Conflict: Email or username already exists in database
-   * - 500 Internal Server Error: Database errors, email service failures, token generation failures
-   *
-   * ## Business Rules
-   *
-   * - Moderator accounts require verified email before full access
-   * - Username must be unique across all moderator and member accounts
-   * - Password must meet security requirements (minimum length, character diversity)
-   * - Email verification must be completed before account becomes active
-   *
-   * ## Related Operations
-   *
-   * - `POST /auth/verify-email` - Verify email after registration
-   * - `POST /auth/login` - Login after email verification
-   * - `POST /auth/register` - Member registration (similar flow for regular users)
+   * All fields are required for moderator account creation to ensure complete profile information from the start.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Moderator registration request with email, password, and username. Password will be securely hashed before storage.
+   * @param body Moderator account creation request with authentication credentials and profile information.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Implement moderator registration flow with email verification. Validate email uniqueness, username uniqueness, and password strength requirements. Hash password before storage. Create moderator record in database. Generate and send email verification token. Return success status without exposing sensitive information.
+   * @x-autobe-specification Service creates new moderator account by validating unique email/username, hashing password with bcrypt, storing moderator record with default karma_score 0, creating initial email verification token, and returning authorized response with access/refresh tokens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -95,72 +57,40 @@ export class RedditlikeAuthModeratorController {
   }
 
   /**
-   * Moderator login endpoint for authenticating existing moderators and establishing JWT-based sessions with elevated permissions for community management.
+   * Authenticate existing moderator account and establish session.
    *
-   * ## Purpose and Functionality
+   * This endpoint validates moderator credentials by verifying the provided email and password against stored account information. The system performs a secure multi-step validation process: first checking if the email exists in the database, then comparing the provided password against the bcrypt-hashed password stored in the password_hash field of the moderator record.
    *
-   * This endpoint authenticates registered moderators and establishes secure JWT sessions. It validates credentials against the database, generates authentication tokens, and creates session audit records.
+   * Upon successful credential verification, the system creates a new session entry in the reddit_like_moderator_sessions table. This session record captures important security metadata including:
    *
-   * ## Authentication Flow
+   * - IP address from which the authentication request originated
+   * - Full URL path that was accessed (href field)
+   * - HTTP referrer URL that directed the moderator to the system
+   * - Timestamps for session creation and expiration
    *
-   * The login process follows these steps:
+   * The session recording provides an append-only audit trail of all moderator authentication events, which is essential for security monitoring and incident investigation.
    *
-   * 1. **Credential Validation**: Validates email format and checks if moderator exists in `reddit_like_moderators` table
+   * Following session creation, the system generates a pair of JWT tokens:
    *
-   * 2. **Password Verification**: Uses secure comparison (bcrypt) to verify password hash matches the `password_hash` field in database
+   * - Access token: Short-lived token (typically 15-30 minutes) used for authenticating API requests
+   * - Refresh token: Long-lived token (typically days to weeks) used to obtain new access tokens without re-authentication
    *
-   * 3. **Email Verification Check**: Verifies `email_verified_at` field is not null before allowing login
+   * Both tokens are signed using secure cryptographic keys and contain the moderator's unique identifier (reddit_like_moderator_id) as a claim.
    *
-   * 4. **Token Generation**: Creates JWT access token (short-lived, e.g., 15 minutes) and refresh token (long-lived, e.g., 7 days)
+   * The operation requires the following fields:
    *
-   * 5. **Session Recording**: Creates record in `reddit_like_moderator_sessions` table with IP address, referrer information, and timestamps
+   * - email: Registered email address associated with the moderator account
+   * - password: Plaintext password that will be verified against the bcrypt hash
    *
-   * 6. **Response**: Returns authenticated user information with JWT tokens
-   *
-   * ## Database Integration
-   *
-   * - Queries `reddit_like_moderators` table for moderator record by email
-   * - Verifies password hash stored in `password_hash` field
-   * - Checks `email_verified_at` timestamp for verification status
-   * - Creates session record in `reddit_like_moderator_sessions` table
-   * - Updates session timing fields (created_at, expired_at)
-   *
-   * ## Security Considerations
-   *
-   * - Passwords are never stored or transmitted in plain text
-   * - JWT tokens follow secure signing practices
-   * - Session records include IP address for audit trail
-   * - Failed login attempts are tracked (rate limiting recommended)
-   * - Token expiration enforces security boundaries
-   *
-   * ## Error Handling
-   *
-   * - 400 Bad Request: Invalid email format, missing required fields
-   * - 401 Unauthorized: Invalid credentials (email not found, password mismatch, unverified email)
-   * - 403 Forbidden: Account suspended or deleted (check `deleted_at` field)
-   * - 429 Too Many Requests: Rate limiting on authentication attempts
-   * - 500 Internal Server Error: Token generation failures, database errors
-   *
-   * ## Business Rules
-   *
-   * - Moderators must verify email before first login
-   * - Deleted moderator accounts (non-null `deleted_at`) cannot authenticate
-   * - Suspended accounts should be handled by business logic (check `deleted_at` field pattern)
-   * - Password reset tokens are valid for limited time (check `reddit_like_moderator_password_resets.expires_at`)
-   *
-   * ## Related Operations
-   *
-   * - `POST /auth/refresh` - Refresh expired access tokens
-   * - `POST /auth/change-password` - Change password for authenticated moderators
-   * - `POST /auth/register` - Initial registration (must complete email verification first)
+   * Successful authentication returns both tokens in the authorized response, enabling the moderator to begin authenticated sessions immediately.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Moderator login request with email and password credentials for authentication.
+   * @param body Moderator authentication request with email and password credentials.
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Implement moderator authentication with JWT tokens. Validate email and password against database records. Generate access and refresh tokens with proper expiration. Create session record tracking IP address and authentication time. Handle failed login attempts with appropriate error responses.
+   * @x-autobe-specification Service validates moderator credentials by checking email existence, verifying password hash with bcrypt, creating new session record in reddit_like_moderator_sessions table with IP address and metadata, and generating access/refresh tokens for authentication.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -182,67 +112,43 @@ export class RedditlikeAuthModeratorController {
   }
 
   /**
-   * Moderator token refresh endpoint for extending authenticated sessions without requiring re-authentication.
+   * Renew authentication tokens using valid refresh token.
    *
-   * ## Purpose and Functionality
+   * This endpoint implements the token refresh pattern for maintaining continuous moderator sessions without requiring frequent re-authentication. The system validates the provided refresh token by checking it against active sessions in the reddit_like_moderator_sessions table.
    *
-   * This endpoint allows moderators to refresh their JWT access tokens using valid refresh tokens. It extends session lifetime while maintaining security boundaries.
+   * The validation process includes several important security checks:
    *
-   * ## Token Refresh Flow
+   * - Verify the refresh token is still valid (not expired based on expired_at timestamp)
+   * - Confirm the token has not been revoked (revoked_at is null)
+   * - Ensure the session record matches the provided refresh token
+   * - Validate that the moderator account has not been deleted (deleted_at is null)
    *
-   * The refresh process follows these steps:
+   * When all validations pass, the system generates a new access token with updated expiration time while ensuring the old refresh token is effectively invalidated by treating it as used.
    *
-   * 1. **Token Validation**: Extracts refresh token from request headers/cookies and validates JWT signature and structure
+   * This approach provides security benefits:
    *
-   * 2. **Session Verification**: Queries `reddit_like_moderator_sessions` table to verify session is still active (not expired)
+   * - Fresh access tokens ensure timely token expiration
+   * - Refresh token rotation prevents replay attacks
+   * - Session tracking enables detection of unauthorized access
    *
-   * 3. **Token Generation**: Creates new JWT access token with fresh expiration time
+   * The operation requires only the refresh token in the request body:
    *
-   * 4. **Session Update**: Optionally updates session `updated_at` timestamp for audit trail
+   * - refreshToken: Valid refresh token from a previous authentication session
    *
-   * 5. **Response**: Returns new access token with extended session
+   * Successful token refresh returns a new authorized response containing:
    *
-   * ## Database Integration
+   * - New access token with extended expiration time
+   * - New refresh token to replace the used one
    *
-   * - Queries `reddit_like_moderator_sessions` table using token metadata
-   * - Validates session `expired_at` timestamp has not passed
-   * - Updates `updated_at` timestamp for audit trail (optional but recommended)
-   * - Checks `deleted_at` field for soft-deleted sessions
-   *
-   * ## Security Considerations
-   *
-   * - Refresh tokens should have longer expiration than access tokens
-   * - Session records track token refresh activity
-   * - Invalid or expired refresh tokens are rejected immediately
-   * - Token refresh doesn't invalidate existing access tokens (both valid until expiration)
-   *
-   * ## Error Handling
-   *
-   * - 400 Bad Request: Invalid refresh token format, missing token
-   * - 401 Unauthorized: Expired refresh token, revoked token, session expired
-   * - 403 Forbidden: Session marked as deleted (soft-deleted)
-   * - 500 Internal Server Error: Database query failures, token generation errors
-   *
-   * ## Business Rules
-   *
-   * - Access tokens typically expire in 15 minutes
-   * - Refresh tokens typically expire in 7 days (configurable)
-   * - Session must be active (not expired) for refresh to succeed
-   * - Refresh tokens cannot be reused after expiration
-   *
-   * ## Related Operations
-   *
-   * - `POST /auth/login` - Initial authentication establishing session
-   * - `POST /auth/refresh` - Subsequent token refresh calls
-   * - `DELETE /auth/logout` - Client-side token discarding (not implemented server-side)
+   * This enables moderators to maintain continuous access to community management capabilities while ensuring security through regular token rotation.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Token refresh request containing valid refresh token for extending moderator session.
+   * @param body Token refresh request containing valid refresh token.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Implement token refresh mechanism for moderator sessions. Validate refresh token from request. Generate new access token with extended expiration. Update session record in database. Handle token expiration and revocation scenarios.
+   * @x-autobe-specification Service validates refresh token against stored session in reddit_like_moderator_sessions table, checks expiration and revocation status, generates new access token while revoking the old refresh token, and returns updated authorized response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

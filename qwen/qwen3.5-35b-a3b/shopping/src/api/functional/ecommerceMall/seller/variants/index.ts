@@ -1,2 +1,2 @@
-export * as inventory_records from "./inventory_records/index";
-export * as inventory_history from "./inventory_history/index";
+export * as inventoryRecords from "./inventoryRecords/index";
+export * as inventory from "./inventory/index";

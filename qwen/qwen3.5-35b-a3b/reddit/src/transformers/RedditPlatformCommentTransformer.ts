@@ -28,7 +28,7 @@ export namespace RedditPlatformCommentTransformer {
         author: RedditPlatformMemberAtSummaryTransformer.select(),
         post: RedditPlatformPostAtSummaryTransformer.select(),
         parent: RedditPlatformCommentAtSummaryTransformer.select(),
-        replies: true,
+        replies: RedditPlatformCommentAtSummaryTransformer.select(),
         votes: true,
         moderationAuditLogs: true,
       },
@@ -39,9 +39,6 @@ export namespace RedditPlatformCommentTransformer {
   ): Promise<IRedditPlatformComment> {
     return {
       id: input.id,
-      author_id: input.author.id,
-      post_id: input.post?.id ?? null,
-      parent_id: input.parent?.id ?? null,
       content: input.content,
       vote_score: input.vote_score,
       author: await RedditPlatformMemberAtSummaryTransformer.transform(
@@ -55,9 +52,12 @@ export namespace RedditPlatformCommentTransformer {
             input.parent,
           )
         : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-    } satisfies IRedditPlatformComment;
+      replies: await ArrayUtil.asyncMap(input.replies, (reply) =>
+        RedditPlatformCommentAtSummaryTransformer.transform(reply),
+      ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    };
   }
 }

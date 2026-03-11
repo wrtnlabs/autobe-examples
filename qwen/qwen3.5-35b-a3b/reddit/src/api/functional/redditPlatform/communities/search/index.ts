@@ -7,30 +7,64 @@ import { IPageIRedditPlatformCommunity } from "../../../../structures/IPageIRedd
 import { IRedditPlatformCommunity } from "../../../../structures/IRedditPlatformCommunity";
 
 /**
- * Search and retrieve communities based on name matching criteria and optional filters.
+ * Search and retrieve communities from the Reddit platform with advanced filtering, sorting, and pagination capabilities.
  *
- * This operation enables users to find communities by searching their names with case-insensitive partial matching. The search returns communities that contain the search term in their name, along with their description, icon URL, and subscriber count.
+ * This operation provides comprehensive community discovery functionality, allowing users to find communities by name using case-insensitive partial matching. The endpoint supports filtering by subscriber count ranges and sorting by various criteria including subscriber count and creation date.
  *
- * The endpoint supports advanced filtering options including subscriber count ranges, sorting by name or subscriber count, and pagination for handling large result sets. Results are filtered to exclude soft-deleted communities (those with deleted_at set).
+ * Both guest and authenticated users can access this endpoint for community browsing and discovery. The response includes community details such as name, description, icon URL, and current subscriber count.
  *
- * Both authenticated and unauthenticated users can access this endpoint to discover communities on the platform. The response includes essential community information optimized for search result display.
+ * Search queries are validated to filter out invalid or special characters. Empty queries return all active communities. Communities with zero subscribers are still included in results.
+ *
+ * **Filtering Behavior:**
+ *
+ * The operation filters out soft-deleted communities by excluding records where `deleted_at` is set. Only active, non-deleted communities are returned in search results. Invalid search queries containing only special characters are rejected with appropriate error messages.
+ *
+ * **Performance Characteristics:**
+ *
+ * Results are paginated to optimize response size and performance. Search operations use database indexes on the `name` field for efficient case-insensitive matching. Pagination support enables efficient browsing of large community datasets.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for community discovery
+ * @param props.body Search criteria, pagination, and sorting parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_platform_communities table with case-insensitive partial name matching on the 'name' field.
+ * @x-autobe-specification Query reddit_platform_communities table with filtering and pagination.
  *
- * Apply search filters:
- * - name: Perform ILIKE search with wildcards (e.g., '%query%')
- * - minSubscribers and maxSubscribers: Filter by subscriber_count range
- * - sortBy and sortOrder: Sort results by name or subscriber_count
- * - page and limit: Apply cursor-based or offset pagination
+ * Search logic:
+ * - If searchQuery is provided: perform case-insensitive LIKE search on name field with invalid character filtering
+ * - If searchQuery is empty or not provided: return all active communities
+ * - Filter out deactivated or deleted communities (status filter)
  *
- * Filter out soft-deleted communities (WHERE deleted_at IS NULL).
- * Join with reddit_platform_members if including owner information.
- * Return paginated results with total count for pagination metadata.
- * Optimize query performance with index on name field.
+ * Filtering:
+ * - Apply minSubscriberCount and maxSubscriberCount if provided (integer comparison)
+ * - Apply name filter for case-insensitive partial matching
+ * - Exclude communities with status = 'deleted' or status = 'deactivated'
+ *
+ * Sorting:
+ * - sortBy parameter determines sort order: 'subscriber_count' (default), 'name', 'created_at'
+ * - sortOrder determines direction: 'asc' or 'desc'
+ * - For 'subscriber_count' sorting, join with subscriber aggregation or use the subscriberCount column directly
+ *
+ * Pagination:
+ * - Implement cursor-based pagination using pageCursor and pageSize
+ * - Return nextCursor for navigation
+ * - Default pageSize is 20, maximum is 100
+ * - Validate pageCursor format (base64 encoded timestamp or ID)
+ *
+ * Validation:
+ * - Filter searchQuery for invalid characters per Section 336
+ * - Reject queries with only special characters
+ * - Validate sortBy and sortOrder values
+ * - Enforce page number >= 1
+ *
+ * Performance:
+ * - Index on name field for search optimization
+ * - Cache frequent search queries for 5 minutes
+ * - Return results within 500ms at 95th percentile per Section 628
+ * - Return zero results within 200ms if no matches exist
+ *
+ * Response structure:
+ * - Paginated wrapper with pagination metadata (total, page, pageSize, hasMore)
+ * - Array of community summaries optimized for list display
  * @path /redditPlatform/communities/search
  * @accessor api.functional.redditPlatform.communities.search.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -60,7 +94,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for community discovery
+     * Search criteria, pagination, and sorting parameters
      */
     body: IRedditPlatformCommunity.IRequest;
   };

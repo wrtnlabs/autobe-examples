@@ -23,9 +23,7 @@ export async function generate_random_shopping_mall_customer_wishlists_items_cre
   const result: IShoppingMallWishlistItem =
     await api.functional.shoppingMall.customer.wishlists.items.create(
       connection,
-      {
-        body: prepared,
-      },
+      { body: prepared },
     );
   return result;
 }

@@ -1,66 +1,54 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallProduct } from "../../../structures/IPageIShoppingMallProduct";
 import { IShoppingMallProduct } from "../../../structures/IShoppingMallProduct";
 
 export * as images from "./images/index";
 export * as variants from "./variants/index";
-export * as reviews from "./reviews/index";
+export * as snapshots from "./snapshots/index";
+export * as search from "./search/index";
+export * as review_stats from "./review_stats/index";
 
 /**
- * Search and browse products across all sellers on the platform.
+ * Search and browse products available in the shopping mall catalog.
  *
- * This endpoint provides comprehensive product discovery capabilities for customers, supporting full-text search on product names, category-based browsing, and price-based filtering. The search functionality enables customers to find products efficiently across the entire marketplace.
+ * This endpoint provides comprehensive product discovery capabilities for customers, enabling text-based search on product names, filtering by category assignment, price range constraints, and stock availability. Products are returned in a paginated format with summary information optimized for catalog browsing.
  *
- * **Filtering Options**
- * Products can be filtered by category (including products in subcategories), price range (minimum and maximum price boundaries), and stock availability (in-stock only toggle). The category filter supports hierarchical browsing - when a parent category is specified, products from both the parent and its subcategories are included.
+ * The search functionality supports partial matching on product names using full-text search capabilities. Category filtering accepts both top-level category and subcategory IDs - when a top-level category is specified, products from all its subcategories are included in results.
  *
- * **Sorting Options**
- * Search results can be sorted by newest first (default), price from low to high, or price from high to low. Sorting helps customers find the most relevant products based on their preferences.
+ * Product availability is determined by the seller's approval status (must be approved and not suspended), the product's active state (not deleted), and the existence of at least one non-deleted variant with available stock. Products without any active variants are marked as unavailable and excluded from results when the in-stock filter is applied.
  *
- * **Product Summary Information**
- * Each product in the results includes the main thumbnail image (first image by display order), product name, base price or price range if variants have different prices, seller shop name for identification, and average rating with review count when available.
+ * Results include essential product information: name, base price, category name, primary thumbnail image (lowest display_order), seller shop name, and calculated availability status. For detailed product information including full description, all images, variant configurations, and customer reviews, use the GET /products/{productId} endpoint.
  *
- * **Visibility Rules**
- * Only active products from approved and non-suspended sellers are shown. Products marked as deleted are excluded from search results. Products from suspended or banned sellers are hidden to maintain marketplace quality.
- *
- * **Pagination**
- * Results are paginated with cursor-based navigation for efficient browsing of large result sets. Each page includes pagination metadata for seamless navigation.
- *
- * **Related Operations**
- * After browsing products, customers can view detailed product information using GET /products/{productId} and add items to cart using POST /cart/items.
+ * Pagination follows cursor-based navigation for efficient browsing of large result sets. Sorting options include relevance (for text searches), price (ascending/descending), creation date (newest first), and name (alphabetical).
  *
  * @param props.connection
- * @param props.body Search criteria including filters for category, price range, stock availability, sorting options, and pagination parameters
+ * @param props.body Product search criteria including text search, category filter, price range, stock availability, pagination, and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_products table with the following steps:
+ * @x-autobe-specification Query shopping_mall_products table with LEFT JOIN on shopping_mall_categories for category information, LEFT JOIN on shopping_mall_sellers to filter by seller status, LEFT JOIN on shopping_mall_product_images for primary image, and LEFT JOIN on shopping_mall_product_variants for stock availability calculation.
  *
- * 1. Apply base filter: Exclude soft-deleted products (deleted_at IS NULL)
- * 2. Apply seller filter: Exclude products from suspended or banned sellers (join shopping_mall_sellers, filter where suspended = false AND banned = false)
- * 3. Apply category filter if provided: Filter by shopping_mall_category_id, including subcategories (if category_id is a parent, also include products in child categories)
- * 4. Apply price range filter if provided: Join shopping_mall_product_variants, calculate effective price (variant.price OR product.base_price), filter by min_price and max_price
- * 5. Apply in-stock filter if provided: Join shopping_mall_product_variants and shopping_mall_inventory_records, calculate current stock, filter for products with at least one variant having stock > 0
- * 6. Apply name search if provided: Full-text search on product.name using GIN trigram index
- * 7. Apply sorting: created_at DESC (newest), base_price ASC (price low-high), base_price DESC (price high-low)
- * 8. Calculate aggregations for each product:
- *    - Main image: SELECT from shopping_mall_product_images WHERE display_order is minimum
- *    - Price range: MIN and MAX of COALESCE(variant.price, product.base_price)
- *    - Average rating: AVG from shopping_mall_reviews where deleted_at IS NULL
- *    - Review count: COUNT from shopping_mall_reviews where deleted_at IS NULL
- * 9. Apply pagination using cursor-based approach with configurable page size
- * 10. Return paginated result with product summaries
+ * WHERE clause filters:
+ * 1. products.deleted_at IS NULL (active products only)
+ * 2. sellers.approval_status = 'approved' AND sellers.suspended = false AND sellers.banned = false AND sellers.deleted_at IS NULL (valid sellers only)
+ * 3. If categoryId provided: products.shopping_mall_category_id = categoryId OR category.parent_id = categoryId (include subcategory products)
+ * 4. If searchText provided: products.name ILIKE '%searchText%' (full-text search with gin_trgm_ops index)
+ * 5. If minPrice provided: products.base_price >= minPrice
+ * 6. If maxPrice provided: products.base_price <= maxPrice
+ * 7. If inStockOnly = true: EXISTS subquery checking variants with deleted_at IS NULL AND (SELECT SUM(quantity_change) FROM inventory_records WHERE variant_id = variant.id) > 0
  *
- * Transaction: Read-only query, no transaction needed.
+ * Calculate availability: EXISTS(variants WHERE deleted_at IS NULL AND stock > 0)
  *
- * Edge cases:
- * - Products without variants: Show as unavailable (include but mark out_of_stock = true)
- * - Products with all variants out of stock: Show with out_of_stock indicator
- * - Products without images: Return null for thumbnail
- * - Products without reviews: Return null for average_rating and 0 for review_count
+ * Select fields: product.id, product.name, product.base_price, product.created_at, category.name as category_name, seller.shop_name, primary_image.image_url
+ *
+ * Order by: sortBy field (relevance/price/createdAt/name) with sortOrder (asc/desc), default 'createdAt DESC'
+ *
+ * Pagination: Use cursor-based pagination with 'limit' and 'cursor' (base64 encoded last record identifier) for efficient large dataset navigation.
+ *
+ * Return IPageIShoppingMallProduct.ISummary with 'data' array and 'pagination' object containing nextCursor, hasNext, and totalCount.
  * @path /shoppingMall/products
  * @accessor api.functional.shoppingMall.products.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -90,7 +78,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria including filters for category, price range, stock availability, sorting options, and pagination parameters
+     * Product search criteria including text search, category filter, price range, stock availability, pagination, and sorting options
      */
     body: IShoppingMallProduct.IRequest;
   };
@@ -139,47 +127,47 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a single product from the shopping_mall_products table, including all related data from associated tables.
+ * Retrieve comprehensive product details for display on product detail pages.
  *
- * This operation provides the complete product detail view for customers browsing the marketplace. The shopping_mall_products table serves as the primary entity, joined with shopping_mall_sellers for shop information (shop_name, logo_image), shopping_mall_categories for category assignment with parent hierarchy support, shopping_mall_product_images for the complete image gallery sorted by display_order, and shopping_mall_product_variants for available SKU configurations with their stock quantities calculated from shopping_mall_inventory_records.
+ * Returns the product with name, description, base price, category assignment, seller's public profile (shop name, description, logo), all images in display order, available variants with SKU codes and pricing, current stock availability per variant, and customer reviews with ratings.
  *
- * Product visibility follows platform business rules: products from sellers with suspended=true or banned=true are not accessible (404 error), and products with deleted_at IS NOT NULL return 404. Products with no active variants (all deleted_at IS NOT NULL) are displayed but marked as unavailable for purchase.
+ * **Product Availability**: Only active products from approved sellers are accessible. Deleted products or products from suspended/banned sellers return a 404 response.
  *
- * The shopping_mall_reviews table provides review data with average rating and total count aggregations. Reviews are displayed with customer display_name from shopping_mall_customers, showing 'deleted user' for accounts where deleted_at IS NOT NULL. Per business rule [925], reviews are sorted by created_at in descending order (newest first).
+ * **Review Display**: Reviews are sorted by creation date (newest first). Reviews from deleted customer accounts show 'deleted user' as the author name.
  *
- * Related operations:
- * - GET /shoppingMall/sellers/{sellerId} - View seller profile after clicking seller shop name
- * - GET /shoppingMall/categories/{categoryId}/products - Browse products by category
- * - POST /shoppingMall/reviews - Create review after product delivery
+ * **Related Operations**: GET /products searches products by category or keyword. PATCH /customers/cart/{variantId} adds a specific variant to cart. GET /sellers/{sellerId} views seller profile details.
  *
  * @param props.connection
  * @param props.productId Unique identifier of the product to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_products table by productId UUID.
+ * @x-autobe-specification Query shopping_mall_products table by primary key (id = productId) with joins to:
+ * 1. shopping_mall_sellers for seller public profile (shop_name, shop_description, logo_image, approval_status)
+ * 2. shopping_mall_categories for category hierarchy
+ * 3. shopping_mall_product_images ordered by display_order ascending
+ * 4. shopping_mall_product_variants where deleted_at IS NULL (active variants only)
+ * 5. shopping_mall_reviews with shopping_mall_customers for review aggregation
  *
- * Join with:
- * - shopping_mall_sellers to get seller info (shop_name, logo_image) - filter out banned/suspended sellers
- * - shopping_mall_categories to get category name and parent category
- * - shopping_mall_product_images ordered by display_order to get all images
- * - shopping_mall_product_variants (exclude deleted_at IS NOT NULL) to get available variants
- * - shopping_mall_reviews (exclude deleted_at IS NOT NULL) to calculate average rating and review count
+ * **Validation Checks**:
+ * - Product must exist (404 if not found)
+ * - Product.deleted_at must be NULL (404 if soft-deleted)
+ * - Seller.approval_status must be 'approved' (404 if pending/rejected)
+ * - Seller.suspended must be FALSE (404 if suspended)
+ * - Seller.banned must be FALSE (404 if banned)
+ * - Category must be active (deleted_at IS NULL)
  *
- * For each variant, calculate current stock by summing all inventory records from shopping_mall_inventory_records.
+ * **Stock Calculation**:
+ * For each variant, sum all shopping_mall_inventory_records.quantity_change values to calculate current stock.
  *
- * Validation:
- * - Return 404 if product not found or deleted_at IS NOT NULL
- * - Return 404 if seller is suspended or banned
- * - Mark product as 'unavailable' if no active variants exist
+ * **Review Aggregation**:
+ * Calculate average rating and total review count. Return reviews with pagination support.
  *
- * Response should include:
- * - Product basic fields (id, name, description, base_price, created_at)
- * - Seller information (id, shop_name, logo_image)
- * - Category information (id, name, parent category if subcategory)
- * - Images array (id, image_url, display_order) sorted by display_order
- * - Variants array (id, sku_code, option_values, price, calculated_stock_quantity)
- * - Review statistics (average_rating, total_review_count)
- * - Reviews array sorted by created_at descending (id, rating, content, created_at, customer display name)
+ * **Error Handling**:
+ * - 404 NOT_FOUND: Product not found, deleted, or seller is suspended/banned
+ * - 400 BAD_REQUEST: Invalid productId format (not UUID)
+ *
+ * **Performance**:
+ * Use single query with LEFT JOIN for images and variants to minimize database round-trips. Reviews should use pagination to handle large review counts efficiently.
  * @path /shoppingMall/products/:productId
  * @accessor api.functional.shoppingMall.products.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -210,7 +198,7 @@ export namespace at {
     /**
      * Unique identifier of the product to retrieve (UUID format)
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
   };
   export type Response = IShoppingMallProduct;
 

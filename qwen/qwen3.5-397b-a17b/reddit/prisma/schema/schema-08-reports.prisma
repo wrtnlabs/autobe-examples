@@ -1,0 +1,156 @@
+/// Content reports filed by users for community moderation. Reports target
+/// posts or comments and go through a review workflow where moderators can
+/// approve (triggering content deletion) or dismiss them. Each report
+/// includes the reason for reporting and tracks the review status and
+/// reviewer.
+///
+/// Reports are filed against content within a specific community and require
+/// moderator review. The status field tracks the report through its
+/// lifecycle: pending (awaiting review), approved (content deleted), or
+/// dismissed (no action taken). Reporter identity is preserved for
+/// moderation transparency.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who filed the report. {@link reddit_community_members.id}
+  reporter_id String
+  
+  /// Community where the reported content belongs. {@link
+  /// reddit_community_communities.id}
+  community_id String
+  
+  /// Moderator who reviewed the report. Null if report is still pending.
+  /// {@link reddit_community_members.id}
+  reviewer_id String?
+  
+  /// Explanation provided by the reporter for why the content violates
+  /// guidelines.
+  reason String
+  
+  /// Current review status: pending (awaiting review), approved (content
+  /// deleted), or dismissed (no action taken).
+  status String
+  
+  /// Timestamp when the report was filed.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  /// Timestamp when the report was reviewed by a moderator. Null if still
+  /// pending.
+  reviewed_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_community_members @relation("reddit_community_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  reviewer reddit_community_members? @relation("reddit_community_reports_of_reviewer_id", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postReport reddit_community_report_posts?
+  commentReport reddit_community_report_comments?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reporter_id])
+  @@index([reviewer_id])
+  @@index([community_id, status])
+  @@index([created_at])
+}
+
+/// Junction table linking content reports to posts. Each report targeting a
+/// post has exactly one record here, establishing a 1:1 relationship between
+/// reports and their post targets. This table enables the polymorphic
+/// reporting system where reports can target either posts or comments.
+/// Managed through the parent reddit_community_reports entity.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report's {@link reddit_community_reports.id}. Unique constraint enforces
+  /// 1:1 relationship between reports and post targets.
+  report_id String
+  
+  /// Reported post's {@link reddit_community_posts.id}. References the post
+  /// being reported.
+  post_id String
+  
+  /// Timestamp when this report-post linkage was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_community_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([report_id])
+  @@index([post_id])
+}
+
+/// Junction table establishing 1:1 relationship between reports and their
+/// target comments. Each report targeting a comment has exactly one entry in
+/// this table, linking the report to the specific comment being reported.
+/// Managed through the parent reddit_community_reports entity.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target report's {@link reddit_community_reports.id}. Unique constraint
+  /// ensures each report targets at most one comment.
+  report_id String
+  
+  /// Target comment's {@link reddit_community_comments.id}. The comment being
+  /// reported.
+  comment_id String
+  
+  /// Timestamp when the report-comment link was created. Used for audit trail
+  /// and chronological ordering.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_community_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([report_id])
+  @@index([comment_id])
+}

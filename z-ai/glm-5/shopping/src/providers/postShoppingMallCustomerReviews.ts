@@ -23,53 +23,58 @@ export async function postShoppingMallCustomerReviews(props: {
   customer: CustomerPayload;
   body: IShoppingMallReview.ICreate;
 }): Promise<IShoppingMallReview> {
-  // 1. Verify the order exists and belongs to the authenticated customer
-  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
-    where: { id: props.body.shopping_mall_order_id },
-    select: { id: true, shopping_mall_customer_id: true },
-  });
-  if (order.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Order does not belong to you", 403);
-  }
-  // 2. Verify at least one order item is delivered for this product
-  const deliveredItem =
-    await MyGlobal.prisma.shopping_mall_order_items.findFirst({
-      where: {
-        shopping_mall_order_id: props.body.shopping_mall_order_id,
-        shopping_mall_product_id: props.body.shopping_mall_product_id,
-        status: "delivered",
+  // 1. Query order item with order relation to verify ownership and delivery status
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
+      where: { id: props.body.orderItem },
+      select: {
+        id: true,
+        status: true,
+        shopping_mall_order_id: true,
+        shopping_mall_product_id: true,
+        order: {
+          select: {
+            id: true,
+            shopping_mall_customer_id: true,
+          },
+        },
       },
-      select: { id: true },
     });
-  if (deliveredItem === null) {
-    throw new HttpException("Product has not been delivered", 400);
+  // 2. Verify ownership - order must belong to authenticated customer
+  if (orderItem.order.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // 3. Check for existing review (one review per product per order)
+  // 3. Verify delivery status - reviews only allowed for delivered items
+  if (orderItem.status !== "delivered") {
+    throw new HttpException("Order item not yet delivered", 422);
+  }
+  // 4. Check uniqueness constraint (one review per product per order per customer)
   const existingReview = await MyGlobal.prisma.shopping_mall_reviews.findUnique(
     {
       where: {
         shopping_mall_customer_id_shopping_mall_product_id_shopping_mall_order_id:
           {
             shopping_mall_customer_id: props.customer.id,
-            shopping_mall_product_id: props.body.shopping_mall_product_id,
-            shopping_mall_order_id: props.body.shopping_mall_order_id,
+            shopping_mall_product_id: orderItem.shopping_mall_product_id,
+            shopping_mall_order_id: orderItem.shopping_mall_order_id,
           },
       },
     },
   );
-  if (existingReview !== null) {
+  if (existingReview) {
     throw new HttpException(
       "Review already exists for this product in this order",
-      400,
+      409,
     );
   }
-  // 4. Create the review using Collector and Transformer
+  // 5. Create the review using Collector for data preparation
   const created = await MyGlobal.prisma.shopping_mall_reviews.create({
     data: await ShoppingMallReviewCollector.collect({
       body: props.body,
-      shoppingMallCustomers: { id: props.customer.id },
+      customer: props.customer,
     }),
     ...ShoppingMallReviewTransformer.select(),
   });
+  // 6. Transform and return the created review
   return await ShoppingMallReviewTransformer.transform(created);
 }

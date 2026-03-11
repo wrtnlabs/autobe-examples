@@ -12,20 +12,19 @@ export function prepare_random_ecommerce_mall_product_variant(
     sku_code: input?.sku_code ?? typia.random<string & tags.MaxLength<50>>(),
     option_values: input?.option_values
       ? Object.fromEntries(
-          Object.entries(input.option_values).map(([k, v]) => [
-            k,
-            v ?? RandomGenerator.alphabets(8),
+          Object.entries(input.option_values).map(([key, value]) => [
+            key,
+            value ?? RandomGenerator.alphaNumeric(8),
           ]),
         )
       : {
-          size: RandomGenerator.alphabets(8),
-          color: RandomGenerator.alphabets(8),
+          size: RandomGenerator.alphaNumeric(8),
+          color: RandomGenerator.alphaNumeric(8),
         },
     stock_quantity:
       input?.stock_quantity ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
+      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
     price_override:
-      input?.price_override ??
-      (Math.random() > 0.5 ? typia.random<number>() : null),
+      input?.price_override ?? typia.random<number | null>() ?? null,
   };
 }

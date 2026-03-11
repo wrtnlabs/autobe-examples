@@ -18,72 +18,27 @@ export async function postDiscussionBoardAdminSystemConfigurations(props: {
   admin: AdminPayload;
   body: IDiscussionBoardSystemConfiguration.ICreate;
 }): Promise<IDiscussionBoardSystemConfiguration> {
-  // Check if config_key already exists
+  // Check key uniqueness
   const existing =
-    await MyGlobal.prisma.discussion_board_system_configurations.findUnique({
-      where: { config_key: props.body.config_key, deleted_at: null },
+    await MyGlobal.prisma.discussion_board_system_configurations.findFirst({
+      where: { key: props.body.key, deleted_at: null },
     });
   if (existing) {
     throw new HttpException(
-      `Configuration with key '${props.body.config_key}' already exists`,
+      `Configuration key '${props.body.key}' already exists`,
       400,
     );
   }
-  // Validate config_value according to data_type
-  validateConfigValue(props.body.config_value, props.body.data_type);
-  // Create the configuration using collector
-  const data = await DiscussionBoardSystemConfigurationCollector.collect({
-    body: props.body,
-  });
-  const created =
+  // Create configuration using collector
+  const configuration =
     await MyGlobal.prisma.discussion_board_system_configurations.create({
-      data,
+      data: await DiscussionBoardSystemConfigurationCollector.collect({
+        body: props.body,
+      }),
       ...DiscussionBoardSystemConfigurationTransformer.select(),
     });
-  return await DiscussionBoardSystemConfigurationTransformer.transform(created);
-}
-function validateConfigValue(
-  value: string,
-  dataType: "string" | "integer" | "boolean" | "number" | "json",
-): void {
-  try {
-    switch (dataType) {
-      case "string":
-        // Any string is valid
-        break;
-      case "integer":
-        const intValue = parseInt(value, 10);
-        if (isNaN(intValue) || !Number.isInteger(intValue)) {
-          throw new Error(`Invalid integer value: ${value}`);
-        }
-        break;
-      case "boolean":
-        const lowerValue = value.toLowerCase();
-        if (
-          lowerValue !== "true" &&
-          lowerValue !== "false" &&
-          lowerValue !== "1" &&
-          lowerValue !== "0"
-        ) {
-          throw new Error(`Invalid boolean value: ${value}`);
-        }
-        break;
-      case "number":
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) {
-          throw new Error(`Invalid number value: ${value}`);
-        }
-        break;
-      case "json":
-        JSON.parse(value);
-        break;
-    }
-  } catch (error) {
-    // Type guard for error message access
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new HttpException(
-      `Invalid configuration value for type '${dataType}': ${errorMessage}`,
-      400,
-    );
-  }
+  // Transform and return
+  return await DiscussionBoardSystemConfigurationTransformer.transform(
+    configuration,
+  );
 }

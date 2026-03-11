@@ -17,11 +17,6 @@ export namespace TodoAppProfileTransformer {
         display_name: true,
         created_at: true,
         updated_at: true,
-        user: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.todo_app_usersFindFirstArgs,
       },
     } satisfies Prisma.todo_app_profilesFindManyArgs;
   }

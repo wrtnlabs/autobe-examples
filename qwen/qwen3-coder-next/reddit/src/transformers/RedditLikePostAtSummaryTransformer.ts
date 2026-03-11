@@ -19,11 +19,15 @@ export namespace RedditLikePostAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        author: RedditLikeMemberAtSummaryTransformer.select(),
-        community: RedditLikeCommunityAtSummaryTransformer.select(),
+        type: true,
+        content: true,
+        url: true,
+        image_url: true,
         score: true,
         comment_count: true,
         created_at: true,
+        author: RedditLikeMemberAtSummaryTransformer.select(),
+        community: RedditLikeCommunityAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_postsFindManyArgs;
   }
@@ -33,15 +37,19 @@ export namespace RedditLikePostAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
+      type: input.type as "text" | "link" | "image",
+      content: input.content ?? undefined,
+      url: input.url ?? undefined,
+      imageUrl: input.image_url ?? undefined,
       author: await RedditLikeMemberAtSummaryTransformer.transform(
         input.author,
       ),
       community: await RedditLikeCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      score: input.score,
-      comment_count: input.comment_count,
-      created_at: input.created_at.toISOString(),
+      voteScore: input.score,
+      commentCount: input.comment_count,
+      createdAt: toISOStringSafe(input.created_at),
     };
   }
 }

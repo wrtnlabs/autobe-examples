@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditLikeCommentCollector {
   export async function collect(props: {
     body: IRedditLikeComment.ICreate;
-    member: IEntity;
+    author: IEntity;
     post: IEntity;
   }) {
     const id: string = v4();
@@ -21,7 +21,7 @@ export namespace RedditLikeCommentCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      author: { connect: { id: props.member.id } },
+      author: { connect: { id: props.author.id } },
       post: { connect: { id: props.post.id } },
       parentComment: props.body.parent_comment_id
         ? { connect: { id: props.body.parent_comment_id } }

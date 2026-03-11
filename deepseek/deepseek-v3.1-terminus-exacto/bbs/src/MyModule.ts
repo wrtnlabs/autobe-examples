@@ -1,372 +1,346 @@
 import { Module } from "@nestjs/common";
 
-import { DiscussionboardAdminAdministrator_promotion_approvalsController } from "./controllers/discussionBoard/admin/administrator-promotion-approvals/DiscussionboardAdminAdministrator_promotion_approvalsController";
-import { DiscussionboardAdminAdminsEmail_verificationsController } from "./controllers/discussionBoard/admin/admins/email-verifications/DiscussionboardAdminAdminsEmail_verificationsController";
-import { DiscussionboardAdminAdminsPassword_resetsController } from "./controllers/discussionBoard/admin/admins/password-resets/DiscussionboardAdminAdminsPassword_resetsController";
-import { DiscussionboardAdminAdminsProfileController } from "./controllers/discussionBoard/admin/admins/profile/DiscussionboardAdminAdminsProfileController";
-import { DiscussionboardAdminAdminsSessionsController } from "./controllers/discussionBoard/admin/admins/sessions/DiscussionboardAdminAdminsSessionsController";
+import { DiscussionboardAdminAdministrative_historiesController } from "./controllers/discussionBoard/admin/administrative-histories/DiscussionboardAdminAdministrative_historiesController";
+import { DiscussionboardAdminAlertsCapacityController } from "./controllers/discussionBoard/admin/alerts/capacity/DiscussionboardAdminAlertsCapacityController";
 import { DiscussionboardAdminAnalyticsController } from "./controllers/discussionBoard/admin/analytics/DiscussionboardAdminAnalyticsController";
-import { DiscussionboardAdminAnalyticsArticle_viewsController } from "./controllers/discussionBoard/admin/analytics/article-views/DiscussionboardAdminAnalyticsArticle_viewsController";
-import { DiscussionboardAdminAnalyticsSectionsController } from "./controllers/discussionBoard/admin/analytics/sections/DiscussionboardAdminAnalyticsSectionsController";
-import { DiscussionboardAdminAnalyticsUser_activityController } from "./controllers/discussionBoard/admin/analytics/user-activity/DiscussionboardAdminAnalyticsUser_activityController";
-import { DiscussionboardAdminApi_rate_limitsController } from "./controllers/discussionBoard/admin/api-rate-limits/DiscussionboardAdminApi_rate_limitsController";
-import { DiscussionboardAdminAppealsController } from "./controllers/discussionBoard/admin/appeals/DiscussionboardAdminAppealsController";
-import { DiscussionboardAdminArticle_draftsController } from "./controllers/discussionBoard/admin/article-drafts/DiscussionboardAdminArticle_draftsController";
-import { DiscussionboardAdminArticles_draftsController } from "./controllers/discussionBoard/admin/articles-drafts/DiscussionboardAdminArticles_draftsController";
-import { DiscussionboardAdminArticles_draftsOwnController } from "./controllers/discussionBoard/admin/articles-drafts/own/DiscussionboardAdminArticles_draftsOwnController";
-import { DiscussionboardAdminArticlesController } from "./controllers/discussionBoard/admin/articles/DiscussionboardAdminArticlesController";
-import { DiscussionboardAdminArticlesComment_pagination_settingsController } from "./controllers/discussionBoard/admin/articles/comment-pagination-settings/DiscussionboardAdminArticlesComment_pagination_settingsController";
-import { DiscussionboardAdminArticlesFavoritesController } from "./controllers/discussionBoard/admin/articles/favorites/DiscussionboardAdminArticlesFavoritesController";
-import { DiscussionboardAdminArticlesFilesController } from "./controllers/discussionBoard/admin/articles/files/DiscussionboardAdminArticlesFilesController";
-import { DiscussionboardAdminArticlesImagesController } from "./controllers/discussionBoard/admin/articles/images/DiscussionboardAdminArticlesImagesController";
-import { DiscussionboardAdminArticlesSnapshotsController } from "./controllers/discussionBoard/admin/articles/snapshots/DiscussionboardAdminArticlesSnapshotsController";
-import { DiscussionboardAdminArticlesTagsController } from "./controllers/discussionBoard/admin/articles/tags/DiscussionboardAdminArticlesTagsController";
-import { DiscussionboardAdminArticlesView_statsController } from "./controllers/discussionBoard/admin/articles/view-stats/DiscussionboardAdminArticlesView_statsController";
+import { DiscussionboardAdminAnalyticsDownloadsController } from "./controllers/discussionBoard/admin/analytics/downloads/DiscussionboardAdminAnalyticsDownloadsController";
+import { DiscussionboardAdminArticlesAttachmentsController } from "./controllers/discussionBoard/admin/articles/attachments/DiscussionboardAdminArticlesAttachmentsController";
+import { DiscussionboardAdminArticlesAttachmentsImage_metadataController } from "./controllers/discussionBoard/admin/articles/attachments/image-metadata/DiscussionboardAdminArticlesAttachmentsImage_metadataController";
+import { DiscussionboardAdminArticlesCommentsActivitiesController } from "./controllers/discussionBoard/admin/articles/comments/activities/DiscussionboardAdminArticlesCommentsActivitiesController";
+import { DiscussionboardAdminArticlesCommentsActivitiesMetadataController } from "./controllers/discussionBoard/admin/articles/comments/activities/metadata/DiscussionboardAdminArticlesCommentsActivitiesMetadataController";
+import { DiscussionboardAdminArticlesCommentsDeletionsController } from "./controllers/discussionBoard/admin/articles/comments/deletions/DiscussionboardAdminArticlesCommentsDeletionsController";
+import { DiscussionboardAdminArticlesMetricsController } from "./controllers/discussionBoard/admin/articles/metrics/DiscussionboardAdminArticlesMetricsController";
+import { DiscussionboardAdminAttachment_categoriesController } from "./controllers/discussionBoard/admin/attachment-categories/DiscussionboardAdminAttachment_categoriesController";
+import { DiscussionboardAdminAttachment_category_mappingsController } from "./controllers/discussionBoard/admin/attachment-category-mappings/DiscussionboardAdminAttachment_category_mappingsController";
+import { DiscussionboardAdminAttachment_downloadsController } from "./controllers/discussionBoard/admin/attachment-downloads/DiscussionboardAdminAttachment_downloadsController";
+import { DiscussionboardAdminAttachment_snapshotsController } from "./controllers/discussionBoard/admin/attachment-snapshots/DiscussionboardAdminAttachment_snapshotsController";
 import { DiscussionboardAdminAudit_logsController } from "./controllers/discussionBoard/admin/audit-logs/DiscussionboardAdminAudit_logsController";
-import { DiscussionboardAdminBackup_recordsController } from "./controllers/discussionBoard/admin/backup-records/DiscussionboardAdminBackup_recordsController";
-import { DiscussionboardAdminBansController } from "./controllers/discussionBoard/admin/bans/DiscussionboardAdminBansController";
-import { DiscussionboardAdminBansAppealsController } from "./controllers/discussionBoard/admin/bans/appeals/DiscussionboardAdminBansAppealsController";
-import { DiscussionboardAdminBrowseController } from "./controllers/discussionBoard/admin/browse/DiscussionboardAdminBrowseController";
-import { DiscussionboardAdminComment_rate_limitsController } from "./controllers/discussionBoard/admin/comment-rate-limits/DiscussionboardAdminComment_rate_limitsController";
-import { DiscussionboardAdminCommentsController } from "./controllers/discussionBoard/admin/comments/DiscussionboardAdminCommentsController";
-import { DiscussionboardAdminCommentsBulk_moderationsController } from "./controllers/discussionBoard/admin/comments/bulk-moderations/DiscussionboardAdminCommentsBulk_moderationsController";
-import { DiscussionboardAdminCommentsEdit_historiesController } from "./controllers/discussionBoard/admin/comments/edit-histories/DiscussionboardAdminCommentsEdit_historiesController";
-import { DiscussionboardAdminCommentsFlagsController } from "./controllers/discussionBoard/admin/comments/flags/DiscussionboardAdminCommentsFlagsController";
-import { DiscussionboardAdminCommentsModerationDashboardController } from "./controllers/discussionBoard/admin/comments/moderation/dashboard/DiscussionboardAdminCommentsModerationDashboardController";
-import { DiscussionboardAdminCommentsModerationsController } from "./controllers/discussionBoard/admin/comments/moderations/DiscussionboardAdminCommentsModerationsController";
-import { DiscussionboardAdminCommentsReportsController } from "./controllers/discussionBoard/admin/comments/reports/DiscussionboardAdminCommentsReportsController";
-import { DiscussionboardAdminCommentsSnapshotsController } from "./controllers/discussionBoard/admin/comments/snapshots/DiscussionboardAdminCommentsSnapshotsController";
-import { DiscussionboardAdminContent_flagsController } from "./controllers/discussionBoard/admin/content-flags/DiscussionboardAdminContent_flagsController";
-import { DiscussionboardAdminContent_moderation_logsController } from "./controllers/discussionBoard/admin/content-moderation-logs/DiscussionboardAdminContent_moderation_logsController";
-import { DiscussionboardAdminDashboardController } from "./controllers/discussionBoard/admin/dashboard/DiscussionboardAdminDashboardController";
-import { DiscussionboardAdminData_retention_policiesController } from "./controllers/discussionBoard/admin/data-retention-policies/DiscussionboardAdminData_retention_policiesController";
-import { DiscussionboardAdminData_retention_policy_data_type_mappingsController } from "./controllers/discussionBoard/admin/data-retention-policy-data-type-mappings/DiscussionboardAdminData_retention_policy_data_type_mappingsController";
-import { DiscussionboardAdminError_logsController } from "./controllers/discussionBoard/admin/error-logs/DiscussionboardAdminError_logsController";
-import { DiscussionboardAdminFlagsController } from "./controllers/discussionBoard/admin/flags/DiscussionboardAdminFlagsController";
-import { DiscussionboardAdminLogsController } from "./controllers/discussionBoard/admin/logs/DiscussionboardAdminLogsController";
+import { DiscussionboardAdminBansDashboardController } from "./controllers/discussionBoard/admin/bans/dashboard/DiscussionboardAdminBansDashboardController";
+import { DiscussionboardAdminBulkCategorizeController } from "./controllers/discussionBoard/admin/bulk/categorize/DiscussionboardAdminBulkCategorizeController";
+import { DiscussionboardAdminCommentsDeletion_impactController } from "./controllers/discussionBoard/admin/comments/deletion-impact/DiscussionboardAdminCommentsDeletion_impactController";
+import { DiscussionboardAdminCross_sectionController } from "./controllers/discussionBoard/admin/cross-section/DiscussionboardAdminCross_sectionController";
+import { DiscussionboardAdminDashboardCategoriesController } from "./controllers/discussionBoard/admin/dashboard/categories/DiscussionboardAdminDashboardCategoriesController";
+import { DiscussionboardAdminDiscoveryController } from "./controllers/discussionBoard/admin/discovery/DiscussionboardAdminDiscoveryController";
+import { DiscussionboardAdminDuplicationController } from "./controllers/discussionBoard/admin/duplication/DiscussionboardAdminDuplicationController";
+import { DiscussionboardAdminEngagementController } from "./controllers/discussionBoard/admin/engagement/DiscussionboardAdminEngagementController";
+import { DiscussionboardAdminHealthController } from "./controllers/discussionBoard/admin/health/DiscussionboardAdminHealthController";
 import { DiscussionboardAdminMaintenance_schedulesController } from "./controllers/discussionBoard/admin/maintenance-schedules/DiscussionboardAdminMaintenance_schedulesController";
-import { DiscussionboardAdminModerated_content_historiesController } from "./controllers/discussionBoard/admin/moderated-content-histories/DiscussionboardAdminModerated_content_historiesController";
-import { DiscussionboardAdminModeration_logsController } from "./controllers/discussionBoard/admin/moderation-logs/DiscussionboardAdminModeration_logsController";
-import { DiscussionboardAdminModeration_queuesController } from "./controllers/discussionBoard/admin/moderation-queues/DiscussionboardAdminModeration_queuesController";
-import { DiscussionboardAdminModerationController } from "./controllers/discussionBoard/admin/moderation/statistics/DiscussionboardAdminModerationController";
-import { DiscussionboardAdminPerformance_metricsController } from "./controllers/discussionBoard/admin/performance-metrics/DiscussionboardAdminPerformance_metricsController";
-import { DiscussionboardAdminQueuesController } from "./controllers/discussionBoard/admin/queues/DiscussionboardAdminQueuesController";
-import { DiscussionboardAdminRecently_activeController } from "./controllers/discussionBoard/admin/recently-active/DiscussionboardAdminRecently_activeController";
+import { DiscussionboardAdminModerationsMetricsController } from "./controllers/discussionBoard/admin/moderations/metrics/DiscussionboardAdminModerationsMetricsController";
+import { DiscussionboardAdminMonitoringAttachment_usageController } from "./controllers/discussionBoard/admin/monitoring/attachment-usage/DiscussionboardAdminMonitoringAttachment_usageController";
+import { DiscussionboardAdminPopularController } from "./controllers/discussionBoard/admin/popular/DiscussionboardAdminPopularController";
+import { DiscussionboardAdminReactionsAnalyticsController } from "./controllers/discussionBoard/admin/reactions/analytics/DiscussionboardAdminReactionsAnalyticsController";
+import { DiscussionboardAdminSearchController } from "./controllers/discussionBoard/admin/search/DiscussionboardAdminSearchController";
+import { DiscussionboardAdminSearchAttachmentsController } from "./controllers/discussionBoard/admin/search/attachments/DiscussionboardAdminSearchAttachmentsController";
 import { DiscussionboardAdminSectionsController } from "./controllers/discussionBoard/admin/sections/DiscussionboardAdminSectionsController";
-import { DiscussionboardAdminSectionsAdministratorsController } from "./controllers/discussionBoard/admin/sections/administrators/DiscussionboardAdminSectionsAdministratorsController";
-import { DiscussionboardAdminSectionsArchivesController } from "./controllers/discussionBoard/admin/sections/archives/DiscussionboardAdminSectionsArchivesController";
-import { DiscussionboardAdminSectionsFilesController } from "./controllers/discussionBoard/admin/sections/files/DiscussionboardAdminSectionsFilesController";
-import { DiscussionboardAdminSectionsImagesController } from "./controllers/discussionBoard/admin/sections/images/DiscussionboardAdminSectionsImagesController";
+import { DiscussionboardAdminSectionsDeletionsController } from "./controllers/discussionBoard/admin/sections/deletions/DiscussionboardAdminSectionsDeletionsController";
 import { DiscussionboardAdminSectionsSnapshotsController } from "./controllers/discussionBoard/admin/sections/snapshots/DiscussionboardAdminSectionsSnapshotsController";
-import { DiscussionboardAdminSectionsStatisticsController } from "./controllers/discussionBoard/admin/sections/statistics/DiscussionboardAdminSectionsStatisticsController";
-import { DiscussionboardAdminSecurity_eventsController } from "./controllers/discussionBoard/admin/security-events/DiscussionboardAdminSecurity_eventsController";
-import { DiscussionboardAdminSystem_activitiesController } from "./controllers/discussionBoard/admin/system-activities/DiscussionboardAdminSystem_activitiesController";
+import { DiscussionboardAdminStatus_enumsController } from "./controllers/discussionBoard/admin/status-enums/DiscussionboardAdminStatus_enumsController";
+import { DiscussionboardAdminStatus_enumsReferencesController } from "./controllers/discussionBoard/admin/status-enums/references/DiscussionboardAdminStatus_enumsReferencesController";
+import { DiscussionboardAdminStatus_enumsSnapshotsController } from "./controllers/discussionBoard/admin/status-enums/snapshots/DiscussionboardAdminStatus_enumsSnapshotsController";
+import { DiscussionboardAdminStatus_typesController } from "./controllers/discussionBoard/admin/status-types/DiscussionboardAdminStatus_typesController";
+import { DiscussionboardAdminSystem_audit_logsParametersController } from "./controllers/discussionBoard/admin/system-audit-logs/parameters/DiscussionboardAdminSystem_audit_logsParametersController";
 import { DiscussionboardAdminSystem_configurationsController } from "./controllers/discussionBoard/admin/system-configurations/DiscussionboardAdminSystem_configurationsController";
-import { DiscussionboardAdminSystemAnalyticsSecurityController } from "./controllers/discussionBoard/admin/system/analytics/security/DiscussionboardAdminSystemAnalyticsSecurityController";
-import { DiscussionboardAdminSystemOverviewController } from "./controllers/discussionBoard/admin/system/overview/DiscussionboardAdminSystemOverviewController";
-import { DiscussionboardAdminSystemReportsSummaryController } from "./controllers/discussionBoard/admin/system/reports/summary/DiscussionboardAdminSystemReportsSummaryController";
+import { DiscussionboardAdminSystem_health_metricsMetadataController } from "./controllers/discussionBoard/admin/system-health-metrics/metadata/DiscussionboardAdminSystem_health_metricsMetadataController";
+import { DiscussionboardAdminSystem_metadataController } from "./controllers/discussionBoard/admin/system-metadata/DiscussionboardAdminSystem_metadataController";
+import { DiscussionboardAdminSystem_notificationsController } from "./controllers/discussionBoard/admin/system-notifications/DiscussionboardAdminSystem_notificationsController";
+import { DiscussionboardAdminSystem_notificationsSubtypesController } from "./controllers/discussionBoard/admin/system-notifications/subtypes/DiscussionboardAdminSystem_notificationsSubtypesController";
+import { DiscussionboardAdminThumbnailsController } from "./controllers/discussionBoard/admin/thumbnails/DiscussionboardAdminThumbnailsController";
+import { DiscussionboardAdminTopicsController } from "./controllers/discussionBoard/admin/topics/DiscussionboardAdminTopicsController";
+import { DiscussionboardAdminUploadProgressController } from "./controllers/discussionBoard/admin/upload/progress/DiscussionboardAdminUploadProgressController";
 import { DiscussionboardAdminUser_bansController } from "./controllers/discussionBoard/admin/user-bans/DiscussionboardAdminUser_bansController";
-import { DiscussionboardAdminUsersSearchController } from "./controllers/discussionBoard/admin/users/search/DiscussionboardAdminUsersSearchController";
 import { DiscussionboardAdminsController } from "./controllers/discussionBoard/admins/DiscussionboardAdminsController";
-import { DiscussionboardArticlesComment_pagination_settingsController } from "./controllers/discussionBoard/articles/comment-pagination-settings/DiscussionboardArticlesComment_pagination_settingsController";
+import { DiscussionboardArticlesController } from "./controllers/discussionBoard/articles/DiscussionboardArticlesController";
+import { DiscussionboardArticlesAttachmentsController } from "./controllers/discussionBoard/articles/attachments/DiscussionboardArticlesAttachmentsController";
+import { DiscussionboardArticlesAttachmentsImage_metadataController } from "./controllers/discussionBoard/articles/attachments/image-metadata/DiscussionboardArticlesAttachmentsImage_metadataController";
+import { DiscussionboardArticlesAttachmentsImage_metadataExifController } from "./controllers/discussionBoard/articles/attachments/image-metadata/exif/DiscussionboardArticlesAttachmentsImage_metadataExifController";
+import { DiscussionboardArticlesAttachmentsThumbnailsController } from "./controllers/discussionBoard/articles/attachments/thumbnails/DiscussionboardArticlesAttachmentsThumbnailsController";
+import { DiscussionboardArticlesComment_statisticsController } from "./controllers/discussionBoard/articles/comment-statistics/DiscussionboardArticlesComment_statisticsController";
 import { DiscussionboardArticlesCommentsController } from "./controllers/discussionBoard/articles/comments/DiscussionboardArticlesCommentsController";
-import { DiscussionboardArticlesCommentsVotesController } from "./controllers/discussionBoard/articles/comments/votes/DiscussionboardArticlesCommentsVotesController";
-import { DiscussionboardArticlesView_stat_eventsController } from "./controllers/discussionBoard/articles/view-stat-events/DiscussionboardArticlesView_stat_eventsController";
+import { DiscussionboardArticlesCommentsSnapshotsController } from "./controllers/discussionBoard/articles/comments/snapshots/DiscussionboardArticlesCommentsSnapshotsController";
+import { DiscussionboardArticlesCommentsTagsController } from "./controllers/discussionBoard/articles/comments/tags/DiscussionboardArticlesCommentsTagsController";
+import { DiscussionboardArticlesMetadataController } from "./controllers/discussionBoard/articles/metadata/DiscussionboardArticlesMetadataController";
+import { DiscussionboardArticlesReactionsController } from "./controllers/discussionBoard/articles/reactions/DiscussionboardArticlesReactionsController";
+import { DiscussionboardArticlesSnapshotsController } from "./controllers/discussionBoard/articles/snapshots/DiscussionboardArticlesSnapshotsController";
+import { DiscussionboardArticlesTagsController } from "./controllers/discussionBoard/articles/tags/DiscussionboardArticlesTagsController";
 import { DiscussionboardAuthAdminController } from "./controllers/discussionBoard/auth/admin/DiscussionboardAuthAdminController";
+import { DiscussionboardAuthGuestController } from "./controllers/discussionBoard/auth/guest/DiscussionboardAuthGuestController";
+import { DiscussionboardAuthMemberController } from "./controllers/discussionBoard/auth/member/DiscussionboardAuthMemberController";
 import { DiscussionboardAuthSuperadminController } from "./controllers/discussionBoard/auth/superAdmin/DiscussionboardAuthSuperadminController";
-import { DiscussionboardAuthUserController } from "./controllers/discussionBoard/auth/user/DiscussionboardAuthUserController";
+import { DiscussionboardGuestCross_sectionController } from "./controllers/discussionBoard/guest/cross-section/DiscussionboardGuestCross_sectionController";
+import { DiscussionboardGuestDiscoveryController } from "./controllers/discussionBoard/guest/discovery/DiscussionboardGuestDiscoveryController";
+import { DiscussionboardGuestHealthController } from "./controllers/discussionBoard/guest/health/DiscussionboardGuestHealthController";
+import { DiscussionboardGuestPopularController } from "./controllers/discussionBoard/guest/popular/DiscussionboardGuestPopularController";
+import { DiscussionboardGuestSearchController } from "./controllers/discussionBoard/guest/search/DiscussionboardGuestSearchController";
+import { DiscussionboardGuestSectionsController } from "./controllers/discussionBoard/guest/sections/DiscussionboardGuestSectionsController";
+import { DiscussionboardGuestSessionsController } from "./controllers/discussionBoard/guest/sessions/DiscussionboardGuestSessionsController";
+import { DiscussionboardGuestTopicsController } from "./controllers/discussionBoard/guest/topics/DiscussionboardGuestTopicsController";
+import { DiscussionboardGuestsController } from "./controllers/discussionBoard/guests/DiscussionboardGuestsController";
+import { DiscussionboardMemberAdmin_requestsController } from "./controllers/discussionBoard/member/admin-requests/DiscussionboardMemberAdmin_requestsController";
+import { DiscussionboardMemberArticlesController } from "./controllers/discussionBoard/member/articles/DiscussionboardMemberArticlesController";
+import { DiscussionboardMemberArticlesAttachmentsController } from "./controllers/discussionBoard/member/articles/attachments/DiscussionboardMemberArticlesAttachmentsController";
+import { DiscussionboardMemberArticlesAttachmentsImage_metadataController } from "./controllers/discussionBoard/member/articles/attachments/image-metadata/DiscussionboardMemberArticlesAttachmentsImage_metadataController";
+import { DiscussionboardMemberArticlesCommentsController } from "./controllers/discussionBoard/member/articles/comments/DiscussionboardMemberArticlesCommentsController";
+import { DiscussionboardMemberArticlesMetadataController } from "./controllers/discussionBoard/member/articles/metadata/DiscussionboardMemberArticlesMetadataController";
+import { DiscussionboardMemberArticlesReactionsController } from "./controllers/discussionBoard/member/articles/reactions/DiscussionboardMemberArticlesReactionsController";
+import { DiscussionboardMemberArticlesSnapshotsController } from "./controllers/discussionBoard/member/articles/snapshots/DiscussionboardMemberArticlesSnapshotsController";
+import { DiscussionboardMemberArticlesTagsController } from "./controllers/discussionBoard/member/articles/tags/DiscussionboardMemberArticlesTagsController";
+import { DiscussionboardMemberCross_sectionController } from "./controllers/discussionBoard/member/cross-section/DiscussionboardMemberCross_sectionController";
+import { DiscussionboardMemberDiscoveryController } from "./controllers/discussionBoard/member/discovery/DiscussionboardMemberDiscoveryController";
+import { DiscussionboardMemberEngagementController } from "./controllers/discussionBoard/member/engagement/DiscussionboardMemberEngagementController";
+import { DiscussionboardMemberFavoritesController } from "./controllers/discussionBoard/member/favorites/DiscussionboardMemberFavoritesController";
+import { DiscussionboardMemberHealthController } from "./controllers/discussionBoard/member/health/DiscussionboardMemberHealthController";
+import { DiscussionboardMemberOrganizeAttachmentsController } from "./controllers/discussionBoard/member/organize/attachments/DiscussionboardMemberOrganizeAttachmentsController";
+import { DiscussionboardMemberPopularController } from "./controllers/discussionBoard/member/popular/DiscussionboardMemberPopularController";
+import { DiscussionboardMemberProfileController } from "./controllers/discussionBoard/member/profile/DiscussionboardMemberProfileController";
+import { DiscussionboardMemberSearchController } from "./controllers/discussionBoard/member/search/DiscussionboardMemberSearchController";
+import { DiscussionboardMemberSearchAttachmentsController } from "./controllers/discussionBoard/member/search/attachments/DiscussionboardMemberSearchAttachmentsController";
+import { DiscussionboardMemberSectionsController } from "./controllers/discussionBoard/member/sections/DiscussionboardMemberSectionsController";
+import { DiscussionboardMemberTopicsController } from "./controllers/discussionBoard/member/topics/DiscussionboardMemberTopicsController";
+import { DiscussionboardMemberUploadProgressController } from "./controllers/discussionBoard/member/upload/progress/DiscussionboardMemberUploadProgressController";
+import { DiscussionboardMembersController } from "./controllers/discussionBoard/members/DiscussionboardMembersController";
 import { DiscussionboardSectionsController } from "./controllers/discussionBoard/sections/DiscussionboardSectionsController";
 import { DiscussionboardSuper_adminsController } from "./controllers/discussionBoard/super-admins/DiscussionboardSuper_adminsController";
-import { DiscussionboardSuperadminAdministrator_grade_changesController } from "./controllers/discussionBoard/superAdmin/administrator-grade-changes/DiscussionboardSuperadminAdministrator_grade_changesController";
-import { DiscussionboardSuperadminAdministrator_promotion_approvalsController } from "./controllers/discussionBoard/superAdmin/administrator-promotion-approvals/DiscussionboardSuperadminAdministrator_promotion_approvalsController";
-import { DiscussionboardSuperadminAdministratorsController } from "./controllers/discussionBoard/superAdmin/administrators/DiscussionboardSuperadminAdministratorsController";
-import { DiscussionboardSuperadminAdministratorsCapabilitiesController } from "./controllers/discussionBoard/superAdmin/administrators/capabilities/DiscussionboardSuperadminAdministratorsCapabilitiesController";
+import { DiscussionboardSuperadminAdmin_request_decisionsController } from "./controllers/discussionBoard/superAdmin/admin-request-decisions/DiscussionboardSuperadminAdmin_request_decisionsController";
+import { DiscussionboardSuperadminAdmin_requestsController } from "./controllers/discussionBoard/superAdmin/admin-requests/DiscussionboardSuperadminAdmin_requestsController";
+import { DiscussionboardSuperadminAdmin_requestsHistoryController } from "./controllers/discussionBoard/superAdmin/admin-requests/history/DiscussionboardSuperadminAdmin_requestsHistoryController";
+import { DiscussionboardSuperadminAdmin_requestsPendingController } from "./controllers/discussionBoard/superAdmin/admin-requests/pending/DiscussionboardSuperadminAdmin_requestsPendingController";
+import { DiscussionboardSuperadminAdministrationsAnalyticsController } from "./controllers/discussionBoard/superAdmin/administrations/analytics/DiscussionboardSuperadminAdministrationsAnalyticsController";
+import { DiscussionboardSuperadminAdministrative_historiesController } from "./controllers/discussionBoard/superAdmin/administrative-histories/DiscussionboardSuperadminAdministrative_historiesController";
+import { DiscussionboardSuperadminAdministrator_assignmentsController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/DiscussionboardSuperadminAdministrator_assignmentsController";
+import { DiscussionboardSuperadminAdministrator_assignmentsBy_adminsController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/by-admins/DiscussionboardSuperadminAdministrator_assignmentsBy_adminsController";
+import { DiscussionboardSuperadminAdministrator_assignmentsBy_membersController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/by-members/DiscussionboardSuperadminAdministrator_assignmentsBy_membersController";
+import { DiscussionboardSuperadminAdministrator_assignmentsBy_super_adminsController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/by-super-admins/DiscussionboardSuperadminAdministrator_assignmentsBy_super_adminsController";
+import { DiscussionboardSuperadminAdministrator_assignmentsHistoryController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/history/DiscussionboardSuperadminAdministrator_assignmentsHistoryController";
+import { DiscussionboardSuperadminAdministrator_assignmentsTo_adminsController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/to-admins/DiscussionboardSuperadminAdministrator_assignmentsTo_adminsController";
+import { DiscussionboardSuperadminAdministrator_assignmentsTo_membersController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/to-members/DiscussionboardSuperadminAdministrator_assignmentsTo_membersController";
+import { DiscussionboardSuperadminAdministrator_assignmentsTo_super_adminsController } from "./controllers/discussionBoard/superAdmin/administrator-assignments/to-super-admins/DiscussionboardSuperadminAdministrator_assignmentsTo_super_adminsController";
+import { DiscussionboardSuperadminAdministratorsController } from "./controllers/discussionBoard/superAdmin/administrators/promote/DiscussionboardSuperadminAdministratorsController";
+import { DiscussionboardSuperadminAlertsCapacityController } from "./controllers/discussionBoard/superAdmin/alerts/capacity/DiscussionboardSuperadminAlertsCapacityController";
 import { DiscussionboardSuperadminAnalyticsController } from "./controllers/discussionBoard/superAdmin/analytics/DiscussionboardSuperadminAnalyticsController";
-import { DiscussionboardSuperadminAnalyticsArticle_viewsController } from "./controllers/discussionBoard/superAdmin/analytics/article-views/DiscussionboardSuperadminAnalyticsArticle_viewsController";
-import { DiscussionboardSuperadminAnalyticsSectionsController } from "./controllers/discussionBoard/superAdmin/analytics/sections/DiscussionboardSuperadminAnalyticsSectionsController";
-import { DiscussionboardSuperadminAnalyticsUser_activityController } from "./controllers/discussionBoard/superAdmin/analytics/user-activity/DiscussionboardSuperadminAnalyticsUser_activityController";
-import { DiscussionboardSuperadminApi_rate_limitsController } from "./controllers/discussionBoard/superAdmin/api-rate-limits/DiscussionboardSuperadminApi_rate_limitsController";
-import { DiscussionboardSuperadminAppealsController } from "./controllers/discussionBoard/superAdmin/appeals/DiscussionboardSuperadminAppealsController";
-import { DiscussionboardSuperadminArticle_draftsController } from "./controllers/discussionBoard/superAdmin/article-drafts/DiscussionboardSuperadminArticle_draftsController";
-import { DiscussionboardSuperadminArticles_draftsController } from "./controllers/discussionBoard/superAdmin/articles-drafts/DiscussionboardSuperadminArticles_draftsController";
-import { DiscussionboardSuperadminArticles_draftsOwnController } from "./controllers/discussionBoard/superAdmin/articles-drafts/own/DiscussionboardSuperadminArticles_draftsOwnController";
-import { DiscussionboardSuperadminArticlesController } from "./controllers/discussionBoard/superAdmin/articles/DiscussionboardSuperadminArticlesController";
-import { DiscussionboardSuperadminArticlesFavoritesController } from "./controllers/discussionBoard/superAdmin/articles/favorites/DiscussionboardSuperadminArticlesFavoritesController";
-import { DiscussionboardSuperadminArticlesFilesController } from "./controllers/discussionBoard/superAdmin/articles/files/DiscussionboardSuperadminArticlesFilesController";
-import { DiscussionboardSuperadminArticlesImagesController } from "./controllers/discussionBoard/superAdmin/articles/images/DiscussionboardSuperadminArticlesImagesController";
-import { DiscussionboardSuperadminArticlesSnapshotsController } from "./controllers/discussionBoard/superAdmin/articles/snapshots/DiscussionboardSuperadminArticlesSnapshotsController";
-import { DiscussionboardSuperadminArticlesTagsController } from "./controllers/discussionBoard/superAdmin/articles/tags/DiscussionboardSuperadminArticlesTagsController";
-import { DiscussionboardSuperadminArticlesView_statsController } from "./controllers/discussionBoard/superAdmin/articles/view-stats/DiscussionboardSuperadminArticlesView_statsController";
+import { DiscussionboardSuperadminAnalyticsDownloadsController } from "./controllers/discussionBoard/superAdmin/analytics/downloads/DiscussionboardSuperadminAnalyticsDownloadsController";
+import { DiscussionboardSuperadminArticlesAttachmentsController } from "./controllers/discussionBoard/superAdmin/articles/attachments/DiscussionboardSuperadminArticlesAttachmentsController";
+import { DiscussionboardSuperadminArticlesAttachmentsImage_metadataController } from "./controllers/discussionBoard/superAdmin/articles/attachments/image-metadata/DiscussionboardSuperadminArticlesAttachmentsImage_metadataController";
+import { DiscussionboardSuperadminArticlesMetricsController } from "./controllers/discussionBoard/superAdmin/articles/metrics/DiscussionboardSuperadminArticlesMetricsController";
+import { DiscussionboardSuperadminAttachment_categoriesController } from "./controllers/discussionBoard/superAdmin/attachment-categories/DiscussionboardSuperadminAttachment_categoriesController";
+import { DiscussionboardSuperadminAttachment_category_mappingsController } from "./controllers/discussionBoard/superAdmin/attachment-category-mappings/DiscussionboardSuperadminAttachment_category_mappingsController";
+import { DiscussionboardSuperadminAttachment_downloadsController } from "./controllers/discussionBoard/superAdmin/attachment-downloads/DiscussionboardSuperadminAttachment_downloadsController";
+import { DiscussionboardSuperadminAttachment_snapshotsController } from "./controllers/discussionBoard/superAdmin/attachment-snapshots/DiscussionboardSuperadminAttachment_snapshotsController";
 import { DiscussionboardSuperadminAudit_logsController } from "./controllers/discussionBoard/superAdmin/audit-logs/DiscussionboardSuperadminAudit_logsController";
-import { DiscussionboardSuperadminBackup_recordsController } from "./controllers/discussionBoard/superAdmin/backup-records/DiscussionboardSuperadminBackup_recordsController";
-import { DiscussionboardSuperadminBan_durationsController } from "./controllers/discussionBoard/superAdmin/ban-durations/DiscussionboardSuperadminBan_durationsController";
-import { DiscussionboardSuperadminBan_reason_categoriesController } from "./controllers/discussionBoard/superAdmin/ban-reason-categories/DiscussionboardSuperadminBan_reason_categoriesController";
-import { DiscussionboardSuperadminBrowseController } from "./controllers/discussionBoard/superAdmin/browse/DiscussionboardSuperadminBrowseController";
-import { DiscussionboardSuperadminCommentsAnalyticsController } from "./controllers/discussionBoard/superAdmin/comments/analytics/DiscussionboardSuperadminCommentsAnalyticsController";
-import { DiscussionboardSuperadminContent_moderation_logsController } from "./controllers/discussionBoard/superAdmin/content-moderation-logs/DiscussionboardSuperadminContent_moderation_logsController";
-import { DiscussionboardSuperadminData_retention_policiesController } from "./controllers/discussionBoard/superAdmin/data-retention-policies/DiscussionboardSuperadminData_retention_policiesController";
-import { DiscussionboardSuperadminData_retention_policy_data_type_mappingsController } from "./controllers/discussionBoard/superAdmin/data-retention-policy-data-type-mappings/DiscussionboardSuperadminData_retention_policy_data_type_mappingsController";
-import { DiscussionboardSuperadminError_logsController } from "./controllers/discussionBoard/superAdmin/error-logs/DiscussionboardSuperadminError_logsController";
-import { DiscussionboardSuperadminFlagsController } from "./controllers/discussionBoard/superAdmin/flags/DiscussionboardSuperadminFlagsController";
-import { DiscussionboardSuperadminLogsController } from "./controllers/discussionBoard/superAdmin/logs/DiscussionboardSuperadminLogsController";
+import { DiscussionboardSuperadminBulkCategorizeController } from "./controllers/discussionBoard/superAdmin/bulk/categorize/DiscussionboardSuperadminBulkCategorizeController";
+import { DiscussionboardSuperadminCommentsDeletion_impactController } from "./controllers/discussionBoard/superAdmin/comments/deletion-impact/DiscussionboardSuperadminCommentsDeletion_impactController";
+import { DiscussionboardSuperadminCommentsMetricsController } from "./controllers/discussionBoard/superAdmin/comments/metrics/DiscussionboardSuperadminCommentsMetricsController";
+import { DiscussionboardSuperadminCross_sectionController } from "./controllers/discussionBoard/superAdmin/cross-section/DiscussionboardSuperadminCross_sectionController";
+import { DiscussionboardSuperadminDashboardController } from "./controllers/discussionBoard/superAdmin/dashboard/DiscussionboardSuperadminDashboardController";
+import { DiscussionboardSuperadminDashboardCategoriesController } from "./controllers/discussionBoard/superAdmin/dashboard/categories/DiscussionboardSuperadminDashboardCategoriesController";
+import { DiscussionboardSuperadminDiscoveryController } from "./controllers/discussionBoard/superAdmin/discovery/DiscussionboardSuperadminDiscoveryController";
+import { DiscussionboardSuperadminDuplicationController } from "./controllers/discussionBoard/superAdmin/duplication/DiscussionboardSuperadminDuplicationController";
+import { DiscussionboardSuperadminEngagementController } from "./controllers/discussionBoard/superAdmin/engagement/DiscussionboardSuperadminEngagementController";
+import { DiscussionboardSuperadminGovernanceOversightController } from "./controllers/discussionBoard/superAdmin/governance/oversight/DiscussionboardSuperadminGovernanceOversightController";
+import { DiscussionboardSuperadminHealthController } from "./controllers/discussionBoard/superAdmin/health/DiscussionboardSuperadminHealthController";
+import { DiscussionboardSuperadminHierarchyController } from "./controllers/discussionBoard/superAdmin/hierarchy/DiscussionboardSuperadminHierarchyController";
 import { DiscussionboardSuperadminMaintenance_schedulesController } from "./controllers/discussionBoard/superAdmin/maintenance-schedules/DiscussionboardSuperadminMaintenance_schedulesController";
-import { DiscussionboardSuperadminModerated_content_historiesController } from "./controllers/discussionBoard/superAdmin/moderated-content-histories/DiscussionboardSuperadminModerated_content_historiesController";
-import { DiscussionboardSuperadminModeration_action_typesController } from "./controllers/discussionBoard/superAdmin/moderation-action-types/DiscussionboardSuperadminModeration_action_typesController";
-import { DiscussionboardSuperadminModeration_logsController } from "./controllers/discussionBoard/superAdmin/moderation-logs/DiscussionboardSuperadminModeration_logsController";
-import { DiscussionboardSuperadminModerationController } from "./controllers/discussionBoard/superAdmin/moderation/statistics/DiscussionboardSuperadminModerationController";
-import { DiscussionboardSuperadminOverviewController } from "./controllers/discussionBoard/superAdmin/overview/DiscussionboardSuperadminOverviewController";
-import { DiscussionboardSuperadminPerformance_metricsController } from "./controllers/discussionBoard/superAdmin/performance-metrics/DiscussionboardSuperadminPerformance_metricsController";
-import { DiscussionboardSuperadminPromotion_analyticsController } from "./controllers/discussionBoard/superAdmin/promotion-analytics/DiscussionboardSuperadminPromotion_analyticsController";
-import { DiscussionboardSuperadminPromotion_requestsController } from "./controllers/discussionBoard/superAdmin/promotion-requests/DiscussionboardSuperadminPromotion_requestsController";
-import { DiscussionboardSuperadminPromotion_requestsWorkflowsController } from "./controllers/discussionBoard/superAdmin/promotion-requests/workflows/DiscussionboardSuperadminPromotion_requestsWorkflowsController";
-import { DiscussionboardSuperadminQueuesController } from "./controllers/discussionBoard/superAdmin/queues/DiscussionboardSuperadminQueuesController";
-import { DiscussionboardSuperadminRecently_activeController } from "./controllers/discussionBoard/superAdmin/recently-active/DiscussionboardSuperadminRecently_activeController";
+import { DiscussionboardSuperadminMaintenanceExecutionController } from "./controllers/discussionBoard/superAdmin/maintenance/execution/DiscussionboardSuperadminMaintenanceExecutionController";
+import { DiscussionboardSuperadminMetricsController } from "./controllers/discussionBoard/superAdmin/metrics/DiscussionboardSuperadminMetricsController";
+import { DiscussionboardSuperadminModerationsMetricsController } from "./controllers/discussionBoard/superAdmin/moderations/metrics/DiscussionboardSuperadminModerationsMetricsController";
+import { DiscussionboardSuperadminMonitoringController } from "./controllers/discussionBoard/superAdmin/monitoring/DiscussionboardSuperadminMonitoringController";
+import { DiscussionboardSuperadminMonitoringAttachment_usageController } from "./controllers/discussionBoard/superAdmin/monitoring/attachment-usage/DiscussionboardSuperadminMonitoringAttachment_usageController";
+import { DiscussionboardSuperadminNotificationsDeliveryController } from "./controllers/discussionBoard/superAdmin/notifications/delivery/DiscussionboardSuperadminNotificationsDeliveryController";
+import { DiscussionboardSuperadminPopularController } from "./controllers/discussionBoard/superAdmin/popular/DiscussionboardSuperadminPopularController";
+import { DiscussionboardSuperadminReactionsAnalyticsController } from "./controllers/discussionBoard/superAdmin/reactions/analytics/DiscussionboardSuperadminReactionsAnalyticsController";
+import { DiscussionboardSuperadminSearchController } from "./controllers/discussionBoard/superAdmin/search/DiscussionboardSuperadminSearchController";
+import { DiscussionboardSuperadminSearchAttachmentsController } from "./controllers/discussionBoard/superAdmin/search/attachments/DiscussionboardSuperadminSearchAttachmentsController";
 import { DiscussionboardSuperadminSectionsController } from "./controllers/discussionBoard/superAdmin/sections/DiscussionboardSuperadminSectionsController";
-import { DiscussionboardSuperadminSectionsAdministratorsController } from "./controllers/discussionBoard/superAdmin/sections/administrators/DiscussionboardSuperadminSectionsAdministratorsController";
-import { DiscussionboardSuperadminSectionsArchivesController } from "./controllers/discussionBoard/superAdmin/sections/archives/DiscussionboardSuperadminSectionsArchivesController";
-import { DiscussionboardSuperadminSectionsFilesController } from "./controllers/discussionBoard/superAdmin/sections/files/DiscussionboardSuperadminSectionsFilesController";
-import { DiscussionboardSuperadminSectionsImagesController } from "./controllers/discussionBoard/superAdmin/sections/images/DiscussionboardSuperadminSectionsImagesController";
+import { DiscussionboardSuperadminSectionsDeletionsController } from "./controllers/discussionBoard/superAdmin/sections/deletions/DiscussionboardSuperadminSectionsDeletionsController";
 import { DiscussionboardSuperadminSectionsSnapshotsController } from "./controllers/discussionBoard/superAdmin/sections/snapshots/DiscussionboardSuperadminSectionsSnapshotsController";
-import { DiscussionboardSuperadminSectionsStatisticsController } from "./controllers/discussionBoard/superAdmin/sections/statistics/DiscussionboardSuperadminSectionsStatisticsController";
-import { DiscussionboardSuperadminSecurity_eventsController } from "./controllers/discussionBoard/superAdmin/security-events/DiscussionboardSuperadminSecurity_eventsController";
-import { DiscussionboardSuperadminStatisticsController } from "./controllers/discussionBoard/superAdmin/statistics/DiscussionboardSuperadminStatisticsController";
-import { DiscussionboardSuperadminSuper_adminsEmail_verificationsController } from "./controllers/discussionBoard/superAdmin/super-admins/email-verifications/DiscussionboardSuperadminSuper_adminsEmail_verificationsController";
-import { DiscussionboardSuperadminSuper_adminsPassword_resetsController } from "./controllers/discussionBoard/superAdmin/super-admins/password-resets/DiscussionboardSuperadminSuper_adminsPassword_resetsController";
-import { DiscussionboardSuperadminSuper_adminsProfileController } from "./controllers/discussionBoard/superAdmin/super-admins/profile/DiscussionboardSuperadminSuper_adminsProfileController";
-import { DiscussionboardSuperadminSuper_adminsSessionsController } from "./controllers/discussionBoard/superAdmin/super-admins/sessions/DiscussionboardSuperadminSuper_adminsSessionsController";
-import { DiscussionboardSuperadminSystem_activitiesController } from "./controllers/discussionBoard/superAdmin/system-activities/DiscussionboardSuperadminSystem_activitiesController";
+import { DiscussionboardSuperadminStatus_enumsController } from "./controllers/discussionBoard/superAdmin/status-enums/DiscussionboardSuperadminStatus_enumsController";
+import { DiscussionboardSuperadminStatus_enumsDependenciesController } from "./controllers/discussionBoard/superAdmin/status-enums/dependencies/DiscussionboardSuperadminStatus_enumsDependenciesController";
+import { DiscussionboardSuperadminStatus_enumsReferencesController } from "./controllers/discussionBoard/superAdmin/status-enums/references/DiscussionboardSuperadminStatus_enumsReferencesController";
+import { DiscussionboardSuperadminStatus_enumsSnapshotsController } from "./controllers/discussionBoard/superAdmin/status-enums/snapshots/DiscussionboardSuperadminStatus_enumsSnapshotsController";
+import { DiscussionboardSuperadminStatus_typesController } from "./controllers/discussionBoard/superAdmin/status-types/DiscussionboardSuperadminStatus_typesController";
+import { DiscussionboardSuperadminSystem_audit_logsParametersController } from "./controllers/discussionBoard/superAdmin/system-audit-logs/parameters/DiscussionboardSuperadminSystem_audit_logsParametersController";
 import { DiscussionboardSuperadminSystem_configurationsController } from "./controllers/discussionBoard/superAdmin/system-configurations/DiscussionboardSuperadminSystem_configurationsController";
-import { DiscussionboardSuperadminSystemAnalyticsErrorsController } from "./controllers/discussionBoard/superAdmin/system/analytics/errors/DiscussionboardSuperadminSystemAnalyticsErrorsController";
-import { DiscussionboardSuperadminSystemAnalyticsSecurityController } from "./controllers/discussionBoard/superAdmin/system/analytics/security/DiscussionboardSuperadminSystemAnalyticsSecurityController";
-import { DiscussionboardSuperadminSystemMetricsPerformanceController } from "./controllers/discussionBoard/superAdmin/system/metrics/performance/DiscussionboardSuperadminSystemMetricsPerformanceController";
-import { DiscussionboardSuperadminSystemOverviewController } from "./controllers/discussionBoard/superAdmin/system/overview/DiscussionboardSuperadminSystemOverviewController";
-import { DiscussionboardSuperadminSystemReportsAuditController } from "./controllers/discussionBoard/superAdmin/system/reports/audit/DiscussionboardSuperadminSystemReportsAuditController";
-import { DiscussionboardSuperadminSystemReportsData_retentionController } from "./controllers/discussionBoard/superAdmin/system/reports/data-retention/DiscussionboardSuperadminSystemReportsData_retentionController";
-import { DiscussionboardSuperadminSystemReportsSummaryController } from "./controllers/discussionBoard/superAdmin/system/reports/summary/DiscussionboardSuperadminSystemReportsSummaryController";
+import { DiscussionboardSuperadminSystem_health_metricsMetadataController } from "./controllers/discussionBoard/superAdmin/system-health-metrics/metadata/DiscussionboardSuperadminSystem_health_metricsMetadataController";
+import { DiscussionboardSuperadminSystem_metadataController } from "./controllers/discussionBoard/superAdmin/system-metadata/DiscussionboardSuperadminSystem_metadataController";
+import { DiscussionboardSuperadminSystem_notificationsController } from "./controllers/discussionBoard/superAdmin/system-notifications/DiscussionboardSuperadminSystem_notificationsController";
+import { DiscussionboardSuperadminSystem_notificationsSubtypesController } from "./controllers/discussionBoard/superAdmin/system-notifications/subtypes/DiscussionboardSuperadminSystem_notificationsSubtypesController";
+import { DiscussionboardSuperadminSystemMetricsController } from "./controllers/discussionBoard/superAdmin/system/metrics/DiscussionboardSuperadminSystemMetricsController";
+import { DiscussionboardSuperadminThumbnailsController } from "./controllers/discussionBoard/superAdmin/thumbnails/DiscussionboardSuperadminThumbnailsController";
+import { DiscussionboardSuperadminTopicsController } from "./controllers/discussionBoard/superAdmin/topics/DiscussionboardSuperadminTopicsController";
+import { DiscussionboardSuperadminUploadProgressController } from "./controllers/discussionBoard/superAdmin/upload/progress/DiscussionboardSuperadminUploadProgressController";
 import { DiscussionboardSuperadminUser_bansController } from "./controllers/discussionBoard/superAdmin/user-bans/DiscussionboardSuperadminUser_bansController";
-import { DiscussionboardUserAppealsController } from "./controllers/discussionBoard/user/appeals/DiscussionboardUserAppealsController";
-import { DiscussionboardUserAppealsMyController } from "./controllers/discussionBoard/user/appeals/my/DiscussionboardUserAppealsMyController";
-import { DiscussionboardUserArticle_draftsController } from "./controllers/discussionBoard/user/article-drafts/DiscussionboardUserArticle_draftsController";
-import { DiscussionboardUserArticles_draftsController } from "./controllers/discussionBoard/user/articles-drafts/DiscussionboardUserArticles_draftsController";
-import { DiscussionboardUserArticles_draftsOwnController } from "./controllers/discussionBoard/user/articles-drafts/own/DiscussionboardUserArticles_draftsOwnController";
-import { DiscussionboardUserArticlesController } from "./controllers/discussionBoard/user/articles/DiscussionboardUserArticlesController";
-import { DiscussionboardUserArticlesCommentsController } from "./controllers/discussionBoard/user/articles/comments/DiscussionboardUserArticlesCommentsController";
-import { DiscussionboardUserArticlesCommentsVotesController } from "./controllers/discussionBoard/user/articles/comments/votes/DiscussionboardUserArticlesCommentsVotesController";
-import { DiscussionboardUserArticlesFavoritesController } from "./controllers/discussionBoard/user/articles/favorites/DiscussionboardUserArticlesFavoritesController";
-import { DiscussionboardUserArticlesFilesController } from "./controllers/discussionBoard/user/articles/files/DiscussionboardUserArticlesFilesController";
-import { DiscussionboardUserArticlesImagesController } from "./controllers/discussionBoard/user/articles/images/DiscussionboardUserArticlesImagesController";
-import { DiscussionboardUserArticlesSearchTagsController } from "./controllers/discussionBoard/user/articles/search/tags/DiscussionboardUserArticlesSearchTagsController";
-import { DiscussionboardUserArticlesSnapshotsController } from "./controllers/discussionBoard/user/articles/snapshots/DiscussionboardUserArticlesSnapshotsController";
-import { DiscussionboardUserArticlesTagsController } from "./controllers/discussionBoard/user/articles/tags/DiscussionboardUserArticlesTagsController";
-import { DiscussionboardUserArticlesView_statsController } from "./controllers/discussionBoard/user/articles/view-stats/DiscussionboardUserArticlesView_statsController";
-import { DiscussionboardUserBansAppealsController } from "./controllers/discussionBoard/user/bans/appeals/DiscussionboardUserBansAppealsController";
-import { DiscussionboardUserBansMy_banController } from "./controllers/discussionBoard/user/bans/my-ban/DiscussionboardUserBansMy_banController";
-import { DiscussionboardUserBansMy_banAppealsController } from "./controllers/discussionBoard/user/bans/my-ban/appeals/DiscussionboardUserBansMy_banAppealsController";
-import { DiscussionboardUserBrowseController } from "./controllers/discussionBoard/user/browse/DiscussionboardUserBrowseController";
-import { DiscussionboardUserCommentsController } from "./controllers/discussionBoard/user/comments/DiscussionboardUserCommentsController";
-import { DiscussionboardUserCommentsEdit_historiesController } from "./controllers/discussionBoard/user/comments/edit-histories/DiscussionboardUserCommentsEdit_historiesController";
-import { DiscussionboardUserCommentsFlagsController } from "./controllers/discussionBoard/user/comments/flags/DiscussionboardUserCommentsFlagsController";
-import { DiscussionboardUserCommentsMy_statisticsController } from "./controllers/discussionBoard/user/comments/my-statistics/DiscussionboardUserCommentsMy_statisticsController";
-import { DiscussionboardUserCommentsMy_voteController } from "./controllers/discussionBoard/user/comments/my-vote/DiscussionboardUserCommentsMy_voteController";
-import { DiscussionboardUserCommentsReportsController } from "./controllers/discussionBoard/user/comments/reports/DiscussionboardUserCommentsReportsController";
-import { DiscussionboardUserContent_flagsController } from "./controllers/discussionBoard/user/content-flags/DiscussionboardUserContent_flagsController";
-import { DiscussionboardUserContent_flagsMy_flagsController } from "./controllers/discussionBoard/user/content-flags/my-flags/DiscussionboardUserContent_flagsMy_flagsController";
-import { DiscussionboardUser_exportController } from "./controllers/discussionBoard/user/export/DiscussionboardUser_exportController";
-import { DiscussionboardUserProfileSectionsPreferencesController } from "./controllers/discussionBoard/user/profile/sections/preferences/DiscussionboardUserProfileSectionsPreferencesController";
-import { DiscussionboardUserPromotion_requestsController } from "./controllers/discussionBoard/user/promotion-requests/DiscussionboardUserPromotion_requestsController";
-import { DiscussionboardUserRecently_activeController } from "./controllers/discussionBoard/user/recently-active/DiscussionboardUserRecently_activeController";
-import { DiscussionboardUserSearchArticlesController } from "./controllers/discussionBoard/user/search/articles/DiscussionboardUserSearchArticlesController";
-import { DiscussionboardUserStatsController } from "./controllers/discussionBoard/user/stats/DiscussionboardUserStatsController";
-import { DiscussionboardUserUsersEmail_verificationsController } from "./controllers/discussionBoard/user/users/email-verifications/DiscussionboardUserUsersEmail_verificationsController";
-import { DiscussionboardUserUsersPassword_resetsController } from "./controllers/discussionBoard/user/users/password-resets/DiscussionboardUserUsersPassword_resetsController";
-import { DiscussionboardUserUsersProfileController } from "./controllers/discussionBoard/user/users/profile/DiscussionboardUserUsersProfileController";
-import { DiscussionboardUserUsersSessionsController } from "./controllers/discussionBoard/user/users/sessions/DiscussionboardUserUsersSessionsController";
-import { DiscussionboardUsersController } from "./controllers/discussionBoard/users/DiscussionboardUsersController";
+import { DiscussionboardTagsController } from "./controllers/discussionBoard/tags/DiscussionboardTagsController";
 
 @Module({
   controllers: [
-    DiscussionboardAuthUserController,
+    DiscussionboardAuthGuestController,
+    DiscussionboardAuthMemberController,
     DiscussionboardAuthAdminController,
     DiscussionboardAuthSuperadminController,
-    DiscussionboardUsersController,
-    DiscussionboardUserUsersProfileController,
+    DiscussionboardGuestsController,
+    DiscussionboardGuestSessionsController,
+    DiscussionboardMembersController,
+    DiscussionboardMemberProfileController,
     DiscussionboardAdminsController,
-    DiscussionboardAdminAdminsProfileController,
     DiscussionboardSuper_adminsController,
-    DiscussionboardSuperadminSuper_adminsProfileController,
-    DiscussionboardUserUsersSessionsController,
-    DiscussionboardUserUsersPassword_resetsController,
-    DiscussionboardUserUsersEmail_verificationsController,
-    DiscussionboardAdminAdminsSessionsController,
-    DiscussionboardAdminAdminsPassword_resetsController,
-    DiscussionboardAdminAdminsEmail_verificationsController,
-    DiscussionboardSuperadminSuper_adminsSessionsController,
-    DiscussionboardSuperadminSuper_adminsPassword_resetsController,
-    DiscussionboardSuperadminSuper_adminsEmail_verificationsController,
+    DiscussionboardAdminStatus_enumsController,
+    DiscussionboardSuperadminStatus_enumsController,
+    DiscussionboardAdminStatus_typesController,
+    DiscussionboardSuperadminStatus_typesController,
+    DiscussionboardAdminSystem_configurationsController,
+    DiscussionboardSuperadminSystem_configurationsController,
+    DiscussionboardAdminSystem_metadataController,
+    DiscussionboardSuperadminSystem_metadataController,
+    DiscussionboardAdminSystem_notificationsController,
+    DiscussionboardSuperadminSystem_notificationsController,
+    DiscussionboardAdminMaintenance_schedulesController,
+    DiscussionboardSuperadminMaintenance_schedulesController,
+    DiscussionboardAdminStatus_enumsSnapshotsController,
+    DiscussionboardSuperadminStatus_enumsSnapshotsController,
+    DiscussionboardAdminStatus_enumsReferencesController,
+    DiscussionboardSuperadminStatus_enumsReferencesController,
+    DiscussionboardAdminSystem_audit_logsParametersController,
+    DiscussionboardSuperadminSystem_audit_logsParametersController,
+    DiscussionboardAdminSystem_notificationsSubtypesController,
+    DiscussionboardSuperadminSystem_notificationsSubtypesController,
+    DiscussionboardAdminSystem_health_metricsMetadataController,
+    DiscussionboardSuperadminSystem_health_metricsMetadataController,
     DiscussionboardSectionsController,
+    DiscussionboardGuestSectionsController,
+    DiscussionboardMemberSectionsController,
     DiscussionboardAdminSectionsController,
     DiscussionboardSuperadminSectionsController,
     DiscussionboardAdminSectionsSnapshotsController,
     DiscussionboardSuperadminSectionsSnapshotsController,
-    DiscussionboardAdminSectionsStatisticsController,
-    DiscussionboardSuperadminSectionsStatisticsController,
-    DiscussionboardAdminSectionsAdministratorsController,
-    DiscussionboardSuperadminSectionsAdministratorsController,
-    DiscussionboardUserProfileSectionsPreferencesController,
-    DiscussionboardAdminSectionsArchivesController,
-    DiscussionboardSuperadminSectionsArchivesController,
-    DiscussionboardAdminSectionsFilesController,
-    DiscussionboardSuperadminSectionsFilesController,
-    DiscussionboardAdminSectionsImagesController,
-    DiscussionboardSuperadminSectionsImagesController,
-    DiscussionboardUserArticlesController,
-    DiscussionboardAdminArticlesController,
-    DiscussionboardSuperadminArticlesController,
-    DiscussionboardUserArticles_draftsController,
-    DiscussionboardAdminArticles_draftsController,
-    DiscussionboardSuperadminArticles_draftsController,
-    DiscussionboardUserArticle_draftsController,
-    DiscussionboardAdminArticle_draftsController,
-    DiscussionboardSuperadminArticle_draftsController,
-    DiscussionboardUserArticlesFilesController,
-    DiscussionboardAdminArticlesFilesController,
-    DiscussionboardSuperadminArticlesFilesController,
-    DiscussionboardUserArticlesImagesController,
-    DiscussionboardAdminArticlesImagesController,
-    DiscussionboardSuperadminArticlesImagesController,
-    DiscussionboardUserArticlesTagsController,
-    DiscussionboardAdminArticlesTagsController,
-    DiscussionboardSuperadminArticlesTagsController,
-    DiscussionboardUserArticlesView_statsController,
-    DiscussionboardAdminArticlesView_statsController,
-    DiscussionboardSuperadminArticlesView_statsController,
-    DiscussionboardArticlesView_stat_eventsController,
-    DiscussionboardUserArticlesFavoritesController,
-    DiscussionboardAdminArticlesFavoritesController,
-    DiscussionboardSuperadminArticlesFavoritesController,
-    DiscussionboardUserArticlesSnapshotsController,
-    DiscussionboardAdminArticlesSnapshotsController,
-    DiscussionboardSuperadminArticlesSnapshotsController,
-    DiscussionboardUserArticles_draftsOwnController,
-    DiscussionboardAdminArticles_draftsOwnController,
-    DiscussionboardSuperadminArticles_draftsOwnController,
+    DiscussionboardAdminSectionsDeletionsController,
+    DiscussionboardSuperadminSectionsDeletionsController,
+    DiscussionboardArticlesController,
+    DiscussionboardMemberArticlesController,
+    DiscussionboardTagsController,
+    DiscussionboardArticlesTagsController,
+    DiscussionboardMemberArticlesTagsController,
+    DiscussionboardArticlesSnapshotsController,
+    DiscussionboardMemberArticlesSnapshotsController,
+    DiscussionboardMemberFavoritesController,
+    DiscussionboardArticlesReactionsController,
+    DiscussionboardMemberArticlesReactionsController,
+    DiscussionboardArticlesMetadataController,
+    DiscussionboardMemberArticlesMetadataController,
+    DiscussionboardMemberArticlesCommentsController,
+    DiscussionboardAdminArticlesCommentsActivitiesController,
+    DiscussionboardAdminArticlesCommentsDeletionsController,
+    DiscussionboardAdminArticlesCommentsActivitiesMetadataController,
     DiscussionboardArticlesCommentsController,
-    DiscussionboardUserArticlesCommentsController,
-    DiscussionboardArticlesCommentsVotesController,
-    DiscussionboardUserArticlesCommentsVotesController,
-    DiscussionboardAdminCommentsFlagsController,
-    DiscussionboardUserCommentsFlagsController,
-    DiscussionboardAdminCommentsReportsController,
-    DiscussionboardUserCommentsReportsController,
-    DiscussionboardUserCommentsEdit_historiesController,
-    DiscussionboardAdminCommentsEdit_historiesController,
-    DiscussionboardAdminCommentsSnapshotsController,
-    DiscussionboardAdminCommentsModerationsController,
-    DiscussionboardArticlesComment_pagination_settingsController,
-    DiscussionboardAdminArticlesComment_pagination_settingsController,
-    DiscussionboardAdminComment_rate_limitsController,
-    DiscussionboardUserCommentsMy_voteController,
-    DiscussionboardAdminCommentsController,
-    DiscussionboardSuperadminAdministratorsController,
+    DiscussionboardArticlesCommentsSnapshotsController,
+    DiscussionboardArticlesCommentsTagsController,
+    DiscussionboardArticlesComment_statisticsController,
+    DiscussionboardSuperadminAdmin_requestsController,
+    DiscussionboardMemberAdmin_requestsController,
+    DiscussionboardSuperadminAdmin_request_decisionsController,
     DiscussionboardAdminUser_bansController,
     DiscussionboardSuperadminUser_bansController,
-    DiscussionboardSuperadminPromotion_requestsWorkflowsController,
-    DiscussionboardSuperadminAdministratorsCapabilitiesController,
-    DiscussionboardUserPromotion_requestsController,
-    DiscussionboardSuperadminPromotion_requestsController,
-    DiscussionboardAdminBansController,
-    DiscussionboardAdminBansAppealsController,
-    DiscussionboardUserBansAppealsController,
-    DiscussionboardSuperadminBan_durationsController,
-    DiscussionboardSuperadminBan_reason_categoriesController,
-    DiscussionboardAdminContent_flagsController,
-    DiscussionboardUserContent_flagsController,
-    DiscussionboardAdminModeration_queuesController,
-    DiscussionboardAdminModeration_logsController,
-    DiscussionboardSuperadminModeration_logsController,
-    DiscussionboardAdminModerated_content_historiesController,
-    DiscussionboardSuperadminModerated_content_historiesController,
-    DiscussionboardSuperadminModeration_action_typesController,
-    DiscussionboardSuperadminAdministrator_grade_changesController,
-    DiscussionboardUserBansMy_banController,
-    DiscussionboardUserBansMy_banAppealsController,
-    DiscussionboardUserContent_flagsMy_flagsController,
-    DiscussionboardAdminSystem_configurationsController,
-    DiscussionboardSuperadminSystem_configurationsController,
+    DiscussionboardSuperadminAdministrator_assignmentsController,
     DiscussionboardAdminAudit_logsController,
     DiscussionboardSuperadminAudit_logsController,
-    DiscussionboardAdminAdministrator_promotion_approvalsController,
-    DiscussionboardSuperadminAdministrator_promotion_approvalsController,
-    DiscussionboardAdminContent_moderation_logsController,
-    DiscussionboardSuperadminContent_moderation_logsController,
-    DiscussionboardAdminSystem_activitiesController,
-    DiscussionboardSuperadminSystem_activitiesController,
-    DiscussionboardAdminPerformance_metricsController,
-    DiscussionboardSuperadminPerformance_metricsController,
-    DiscussionboardAdminError_logsController,
-    DiscussionboardSuperadminError_logsController,
-    DiscussionboardAdminBackup_recordsController,
-    DiscussionboardSuperadminBackup_recordsController,
-    DiscussionboardAdminMaintenance_schedulesController,
-    DiscussionboardSuperadminMaintenance_schedulesController,
-    DiscussionboardAdminApi_rate_limitsController,
-    DiscussionboardSuperadminApi_rate_limitsController,
-    DiscussionboardAdminSecurity_eventsController,
-    DiscussionboardSuperadminSecurity_eventsController,
-    DiscussionboardAdminData_retention_policiesController,
-    DiscussionboardSuperadminData_retention_policiesController,
-    DiscussionboardAdminData_retention_policy_data_type_mappingsController,
-    DiscussionboardSuperadminData_retention_policy_data_type_mappingsController,
-    DiscussionboardUserStatsController,
-    DiscussionboardUserBrowseController,
-    DiscussionboardAdminDashboardController,
-    DiscussionboardSuperadminOverviewController,
-    DiscussionboardAdminUsersSearchController,
-    DiscussionboardUser_exportController,
-    DiscussionboardSuperadminPromotion_analyticsController,
+    DiscussionboardAdminAdministrative_historiesController,
+    DiscussionboardSuperadminAdministrative_historiesController,
+    DiscussionboardSuperadminAdministrator_assignmentsTo_membersController,
+    DiscussionboardSuperadminAdministrator_assignmentsTo_adminsController,
+    DiscussionboardSuperadminAdministrator_assignmentsTo_super_adminsController,
+    DiscussionboardSuperadminAdministrator_assignmentsBy_membersController,
+    DiscussionboardSuperadminAdministrator_assignmentsBy_adminsController,
+    DiscussionboardSuperadminAdministrator_assignmentsBy_super_adminsController,
+    DiscussionboardArticlesAttachmentsController,
+    DiscussionboardMemberArticlesAttachmentsController,
+    DiscussionboardAdminArticlesAttachmentsController,
+    DiscussionboardSuperadminArticlesAttachmentsController,
+    DiscussionboardArticlesAttachmentsImage_metadataController,
+    DiscussionboardMemberArticlesAttachmentsImage_metadataController,
+    DiscussionboardAdminArticlesAttachmentsImage_metadataController,
+    DiscussionboardSuperadminArticlesAttachmentsImage_metadataController,
+    DiscussionboardAdminAttachment_downloadsController,
+    DiscussionboardSuperadminAttachment_downloadsController,
+    DiscussionboardAdminAttachment_categoriesController,
+    DiscussionboardSuperadminAttachment_categoriesController,
+    DiscussionboardAdminAttachment_snapshotsController,
+    DiscussionboardSuperadminAttachment_snapshotsController,
+    DiscussionboardAdminThumbnailsController,
+    DiscussionboardSuperadminThumbnailsController,
+    DiscussionboardArticlesAttachmentsImage_metadataExifController,
+    DiscussionboardAdminAttachment_category_mappingsController,
+    DiscussionboardSuperadminAttachment_category_mappingsController,
+    DiscussionboardArticlesAttachmentsThumbnailsController,
+    DiscussionboardGuestHealthController,
+    DiscussionboardMemberHealthController,
+    DiscussionboardAdminHealthController,
+    DiscussionboardSuperadminHealthController,
+    DiscussionboardSuperadminMetricsController,
+    DiscussionboardSuperadminHierarchyController,
+    DiscussionboardSuperadminGovernanceOversightController,
+    DiscussionboardSuperadminNotificationsDeliveryController,
+    DiscussionboardSuperadminMaintenanceExecutionController,
+    DiscussionboardSuperadminStatus_enumsDependenciesController,
+    DiscussionboardSuperadminDashboardController,
     DiscussionboardAdminAnalyticsController,
     DiscussionboardSuperadminAnalyticsController,
-    DiscussionboardUserRecently_activeController,
-    DiscussionboardAdminRecently_activeController,
-    DiscussionboardSuperadminRecently_activeController,
-    DiscussionboardAdminBrowseController,
-    DiscussionboardSuperadminBrowseController,
-    DiscussionboardUserSearchArticlesController,
-    DiscussionboardUserArticlesSearchTagsController,
-    DiscussionboardAdminAnalyticsArticle_viewsController,
-    DiscussionboardSuperadminAnalyticsArticle_viewsController,
-    DiscussionboardAdminAnalyticsSectionsController,
-    DiscussionboardSuperadminAnalyticsSectionsController,
-    DiscussionboardAdminAnalyticsUser_activityController,
-    DiscussionboardSuperadminAnalyticsUser_activityController,
-    DiscussionboardUserCommentsController,
-    DiscussionboardAdminCommentsModerationDashboardController,
-    DiscussionboardUserCommentsMy_statisticsController,
-    DiscussionboardSuperadminCommentsAnalyticsController,
-    DiscussionboardAdminCommentsBulk_moderationsController,
-    DiscussionboardSuperadminStatisticsController,
-    DiscussionboardAdminAppealsController,
-    DiscussionboardSuperadminAppealsController,
-    DiscussionboardAdminModerationController,
-    DiscussionboardSuperadminModerationController,
-    DiscussionboardAdminFlagsController,
-    DiscussionboardSuperadminFlagsController,
-    DiscussionboardAdminQueuesController,
-    DiscussionboardSuperadminQueuesController,
-    DiscussionboardAdminLogsController,
-    DiscussionboardSuperadminLogsController,
-    DiscussionboardUserAppealsController,
-    DiscussionboardUserAppealsMyController,
-    DiscussionboardAdminSystemOverviewController,
-    DiscussionboardSuperadminSystemOverviewController,
-    DiscussionboardSuperadminSystemMetricsPerformanceController,
-    DiscussionboardAdminSystemAnalyticsSecurityController,
-    DiscussionboardSuperadminSystemAnalyticsSecurityController,
-    DiscussionboardSuperadminSystemReportsAuditController,
-    DiscussionboardSuperadminSystemAnalyticsErrorsController,
-    DiscussionboardSuperadminSystemReportsData_retentionController,
-    DiscussionboardAdminSystemReportsSummaryController,
-    DiscussionboardSuperadminSystemReportsSummaryController,
+    DiscussionboardAdminDuplicationController,
+    DiscussionboardSuperadminDuplicationController,
+    DiscussionboardGuestSearchController,
+    DiscussionboardMemberSearchController,
+    DiscussionboardAdminSearchController,
+    DiscussionboardSuperadminSearchController,
+    DiscussionboardGuestPopularController,
+    DiscussionboardMemberPopularController,
+    DiscussionboardAdminPopularController,
+    DiscussionboardSuperadminPopularController,
+    DiscussionboardAdminReactionsAnalyticsController,
+    DiscussionboardSuperadminReactionsAnalyticsController,
+    DiscussionboardAdminArticlesMetricsController,
+    DiscussionboardSuperadminArticlesMetricsController,
+    DiscussionboardGuestDiscoveryController,
+    DiscussionboardMemberDiscoveryController,
+    DiscussionboardAdminDiscoveryController,
+    DiscussionboardSuperadminDiscoveryController,
+    DiscussionboardGuestCross_sectionController,
+    DiscussionboardMemberCross_sectionController,
+    DiscussionboardAdminCross_sectionController,
+    DiscussionboardSuperadminCross_sectionController,
+    DiscussionboardGuestTopicsController,
+    DiscussionboardMemberTopicsController,
+    DiscussionboardAdminTopicsController,
+    DiscussionboardSuperadminTopicsController,
+    DiscussionboardSuperadminMonitoringController,
+    DiscussionboardMemberEngagementController,
+    DiscussionboardAdminEngagementController,
+    DiscussionboardSuperadminEngagementController,
+    DiscussionboardAdminCommentsDeletion_impactController,
+    DiscussionboardSuperadminCommentsDeletion_impactController,
+    DiscussionboardAdminModerationsMetricsController,
+    DiscussionboardSuperadminModerationsMetricsController,
+    DiscussionboardSuperadminCommentsMetricsController,
+    DiscussionboardSuperadminAdmin_requestsHistoryController,
+    DiscussionboardSuperadminAdministrationsAnalyticsController,
+    DiscussionboardSuperadminAdministratorsController,
+    DiscussionboardAdminBansDashboardController,
+    DiscussionboardSuperadminSystemMetricsController,
+    DiscussionboardSuperadminAdmin_requestsPendingController,
+    DiscussionboardSuperadminAdministrator_assignmentsHistoryController,
+    DiscussionboardAdminAnalyticsDownloadsController,
+    DiscussionboardSuperadminAnalyticsDownloadsController,
+    DiscussionboardAdminDashboardCategoriesController,
+    DiscussionboardSuperadminDashboardCategoriesController,
+    DiscussionboardMemberSearchAttachmentsController,
+    DiscussionboardAdminSearchAttachmentsController,
+    DiscussionboardSuperadminSearchAttachmentsController,
+    DiscussionboardAdminBulkCategorizeController,
+    DiscussionboardSuperadminBulkCategorizeController,
+    DiscussionboardMemberOrganizeAttachmentsController,
+    DiscussionboardAdminMonitoringAttachment_usageController,
+    DiscussionboardSuperadminMonitoringAttachment_usageController,
+    DiscussionboardMemberUploadProgressController,
+    DiscussionboardAdminUploadProgressController,
+    DiscussionboardSuperadminUploadProgressController,
+    DiscussionboardAdminAlertsCapacityController,
+    DiscussionboardSuperadminAlertsCapacityController,
   ],
 })
 export class MyModule {}

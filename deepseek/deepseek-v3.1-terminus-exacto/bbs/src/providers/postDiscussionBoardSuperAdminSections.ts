@@ -1,4 +1,3 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -10,36 +9,33 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardSectionCollector } from "../collectors/DiscussionBoardSectionCollector";
-import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
 import { DiscussionBoardSectionTransformer } from "../transformers/DiscussionBoardSectionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminSections(props: {
-  superAdmin: SuperAdminPayload;
+  superAdmin: SuperadminPayload;
   body: IDiscussionBoardSection.ICreate;
 }): Promise<IDiscussionBoardSection> {
-  // Check for existing section with the same name
-  const existingSection =
-    await MyGlobal.prisma.discussion_board_sections.findFirst({
-      where: {
-        name: props.body.name,
-        deleted_at: null,
-      },
-    });
-  if (existingSection) {
-    throw new HttpException(
-      `Section name "${props.body.name}" already exists`,
-      400,
-    );
+  // Check if section name already exists among active sections
+  const existing = await MyGlobal.prisma.discussion_board_sections.findFirst({
+    where: {
+      name: props.body.name,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (existing !== null) {
+    throw new HttpException("Section name already exists", 409);
   }
-  // Create the section using collector and transformer
-  const section = await MyGlobal.prisma.discussion_board_sections.create({
+  // Create new section using Collector for data transformation
+  const created = await MyGlobal.prisma.discussion_board_sections.create({
     data: await DiscussionBoardSectionCollector.collect({
       body: props.body,
-      discussionBoardAdmins: { id: props.superAdmin.id },
     }),
     ...DiscussionBoardSectionTransformer.select(),
   });
-  return await DiscussionBoardSectionTransformer.transform(section);
+  // Transform database result to DTO
+  return await DiscussionBoardSectionTransformer.transform(created);
 }

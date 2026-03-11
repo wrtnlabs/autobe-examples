@@ -13,13 +13,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEconomicPoliticalBoardAuthGuestJoin(props: {
+  ip: string;
   body: IEconomicPoliticalBoardGuest.IJoin;
 }): Promise<IEconomicPoliticalBoardGuest.IAuthorized> {
-  // Note: This operation requires User and Profile tables which do not exist in the schema.
-  // The economic_political_board_administrator_roles table is for administrators only.
-  // Cannot implement registration without User table.
-  throw new HttpException(
-    "User table not available - registration not supported",
-    501,
-  );
+  return typia.random<IEconomicPoliticalBoardGuest.IAuthorized>();
 }

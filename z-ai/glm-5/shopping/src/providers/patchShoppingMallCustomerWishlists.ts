@@ -22,64 +22,47 @@ export async function patchShoppingMallCustomerWishlists(props: {
   customer: CustomerPayload;
   body: IShoppingMallWishlistItem.IRequest;
 }): Promise<IPageIShoppingMallWishlistItem.ISummary> {
-  const limit = props.body.limit ?? 20;
-  const sort = props.body.sort ?? "created_at";
-  const cursor = props.body.cursor;
-  const page = props.body.page;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
   // Find customer's wishlist
   const wishlist = await MyGlobal.prisma.shopping_mall_wishlists.findUnique({
     where: { shopping_mall_customer_id: props.customer.id },
     select: { id: true },
   });
-  if (!wishlist) {
+  // If no wishlist exists, return empty result
+  if (wishlist === null) {
     return {
       data: [],
       pagination: {
-        current: page ?? 1,
+        current: page,
         limit: limit,
         records: 0,
         pages: 0,
       } satisfies IPage.IPagination,
     };
   }
-  // Base WHERE conditions filtering deleted products and suspended/banned sellers
-  const baseWhere = {
+  // Query wishlist items with filtering for active products and approved sellers
+  const whereInput = {
     shopping_mall_wishlist_id: wishlist.id,
     product: {
       deleted_at: null,
       seller: {
         suspended: false,
         banned: false,
+        approval_status: "approved",
       },
     },
   } satisfies Prisma.shopping_mall_wishlist_itemsWhereInput;
-  // Cursor-based WHERE (for cursor pagination)
-  const whereWithCursor = cursor
-    ? ({
-        ...baseWhere,
-        created_at: { lt: new Date(cursor) },
-      } satisfies Prisma.shopping_mall_wishlist_itemsWhereInput)
-    : baseWhere;
-  // Determine pagination mode
-  const useCursorPagination = cursor !== undefined && page === undefined;
-  // Build ORDER BY
-  const orderBy: Prisma.shopping_mall_wishlist_itemsOrderByWithRelationInput =
-    sort === "price_asc"
-      ? { product: { base_price: "asc" } }
-      : sort === "price_desc"
-        ? { product: { base_price: "desc" } }
-        : { created_at: "desc" };
-  // Query wishlist items
   const items = await MyGlobal.prisma.shopping_mall_wishlist_items.findMany({
-    where: useCursorPagination ? whereWithCursor : baseWhere,
-    skip: useCursorPagination ? undefined : ((page ?? 1) - 1) * limit,
-    take: limit,
-    orderBy,
+    where: whereInput,
     ...ShoppingMallWishlistItemAtSummaryTransformer.select(),
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
   });
-  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.shopping_mall_wishlist_items.count({
-    where: baseWhere,
+    where: whereInput,
   });
   return {
     data: await ArrayUtil.asyncMap(
@@ -87,7 +70,7 @@ export async function patchShoppingMallCustomerWishlists(props: {
       ShoppingMallWishlistItemAtSummaryTransformer.transform,
     ),
     pagination: {
-      current: page ?? 1,
+      current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),

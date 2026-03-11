@@ -3,11 +3,12 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAddress";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import type { IShoppingMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCheckout";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshot";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
@@ -25,98 +26,177 @@ import { authorize_seller_login } from "../../../authorize/authorize_seller_logi
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_shopping_mall_customer_addresses_create } from "../../../generate/generate_random_shopping_mall_customer_addresses_create";
 import { generate_random_shopping_mall_customer_checkout_create } from "../../../generate/generate_random_shopping_mall_customer_checkout_create";
-import { generate_random_shopping_mall_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_shipments_create";
+import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
+import { generate_random_shopping_mall_seller_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_seller_products_create";
+import { generate_random_shopping_mall_seller_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_seller_shipments_create";
 import { prepare_random_shopping_mall_address } from "../../../prepare/prepare_random_shopping_mall_address";
-import { prepare_random_shopping_mall_checkout } from "../../../prepare/prepare_random_shopping_mall_checkout";
+import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
+import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
+import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
 import { prepare_random_shopping_mall_shipment } from "../../../prepare/prepare_random_shopping_mall_shipment";
 
+/**
+ * Test the business workflow where a seller bundles multiple order items
+ * from the same order into a single shipment.
+ *
+ * This validates:
+ * 1. Seller can bundle multiple order items from same order
+ * 2. Same-seller constraint enforcement
+ * 3. Same-order constraint enforcement
+ * 4. Atomic status update to 'shipped'
+ * 5. Single shipment record linking multiple items
+ */
 export async function test_api_shipment_multi_item_bundle(
   connection: api.IConnection,
 ): Promise<void> {
-  /**
-   * Test that a seller can retrieve a shipment containing multiple bundled order items.
-   *
-   * This scenario validates:
-   * - All order items grouped in the shipment are correctly returned in the orderItems array
-   * - Each order item maintains its individual product snapshot data
-   * - Each item shows correct quantity and price at purchase time
-   * - All items show 'shipped' status after shipment creation
-   * - The same carrier name and tracking number applies to all items in the bundle
-   */
-  // 1. Create and authenticate seller
+  // 1. Seller Setup
   const sellerConnection: api.IConnection = { host: connection.host };
   const seller = await authorize_seller_join(sellerConnection, {});
   typia.assert(seller);
-  // 2. Create and authenticate customer
+  // 2. Create product with multiple variants
+  const product =
+    await generate_random_shopping_mall_seller_seller_products_create(
+      sellerConnection,
+      {
+        body: {
+          name: RandomGenerator.name(2),
+          description: RandomGenerator.paragraph({ sentences: 5 }),
+          basePrice: typia.random<number>(),
+        },
+      },
+    );
+  typia.assert(product);
+  // 3. Create two product variants for bundling test
+  const variant1 =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          sku_code: `SKU-${RandomGenerator.alphaNumeric(8)}`,
+          option_values: { color: "Red", size: "Large" },
+          price: product.base_price + 10,
+        },
+      },
+    );
+  typia.assert(variant1);
+  const variant2 =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          sku_code: `SKU-${RandomGenerator.alphaNumeric(8)}`,
+          option_values: { color: "Blue", size: "Medium" },
+          price: product.base_price,
+        },
+      },
+    );
+  typia.assert(variant2);
+  // 4. Customer Setup
   const customerConnection: api.IConnection = { host: connection.host };
   const customer = await authorize_customer_join(customerConnection, {});
   typia.assert(customer);
-  // 3. Create shipping address for customer
+  // 5. Create shipping address
   const address = await generate_random_shopping_mall_customer_addresses_create(
     customerConnection,
-    { body: { is_default: true } },
+    {
+      body: {
+        recipientName: RandomGenerator.name(),
+        phoneNumber: RandomGenerator.mobile(),
+        streetAddress: RandomGenerator.paragraph({
+          sentences: 1,
+          wordMin: 3,
+          wordMax: 5,
+        }),
+        city: RandomGenerator.name(1),
+        stateProvince: RandomGenerator.name(1),
+        postalCode: RandomGenerator.alphaNumeric(6),
+        country: "United States",
+      },
+    },
   );
   typia.assert(address);
-  // 4. Create order with items (checkout) - generation function handles cart setup
+  // 6. Create order (checkout)
   const order = await generate_random_shopping_mall_customer_checkout_create(
     customerConnection,
-    { body: { address_id: address.id } },
+    {
+      body: {
+        addressId: address.id,
+      },
+    },
   );
   typia.assert(order);
-  // 5. Create shipment bundling order items
-  // Generation function creates proper shipment with order_id and order_item_ids
-  const shipment = await generate_random_shopping_mall_seller_shipments_create(
-    sellerConnection,
-    { body: { order_id: order.id } },
+  // 7. Get order items that belong to this seller and are in 'paid' status
+  const paidOrderItems = order.orderItems.filter(
+    (item) => item.status === "paid" && item.seller.id === seller.id,
   );
+  TestValidator.predicate(
+    "Should have at least one paid order item from this seller",
+    paidOrderItems.length >= 1,
+  );
+  // 8. Create shipment bundling multiple order items
+  const orderItemIds = paidOrderItems.map((item) => item.id) satisfies (string &
+    tags.Format<"uuid">)[];
+  const shipment =
+    await api.functional.shoppingMall.seller.seller.shipments.create(
+      sellerConnection,
+      {
+        body: {
+          carrierName: "FedEx",
+          trackingNumber: `TRK-${RandomGenerator.alphaNumeric(12)}`,
+          orderId: order.id,
+          orderItemIds: orderItemIds,
+        } satisfies IShoppingMallShipment.ICreate,
+      },
+    );
   typia.assert(shipment);
-  // 6. Retrieve the shipment using the at endpoint (main test target)
-  const retrievedShipment =
-    await api.functional.shoppingMall.seller.shipments.at(sellerConnection, {
-      shipmentId: shipment.id,
-    });
-  typia.assert(retrievedShipment);
-  // 7. Validate the shipment contains bundled items (at least 1)
-  TestValidator.predicate(
-    "shipment has order items",
-    retrievedShipment.orderItems.length >= 1,
-  );
-  // 8. Validate all items have 'shipped' status
-  for (const item of retrievedShipment.orderItems) {
-    TestValidator.equals("item status is shipped", item.status, "shipped");
-  }
-  // 9. Validate carrier and tracking information
-  TestValidator.predicate(
-    "carrier name is not empty",
-    retrievedShipment.carrier_name.length > 0,
-  );
-  TestValidator.predicate(
-    "tracking number is not empty",
-    retrievedShipment.tracking_number.length > 0,
-  );
-  // 10. Validate each item has required data (product, variant, quantity, price)
-  for (const item of retrievedShipment.orderItems) {
-    TestValidator.predicate(
-      "item has product data",
-      item.product !== null && item.product !== undefined,
-    );
-    TestValidator.predicate(
-      "item has variant data",
-      item.variant !== null && item.variant !== undefined,
-    );
-    TestValidator.predicate("item has quantity", item.quantity > 0);
-    TestValidator.predicate("item has price", item.price >= 0);
-  }
-  // 11. Validate order reference in shipment matches
+  // 9. Post-Creation Verification
+  // Verify shipment has correct order reference
   TestValidator.equals(
-    "shipment order id matches",
-    retrievedShipment.order.id,
+    "Shipment order ID matches",
+    shipment.order.id,
     order.id,
   );
-  // 12. Validate seller reference in shipment matches
+  // Verify seller is the authenticated seller
   TestValidator.equals(
-    "shipment seller id matches",
-    retrievedShipment.seller.id,
+    "Shipment seller ID matches",
+    shipment.seller.id,
     seller.id,
+  );
+  // Verify carrier and tracking information
+  TestValidator.equals("Carrier name matches", shipment.carrierName, "FedEx");
+  // Verify all bundled items are in shipment
+  TestValidator.equals(
+    "Shipment contains all bundled items",
+    shipment.orderItems.length,
+    orderItemIds.length,
+  );
+  // Verify all items reference the same shipment
+  const allItemsHaveSameShipment = shipment.orderItems.every(
+    (item) => item.shipment !== null && item.shipment.id === shipment.id,
+  );
+  TestValidator.predicate(
+    "All order items reference the same shipment",
+    allItemsHaveSameShipment,
+  );
+  // Verify all items are now shipped status
+  const allItemsShipped = shipment.orderItems.every(
+    (item) => item.status === "shipped",
+  );
+  TestValidator.predicate(
+    "All order items have shipped status",
+    allItemsShipped,
+  );
+  // Verify shippedAt timestamp is set
+  TestValidator.predicate(
+    "ShippedAt timestamp is set",
+    new Date(shipment.shippedAt) <= new Date(),
+  );
+  // Verify deliveredAt is null (not yet delivered)
+  TestValidator.equals(
+    "DeliveredAt is null for new shipment",
+    shipment.deliveredAt,
+    null,
   );
 }

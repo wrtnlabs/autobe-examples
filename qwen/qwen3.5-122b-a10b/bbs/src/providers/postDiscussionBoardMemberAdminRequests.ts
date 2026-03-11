@@ -20,30 +20,34 @@ export async function postDiscussionBoardMemberAdminRequests(props: {
   member: MemberPayload;
   body: IDiscussionBoardAdminRequest.ICreate;
 }): Promise<IDiscussionBoardAdminRequest> {
-  const member =
-    await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
-      where: { id: props.member.id },
-    });
-  try {
-    const created =
-      await MyGlobal.prisma.discussion_board_admin_requests.create({
-        data: await DiscussionBoardAdminRequestCollector.collect({
-          body: props.body,
-          discussionBoardMembers: member,
-        }),
-        ...DiscussionBoardAdminRequestTransformer.select(),
-      });
-    return await DiscussionBoardAdminRequestTransformer.transform(created);
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      throw new HttpException(
-        "You already have a pending administrator request",
-        409,
-      );
-    }
-    throw error;
+  // Validate reason is non-empty after trimming
+  const trimmedReason = props.body.reason.trim();
+  if (trimmedReason.length === 0) {
+    throw new HttpException("Reason cannot be empty", 400);
   }
+  // Check for existing pending request by this member
+  const existingRequest =
+    await MyGlobal.prisma.discussion_board_admin_requests.findFirst({
+      where: {
+        discussion_board_member_id: props.member.id,
+        status: "pending",
+        deleted_at: null,
+      },
+    });
+  if (existingRequest !== null) {
+    throw new HttpException(
+      "You already have a pending administrator request",
+      409,
+    );
+  }
+  // Create the request using collector
+  const memberEntity: IEntity = { id: props.member.id } satisfies IEntity;
+  const created = await MyGlobal.prisma.discussion_board_admin_requests.create({
+    data: await DiscussionBoardAdminRequestCollector.collect({
+      body: { reason: trimmedReason },
+      discussionBoardMembers: memberEntity,
+    }),
+    ...DiscussionBoardAdminRequestTransformer.select(),
+  });
+  return await DiscussionBoardAdminRequestTransformer.transform(created);
 }

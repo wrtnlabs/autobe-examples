@@ -26,77 +26,72 @@ export async function patchShoppingMallSellerShipments(props: {
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput = {
-    seller_id: props.seller.id,
     deleted_at: null,
-    ...(props.body.orderId && { order_id: props.body.orderId }),
-    ...(props.body.carrierName && {
+    seller_id: props.seller.id,
+    ...(props.body.orderId !== undefined && { order_id: props.body.orderId }),
+    ...(props.body.carrierName !== undefined && {
       carrier_name: {
         contains: props.body.carrierName,
         mode: "insensitive" as const,
       },
     }),
-    ...(props.body.trackingNumber && {
-      tracking_number: props.body.trackingNumber,
+    ...(props.body.status !== undefined && {
+      delivered_at:
+        props.body.status === "pending_delivery" ? null : { not: null },
     }),
-    ...(props.body.shippedFrom || props.body.shippedTo
-      ? {
-          shipped_at: {
-            ...(props.body.shippedFrom && {
-              gte: new Date(props.body.shippedFrom),
-            }),
-            ...(props.body.shippedTo && {
-              lte: new Date(props.body.shippedTo),
-            }),
+    ...(props.body.search !== undefined && {
+      OR: [
+        {
+          carrier_name: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
           },
-        }
-      : {}),
-    ...(props.body.deliveredFrom || props.body.deliveredTo
-      ? {
-          delivered_at: {
-            ...(props.body.deliveredFrom && {
-              gte: new Date(props.body.deliveredFrom),
-            }),
-            ...(props.body.deliveredTo && {
-              lte: new Date(props.body.deliveredTo),
-            }),
+        },
+        {
+          tracking_number: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
           },
-        }
-      : {}),
-    ...(props.body.createdFrom || props.body.createdTo
-      ? {
-          created_at: {
-            ...(props.body.createdFrom && {
-              gte: new Date(props.body.createdFrom),
-            }),
-            ...(props.body.createdTo && {
-              lte: new Date(props.body.createdTo),
-            }),
-          },
-        }
-      : {}),
-    ...(props.body.delivered === true && { delivered_at: { not: null } }),
-    ...(props.body.delivered === false && { delivered_at: null }),
+        },
+      ],
+    }),
+    ...(props.body.shippedFrom !== undefined &&
+      props.body.shippedFrom !== null && {
+        shipped_at: { gte: new Date(props.body.shippedFrom) },
+      }),
+    ...(props.body.shippedTo !== undefined &&
+      props.body.shippedTo !== null && {
+        shipped_at: { lte: new Date(props.body.shippedTo) },
+      }),
+    ...(props.body.deliveredFrom !== undefined &&
+      props.body.deliveredFrom !== null && {
+        delivered_at: { gte: new Date(props.body.deliveredFrom) },
+      }),
+    ...(props.body.deliveredTo !== undefined &&
+      props.body.deliveredTo !== null && {
+        delivered_at: { lte: new Date(props.body.deliveredTo) },
+      }),
   } satisfies Prisma.shopping_mall_shipmentsWhereInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_shipments.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...ShoppingMallShipmentAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.shopping_mall_shipments.count({ where: whereInput }),
-  ]);
+  const data = await MyGlobal.prisma.shopping_mall_shipments.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" as const },
+    ...ShoppingMallShipmentAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.shopping_mall_shipments.count({
+    where: whereInput,
+  });
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallShipmentAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallShipmentAtSummaryTransformer.transform,
-    ),
-  } satisfies IPageIShoppingMallShipment.ISummary;
+  };
 }

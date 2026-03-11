@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -21,7 +22,8 @@ export async function postTodoAppMemberTodos(props: {
   const created = await MyGlobal.prisma.todo_app_todos.create({
     data: await TodoAppTodoCollector.collect({
       body: props.body,
-      todoAppUsers: props.member,
+      todoAppUsers: { id: props.member.id },
+      todoAppMemberSessions: { id: props.member.session_id },
     }),
     ...TodoAppTodoTransformer.select(),
   });

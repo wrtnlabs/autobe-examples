@@ -9,10 +9,12 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallSellerTransformer } from "../transformers/ShoppingMallSellerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthSellerJoin(props: {
+  ip: string;
   body: IShoppingMallSeller.IJoin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
   // 1. Check duplicate email
@@ -22,97 +24,70 @@ export async function postShoppingMallAuthSellerJoin(props: {
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Create seller
+  // 2. Create seller record
+  const hashedPassword = await PasswordUtil.hash(props.body.password);
   const now = new Date();
-  const sellerId = v4();
   const seller = await MyGlobal.prisma.shopping_mall_sellers.create({
     data: {
-      id: sellerId,
+      id: v4(),
       email: props.body.email,
-      password_hash: passwordHash,
-      shop_name: props.body.shop_name,
-      shop_description: props.body.shop_description ?? null,
-      logo_image: props.body.logo_image ?? null,
+      password_hash: hashedPassword,
+      shop_name: props.body.shopName,
+      shop_description: props.body.shopDescription ?? null,
+      logo_image: props.body.logoImage ?? null,
       approval_status: "pending",
+      rejection_reason: null,
       suspended: false,
       banned: false,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      email: true,
-      shop_name: true,
-      shop_description: true,
-      logo_image: true,
-      approval_status: true,
-      rejection_reason: true,
-      suspended: true,
-      banned: true,
-      created_at: true,
-      updated_at: true,
-    },
+    ...ShoppingMallSellerTransformer.select(),
   });
-  // 4. Create session (24 hour expiry)
-  const sessionId = v4();
-  const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await MyGlobal.prisma.shopping_mall_seller_sessions.create({
+  // 3. Create session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
-      id: sessionId,
-      seller_id: sellerId,
-      ip: props.body.ip ?? "unknown",
+      id: v4(),
+      seller_id: seller.id,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
-      referrer: props.body.referrer ?? null,
+      referrer: props.body.referrer,
       created_at: now,
-      expired_at: expiredAt,
+      expired_at: accessExpires,
     },
   });
-  // 5. Generate JWT tokens
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessToken = jwt.sign(
-    {
-      type: "seller",
-      id: sellerId,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "seller",
-      id: sellerId,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
+  // 4. Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now.toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
   };
-  // 6. Return IAuthorized
+  // 5. Return IAuthorized
   return {
-    id: seller.id,
-    email: seller.email,
-    shopName: seller.shop_name,
-    shopDescription: seller.shop_description,
-    logoImage: seller.logo_image,
-    approval_status: seller.approval_status,
-    rejection_reason: seller.rejection_reason,
-    suspended: seller.suspended,
-    banned: seller.banned,
-    created_at: seller.created_at.toISOString(),
-    updated_at: seller.updated_at.toISOString(),
+    ...(await ShoppingMallSellerTransformer.transform(seller)),
     token,
-  };
+  } satisfies IShoppingMallSeller.IAuthorized;
 }

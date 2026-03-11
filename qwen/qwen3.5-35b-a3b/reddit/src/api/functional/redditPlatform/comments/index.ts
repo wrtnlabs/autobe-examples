@@ -3,58 +3,46 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IPageIRedditPlatformComment } from "../../../structures/IPageIRedditPlatformComment";
 import { IRedditPlatformComment } from "../../../structures/IRedditPlatformComment";
 
 /**
- * Retrieve a specific comment by its unique identifier.
+ * Retrieves a single comment with full details including author information, nested replies, and vote score.
  *
- * This operation fetches a single comment record from the reddit_platform_comments table, returning complete comment details including the comment content, author information, vote score, and timestamps. The endpoint supports viewing comments in the context of threaded discussions, showing both the comment's parent post (if top-level) or parent comment (if reply).
+ * This operation returns a specific comment by its UUID identifier, along with all associated data needed to display the comment in a thread context. The response includes the comment author's username and avatar, the parent post or parent comment reference, and all nested replies to show the conversation hierarchy.
  *
- * Security considerations:
- * - Guests can view comments on public posts they have access to
- * - Members can view all comments including private discussions
- * - Moderators can view all comments across all communities
- * - Deleted comments return null response with 404 status
- * - Comments on posts the user cannot access return 403 Forbidden
+ * The comment's vote score is included from the aggregated votes in reddit_platform_comment_votes table. If the comment has been deleted by the author or moderator, the response will indicate this status.
  *
- * The comment data includes:
- * - Unique identifier and creation/modification timestamps
- * - Author's username, display name, and karma score for profile context
- * - Comment text content
- * - Current vote score calculated from upvotes and downvotes
- * - Parent relationship information identifying the post or comment this comment belongs to
- * - Reply count for nested discussion context
+ * For top-level comments, the associated post information is included. For replies, the parent comment reference is provided to enable proper thread rendering in the UI.
+ *
+ * Authorization: Any authenticated member or guest can view a comment if they have permission to access the parent post or comment thread.
+ *
+ * Dependencies: This operation assumes the parent post or parent comment exists and is accessible. If the comment or its ancestors have been deleted, the operation will return the comment metadata without content for visibility purposes.
  *
  * @param props.connection
- * @param props.commentId Unique identifier of the comment to retrieve
+ * @param props.commentId UUID of the comment to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Fetch single comment record from reddit_platform_comments by UUID.
+ * @x-autobe-specification Query reddit_platform_comments table for the comment by id UUID.
  *
- * Implementation steps:
- * 1. Validate commentId is valid UUID format
- * 2. Query reddit_platform_comments WHERE id = commentId AND deleted_at IS NULL
- * 3. If not found, return 404 Not Found
- * 4. Join with reddit_platform_members to get author details (username, display_name, karma_score)
- * 5. Check if post_id exists and verify user can access the post
- * 6. If parent_id exists, include parent comment reference
- * 7. Calculate reply count by counting children in reddit_platform_comments WHERE parent_id = commentId
- * 8. Return complete comment object with all fields
+ * Join with reddit_platform_members to get author username and avatar_url.
+ * Join with reddit_platform_posts for top-level comments to get post title and community context.
+ * Query reddit_platform_comment_votes for the specific comment_id to calculate aggregate vote_score.
+ * Query reddit_platform_comments recursively for all nested replies where parent_id equals the target comment.
  *
- * Database query:
- * SELECT c.*, m.username, m.display_name, m.karma_score,
- *        COUNT(r.id) as reply_count
- * FROM reddit_platform_comments c
- * JOIN reddit_platform_members m ON c.author_id = m.id
- * LEFT JOIN reddit_platform_comments r ON r.parent_id = c.id
- * WHERE c.id = :commentId AND c.deleted_at IS NULL
- * GROUP BY c.id, m.id;
+ * Apply soft delete handling: if deleted_at is not null, return comment metadata but mark as deleted and omit sensitive content.
  *
- * Error handling:
- * - 404: Comment not found or deleted
- * - 403: User lacks permission to access parent post
- * - 400: Invalid UUID format for commentId
+ * Include all nested replies up to the maximum allowed depth with recursive queries or application-level pagination.
+ *
+ * Return comment with fields: id, author_id, post_id, parent_id, content, vote_score, created_at, updated_at, deleted_at.
+ *
+ * Return author information: username, avatar_url, display_name, karma_score.
+ *
+ * Return replies array with recursive structure for nested thread display.
+ *
+ * Validate comment_id is a valid UUID format.
+ * Return 404 if comment does not exist or is not accessible to the requesting user.
+ *
+ * Handle deleted comments gracefully: return metadata with deleted flag but omit content from deleted_by_author or deleted_by_moderator comments.
  * @path /redditPlatform/comments/:commentId
  * @accessor api.functional.redditPlatform.comments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -83,7 +71,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the comment to retrieve
+     * UUID of the comment to retrieve
      */
     commentId: string & tags.Format<"uuid">;
   };
@@ -115,126 +103,6 @@ export namespace at {
     });
     try {
       assert.param("commentId")(() => typia.assert(props.commentId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a filtered, sorted, and paginated list of comments from the Reddit platform.
- *
- * This operation provides advanced search and filtering capabilities for comments across posts, communities, and users. It supports multiple sorting strategies including best (score-based), new (chronological), and controversial (high debate) sorting methods.
- *
- * The response includes comment summaries with vote scores, author information, and post context. Deleted comments are handled gracefully based on user authentication status and permissions.
- *
- * Supports nested reply retrieval with configurable depth to display comment threads hierarchically. Pagination uses cursor-based approach for efficient large result set handling.
- *
- * Related operations: GET /posts/{postId} provides post context. GET /redditPlatform/comments/{id} retrieves individual comment details. POST /redditPlatform/comments creates new comments.
- *
- * @param props.connection
- * @param props.body Search criteria, pagination, and sorting options for retrieving comments
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_platform_comments table with optional filters.
- *
- * Database Query Logic:
- * 1. Base query selects from reddit_platform_comments with joins to associated entities
- * 2. Apply WHERE filters based on requestBody parameters:
- *    - postId: Filter comments belonging to specific post (join with reddit_platform_posts)
- *    - authorId: Filter comments by specific user (join with reddit_platform_members)
- *    - communityName: Filter comments by community (join through reddit_platform_posts to reddit_platform_communities)
- *    - status: Filter by comment status (active, deleted)
- *    - search: Full-text search on comment content
- * 3. Apply ORDER BY based on sortType:
- *    - best: score DESC, then createdAt DESC
- *    - new: createdAt DESC
- *    - controversial: ABS(upvotes - downvotes) DESC
- * 4. Apply pagination using cursor-based or offset-based approach
- * 5. For replies (depth > 1): Join with parent comments, preserve thread hierarchy
- *
- * Business Rules:
- * - Guest users can view comments but not see deleted content
- * - Member users can see deleted comments on their own posts
- * - Community moderators can see all comments in their communities
- * - Deleted comments show placeholder content with author information preserved for ownership tracking
- *
- * Performance Optimizations:
- * - Index on (post_id, created_at) for new sorting
- * - Index on (post_id, score) for best sorting
- * - Index on (author_id, created_at) for user comment queries
- * - Use composite indexes for common filter combinations
- * @path /redditPlatform/comments
- * @accessor api.functional.redditPlatform.comments.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Search criteria, pagination, and sorting options for retrieving comments
-     */
-    body: IRedditPlatformComment.IRequest;
-  };
-  export type Body = IRedditPlatformComment.IRequest;
-  export type Response = IPageIRedditPlatformComment.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/redditPlatform/comments",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/redditPlatform/comments";
-  export const random = (): IPageIRedditPlatformComment.ISummary =>
-    typia.random<IPageIRedditPlatformComment.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

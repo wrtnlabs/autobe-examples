@@ -10,20 +10,21 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardSectionCollector {
   export async function collect(props: {
     body: IDiscussionBoardSection.ICreate;
-    discussionBoardAdmins: IEntity;
   }) {
     const id: string = v4();
+    const now: Date = new Date();
     return {
+      // Scalar fields
       id,
       name: props.body.name,
-      description: props.body.description,
-      status: props.body.status ?? "active",
-      display_order: props.body.display_order ?? 0,
-      created_at: new Date(),
-      updated_at: new Date(),
+      description: props.body.description ?? null,
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
-      createdByAdmin: { connect: { id: props.discussionBoardAdmins.id } },
-      lastModifiedByAdmin: undefined,
+      // Relations (not applicable for creation)
+      snapshots: undefined,
+      deletion: undefined,
+      articles: undefined,
     } satisfies Prisma.discussion_board_sectionsCreateInput;
   }
 }

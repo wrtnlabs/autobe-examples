@@ -14,26 +14,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthCustomerLogin(props: {
+  ip: string;
   body: IShoppingMallCustomer.ILogin;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // 1. Find customer by email with password_hash
+  // 1. Find customer by email with password_hash explicitly selected
   const customer = await MyGlobal.prisma.shopping_mall_customers.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email.toLowerCase() },
     select: {
       ...ShoppingMallCustomerTransformer.select().select,
       password_hash: true,
-      deleted_at: true,
     },
   });
-  // 2. Validate customer exists and is not deleted
-  if (!customer || customer.deleted_at !== null) {
+  // 2. Customer not found - use generic error to prevent email enumeration
+  if (!customer) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Check if banned
-  if (customer.banned) {
-    throw new HttpException("Account is banned", 403);
-  }
-  // 4. Verify password
+  // 3. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     customer.password_hash,
@@ -41,31 +37,37 @@ export async function postShoppingMallAuthCustomerLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 5. Create new session
-  const now = new Date().toISOString();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-  const refreshExpires = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString(); // 7 days
+  // 4. Check if account is banned
+  if (customer.banned) {
+    throw new HttpException("Account is banned", 403);
+  }
+  // 5. Check if account is deleted
+  if (customer.deleted_at !== null) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 6. Create session expiration timestamps
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // 7. Create new session
   const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
     data: {
       id: v4(),
       customer_id: customer.id,
-      ip: props.body.ip,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
-      expired_at: accessExpires,
+      created_at: new Date().toISOString(),
+      expired_at: accessExpires.toISOString(),
     },
   });
-  // 6. Generate JWT tokens
+  // 8. Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "customer",
         id: customer.id,
         session_id: session.id,
-        created_at: now,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -76,25 +78,17 @@ export async function postShoppingMallAuthCustomerLogin(props: {
         id: customer.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
-  // 7. Return IAuthorized using transformer
-  const transformedCustomer =
-    await ShoppingMallCustomerTransformer.transform(customer);
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  } satisfies IAuthorizationToken;
+  // 9. Transform and return with token
   return {
-    id: transformedCustomer.id,
-    email: transformedCustomer.email,
-    displayName: transformedCustomer.displayName ?? null,
-    phoneNumber: transformedCustomer.phoneNumber ?? null,
-    banned: transformedCustomer.banned,
-    createdAt: transformedCustomer.createdAt,
-    updatedAt: transformedCustomer.updatedAt,
+    ...(await ShoppingMallCustomerTransformer.transform(customer)),
     token,
   } satisfies IShoppingMallCustomer.IAuthorized;
 }

@@ -13,44 +13,35 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardAuthMemberJoin(props: {
+  ip: string;
   body: IDiscussionBoardMember.IJoin;
 }): Promise<IDiscussionBoardMember.IAuthorized> {
-  // 1. Check email uniqueness
-  const existingByEmail =
-    await MyGlobal.prisma.discussion_board_members.findFirst({
-      where: { email: props.body.email },
-    });
-  if (existingByEmail) {
+  // 1. Check duplicate email
+  const existing = await MyGlobal.prisma.discussion_board_members.findFirst({
+    where: { email: props.body.email },
+  });
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Check display_name uniqueness
-  const existingByName =
-    await MyGlobal.prisma.discussion_board_members.findFirst({
-      where: { display_name: props.body.display_name },
-    });
-  if (existingByName) {
-    throw new HttpException("Display name already taken", 409);
-  }
-  // 3. Hash password
+  // 2. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 4. Create member record
+  // 3. Create member record
+  const now = new Date();
   const member = await MyGlobal.prisma.discussion_board_members.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: passwordHash,
-      display_name: props.body.display_name,
+      display_name: props.body.displayName,
       bio: props.body.bio ?? null,
       ban_status: "active",
       ban_reason: null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: toISOStringSafe(now),
+      updated_at: toISOStringSafe(now),
       deleted_at: null,
     },
     select: {
       id: true,
-      email: true,
-      password_hash: true,
       display_name: true,
       bio: true,
       ban_status: true,
@@ -58,39 +49,54 @@ export async function postDiscussionBoardAuthMemberJoin(props: {
       created_at: true,
       updated_at: true,
       deleted_at: true,
+      _count: {
+        select: {
+          articles: true,
+          comments: true,
+        },
+      },
+      articles: {
+        select: { id: true },
+      } satisfies Prisma.discussion_board_articlesFindManyArgs,
+      comments: {
+        select: { id: true },
+      } satisfies Prisma.discussion_board_commentsFindManyArgs,
     },
   });
-  // 5. Create session record
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
-    {
-      data: {
-        id: v4(),
-        discussion_board_member_id: member.id,
-        ip: props.body.ip ?? "0.0.0.0",
-        href: props.body.href,
-        referrer: props.body.referrer,
-        created_at: new Date(),
-        updated_at: new Date(),
-        expired_at: accessExpires,
-      },
-    },
-  );
-  // 6. Create email verification token
-  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // 4. Generate email verification token
+  const verificationToken = v4();
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // 5. Create email verification record
   await MyGlobal.prisma.discussion_board_member_email_verifications.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       discussion_board_member_id: member.id,
-      token: v4(),
-      expires_at: verificationExpires,
+      token: verificationToken,
+      expires_at: toISOStringSafe(expiresAt),
       verified_at: null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: toISOStringSafe(now),
+      updated_at: toISOStringSafe(now),
       deleted_at: null,
     },
   });
+  // Note: Email sending is handled by external service, not implemented here
+  // 6. Create session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.discussion_board_member_sessions.create(
+    {
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        discussion_board_member_id: member.id,
+        ip: props.body.ip ?? props.ip,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: toISOStringSafe(now),
+        updated_at: toISOStringSafe(now),
+        expired_at: toISOStringSafe(accessExpires),
+      },
+    },
+  );
   // 7. Generate JWT tokens
   const token = {
     access: jwt.sign(
@@ -98,7 +104,7 @@ export async function postDiscussionBoardAuthMemberJoin(props: {
         type: "member",
         id: member.id,
         session_id: session.id,
-        created_at: toISOStringSafe(new Date()),
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -109,25 +115,31 @@ export async function postDiscussionBoardAuthMemberJoin(props: {
         id: member.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      { expiresIn: "30d", issuer: "autobe" },
     ),
     expired_at: toISOStringSafe(accessExpires),
     refreshable_until: toISOStringSafe(refreshExpires),
-  };
-  // 8. Return IAuthorized response
+  } satisfies IAuthorizationToken;
+  // 8. Return authorized response
   return {
     id: member.id,
-    email: member.email,
-    displayName: member.display_name,
-    bio: member.bio ?? undefined,
-    banStatus: member.ban_status,
-    banReason: member.ban_reason ?? undefined,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    deletedAt: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    display_name: member.display_name,
+    bio: member.bio ?? null,
+    ban_status: member.ban_status,
+    ban_reason: member.ban_reason ?? null,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    article_count: member._count.articles,
+    comment_count: member._count.comments,
+    email: props.body.email,
+    access_token: token.access,
+    refresh_token: token.refresh,
+    token_type: "Bearer",
+    expires_in: 3600,
     token,
   } satisfies IDiscussionBoardMember.IAuthorized;
 }

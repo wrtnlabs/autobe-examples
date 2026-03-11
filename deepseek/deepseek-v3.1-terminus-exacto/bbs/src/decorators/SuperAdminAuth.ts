@@ -1,9 +1,9 @@
 import { SwaggerCustomizer } from "@nestia/core";
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
-import { superAdminAuthorize } from "../providers/authorize/superAdminAuthorize";
+import { superadminAuthorize } from "../providers/authorize/superadminAuthorize";
 
-export const SuperAdminAuth =
+export const SuperadminAuth =
   (): ParameterDecorator =>
   (
     target: object,
@@ -20,6 +20,6 @@ export const SuperAdminAuth =
 const singleton = new Singleton(() =>
   createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return superAdminAuthorize(request);
+    return superadminAuthorize(request);
   })(),
 );

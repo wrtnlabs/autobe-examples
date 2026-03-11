@@ -10,29 +10,24 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardMaintenanceScheduleCollector {
   export async function collect(props: {
     body: IDiscussionBoardMaintenanceSchedule.ICreate;
-    discussionBoardAdmins: IEntity; // from authorized actor
+    statusType: IEntity; // Required parameter for status type relation
   }) {
     const id: string = v4();
     return {
       // Scalar fields
       id,
       maintenance_type: props.body.maintenance_type,
-      description: props.body.description,
-      scheduled_start_time: new Date(props.body.scheduled_start_time),
-      scheduled_end_time: new Date(props.body.scheduled_end_time),
-      actual_start_time: null,
-      actual_end_time: null,
-      status: props.body.status,
-      estimated_duration_minutes: props.body.estimated_duration_minutes,
-      actual_duration_minutes: null,
-      impact_level: props.body.impact_level,
-      notes: props.body.notes ?? null,
+      title: props.body.title,
+      description: props.body.description ?? null,
+      planned_start_at: new Date(props.body.planned_start_at),
+      planned_end_at: new Date(props.body.planned_end_at),
+      actual_start_at: null,
+      actual_end_at: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      scheduledByAdmin: { connect: { id: props.discussionBoardAdmins.id } },
-      performedByAdmin: undefined,
+      // BelongsTo relation
+      statusType: { connect: { id: props.statusType.id } },
     } satisfies Prisma.discussion_board_maintenance_schedulesCreateInput;
   }
 }

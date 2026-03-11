@@ -17,16 +17,10 @@ export namespace RedditPlatformAdminAtSummaryTransformer {
         email: true,
         username: true,
         display_name: true,
-        is_active: true,
-        created_at: true,
-        password_hash: true,
         bio: true,
         avatar_url: true,
-        updated_at: true,
-        sessions: true,
-        passwordResets: true,
-        auditLogs: true,
-        reportViews: true,
+        is_active: true,
+        created_at: true,
       },
     } satisfies Prisma.reddit_platform_adminsFindManyArgs;
   }
@@ -38,6 +32,8 @@ export namespace RedditPlatformAdminAtSummaryTransformer {
       username: input.username,
       display_name: input.display_name,
       email: input.email,
+      bio: input.bio,
+      avatar_url: input.avatar_url,
       is_active: input.is_active,
       created_at: input.created_at.toISOString(),
     };

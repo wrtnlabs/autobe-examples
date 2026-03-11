@@ -1,0 +1,142 @@
+/// User profiles containing display name, bio text, avatar reference, and
+/// denormalized karma score for quick access.
+///
+/// Each member has exactly one profile that extends their basic identity
+/// with customizable public information. Profiles are independently managed
+/// by users and display their presentation layer including display name, bio
+/// description, avatar image reference, and aggregated karma score.
+///
+/// The karma_score field is denormalized for performance, avoiding expensive
+/// aggregations across {@link reddit_community_post_votes} and {@link
+/// reddit_community_comment_votes} tables during profile views.
+///
+/// Related entities:
+/// - Belongs to one {@link reddit_community_members} (1:1 relationship)
+/// - Has many {@link reddit_community_profile_attachments} for avatar images
+/// - Referenced by posts and comments for author profile display
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_community_members.id}. Enforces 1:1
+  /// relationship between members and profiles.
+  user_id String
+  
+  /// User's chosen display name shown publicly on profile and next to
+  /// posts/comments. Can be edited by the user.
+  display_name String
+  
+  /// Optional biographical text describing the user. Shown on public profile
+  /// page. Can contain markdown formatting.
+  bio String?
+  
+  /// URL reference to the user's avatar image. Points to CDN storage or
+  /// external image service. Null shows default avatar.
+  avatar_url String?
+  
+  /// Denormalized total karma score calculated from upvotes minus downvotes
+  /// across all user's posts and comments. Can be negative. Updated on vote
+  /// changes.
+  karma_score Int
+  
+  /// Timestamp when the profile was first created. Automatically set on
+  /// profile initialization.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last modified. Updated on any profile
+  /// field change.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft deleted. Null means active profile.
+  /// Used for profile deactivation without permanent deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_community_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  attachment reddit_community_profile_attachments?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id])
+  @@index([created_at])
+}
+
+/// Avatar image attachments linked to user profiles with file metadata
+/// including storage path, size, MIME type, and dimensions. Each profile can
+/// have one active avatar attachment at a time, enforced by unique
+/// constraint on profile foreign key. Supports image upload validation and
+/// CDN distribution for profile display.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_profile_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged profile's {@link reddit_community_profiles.id}. Links avatar
+  /// attachment to the user profile it represents.
+  reddit_community_profile_id String
+  
+  /// Storage path or URL reference to the avatar image file in CDN or object
+  /// storage. Used to retrieve and display the avatar image.
+  file_path String
+  
+  /// File size in bytes. Used for storage quota enforcement and validation
+  /// against maximum upload limits.
+  file_size Int
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png, image/webp).
+  /// Used for content-type validation and proper browser rendering.
+  mime_type String
+  
+  /// Image width in pixels. Used for display optimization and thumbnail
+  /// generation.
+  width Int
+  
+  /// Image height in pixels. Used for display optimization and thumbnail
+  /// generation.
+  height Int
+  
+  /// Timestamp when the avatar attachment was created. Used for audit trail
+  /// and sorting.
+  created_at DateTime
+  
+  /// Timestamp when the avatar attachment was last updated. Used for change
+  /// tracking and cache invalidation.
+  updated_at DateTime
+  
+  /// Timestamp when the avatar attachment was soft deleted (null if active).
+  /// Used for audit trail and historical tracking when users change avatars.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  profile reddit_community_profiles @relation(fields: [reddit_community_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_profile_id], map: "reddit_community_profile_attachments_reddit_community__da065120")
+  @@index([created_at])
+}

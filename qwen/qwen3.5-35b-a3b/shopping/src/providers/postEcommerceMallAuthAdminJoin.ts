@@ -13,82 +13,78 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallAuthAdminJoin(props: {
+  ip: string;
   body: IEcommerceMallAdmin.IJoin;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  const { email, password, href, referrer, ip } = props.body;
-  const adminRequest =
-    await MyGlobal.prisma.ecommerce_mall_admin_request_requests.findFirst({
-      where: {
-        deleted_at: null,
-        request_status: "approved",
-      },
-      include: {
-        customerRequests: true,
-        sellerRequests: true,
-      },
-    });
-  if (!adminRequest) {
-    throw new HttpException("Admin request not found or not approved", 404);
-  }
-  const isCustomerRequest =
-    adminRequest.customerRequests !== null &&
-    adminRequest.customerRequests !== undefined;
-  const sellerRequest = adminRequest.sellerRequests;
-  const customerRequest = adminRequest.customerRequests;
-  if (isCustomerRequest) {
-    const customer = await MyGlobal.prisma.ecommerce_mall_customers.findUnique({
-      where: { id: customerRequest!.customer_id },
-    });
-    if (!customer || customer.email !== email) {
-      throw new HttpException("Admin request not found or not approved", 404);
-    }
-  } else if (sellerRequest) {
-    const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUnique({
-      where: { id: sellerRequest.seller_id },
-    });
-    if (!seller || seller.email !== email) {
-      throw new HttpException("Admin request not found or not approved", 404);
-    }
-  }
+  const accessExpiresAt: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString();
+  const refreshExpiresAt: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
   const existingAdmin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: { email: email },
+    where: { email: props.body.email },
   });
   if (existingAdmin) {
     throw new HttpException("Email already registered", 409);
   }
-  const password_hash = await PasswordUtil.hash(password);
-  const now = new Date();
+  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
+  const adminId: string & tags.Format<"uuid"> = v4();
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      email: email,
-      password_hash: password_hash,
+      id: adminId,
+      email: props.body.email,
+      password_hash: hashedPassword,
       is_banned: false,
       ban_reason: null,
       created_at: now,
       updated_at: now,
     },
-  });
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      admin_id: admin.id,
-      ip: ip ?? "",
-      href: href,
-      referrer: referrer,
-      created_at: now,
-      expired_at: accessExpires,
+    select: {
+      id: true,
+      email: true,
+      is_banned: true,
+      ban_reason: true,
+      created_at: true,
+      updated_at: true,
     },
   });
-  const token: IAuthorizationToken = {
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
+    data: {
+      id: sessionId,
+      admin_id: adminId,
+      ip: props.body.ip ?? props.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: accessExpiresAt,
+    },
+  });
+  const verificationTokenId: string & tags.Format<"uuid"> = v4();
+  const verificationToken: string & tags.Format<"uuid"> = v4();
+  await MyGlobal.prisma.ecommerce_mall_admin_email_verifications.create({
+    data: {
+      id: verificationTokenId,
+      admin_id: adminId,
+      token: verificationToken,
+      email: props.body.email,
+      status: "pending",
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      used_at: null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+  });
+  const token = {
     access: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: toISOStringSafe(now),
+        id: adminId,
+        session_id: sessionId,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -96,24 +92,24 @@ export async function postEcommerceMallAuthAdminJoin(props: {
     refresh: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
+        id: adminId,
+        session_id: sessionId,
         tokenType: "refresh",
-        created_at: toISOStringSafe(now),
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+    expired_at: accessExpiresAt,
+    refreshable_until: refreshExpiresAt,
+  } satisfies IAuthorizationToken;
   return {
     id: admin.id,
     email: admin.email,
-    is_banned: admin.is_banned,
-    ban_reason: admin.ban_reason,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
+    isBanned: admin.is_banned,
+    banReason: admin.ban_reason,
+    createdAt: admin.created_at.toISOString(),
+    updatedAt: admin.updated_at.toISOString(),
     token,
   } satisfies IEcommerceMallAdmin.IAuthorized;
 }

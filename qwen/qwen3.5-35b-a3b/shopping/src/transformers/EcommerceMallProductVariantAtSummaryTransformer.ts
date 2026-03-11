@@ -19,27 +19,34 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
       select: {
         id: true,
         sku_code: true,
+        option_values: true,
         price_override: true,
         stock_quantity: true,
         is_active: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         product: EcommerceMallProductAtSummaryTransformer.select(),
+        cartItems: true,
+        orderItems: true,
+        inventoryHistories: true,
+        snapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallProductVariant.ISummary> {
-    const displayPrice = input.price_override ?? input.product.base_price;
     return {
       id: input.id,
       skuCode: input.sku_code,
+      optionValues: input.option_values,
+      priceOverride: input.price_override ?? null,
+      stockQuantity: input.stock_quantity,
+      isActive: input.is_active,
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      stockQuantity: input.stock_quantity,
-      isActive: input.is_active,
-      priceOverride: input.price_override ?? undefined,
-      displayPrice,
     };
   }
 }

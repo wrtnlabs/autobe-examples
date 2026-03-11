@@ -1,12 +1,6 @@
-import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
-import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
-import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
-import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
-import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { IPageIDiscussionBoardSectionSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSectionSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -26,61 +20,79 @@ export async function patchDiscussionBoardAdminSectionsSectionIdSnapshots(props:
   sectionId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSectionSnapshot.IRequest;
 }): Promise<IPageIDiscussionBoardSectionSnapshot.ISummary> {
-  // Verify section exists
-  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
-    where: { id: props.sectionId },
+  // Verify section exists and admin has access (section belongs to platform, no owner)
+  const section = await MyGlobal.prisma.discussion_board_sections.findUnique({
+    where: { id: props.sectionId, deleted_at: null },
   });
-  // Setup pagination (fields are required but keep defaults for safety)
+  if (!section) {
+    throw new HttpException("Section not found", 404);
+  }
+  // Build WHERE clause for snapshots
+  const whereInput: Prisma.discussion_board_section_snapshotsWhereInput = {
+    discussion_board_section_id: props.sectionId,
+  };
+  // Optional date range filtering
+  if (props.body.start_date) {
+    whereInput.created_at = { gte: new Date(props.body.start_date) };
+  }
+  if (props.body.end_date) {
+    if (
+      whereInput.created_at &&
+      typeof whereInput.created_at === "object" &&
+      "gte" in whereInput.created_at
+    ) {
+      whereInput.created_at = {
+        ...whereInput.created_at,
+        lte: new Date(props.body.end_date),
+      };
+    } else {
+      whereInput.created_at = { lte: new Date(props.body.end_date) };
+    }
+  }
+  // Optional snapshot reason filter
+  if (props.body.snapshot_reason !== undefined) {
+    if (props.body.snapshot_reason === null) {
+      whereInput.snapshot_reason = null;
+    } else {
+      whereInput.snapshot_reason = props.body.snapshot_reason;
+    }
+  }
+  // Optional text search across name and snapshot_reason
+  if (props.body.search) {
+    whereInput.OR = [
+      { name: { contains: props.body.search, mode: "insensitive" } },
+      { snapshot_reason: { contains: props.body.search, mode: "insensitive" } },
+    ];
+  }
+  // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Setup sorting
-  const sortField = props.body.sort ?? "created_at";
-  const orderDirection = props.body.order ?? "desc";
-  const orderBy = (
-    sortField === "name"
-      ? { name: orderDirection }
-      : { created_at: orderDirection }
-  ) satisfies Prisma.discussion_board_section_snapshotsOrderByWithRelationInput;
-  // Build where clause (include all snapshots, including soft-deleted)
-  const where = {
-    discussion_board_section_id: props.sectionId,
-  } satisfies Prisma.discussion_board_section_snapshotsWhereInput;
-  // Execute findMany first
+  // Execute paginated query
   const data =
     await MyGlobal.prisma.discussion_board_section_snapshots.findMany({
-      where,
+      where: whereInput,
       skip,
       take: limit,
-      orderBy,
+      orderBy: { created_at: "desc" },
       ...DiscussionBoardSectionSnapshotAtSummaryTransformer.select(),
     });
-  // Then count total (sequential as per guidelines)
+  // Total count with same WHERE
   const total = await MyGlobal.prisma.discussion_board_section_snapshots.count({
-    where,
+    where: whereInput,
   });
   // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    DiscussionBoardSectionSnapshotAtSummaryTransformer.transform,
+  const transformed = await ArrayUtil.asyncMap(data, (snapshot) =>
+    DiscussionBoardSectionSnapshotAtSummaryTransformer.transform(snapshot),
   );
-  // Calculate pagination
-  const pages = total > 0 ? Math.ceil(total / limit) : 0;
+  // Build pagination response
   return {
-    data: transformedData,
+    data: transformed,
     pagination: {
-      current: page satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      limit: limit satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      records: total satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-      pages: pages satisfies number as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit) || 0,
     } satisfies IPage.IPagination,
-  } satisfies IPageIDiscussionBoardSectionSnapshot.ISummary;
+  };
 }

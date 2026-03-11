@@ -11,54 +11,53 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallReviewSnapshotAtSummaryTransformer } from "../transformers/ShoppingMallReviewSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallCustomerReviewsReviewIdSnapshots(props: {
   customer: CustomerPayload;
-  reviewId: string & tags.Format<"uuid">;
+  reviewId: string;
   body: IShoppingMallReviewSnapshot.IRequest;
 }): Promise<IPageIShoppingMallReviewSnapshot.ISummary> {
-  // Verify customer owns the review (including soft-deleted reviews)
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findFirst({
-    where: {
-      id: props.reviewId,
-      shopping_mall_customer_id: props.customer.id,
-    },
-    select: { id: true },
+  // 1. Verify review exists and belongs to customer
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+    where: { id: props.reviewId },
+    select: { id: true, shopping_mall_customer_id: true },
   });
-  if (review === null) {
-    throw new HttpException("Review not found or access denied", 404);
+  if (review.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Pagination parameters
+  // 2. Parse pagination parameters
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Query snapshots ordered chronologically (oldest first)
+  // 3. Parse sorting - default created_at ASC (oldest first, chronological)
+  // Only 'created_at' or '-created_at' are valid per specification
+  const sortValue = props.body.sort ?? "created_at";
+  const orderBy: Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput =
+    sortValue === "-created_at"
+      ? { created_at: "desc" }
+      : { created_at: "asc" };
+  // 4. Query snapshots with transformer select
   const snapshots =
     await MyGlobal.prisma.shopping_mall_review_snapshots.findMany({
-      where: {
-        shopping_mall_review_id: props.reviewId,
-      },
+      where: { shopping_mall_review_id: props.reviewId },
       skip,
       take: limit,
-      orderBy: { created_at: "asc" },
+      orderBy,
+      ...ShoppingMallReviewSnapshotAtSummaryTransformer.select(),
     });
-  // Count total records for pagination
+  // 5. Count total for pagination
   const total = await MyGlobal.prisma.shopping_mall_review_snapshots.count({
-    where: {
-      shopping_mall_review_id: props.reviewId,
-    },
+    where: { shopping_mall_review_id: props.reviewId },
   });
-  // Transform results to ISummary format
-  const data: IShoppingMallReviewSnapshot.ISummary[] = snapshots.map(
-    (snapshot) => ({
-      id: snapshot.id,
-      rating: snapshot.rating,
-      content: snapshot.content,
-      created_at: snapshot.created_at.toISOString(),
-    }),
+  // 6. Transform results using transformer
+  const data = await ArrayUtil.asyncMap(
+    snapshots,
+    ShoppingMallReviewSnapshotAtSummaryTransformer.transform,
   );
+  // 7. Return paginated response
   return {
     data,
     pagination: {
@@ -67,5 +66,5 @@ export async function patchShoppingMallCustomerReviewsReviewIdSnapshots(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIShoppingMallReviewSnapshot.ISummary;
+  };
 }

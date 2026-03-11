@@ -11,7 +11,6 @@ export namespace EconomicPoliticalBoardAttachmentCollector {
   export async function collect(props: {
     body: IEconomicPoliticalBoardAttachment.ICreate;
     economicPoliticalBoardArticles: IEntity;
-    economicPoliticalBoardAdministratorRoles: IEntity;
   }) {
     const id: string = v4();
     return {

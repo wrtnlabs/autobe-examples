@@ -1,55 +1,41 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallRefundRequestSnapshot } from "../../../../structures/IPageIShoppingMallRefundRequestSnapshot";
 import { IShoppingMallRefundRequestSnapshot } from "../../../../structures/IShoppingMallRefundRequestSnapshot";
 
 /**
- * Retrieve a filtered and paginated list of refund request snapshots for audit trail and dispute resolution purposes.
+ * Retrieve a filtered and paginated list of refund request snapshots across the platform.
  *
- * This operation provides access to immutable snapshots that preserve the state of refund requests when sellers respond. Each snapshot captures the reason text and status at a specific point in time, creating a permanent audit trail of all refund request state transitions. Snapshots are created automatically by the system when a seller approves or rejects a refund request.
+ * This operation provides administrators with comprehensive access to all refund request snapshots for oversight, audit trail review, and dispute resolution. Each snapshot represents an immutable record of a refund request's state at the time of seller response, preserving the reason and status for historical accuracy.
  *
- * **Access Control:**
- * - Administrators can view all snapshots across the entire platform for oversight and dispute resolution
- * - Sellers can only view snapshots for refund requests related to their own products
- * - Customers can only view snapshots of their own refund requests
+ * The search functionality supports filtering by refund request ID to view the complete history of a specific refund request, filtering by status (pending/approved/rejected) to analyze response patterns, and date range filtering to investigate snapshots created within specific timeframes. Results are paginated with configurable page sizes and sorted by creation timestamp in descending order by default.
  *
- * **Snapshot Immutability:**
- * All refund request snapshots are permanent records that cannot be modified or deleted. This ensures transaction integrity and provides reliable evidence for dispute resolution between customers and sellers. Even if the original refund request is resolved or the seller account is deleted, snapshots are preserved indefinitely.
- *
- * **Filtering and Pagination:**
- * Supports filtering by refund request ID, status, and date range. Results are paginated with configurable page sizes, sorted by creation timestamp in descending order (newest first). The complete audit trail for a specific refund request can be viewed by filtering on refund request ID.
- *
- * **Related Operations:**
- * To understand the full context, use GET /refund-requests/{refundRequestId} to view the refund request details, then use this endpoint with refundRequestId filter to see all state change history.
+ * This endpoint is restricted to administrator access only. All snapshots are read-only immutable records that cannot be modified or deleted, ensuring the integrity of the audit trail. Sellers can access snapshots related to their own products through a separate seller-specific endpoint.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for refund request snapshot listing
+ * @param props.body Search criteria and pagination parameters for filtering refund request snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table with pagination and filtering capabilities.
+ * @x-autobe-specification Query the shopping_mall_refund_request_snapshots table with pagination and filtering.
  *
  * Implementation steps:
- * 1. Parse search criteria from request body (refundRequestId, status, date range)
- * 2. Apply authorization filter based on actor type:
- *    - Administrator: no filter, access all snapshots
- *    - Seller: join through refund_request → order_item → product to filter by seller_id
- *    - Customer: join through refund_request → order_item → order to filter by customer_id
- * 3. Apply optional filters:
- *    - Filter by shopping_mall_refund_request_id if provided
- *    - Filter by status if provided
- *    - Filter by created_at date range if provided
- * 4. Apply pagination with configurable page size
- * 5. Sort results by created_at descending (newest first)
- * 6. Return paginated response with snapshot summary data
+ * 1. Validate administrator authentication - reject if not an administrator
+ * 2. Build query with optional filters:
+ *    - shopping_mall_refund_request_id: filter by specific refund request
+ *    - status: filter by 'pending', 'approved', or 'rejected'
+ *    - created_at range: filter by creation timestamp range
+ * 3. Join with shopping_mall_refund_requests to include refund request context
+ * 4. Apply pagination with cursor-based or offset-based approach
+ * 5. Sort by created_at descending by default
+ * 6. Return paginated results with summary information
  *
- * Join queries needed:
- * - For seller access: snapshots → refund_requests → order_items → products (filter by seller)
- * - For customer access: snapshots → refund_requests → order_items → orders (filter by customer)
- *
- * Response includes: snapshot id, reason, status, created_at, and associated refund request information.
+ * Edge cases:
+ * - Return empty array if no snapshots match criteria
+ * - Validate status values are valid enum values
+ * - Ensure date ranges are properly formatted ISO timestamps
  * @path /shoppingMall/administrator/refund-request-snapshots
  * @accessor api.functional.shoppingMall.administrator.refund_request_snapshots.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -79,7 +65,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for refund request snapshot listing
+     * Search criteria and pagination parameters for filtering refund request snapshots
      */
     body: IShoppingMallRefundRequestSnapshot.IRequest;
   };
@@ -131,22 +117,30 @@ export namespace index {
 /**
  * Retrieve a specific refund request snapshot by its unique identifier.
  *
- * This operation provides access to an immutable historical record of a refund request's state at a specific point in time. Snapshots are created when sellers respond to refund requests, capturing the reason and status for audit trail and dispute resolution purposes.
+ * This operation provides access to an immutable record that captures the state of a refund request at the moment a seller responded. Each snapshot preserves the customer's reason text, the status (approved or rejected), and the precise timestamp of creation. These records serve as permanent audit evidence for dispute resolution between customers and sellers.
  *
- * The shopping_mall_refund_request_snapshots table stores the snapshot data including the reason text submitted by the customer and the status value (pending, approved, or rejected) at the time of snapshot creation.
+ * Snapshots are append-only records created automatically when a seller approves or rejects a refund request. They cannot be modified or deleted, ensuring the integrity of the audit trail for all refund request state transitions.
  *
- * Authorization is enforced based on user role:
- * - Customers can view snapshots for refund requests they submitted
- * - Sellers can view snapshots for refund requests on their own products
- * - Administrators can view all snapshots across the platform
+ * Access control is enforced based on user role: sellers can only view snapshots for refund requests on products they own, while administrators can access all snapshots across the platform for oversight purposes. The snapshot includes the reference to its parent refund request for full traceability.
  *
- * This endpoint supports the platform's transparency and accountability requirements by providing detailed historical evidence for dispute resolution between customers and sellers.
+ * For complete refund request investigation, use the parent refund request endpoint to view the full request details including customer and order item information.
  *
  * @param props.connection
  * @param props.snapshotId Unique identifier of the refund request snapshot to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by primary key (id). Join with shopping_mall_refund_requests to get the refund request context, then join with shopping_mall_order_items to get the order item, and finally join with shopping_mall_sellers to verify seller ownership. Authorization checks: (1) If user is a customer, verify they own the order containing the refund request; (2) If user is a seller, verify they own the product in the order item; (3) If user is an administrator, allow access to all snapshots. Return 404 if snapshot not found. Return 403 if user lacks authorization.
+ * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by primary key (id) to retrieve a single snapshot record.
+ *
+ * Join with shopping_mall_refund_requests to get the parent refund request reference.
+ *
+ * For seller access: verify the refund request belongs to an order item whose product is owned by the authenticated seller. Join path: snapshot → refund_request → order_item → product_variant → product → seller.
+ *
+ * For administrator access: allow retrieval without ownership restriction.
+ *
+ * Return 404 Not Found if snapshot does not exist.
+ * Return 403 Forbidden if seller attempts to access a snapshot for another seller's product.
+ *
+ * The response includes: id (UUID), shopping_mall_refund_request_id (UUID reference), reason (customer's explanation text), status (pending/approved/rejected), and created_at (timestamp when snapshot was created).
  * @path /shoppingMall/administrator/refund-request-snapshots/:snapshotId
  * @accessor api.functional.shoppingMall.administrator.refund_request_snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -177,7 +171,7 @@ export namespace at {
     /**
      * Unique identifier of the refund request snapshot to retrieve
      */
-    snapshotId: string & tags.Format<"uuid">;
+    snapshotId: string;
   };
   export type Response = IShoppingMallRefundRequestSnapshot;
 

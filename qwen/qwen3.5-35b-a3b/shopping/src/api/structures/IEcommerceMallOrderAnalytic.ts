@@ -2,77 +2,88 @@ import { tags } from "typia";
 
 export namespace IEcommerceMallOrderAnalytic {
   /**
-   * Summary view of order analytics metrics for administrative monitoring and business intelligence. Provides aggregated statistics including order counts by status, fulfillment rates, and average order values within a specified time period.
+   * Request body parameters for filtering and paginating order lifecycle analytics data. Accepts date range filters, order status filter, and pagination controls to query aggregated order metrics from the ecommerce_mall_orders table.
+   */
+  export type IRequest = {
+    /**
+     * Optional lower bound for order creation date range filter. Orders created on or after this timestamp will be included.
+     *
+     * @x-autobe-specification Query filter: WHERE created_at >= fromDate. Format: ISO 8601 date-time (e.g., '2024-01-01T00:00:00Z'). Optional parameter - if omitted, no date filtering is applied.
+     */
+    fromDate?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Page number for pagination (1-indexed). Controls which subset of results to return.
+     *
+     * @x-autobe-specification Pagination parameter: which page of results to return (1-indexed). Used in OFFSET calculation: (page - 1) * pageSize. Defaults to 1 if omitted or invalid.
+     */
+    page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
+
+    /**
+     * Number of results to return per page. Must be between 1 and 100. Controls pagination granularity.
+     *
+     * @x-autobe-specification Pagination parameter: number of results per page (1-100). Used in SELECT with LIMIT clause. Defaults to 20 if omitted. Maximum enforced: 100 to prevent excessive resource consumption.
+     */
+    pageSize?:
+      | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
+      | undefined;
+
+    /**
+     * Filter orders by their lifecycle status. Limits results to orders in the specified state.
+     *
+     * @x-autobe-specification Query filter: WHERE overall_status = status. Valid values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. Optional parameter - if omitted, all statuses are included.
+     */
+    status?:
+      | "paid"
+      | "shipped"
+      | "delivered"
+      | "cancelled"
+      | "refunded"
+      | undefined;
+
+    /**
+     * Optional upper bound for order creation date range filter. Orders created on or before this timestamp will be included.
+     *
+     * @x-autobe-specification Query filter: WHERE created_at <= toDate. Format: ISO 8601 date-time (e.g., '2024-12-31T23:59:59Z'). Optional parameter - if omitted, no upper date limit is applied.
+     */
+    toDate?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Maximum number of records to return per page. Defaults to 100 if not provided or null.
+     *
+     * @x-autobe-specification Query parameter: maximum number of records to return (optional override for pageSize). If null, omitted, or undefined, defaults to 100. Alternative pagination control mechanism.
+     */
+    limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
+  };
+
+  /**
+   * Aggregated order lifecycle analytics metrics with pagination metadata. This response type provides a summary of orders distributed across different lifecycle stages (paid, shipped, delivered, cancelled, refunded) for efficient dashboard display and reporting. Contains count metrics per status and pagination information for large result sets.
    */
   export type ISummary = {
     /**
-     * Unique identifier for this analytics record.
+     * Pagination metadata containing current page position and total data count.
      *
-     * @x-autobe-specification UUID generated on analytics record creation. Unique identifier for each analytics snapshot.
+     * @x-autobe-specification Computed pagination metadata. page and pageSize reflect request parameters. totalItems = count of orders matching filters. totalPages = ceil(totalItems / pageSize). All values are non-negative integers calculated by the server.
      */
-    id: string & tags.Format<"uuid">;
-
-    /**
-     * Start date of the analytics period (inclusive).
-     *
-     * @x-autobe-specification Start date of the analytics period (YYYY-MM-DD format). Used to filter orders within the aggregation window.
-     */
-    periodStart: string & tags.Format<"date">;
-
-    /**
-     * End date of the analytics period (inclusive).
-     *
-     * @x-autobe-specification End date of the analytics period (YYYY-MM-DD format). Used to filter orders within the aggregation window.
-     */
-    periodEnd: string & tags.Format<"date">;
-
-    /**
-     * Total number of orders within the analytics period.
-     *
-     * @x-autobe-specification COUNT(*) of all orders within the analytics period. Aggregates order records without filtering by status.
-     */
-    totalOrders: number & tags.Type<"int32"> & tags.Minimum<0>;
-
-    /**
-     * Breakdown of orders by their status.
-     *
-     * @x-autobe-specification Object containing order counts grouped by overall_status enum values: {paid, shipped, delivered, cancelled, refunded, partiallyCompleted}. Each count represents COUNT(*) WHERE overall_status = 'X' within the period.
-     */
-    statusCounts: {
-      paid: number & tags.Type<"int32"> & tags.Minimum<0>;
-      shipped: number & tags.Type<"int32"> & tags.Minimum<0>;
-      delivered: number & tags.Type<"int32"> & tags.Minimum<0>;
-      cancelled: number & tags.Type<"int32"> & tags.Minimum<0>;
-      refunded: number & tags.Type<"int32"> & tags.Minimum<0>;
-      partiallyCompleted: number & tags.Type<"int32"> & tags.Minimum<0>;
+    pagination: {
+      page: number & tags.Type<"int32">;
+      pageSize: number & tags.Type<"int32">;
+      totalItems: number & tags.Type<"int32">;
+      totalPages: number & tags.Type<"int32">;
     };
 
     /**
-     * Number of orders that have been shipped or delivered.
+     * Order lifecycle metrics including counts per status (paid, shipped, delivered, cancelled, refunded) and total order count.
      *
-     * @x-autobe-specification COUNT where overall_status IN ('shipped', 'delivered'). Represents orders that have been shipped to customers.
+     * @x-autobe-specification Computed order lifecycle metrics aggregated from ecommerce_mall_orders table. Each field counts orders by their overall_status: ordersCreated (paid), ordersShipped (shipped), ordersDelivered (delivered), ordersCancelled (cancelled), ordersRefunded (refunded), totalOrders (all statuses). Values are calculated using SQL aggregate functions with optional filtering by date range and status.
      */
-    fulfilledOrders: number & tags.Type<"int32"> & tags.Minimum<0>;
-
-    /**
-     * Number of orders that were cancelled.
-     *
-     * @x-autobe-specification COUNT where overall_status = 'cancelled'. Represents orders that were cancelled by customers or sellers.
-     */
-    cancelledOrders: number & tags.Type<"int32"> & tags.Minimum<0>;
-
-    /**
-     * Number of orders that were refunded.
-     *
-     * @x-autobe-specification COUNT where overall_status = 'refunded'. Represents orders that had refunds processed.
-     */
-    refundedOrders: number & tags.Type<"int32"> & tags.Minimum<0>;
-
-    /**
-     * Average order value in currency units.
-     *
-     * @x-autobe-specification AVG(total_price) for orders with status IN ('shipped', 'delivered'), rounded to 2 decimal places. Represents the average revenue per successful order.
-     */
-    averageOrderValue: number & tags.Minimum<0>;
+    data: {
+      ordersCreated: number & tags.Type<"int32">;
+      ordersShipped: number & tags.Type<"int32">;
+      ordersDelivered: number & tags.Type<"int32">;
+      ordersCancelled: number & tags.Type<"int32">;
+      ordersRefunded: number & tags.Type<"int32">;
+      totalOrders: number & tags.Type<"int32">;
+    };
   };
 }

@@ -17,8 +17,7 @@ export async function authorize_member_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    displayName: props.body?.displayName ?? RandomGenerator.name(),
-    bio: props.body?.bio ?? RandomGenerator.paragraph({ sentences: 2 }),
+    name: props.body?.name ?? RandomGenerator.name(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),

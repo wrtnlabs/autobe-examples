@@ -15,7 +15,7 @@ import { prepare_random_reddit_like_comment } from "../prepare/prepare_random_re
 export async function generate_random_reddit_like_member_posts_comments_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IRedditLikeComment.ICreate>;
+    body?: DeepPartial<IRedditLikeComment.ICreate> | undefined;
     params: {
       postId: string;
     };

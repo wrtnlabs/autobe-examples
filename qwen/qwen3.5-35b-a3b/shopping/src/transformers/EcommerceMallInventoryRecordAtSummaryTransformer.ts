@@ -29,7 +29,8 @@ export namespace EcommerceMallInventoryRecordAtSummaryTransformer {
       variant_id: input.variant.id,
       quantity_change: input.quantity_change,
       reason: input.reason,
-      timestamp: input.timestamp.toISOString(),
+      timestamp: toISOStringSafe(input.timestamp),
+      current_stock: 0,
     };
   }
 }

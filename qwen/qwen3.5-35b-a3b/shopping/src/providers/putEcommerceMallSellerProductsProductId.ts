@@ -1,5 +1,10 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -11,7 +16,9 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallProductAtSummaryTransformer } from "../transformers/EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductTransformer } from "../transformers/EcommerceMallProductTransformer";
+import { EcommerceMallProductVariantTransformer } from "../transformers/EcommerceMallProductVariantTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,94 +27,505 @@ export async function putEcommerceMallSellerProductsProductId(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProduct.IUpdate;
 }): Promise<IEcommerceMallProduct> {
+  // Step 1: Verify product exists and is not soft-deleted
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
+      where: {
+        id: props.productId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        seller_id: true,
+        category_id: true,
+        name: true,
+        description: true,
+        base_price: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        _count: {
+          select: {
+            orderItems: true,
+            wishlistEntries: true,
+            reviews: true,
+          },
+        },
+        seller: {
+          select: {
+            email: true,
+            id: true,
+            approval_status: true,
+            rejection_reason: true,
+            is_suspended: true,
+            is_banned: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+        category: {
+          select: {
+            name: true,
+            id: true,
+            deleted_at: true,
+            description: true,
+            parent_category_id: true,
+            is_leaf: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+        variants: EcommerceMallProductVariantTransformer.select(),
+        images: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            image_url: true,
+            display_order: true,
+            product: EcommerceMallProductAtSummaryTransformer.select(),
+          } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs,
+        },
+        snapshots: {
+          select: {
+            id: true,
+            created_at: true,
+            name: true,
+            base_price: true,
+            seller: {
+              select: {
+                email: true,
+                id: true,
+                approval_status: true,
+                rejection_reason: true,
+                is_suspended: true,
+                is_banned: true,
+                created_at: true,
+                updated_at: true,
+              },
+            },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                base_price: true,
+                is_active: true,
+                seller: {
+                  select: {
+                    email: true,
+                    id: true,
+                    approval_status: true,
+                    rejection_reason: true,
+                    is_suspended: true,
+                    is_banned: true,
+                    created_at: true,
+                    updated_at: true,
+                  },
+                },
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    created_at: true,
+                    updated_at: true,
+                    deleted_at: true,
+                    parent_category_id: true,
+                    is_leaf: true,
+                  },
+                },
+              },
+            },
+            is_active: true,
+            description: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                created_at: true,
+                updated_at: true,
+                deleted_at: true,
+                parent_category_id: true,
+                is_leaf: true,
+              },
+            },
+          },
+        },
+        reviews: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            rating: true,
+            deleted_at: true,
+            text_content: true,
+            is_active: true,
+            customer: {
+              select: {
+                id: true,
+                email: true,
+                is_banned: true,
+                created_at: true,
+              },
+            },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                base_price: true,
+                is_active: true,
+                seller: {
+                  select: {
+                    email: true,
+                    id: true,
+                    approval_status: true,
+                    rejection_reason: true,
+                    is_suspended: true,
+                    is_banned: true,
+                    created_at: true,
+                    updated_at: true,
+                  },
+                },
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    created_at: true,
+                    updated_at: true,
+                    deleted_at: true,
+                    parent_category_id: true,
+                    is_leaf: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderItems: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            quantity: true,
+            unit_price: true,
+            item_status: true,
+            product_snapshot: true,
+            variant_snapshot: true,
+            seller_profile_snapshot: true,
+            deleted_at: true,
+            ecommerce_mall_order_id: true,
+            ecommerce_mall_product_id: true,
+            ecommerce_mall_product_variant_id: true,
+          },
+        },
+        wishlistEntries: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            ecommerce_mall_product_id: true,
+            ecommerce_mall_customer_id: true,
+          },
+        },
+        variantSnapshots: {
+          select: {
+            id: true,
+            created_at: true,
+            stock_quantity: true,
+            sku_code: true,
+            product_id: true,
+            ecommerce_mall_product_variant_id: true,
+            option_values: true,
+            price_override: true,
+            is_active: true,
+          },
+        },
+      },
     });
+  // Step 2: Verify seller owns this product
   if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Step 3: Validate category change if provided
+  if (props.body.category_id !== undefined) {
+    // Verify category exists
+    const category = await MyGlobal.prisma.ecommerce_mall_categories.findUnique(
+      {
+        where: {
+          id: props.body.category_id,
+          deleted_at: null,
+        },
+      },
+    );
+    if (category === null) {
+      throw new HttpException("Category not found", 400);
+    }
+    // Create product snapshot before category change (section 461)
+    if (props.body.category_id !== product.category_id) {
+      await MyGlobal.prisma.ecommerce_mall_product_snapshots.create({
+        data: {
+          id: v4() as string & tags.Format<"uuid">,
+          product: {
+            connect: { id: props.productId },
+          },
+          ...(product.category_id !== null && {
+            category: {
+              connect: { id: product.category_id },
+            },
+          }),
+          seller: {
+            connect: { id: props.seller.id },
+          },
+          name: product.name,
+          description: product.description,
+          base_price: Number(product.base_price),
+          is_active: product.is_active,
+          created_at: toISOStringSafe(new Date()),
+        },
+      });
+    }
+  }
+  // Step 4: Validate base_price is positive if provided
   if (props.body.base_price !== undefined && props.body.base_price <= 0) {
     throw new HttpException("Base price must be positive", 400);
   }
-  if (props.body.category_id !== undefined) {
-    const category = await MyGlobal.prisma.ecommerce_mall_categories.findFirst({
-      where: {
-        id: props.body.category_id,
-        deleted_at: null,
-      },
-    });
-    if (!category) {
-      throw new HttpException("Category not found", 400);
-    }
-  }
-  const oldValues = {
-    name: product.name,
-    description: product.description,
-    base_price: product.base_price,
-    category_id: product.category_id,
-    is_active: product.is_active,
-  };
-  const now = new Date().toISOString();
-  const updateData: Prisma.ecommerce_mall_productsUpdateInput = {
-    updated_at: now,
-  };
-  if (props.body.name !== undefined) updateData.name = props.body.name;
-  if (props.body.description !== undefined)
-    updateData.description = props.body.description;
-  if (props.body.base_price !== undefined)
-    updateData.base_price = props.body.base_price;
-  if (props.body.category_id !== undefined)
-    updateData.category = { connect: { id: props.body.category_id } };
-  if (props.body.is_active !== undefined)
-    updateData.is_active = props.body.is_active;
-  await MyGlobal.prisma.ecommerce_mall_products.update({
-    where: { id: props.productId },
-    data: updateData,
-  });
-  const changedFields: string[] = [];
-  if (props.body.name !== undefined) changedFields.push("name");
-  if (props.body.description !== undefined) changedFields.push("description");
-  if (props.body.base_price !== undefined) changedFields.push("base_price");
-  if (props.body.category_id !== undefined) changedFields.push("category_id");
-  if (props.body.is_active !== undefined) changedFields.push("is_active");
-  await MyGlobal.prisma.ecommerce_mall_product_snapshots.create({
-    data: {
-      id: v4(),
-      product_id: props.productId,
-      category_id: props.body.category_id ?? product.category_id,
-      seller_id: props.seller.id,
-      name: props.body.name ?? product.name,
-      description: props.body.description ?? product.description,
-      base_price: props.body.base_price ?? product.base_price,
-      is_active: props.body.is_active ?? product.is_active,
-      created_at: now,
+  // Step 5: Update product record
+  const updatedProduct = await MyGlobal.prisma.ecommerce_mall_products.update({
+    where: {
+      id: props.productId,
     },
-  });
-  await MyGlobal.prisma.ecommerce_mall_snapshot_audits.create({
     data: {
-      id: v4(),
-      record_type: "ecommerce_mall_product",
-      record_id: props.productId,
-      changes: JSON.stringify(changedFields),
-      old_values: JSON.stringify(oldValues),
-      new_values: JSON.stringify({
-        name: props.body.name ?? product.name,
-        description: props.body.description ?? product.description,
-        base_price: props.body.base_price ?? product.base_price,
-        category_id: props.body.category_id ?? product.category_id,
-        is_active: props.body.is_active ?? product.is_active,
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
       }),
-      changed_at: now,
-      changed_by: props.seller.id,
-      created_at: now,
-      updated_at: now,
+      ...(props.body.base_price !== undefined && {
+        base_price: props.body.base_price,
+      }),
+      ...(props.body.category_id !== undefined && {
+        category_id: props.body.category_id,
+      }),
+      ...(props.body.is_active !== undefined && {
+        is_active: props.body.is_active,
+      }),
+      updated_at: toISOStringSafe(new Date()),
+    },
+    select: {
+      id: true,
+      seller_id: true,
+      category_id: true,
+      name: true,
+      description: true,
+      base_price: true,
+      is_active: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      _count: {
+        select: {
+          orderItems: true,
+          wishlistEntries: true,
+          reviews: true,
+        },
+      },
+      seller: {
+        select: {
+          email: true,
+          id: true,
+          approval_status: true,
+          rejection_reason: true,
+          is_suspended: true,
+          is_banned: true,
+          created_at: true,
+          updated_at: true,
+        },
+      },
+      category: {
+        select: {
+          name: true,
+          id: true,
+          deleted_at: true,
+          description: true,
+          parent_category_id: true,
+          is_leaf: true,
+          created_at: true,
+          updated_at: true,
+        },
+      },
+      variants: EcommerceMallProductVariantTransformer.select(),
+      images: {
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          image_url: true,
+          display_order: true,
+          product: EcommerceMallProductAtSummaryTransformer.select(),
+        } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs,
+      },
+      snapshots: {
+        select: {
+          id: true,
+          created_at: true,
+          name: true,
+          base_price: true,
+          seller: {
+            select: {
+              email: true,
+              id: true,
+              approval_status: true,
+              rejection_reason: true,
+              is_suspended: true,
+              is_banned: true,
+              created_at: true,
+              updated_at: true,
+            },
+          },
+          product: {
+            select: {
+              id: true,
+              name: true,
+              base_price: true,
+              is_active: true,
+              seller: {
+                select: {
+                  email: true,
+                  id: true,
+                  approval_status: true,
+                  rejection_reason: true,
+                  is_suspended: true,
+                  is_banned: true,
+                  created_at: true,
+                  updated_at: true,
+                },
+              },
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  created_at: true,
+                  updated_at: true,
+                  deleted_at: true,
+                  parent_category_id: true,
+                  is_leaf: true,
+                },
+              },
+            },
+          },
+          is_active: true,
+          description: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              created_at: true,
+              updated_at: true,
+              deleted_at: true,
+              parent_category_id: true,
+              is_leaf: true,
+            },
+          },
+        },
+      },
+      reviews: {
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          rating: true,
+          deleted_at: true,
+          text_content: true,
+          is_active: true,
+          customer: {
+            select: {
+              id: true,
+              email: true,
+              is_banned: true,
+              created_at: true,
+            },
+          },
+          product: {
+            select: {
+              id: true,
+              name: true,
+              base_price: true,
+              is_active: true,
+              seller: {
+                select: {
+                  email: true,
+                  id: true,
+                  approval_status: true,
+                  rejection_reason: true,
+                  is_suspended: true,
+                  is_banned: true,
+                  created_at: true,
+                  updated_at: true,
+                },
+              },
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  created_at: true,
+                  updated_at: true,
+                  deleted_at: true,
+                  parent_category_id: true,
+                  is_leaf: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      orderItems: {
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          quantity: true,
+          unit_price: true,
+          item_status: true,
+          product_snapshot: true,
+          variant_snapshot: true,
+          seller_profile_snapshot: true,
+          deleted_at: true,
+          ecommerce_mall_order_id: true,
+          ecommerce_mall_product_id: true,
+          ecommerce_mall_product_variant_id: true,
+        },
+      },
+      wishlistEntries: {
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          ecommerce_mall_product_id: true,
+          ecommerce_mall_customer_id: true,
+        },
+      },
+      variantSnapshots: {
+        select: {
+          id: true,
+          created_at: true,
+          stock_quantity: true,
+          sku_code: true,
+          product_id: true,
+          ecommerce_mall_product_variant_id: true,
+          option_values: true,
+          price_override: true,
+          is_active: true,
+        },
+      },
     },
   });
-  const result =
-    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      ...EcommerceMallProductTransformer.select(),
-    });
-  return await EcommerceMallProductTransformer.transform(result);
+  // Step 6: Transform and return complete product
+  return await EcommerceMallProductTransformer.transform(updatedProduct);
 }

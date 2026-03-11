@@ -30,14 +30,16 @@ export namespace RedditPlatformCommunityModeratorTransformer {
   ): Promise<IRedditPlatformCommunityModerator> {
     return {
       id: input.id,
+      community_id: input.community.id,
+      user_id: input.user.id,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       community: await RedditPlatformCommunityAtSummaryTransformer.transform(
         input.community,
       ),
       user: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.user,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-    };
+    } satisfies IRedditPlatformCommunityModerator;
   }
 }

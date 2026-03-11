@@ -7,36 +7,47 @@ import { IPageIRedditPlatformGuest } from "../../../structures/IPageIRedditPlatf
 import { IRedditPlatformGuest } from "../../../structures/IRedditPlatformGuest";
 
 /**
- * Retrieve a filtered and paginated list of guest accounts that have accessed the platform without authentication.
+ * Retrieve a paginated and filtered list of guest accounts for the Reddit Platform.
  *
- * This operation provides administrative visibility into guest browsing activity across the platform. It allows system administrators and moderators to view guest accounts for analytics, security monitoring, and abuse detection purposes.
+ * This operation provides administrators with the ability to search and browse guest accounts across the platform. Guest accounts are temporary anonymous user accounts identified by email and device fingerprint, allowing unauthenticated visitors to browse the platform anonymously.
  *
- * The endpoint supports comprehensive filtering by guest identification criteria, session timestamps, and activity metrics. Pagination parameters enable efficient browsing of large result sets with configurable page sizes and cursor-based navigation.
+ * The endpoint supports comprehensive filtering options including email domain search, username pattern matching, karma score ranges, and account status filtering. Results are sortable by creation date, last update time, or karma score in ascending or descending order.
  *
- * All guest data returned is anonymized and does not include personally identifiable information beyond email and username, consistent with privacy requirements for guest access. Only active guest accounts (not soft-deleted) are returned by default.
+ * Security considerations: Guest accounts contain sensitive information including hashed passwords. Access to this operation is restricted to system administrators with appropriate permissions. The response excludes sensitive fields such as password_hash and only returns public profile information needed for moderation and analytics.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for filtering guest accounts
+ * @param props.body Search criteria and pagination parameters for guest account list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_platform_guests table with optional filtering on device fingerprint, session timestamps, and activity metrics.
+ * @x-autobe-specification Execute paginated query against reddit_platform_guests table with optional filtering and sorting.
  *
- * Apply pagination with configurable page size (default: 20, maximum: 100) and cursor-based navigation using last seen timestamp or ID.
+ * Service layer logic:
+ * 1. Validate authorization - require admin role
+ * 2. Parse request body parameters for pagination, search filters, and sorting
+ * 3. Apply soft-delete filter - exclude records where deleted_at IS NOT NULL
+ * 4. Execute database query with filters:
+ *    - Email field: support contains search for email substring
+ *    - Username field: support contains search for username substring
+ *    - Display name field: support contains search for display name substring
+ *    - Karma field: support range filtering (minKarma, maxKarma)
+ *    - Created date range: support date range filtering
+ * 5. Apply sorting based on sortBy parameter (createdAt, updatedAt, karma)
+ * 6. Apply pagination - return page items with total count
+ * 7. Exclude password_hash field from response for security
+ * 8. Return paginated result with metadata
  *
- * Support filtering by:
- * - Device fingerprint pattern (for tracking return visitors)
- * - Session creation date range
- * - Last activity timestamp range
- * - Community access patterns
- * - Post/comment viewing counts
+ * Database queries involved:
+ * - SELECT id, email, username, display_name, bio, avatar_url, karma, created_at, updated_at, deleted_at FROM reddit_platform_guests
+ * - WHERE deleted_at IS NULL (soft delete filter)
+ * - Apply WHERE conditions for search filters
+ * - Apply ORDER BY for sorting
+ * - Apply LIMIT and OFFSET for pagination
  *
- * Join with reddit_platform_guest_sessions to aggregate session statistics including total sessions, last access time, and devices used.
- *
- * Return anonymized guest data suitable for analytics and moderation review. Exclude any personally identifiable information.
- *
- * Apply rate limiting to prevent abuse of this administrative endpoint. Track all accesses for audit purposes.
- *
- * Sort results by last activity timestamp (descending) by default, with support for alternative sorting by registration time or ID.
+ * Edge cases:
+ * - Empty result set: return pagination with 0 items and total count
+ * - Invalid sort field: default to created_at descending
+ * - Missing pagination params: use default page=1, limit=20
+ * - No admin authorization: return 403 Forbidden
  * @path /redditPlatform/guests
  * @accessor api.functional.redditPlatform.guests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,7 +77,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for filtering guest accounts
+     * Search criteria and pagination parameters for guest account list
      */
     body: IRedditPlatformGuest.IRequest;
   };
@@ -115,37 +126,33 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific guest account from the Reddit Platform.
+ * Retrieve detailed information about a specific guest account in the Reddit platform.
  *
- * This operation returns comprehensive profile data for a guest user identified by their unique UUID. The response includes the guest's account identifier, email address, username, display name, optional biography text, avatar image URL, accumulated karma score, and account timestamps.
+ * This operation returns the complete profile of a temporary anonymous guest user, identified by their unique guest identifier. Guest accounts are automatically created when unauthenticated users browse the platform and are tracked by device fingerprint for analytics and session management purposes.
  *
- * The guest account represents an unauthenticated visitor identified by device fingerprint and email for anonymous browsing. The system tracks guest accounts to enable anonymous content creation while maintaining audit trails for security compliance.
+ * The response includes the guest's identifier, session metadata, browsing activity statistics, and temporal information such as creation timestamp and last activity time. This information is primarily used for administrative oversight, abuse detection, and platform analytics.
  *
- * This operation is designed for viewing guest profiles and provides the same information to all users without authentication requirements. The endpoint retrieves the complete guest record from the reddit_platform_guests table.
+ * Authentication is not required to retrieve guest information as guests do not possess personal identifiable data. However, access to this endpoint may be restricted to authorized system administrators or support personnel depending on the deployment configuration.
  *
  * @param props.connection
- * @param props.guestId The unique identifier of the guest account to retrieve
+ * @param props.guestId Unique identifier of the guest account to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_platform_guests table to retrieve the guest record matching the provided UUID.
+ * @x-autobe-specification Query the reddit_platform_guests table for the guest record matching the provided guestId parameter.
  *
- * Implementation steps:
- * 1. Validate guestId parameter is a valid UUID format
- * 2. Query reddit_platform_guests WHERE id = guestId
- * 3. If no record found, return 404 Not Found
- * 4. If record exists but deleted_at is NOT NULL, return 410 Gone (soft-deleted account)
- * 5. Return the complete guest record with all fields: id, email, username, display_name, bio, avatar_url, karma, created_at, updated_at
+ * Perform a direct lookup using the guest's unique identifier (UUID format).
  *
- * Business logic:
- * - Guest accounts are identified by email and username uniqueness constraints
- * - Karma score is automatically calculated from votes (not directly modified)
- * - Accounts may be soft-deleted (deleted_at set) but still retrievable for audit purposes
- * - Email and username are unique identifiers enforceable by database constraints
+ * Join with reddit_platform_guest_sessions table to include active session information if available.
  *
- * Error handling:
- * - 404 if guest not found
- * - 410 if guest account was soft-deleted
- * - 400 if guestId is not valid UUID format
+ * Aggregate browsing statistics from related analytics tables if present.
+ *
+ * Return the complete guest record with all associated metadata.
+ *
+ * Validate that the guestId parameter follows UUID format before executing the query.
+ *
+ * Handle the case where the guest does not exist by returning a 404 Not Found response.
+ *
+ * Ensure response does not include sensitive session tokens or security-relevant data that could be misused.
  * @path /redditPlatform/guests/:guestId
  * @accessor api.functional.redditPlatform.guests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -174,7 +181,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique identifier of the guest account to retrieve
+     * Unique identifier of the guest account to retrieve
      */
     guestId: string & tags.Format<"uuid">;
   };

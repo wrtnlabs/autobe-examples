@@ -1,0 +1,146 @@
+/// User-created posts within communities supporting three content types:
+/// text posts with body content, link posts with URLs, and image posts with
+/// uploaded images. Posts are the primary content entity that users create,
+/// edit, delete, and browse. Each post belongs to an author (member) and a
+/// community, with type-specific content fields. Posts can have multiple
+/// images (stored in reddit_community_post_images child table with
+/// ordering), receive votes (tracked in reddit_community_post_votes), and
+/// accumulate comments (stored in reddit_community_comments). Vote scores
+/// and comment counts are computed via queries, not stored denormalized.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_community_members.id}. The member who created this
+  /// post.
+  member_id String
+  
+  /// Community's {@link reddit_community_communities.id}. The community where
+  /// this post is published.
+  community_id String
+  
+  /// Post type classification: 'text' for text posts with body content, 'link'
+  /// for link posts with URLs, 'image' for image posts with uploaded images.
+  /// Determines which content field is populated. Type is immutable after
+  /// creation.
+  type String
+  
+  /// Post title. Required for all post types. Displayed in feeds and post
+  /// listings. Subject to character limits and content sanitization.
+  title String
+  
+  /// Text content for text-type posts only. Null for link and image posts.
+  /// Contains the main body text with formatting support.
+  body String?
+  
+  /// URL for link-type posts only. Null for text and image posts. Points to
+  /// external resource. Validated for accessibility and format.
+  link_url String?
+  
+  /// Timestamp when the post was created. Used for sorting and time-based
+  /// filtering.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated. Tracks modification history.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. Null for active posts. Enables
+  /// content removal while preserving referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images reddit_community_post_images[]
+  comments reddit_community_comments[]
+  votes reddit_community_post_votes[]
+  voteSnapshots reddit_community_post_vote_snapshots[]
+  reports reddit_community_report_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, created_at])
+  @@index([community_id, created_at])
+  @@index([type, created_at])
+}
+
+/// Images attached to posts supporting multiple images per post with file
+/// storage references and ordering.
+///
+/// Stores uploaded image files for image-type posts with metadata including
+/// storage location, file size, MIME type, and dimensions. Each image has a
+/// sequence number for ordering when multiple images are attached to a
+/// single post. Images are managed through their parent post entity and are
+/// soft-deleted when the parent post is deleted.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// File storage path or URL for accessing the uploaded image.
+  storage_path String
+  
+  /// Original filename of the uploaded image.
+  file_name String
+  
+  /// File size in bytes for storage tracking and validation.
+  file_size Int
+  
+  /// MIME type of the image file (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// Image width in pixels for display and thumbnail generation.
+  width Int
+  
+  /// Image height in pixels for display and thumbnail generation.
+  height Int
+  
+  /// Sequence number for ordering multiple images within a post (1-based
+  /// index).
+  sequence Int
+  
+  /// Timestamp when the image record was created.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, sequence], map: "reddit_community_post_images_reddit_community_post_id__183a0239")
+  @@index([created_at])
+}

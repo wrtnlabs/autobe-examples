@@ -11,60 +11,48 @@ import { deleteEconomicPoliticalBoardAdminArticlesArticleIdCommentsCommentId } f
 )
 export class EconomicpoliticalboardAdminArticlesCommentsController {
   /**
-   * Delete a specific comment from an article. This operation removes the comment from the discussion thread by marking it as deleted (soft deletion). Only the original comment author can delete their own comment.
+   * Delete a comment from an article.
+   *
+   * This operation removes a comment from the discussion board. The comment will be permanently deleted and cannot be recovered.
+   *
+   * **Authorization Requirements**:
+   * - Comment authors can delete their own comments
+   * - Administrators can delete any comment regardless of author
+   *
+   * **Business Rules**:
+   * - The system validates that the comment belongs to the specified article
+   * - The system verifies the requesting user has delete permission (owner or admin)
+   * - If the comment does not exist, the system rejects the request
+   * - If the user is not the comment author and not an admin, the system rejects the request
+   *
+   * **Related Operations**:
+   * - `GET /articles/{articleId}/comments` - List all comments on an article
+   * - `POST /comments` - Create a new comment
+   * - `PUT /comments/{commentId}` - Update an existing comment
+   *
+   * **Error Handling**:
+   * - 404 Not Found: If the article or comment does not exist
+   * - 403 Forbidden: If the user is not the comment author and not an administrator
+   * - 401 Unauthorized: If the user is not authenticated
    *
    * @param connection
-   * @param articleId Parent article's ID that contains this comment
-   * @param commentId Target comment's ID to delete
+   * @param articleId The unique identifier of the article containing the comment
+   * @param commentId The unique identifier of the comment to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Execute soft deletion of the comment by setting deleted_at to current timestamp.
+   * @x-autobe-specification 1. Verify the article exists by querying economic_political_board_articles where id = articleId
+   * 2. Verify the comment exists by querying economic_political_board_comments where id = commentId AND articleId matches the provided articleId
+   * 3. Check authentication: require valid JWT token from authenticated user
+   * 4. Check authorization:
+   *    - If request.user.id == comment.authorId, allow deletion (owner)
+   *    - If request.user has admin role, allow deletion (admin)
+   *    - Otherwise, reject with 403 Forbidden
+   * 5. Delete the comment record from economic_political_board_comments table
+   * 6. Update the article's commentCount by decrementing by 1 (query economic_political_board_articles and update)
+   * 7. Return 204 No Content
    *
-   * Preconditions:
-   * 1. Verify comment exists in economic_political_board_comments table
-   * 2. Verify comment belongs to the specified article (article_id matches)
-   * 3. Verify requesting user is the comment author (author_id matches authenticated user's ID)
-   * 4. Verify comment is not already deleted (deleted_at is NULL)
-   *
-   * Business Logic:
-   * - Only the comment author can delete their own comment
-   * - If user attempts to delete another user's comment, reject with 403 Forbidden
-   * - If comment does not exist, reject with 404 Not Found
-   * - If comment is already deleted, reject with 410 Gone
-   * - If article ID does not match the comment's article, reject with 400 Bad Request
-   *
-   * Soft Deletion Process:
-   * - Set deleted_at to current timestamp (UTC)
-   * - Keep comment data intact for audit trail
-   * - Update updated_at timestamp
-   * - Delete is permanent in terms of API visibility (not recoverable through normal operations)
-   *
-   * Database Operation:
-   * ```sql
-   * UPDATE economic_political_board_comments
-   * SET deleted_at = NOW(), updated_at = NOW()
-   * WHERE id = :commentId
-   *   AND article_id = :articleId
-   *   AND author_id = :userId
-   *   AND deleted_at IS NULL;
-   * ```
-   *
-   * Error Handling:
-   * - 401 Unauthorized: No valid authentication token
-   * - 403 Forbidden: Comment does not belong to authenticated user
-   * - 404 Not Found: Comment or article does not exist
-   * - 410 Gone: Comment is already deleted
-   *
-   * Related Operations:
-   * - GET /articles/{articleId}/comments - List all non-deleted comments on article
-   * - PUT /comments/{commentId} - Update own comment
-   * - DELETE /articles/{articleId}/comments/{commentId} - Delete comment (this operation)
-   *
-   * Security Notes:
-   * - Authentication required (member or admin role)
-   * - No authorization for guests to delete comments
-   * - Comment authorship is verified against authenticated user ID
-   * - Cascading delete rules ensure data integrity on parent entity deletion
+   * Database schema reference:
+   * - economic_political_board_comments: id (int, primary), content (text), authorId (int), articleId (int), createdAt (datetime), updatedAt (datetime)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete()

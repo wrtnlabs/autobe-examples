@@ -1,0 +1,179 @@
+/// Main section table containing all thematic content categories for article
+/// organization managed by administrators.
+///
+/// Sections represent high-level content groupings such as Politics,
+/// Economy, or Current Affairs that administrators {@link
+/// discussion_board_admins} and {@link discussion_board_super_admins}
+/// create, edit, and manage. Each section has a unique name and description
+/// that users can browse to find relevant articles via {@link
+/// discussion_board_articles}. Sections serve as the primary categorization
+/// backbone for content discovery and navigation.
+///
+/// Administrators can create new sections, edit existing ones, or delete
+/// sections through {@link discussion_board_section_deletions} soft deletion
+/// while preserving access patterns. Users can view all available sections
+/// to browse articles by thematic category. Section uniqueness is enforced
+/// at the database level to prevent duplicate categorization.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the section used for identification and browsing. Must be
+  /// unique across all active sections. Examples: "Politics", "Economy",
+  /// "Current Affairs". Maximum length should be enforced at application
+  /// level.
+  name String
+  
+  /// Descriptive text explaining the section's purpose and content focus.
+  /// Helps users understand what type of articles belong in this category. Can
+  /// be null for newly created sections.
+  description String?
+  
+  /// Timestamp when this section was created by an administrator. Used for
+  /// auditing and chronological ordering of sections.
+  created_at DateTime
+  
+  /// Timestamp when this section was last modified. Updated whenever name or
+  /// description changes. Used for tracking recent activity.
+  updated_at DateTime
+  
+  /// Timestamp when this section was soft-deleted by an administrator. Allows
+  /// preservation of existing article associations while removing the section
+  /// from active listings. Null indicates the section is currently active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_section_snapshots[]
+  deletion discussion_board_section_deletions?
+  articles discussion_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Audit trail of section changes over time, capturing point-in-time
+/// metadata for compliance.
+///
+/// This table stores historical snapshots of section configurations whenever
+/// they are modified by administrators. Each record represents the complete
+/// state of a section at a specific moment in time, enabling compliance
+/// auditing and change tracking. The snapshots capture the name,
+/// description, and metadata fields exactly as they existed when the
+/// snapshot was created.
+///
+/// Snapshots are created automatically whenever sections are created or
+/// updated, providing a comprehensive audit trail for administrative
+/// decisions and section evolution over time. {@link
+/// discussion_board_sections.id}
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original section that this snapshot captures. {@link
+  /// discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Section name at the time this snapshot was created. Captured exactly as
+  /// it appeared when the section was saved.
+  name String
+  
+  /// Section description text at the time this snapshot was created. Preserves
+  /// the full description content for historical reference.
+  description String?
+  
+  /// Timestamp when this snapshot was created. Marks the exact moment when the
+  /// section state was captured for audit purposes.
+  created_at DateTime
+  
+  /// Optional reason or note explaining why this snapshot was created, such as
+  /// 'initial creation', 'administrative update', or 'compliance audit'.
+  snapshot_reason String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_39571b0c")
+}
+
+/// Soft deletion tracking for sections with preservation of existing article
+/// associations and access patterns.
+///
+/// When a section is deleted by an administrator, a reference record is
+/// created here to maintain foreign key integrity with existing articles
+/// while marking the section as removed from public browsing. This table
+/// tracks who performed the deletion, when it occurred, and optionally why,
+/// without actually removing the section data from the database.
+///
+/// {@link discussion_board_sections.id}
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the deleted section's {@link discussion_board_sections.id}.
+  discussion_board_section_id String
+  
+  /// Reference to the member who performed the deletion via {@link
+  /// discussion_board_members.id}. Administrators deleting sections are also
+  /// members in the system.
+  deleted_by_member_id String
+  
+  /// Optional explanation for why the section was deleted, providing context
+  /// for administrative actions.
+  reason String?
+  
+  /// Timestamp when the deletion record was created, representing when the
+  /// section was marked as deleted.
+  created_at DateTime
+  
+  /// Timestamp when the deletion record was last updated, though typically
+  /// deletion records are not modified after creation.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  deletedByMember discussion_board_members @relation(fields: [deleted_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_section_id], map: "discussion_board_section_deletions_discussion_board_se_c1674a62")
+  // spellchecker: ignore-next-line
+  @@index([deleted_by_member_id, created_at], map: "discussion_board_section_deletions_deleted_by_member_i_9876020b")
+}

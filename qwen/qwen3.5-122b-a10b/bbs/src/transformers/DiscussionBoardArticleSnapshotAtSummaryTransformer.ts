@@ -8,8 +8,6 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
-import { DiscussionBoardSectionAtSummaryTransformer } from "./DiscussionBoardSectionAtSummaryTransformer";
 
 export namespace DiscussionBoardArticleSnapshotAtSummaryTransformer {
   export type Payload = Prisma.discussion_board_article_snapshotsGetPayload<
@@ -19,8 +17,8 @@ export namespace DiscussionBoardArticleSnapshotAtSummaryTransformer {
     return {
       select: {
         id: true,
-        discussion_board_section_id: true,
         discussion_board_member_id: true,
+        discussion_board_section_id: true,
         title: true,
         body: true,
         tags: true,
@@ -32,8 +30,6 @@ export namespace DiscussionBoardArticleSnapshotAtSummaryTransformer {
         discussionBoardArticle: {
           select: {
             id: true,
-            section: DiscussionBoardSectionAtSummaryTransformer.select(),
-            member: DiscussionBoardMemberAtSummaryTransformer.select(),
           },
         } satisfies Prisma.discussion_board_articlesFindManyArgs,
       },
@@ -44,21 +40,17 @@ export namespace DiscussionBoardArticleSnapshotAtSummaryTransformer {
   ): Promise<IDiscussionBoardArticleSnapshot.ISummary> {
     return {
       id: input.id,
-      discussion_board_article_id: input.discussionBoardArticle.id,
       title: input.title,
-      body: input.body,
-      tags: input.tags,
+      author: {
+        id: input.discussion_board_member_id,
+      } as IDiscussionBoardMember.ISummary,
+      section: {
+        id: input.discussion_board_section_id,
+      } as IDiscussionBoardSection.ISummary,
+      tags: input.tags ?? null,
       file_count: input.file_count,
       image_count: input.image_count,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      section: await DiscussionBoardSectionAtSummaryTransformer.transform(
-        input.discussionBoardArticle.section,
-      ),
-      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
-        input.discussionBoardArticle.member,
-      ),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

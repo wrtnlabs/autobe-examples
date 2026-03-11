@@ -15,7 +15,7 @@ export namespace DiscussionBoardAdminTransformer {
       select: {
         id: true,
         email: true,
-        display_name: true,
+        admin_grade: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
@@ -28,10 +28,10 @@ export namespace DiscussionBoardAdminTransformer {
     return {
       id: input.id,
       email: input.email,
-      display_name: input.display_name,
+      admin_grade: input.admin_grade as "regular" | "super",
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

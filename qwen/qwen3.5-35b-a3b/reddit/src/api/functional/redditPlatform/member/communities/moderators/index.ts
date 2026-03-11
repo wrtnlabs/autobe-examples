@@ -3,47 +3,40 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IPageIRedditPlatformCommunityModerator } from "../../../../../structures/IPageIRedditPlatformCommunityModerator";
 import { IRedditPlatformCommunityModerator } from "../../../../../structures/IRedditPlatformCommunityModerator";
-import { IRedditPlatformModeratorHistory } from "../../../../../structures/IRedditPlatformModeratorHistory";
+import { IRedditPlatformCommunityModeratorDetail } from "../../../../../structures/IRedditPlatformCommunityModeratorDetail";
 
 /**
- * Add a new moderator to a community. This operation appoints an authenticated member as a moderator for a specific community, granting them elevated moderation privileges including the ability to delete posts and comments, ban/unban users, and view content reports for that community.
+ * Add a new moderator to a community.
  *
- * Only community owners can add moderators to their communities. The system verifies that the requesting user has owner authority over the target community before creating the moderator appointment. Attempting to add a moderator to a community where the user lacks owner authority will be rejected.
+ * This operation creates a moderator assignment relationship between a user and a community, granting them moderation privileges. The requesting user must be either the community owner or an existing moderator with authority to add other moderators.
  *
- * Upon successful creation, the appointed user gains moderator status within the community and can perform all moderator actions. The appointment is tracked in the community moderators table and audit logs are generated to record the addition for compliance and transparency purposes.
+ * The operation verifies that the target user does not already have moderator status in this community before creating the assignment. Upon successful creation, the new moderator gains the ability to view reports, delete posts and comments, and ban users within this specific community.
+ *
+ * Only users with owner or moderator role in the community can add new moderators. The system maintains audit records of all moderator assignment actions for compliance purposes.
  *
  * @param props.connection
- * @param props.communityId Target community's unique identifier
- * @param props.body The member ID of the user to appoint as moderator
+ * @param props.communityId Unique identifier of the community where a moderator will be added
+ * @param props.body User ID of the member to be added as a moderator
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the authenticated user is the owner of the target community by querying the reddit_platform_communities table and checking the owner_id field.
- * 2. Verify the community exists and is active by checking the reddit_platform_communities table.
- * 3. Validate the user_id in the request body corresponds to a valid member account in the reddit_platform_members table.
- * 4. Check that the member is not already a moderator of this community by querying the reddit_platform_community_moderators table with a composite unique constraint on [community_id, user_id].
- * 5. Verify the member being appointed is not the current owner of the community.
- * 6. Create a new record in reddit_platform_community_moderators table with the community_id from path parameter, user_id from request body, and timestamps.
- * 7. Generate an audit log entry in reddit_platform_moderator_histories to track this moderator appointment for compliance purposes.
- * 8. Return the newly created moderator relationship with all details including id, community_id, user_id, created_at, and updated_at.
- *
- * Error handling:
- * - 401: Authentication required - user must be logged in
- * - 403: Forbidden - user is not the owner of this community (verified against reddit_platform_communities.owner_id)
- * - 404: Community not found or Member not found
- * - 409: Member is already a moderator of this community (unique constraint violation on [community_id, user_id])
- * - 409: Cannot add owner as moderator - the owner cannot be added as a moderator
+ * @x-autobe-specification 1. Validate authentication - ensure user is logged in
+ * 2. Verify communityId exists in reddit_platform_communities table
+ * 3. Check requesting user's role in this community - must be owner or existing moderator in reddit_platform_community_moderators
+ * 4. Validate userId in request body exists in reddit_platform_members table
+ * 5. Check if user already has moderator status in this community - return conflict if exists
+ * 6. Create new record in reddit_platform_community_moderators table with communityId, userId, and current timestamp
+ * 7. Return the created moderator assignment with user details
  * @path /redditPlatform/member/communities/:communityId/moderators
- * @accessor api.functional.redditPlatform.member.communities.moderators.add
+ * @accessor api.functional.redditPlatform.member.communities.moderators.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function add(
+export async function create(
   connection: IConnection,
-  props: add.Props,
-): Promise<add.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? add.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -53,22 +46,22 @@ export async function add(
           },
         },
         {
-          ...add.METADATA,
-          path: add.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace add {
+export namespace create {
   export type Props = {
     /**
-     * Target community's unique identifier
+     * Unique identifier of the community where a moderator will be added
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
-     * The member ID of the user to appoint as moderator
+     * User ID of the member to be added as a moderator
      */
     body: IRedditPlatformCommunityModerator.ICreate;
   };
@@ -94,12 +87,12 @@ export namespace add {
     typia.random<IRedditPlatformCommunityModerator>();
   export const simulate = (
     connection: IConnection,
-    props: add.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: add.path(props),
+      path: create.path(props),
       contentType: "application/json",
     });
     try {
@@ -119,53 +112,69 @@ export namespace add {
 }
 
 /**
- * Retrieve a filtered and paginated list of moderators for a specific community.
+ * Manage moderator assignments for a community by adding new moderators or removing existing ones from the moderation team.
  *
- * This operation allows authenticated users to query the moderator records for a given community, with support for filtering by user ID, pagination for large result sets, and sorting by appointment date or other criteria.
+ * This operation handles the core moderator management workflow for Reddit-like communities, allowing owners and moderators to maintain the moderation team. When adding a moderator, the system creates a new entry in the moderator assignment table and logs the action in the moderator history audit table. When removing a moderator, the system deletes the moderator assignment and logs the removal action.
  *
- * The response includes moderator summary information optimized for display in moderator management interfaces, including user profile references (username, display_name, avatar_url, karma_score) and community associations. Pagination uses cursor-based navigation for efficient retrieval of large datasets.
+ * Authorization requires the authenticated user to be either the community owner or an existing moderator of the specified community. Owners have unrestricted moderator management capabilities, while moderators can add or remove other moderators but cannot modify their own role or remove the community owner.
  *
- * Authorized users include community owners and platform administrators who can view all moderators. Individual moderators can view their own moderator assignments across communities. The operation enforces access control to prevent unauthorized access to moderator information.
+ * The endpoint performs the requested action atomically: it validates the target user, checks authorization, performs the moderator assignment change, logs the audit record, and returns the updated complete moderator list for the community.
  *
- * **Required Pre-execution:**
+ * Related operations:
+ * - GET /communities/{communityId} to view community details
+ * - GET /communities/{communityId}/moderators to list current moderators
+ * - GET /communities/{communityId}/bans to manage user bans
+ * - POST /reports to submit content reports
  *
- * Before calling this operation, users should have valid authentication credentials. Community-specific moderator listing requires appropriate authorization - only community owners and assigned moderators can view full details for their respective communities.
+ * Error handling:
+ * - Returns 403 Forbidden if user lacks moderator/owner privileges
+ * - Returns 404 Not Found if community or target user does not exist
+ * - Returns 409 Conflict if attempting to remove the owner or self
+ * - Returns 400 Bad Request if action type or user ID is invalid
  *
- * **Related Operations:**
- *
- * - `GET /communities/{communityId}` must be pre-executed to get community details before listing moderators for a specific community
- * - `GET /users/{userId}` can be used to retrieve detailed user profile information for individual moderators
+ * Moderator hierarchy:
+ * - Owner: Full control over all community settings and moderation
+ * - Moderator: Can add/remove other moderators, delete content, ban users
+ * - Member: Standard user with posting and voting privileges
  *
  * @param props.connection
- * @param props.communityId The unique identifier of the community for which moderators are being listed
- * @param props.body Search criteria and pagination parameters for moderator listing
+ * @param props.communityId UUID of the community to manage moderators for. The authenticated user must be the owner or have moderator privileges in this community.
+ * @param props.body Moderator management action specifying whether to add or remove a moderator from the community
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_platform_community_moderators table with pagination and filtering.
- *
- * Apply search filters on community_id (from path parameter) to get moderators for the specific community, and user_id filter for filtering by specific user.
- *
- * Join with reddit_platform_members for user profile information (username, display_name, avatar_url, karma_score, is_active).
- *
- * Return cursor-based pagination for large result sets.
- *
- * Apply authorization checks - authenticated users can only view moderators for communities they own or moderate.
- *
- * Sort by created_at (appointment date) in ascending order by default, with support for reverse ordering (DESC).
- *
- * Include user karma_score and is_active status in the response for moderator quality assessment.
- *
- * Validate community_id exists before querying to prevent invalid lookups - return 404 if community not found.
+ * @x-autobe-specification 1. Authenticate the request and extract user identity from JWT token
+ * 2. Fetch community by communityId parameter, verify community exists and is not soft-deleted
+ * 3. Check if authenticated user is owner of the community OR has moderator role in this community
+ *    - Query reddit_platform_community_moderators table for user's moderator status
+ *    - If not owner and not moderator, return 403 Forbidden
+ * 4. Validate request body:
+ *    - actionType: must be 'ADD' or 'REMOVE'
+ *    - targetUserId: valid UUID format, must reference existing member account
+ *    - notes: optional string, max 500 characters
+ * 5. Fetch target member by targetUserId, verify user exists and is not soft-deleted
+ * 6. If actionType is 'ADD':
+ *    - Check if target user is already a moderator in this community (prevent duplicates)
+ *    - Verify target user is not the community owner
+ *    - Insert new record into reddit_platform_community_moderators table
+ *    - Insert audit record into reddit_platform_moderator_histories with action_type='APPOINTED'
+ * 7. If actionType is 'REMOVE':
+ *    - Verify the moderator is not the community owner (cannot remove owner)
+ *    - Verify the moderator is not the authenticated user attempting removal (cannot remove self)
+ *    - Delete moderator record from reddit_platform_community_moderators table
+ *    - Insert audit record into reddit_platform_moderator_histories with action_type='REMOVED'
+ * 8. Query all current moderators for the community (excluding soft-deleted records)
+ * 9. Join with reddit_platform_members to get complete user details
+ * 10. Return updated moderator list with full user profiles
  * @path /redditPlatform/member/communities/:communityId/moderators
- * @accessor api.functional.redditPlatform.member.communities.moderators.index
+ * @accessor api.functional.redditPlatform.member.communities.moderators.assignModerators
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function assignModerators(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: assignModerators.Props,
+): Promise<assignModerators.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? assignModerators.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -175,27 +184,27 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...assignModerators.METADATA,
+          path: assignModerators.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace assignModerators {
   export type Props = {
     /**
-     * The unique identifier of the community for which moderators are being listed
+     * UUID of the community to manage moderators for. The authenticated user must be the owner or have moderator privileges in this community.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria and pagination parameters for moderator listing
+     * Moderator management action specifying whether to add or remove a moderator from the community
      */
-    body: IRedditPlatformCommunityModerator.IRequest;
+    body: IRedditPlatformCommunityModerator.IAssignment;
   };
-  export type Body = IRedditPlatformCommunityModerator.IRequest;
-  export type Response = IPageIRedditPlatformCommunityModerator.ISummary;
+  export type Body = IRedditPlatformCommunityModerator.IAssignment;
+  export type Response = IRedditPlatformCommunityModerator.IListResponse;
 
   export const METADATA = {
     method: "PATCH",
@@ -212,16 +221,16 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators`;
-  export const random = (): IPageIRedditPlatformCommunityModerator.ISummary =>
-    typia.random<IPageIRedditPlatformCommunityModerator.ISummary>();
+  export const random = (): IRedditPlatformCommunityModerator.IListResponse =>
+    typia.random<IRedditPlatformCommunityModerator.IListResponse>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: assignModerators.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: assignModerators.path(props),
       contentType: "application/json",
     });
     try {
@@ -241,56 +250,46 @@ export namespace index {
 }
 
 /**
- * Remove a moderator's privileges from a specific community.
+ * Add a moderator to a specific community.
  *
- * This operation permanently removes a member's moderator role within the specified community. Only the community owner has the authority to remove moderators from their community. The operation verifies that the moderator exists in the community and that the removal target is not the community owner before proceeding.
+ * This operation creates a moderator relationship by assigning a member to have moderator privileges within a specific community. The moderator role grants elevated permissions within that community, including the ability to delete posts and comments from any user, ban and unban users, review content reports, and add other moderators.
  *
- * Upon successful removal, the system will:
- * - Delete the moderator relationship record from the reddit_platform_community_moderators table
- * - Revoke all moderator privileges from the specified member within this community
- * - Create an audit log entry in reddit_platform_moderation_audit_logs documenting the removal action for compliance purposes
- * - Preserve historical data for audit and transparency requirements
+ * Both the owner of the community and existing moderators can add new moderators to the community. The owner has full authority to manage moderation teams, while existing moderators can also delegate moderator privileges to trusted members, enabling distributed community governance.
  *
- * The removed moderator retains all other community privileges such as posting and commenting, but loses the ability to moderate content, ban users, or add other moderators.
+ * The system verifies that the target user exists in the platform and maintains proper authorization checks to ensure the requesting user has the privilege to add moderators in this specific community. Once added, the moderator immediately gains all standard moderation privileges for that community as defined in Section 24.
  *
- * Authorization requires the requesting user to be authenticated as the community owner. The operation follows strict protection rules to prevent unauthorized moderator management.
+ * The operation also triggers an audit log entry to track this moderator appointment for compliance and transparency purposes, maintaining a permanent record of all moderator actions within the community.
  *
  * @param props.connection
- * @param props.communityId The unique identifier of the community from which to remove the moderator
- * @param props.moderatorId The unique identifier of the moderator to remove from the community
+ * @param props.communityId UUID of the community where the moderator role is being assigned.
+ * @param props.userId UUID of the user who will be granted moderator privileges in this community.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that both communityId and moderatorId are valid UUID format
- * 2. Verify the requesting user is authenticated and is the owner of the specified community
- *    - Query reddit_platform_communities where id = communityId
- *    - Verify owner_id matches the authenticated user's ID
- *    - Return 403 if user is not the owner
- * 3. Verify the moderator exists in this specific community
- *    - Query reddit_platform_community_moderators where community_id = communityId AND user_id = moderatorId
- *    - Return 404 if no moderator record found
- * 4. Ensure the moderator being removed is not the community owner
- *    - Query the user's record to verify they are not the owner
- *    - Return 400 error if attempt is made to remove owner
- * 5. Delete the moderator relationship record from reddit_platform_community_moderators
- * 6. Create an audit log entry in reddit_platform_moderation_audit_logs documenting the removal
- *    - Record the action type, actor, target moderator, and timestamp
- * 7. Return the removed moderator's summary information
+ * @x-autobe-specification 1. Validate that the requesting user is authenticated (member actor).
+ * 2. Verify that the target community exists by querying reddit_platform_communities.
+ * 3. Verify that the requesting user is the owner of this community by checking the community's owner_id field.
+ * 4. Query reddit_platform_members to verify the target user exists.
+ * 5. Check if a moderator relationship already exists for this user in this community by querying reddit_platform_community_moderators where community_id = {communityId} AND user_id = {userId}. If exists, return 409 Conflict error.
+ * 6. Create a new record in reddit_platform_community_moderators with community_id = {communityId}, user_id = {userId}, and set created_at and updated_at to current timestamp.
+ * 7. Create an audit log entry in reddit_platform_moderator_histories recording this moderator appointment action.
+ * 8. Return the newly created moderator relationship record with full details.
  *
- * Business rules enforced:
- * - Only community owner can remove moderators (section 205, 526)
- * - Moderators cannot remove other moderators (section 524, 526)
- * - Community owner cannot be removed as moderator (section 131, 524)
- * - Cascade deletion preserves historical data integrity
- * @path /redditPlatform/member/communities/:communityId/moderators/:moderatorId
- * @accessor api.functional.redditPlatform.member.communities.moderators.erase
+ * Error handling:
+ * - 401 Unauthorized: Requesting user is not authenticated.
+ * - 403 Forbidden: Requesting user is not the community owner.
+ * - 404 Not Found: Target community or target user does not exist.
+ * - 409 Conflict: User is already a moderator in this community.
+ * - 400 Bad Request: Invalid UUID format in path parameters.
+ * @path /redditPlatform/member/communities/:communityId/moderators/:userId
+ * @accessor api.functional.redditPlatform.member.communities.moderators.addModerator
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function erase(
+export async function addModerator(
   connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
+  props: addModerator.Props,
+): Promise<addModerator.Response> {
   return true === connection.simulate
-    ? erase.simulate(connection, props)
+    ? addModerator.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -300,28 +299,29 @@ export async function erase(
           },
         },
         {
-          ...erase.METADATA,
-          path: erase.path(props),
+          ...addModerator.METADATA,
+          path: addModerator.path(props),
           status: null,
         },
       );
 }
-export namespace erase {
+export namespace addModerator {
   export type Props = {
     /**
-     * The unique identifier of the community from which to remove the moderator
+     * UUID of the community where the moderator role is being assigned.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
-     * The unique identifier of the moderator to remove from the community
+     * UUID of the user who will be granted moderator privileges in this community.
      */
-    moderatorId: string & tags.Format<"uuid">;
+    userId: string & tags.Format<"uuid">;
   };
+  export type Response = IRedditPlatformCommunityModerator;
 
   export const METADATA = {
-    method: "DELETE",
-    path: "/redditPlatform/member/communities/:communityId/moderators/:moderatorId",
+    method: "POST",
+    path: "/redditPlatform/member/communities/:communityId/moderators/:userId",
     request: null,
     response: {
       type: "application/json",
@@ -330,21 +330,22 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
+    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.userId ?? "null")}`;
+  export const random = (): IRedditPlatformCommunityModerator =>
+    typia.random<IRedditPlatformCommunityModerator>();
   export const simulate = (
     connection: IConnection,
-    props: erase.Props,
-  ): void => {
+    props: addModerator.Props,
+  ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: erase.path(props),
+      path: addModerator.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("communityId")(() => typia.assert(props.communityId));
-      assert.param("moderatorId")(() => typia.assert(props.moderatorId));
+      assert.param("userId")(() => typia.assert(props.userId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {
@@ -359,36 +360,141 @@ export namespace erase {
 }
 
 /**
- * Retrieve detailed information about a specific community moderator and their assigned community.
+ * Removes a user's moderator role from a specific community.
  *
- * This operation returns the moderator user's profile information along with the community they have moderator privileges for. Moderators are users who have been granted elevated permissions within specific communities to help manage content and enforce community guidelines.
+ * This operation allows the community owner to revoke moderator privileges from another user within their community. The action removes the user from the moderator list and immediately revokes all moderation capabilities.
  *
- * Security considerations:
- * - This endpoint is public and does not require authentication
- * - Moderators can be viewed by any authenticated or unauthenticated user
- * - Only basic profile information is returned to protect moderator privacy
+ * The community owner must be the authenticated user making this request. Regular moderators cannot remove other moderators or the owner from their roles. The system validates that the target user actually has moderator status in the specified community before removal.
  *
- * The returned data includes the moderator's user profile (username, displayName, avatarUrl, karmaScore) and the community they moderate (name, description, iconUrl). The moderator's own list of moderated communities is excluded from the response to prevent circular reference issues.
+ * Upon successful deletion, the user loses all moderator permissions including the ability to delete posts and comments, ban and unban users, view content reports, and manage other moderators. The removal is immediately effective and cannot be undone without re-assignment.
+ *
+ * The operation logs the removal action in the community's audit history for transparency and compliance purposes, creating a record in the reddit_platform_moderator_histories table.
+ *
+ * Note: This operation performs a hard delete of the moderator assignment record from reddit_platform_community_moderators, permanently removing the relationship between the user and community moderator role.
  *
  * @param props.connection
- * @param props.communityName The unique name/identifier of the community
- * @param props.userId The ID of the moderator user
+ * @param props.communityId UUID of the community from which to remove the moderator
+ * @param props.userId UUID of the user whose moderator role should be removed
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_platform_community_moderators table for a record matching the provided communityName and userId path parameters.
+ * @x-autobe-specification 1. Verify the authenticated user is the owner of the specified community by querying reddit_platform_communities.owner_id
+ * 2. If the authenticated user is not the owner, reject with 403 Forbidden and insufficient authority message
+ * 3. Query reddit_platform_community_moderators to find the assignment matching community_id and user_id
+ * 4. If no matching assignment exists, reject with 404 Not Found and moderator not found message
+ * 5. Verify the target user_id is not the community owner (prevent owner removal)
+ * 6. Delete the moderator assignment record from reddit_platform_community_moderators
+ * 7. Insert a record into reddit_platform_moderator_histories documenting the removal with timestamp and actor_id
+ * 8. Return the deleted moderator assignment details in the response body
+ * 9. Handle transaction failure with appropriate rollback if the operation fails mid-execution
+ * @path /redditPlatform/member/communities/:communityId/moderators/:userId
+ * @accessor api.functional.redditPlatform.member.communities.moderators.eraseByCommunityidAndUserid
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function eraseByCommunityidAndUserid(
+  connection: IConnection,
+  props: eraseByCommunityidAndUserid.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? eraseByCommunityidAndUserid.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...eraseByCommunityidAndUserid.METADATA,
+          path: eraseByCommunityidAndUserid.path(props),
+          status: null,
+        },
+      );
+}
+export namespace eraseByCommunityidAndUserid {
+  export type Props = {
+    /**
+     * UUID of the community from which to remove the moderator
+     */
+    communityId: string & tags.Format<"uuid">;
+
+    /**
+     * UUID of the user whose moderator role should be removed
+     */
+    userId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/redditPlatform/member/communities/:communityId/moderators/:userId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.userId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: eraseByCommunityidAndUserid.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: eraseByCommunityidAndUserid.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("userId")(() => typia.assert(props.userId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve detailed information about a specific moderator within a community.
  *
- * 1. Convert communityName path parameter to the corresponding community ID by querying reddit_platform_communities.name
- * 2. Convert userId path parameter to the corresponding user ID
- * 3. Execute JOIN query on reddit_platform_community_moderators with reddit_platform_members (as user) and reddit_platform_communities (as community)
- * 4. Filter WHERE community_id = {communityId} AND user_id = {userId}
- * 5. Return ISingleRedditPlatformModerator with:
- *    - user: full user profile from reddit_platform_members
- *    - community: community details from reddit_platform_communities (excluding the moderator's users array)
- *    - created_at: moderator appointment timestamp
- * 6. Return 404 Not Found if no moderator record exists for the given community and user combination
- * 7. Validate that the path parameters are valid UUIDs before querying
- * 8. No caching of sensitive moderator assignment data
- * @path /redditPlatform/member/communities/:communityName/moderators/:userId
+ * This operation returns the moderator role information and the associated member's profile details, including username, display name, bio, avatar URL, and karma score. It is designed for community moderators and owners to view the complete list of moderators managing their communities.
+ *
+ * Only users with moderator status in the target community can access this endpoint. This ensures that moderator information is only visible to those with legitimate administrative responsibilities within the community.
+ *
+ * The response includes both the moderator relationship metadata (appointment timestamp) and the user's public profile information, providing a comprehensive view of who is managing the community alongside the requester.
+ *
+ * Related operations:
+ * - `GET /communities/:id` - View community details and summary information
+ * - `GET /communities/:id/members` - List all members of a community
+ * - `DELETE /communities/{communityId}/moderators/{moderatorId}` - Remove moderator status from a user
+ *
+ * @param props.connection
+ * @param props.communityId The UUID of the community where the moderator serves
+ * @param props.moderatorId The UUID of the moderator user within this community
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification Query the reddit_platform_community_moderators table to find the moderator record matching both the community_id and user_id parameters.
+ *
+ * Perform JOIN with reddit_platform_members to retrieve the user's profile information (username, display_name, bio, avatar_url, karma_score).
+ *
+ * Authorization: Verify that the authenticated member has moderator status in the target community by checking the reddit_platform_community_moderators table. Reject the request if the authenticated user lacks moderator privileges in this community.
+ *
+ * Return the combined moderator role data and member profile data.
+ *
+ * Edge cases:
+ * - If no moderator record exists with the specified IDs, return 404 Not Found
+ * - If the moderator record exists but the associated user was deleted, handle gracefully by returning available moderator info with limited user details
+ * - Ensure the community_id and moderator_id are valid UUIDs
+ * @path /redditPlatform/member/communities/:communityId/moderators/:moderatorId
  * @accessor api.functional.redditPlatform.member.communities.moderators.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -416,20 +522,20 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique name/identifier of the community
+     * The UUID of the community where the moderator serves
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * The ID of the moderator user
+     * The UUID of the moderator user within this community
      */
-    userId: string & tags.Format<"uuid">;
+    moderatorId: string & tags.Format<"uuid">;
   };
-  export type Response = IRedditPlatformModeratorHistory;
+  export type Response = IRedditPlatformCommunityModeratorDetail;
 
   export const METADATA = {
     method: "GET",
-    path: "/redditPlatform/member/communities/:communityName/moderators/:userId",
+    path: "/redditPlatform/member/communities/:communityId/moderators/:moderatorId",
     request: null,
     response: {
       type: "application/json",
@@ -438,9 +544,9 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditPlatform/member/communities/${encodeURIComponent(props.communityName ?? "null")}/moderators/${encodeURIComponent(props.userId ?? "null")}`;
-  export const random = (): IRedditPlatformModeratorHistory =>
-    typia.random<IRedditPlatformModeratorHistory>();
+    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
+  export const random = (): IRedditPlatformCommunityModeratorDetail =>
+    typia.random<IRedditPlatformCommunityModeratorDetail>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -452,8 +558,117 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
-      assert.param("userId")(() => typia.assert(props.userId));
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("moderatorId")(() => typia.assert(props.moderatorId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Removes a moderator role from a specified user within a community.
+ *
+ * This operation deletes the moderator appointment record from the reddit_platform_community_moderators table, effectively revoking all moderator privileges from the specified user in the target community. The user will no longer be able to delete posts or comments, ban/unban other users, or view content reports for that community.
+ *
+ * Only the community owner has the authority to remove moderators. Moderators are explicitly prohibited from removing other moderators or the community owner, as defined in the moderator hierarchy rules. If a moderator attempts this operation, the request will be rejected with an authorization error.
+ *
+ * The operation performs a direct database deletion of the moderation record (community_id + user_id unique constraint match). No cascade effects occur on the user's other community moderations or their content.
+ *
+ * **Authorization:** Requires authentication. The authenticated user must be the owner of the target community.
+ *
+ * **Related operations:**
+ * - POST /communities/{communityId}/moderators - Add a moderator to a community (owner only)
+ * - GET /communities/{communityId} - View community details including current moderators
+ * - DELETE /communities/{communityId}/bans/{userId} - Unban a user from a community (owner or moderator)
+ *
+ * @param props.connection
+ * @param props.communityId The unique identifier of the community where the moderator role will be removed.
+ * @param props.moderatorId The unique identifier of the user whose moderator role will be removed from the community.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification 1. Validate JWT token and extract authenticated user ID from request headers
+ * 2. Verify the authenticated user exists and has an active account (is_active = true)
+ * 3. Query reddit_platform_communities table to retrieve community by communityId
+ * 4. Verify community exists and is not soft-deleted (deleted_at IS NULL)
+ * 5. Check if authenticated user is the owner of this community (owner_id == authenticated_user_id)
+ * 6. If NOT owner, return 403 Forbidden with message: 'Only the community owner can remove moderators'
+ * 7. Query reddit_platform_community_moderators table to find the moderator record matching (community_id = communityId AND user_id = moderatorId)
+ * 8. If no matching record found, return 404 Not Found with message: 'User is not a moderator of this community'
+ * 9. Delete the moderator record from reddit_platform_community_moderators (cascade deletion will handle the unique constraint on [community_id, user_id])
+ * 10. Return 204 No Content with no response body
+ * 11. Optionally log the action to reddit_platform_moderation_audit_logs for compliance tracking (moderator removed by owner)
+ * @path /redditPlatform/member/communities/:communityId/moderators/:moderatorId
+ * @accessor api.functional.redditPlatform.member.communities.moderators.eraseByCommunityidAndModeratorid
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function eraseByCommunityidAndModeratorid(
+  connection: IConnection,
+  props: eraseByCommunityidAndModeratorid.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? eraseByCommunityidAndModeratorid.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...eraseByCommunityidAndModeratorid.METADATA,
+          path: eraseByCommunityidAndModeratorid.path(props),
+          status: null,
+        },
+      );
+}
+export namespace eraseByCommunityidAndModeratorid {
+  export type Props = {
+    /**
+     * The unique identifier of the community where the moderator role will be removed.
+     */
+    communityId: string & tags.Format<"uuid">;
+
+    /**
+     * The unique identifier of the user whose moderator role will be removed from the community.
+     */
+    moderatorId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/redditPlatform/member/communities/:communityId/moderators/:moderatorId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: eraseByCommunityidAndModeratorid.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: eraseByCommunityidAndModeratorid.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("moderatorId")(() => typia.assert(props.moderatorId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

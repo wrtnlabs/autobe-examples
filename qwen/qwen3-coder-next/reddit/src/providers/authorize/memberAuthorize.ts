@@ -9,7 +9,7 @@ export async function memberAuthorize(request: {
   const payload: MemberPayload = jwtAuthorize({ request }) as MemberPayload;
 
   if (payload.type !== "member") {
-    throw new UnauthorizedException("Invalid token type");
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
   const member = await MyGlobal.prisma.reddit_like_members.findFirst({

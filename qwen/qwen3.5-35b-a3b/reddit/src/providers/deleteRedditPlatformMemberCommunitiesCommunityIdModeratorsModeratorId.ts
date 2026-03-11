@@ -16,50 +16,29 @@ export async function deleteRedditPlatformMemberCommunitiesCommunityIdModerators
   communityId: string & tags.Format<"uuid">;
   moderatorId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify the requesting user is the owner of the community
   const community =
-    await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
-      where: { id: props.communityId },
+    await MyGlobal.prisma.reddit_platform_communities.findFirstOrThrow({
+      where: {
+        id: props.communityId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        owner_id: true,
+      },
     });
   if (community.owner_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Verify the moderator exists in this community
-  const moderatorRelation =
-    await MyGlobal.prisma.reddit_platform_community_moderators.findFirstOrThrow(
-      {
-        where: {
-          community_id: props.communityId,
-          user_id: props.moderatorId,
-        },
-      },
+    throw new HttpException(
+      "Only the community owner can remove moderators",
+      403,
     );
-  // Verify the moderator is not the community owner
-  const moderator =
-    await MyGlobal.prisma.reddit_platform_members.findUniqueOrThrow({
-      where: { id: props.moderatorId },
-    });
-  if (moderator.id === community.owner_id) {
-    throw new HttpException("Cannot remove community owner", 400);
   }
-  // Delete the moderator relationship
   await MyGlobal.prisma.reddit_platform_community_moderators.delete({
-    where: { id: moderatorRelation.id },
-  });
-  // Create audit log entry
-  await MyGlobal.prisma.reddit_platform_moderation_audit_logs.create({
-    data: {
-      id: v4(),
-      moderator_id: props.member.id,
-      community_id: props.communityId,
-      action_type: "remove_moderator",
-      action_target_type: "member",
-      action_target_id: props.moderatorId,
-      action_reason: undefined,
-      action_details: undefined,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
+    where: {
+      community_id_user_id: {
+        community_id: props.communityId,
+        user_id: props.moderatorId,
+      },
     },
   });
 }

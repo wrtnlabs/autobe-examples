@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
@@ -28,12 +27,9 @@ export async function getEcommerceMallCustomerOrdersOrderId(props: {
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
-      deleted_at: null,
+      customer_id: props.customer.id,
     },
     ...EcommerceMallOrderTransformer.select(),
   });
-  if (order.customer.id !== props.customer.id) {
-    throw new HttpException("Not found", 404);
-  }
   return await EcommerceMallOrderTransformer.transform(order);
 }

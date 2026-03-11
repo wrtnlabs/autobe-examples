@@ -9,27 +9,89 @@ import { postTodoAppAuthGuestRefresh } from "../../../../providers/postTodoAppAu
 @Controller("/todoApp/auth/guest")
 export class TodoappAuthGuestController {
   /**
-   * Guest account registration operation.
+   * Guest account creation endpoint that establishes temporary unauthenticated access for users without registration.
    *
-   * This endpoint allows unauthenticated users to create temporary guest accounts using their device identifier. The operation:
+   * ## Purpose
    *
-   * 1. Creates a new guest record in the todo_app_guests table with the provided device_id, IP address, and optional user agent information
-   * 2. Creates an initial session in the todo_app_guest_sessions table with the configured expiration time
-   * 3. Returns access and refresh tokens for subsequent authenticated requests
-   * 4. Ensures device_id uniqueness through database constraints
-   * 5. Validates required fields: device_id, ip
+   * This endpoint creates a guest account that allows temporary access to the system without requiring email verification or password authentication. Guest accounts are designed for users who want to explore the application before committing to a full registration. Each guest account is identified by a unique device_id and can have multiple sessions that track connection metadata.
    *
-   * The operation uses device_id as the primary identifier since guests do not provide email/password credentials. All guest sessions are tracked with session metadata including IP, user agent, and expiration time for security auditing.
+   * ## Implementation Details
    *
-   * This is the primary authentication entry point for temporary, unauthenticated users who may later convert to registered members.
+   * Based on the database schema, this operation:
+   *
+   * 1. Creates a new `todo_app_guests` record with the provided device_id
+   * 2. Generates a new `todo_app_guest_sessions` entry for the current connection
+   * 3. Sets session metadata including client IP, user agent, and referrer
+   * 4. Calculates expiration timestamps for both guest account and session
+   * 5. Returns authentication tokens for the newly created guest account
+   *
+   * The guest creation follows strict device-level uniqueness rules where each device_id can only be associated with one active guest account (soft-deleted accounts can be re-used). The session metadata includes IP address, user agent, and referrer URL for security auditing and analytics purposes.
+   *
+   * ## Security Considerations
+   *
+   * Guest accounts have restricted permissions compared to registered users:
+   *
+   * - No access to other users' todos or profiles
+   * - No profile editing capabilities
+   * - No access to protected features that require registration
+   * - Limited session duration (typically 24-72 hours)
+   * - Automatic cleanup of inactive guest accounts
+   *
+   * The endpoint enforces rate limiting to prevent abuse and validates device_id format to ensure proper identification. All guest activities are logged with session metadata for security auditing.
+   *
+   * ## Request Processing Flow
+   *
+   * 1. Validate device_id format and uniqueness
+   * 2. Check for existing active guest account with same device_id
+   * 3. Create new guest account record
+   * 4. Generate authentication tokens (access + refresh)
+   * 5. Create initial session record with connection metadata
+   * 6. Return authenticated guest session
+   *
+   * ## Related Operations
+   *
+   * - **Login Flow**: Guest accounts can later be converted to member accounts by registering with email/password
+   * - **Session Refresh**: Guest sessions can be refreshed before expiration
+   * - **Session Cleanup**: Inactive guest accounts are automatically deleted
+   *
+   * ## Response Structure
+   *
+   * The response includes:
+   * - Access token for immediate API access
+   * - Refresh token for extending the session
+   * - Guest account identification information
+   * - Session expiration details
+   * - Initial guest account metadata
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Registration request containing device identification and session metadata
+   * @param body Guest account registration request payload containing device identification and connection metadata. This payload establishes temporary unauthenticated access for users without requiring email verification or password authentication.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Create a new guest account using device_id for identification. Validates uniqueness of device_id and creates both guest record and initial session. Password hashing is not used for guests.
+   * @x-autobe-specification Service layer logic:
+   * 1. Validate device_id format (UUID or alphanumeric string)
+   * 2. Check for existing active guest with same device_id
+   * 3. Create new todo_app_guests record with device_id, ip, user_agent
+   * 4. Create initial todo_app_guest_sessions record
+   * 5. Generate JWT access token (short-lived, e.g., 15 minutes)
+   * 6. Generate JWT refresh token (longer-lived, e.g., 7 days)
+   * 7. Return tokens in IAuthorized response format
+   *
+   * Database queries:
+   * - INSERT INTO todo_app_guests (id, device_id, ip, user_agent, created_at, updated_at)
+   * - INSERT INTO todo_app_guest_sessions (id, todo_app_guest_id, ip, user_agent, created_at, expired_at)
+   *
+   * Business rules:
+   * - One active guest per device_id
+   * - Device_id must be unique (case-insensitive)
+   * - Session expiration within 24-72 hours
+   * - IP address stored for security auditing
+   *
+   * Error handling:
+   * - Invalid device_id format → 400 Bad Request
+   * - Duplicate device_id → 409 Conflict
+   * - Session creation failure → 500 Internal Server Error
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -51,25 +113,91 @@ export class TodoappAuthGuestController {
   }
 
   /**
-   * Guest session token refresh operation.
+   * Guest session refresh endpoint that extends temporary access without requiring re-authentication.
    *
-   * This endpoint allows guest users to extend their authenticated session by obtaining new access and refresh tokens. The operation:
+   * ## Purpose
    *
-   * 1. Validates the provided refresh token and ensures it belongs to an active guest session
-   * 2. Updates the session metadata including last activity timestamp and IP address
-   * 3. Creates a new session record with extended expiration time
-   * 4. Returns fresh access and refresh tokens
-   * 5. Maintains guest identity continuity across multiple session lifecycles
+   * This endpoint refreshes the authentication tokens for an existing guest session, allowing continued access without creating new guest accounts. Guest sessions have limited lifespans and this refresh mechanism enables seamless continuation of temporary access while maintaining security through token rotation.
    *
-   * The operation supports temporary guest users who need extended access without re-registering. All session renewals are logged with updated metadata for security auditing and monitoring purposes. The refresh mechanism ensures guests can maintain their session state while preventing indefinite token validity.
+   * ## Implementation Details
+   *
+   * Based on the database schema, this operation:
+   *
+   * 1. Validates the provided refresh token against active guest sessions
+   * 2. Verifies the session hasn't expired (expired_at timestamp)
+   * 3. Updates session metadata (last activity, IP validation)
+   * 4. Generates new access and refresh tokens
+   * 5. Returns updated authentication credentials
+   *
+   * The refresh operation maintains session continuity by preserving the guest account identity while refreshing the authentication credentials. Session metadata is updated to track the latest activity and validate session integrity.
+   *
+   * ## Security Considerations
+   *
+   * Guest session refresh follows strict security policies:
+   *
+   * - Refresh tokens have longer expiration than access tokens
+   * - Session metadata is validated on each refresh
+   * - Suspicious activity triggers session invalidation
+   * - Maximum refresh count limits prevent token abuse
+   * - Session binding (IP/user agent) is enforced
+   *
+   * The endpoint implements防爆 mechanism to prevent token replay attacks and validates that the refresh request originates from the same device that created the original session.
+   *
+   * ## Request Processing Flow
+   *
+   * 1. Validate refresh token format and signature
+   * 2. Lookup active guest session by token
+   * 3. Verify session hasn't expired
+   * 4. Validate session metadata (IP, user agent)
+   * 5. Generate new access and refresh tokens
+   * 6. Update session metadata
+   * 7. Return refreshed authentication tokens
+   *
+   * ## Related Operations
+   *
+   * - **Guest Join**: Creates new guest sessions from scratch
+   * - **Session Invalidation**: Manually expires sessions for security
+   * - **Account Conversion**: Guest accounts can be upgraded to member accounts
+   *
+   * ## Response Structure
+   *
+   * The response includes:
+   * - New access token with extended validity
+   * - New refresh token for subsequent refresh operations
+   * - Updated session expiration information
+   * - Guest account identification details
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh request containing current session token
+   * @param body Guest session refresh request payload containing the current refresh token for token rotation. This payload validates the existing session and requests new authentication credentials.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Renew guest session tokens using existing refresh token. Updates session metadata and resets expiration time. Maintains guest continuity across multiple sessions.
+   * @x-autobe-specification Service layer logic:
+   * 1. Validate refresh token signature and format
+   * 2. Lookup active guest session by refresh token
+   * 3. Check session expiration (expired_at)
+   * 4. Validate session metadata (IP, user agent consistency)
+   * 5. Generate new JWT access token (short-lived)
+   * 6. Generate new JWT refresh token (longer-lived)
+   * 7. Update session metadata (updated_at, last activity)
+   * 8. Return new tokens in IAuthorized response format
+   *
+   * Database queries:
+   * - SELECT FROM todo_app_guest_sessions WHERE refresh_token = ? AND expired_at > NOW()
+   * - UPDATE todo_app_guest_sessions SET updated_at = NOW(), last_activity = NOW()
+   *
+   * Business rules:
+   * - Refresh tokens valid until expired_at
+   * - Session metadata must match (IP, user agent)
+   * - Maximum refresh count (e.g., 100 refreshes per session)
+   * - No refresh after account deletion
+   *
+   * Error handling:
+   * - Invalid refresh token → 401 Unauthorized
+   * - Expired session → 401 Unauthorized
+   * - Metadata mismatch → 403 Forbidden
+   * - Max refresh count exceeded → 401 Unauthorized
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

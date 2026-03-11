@@ -11,16 +11,19 @@ import typia, { tags } from "typia";
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<ITodoAppGuest.IJoin>;
+    body: ITodoAppGuest.IJoin;
   },
 ): Promise<ITodoAppGuest.IAuthorized> {
   const joinInput = {
     device_id:
-      props.body?.device_id ?? typia.random<string & tags.Format<"uuid">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+      props.body.device_id ?? typia.random<string & tags.Format<"uuid">>(),
+    ip: props.body.ip ?? typia.random<string & tags.Format<"ipv4">>(),
     user_agent:
-      props.body?.user_agent ??
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      props.body.user_agent ??
+      RandomGenerator.paragraph({ sentences: 1, wordMin: 5, wordMax: 10 }),
+    href: props.body.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body.referrer ?? typia.random<string & tags.Format<"uri">>(),
   } satisfies ITodoAppGuest.IJoin;
   return await api.functional.todoApp.auth.guest.join(connection, {
     body: joinInput,

@@ -1,3 +1,4 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
@@ -25,7 +26,9 @@ export namespace EcommerceMallShipmentTransformer {
         deleted_at: true,
         order: EcommerceMallOrderAtSummaryTransformer.select(),
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
-        shipmentItems: true,
+        shipmentItems: {
+          select: {},
+        } satisfies Prisma.ecommerce_mall_shipment_itemsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs;
   }
@@ -34,17 +37,17 @@ export namespace EcommerceMallShipmentTransformer {
   ): Promise<IEcommerceMallShipment> {
     return {
       id: input.id,
-      carrierName: input.carrier_name,
-      trackingNumber: input.tracking_number,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-    } satisfies IEcommerceMallShipment;
+      carrier_name: input.carrier_name,
+      tracking_number: input.tracking_number,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    };
   }
 }

@@ -15,40 +15,31 @@ export async function deleteDiscussionBoardAdminSectionsSectionId(props: {
   admin: AdminPayload;
   sectionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify section exists
-  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
-    where: { id: props.sectionId },
-  });
-  // Check if section contains any articles
+  // Verify section exists and is not soft-deleted
+  const section =
+    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+      where: {
+        id: props.sectionId,
+        deleted_at: null,
+      },
+    });
+  // Count articles in section (excluding soft-deleted ones)
   const articleCount = await MyGlobal.prisma.discussion_board_articles.count({
     where: {
       discussion_board_section_id: props.sectionId,
       deleted_at: null,
     },
   });
+  // Section must have zero articles for deletion
   if (articleCount > 0) {
     throw new HttpException(
-      "Cannot delete section with articles. Remove or move all articles first.",
-      400,
+      "Cannot delete section with existing articles. Please remove or reassign all articles first.",
+      409,
     );
   }
-  // Delete the section (cascade handles articles, comments, attachments)
-  await MyGlobal.prisma.discussion_board_sections.delete({
+  // Soft delete the section
+  await MyGlobal.prisma.discussion_board_sections.update({
     where: { id: props.sectionId },
-  });
-  // Log audit trail
-  await MyGlobal.prisma.discussion_board_audit_logs.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      admin_id: props.admin.id,
-      actor_type: "admin",
-      action_type: "section.delete",
-      resource_type: "section",
-      resource_id: props.sectionId,
-      metadata: null,
-      ip_address: null,
-      user_agent: null,
-      created_at: new Date(),
-    },
+    data: { deleted_at: new Date().toISOString() },
   });
 }

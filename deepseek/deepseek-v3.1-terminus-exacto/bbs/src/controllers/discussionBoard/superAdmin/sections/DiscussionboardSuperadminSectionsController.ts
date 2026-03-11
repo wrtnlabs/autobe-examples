@@ -3,34 +3,67 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardSection } from "../../../../api/structures/IDiscussionBoardSection";
-import { SuperAdminAuth } from "../../../../decorators/SuperAdminAuth";
-import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
+import { IPageIDiscussionBoardSection } from "../../../../api/structures/IPageIDiscussionBoardSection";
+import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
+import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
 import { deleteDiscussionBoardSuperAdminSectionsSectionId } from "../../../../providers/deleteDiscussionBoardSuperAdminSectionsSectionId";
+import { getDiscussionBoardSuperAdminSections } from "../../../../providers/getDiscussionBoardSuperAdminSections";
+import { patchDiscussionBoardSuperAdminSections } from "../../../../providers/patchDiscussionBoardSuperAdminSections";
 import { postDiscussionBoardSuperAdminSections } from "../../../../providers/postDiscussionBoardSuperAdminSections";
 import { putDiscussionBoardSuperAdminSectionsSectionId } from "../../../../providers/putDiscussionBoardSuperAdminSectionsSectionId";
 
 @Controller("/discussionBoard/superAdmin/sections")
 export class DiscussionboardSuperadminSectionsController {
   /**
-   * Create a new discussion board section for organizing articles and content.
+   * Retrieve the complete list of available discussion board sections for content navigation.
    *
-   * This operation allows administrators to create new thematic sections within the discussion board platform. Sections serve as the primary organizational structure, categorizing content by topics such as Politics, Economy, and Current Affairs. Each section requires a unique name, descriptive text, display ordering, and initial status setting.
+   * This operation provides access to all thematic content categories that organize articles within the discussion platform. Each section represents a high-level content grouping such as Politics, Economy, or Current Affairs that administrators create and manage. Sections serve as the primary categorization backbone for content discovery and navigation, enabling users to browse articles organized by thematic category.
    *
-   * The creation process validates section name uniqueness and enforces administrator-only access. Upon successful creation, the system automatically records the creating administrator's identity and timestamps for audit trail purposes. The operation supports immediate section activation or creation with inactive status for later deployment.
+   * Users can browse sections to find relevant articles organized by thematic category. The response includes section names and descriptions to help users understand the content focus of each category. This operation supports the platform's content discovery workflow by enabling users to explore articles within specific thematic areas.
    *
-   * Administrators can use this operation to expand the discussion board's topical coverage and organizational structure as community needs evolve. The created section becomes immediately available for article posting unless specified as inactive during creation.
+   * All user types including guests, members, administrators, and super administrators can access section listings. The operation returns active sections only, excluding any sections that have been soft-deleted by administrators through the `discussion_board_section_deletions` soft deletion process while preserving existing article associations. This enables consistent content navigation while maintaining administrative flexibility for section management.
    *
    * @param connection
-   * @param body Section creation parameters including name, description, status, and display order
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Validate that the requesting user has administrator privileges before processing section creation. Check for duplicate section names using the unique constraint on the name field. Generate a UUID for the new section ID and set creation timestamps. Associate the section with the creating administrator's ID and set initial status based on the request. Validate that required fields (name, description) meet length and format requirements. Handle display order validation to ensure proper section sequencing in the user interface. Return the complete created section object with all generated fields and relationships.
+   * @x-autobe-specification Query the discussion_board_sections table to retrieve all active sections (where deleted_at is null). Sort sections alphabetically by name for consistent browsing experience. Return basic section information including name, description, and creation timestamp. This operation should be accessible to all user types without authentication requirements.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get()
+  public async at(
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
+  ): Promise<IDiscussionBoardSection.ISummary> {
+    try {
+      return await getDiscussionBoardSuperAdminSections({
+        superAdmin,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new thematic content category section for organizing articles within the discussion board platform.
+   *
+   * This operation allows administrators to define new topical areas such as Politics, Economy, or Current Affairs where users can post and browse related articles. Each section requires a unique name for identification and can include an optional description explaining the section's purpose and content focus.
+   *
+   * Administrators can use this endpoint to expand the platform's content categorization system. The created section becomes immediately available for article posting and browsing by all users. Section names must be unique across all active sections to prevent duplicate categorization.
+   *
+   * This operation is restricted to administrator and super administrator roles only, as section management is an administrative function. Regular members and guests cannot create sections but can browse and view existing sections through the GET /sections operation.
+   *
+   * @param connection
+   * @param body Section creation information including name and description
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Create a new discussion board section by inserting into the discussion_board_sections table. Validate that the section name is unique by checking against existing active sections (where deleted_at is null). Set created_at and updated_at to current timestamp. Return the complete section object with generated UUID id.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedBody()
     body: IDiscussionBoardSection.ICreate,
   ): Promise<IDiscussionBoardSection> {
@@ -46,26 +79,65 @@ export class DiscussionboardSuperadminSectionsController {
   }
 
   /**
-   * Update an existing discussion board section with modified information.
+   * Retrieve a filtered and paginated list of discussion board sections.
    *
-   * This operation allows administrators to modify section details including the display name, description text, current status, and display ordering sequence. Only the fields provided in the request body will be updated, leaving unspecified fields unchanged. This partial update capability enables administrators to make targeted modifications without affecting unrelated section attributes.
+   * This operation provides advanced search capabilities for browsing thematic content categories within the discussion platform. Sections represent high-level groupings such as Politics, Economy, or Current Affairs that administrators create and manage for organizing articles.
    *
-   * The system enforces comprehensive validation including uniqueness constraints to prevent duplicate section names across categories and maintains strict character length requirements matching the discussion_board_sections database schema specifications. Administrator permissions are verified during the update process to ensure only authorized personnel can modify section configurations.
+   * Supports comprehensive pagination with configurable page sizes and multiple sorting options. Response includes section summary information optimized for browsing interfaces, including name, description, and creation metadata.
    *
-   * The operation returns the complete updated section object, reflecting all current field values after modifications have been applied. This comprehensive response includes system-generated metadata such as modification timestamps and administrator identifiers that track the edit history within the discussion board platform.
+   * Administrators can use this operation to manage section organization while regular users can browse available content categories. The operation filters out soft-deleted sections (where deleted_at is not null) to maintain clean listings while preserving historical article associations.
    *
    * @param connection
-   * @param sectionId UUID identifier of the section to update
-   * @param body Section update fields including name, description, status, and display order
+   * @param body Search criteria and pagination parameters for section browsing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Update an existing section by ID. Validate that the section exists and belongs to the authenticated administrator. Check for name uniqueness across sections. Update only the provided fields in the request body. Handle validation for name length (2-50 characters) and description length (10-500 characters) as specified in requirements. Return the complete updated section object.
+   * @x-autobe-specification Query discussion_board_sections table with pagination and filtering.
+   * Apply search filters on name and description using partial matching.
+   * Support sorting by created_at (newest/oldest) and updated_at.
+   * Implement cursor-based pagination for large result sets.
+   * Exclude soft-deleted sections (deleted_at IS NULL).
+   * Return section summaries optimized for list displays.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
+    @TypedBody()
+    body: IDiscussionBoardSection.IRequest,
+  ): Promise<IPageIDiscussionBoardSection.ISummary> {
+    try {
+      return await patchDiscussionBoardSuperAdminSections({
+        superAdmin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the name and description of an existing discussion board section.
+   *
+   * This operation allows administrators to modify section metadata while preserving the section's creation timestamp and deletion status. The name must remain unique across all active sections to maintain content categorization integrity.
+   *
+   * Administrators can use this operation to refine section descriptions or rename sections to better reflect their topical focus. The system automatically updates the modification timestamp while preserving historical creation data.
+   *
+   * This operation requires administrator privileges and validates that the target section exists and is currently active. If the section has been soft-deleted, the operation will fail with appropriate error messaging.
+   *
+   * @param connection
+   * @param sectionId Unique identifier of the section to update
+   * @param body Section update information including name and description
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor superAdmin
+   * @x-autobe-specification Update an existing discussion board section by ID. Validate that the section exists and is not soft-deleted. Ensure the updated name remains unique across all active sections. Update the updated_at timestamp automatically. Preserve the created_at and deleted_at fields unchanged. Return the complete updated section object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":sectionId")
   public async update(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -86,23 +158,25 @@ export class DiscussionboardSuperadminSectionsController {
   /**
    * Soft delete a discussion board section by marking it as deleted.
    *
-   * This operation allows administrators to remove sections from the discussion board platform by setting the deleted_at timestamp. When a section is soft-deleted, it becomes hidden from regular browsing interfaces while preserving all associated articles, comments, and historical data.
+   * This administrative operation allows authorized administrators to remove sections from active listings on the discussion board platform. The operation performs a soft deletion by setting the deleted_at timestamp in the discussion_board_sections table, preserving existing article associations while removing the section from active browsing.
    *
-   * Only administrators with proper privileges can perform this operation. The soft deletion is logged for audit purposes, recording which administrator performed the action and when. The system maintains referential integrity by preserving all content associated with the deleted section.
+   * Before deletion, the system validates that the section contains no articles to maintain referential integrity. This check queries the discussion_board_articles table to ensure no articles reference this section through the discussion_board_section_id foreign key. If articles exist in the section, the deletion is rejected with a detailed error message indicating the article count. Administrators must first move or delete all articles in the section before attempting section deletion.
    *
-   * Administrators can restore soft-deleted sections if needed, as the operation does not permanently remove data. This approach maintains content organization and user experience while allowing for section lifecycle management.
+   * Authorization is strictly enforced - only users with administrator privileges (admin or superAdmin role) can perform this operation, as documented in administrative protocol requirements. The system records which administrator performed the deletion in the discussion_board_section_deletions table and when it occurred for audit trail purposes. Once soft deleted, the section becomes inaccessible for new article creation while preserving associations with existing content for historical reference.
+   *
+   * Related operations include section creation (POST /sections) for administrators initializing new thematic categories and section browsing (PATCH /sections) for administrators managing the board's organizational structure. Note that this soft deletion operation maintains all historical snapshots captured in the discussion_board_section_snapshots table for compliance auditing.
    *
    * @param connection
    * @param sectionId Unique identifier of the section to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Verify administrator authorization before allowing section deletion. Check if the requesting user has administrator privileges. Handle existing articles in the section by either moving them to a default section (like 'General') or deleting them based on system configuration. Update the deleted_at timestamp for soft deletion. Log the deletion action for audit purposes. Ensure referential integrity with articles and other related entities.
+   * @x-autobe-specification Validate that the requesting user has administrator privileges. Check if the section contains any articles by querying discussion_board_articles table where section_id equals the provided sectionId. If articles exist, reject the deletion with appropriate error message. If section is empty, perform soft deletion by setting deleted_at timestamp. Log the administrative action for audit purposes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":sectionId")
   public async erase(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
   ): Promise<void> {

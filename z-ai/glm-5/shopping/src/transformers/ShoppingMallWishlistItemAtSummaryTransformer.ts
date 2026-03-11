@@ -20,6 +20,11 @@ export namespace ShoppingMallWishlistItemAtSummaryTransformer {
         id: true,
         created_at: true,
         product: ShoppingMallProductAtSummaryTransformer.select(),
+        wishlist: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_wishlistsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_wishlist_itemsFindManyArgs;
   }
@@ -28,10 +33,10 @@ export namespace ShoppingMallWishlistItemAtSummaryTransformer {
   ): Promise<IShoppingMallWishlistItem.ISummary> {
     return {
       id: input.id,
+      created_at: input.created_at.toISOString(),
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      created_at: input.created_at.toISOString(),
     };
   }
 }

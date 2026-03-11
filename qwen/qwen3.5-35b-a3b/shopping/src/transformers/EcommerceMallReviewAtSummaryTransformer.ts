@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -21,14 +20,14 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
     return {
       select: {
         id: true,
+        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        product: EcommerceMallProductAtSummaryTransformer.select(),
         rating: true,
         text_content: true,
         is_active: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        product: EcommerceMallProductAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
   }
@@ -37,18 +36,18 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
   ): Promise<IEcommerceMallReview.ISummary> {
     return {
       id: input.id,
-      rating: input.rating,
-      textContent: input.text_content,
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      isActive: input.is_active,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      rating: input.rating,
+      text_content: input.text_content ?? null,
+      is_active: input.is_active,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

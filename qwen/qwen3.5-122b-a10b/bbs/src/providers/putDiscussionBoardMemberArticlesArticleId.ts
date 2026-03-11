@@ -2,7 +2,6 @@ import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -22,82 +21,75 @@ export async function putDiscussionBoardMemberArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardArticle.IUpdate;
 }): Promise<IDiscussionBoardArticle> {
-  // 1. Find article by ID (404 if not found)
+  // Find article with ownership information
   const article =
     await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
       select: {
         id: true,
         discussion_board_member_id: true,
-        title: true,
-        body: true,
-        discussion_board_section_id: true,
-        created_at: true,
-        updated_at: true,
         deleted_at: true,
       },
     });
-  // 2. Validate ownership
+  // Verify ownership or admin privilege
   if (article.discussion_board_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    // Check if member is an admin
+    const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
+      where: {
+        id: props.member.id,
+        deleted_at: null,
+      },
+    });
+    if (admin === null) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
-  // 3. Update article title and body
+  // Update article with provided fields
   await MyGlobal.prisma.discussion_board_articles.update({
     where: { id: props.articleId },
     data: {
       ...(props.body.title !== undefined && { title: props.body.title }),
       ...(props.body.body !== undefined && { body: props.body.body }),
-      updated_at: toISOStringSafe(new Date()),
+      ...(props.body.discussion_board_section_id !== undefined && {
+        discussion_board_section_id: props.body.discussion_board_section_id,
+      }),
+      updated_at: new Date(),
     },
   });
-  // 4. Handle tags - delete existing associations
-  if (props.body.tags !== undefined) {
-    await MyGlobal.prisma.discussion_board_article_tags.deleteMany({
-      where: { discussion_board_article_id: props.articleId },
+  // Create snapshot for audit trail
+  const updatedArticle =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        discussion_board_section_id: true,
+        discussion_board_member_id: true,
+        created_at: true,
+      },
     });
-    // Find or create tags and create new associations
-    const uniqueTags = Array.from(new Set(props.body.tags));
-    const tagIds: Array<string & tags.Format<"uuid">> = [];
-    for (const tagName of uniqueTags) {
-      // Find existing tag or create new one
-      let tag = await MyGlobal.prisma.discussion_board_tags.findFirst({
-        where: { name: tagName, deleted_at: null },
-      });
-      if (tag === null) {
-        const tagId = v4() as string & tags.Format<"uuid">;
-        await MyGlobal.prisma.discussion_board_tags.create({
-          data: {
-            id: tagId,
-            name: tagName,
-            created_at: toISOStringSafe(new Date()),
-            updated_at: toISOStringSafe(new Date()),
-            deleted_at: null,
-          },
-        });
-        tagIds.push(tagId);
-      } else {
-        tagIds.push(tag.id as string & tags.Format<"uuid">);
-      }
-    }
-    // Create new article-tag associations
-    if (tagIds.length > 0) {
-      await MyGlobal.prisma.discussion_board_article_tags.createMany({
-        data: tagIds.map((tagId) => ({
-          id: v4() as string & tags.Format<"uuid">,
-          discussion_board_article_id: props.articleId,
-          discussion_board_tag_id: tagId,
-          created_at: toISOStringSafe(new Date()),
-          updated_at: toISOStringSafe(new Date()),
-          deleted_at: null,
-        })),
-      });
-    }
-  }
-  // 5. Return updated article using transformer
-  const updated =
+  await MyGlobal.prisma.discussion_board_article_snapshots.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      discussion_board_article_id: props.articleId,
+      title: updatedArticle.title,
+      body: updatedArticle.body,
+      discussion_board_section_id: updatedArticle.discussion_board_section_id,
+      discussion_board_member_id: updatedArticle.discussion_board_member_id,
+      created_at: new Date(),
+      updated_at: new Date(),
+      file_count: 0,
+      image_count: 0,
+    },
+  });
+  // Return transformed article using transformer
+  const articleWithRelations =
     await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
       ...DiscussionBoardArticleTransformer.select(),
     });
-  return await DiscussionBoardArticleTransformer.transform(updated);
+  return await DiscussionBoardArticleTransformer.transform(
+    articleWithRelations,
+  );
 }

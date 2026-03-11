@@ -12,118 +12,57 @@ import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 
-/**
- * Test administrator login success scenario.
- *
- * This test verifies the primary success path for administrator authentication:
- * 1. Create an administrator account through the join endpoint
- * 2. Login with valid credentials
- * 3. Validate the response contains all required profile information
- * 4. Validate the token structure and expiration times
- */
 export async function test_api_admin_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create administrator account for login testing
-  const adminConnection: api.IConnection = { host: connection.host };
-  const adminEmail = typia.random<string & tags.Format<"email">>();
-  const adminPassword = RandomGenerator.alphaNumeric(16);
-  const adminDisplayName = RandomGenerator.name();
-  const adminJoinResult = await authorize_admin_join(adminConnection, {
+  // 1. Create admin account via join
+  const joinConnection: api.IConnection = { host: connection.host };
+  const password = RandomGenerator.alphaNumeric(16);
+  const joinResult = await authorize_admin_join(joinConnection, {
     body: {
-      email: adminEmail,
-      password: adminPassword,
-      display_name: adminDisplayName,
-      bio: RandomGenerator.paragraph({ sentences: 3 }),
+      email: typia.random<string & tags.Format<"email">>(),
+      password: password,
+      display_name: RandomGenerator.name(),
+      bio: RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
+      grade: RandomGenerator.pick(["regular", "super"]),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IDiscussionBoardAdmin.IJoin,
   });
-  typia.assert(adminJoinResult);
-  // 2. Test admin login with valid credentials
+  typia.assert(joinResult);
+  // 2. Login with the same credentials
   const loginConnection: api.IConnection = { host: connection.host };
   const loginResult = await authorize_admin_login(loginConnection, {
     body: {
-      email: adminEmail,
-      password: adminPassword,
+      email: joinResult.email,
+      password: password,
     } satisfies IDiscussionBoardAdmin.ILogin,
   });
   typia.assert(loginResult);
-  // 3. Validate administrator profile information
-  TestValidator.predicate(
-    "admin id is UUID",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      loginResult.id,
-    ),
-  );
-  TestValidator.equals("email matches", loginResult.email, adminEmail);
-  TestValidator.predicate(
-    "display name exists",
-    loginResult.display_name.length > 0,
-  );
+  // 3. Validate business logic - email matches
   TestValidator.equals(
-    "display name matches",
-    loginResult.display_name,
-    adminDisplayName,
+    "email matches input",
+    loginResult.email,
+    joinResult.email,
+  );
+  // 4. Validate token expiration times
+  const accessExpire = new Date(loginResult.token.expired_at).getTime();
+  const refreshableUntil = new Date(
+    loginResult.token.refreshable_until,
+  ).getTime();
+  const now = Date.now();
+  TestValidator.predicate(
+    "access token expires within 15 minutes",
+    accessExpire - now <= 15 * 60 * 1000,
   );
   TestValidator.predicate(
-    "grade is valid",
-    loginResult.grade === "regular" || loginResult.grade === "super",
+    "refresh token expires within 7 days",
+    refreshableUntil - now <= 7 * 24 * 60 * 60 * 1000,
   );
+  TestValidator.predicate("access token expires after now", accessExpire > now);
   TestValidator.predicate(
-    "created_at is valid date-time",
-    /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T|\s)([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$/i.test(
-      loginResult.created_at,
-    ),
-  );
-  TestValidator.predicate(
-    "updated_at is valid date-time",
-    /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T|\s)([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$/i.test(
-      loginResult.updated_at,
-    ),
-  );
-  TestValidator.predicate(
-    "deleted_at is null for active account",
-    loginResult.deleted_at === null,
-  );
-  // 4. Validate token structure
-  TestValidator.predicate(
-    "access token exists",
-    loginResult.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token exists",
-    loginResult.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "expired_at is valid date-time",
-    /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T|\s)([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$/i.test(
-      loginResult.token.expired_at,
-    ),
-  );
-  TestValidator.predicate(
-    "refreshable_until is valid date-time",
-    /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T|\s)([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$/i.test(
-      loginResult.token.refreshable_until,
-    ),
-  );
-  // 5. Validate token expiration times (access token should expire within 30 minutes, refresh within 7 days)
-  const now = new Date();
-  const expiredAt = new Date(loginResult.token.expired_at);
-  const refreshableUntil = new Date(loginResult.token.refreshable_until);
-  const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  TestValidator.predicate(
-    "access token expires within 30 minutes",
-    expiredAt <= thirtyMinutesFromNow,
-  );
-  TestValidator.predicate(
-    "refresh token valid for up to 7 days",
-    refreshableUntil <= sevenDaysFromNow,
-  );
-  TestValidator.predicate(
-    "refreshable_until is after expired_at",
-    refreshableUntil > expiredAt,
+    "refresh token expires after access token",
+    refreshableUntil > accessExpire,
   );
 }

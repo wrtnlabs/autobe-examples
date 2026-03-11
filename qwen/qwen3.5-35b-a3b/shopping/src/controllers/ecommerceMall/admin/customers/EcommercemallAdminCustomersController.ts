@@ -1,40 +1,62 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallCustomer } from "../../../../api/structures/IEcommerceMallCustomer";
 import { IPageIEcommerceMallCustomer } from "../../../../api/structures/IPageIEcommerceMallCustomer";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getEcommerceMallAdminCustomersCustomerId } from "../../../../providers/getEcommerceMallAdminCustomersCustomerId";
 import { patchEcommerceMallAdminCustomers } from "../../../../providers/patchEcommerceMallAdminCustomers";
 
 @Controller("/ecommerceMall/admin/customers")
 export class EcommercemallAdminCustomersController {
   /**
-   * Retrieve a filtered and paginated list of customer accounts with optional search criteria and sorting.
+   * Retrieve a filtered and paginated list of customer accounts registered on the ecommerce platform.
    *
-   * This operation provides administrators and system services with the ability to query customer accounts based on various filters including email address, ban status, account creation date range, and deletion status. The response includes customer summary information optimized for list displays without exposing sensitive data such as password hashes.
+   * This operation provides advanced search and filtering capabilities for customer data, allowing administrators to query customer accounts based on various criteria including partial display name matching, email filtering, account status (active/banned), and registration date ranges.
    *
-   * The operation supports advanced filtering capabilities including partial email matching, ban status filtering, account state filtering (active, banned, deleted), and date range queries on creation or update timestamps. Pagination is cursor-based for efficient handling of large result sets.
+   * The response includes paginated results with customer summary information optimized for list displays, supporting configurable page sizes and sorting options. Each customer summary includes essential identification data such as customer ID, display name, email address, registration date, and account status.
    *
-   * Search results can be sorted by any available field including email, ban status, or account creation date. The operation respects data isolation rules, ensuring that query results are appropriate for the requesting user's authorization level.
+   * This operation returns only customers with non-deleted status (soft delete). Banned customers are included in results unless explicitly filtered out, allowing administrators to review account states. The operation supports cursor-based pagination for efficient handling of large result sets.
+   *
+   * This is an admin-only operation requiring administrative privileges to access.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for customer account queries
+   * @param body Search criteria and pagination parameters for customer list retrieval
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
    * @x-autobe-specification Query the ecommerce_mall_customers table with pagination and filtering.
    *
-   * Apply search filters on email field using LIKE pattern matching for partial matches. Filter by is_banned boolean field to show only banned or non-banned accounts. Filter by deleted_at field to show active, deleted, or all accounts. Filter by created_at date range using start and end parameters.
+   * Apply search filters from request body:
+   * - name: partial match on customer_profile.display_name (join required)
+   * - email: exact or partial match on customer.email field
+   * - status: filter by is_banned boolean field (true/false/null)
+   * - registrationDateRange: filter by customer.created_at between start and end timestamps
+   * - sortOrder: sort by specified field (createdAt, email, displayName)
+   * - sortOrderDirection: ascending or descending
+   * - cursor: pagination cursor for cursor-based pagination
+   * - limit: maximum number of records to return
    *
-   * Apply sorting on sortBy field (email, created_at, is_banned, deleted_at) with sortOrder ASC/DESC.
+   * Join with ecommerce_mall_customer_profiles to retrieve display_name.
    *
-   * Return cursor-based pagination with cursor from last page and pageSize from request.
+   * Validate that requesting user is authenticated (customer or admin actor).
+   * For admin actors, return all customers matching filters.
+   * For customer actors, return only their own customer record.
    *
-   * Never include password_hash in response per security requirements. Exclude deleted accounts by default unless explicitly requested via filter.
+   * Apply pagination using cursor-based approach:
+   * - First page: no cursor, return first N records
+   * - Subsequent pages: use cursor from previous response's pagination.nextCursor
+   * - Limit results to configured maximum (default 20, max 100)
    *
-   * Log all search operations for audit trail.
+   * Return paginated response with:
+   * - data: array of customer summaries
+   * - pagination: page info, total count, cursors
+   *
+   * Handle edge cases:
+   * - No matching customers: return empty data array with pagination info
+   * - Invalid cursor: return error 400 Bad Request
+   * - Unauthorized access: return error 401/403
+   * - Invalid sort field: default to createdAt ascending
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -48,47 +70,6 @@ export class EcommercemallAdminCustomersController {
       return await patchEcommerceMallAdminCustomers({
         admin,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information about a specific customer account.
-   *
-   * This endpoint returns complete customer account details including email address, account status, ban information, and timestamp data. The customer must be authenticated to access their own account information, while administrators with appropriate privileges can view any customer account.
-   *
-   * The response includes sensitive information such as the email address and account creation/update timestamps. Password hash is never exposed in responses for security reasons. Account status information (isBanned, banReason) helps identify whether the account is active or restricted.
-   *
-   * @param connection
-   * @param customerId UUID identifier of the customer account to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_customers table for the record matching the customerId path parameter.
-   *
-   * 1. Validate customerId is a valid UUID format
-   * 2. Check if customer exists and is not soft-deleted (deleted_at is null)
-   * 3. Return customer data excluding password_hash field
-   * 4. Include all visible fields: id, email, isBanned, banReason, createdAt, updatedAt
-   * 5. Handle 404 if customer not found or soft-deleted
-   * 6. Enforce authorization: customer can access own account; admin can access any
-   *
-   * Database query uses primary key lookup on id column with UUID type.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":customerId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("customerId")
-    customerId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallCustomer> {
-    try {
-      return await getEcommerceMallAdminCustomersCustomerId({
-        admin,
-        customerId,
       });
     } catch (error) {
       console.log(error);

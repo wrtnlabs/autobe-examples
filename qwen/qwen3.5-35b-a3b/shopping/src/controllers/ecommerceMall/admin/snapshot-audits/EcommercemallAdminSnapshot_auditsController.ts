@@ -12,37 +12,53 @@ import { patchEcommerceMallAdminSnapshotAudits } from "../../../../providers/pat
 @Controller("/ecommerceMall/admin/snapshot-audits")
 export class EcommercemallAdminSnapshot_auditsController {
   /**
-   * Retrieve a filtered and paginated list of immutable audit trail snapshots that track all entity changes across Products, ProductVariants, SellerProfiles, OrderItems, Reviews, CancellationRequests, and RefundRequests.
+   * Retrieve a filtered and paginated list of immutable audit snapshots that track all entity changes across the ecommerce platform.
    *
-   * This operation provides advanced search capabilities including filtering by entity type (record_type), date range (changed_at), actor attribution (changed_by), and pagination support for navigating large audit datasets.
+   * This operation provides advanced search capabilities for audit trails, allowing administrators, sellers, and customers to review historical state changes. Results can be filtered by entity type (product, product_variant, seller_profile, order_item, review, cancellation_request, refund_request), date range, and actor identity.
    *
-   * Supports comprehensive filtering on all snapshot fields including record type identification, entity identification via record_id, and timestamp-based queries. Response includes snapshot summary information optimized for audit review and dispute resolution workflows.
+   * Each snapshot record preserves the complete before-and-after state of an entity at the moment of change, enabling dispute resolution, compliance auditing, and change history review. The operation returns summary information optimized for list displays, with full snapshot details accessible via individual retrieval.
    *
-   * **Authorization**: Administrators can view all snapshots. Sellers can view snapshots of their own products. Customers can view snapshots of their own reviews.
+   * **Security and Permissions**:
+   * - Super administrators can view all snapshots across all entity types
+   * - Regular administrators can view snapshots for products, orders, and user management
+   * - Sellers can only view snapshots for their own products, variants, and seller profiles
+   * - Customers can only view snapshots for their own reviews
+   * - All actors can search and filter audit logs within their permitted scope
+   *
+   * **Related Operations**:
+   * - GET /snapshot-audits/{id} retrieves a specific snapshot's complete details
+   * - Individual entity operations (GET /products/{id}, GET /reviews/{id}, etc.) trigger automatic snapshot creation
    *
    * @param connection
    * @param body Search criteria and pagination parameters for snapshot audit retrieval
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_snapshot_audits table with cursor-based pagination and filtering.
+   * @x-autobe-specification Query ecommerce_mall_snapshot_audits table with pagination and filtering.
    *
-   * Apply search filters on:
-   * - record_type: Filter by entity type (product, product_variant, seller_profile, order_item, review, cancellation_request, refund_request)
-   * - record_id: Filter by specific entity ID
-   * - changed_by: Filter by actor ID (customer, seller, or admin)
-   * - changed_at: Filter by date range (minChangedAt, maxChangedAt)
-   * - sortBy: Sort results by field (id, changed_at, record_type, changed_by)
-   * - sortOrder: Sort direction (asc, desc)
-   * - page: Current page number (1-indexed)
-   * - limit: Number of results per page (default: 50, max: 200)
+   * **Database Query**:
+   * - Select from ecommerce_mall_snapshot_audits with cursor-based pagination
+   * - Apply filters on record_type, changed_at range, and changed_by actor ID
+   * - For seller actors: filter by record_type IN ('product', 'product_variant', 'seller_profile') AND (changed_by = current_user_id OR record_id IN (SELECT id FROM products WHERE seller_id = current_user_id))
+   * - For customer actors: filter by record_type = 'review' AND changed_by = current_user_id
+   * - For admin actors: no actor filtering
+   * - Join with target entities only if entity details requested (optional optimization)
    *
-   * Apply cursor-based pagination for efficient large dataset navigation. The response includes cursor values for next and previous page navigation.
+   * **Filtering Logic**:
+   * - record_type: Exact match or multiple values (enum: product, product_variant, seller_profile, order_item, review, cancellation_request, refund_request)
+   * - changed_at: Range filter with min/max timestamps
+   * - changed_by: Actor UUID filter (optional)
+   * - Sorting: Default by changed_at DESC, allow custom sort fields
    *
-   * Join validation to ensure record_id exists in the target entity table based on record_type when filter is provided.
+   * **Pagination**:
+   * - Cursor-based pagination using created_at + id as cursor
+   * - Default page size: 20, max: 100
+   * - Return total count for UI pagination controls
    *
-   * Return immutable audit snapshot summaries with record type, entity identifier, change timestamp, and actor attribution.
-   *
-   * Enforce access control: administrators see all records; sellers see only snapshots of their own products; customers see only snapshots of their own reviews.
+   * **Performance**:
+   * - Use composite index on (record_type, record_id, created_at)
+   * - Use index on (changed_at) for date range queries
+   * - Use index on (record_type, changed_at) for combined filters
+   * - Limit JSON parsing to required fields only
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -66,52 +82,61 @@ export class EcommercemallAdminSnapshot_auditsController {
   /**
    * Retrieve a specific snapshot audit record from the immutable audit trail.
    *
-   * This operation provides read-only access to historical change records that capture before-after snapshots of entity modifications across the ecommerce mall system. Snapshot audits preserve data integrity for dispute resolution, compliance tracking, and change history auditing.
+   * This operation returns a complete snapshot audit record that preserves historical state changes for business entities across the ecommerce platform. Snapshot audits are created whenever Products, ProductVariants, SellerProfiles, OrderItems, Reviews, CancellationRequests, or RefundRequests are modified, deleted, or otherwise change state.
    *
-   * Each snapshot audit record documents when a change occurred, who made the change, what fields were modified, and the before/after values of those fields. This enables reconstruction of entity state at any point in time and provides an immutable audit trail for all significant modifications.
+   * The snapshot record contains:
+   * - record_type: Identifies the entity type (product, product_variant, seller_profile, order_item, review, cancellation_request, or refund_request)
+   * - record_id: UUID of the entity being audited
+   * - changes: JSON describing what fields were modified
+   * - old_values: JSON containing the entity state before the change
+   * - new_values: JSON containing the entity state after the change
+   * - changed_at: Timestamp when the change occurred
+   * - changed_by: ID of the actor (customer, seller, or admin) who made the change
    *
-   * **Security & Authorization**:
-   * - Administrators have access to all snapshot audit records for oversight purposes
-   * - All admins (regular and super admin grades) can view the complete audit trail
-   * - Snapshot audit records are immutable and cannot be modified or deleted by any user
+   * **Authorization Rules**:
+   * - Super Administrators: Can view any snapshot audit record in the system
+   * - Sellers: Can view snapshot audits for their own products and seller profiles only
+   * - Customers: Can view snapshot audits for their own reviews only
+   * - Regular Administrators: Limited access based on their privilege level
    *
-   * **Snapshot Audit Types**:
-   * The following entity types are tracked in the audit trail:
-   * - product: Product edits (name, description, basePrice, status changes)
-   * - product_variant: Variant edits (skuCode, stockQuantity, priceOverride changes)
-   * - seller_profile: Shop profile edits (shopName, shopDescription, logoImage changes)
-   * - order_item: Purchase snapshots (product/variant/seller state at time of purchase)
-   * - review: Review edits (rating or textContent changes)
-   * - cancellation_request: Seller approval/rejection responses to cancellation requests
-   * - refund_request: Seller approval/rejection responses to refund requests
-   *
-   * **Data Integrity**:
-   * - Snapshot audit records are immutable and cannot be modified or deleted
-   * - The operation returns the record exactly as stored without any computed fields
-   * - Use the snapshot for historical accuracy when examining past entity states
-   *
-   * **Related Operations**:
-   * - `PATCH /snapshot-audits` (index) must be pre-executed to list all snapshot audits with filtering
-   * - `GET /products/{productId}` retrieves current product state; use snapshots to see historical product states
-   * - `GET /seller-profiles/{sellerId}` retrieves current seller profile; use snapshots to see shop history
+   * **Immutable Records**:
+   * Snapshot audit records are immutable and can never be modified or deleted once created. This ensures data integrity for dispute resolution, compliance audits, and historical accuracy.
    *
    * @param connection
-   * @param auditId UUID identifier of the snapshot audit record to retrieve
+   * @param auditId UUID of the snapshot audit to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate auditId is a valid UUID format
-   * 2. Query the ecommerce_mall_snapshot_audits table for the record with matching id
-   * 3. Verify user has authorization to view this snapshot audit:
-   *    - Super admin: access all records
-   *    - Regular admin: check record_type and changed_by against admin oversight permissions
-   *    - Account owner: verify changed_by matches user ID
-   * 4. If record not found, return 404 Not Found
-   * 5. If user lacks authorization, return 403 Forbidden
-   * 6. Return the complete snapshot audit record with all fields:
-   *    - id, record_type, record_id, changes, old_values, new_values
-   *    - changed_at, changed_by, created_at, updated_at
-   * 7. Parse JSON strings (changes, old_values, new_values) into objects in response
-   * 8. Ensure DateTime fields are formatted as ISO 8601 strings
+   * @x-autobe-specification Query the ecommerce_mall_snapshot_audits table for the record with id matching the auditId path parameter.
+   *
+   * **Implementation Steps**:
+   * 1. Parse auditId path parameter as UUID
+   * 2. Validate auditId is a valid UUID format
+   * 3. Query ecommerce_mall_snapshot_audits WHERE id = auditId
+   * 4. Check authorization:
+   *    - If current actor is super_admin: allow access to any record
+   *    - If current actor is seller: verify record_type is 'product' OR 'seller_profile' AND changed_by matches seller's ID
+   *    - If current actor is customer: verify record_type is 'review' AND changed_by matches customer's ID
+   *    - Otherwise: deny access
+   * 5. Return 404 if record not found
+   * 6. Return 403 if access denied by authorization check
+   * 7. Return 200 with complete snapshot record on success
+   *
+   * **Data Mapping**:
+   * - id -> auditId
+   * - record_type -> recordType (string)
+   * - record_id -> recordId (string)
+   * - changes -> changes (string, JSON)
+   * - old_values -> oldValues (string, JSON)
+   * - new_values -> newValues (string, JSON)
+   * - changed_at -> changedAt (DateTime)
+   * - changed_by -> changedBy (string)
+   * - created_at -> createdAt (DateTime)
+   * - updated_at -> updatedAt (DateTime)
+   *
+   * **Error Handling**:
+   * - 404 Not Found: No snapshot audit record exists with the given auditId
+   * - 403 Forbidden: Current actor does not have permission to view this snapshot audit
+   * - 400 Bad Request: Invalid auditId UUID format
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":auditId")

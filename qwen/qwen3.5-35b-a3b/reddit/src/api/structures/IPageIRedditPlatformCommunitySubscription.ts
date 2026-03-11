@@ -18,7 +18,7 @@ export namespace IPageIRedditPlatformCommunitySubscription {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IRedditPlatformCommunitySubscription.ISummary.
+     * @x-autobe-specification List of records of type IRedditPlatformCircuitBreaker.ISummary.
      */
     data: IRedditPlatformCommunitySubscription.ISummary[];
   };

@@ -9,11 +9,13 @@ export function prepare_random_reddit_like_comment(
   input?: DeepPartial<IRedditLikeComment.ICreate>,
 ): IRedditLikeComment.ICreate {
   return {
-    content: input?.content ?? RandomGenerator.paragraph({ sentences: 3 }),
+    content:
+      input?.content ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 15 }),
     parent_comment_id:
       input?.parent_comment_id ??
       (Math.random() > 0.5
-        ? null
-        : typia.random<string & tags.Format<"uuid">>()),
+        ? typia.random<string & tags.Format<"uuid">>()
+        : null),
   };
 }

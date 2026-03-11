@@ -1,46 +1,55 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallCategory } from "../../../structures/IPageIShoppingMallCategory";
 import { IShoppingMallCategory } from "../../../structures/IShoppingMallCategory";
 
+export * as subcategories from "./subcategories/index";
+
 /**
- * Retrieve a paginated list of categories with optional search and filter capabilities.
+ * Retrieve a filtered and paginated list of product categories available on the platform.
  *
- * This endpoint enables browsing and discovering categories organized in the product catalog. Categories provide the primary organizational structure for products, supporting one level of subcategory nesting beneath parent categories.
+ * This operation provides comprehensive category browsing capabilities for all users. Categories serve as the primary organizational structure for the product catalog, enabling customers to discover products by browsing logical groupings. The system supports a two-level hierarchy where top-level categories can have subcategories, but subcategories cannot have further nesting.
  *
- * The shopping_mall_categories table stores category records with: name (unique display name), description (optional detailed description), and parent_id (optional reference to parent category for subcategories). Categories use soft deletion (deleted_at field) to preserve referential integrity while hiding deleted categories.
+ * The search functionality supports filtering by category name (partial matching), parent category (to find subcategories), and hierarchy level (top-level vs subcategory). Results are paginated and can be sorted by creation date or name.
  *
- * **Authorization**: Public access - no authentication required. Category browsing is available to all users including anonymous visitors, as categories serve as the primary navigation structure for product discovery.
+ * Categories are created and managed exclusively by administrators through separate admin endpoints, but are publicly browsable by all users including customers and sellers. Each category summary includes its unique identifier, name, description, parent category reference (for subcategories), and timestamps.
  *
- * **Filtering**: The endpoint supports filtering by name (case-insensitive partial match), parent category (to retrieve subcategories of a specific parent), and top-level only flag (to exclude subcategories). Results are paginated with configurable page sizes.
- *
- * **Soft Delete**: Categories marked as deleted (deleted_at is not null) are automatically excluded from results.
+ * This endpoint is commonly used in conjunction with GET /categories/{id} to first obtain a list of categories, then retrieve detailed information about a specific category and its subcategories.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for category listing
+ * @param props.body Search criteria and pagination parameters for category filtering
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement category listing with pagination and filtering support.
+ * @x-autobe-specification Query shopping_mall_categories table with pagination, filtering, and sorting support.
  *
- * 1. **Query Construction**: Query shopping_mall_categories table with WHERE clause filtering out soft-deleted records (deleted_at IS NULL).
+ * Filtering logic:
+ * - name: Case-insensitive partial match using ILIKE '%searchTerm%'
+ * - parentId: Exact match filtering (null for top-level categories, UUID for subcategories)
+ * - hierarchyLevel: 'top-level' filters where parent_id IS NULL, 'subcategory' filters where parent_id IS NOT NULL
  *
- * 2. **Search Filters**:
- *    - name: Case-insensitive partial match using ILIKE '%{name}%'
- *    - parentId: Filter by parent category (UUID). null returns top-level categories only.
- *    - topLevelOnly: Boolean to exclude subcategories
+ * Sorting options:
+ * - name: Alphabetical ascending/descending
+ * - createdAt: Chronological ascending/descending (newest/oldest first)
+ * - Default sort: name ascending
  *
- * 3. **Pagination**: Implement cursor-based pagination using created_at and id. Default page size of 20, maximum 100.
+ * Pagination:
+ * - Use cursor-based pagination for consistent results
+ * - Include total count in pagination metadata
+ * - Support configurable page sizes (default: 20, max: 100)
  *
- * 4. **Sorting**: Support sorting by name (alphabetical), createdAt (newest/oldest).
+ * Response construction:
+ * - Select id, name, description, parent_id, created_at, updated_at from shopping_mall_categories
+ * - Filter out soft-deleted categories (where deleted_at IS NOT NULL)
+ * - For each result, determine if it's a top-level category or subcategory based on parent_id presence
+ * - Include parent category name if parentId is set (left join for parent name)
  *
- * 5. **Response Transformation**: Return summary DTOs with: id, name, description, parentId, createdAt.
- *
- * 6. **Soft-Delete Handling**: Always exclude records where deleted_at IS NOT NULL.
- *
- * 7. **Authorization**: Accessible to all authenticated users (customer, seller, administrator).
+ * Performance considerations:
+ * - Index on parent_id for efficient subcategory filtering
+ * - Index on name for search performance
+ * - Consider caching top-level categories list
  * @path /shoppingMall/categories
  * @accessor api.functional.shoppingMall.categories.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -70,7 +79,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for category listing
+     * Search criteria and pagination parameters for category filtering
      */
     body: IShoppingMallCategory.IRequest;
   };
@@ -119,32 +128,43 @@ export namespace index {
 }
 
 /**
- * Retrieves detailed information about a specific product category by its unique identifier.
+ * Retrieve detailed information about a specific category including its subcategories.
  *
- * This endpoint allows all users (customers, sellers, and administrators) to view category details without authentication requirements. Categories serve as the primary organizational structure for the product catalog, enabling customers to discover and navigate products logically.
+ * This public endpoint allows all users, including unauthenticated visitors, to view category details for product browsing purposes. The response includes the category's identification, name, description, hierarchical relationship information (parent reference for subcategories), and a complete list of child subcategories.
  *
- * The response includes the category's name, description, parent category reference (if it is a subcategory), and a list of its subcategories (if any). The system supports one level of subcategory nesting, meaning categories can have subcategories, but subcategories cannot have further subcategories.
+ * Categories serve as the primary organizational structure for the product catalog. When viewing a parent category, the response includes all direct subcategories beneath it. When viewing a subcategory, the response includes a reference to its parent category, enabling seamless navigation back up the hierarchy.
  *
- * When a parent category is requested, the response includes references to all its subcategories, allowing navigation through the category hierarchy. When a subcategory is requested, the response includes a reference to its parent category, enabling navigation back to the parent level.
+ * The category hierarchy is strictly limited to one level of nesting - parent categories can have subcategories, but subcategories cannot have further nested categories. This constraint ensures manageable navigation for customers exploring products by category.
  *
- * The category data is retrieved from shopping_mall_categories table where deleted_at is null, ensuring only active categories are returned. Soft-deleted categories are excluded from results.
+ * Related operations:
+ * - GET /categories - List all categories in hierarchical structure
+ * - GET /categories/{categoryId}/products - Browse products within a specific category
  *
  * @param props.connection
- * @param props.categoryId Unique identifier of the category to retrieve. Must be a valid UUID referencing an existing, non-deleted category in the system.
+ * @param props.categoryId Unique identifier of the category to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_categories table for a single record matching the provided categoryId UUID.
+ * @x-autobe-specification Query the shopping_mall_categories table for a single category record matching the provided categoryId UUID.
  *
- * SELECT columns: id, parent_id, name, description, created_at, updated_at.
- * WHERE conditions: id = :categoryId AND deleted_at IS NULL.
+ * Database query:
+ * 1. Find category by id WHERE deleted_at IS NULL (exclude soft-deleted categories)
+ * 2. Include children subcategories array (WHERE parent_id = this.id AND deleted_at IS NULL)
+ * 3. If the category has a parent_id, include the parent category reference
  *
- * If no matching category is found or the category has been soft-deleted, return a 404 Not Found error.
+ * Response structure:
+ * - id: UUID of the category
+ * - name: unique category name
+ * - description: optional category description (may be null)
+ * - parent: null for top-level categories, or reference to parent category for subcategories
+ * - children: array of subcategory objects (empty array if no subcategories)
+ * - createdAt: timestamp of category creation
+ * - updatedAt: timestamp of last modification
  *
- * For parent categories (parent_id IS NULL): Also query and include all child categories where parent_id = :categoryId and deleted_at IS NULL.
+ * Error handling:
+ * - Return 404 Not Found if categoryId does not exist or is soft-deleted
+ * - Use Prisma's include to eagerly load children subcategories
  *
- * For subcategories (parent_id IS NOT NULL): Include a reference to the parent category (SELECT id, name FROM shopping_mall_categories WHERE id = parent_id).
- *
- * Return the complete category object with optional parent and children relationships populated.
+ * Security: This is a public endpoint with no authentication required.
  * @path /shoppingMall/categories/:categoryId
  * @accessor api.functional.shoppingMall.categories.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -173,9 +193,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the category to retrieve. Must be a valid UUID referencing an existing, non-deleted category in the system.
+     * Unique identifier of the category to retrieve
      */
-    categoryId: string & tags.Format<"uuid">;
+    categoryId: string;
   };
   export type Response = IShoppingMallCategory;
 

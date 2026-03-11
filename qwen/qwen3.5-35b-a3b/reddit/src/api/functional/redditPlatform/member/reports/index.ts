@@ -3,62 +3,50 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IPageIRedditPlatformReport } from "../../../../structures/IPageIRedditPlatformReport";
 import { IRedditPlatformReport } from "../../../../structures/IRedditPlatformReport";
 
+export * as snapshots from "./snapshots/index";
+export * as dashboard from "./dashboard/index";
+export * as analytics from "./analytics/index";
+export * as queue from "./queue/index";
+
 /**
- * Create a content moderation report for a post or comment that violates community guidelines.
+ * Submit a report for a post or comment that violates community guidelines or standards.
  *
- * This operation allows authenticated members to report content that violates community standards. The report includes a required reason text describing the violation, and associates the report with the reporting user, the community containing the reported content, and the specific content item (post or comment) being reported.
+ * This operation allows authenticated members to flag inappropriate content for moderator review. When a report is submitted, it is associated with the reporting user, the reported content (either a post or comment), and the community where the content exists. The report is created with PENDING status and will appear in the community's moderation dashboard for moderator action.
  *
- * Upon submission, the system validates that the user is not banned from the community, that the reported content exists, and that the user has not already reported the same content item. The report status is set to PENDING and will appear in the moderator dashboard for review.
+ * The report requires a reason text field that must be at least 10 characters long to provide meaningful context for moderators. The system prevents duplicate reports from the same user for the same content item to avoid report spam.
  *
- * Moderators can view and manage reports through the /communities/:name/reports endpoint and take actions such as approving (which deletes the reported content) or dismissing the report.
+ * Reports can only be submitted for content within communities where the user is not banned. Moderators have exclusive access to view and act on reports through the GET /communities/{communityId}/reports endpoint.
  *
- * **Validation Rules**:
- * - Reason text: Minimum 10 characters, maximum 500 characters
- * - User must be authenticated (member actor)
- * - User cannot be banned from the community
- * - Reported content must exist
- * - No duplicate reports from same user for same content
- *
- * **Related Operations**:
- * - GET /communities/:name/reports - View reports as moderator
- * - POST /reports/:id/approve - Approve and delete reported content
- * - POST /reports/:id/dismiss - Dismiss invalid report
+ * Related operations:
+ * - GET /communities/{communityId}/reports - View all reports for a community (moderator only)
+ * - PATCH /reports/{reportId} - Approve or dismiss a report (moderator only)
+ * - POST /reports - Submit a new report (member only)
  *
  * @param props.connection
- * @param props.body Report creation data including reason and content reference.
+ * @param props.body Report submission data containing the reported content and reason
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a reddit_platform_reports record with the following steps:
- *
- * 1. **Authentication**: Verify the requesting user is authenticated as a member actor. Return 401 if not authenticated.
- *
- * 2. **Community Ban Check**: Verify the user is not banned from the target community using the community_id from the request. Query reddit_platform_community_bans table. Return 403 if banned.
- *
- * 3. **Content Existence Validation**: Based on reported_content_type:
- *    - If POST: Query reddit_platform_posts table for reported_content_id. Return 404 if not found.
- *    - If COMMENT: Query reddit_platform_comments table for reported_content_id. Return 404 if not found.
- *
- * 4. **Duplicate Report Prevention**: Check for existing report with same reporter_id, reported_content_type, and reported_content_id using the unique constraint index. Return 409 Conflict if duplicate exists.
- *
- * 5. **Reason Validation**: Validate reason text is 10-500 characters. Return 400 Validation Failed if outside range.
- *
- * 6. **Create Report Record**: Insert into reddit_platform_reports table:
- *    - id: Generate UUID
- *    - reporter_id: Authenticated user's ID
- *    - community_id: From request body
- *    - reported_content_type: From request body (POST or COMMENT)
- *    - reported_content_id: From request body
- *    - reason: From request body
- *    - status: PENDING (default)
- *    - resolved_by_id: NULL (not yet resolved)
- *    - created_at: Current timestamp
- *    - updated_at: Current timestamp
- *    - deleted_at: NULL (active)
- *
- * 7. **Response**: Return the created report with all fields including generated id and timestamps.
+ * @x-autobe-specification 1. Verify the authenticated member (request JWT token from Authorization header)
+ * 2. Validate the request body:
+ *    - reported_content_type must be 'POST' or 'COMMENT'
+ *    - reported_content_id must be a valid UUID
+ *    - reason must be 10-500 characters (section 592)
+ *    - community_id must be a valid UUID
+ * 3. Verify the reported content exists in the specified community by querying reddit_platform_posts or reddit_platform_comments with community_id filter
+ * 4. Check if this user has already reported this content item to prevent duplicates (unique constraint: [reporter_id, reported_content_type, reported_content_id] per section 154)
+ * 5. Insert new record into reddit_platform_reports:
+ *    - id: generate UUID
+ *    - reporter_id: from authenticated member
+ *    - community_id: from request body
+ *    - reported_content_type: from request body
+ *    - reported_content_id: from request body
+ *    - reason: from request body
+ *    - status: 'PENDING' (default)
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ * 6. Return the created report record
  * @path /redditPlatform/member/reports
  * @accessor api.functional.redditPlatform.member.reports.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -88,7 +76,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Report creation data including reason and content reference.
+     * Report submission data containing the reported content and reason
      */
     body: IRedditPlatformReport.ICreate;
   };
@@ -137,134 +125,27 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered and paginated list of content moderation reports for communities where the authenticated user serves as a moderator.
+ * Retrieve detailed information about a single content moderation report by its unique identifier.
  *
- * This operation provides comprehensive report management capabilities for community moderators, displaying reports that require review along with their associated metadata. Reports are ordered by creation timestamp with newest reports appearing first, enabling efficient queue management.
+ * This endpoint provides moderators with comprehensive report details including the reported content, reporter identity, violation reason, submission timestamp, and current status. The response includes the full context needed for review and decision-making.
  *
- * Supports filtering by report status (pending, resolved, dismissed), reporter identity, content type (post or comment), and date range. The response includes essential information for triage decisions: reporter username, reported content reference, reason text, current status, creation timestamp, and the last updated timestamp when status was changed.
- *
- * Only users with moderator privileges for at least one community can access this endpoint. The system returns reports for all communities where the user holds moderator status, consolidated into a single paginated list.
- *
- * Related operations: Use POST /reports/:id/approve or POST /reports/:id/dismiss to change report status. Use GET /reports/:id for detailed report information.
+ * The report details include information about the reported content (post or comment), the member who submitted the report, the reason text for the violation, and the current status of the report. This information is critical for moderators to assess whether the reported content violates community guidelines.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for report list. Allows filtering by status, reporter, content type, date range, and pagination controls.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_platform_reports table with join to reddit_platform_members for reporter username. Filter by status (pending, resolved, dismissed), reporter_id, reported_content_type, community_id (where user is moderator), and created_at range.
- *
- * Apply pagination: page (default 1), limit (default 20, max 100). Sort by created_at DESC (newest first) with optional date_range filtering for TODAY, WEEK, MONTH, YEAR, ALL.
- *
- * Authorization: Verify user has moderator role in at least one community via reddit_platform_community_moderators table. Only return reports for those communities.
- *
- * Return IRedditPlatformReport.ISummary for each report: id, reporter_username, community_name, reported_content_type, reported_content_id, reason, status, created_at, resolved_at (if resolved).
- *
- * Include IPageIRedditPlatformReport.ISummary wrapper with pagination metadata (total, page, limit, totalPages) and data array.
- * @path /redditPlatform/member/reports
- * @accessor api.functional.redditPlatform.member.reports.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Search criteria and pagination parameters for report list. Allows filtering by status, reporter, content type, date range, and pagination controls.
-     */
-    body: IRedditPlatformReport.IRequest;
-  };
-  export type Body = IRedditPlatformReport.IRequest;
-  export type Response = IPageIRedditPlatformReport.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/redditPlatform/member/reports",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/redditPlatform/member/reports";
-  export const random = (): IPageIRedditPlatformReport.ISummary =>
-    typia.random<IPageIRedditPlatformReport.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a specific content moderation report for moderator review.
- *
- * This operation returns detailed information about a reported content item, including the reported post or comment, the reporter's identity, the reason provided, and the current status. Reports are community-specific and only accessible to moderators of the relevant community per section 540.
- *
- * The response includes the reported content type (POST or COMMENT) and the corresponding content ID. For POST reports, this references reddit_platform_posts.id. For COMMENT reports, this references reddit_platform_comments.id. The status field indicates whether the report is pending moderator review, has been resolved (content deleted), or dismissed (invalid report).
- *
- * Authorization requires moderator privileges on the community where the reported content exists. Non-moderators attempting to access this endpoint will receive a 403 Forbidden error. Moderators attempting to access reports from communities they do not moderate will also receive 403.
- *
- * Related operations: GET /communities/:name/reports for listing all pending reports in a community, POST /reports/:id/approve to approve a report, POST /reports/:id/dismiss to dismiss a report.
- *
- * @param props.connection
- * @param props.reportId The unique identifier of the report to retrieve
+ * @param props.reportId Unique identifier of the report to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
  * @x-autobe-specification Query reddit_platform_reports table for the report with the specified UUID.
  *
- * 1. Validate that the report exists and is not soft-deleted (deleted_at IS NULL)
- * 2. Verify the requesting user has moderator privileges on the community (join with reddit_platform_community_moderators or reddit_platform_admins)
- * 3. Check that the report belongs to a community where the user has moderation authority
- * 4. Include the reporter relationship (reddit_platform_members) for username display
- * 5. Include the community relationship for context
- * 6. Return 404 if report not found or deleted
- * 7. Return 403 if user lacks moderator authority for this community
- *
- * Use optimistic locking via updated_at for concurrent status updates.
- * Load report view history via reddit_platform_report_views when accessed.
- * Update the viewed_at timestamp in reddit_platform_report_views on successful retrieval.
+ * 1. Validate that reportId is a valid UUID format
+ * 2. Fetch the report record with all associated fields including status, reason, timestamp
+ * 3. Join with reddit_platform_members to include reporter's username
+ * 4. Join with reddit_platform_posts or reddit_platform_comments to include the reported content details based on reported_type field
+ * 5. Include community context to identify which community the reported content belongs to
+ * 6. Check that the requesting user has moderator privileges for the community associated with the report
+ * 7. If user is not authorized, return 403 Forbidden
+ * 8. Update report_views table to track when the moderator viewed this report
+ * 9. Return report data including: id, status, reason, created_at, reporter_username, reported_type, reported_id, community_id
  * @path /redditPlatform/member/reports/:reportId
  * @accessor api.functional.redditPlatform.member.reports.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -293,7 +174,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique identifier of the report to retrieve
+     * Unique identifier of the report to retrieve
      */
     reportId: string & tags.Format<"uuid">;
   };
@@ -325,6 +206,140 @@ export namespace at {
     });
     try {
       assert.param("reportId")(() => typia.assert(props.reportId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Approve or dismiss a content moderation report.
+ *
+ * This operation allows community moderators to review and resolve pending content reports. When a moderator approves a report, the reported content (post or comment) is marked for deletion. When a moderator dismisses a report, the report is closed without action on the reported content.
+ *
+ * Authorization: Only community moderators can access this endpoint. The system validates that the requesting member has moderator privileges in the relevant community before processing the action.
+ *
+ * Report Status Updates:
+ * - Approve: Changes status from PENDING to RESOLVED and sets resolved_by_id to the moderator's ID. The reported content should be deleted by the moderation workflow.
+ * - Dismiss: Changes status from PENDING to DISMISSED and sets resolved_by_id to the moderator's ID.
+ *
+ * Audit Trail:
+ * The operation automatically records the moderator identity in resolved_by_id field and updates the updated_at timestamp. All moderation actions are logged for compliance and transparency purposes.
+ *
+ * Related Operations:
+ * - GET /communities/{id}/reports - View all reports in a community before moderating
+ * - GET /reports/{reportId} - View individual report details before taking action
+ *
+ * @param props.connection
+ * @param props.reportId Unique identifier of the report to moderate
+ * @param props.body Moderation action to perform on the report
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification 1. Verify moderator authorization for the community containing the report
+ *    - Load report to get community_id
+ *    - Query reddit_platform_community_moderators for active moderation status
+ *    - Reject with 403 if not a moderator of the community
+ *
+ * 2. Validate report exists and is in PENDING status
+ *    - Check for soft delete (deleted_at is NULL)
+ *    - Validate status equals PENDING
+ *    - Reject with 404 if not found or already resolved/dismissed
+ *
+ * 3. Extract action from request body
+ *    - action: 'approve' or 'dismiss'
+ *    - Optional: reason for the moderation decision
+ *
+ * 4. Update report record
+ *    - Set status to 'RESOLVED' if action is 'approve', 'DISMISSED' if 'dismiss'
+ *    - Set resolved_by_id to current authenticated user's ID
+ *    - Update updated_at timestamp
+ *    - Persist changes in transaction
+ *
+ * 5. If action is 'approve', trigger content deletion workflow
+ *    - Query reported_content_type (POST or COMMENT)
+ *    - Delete the reported post/comment record
+ *    - Update post/comment engagement stats (vote counts, etc.)
+ *    - Log deletion in moderation audit trail
+ *
+ * 6. Return updated report object with new status and resolved_by_id
+ * @path /redditPlatform/member/reports/:reportId
+ * @accessor api.functional.redditPlatform.member.reports.moderate
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function moderate(
+  connection: IConnection,
+  props: moderate.Props,
+): Promise<moderate.Response> {
+  return true === connection.simulate
+    ? moderate.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...moderate.METADATA,
+          path: moderate.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace moderate {
+  export type Props = {
+    /**
+     * Unique identifier of the report to moderate
+     */
+    reportId: string & tags.Format<"uuid">;
+
+    /**
+     * Moderation action to perform on the report
+     */
+    body: IRedditPlatformReport.IModerate;
+  };
+  export type Body = IRedditPlatformReport.IModerate;
+  export type Response = IRedditPlatformReport;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/redditPlatform/member/reports/:reportId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/redditPlatform/member/reports/${encodeURIComponent(props.reportId ?? "null")}`;
+  export const random = (): IRedditPlatformReport =>
+    typia.random<IRedditPlatformReport>();
+  export const simulate = (
+    connection: IConnection,
+    props: moderate.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: moderate.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("reportId")(() => typia.assert(props.reportId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

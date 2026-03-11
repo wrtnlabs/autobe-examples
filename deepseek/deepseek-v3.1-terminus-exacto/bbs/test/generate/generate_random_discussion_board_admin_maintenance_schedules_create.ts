@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
-import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import type { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -13,7 +13,7 @@ import { prepare_random_discussion_board_maintenance_schedule } from "../prepare
 export async function generate_random_discussion_board_admin_maintenance_schedules_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardMaintenanceSchedule.ICreate>;
+    body?: DeepPartial<IDiscussionBoardMaintenanceSchedule.ICreate> | undefined;
   },
 ): Promise<IDiscussionBoardMaintenanceSchedule> {
   const prepared: IDiscussionBoardMaintenanceSchedule.ICreate =

@@ -20,45 +20,34 @@ export async function patchShoppingMallCustomerAddresses(props: {
   body: IShoppingMallAddress.IRequest;
 }): Promise<IPageIShoppingMallAddress.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput = {
     shopping_mall_customer_id: props.customer.id,
     deleted_at: null,
-    ...(props.body.search && {
-      OR: [
-        {
-          recipient_name: {
-            contains: props.body.search,
-            mode: "insensitive" as const,
-          },
-        },
-        {
-          street_address: {
-            contains: props.body.search,
-            mode: "insensitive" as const,
-          },
-        },
-        { city: { contains: props.body.search, mode: "insensitive" as const } },
-      ],
+    ...(props.body.city !== undefined && {
+      city: { contains: props.body.city, mode: "insensitive" as const },
     }),
-    ...(props.body.country && { country: props.body.country }),
-    ...(props.body.city && { city: props.body.city }),
-    ...(props.body.is_default !== undefined && {
-      is_default: props.body.is_default,
+    ...(props.body.stateProvince !== undefined && {
+      state_province: {
+        contains: props.body.stateProvince,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.country !== undefined && {
+      country: { contains: props.body.country, mode: "insensitive" as const },
+    }),
+    ...(props.body.isDefault !== undefined && {
+      is_default: props.body.isDefault,
     }),
   } satisfies Prisma.shopping_mall_addressesWhereInput;
-  const orderByInput = [
-    { is_default: "desc" as const },
-    { created_at: "desc" as const },
-  ];
   const [data, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_addresses.findMany({
       where: whereInput,
+      ...ShoppingMallAddressAtSummaryTransformer.select(),
       skip,
       take: limit,
-      orderBy: orderByInput,
-      ...ShoppingMallAddressAtSummaryTransformer.select(),
+      orderBy: [{ is_default: "desc" }, { created_at: "desc" }],
     }),
     MyGlobal.prisma.shopping_mall_addresses.count({ where: whereInput }),
   ]);

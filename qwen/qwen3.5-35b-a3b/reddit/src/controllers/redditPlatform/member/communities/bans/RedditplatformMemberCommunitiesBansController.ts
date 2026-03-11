@@ -2,53 +2,62 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIRedditPlatformCommunityBan } from "../../../../../api/structures/IPageIRedditPlatformCommunityBan";
 import { IRedditPlatformCommunityBan } from "../../../../../api/structures/IRedditPlatformCommunityBan";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { deleteRedditPlatformMemberCommunitiesCommunityIdBansBanId } from "../../../../../providers/deleteRedditPlatformMemberCommunitiesCommunityIdBansBanId";
+import { deleteRedditPlatformMemberCommunitiesCommunityIdBansUserId } from "../../../../../providers/deleteRedditPlatformMemberCommunitiesCommunityIdBansUserId";
+import { getRedditPlatformMemberCommunitiesCommunityIdBansBanId } from "../../../../../providers/getRedditPlatformMemberCommunitiesCommunityIdBansBanId";
+import { patchRedditPlatformMemberCommunitiesCommunityIdBans } from "../../../../../providers/patchRedditPlatformMemberCommunitiesCommunityIdBans";
 import { postRedditPlatformMemberCommunitiesCommunityIdBans } from "../../../../../providers/postRedditPlatformMemberCommunitiesCommunityIdBans";
+import { postRedditPlatformMemberCommunitiesCommunityIdBansUserId } from "../../../../../providers/postRedditPlatformMemberCommunitiesCommunityIdBansUserId";
+import { putRedditPlatformMemberCommunitiesCommunityIdBansBanId } from "../../../../../providers/putRedditPlatformMemberCommunitiesCommunityIdBansBanId";
 
 @Controller("/redditPlatform/member/communities/:communityId/bans")
 export class RedditplatformMemberCommunitiesBansController {
   /**
-   * Create a ban record to restrict a user's ability to post and comment in a specific community.
+   * Create a ban record to prevent a user from posting, commenting, or voting in a community.
    *
-   * This operation adds the specified user to the community's banned users list, preventing them from creating new posts or comments within that community. The ban is immediately enforced at the time of creation. Banned users retain the ability to view existing content in the community but cannot participate in discussions.
+   * This endpoint allows community owners and moderators to ban users from a specific community. When a user is banned, they are immediately prevented from creating new posts, writing comments, or submitting votes within that community. Banned users can still view existing content but cannot participate.
    *
-   * The ban record tracks the moderator or owner who issued the ban via the banned_by field, along with a timestamp of when the ban was created. Bans can be permanent (expires_at is null) or time-limited by specifying an expiration datetime.
+   * The ban record is stored in the reddit_platform_community_bans table with the community_id, user_id being banned, and the banned_by field tracking which moderator or owner issued the ban. Bans can be permanent (expires_at is null) or time-limited by specifying an expiration date.
    *
-   * Per community moderation rules, only users with moderator or owner privileges for the target community can create bans. Attempting to ban a user who is already banned will result in a duplicate conflict error. Attempting to ban a user who is not banned will add them to the ban list and restrict their posting and commenting abilities.
-   *
-   * Related operations:
-   * - GET /communities/{communityId}/bans - List all banned users in a community
-   * - DELETE /communities/{communityId}/ban/{userId} - Unban a user (soft delete)
+   * The system verifies that the requesting user has owner or moderator privileges for the target community before creating the ban. Attempting to ban a user who is already banned from the community will result in an error. Similarly, banned users cannot submit reports or perform any write operations in the banned community.
    *
    * @param connection
    * @param communityId The unique identifier of the community where the ban applies
-   * @param body Information about the user to ban and optional expiration time
+   * @param body Ban creation parameters including user to ban and optional expiration
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new ban record in the reddit_platform_community_bans table.
+   * @x-autobe-specification Create a ban record in reddit_platform_community_bans table:
    *
-   * 1. Validate that the authenticated user has moderator or owner privileges for the specified community
-   * 2. Validate that the community exists and is not deleted
-   * 3. Validate that the target user (user_id) exists in the system
-   * 4. Check for existing active ban (deleted_at is null) for this community-user pair to prevent duplicates
-   * 5. Create the ban record with:
+   * 1. Validate that the requesting user is authenticated as a community owner or moderator for community_id
+   * 2. Verify the target user (user_id in request body) exists in reddit_platform_members
+   * 3. Check if a ban already exists for this community_id + user_id combination by querying reddit_platform_community_bans with unique constraint
+   * 4. If ban exists, return 409 Conflict error
+   * 5. Create new record in reddit_platform_community_bans with:
    *    - id: auto-generated UUID
-   *    - community_id: from path parameter (convert to UUID)
+   *    - community_id: from path parameter
    *    - user_id: from request body
-   *    - banned_by: current authenticated user's ID
+   *    - banned_by: authenticated user's ID
+   *    - expires_at: from request body (optional, null for permanent ban)
    *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - expires_at: from request body (optional, null for permanent bans)
    *    - deleted_at: null (active ban)
-   * 6. Return the complete ban record with all fields
+   *    - updated_at: current timestamp
+   * 6. Return the created ban record with full details
    *
-   * Business rule enforcement:
-   * - Unique constraint on [community_id, user_id] prevents duplicate bans
-   * - Cascade delete on community means ban is automatically removed if community is deleted
-   * - After ban creation, check_user_community_access will reject post/comment/vote operations for this user
+   * Validation rules:
+   * - Requesting user must be owner or moderator of the community
+   * - user_id must be a valid existing member
+   * - Cannot ban the requesting user themselves
+   * - Cannot create duplicate ban for same community + user combination
+   * - expires_at must be a valid future datetime if provided
+   *
+   * Related operations:
+   * - GET /communities/{communityId}/bans - List banned users
+   * - DELETE /communities/{communityId}/bans/{userId} - Unban user
+   * - POST /communities/{communityId}/moderators - Add moderator who can perform bans
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -73,59 +82,339 @@ export class RedditplatformMemberCommunitiesBansController {
   }
 
   /**
-   * Remove a ban from a user in a community, effectively unbanning them and restoring their posting and commenting privileges.
+   * Retrieve a paginated list of banned users for a specific community.
    *
-   * This operation soft-deletes the ban record by setting the deleted_at timestamp, which transitions the user's subscription state from 'banned' back to 'unsubscribed'. The ban record is retained in the database for audit purposes.
+   * This endpoint provides community owners and moderators with visibility into all active bans within the community. It supports advanced filtering options to help manage the ban list effectively, including filtering by user, ban issuer, date ranges, and expiration status.
    *
-   * Security and Authorization:
-   * - Only community owners and active moderators can unban users from their communities
-   * - The operation requires valid authentication and proper moderator privileges
-   * - Attempting to unban a user without appropriate permissions will result in a 403 Forbidden error
+   * The response includes comprehensive information about each ban record: the banned user's profile (username, display name, avatar URL), the moderator who issued the ban, the ban timestamp, and any expiration date for time-limited bans.
    *
-   * Ban Record Structure:
-   * - The ban record is identified by the unique combination of community_id and user_id
-   * - Each ban record contains information about who was banned, who issued the ban, when it was issued, and whether it has an expiration date
-   * - The ban can be permanent (expires_at is null) or time-limited (expires_at is set)
-   *
-   * User State Transitions:
-   * - Upon successful unban, the user's subscription state transitions from 'banned' to 'unsubscribed'
-   * - The user retains the ability to view existing content in the community
-   * - The user can subscribe to the community again if desired
-   * - The user's posting and commenting privileges are restored
-   *
-   * Related Operations:
-   * - GET /communities/{communityId}/bans/{banId} - View ban details before removing
-   * - POST /communities/{communityId}/bans - Create a new ban for a user
-   * - GET /communities/{communityId}/moderators - Verify moderator status before performing unban
+   * Only community owners and moderators have access to this endpoint. Regular subscribed members cannot view the ban list.
    *
    * @param connection
-   * @param communityId The unique identifier of the community where the ban should be removed.
-   * @param banId The unique identifier of the ban record to remove (unban the user).
+   * @param communityId The unique identifier of the community whose banned users list to retrieve.
+   * @param body Optional filtering, pagination, and sorting parameters for the banned users list query.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the user making the request is authenticated and has owner or moderator privileges for the specified community
-   * 2. Fetch the ban record using the banId from reddit_platform_community_bans table
-   * 3. Verify the ban record belongs to the specified communityId (prevents unauthorized cross-community operations)
-   * 4. Soft delete the ban record by setting deleted_at to the current timestamp
-   * 5. The database's unique constraint [community_id, user_id] will prevent duplicate active bans for the same user in the same community
-   * 6. Return the updated ban record with deleted_at set to confirm the unban action
-   * 7. If the ban record does not exist or is already deleted (deleted_at is not null), return 404 Not Found
-   * 8. If the user lacks owner or moderator privileges, return 403 Forbidden
+   * @x-autobe-specification Query reddit_platform_community_bans table where community_id matches the path parameter and deleted_at is null (active bans only).
    *
-   * Transaction Considerations:
-   * - This operation should be performed within a database transaction to ensure data integrity
-   * - The soft delete operation is atomic and does not require cascading deletions
+   * 1. Verify the requesting member owns the community or has moderator status for this community by checking:
+   *    - owner_id matches in reddit_platform_communities, OR
+   *    - Exists in reddit_platform_community_moderators with active status
    *
-   * Edge Cases:
-   * - Ban record already deleted (user already unbanned): Return 404
-   * - Ban record belongs to different community: Return 404
-   * - User attempting to unban without privileges: Return 403
-   * - Ban with future expiration date: Allow unban (expiring before expiration)
-   * - Permanent ban (expires_at is null): Allow unban
+   * 2. Build query with optional filters from requestBody:
+   *    - userId: Filter by specific user ID
+   *    - username: Partial match filter on member username (using trigram index)
+   *    - bannedBy: Filter by moderator who issued the ban
+   *    - dateRange: Filter bans by created_at timestamp range
+   *    - status: Filter by ban expiration (active/expired) based on expires_at
+   *    - pagination: page (offset), limit (page size)
+   *    - sortBy: created_at desc (default), user_id, banned_by, expires_at
+   *
+   * 3. Join with reddit_platform_members for banned user details (username, display_name, avatar_url) and issuer details (banned_by username)
+   *
+   * 4. Apply soft delete filter: WHERE deleted_at IS NULL
+   *
+   * 5. Return paginated results with total count
+   *
+   * 6. Enforce permission check before query: reject if user is not owner or moderator
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformCommunityBan.IRequest,
+  ): Promise<IPageIRedditPlatformCommunityBan.ISummary> {
+    try {
+      return await patchRedditPlatformMemberCommunitiesCommunityIdBans({
+        member,
+        communityId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ban a user from a community, preventing them from creating posts or comments while allowing content viewing.
+   *
+   * This operation creates a ban record in the community ban table, immediately restricting the user's ability to participate in the community. The ban can be permanent (expires_at is null) or time-limited (expires_at specified). Banned users retain read access but are blocked from write operations.
+   *
+   * Authorization: Requires moderator privileges in the target community. Only community owners and active moderators can ban users.
+   *
+   * Related operations:
+   * - GET /communities/{communityId}/bans - View list of banned users
+   * - DELETE /communities/{communityId}/bans/{userId} - Unban a user
+   * - POST /communities/{communityId}/moderators - Add moderator
+   *
+   * Error conditions:
+   * - User is already banned from this community
+   * - Specified user does not exist
+   * - Requesting user is not a moderator of this community
+   * - Community does not exist or has been deleted
+   *
+   * @param connection
+   * @param communityId UUID of the community to ban the user from
+   * @param userId UUID of the user to ban
+   * @param body Ban configuration including optional expiration
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1. Validate that communityId references an existing, non-deleted community in reddit_platform_communities
+   * 2. Validate that userId references an existing member in reddit_platform_members
+   * 3. Check requesting user's moderator status in community via reddit_platform_community_moderators table
+   * 4. Verify user is not already banned (check unique constraint on [community_id, user_id] in reddit_platform_community_bans with deleted_at IS NULL)
+   * 5. Insert new ban record with:
+   *    - community_id: path parameter
+   *    - user_id: path parameter
+   *    - banned_by: authenticated user's ID from session
+   *    - expires_at: from request body (optional, null for permanent)
+   *    - created_at: current timestamp
+   * 6. Return the created ban record with full details
+   * 7. Handle unique constraint violation gracefully with appropriate error message
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":userId")
+  public async ban(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformCommunityBan.ICreate,
+  ): Promise<IRedditPlatformCommunityBan> {
+    try {
+      return await postRedditPlatformMemberCommunitiesCommunityIdBansUserId({
+        member,
+        communityId,
+        userId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a ban from a user in a community, restoring their posting and commenting privileges.
+   *
+   * This operation soft-deletes the ban record by setting the deleted_at timestamp, effectively unbanning the user. The user regains their ability to create posts and comments in the community, though existing posts and comments remain untouched.
+   *
+   * Only community owners and moderators have permission to unban users. Regular subscribers cannot unban users even if they were previously banned. The unban action is logged in the moderator history for audit purposes.
+   *
+   * The ban record remains in the database with deleted_at set, preserving historical records of who was banned, by whom, and when the ban was issued. This maintains transparency and accountability for moderator actions.
+   *
+   * @param connection
+   * @param communityId The UUID of the community from which to unban the user
+   * @param userId The UUID of the user to unban from the community
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Perform the following steps to unban a user from a community:
+   *
+   * 1. **Authorization Check**:
+   *    - Verify the requesting user is authenticated (has valid JWT token)
+   *    - Check if user is the owner or a moderator of the community
+   *    - Query reddit_platform_community_moderators to verify moderator role if not owner
+   *    - Return 403 Forbidden if user lacks authority
+   *
+   * 2. **Ban Record Lookup**:
+   *    - Query reddit_platform_community_bans table for record where:
+   *      - community_id = {communityId}
+   *      - user_id = {userId}
+   *      - deleted_at IS NULL (active ban)
+   *    - Return 404 Not Found if no active ban record exists
+   *
+   * 3. **Soft Delete Ban Record**:
+   *    - Update the ban record by setting deleted_at = CURRENT_TIMESTAMP
+   *    - This soft deletes the ban without removing the record
+   *    - Preserves historical ban information (ban issuer, ban date, expiry)
+   *
+   * 4. **Audit Logging**:
+   *    - Create record in reddit_platform_moderator_histories:
+   *      - action: 'unban'
+   *      - community_id: {communityId}
+   *      - user_id: {userId}
+   *      - performed_by: current user ID
+   *      - performed_at: CURRENT_TIMESTAMP
+   *
+   * 5. **Return Response**:
+   *    - Return 204 No Content on success
+   *
+   * **Error Handling**:
+   * - 401 Unauthorized: User not authenticated
+   * - 403 Forbidden: User is not owner or moderator
+   * - 404 Not Found: No active ban record for this user in this community
+   * - 404 Not Found: Community does not exist
+   * - 400 Bad Request: Invalid UUID format for communityId or userId
+   *
+   * **Performance Considerations**:
+   * - Indexes on (community_id, deleted_at) and (user_id, deleted_at) enable fast lookups
+   * - Moderate permission check requires query to community_moderators table
+   * - Soft delete is faster than hard delete as it doesn't cascade
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":userId")
+  public async eraseByCommunityidAndUserid(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("userId")
+    userId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteRedditPlatformMemberCommunitiesCommunityIdBansUserId({
+        member,
+        communityId,
+        userId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific community ban record.
+   *
+   * This operation allows community moderators and owners to view comprehensive ban details, including which user was banned, who issued the ban, when it was issued, and whether it has an expiration date. The response includes the banned user's profile information and the full ban record status.
+   *
+   * The ban record can be either active (deleted_at is null and expires_at is in the future or null) or inactive (deleted_at is set indicating the user was unbanned). This information is used for moderation audit trails and to verify ban status when processing community actions.
+   *
+   * Only users with moderator or owner privileges for the specified community can access this information. Regular community members and guests cannot view ban records to protect user privacy and prevent abuse of moderation data.
+   *
+   * @param connection
+   * @param communityId UUID of the community where the ban was issued
+   * @param banId UUID of the ban record to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Retrieve a specific community ban record by its UUID identifier.
+   *
+   * Implementation steps:
+   * 1. Verify the requesting user has moderator or owner role in the specified community (check reddit_platform_community_moderators or owner relationship)
+   * 2. Query the reddit_platform_community_bans table for the ban record with matching community_id and ban id
+   * 3. Verify the ban record exists and check its active status (deleted_at is null)
+   * 4. Return the ban record with all relevant fields: id, user_id, banned_by, community_id, created_at, expires_at, deleted_at
+   * 5. If user lacks moderation privileges, return 403 Forbidden
+   * 6. If ban record not found, return 404 Not Found
+   * 7. The ban record should include:
+   *    - id: UUID of the ban record
+   *    - community_id: UUID of the community where ban applies
+   *    - user_id: UUID of the banned user
+   *    - banned_by: UUID of the moderator/admin who issued the ban
+   *    - created_at: Timestamp when ban was issued
+   *    - updated_at: Timestamp when ban was last updated
+   *    - deleted_at: Timestamp when ban was unbanned (null if active)
+   *    - expires_at: Optional expiration timestamp (null for permanent bans)
+   * 8. Include user reference data (username, display_name) from reddit_platform_members for the banned user
+   * 9. Include moderator reference data for banned_by
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":banId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("banId")
+    banId: string & tags.Format<"uuid">,
+  ): Promise<IRedditPlatformCommunityBan> {
+    try {
+      return await getRedditPlatformMemberCommunitiesCommunityIdBansBanId({
+        member,
+        communityId,
+        banId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unban a user from a Reddit community, restoring their ability to create posts and comments.
+   *
+   * This moderation operation allows community owners and moderators to remove a ban from a specific user. The system will update the user's subscription state from 'banned' to 'unsubscribed', allowing them to view community content and participate in discussions again.
+   *
+   * Only users with moderator or owner privileges on the community can perform this operation. The system maintains an audit trail of all ban and unban actions, including timestamps and the moderator who performed the action.
+   *
+   * The unban operation performs a soft delete on the ban record by setting the deleted_at field to the current timestamp. This preserves the historical record while marking the ban as no longer active.
+   *
+   * @param connection
+   * @param communityId Identifier of the community from which to unban the user
+   * @param banId Identifier of the specific ban record to unban
+   * @param body Unban request details including reason
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Retrieve the ban record by banId and verify it belongs to the specified communityId. Validate that the requesting user has moderator or owner privileges on the community. Update the ban record to mark it as unbanned, recording the unban timestamp, the user who performed the unban, and an optional reason. Change the user's subscription state in the community from 'banned' to 'unsubscribed'. Remove the user from all moderator roles if they had any in this community. Update the community's moderator history log with the unban action. Return the updated ban record with unban metadata (unbanAt, unbannedBy, unbanReason).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":banId")
+  public async putByCommunityidAndBanid(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("banId")
+    banId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformCommunityBan.IUnban,
+  ): Promise<IRedditPlatformCommunityBan> {
+    try {
+      return await putRedditPlatformMemberCommunitiesCommunityIdBansBanId({
+        member,
+        communityId,
+        banId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a ban from a community, restoring the user's ability to post and comment.
+   *
+   * This endpoint performs a soft delete on the ban record, which sets the deleted_at timestamp. Once unbanned, the user can again create posts and write comments in the community. The ban history is preserved for audit purposes.
+   *
+   * Authorization: Only community owners and moderators can unban users. The system validates that the requester has moderator or owner privileges for the specified community.
+   *
+   * The operation updates the ban status and removes restrictions on the user's posting and commenting capabilities in this community. The ban record remains in the database with deleted_at set, maintaining a complete audit trail of moderation actions.
+   *
+   * @param connection
+   * @param communityId The unique identifier of the community
+   * @param banId The unique identifier of the ban record to remove
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Perform soft delete on the ban record to unban the user.
+   *
+   * 1. Verify the user is authenticated (member actor)
+   * 2. Verify the requester has owner or moderator privileges for the specified community
+   *    - Check community.owner_id matches the user_id
+   *    - OR check that user exists in reddit_platform_community_moderators table for this community_id
+   * 3. Verify the ban record exists and is currently active (deleted_at is null)
+   *    - Query reddit_platform_community_bans where id = banId and community_id = communityId
+   * 4. Soft delete the ban record by setting deleted_at to current timestamp
+   *    - UPDATE reddit_platform_community_bans SET deleted_at = NOW() WHERE id = banId
+   * 5. Return the updated ban record with deleted_at timestamp
+   *
+   * Edge cases:
+   * - Ban record not found: return 404
+   * - Ban already deleted: return 404 (soft-delete already performed)
+   * - Unauthorized: return 403
+   * - User not banned in this community: return 404
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":banId")
-  public async erase(
+  public async eraseByCommunityidAndBanid(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("communityId")

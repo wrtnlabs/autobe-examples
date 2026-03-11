@@ -14,7 +14,10 @@ export async function authorize_member_refresh(
     body: IDiscussionBoardMember.IRefresh;
   },
 ): Promise<IDiscussionBoardMember.IAuthorized> {
-  return await api.functional.discussionBoard.auth.member.refresh(connection, {
-    body: props.body,
-  });
+  return await api.functional.discussionBoard.auth.member.refresh.refreshToken(
+    connection,
+    {
+      body: props.body,
+    },
+  );
 }

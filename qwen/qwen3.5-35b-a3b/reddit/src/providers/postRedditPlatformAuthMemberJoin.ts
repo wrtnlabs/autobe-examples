@@ -1,7 +1,13 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformComment";
+import { IRedditPlatformCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommentVote";
 import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
 import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import { IRedditPlatformMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMemberSession";
+import { IRedditPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPost";
+import { IRedditPlatformPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPostVote";
+import { IRedditPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,37 +16,47 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditPlatformMemberCollector } from "../collectors/RedditPlatformMemberCollector";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditPlatformAuthMemberJoin(props: {
+  ip: string;
   body: IRedditPlatformMember.IJoin;
 }): Promise<IRedditPlatformMember.IAuthorized> {
-  // 1. Check for duplicate email
-  const existingByEmail =
-    await MyGlobal.prisma.reddit_platform_members.findFirst({
+  // 1. Check email uniqueness
+  const existingEmail =
+    await MyGlobal.prisma.reddit_platform_members.findUnique({
       where: { email: props.body.email },
     });
-  if (existingByEmail) {
+  if (existingEmail) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Check for duplicate username
-  const existingByUsername =
-    await MyGlobal.prisma.reddit_platform_members.findFirst({
+  // 2. Check username uniqueness
+  const existingUsername =
+    await MyGlobal.prisma.reddit_platform_members.findUnique({
       where: { username: props.body.username },
     });
-  if (existingByUsername) {
+  if (existingUsername) {
     throw new HttpException("Username already taken", 409);
   }
-  // 3. Create member record (Collector handles password hashing)
+  // 3. Create member actor
   const member = await MyGlobal.prisma.reddit_platform_members.create({
-    data: await RedditPlatformMemberCollector.collect({
-      body: typia.assert<IRedditPlatformMember.ICreate>(props.body),
-    }),
+    data: {
+      id: v4(),
+      email: props.body.email,
+      username: props.body.username,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: props.body.displayName ?? props.body.username,
+      bio: props.body.bio,
+      avatar_url: props.body.avatarUrl,
+      karma_score: 0,
+      is_active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+    },
     select: {
       id: true,
-      email: true,
       username: true,
       display_name: true,
       bio: true,
@@ -50,67 +66,87 @@ export async function postRedditPlatformAuthMemberJoin(props: {
       created_at: true,
       updated_at: true,
       deleted_at: true,
-    } satisfies Prisma.reddit_platform_membersSelect,
+    },
   });
   // 4. Create session record
-  const accessExpiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.reddit_platform_member_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      member: { connect: { id: member.id } },
-      ip: props.body.ip ?? "0.0.0.0",
+      id: v4(),
+      member_id: member.id,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: toISOStringSafe(new Date()),
-      expired_at: accessExpiresAt,
-    } satisfies Prisma.reddit_platform_member_sessionsCreateInput,
+      created_at: new Date(),
+      expired_at: accessExpires,
+    },
+    select: {
+      id: true,
+      member_id: true,
+      ip: true,
+      href: true,
+      referrer: true,
+      created_at: true,
+      expired_at: true,
+    },
   });
   // 5. Generate JWT tokens
-  const tokenPayload = {
-    type: "member" as const,
-    id: member.id,
-    session_id: session.id,
-    created_at: toISOStringSafe(new Date()),
-  };
-  const access: string = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshPayload = {
-    ...tokenPayload,
-    tokenType: "refresh" as const,
-  };
-  const refresh: string = jwt.sign(
-    refreshPayload,
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
   const token: IAuthorizationToken = {
-    access,
-    refresh,
-    expired_at: accessExpiresAt,
-    refreshable_until: refreshExpiresAt,
+    access: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
   // 6. Build and return IAuthorized response
-  return {
+  const authorizedMember: IRedditPlatformMember.IAuthorized = {
     id: member.id,
-    email: member.email,
     username: member.username,
-    displayName: member.display_name,
-    bio: member.bio,
-    avatarUrl: member.avatar_url ?? null,
-    karmaScore: member.karma_score,
-    isActive: member.is_active,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    deletedAt: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
-    moderatorOfCommunities: [],
-    bannedUsers: [],
+    display_name: member.display_name,
+    bio: member.bio ?? null,
+    avatar_url: member.avatar_url ?? null,
+    karma_score: member.karma_score,
+    is_active: member.is_active,
+    created_at: member.created_at.toISOString(),
+    updated_at: member.updated_at.toISOString(),
+    deleted_at: member.deleted_at?.toISOString() ?? null,
+    sessions: [],
+    posts: [],
+    comments: [],
+    postVotes: [],
+    commentVotes: [],
+    reports: [],
+    access: token.access,
+    refresh: token.refresh,
+    expired_at: token.expired_at,
+    user: {
+      id: member.id,
+      username: member.username,
+      display_name: member.display_name,
+      karma_score: member.karma_score,
+      is_active: member.is_active,
+      created_at: member.created_at.toISOString(),
+    },
     token,
-  } satisfies IRedditPlatformMember.IAuthorized;
+  };
+  return authorizedMember;
 }

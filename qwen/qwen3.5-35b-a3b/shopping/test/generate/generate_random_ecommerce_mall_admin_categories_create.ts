@@ -12,7 +12,7 @@ import { prepare_random_ecommerce_mall_category } from "../prepare/prepare_rando
 export async function generate_random_ecommerce_mall_admin_categories_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEcommerceMallCategory.ICreate>;
+    body?: DeepPartial<IEcommerceMallCategory.ICreate> | undefined;
   },
 ): Promise<IEcommerceMallCategory> {
   const prepared: IEcommerceMallCategory.ICreate =

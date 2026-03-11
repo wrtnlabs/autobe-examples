@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import type { IShoppingMallSellerSessions } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSessions";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -12,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_seller_refresh(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallSeller.IRefresh;
+    body: IEcommerceMallSeller.IRefresh;
   },
-): Promise<IShoppingMallSeller.IAuthorized> {
-  return await api.functional.shoppingMall.auth.seller.refresh(connection, {
+): Promise<IEcommerceMallSeller.IAuthorized> {
+  return await api.functional.ecommerceMall.auth.seller.refresh(connection, {
     body: props.body,
   });
 }

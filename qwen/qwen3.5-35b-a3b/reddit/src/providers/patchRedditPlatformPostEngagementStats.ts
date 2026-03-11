@@ -17,94 +17,107 @@ import { RedditPlatformPostEngagementStatAtSummaryTransformer } from "../transfo
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function patchRedditPlatformPostEngagementStats(props: {
   body: IRedditPlatformPostEngagementStat.IRequest;
 }): Promise<IPageIRedditPlatformPostEngagementStat.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? props.body.pageSize ?? 100;
   const skip = (page - 1) * limit;
-  const deletedAtCondition = (() => {
-    if (props.body.deleted_at_is_null === true) {
-      return { deleted_at: null };
-    }
-    if (props.body.deleted_at_is_null === false) {
-      return { deleted_at: { not: null } };
-    }
-    return undefined;
-  })();
+  // Build WHERE clause with soft delete exclusion and optional filters
   const whereInput: Prisma.reddit_platform_post_engagement_statsWhereInput = {
-    ...(deletedAtCondition !== undefined && deletedAtCondition),
+    deleted_at: null,
     ...(props.body.post_id !== undefined && {
       post_id: props.body.post_id,
     }),
-    ...(props.body.min_view_count !== undefined && {
+    ...(props.body.postIds !== undefined &&
+      props.body.postIds.length > 0 && {
+        post_id: {
+          in: props.body.postIds,
+        },
+      }),
+    ...(props.body.minViewCount !== undefined && {
       view_count: {
-        gte: props.body.min_view_count,
+        gte: props.body.minViewCount,
       },
     }),
-    ...(props.body.max_view_count !== undefined && {
+    ...(props.body.maxViewCount !== undefined && {
       view_count: {
-        lte: props.body.max_view_count,
+        lte: props.body.maxViewCount,
       },
     }),
-    ...(props.body.min_upvote_count !== undefined && {
+    ...(props.body.minUpvoteCount !== undefined && {
       upvote_count: {
-        gte: props.body.min_upvote_count,
+        gte: props.body.minUpvoteCount,
       },
     }),
-    ...(props.body.max_upvote_count !== undefined && {
+    ...(props.body.maxUpvoteCount !== undefined && {
       upvote_count: {
-        lte: props.body.max_upvote_count,
+        lte: props.body.maxUpvoteCount,
       },
     }),
-    ...(props.body.min_downvote_count !== undefined && {
+    ...(props.body.minDownvoteCount !== undefined && {
       downvote_count: {
-        gte: props.body.min_downvote_count,
+        gte: props.body.minDownvoteCount,
       },
     }),
-    ...(props.body.max_downvote_count !== undefined && {
+    ...(props.body.maxDownvoteCount !== undefined && {
       downvote_count: {
-        lte: props.body.max_downvote_count,
+        lte: props.body.maxDownvoteCount,
       },
     }),
-    ...(props.body.last_viewed_at_after !== undefined && {
+    ...(props.body.dateFrom !== undefined && {
       last_viewed_at: {
-        gt: props.body.last_viewed_at_after,
+        gte: props.body.dateFrom,
       },
     }),
-    ...(props.body.last_viewed_at_before !== undefined && {
+    ...(props.body.dateTo !== undefined && {
       last_viewed_at: {
-        lt: props.body.last_viewed_at_before,
+        lte: props.body.dateTo,
       },
     }),
   };
-  const sortField = props.body.sort ?? "last_viewed_at";
-  const sortOrder = props.body.order ?? "desc";
-  const orderByInput = {
-    [sortField]: sortOrder,
-  } satisfies Prisma.reddit_platform_post_engagement_statsOrderByWithRelationInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.reddit_platform_post_engagement_stats.findMany({
+  // Build ORDER BY clause
+  const sortByField:
+    | "view_count"
+    | "upvote_count"
+    | "downvote_count"
+    | "last_viewed_at"
+    | "created_at" = props.body.sortBy ?? "last_viewed_at";
+  const sortOrder: "asc" | "desc" = props.body.sortOrder ?? "desc";
+  const orderByInput: Prisma.reddit_platform_post_engagement_statsOrderByWithRelationInput[] =
+    [
+      {
+        [sortByField]: sortOrder,
+      },
+    ] satisfies Prisma.reddit_platform_post_engagement_statsOrderByWithRelationInput[];
+  // Get paginated data
+  const data =
+    await MyGlobal.prisma.reddit_platform_post_engagement_stats.findMany({
       where: whereInput,
-      orderBy: orderByInput,
       skip,
       take: limit,
+      orderBy: orderByInput,
       ...RedditPlatformPostEngagementStatAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.reddit_platform_post_engagement_stats.count({
+    });
+  // Get total count
+  const total =
+    await MyGlobal.prisma.reddit_platform_post_engagement_stats.count({
       where: whereInput,
-    }),
-  ]);
+    });
+  // Transform and return paginated result
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    RedditPlatformPostEngagementStatAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditPlatformPostEngagementStatAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total > 0 ? Math.ceil(total / limit) : 0,
     } satisfies IPage.IPagination,
   };
 }

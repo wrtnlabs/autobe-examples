@@ -11,23 +11,23 @@ import { AdminPayload } from "../decorators/payload/AdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function deleteDiscussionBoardAdminTagsTagId(props: {
   admin: AdminPayload;
   tagId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify tag exists - will throw 404 if not found
-  await MyGlobal.prisma.discussion_board_tags.findUniqueOrThrow({
+  const tag = await MyGlobal.prisma.discussion_board_tags.findUnique({
     where: { id: props.tagId },
   });
-  // Soft delete by setting deleted_at timestamp
-  // Database cascade will automatically remove discussion_board_article_tags
+  if (tag === null) {
+    throw new HttpException("Tag not found", 404);
+  }
+  if (tag.deleted_at !== null) {
+    throw new HttpException("Tag already deleted", 404);
+  }
   await MyGlobal.prisma.discussion_board_tags.update({
     where: { id: props.tagId },
     data: {
       deleted_at: new Date(),
-      updated_at: new Date(),
     },
   });
 }

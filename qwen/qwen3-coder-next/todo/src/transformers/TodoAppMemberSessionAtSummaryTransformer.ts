@@ -7,31 +7,41 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace TodoAppMemberSessionAtSummaryTransformer {
-  export type Payload = Prisma.todo_app_member_sessionsGetPayload<
+  export type Payload = Prisma.todo_app_membersGetPayload<
     ReturnType<typeof select>
   >;
   export function select() {
     return {
       select: {
         id: true,
-        member: {
+        email: true,
+        password_hash: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        profile: {
+          select: {
+            id: true,
+            display_name: true,
+            created_at: true,
+            updated_at: true,
+          },
+        } satisfies Prisma.todo_app_profilesFindManyArgs,
+        sessions: {
           select: {
             id: true,
           },
-        },
-        last_used_at: true,
-        created_at: true,
+        } satisfies Prisma.todo_app_member_sessionsFindManyArgs,
       },
-    } satisfies Prisma.todo_app_member_sessionsFindManyArgs;
+    } satisfies Prisma.todo_app_membersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<ITodoAppMemberSession.ISummary> {
     return {
       id: input.id,
-      todo_app_member_id: input.member.id,
-      last_used_at: input.last_used_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
+      email: input.email,
+      displayName: input.profile.display_name,
     };
   }
 }

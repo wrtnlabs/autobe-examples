@@ -13,32 +13,27 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteRedditLikeMemberPostsPostId(props: {
   member: MemberPayload;
-  postId: string & tags.Format<"uuid">;
+  postId: string;
 }): Promise<void> {
-  const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-    where: { id: props.postId },
+  const postIdUUID = props.postId as string & tags.Format<"uuid">;
+  // Check if post exists and belongs to member
+  const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
+    where: {
+      id: postIdUUID,
+    },
     select: {
       id: true,
       author_id: true,
       community_id: true,
-      deleted_at: true,
     },
   });
-  if (post.deleted_at !== null) {
-    throw new HttpException("Post already deleted", 409);
+  if (!post || post.author_id !== props.member.id) {
+    throw new HttpException("Post not found or access denied", 404);
   }
-  const isAuthor = post.author_id === props.member.id;
-  const isModerator =
-    (await MyGlobal.prisma.reddit_like_moderator_roles.findFirst({
-      where: {
-        user_id: props.member.id,
-        community_id: post.community_id,
-      },
-    })) !== null;
-  if (!isAuthor && !isModerator) {
-    throw new HttpException("Forbidden", 403);
-  }
+  // Perform cascade delete using Prisma's relation cascade
   await MyGlobal.prisma.reddit_like_posts.delete({
-    where: { id: props.postId },
+    where: {
+      id: postIdUUID,
+    },
   });
 }

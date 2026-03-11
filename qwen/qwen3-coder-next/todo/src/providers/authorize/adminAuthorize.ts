@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
@@ -20,7 +20,7 @@ export async function adminAuthorize(request: {
   });
 
   if (admin === null) {
-    throw new UnauthorizedException("You're not enrolled");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

@@ -3,7 +3,6 @@ import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import type { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -16,7 +15,7 @@ import { prepare_random_discussion_board_article } from "../prepare/prepare_rand
 export async function generate_random_discussion_board_member_articles_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardArticle.ICreate> | undefined;
+    body?: DeepPartial<IDiscussionBoardArticle.ICreate>;
   },
 ): Promise<IDiscussionBoardArticle> {
   const prepared: IDiscussionBoardArticle.ICreate =

@@ -15,19 +15,38 @@ export async function deleteRedditPlatformMemberSubscriptionsSubscriptionId(prop
   member: MemberPayload;
   subscriptionId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Find the subscription and verify it exists and is not already deleted
+  await MyGlobal.prisma.reddit_platform_community_subscriptions.findUniqueOrThrow(
+    {
+      where: {
+        id: props.subscriptionId,
+        deleted_at: null,
+      },
+    },
+  );
+  // Verify ownership - only the subscription owner can delete it
   const subscription =
     await MyGlobal.prisma.reddit_platform_community_subscriptions.findFirst({
       where: {
         id: props.subscriptionId,
-        reddit_platform_member_id: props.member.id,
         deleted_at: null,
       },
+      select: {
+        reddit_platform_member_id: true,
+      },
     });
-  if (subscription === null) {
-    throw new HttpException("Subscription not found", 404);
+  if (
+    subscription === null ||
+    subscription.reddit_platform_member_id !== props.member.id
+  ) {
+    throw new HttpException("Forbidden", 403);
   }
+  // Perform soft delete by setting deleted_at timestamp
   await MyGlobal.prisma.reddit_platform_community_subscriptions.update({
     where: { id: props.subscriptionId },
-    data: { deleted_at: new Date() },
+    data: {
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
   });
 }

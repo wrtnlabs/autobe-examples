@@ -10,37 +10,32 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticle.ICreate;
-    discussionBoardUsers: IEntity; // from authorized actor
-    discussionBoardUserSessions: IEntity; // from authorized session
+    discussionBoardMembers: IEntity;
+    discussionBoardMemberSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       // Scalar fields
       id,
       title: props.body.title,
-      content: props.body.content,
-      status: "draft",
+      body: props.body.body,
+      status: "published",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relations
+      author: { connect: { id: props.discussionBoardMembers.id } },
       section: { connect: { id: props.body.discussion_board_section_id } },
-      author: { connect: { id: props.discussionBoardUsers.id } },
-      // Has relations (empty for creation)
-      auditActions: undefined,
-      snapshots: undefined,
-      files: undefined,
-      images: undefined,
+      // HasMany relations - not applicable for creation
       tags: undefined,
-      viewStat: undefined,
-      favoritedBies: undefined,
-      drafts: undefined,
-      viewStatEvents: undefined,
+      snapshots: undefined,
+      viewStats: undefined,
+      favorites: undefined,
+      reactions: undefined,
+      metadatum: undefined,
       comments: undefined,
-      commentPaginationSetting: undefined,
-      moderationLogs: undefined,
-      moderationHistories: undefined,
-      contentFlags: undefined,
+      commentStatistic: undefined,
+      attachments: undefined,
     } satisfies Prisma.discussion_board_articlesCreateInput;
   }
 }

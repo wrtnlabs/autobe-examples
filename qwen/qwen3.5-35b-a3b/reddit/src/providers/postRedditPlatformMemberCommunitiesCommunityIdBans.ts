@@ -10,7 +10,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditPlatformCommunityBanCollector } from "../collectors/RedditPlatformCommunityBanCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditPlatformCommunityBanTransformer } from "../transformers/RedditPlatformCommunityBanTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -21,71 +20,55 @@ export async function postRedditPlatformMemberCommunitiesCommunityIdBans(props: 
   communityId: string & tags.Format<"uuid">;
   body: IRedditPlatformCommunityBan.ICreate;
 }): Promise<IRedditPlatformCommunityBan> {
-  // Step 1: Verify community exists and is not deleted
+  // Check community exists and member is authorized (owner or moderator)
   const community =
     await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
-      where: {
-        id: props.communityId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        owner_id: true,
+      where: { id: props.communityId },
+      include: {
+        owner: { select: { id: true } },
+        moderators: { select: { id: true } },
       },
     });
-  // Step 2: Check if the current member is the owner or has moderator privileges
-  const isOwner = community.owner_id === props.member.id;
-  if (!isOwner) {
-    // Check if member is a moderator of this community
-    const moderator =
-      await MyGlobal.prisma.reddit_platform_community_moderators.findFirst({
-        where: {
-          community_id: props.communityId,
-          user_id: props.member.id,
-        },
-      });
-    if (moderator === null) {
-      throw new HttpException(
-        "You do not have permission to ban users in this community",
-        403,
-      );
-    }
+  const isOwner = community.owner.id === props.member.id;
+  const isModerator = community.moderators.some(
+    (m) => m.id === props.member.id,
+  );
+  if (!isOwner && !isModerator) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Verify target user exists
-  const targetUser = await MyGlobal.prisma.reddit_platform_members.findFirst({
-    where: {
-      id: props.body.user_id,
-      deleted_at: null,
-    },
-  });
-  if (targetUser === null) {
-    throw new HttpException("Target user not found", 404);
+  // Check target user exists and is not self
+  const targetUser =
+    await MyGlobal.prisma.reddit_platform_members.findUniqueOrThrow({
+      where: { id: props.body.userId },
+    });
+  if (targetUser.id === props.member.id) {
+    throw new HttpException("Cannot ban yourself", 400);
   }
-  // Step 4: Check for existing active ban to prevent duplicates
+  // Check for existing active ban (unique constraint: community_id + user_id)
   const existingBan =
     await MyGlobal.prisma.reddit_platform_community_bans.findFirst({
       where: {
         community_id: props.communityId,
-        user_id: props.body.user_id,
+        user_id: props.body.userId,
         deleted_at: null,
       },
     });
   if (existingBan !== null) {
     throw new HttpException("User is already banned from this community", 409);
   }
-  // Step 5: Create the ban record using collector
+  // Create ban record
   const created = await MyGlobal.prisma.reddit_platform_community_bans.create({
-    data: await RedditPlatformCommunityBanCollector.collect({
-      body: props.body,
-      redditPlatformCommunities: {
-        id: props.communityId,
-      },
-      redditPlatformMembers: {
-        id: props.member.id,
-      },
-    }),
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      community: { connect: { id: props.communityId } },
+      bannedUser: { connect: { id: props.body.userId } },
+      bannedBy: { connect: { id: props.member.id } },
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      expires_at: props.body.expiresAt ?? null,
+    },
     ...RedditPlatformCommunityBanTransformer.select(),
   });
-  // Step 6: Return transformed response
   return await RedditPlatformCommunityBanTransformer.transform(created);
 }

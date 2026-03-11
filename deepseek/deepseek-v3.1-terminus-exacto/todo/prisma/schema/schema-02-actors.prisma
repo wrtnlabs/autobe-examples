@@ -1,64 +1,52 @@
-/// Registered user accounts with email/password authentication credentials
-/// and profile information. This table serves as the primary actor entity
-/// for authenticated users who manage their personal todo lists. Users can
-/// create, edit, complete, and delete todos while maintaining complete
-/// privacy and data isolation from other users. Each user has a profile with
-/// display name and authentication credentials for secure login and account
-/// management.
+/// Temporary guest accounts for unauthenticated users during registration
+/// and login flows.
 ///
-/// The table supports user registration, login, password changes, and
-/// account deletion workflows. It maintains temporal tracking for creation,
-/// updates, and soft deletion capabilities. All user data is completely
-/// isolated, ensuring privacy guarantees as specified in the requirements.
+/// This table stores guest user identities that are created during the
+/// authentication process. Guest accounts serve as temporary placeholders
+/// for users who are in the process of registering or logging in. Each guest
+/// account has email authentication credentials and can establish sessions
+/// for temporary access.
+///
+/// Guest accounts are typically short-lived and may be automatically cleaned
+/// up after successful registration or login completion. They provide a way
+/// to track unauthenticated user activity while maintaining proper
+/// authentication flow separation.
+///
+/// Relationships:
+/// - Has many {@link multi_user_todo_guest_sessions} for temporary access
+/// - References {@link multi_user_todo_audit_logs} for security tracking
+/// - May be converted to {@link multi_user_todo_members} upon successful
+/// registration
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_users {
+model multi_user_todo_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User's email address used for authentication and account identification.
-  /// Must be unique across all users.
+  /// Unique email address for guest authentication and identification.
   email String
   
-  /// Securely hashed password for user authentication. Stored using
-  /// industry-standard hashing algorithms.
+  /// Hashed password for guest account security.
   password_hash String
   
-  /// User's display name shown throughout the application for personalization
-  /// and identification.
-  display_name String
-  
-  /// Timestamp when the user account was created.
+  /// Timestamp when the guest account was created.
   created_at DateTime
   
-  /// Timestamp when the user account was last updated.
+  /// Timestamp when the guest account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft deleted. Null indicates active
-  /// account.
+  /// Timestamp when the guest account was soft-deleted, null if active.
   deleted_at DateTime?
   
   //----
   // HAS RELATIONS
   //   - format: (propertyKey targetModel)
   //----
-  sessions todo_app_user_sessions[]
-  passwordResets todo_app_user_password_resets[]
-  auditLogs todo_app_audit_logs[]
-  errorLogs todo_app_error_logs[]
-  backgroundJobs todo_app_background_jobs[]
-  systemNotifications todo_app_system_notifications[]
-  errorLogDetailUserContexts todo_app_error_log_detail_user_contexts[]
-  todos todo_app_todos[]
-  todoHistories todo_app_todo_histories[]
-  trashItems todo_app_trash_items[]
-  trashRestorations todo_app_trash_restorations[]
-  permanentDeletions todo_app_permanent_deletions[]
-  trashSetting todo_app_trash_settings?
+  sessions multi_user_todo_guest_sessions[]
   
   //----
   // INDEXES
@@ -68,135 +56,441 @@ model todo_app_users {
   @@index([updated_at])
 }
 
-/// JWT session tokens for user authentication with access and refresh token
-/// support. Each session tracks the user's login context including IP
-/// address, browser information, and connection metadata for security
-/// auditing purposes.
+/// Temporary session tokens for guest access during authentication workflows.
 ///
-/// Sessions are created during user login and managed through authentication
-/// flows. They contain both access and refresh tokens to support secure
-/// authentication with token rotation. The expiration tracking ensures
-/// sessions are automatically invalidated after their designated lifetime
-/// for security.
+/// This table stores session information for guest users who are in the
+/// process of registration or login. Each session contains connection
+/// metadata for auditing purposes and has an expiration time to ensure
+/// temporary access. Sessions are managed through authentication flows and
+/// provide temporary access tokens for guest operations.
 ///
-/// This table maintains a complete audit trail of user login activity,
-/// supporting security monitoring and compliance requirements. Sessions are
-/// automatically cleaned up based on expiration policies to maintain
-/// database performance and security.
-///
-/// {@link todo_app_users.id}
+/// Guest sessions are distinct from member sessions as they have limited
+/// privileges and shorter lifespans, typically used during the transition
+/// from unauthenticated to authenticated state. {@link
+/// multi_user_todo_guests.id}
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_sessions {
+model multi_user_todo_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Authenticated user's session reference. {@link todo_app_users.id}
-  todo_app_user_id String
+  /// Guest account associated with this session. {@link
+  /// multi_user_todo_guests.id}
+  multi_user_todo_guest_id String
   
-  /// JWT access token for authenticated API requests. Contains user identity
-  /// and permissions encoded as a secure token.
-  access_token String
-  
-  /// JWT refresh token for obtaining new access tokens without requiring
-  /// re-authentication. Used for session longevity.
-  refresh_token String
-  
-  /// IP address of the client connection where the session was created. Used
-  /// for security auditing and geographic tracking.
+  /// IP address of the client connection for security auditing.
   ip String
   
-  /// Full URL of the page where the session was initiated. Provides context
-  /// for the login event.
+  /// Current page URL where the session was created for context tracking.
   href String
   
-  /// HTTP referrer header value indicating the source page that directed to
-  /// the login. Useful for traffic source analysis.
+  /// Referrer URL indicating where the user came from for analytics.
   referrer String
   
-  /// Timestamp when the session was created during user login. Used for
-  /// session lifetime calculation and audit trail.
+  /// Timestamp when the session was created for audit purposes.
   created_at DateTime
   
-  /// Timestamp when the session expires and becomes invalid. Ensures automatic
-  /// session cleanup for security.
+  /// Timestamp when the session expires for security enforcement.
   expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // HAS RELATIONS
-  //   - format: (propertyKey targetModel)
-  //----
-  errorLogs todo_app_error_logs[]
-  errorLogDetailUserContexts todo_app_error_log_detail_user_contexts[]
+  guest multi_user_todo_guests @relation(fields: [multi_user_todo_guest_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@index([todo_app_user_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_guest_id, created_at], map: "multi_user_todo_guest_sessions_multi_user_todo_guest_i_a66d6799")
 }
 
-/// Stores password reset tokens with expiration timestamps for secure
-/// password recovery workflow. Each reset request generates a unique token
-/// that can be used once to reset a user's password within a limited time
-/// window for security purposes. Users can have multiple reset requests over
-/// time, but only active (unexpired, unused) tokens are valid for password
-/// reset operations.
+/// Registered user accounts with email/password authentication credentials.
+///
+/// This table stores the core identity and authentication information for
+/// registered users of the multi-user Todo application. Each member
+/// represents a unique user who can create, manage, and organize their
+/// private todo lists. The table includes authentication credentials (email
+/// and password hash) along with user profile information.
+///
+/// Users can manage their account settings, including password changes and
+/// account deletion. All operations performed by members are tracked through
+/// session tables and audit logs. Members have complete privacy isolation -
+/// they can only access their own todos and cannot view other users' data.
+///
+/// {@link multi_user_todo_member_sessions.id} tracks authentication sessions
+/// for this user.
+/// {@link multi_user_todo_member_password_resets.id} handles password
+/// recovery workflows.
+/// {@link multi_user_todo_todos.id} contains all todos owned by this user.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model todo_app_user_password_resets {
+model multi_user_todo_members {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// User who requested the password reset. {@link todo_app_users.id}
-  todo_app_user_id String
+  /// Unique email address used for authentication and account identification.
+  email String
   
-  /// Unique cryptographic token for password reset verification. Must be
-  /// cryptographically secure and globally unique.
-  reset_token String
+  /// Hashed password for secure authentication using industry-standard hashing
+  /// algorithms.
+  password_hash String
   
-  /// Timestamp when this reset token expires and becomes invalid for security
-  /// purposes.
-  expires_at DateTime
+  /// User's visible name displayed throughout the application interface.
+  display_name String
   
-  /// Timestamp when this reset token was successfully used to reset password.
-  /// Null indicates unused token.
-  used_at DateTime?
-  
-  /// Timestamp when the password reset request was created.
+  /// Timestamp when the user account was created.
   created_at DateTime
   
-  /// Timestamp when the password reset record was last updated.
+  /// Timestamp when the user account was last updated.
   updated_at DateTime
   
-  /// Timestamp when the password reset record was soft deleted for audit
-  /// purposes.
+  /// Timestamp when the user account was soft-deleted, allowing for account
+  /// recovery within retention period.
   deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions multi_user_todo_member_sessions[]
+  passwordResets multi_user_todo_member_password_resets[]
+  auditLogs multi_user_todo_audit_logs[]
+  todos multi_user_todo_todos[]
+  todoFilterSettings multi_user_todo_todo_filter_settings[]
+  todoViewStats multi_user_todo_todo_view_stats[]
+  todoSortingPreference multi_user_todo_todo_sorting_preferences?
+  editHistories multi_user_todo_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([display_name])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// support.
+///
+/// This table stores authentication sessions for registered members,
+/// tracking their login events and session metadata. Each session contains
+/// connection context including IP address, referrer information, and
+/// timestamps for session lifecycle management. Sessions are managed through
+/// authentication flows and provide the foundation for secure member access
+/// to the todo application.
+///
+/// The table maintains an audit trail of member login activity and supports
+/// JWT token management with proper expiration handling. Sessions are
+/// append-only records that capture authentication events for security
+/// monitoring and user activity tracking.
+///
+/// {@link multi_user_todo_members.id}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// JWT access token for member authentication.
+  access_token String
+  
+  /// JWT refresh token for session renewal.
+  refresh_token String
+  
+  /// IP address of the member's connection.
+  ip String
+  
+  /// Current URL where the session was created.
+  href String
+  
+  /// Referrer URL that directed the member to the application.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires.
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  errorLogs multi_user_todo_error_logs[]
   
   //----
   // INDEXES
   //----
-  @@unique([reset_token])
-  @@index([todo_app_user_id, expires_at])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_member_sessions_multi_user_todo_member_ae42118b")
+}
+
+/// Administrator accounts with email/password authentication and elevated
+/// privileges.
+///
+/// This table stores administrator identity information including
+/// authentication credentials and profile data. Administrators have elevated
+/// system access for management functions including user support, system
+/// configuration, and audit oversight.
+///
+/// Each administrator account is associated with session records in {@link
+/// multi_user_todo_admin_sessions} for authentication management and
+/// password reset tokens in {@link multi_user_todo_admin_password_resets}
+/// for account recovery.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's unique email address used for authentication.
+  email String
+  
+  /// Hashed password for administrator authentication.
+  password_hash String
+  
+  /// Administrator's display name for system identification.
+  display_name String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted, or null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions multi_user_todo_admin_sessions[]
+  passwordResets multi_user_todo_admin_password_resets[]
+  auditLogs multi_user_todo_audit_logs[]
+  maintenanceLogs multi_user_todo_system_maintenance_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh support.
+///
+/// This table manages administrator login sessions, storing authentication
+/// tokens and connection context for secure access control. Each session is
+/// tied to a specific administrator account and tracks login metadata
+/// including IP address, user agent, and expiration timestamps. Sessions
+/// support both access and refresh token functionality with proper
+/// expiration handling.
+///
+/// The table follows the standard session pattern with foreign key
+/// relationship to {@link multi_user_todo_admins} for administrator identity
+/// verification. Sessions are managed through authentication flows and
+/// provide audit trail capabilities for security monitoring.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link multi_user_todo_admins.id}.
+  multi_user_todo_admin_id String
+  
+  /// JWT access token for authentication.
+  access_token String
+  
+  /// JWT refresh token for token renewal.
+  refresh_token String
+  
+  /// IP address of the session connection.
+  ip String
+  
+  /// URL of the session initiation.
+  href String
+  
+  /// HTTP referrer header value.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin multi_user_todo_admins @relation(fields: [multi_user_todo_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  errorLogs multi_user_todo_error_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_admin_id, created_at], map: "multi_user_todo_admin_sessions_multi_user_todo_admin_i_3c96598f")
+}
+
+/// Password reset tokens with expiration for administrator account recovery.
+///
+/// This table stores temporary password reset tokens that allow
+/// administrators to securely reset their account passwords. Each token is
+/// valid for a limited time period and can only be used once. The tokens are
+/// generated during password reset requests and verified during the reset
+/// process.
+///
+/// Tokens are associated with specific administrator accounts and include
+/// security features like expiration tracking and usage status to prevent
+/// unauthorized access. The table maintains a complete audit trail of
+/// password reset attempts for security monitoring.
+///
+/// Related entities: {@link multi_user_todo_admins} for administrator
+/// account reference, {@link multi_user_todo_admin_sessions} for
+/// authentication context.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator account requesting password reset. {@link
+  /// multi_user_todo_admins.id}
+  multi_user_todo_admin_id String
+  
+  /// Secure password reset token used for account recovery verification.
+  token String
+  
+  /// Timestamp when the reset token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the reset token was successfully used, marking it as
+  /// consumed.
+  used_at DateTime?
+  
+  /// Timestamp when the reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the reset token record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin multi_user_todo_admins @relation(fields: [multi_user_todo_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_admin_id, created_at], map: "multi_user_todo_admin_password_resets_multi_user_todo__3e7f991c")
   @@index([expires_at])
-  @@index([used_at])
+}
+
+/// Password reset tokens with expiration for member account recovery.
+///
+/// This table stores temporary password reset tokens that allow members to
+/// securely reset their passwords. Each token has a limited validity period
+/// and can only be used once. The tokens are generated when members request
+/// password resets and are invalidated after successful password changes or
+/// expiration.
+///
+/// Tokens reference the member who requested the reset and include security
+/// features like expiration timestamps to prevent unauthorized access. This
+/// table supports the password recovery workflow described in the
+/// authentication requirements.
+///
+/// Related to {@link multi_user_todo_members} for member identity and
+/// authentication context.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who requested the password reset. {@link
+  /// multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// Unique reset token used for password recovery authentication.
+  token String
+  
+  /// Timestamp when the reset token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used for password reset. Null
+  /// if unused.
+  used_at DateTime?
+  
+  /// Timestamp when the reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when the reset token record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_member_password_resets_multi_user_todo_26de42c3")
+  @@index([expires_at])
 }

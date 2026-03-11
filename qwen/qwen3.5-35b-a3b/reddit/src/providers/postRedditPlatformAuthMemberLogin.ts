@@ -1,7 +1,13 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformComment";
+import { IRedditPlatformCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommentVote";
 import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
 import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import { IRedditPlatformMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMemberSession";
+import { IRedditPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPost";
+import { IRedditPlatformPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPostVote";
+import { IRedditPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -14,27 +20,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditPlatformAuthMemberLogin(props: {
+  ip: string;
   body: IRedditPlatformMember.ILogin;
 }): Promise<IRedditPlatformMember.IAuthorized> {
-  const currentTime: string & tags.Format<"date-time"> =
-    new Date().toISOString();
-  const accessExpiresAt: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 15 * 60 * 1000,
-  ).toISOString();
-  const refreshExpiresAt: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
+  // 1. Find member by email with password_hash explicitly selected
   const member = await MyGlobal.prisma.reddit_platform_members.findFirst({
-    where: {
-      email: props.body.email,
-      is_active: true,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
       id: true,
+      password_hash: true,
       username: true,
       display_name: true,
-      email: true,
       bio: true,
       avatar_url: true,
       karma_score: true,
@@ -42,12 +38,22 @@ export async function postRedditPlatformAuthMemberLogin(props: {
       created_at: true,
       updated_at: true,
       deleted_at: true,
-      password_hash: true,
+      sessions: {
+        select: {
+          id: true,
+          created_at: true,
+        },
+      },
     },
   });
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
   }
+  // Verify account is active and not deleted
+  if (!member.is_active || member.deleted_at !== null) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 2. Verify password using PasswordUtil.verify
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
@@ -55,133 +61,92 @@ export async function postRedditPlatformAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  await MyGlobal.prisma.reddit_platform_member_sessions.deleteMany({
-    where: {
-      user: { id: member.id },
-      expired_at: {
-        gte: currentTime,
-      },
-    },
-  });
-  const session: {
-    id: string;
-  } = await MyGlobal.prisma.reddit_platform_member_sessions.create({
+  // 3. Enforce max 5 concurrent sessions limit
+  const MAX_SESSIONS = 5;
+  const existingSessions = member.sessions;
+  if (existingSessions.length >= MAX_SESSIONS) {
+    // Find oldest session by created_at and invalidate it
+    const sortedSessions = [...existingSessions].sort(
+      (a, b) => a.created_at.getTime() - b.created_at.getTime(),
+    );
+    if (sortedSessions.length > 0) {
+      await MyGlobal.prisma.reddit_platform_member_sessions.update({
+        where: { id: sortedSessions[0].id },
+        data: {
+          expired_at: new Date(),
+        },
+      });
+    }
+  }
+  // 4. Create new session with 2-hour expiration
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const session = await MyGlobal.prisma.reddit_platform_member_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      user: { connect: { id: member.id } },
-      created_at: currentTime,
-      expired_at: accessExpiresAt,
+      id: v4(),
+      member_id: member.id,
+      ip: props.ip,
+      href: null,
+      referrer: null,
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "member",
-        id: member.id,
-        session_id: session.id,
-        created_at: currentTime,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "15m", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "member",
-        id: member.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: currentTime,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpiresAt,
-    refreshable_until: refreshExpiresAt,
+  // 5. Generate JWT tokens
+  const tokenPayload = {
+    type: "member" as const,
+    id: member.id,
+    session_id: session.id,
+    created_at: now.toISOString(),
   };
-  await MyGlobal.prisma.reddit_platform_members.update({
-    where: { id: member.id },
-    data: { updated_at: currentTime },
+  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "2h",
+    issuer: "autobe",
   });
-  const moderatorCommunities =
-    await MyGlobal.prisma.reddit_platform_community_moderators.findMany({
-      where: {
-        user: { id: member.id },
-      },
-    });
-  const bannedUsers =
-    await MyGlobal.prisma.reddit_platform_community_bans.findMany({
-      where: {
-        banned_by: member.id,
-      },
-    });
-  const moderatorOfCommunities: IRedditPlatformCommunity.ISummary[] =
-    moderatorCommunities.length > 0
-      ? moderatorCommunities.map((mc) => ({
-          id: mc.community_id,
-          name: "",
-          description: null,
-          icon_url: null,
-          subscriber_count: 0,
-          author: {
-            id: mc.user_id,
-            username: "",
-            displayName: "",
-            bio: null,
-            avatarUrl: null,
-            karmaScore: 0,
-            createdAt: currentTime,
-            subscriptionCount: 0,
-          },
-          created_at: mc.created_at.toISOString(),
-        }))
-      : [];
-  const bannedUsersSummary: IRedditPlatformMember.ISummary[] =
-    bannedUsers.length > 0
-      ? (
-          await ArrayUtil.asyncMap(bannedUsers, async (bu) => {
-            const bannedMember =
-              await MyGlobal.prisma.reddit_platform_members.findUnique({
-                where: { id: bu.user_id },
-                select: {
-                  id: true,
-                  username: true,
-                  display_name: true,
-                  bio: true,
-                  avatar_url: true,
-                  karma_score: true,
-                  created_at: true,
-                },
-              });
-            return bannedMember
-              ? {
-                  id: bannedMember.id as string & tags.Format<"uuid">,
-                  username: bannedMember.username,
-                  displayName: bannedMember.display_name,
-                  bio: bannedMember.bio,
-                  avatarUrl: bannedMember.avatar_url,
-                  karmaScore: bannedMember.karma_score,
-                  createdAt: bannedMember.created_at.toISOString(),
-                  subscriptionCount: 0,
-                }
-              : null;
-          })
-        ).filter((u): u is IRedditPlatformMember.ISummary => u !== null)
-      : [];
-  const response: IRedditPlatformMember.IAuthorized = {
-    id: member.id as string & tags.Format<"uuid">,
-    email: member.email,
+  const refresh = jwt.sign(
+    { ...tokenPayload, tokenType: "refresh" as const },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+  // 6. Return IAuthorized pattern
+  return {
+    id: member.id,
     username: member.username,
-    displayName: member.display_name,
-    bio: member.bio,
-    avatarUrl: member.avatar_url,
-    karmaScore: member.karma_score,
-    isActive: member.is_active,
-    createdAt: member.created_at.toISOString(),
-    updatedAt: member.updated_at.toISOString(),
-    deletedAt: member.deleted_at?.toISOString() ?? null,
-    moderatorOfCommunities: moderatorOfCommunities,
-    bannedUsers: bannedUsersSummary,
+    display_name: member.display_name,
+    bio: member.bio ?? null,
+    avatar_url: member.avatar_url ?? null,
+    karma_score: Number(member.karma_score),
+    is_active: member.is_active,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    sessions: [],
+    posts: [],
+    comments: [],
+    postVotes: [],
+    commentVotes: [],
+    reports: [],
+    access: token.access,
+    refresh: token.refresh,
+    expired_at: token.expired_at,
+    user: {
+      id: member.id,
+      username: member.username,
+      display_name: member.display_name,
+      karma_score: Number(member.karma_score),
+      is_active: member.is_active,
+      created_at: toISOStringSafe(member.created_at),
+    },
     token,
   };
-  return response;
 }

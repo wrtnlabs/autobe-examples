@@ -2,7 +2,7 @@ import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallCustomer";
+import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSeller";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { putShoppingMallCustomerProfile } from "../../../../providers/putShoppingMallCustomerProfile";
@@ -10,34 +10,67 @@ import { putShoppingMallCustomerProfile } from "../../../../providers/putShoppin
 @Controller("/shoppingMall/customer/profile")
 export class ShoppingmallCustomerProfileController {
   /**
-   * Update the authenticated customer's profile information.
+   * Update the authenticated seller's shop profile information including shop name, description, and logo image.
    *
-   * This operation allows customers to modify their display name and phone number. Both fields are optional and can be updated independently or cleared entirely by providing empty values.
+   * This operation allows approved sellers to modify their shop profile details. The shop name is displayed on product listings and order details, making it a critical identifier for customers. The shop description provides additional context about the seller's business, and the logo image serves as visual branding.
    *
-   * **Profile Update Behavior:**
-   * - Changes are applied immediately and persisted to the database
-   * - No snapshots are created for profile updates (not financial/transactional data)
-   * - Display name can be up to 50 characters
-   * - Phone number must be a valid format if provided
-   * - Either or both fields can be updated in a single request
-   * - Clearing a field (empty value) removes the information from the profile
+   * **Business Rules:**
+   * - Shop name is required and cannot be empty
+   * - Shop description and logo image are optional
+   * - Profile changes require the seller to have approval_status='approved'
+   * - Profile updates are not allowed if seller account is suspended
    *
-   * **Security:**
-   * - Only the authenticated customer can update their own profile
-   * - Banned customers cannot update their profile
-   * - Deleted accounts cannot update their profile
-   * - Account email and password are not modified through this endpoint
+   * **Snapshot Creation:**
+   * When a seller saves profile changes, the system automatically creates a SellerProfileSnapshot record preserving the previous shop_name, shop_description, and logo_image. This snapshot serves as an audit trail for dispute resolution and is linked to the seller account with a timestamp. Snapshots are immutable and cannot be modified or deleted, even after seller account deletion.
    *
    * **Related Operations:**
-   * - GET /shoppingMall/customer/profile - Retrieve current profile information
-   * - PUT /shoppingMall/customer/password - Change account password
-   * - DELETE /shoppingMall/customer/profile - Delete customer account
+   * - GET /sellers/profile - Retrieve current profile information
+   * - GET /sellers/:id/profile - Public profile viewing by customers
+   * - GET /sellers/:id/snapshots - View profile snapshot history
    *
    * @param connection
-   * @param body Profile update data containing optional display name and phone number fields
+   * @param body Seller profile update data with shop name (required), description (optional), and logo image URL (optional)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update the authenticated customer's profile information. Retrieve customer ID from authentication context. Validate displayName length (max 50 characters) and phone number format if provided. Update display_name and/or phone_number fields in shopping_mall_customers table. Set updated_at to current timestamp. Return updated customer profile data.
+   * @x-autobe-specification Implementation steps for seller profile update:
+   *
+   * 1. **Authentication & Authorization:**
+   *    - Extract seller ID from JWT token
+   *    - Query shopping_mall_sellers table to verify seller exists and is not deleted
+   *    - Validate seller.approval_status === 'approved'
+   *    - Validate seller.suspended === false
+   *    - Validate seller.banned === false
+   *
+   * 2. **Request Validation:**
+   *    - Validate shop_name is present and not empty string
+   *    - Validate shop_name length ≤ 255 characters
+   *    - Validate shop_description length ≤ 5000 characters (if provided)
+   *    - Validate logo_image is valid URL format (if provided)
+   *    - Validate logo_image URL length ≤ 80000 characters (database constraint)
+   *
+   * 3. **Snapshot Creation (Pre-change):**
+   *    - Create shopping_mall_seller_profile_snapshots record with:
+   *      - seller_id: current seller.id
+   *      - shop_name: current seller.shop_name
+   *      - shop_description: current seller.shop_description
+   *      - logo_image: current seller.logo_image
+   *      - created_at: current timestamp
+   *    - This must happen BEFORE updating the seller record
+   *
+   * 4. **Profile Update:**
+   *    - Update shopping_mall_sellers record:
+   *      - shop_name = request.shop_name
+   *      - shop_description = request.shop_description (or null if not provided)
+   *      - logo_image = request.logo_image (or null if not provided)
+   *      - updated_at = current timestamp
+   *
+   * 5. **Transaction:**
+   *    - Wrap snapshot creation and profile update in a database transaction
+   *    - Rollback both if either fails
+   *
+   * 6. **Response:**
+   *    - Return updated seller entity (excluding password_hash)
+   *    - Include id, email, shop_name, shop_description, logo_image, approval_status, suspended, banned, created_at, updated_at
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put()
@@ -45,8 +78,8 @@ export class ShoppingmallCustomerProfileController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallCustomer.IUpdate,
-  ): Promise<IShoppingMallCustomer> {
+    body: IShoppingMallSeller.IUpdate,
+  ): Promise<IShoppingMallSeller> {
     try {
       return await putShoppingMallCustomerProfile({
         customer,

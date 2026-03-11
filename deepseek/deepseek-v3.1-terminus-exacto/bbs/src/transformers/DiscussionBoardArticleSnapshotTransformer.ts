@@ -1,6 +1,6 @@
 import { IDiscussionBoardArticleSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleSnapshot";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -17,41 +17,46 @@ export namespace DiscussionBoardArticleSnapshotTransformer {
       select: {
         id: true,
         title: true,
-        content: true,
-        discussion_board_section_id: true,
-        discussion_board_user_id: true,
+        body: true,
+        section_id: true,
+        author_id: true,
+        snapshot_reason: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        // article relation is required by schema but not used in DTO
         article: {
-          select: {
-            id: true,
-          },
-        },
+          select: { id: true },
+        } satisfies Prisma.discussion_board_articlesFindManyArgs,
       },
     } satisfies Prisma.discussion_board_article_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IDiscussionBoardArticleSnapshot> {
+    // Note: section and author need to be fetched separately using section_id and author_id
+    // since they are scalar columns without direct relations in the schema
     return {
       id: input.id,
       title: input.title,
-      content: input.content,
+      body: input.body,
       section: {
-        id: input.discussion_board_section_id,
+        // TODO: Fetch section using input.section_id with DiscussionBoardSectionAtSummaryTransformer
+        id: input.section_id,
         name: "",
-        description: "",
-        status: "",
-        display_order: 0,
-        deleted_at: undefined,
+        description: null,
+        created_at: new Date().toISOString(),
       } satisfies IDiscussionBoardSection.ISummary,
       author: {
-        id: input.discussion_board_user_id,
+        // TODO: Fetch author using input.author_id with DiscussionBoardMemberAtSummaryTransformer
+        id: input.author_id,
         display_name: "",
         bio: undefined,
-        created_at: toISOStringSafe(new Date()),
-      } satisfies IDiscussionBoardUser.ISummary,
-      created_at: toISOStringSafe(input.created_at),
-      article_id: input.article.id,
+      } satisfies IDiscussionBoardMember.ISummary,
+      snapshotReason: input.snapshot_reason ?? undefined,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

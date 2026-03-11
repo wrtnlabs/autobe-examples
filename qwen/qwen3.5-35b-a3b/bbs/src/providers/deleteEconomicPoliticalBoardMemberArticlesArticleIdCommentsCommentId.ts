@@ -16,27 +16,34 @@ export async function deleteEconomicPoliticalBoardMemberArticlesArticleIdComment
   articleId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // 1. Verify article exists
+  await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
+    where: { id: props.articleId },
+  });
+  // 2. Verify comment exists and belongs to the article
   const comment =
     await MyGlobal.prisma.economic_political_board_comments.findUniqueOrThrow({
       where: { id: props.commentId },
     });
+  // Verify comment belongs to the specified article
   if (comment.article_id !== props.articleId) {
     throw new HttpException(
       "Comment does not belong to the specified article",
-      400,
+      404,
     );
   }
-  if (comment.author_id !== props.member.id) {
-    throw new HttpException("You can only delete your own comments", 403);
+  // 3. Check authorization: owner or admin
+  const isAdmin =
+    await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst(
+      {
+        where: { id: props.member.id },
+      },
+    );
+  if (comment.author_id !== props.member.id && !isAdmin) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (comment.deleted_at !== null) {
-    throw new HttpException("Comment is already deleted", 410);
-  }
-  await MyGlobal.prisma.economic_political_board_comments.update({
+  // 4. Delete the comment (cascade handles dependent records)
+  await MyGlobal.prisma.economic_political_board_comments.delete({
     where: { id: props.commentId },
-    data: {
-      deleted_at: new Date(),
-      updated_at: new Date(),
-    },
   });
 }

@@ -10,7 +10,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeCommunityAtSummaryTransformer } from "../transformers/RedditLikeCommunityAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,41 +19,40 @@ export async function patchRedditLikeCommunities(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause
-  const where: Prisma.reddit_like_communitiesWhereInput = {
+  const whereInput = {
     deleted_at: null,
-    ...(props.body.search && {
-      name: { contains: props.body.search.toLowerCase() },
+    ...(props.body.name && {
+      name: { contains: props.body.name, mode: "insensitive" as const },
     }),
-  };
-  // Build order by clause
-  const orderBy: Prisma.reddit_like_communitiesOrderByWithRelationInput =
-    props.body.sort === "subscribers"
-      ? { subscriptions: { _count: "desc" } }
-      : props.body.sort === "newest"
-        ? { created_at: "desc" }
-        : { name: "asc" };
-  // Execute queries
-  const communities = await MyGlobal.prisma.reddit_like_communities.findMany({
-    where,
-    orderBy,
+  } satisfies Prisma.reddit_like_communitiesWhereInput;
+  const data = await MyGlobal.prisma.reddit_like_communities.findMany({
+    where: whereInput,
     skip,
     take: limit,
-    ...RedditLikeCommunityAtSummaryTransformer.select(),
+    orderBy: (props.body.sort === "created_at"
+      ? { created_at: "asc" }
+      : props.body.sort === "created_at_desc"
+        ? { created_at: "desc" }
+        : {
+            created_at: "desc",
+          }) satisfies Prisma.reddit_like_communitiesOrderByWithRelationInput,
   });
   const total = await MyGlobal.prisma.reddit_like_communities.count({
-    where,
+    where: whereInput,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      communities,
-      RedditLikeCommunityAtSummaryTransformer.transform,
-    ),
+    data: data.map((record) => ({
+      name: record.name,
+      icon_url: record.icon_url,
+      subscriber_count: (record as any).subscriber_count as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    })),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIRedditLikeCommunity.ISummary;
 }

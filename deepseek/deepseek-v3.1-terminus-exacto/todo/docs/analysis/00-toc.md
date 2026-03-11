@@ -1,127 +1,144 @@
-# Multi-User Todo Application Documentation
+### Table of Contents
 
-## Project Overview
+**multiUserTodo** is a backend service with the following actors and domain entities.
 
-This documentation provides comprehensive business requirements for a multi-user Todo application that enables individual users to manage their personal task lists with privacy, history tracking, and robust management capabilities.
+**Actors**: guest, member, admin
+**Entities**: User, Todo, EditHistory
 
-### Documentation Purpose
-The purpose of this documentation is to define the complete business requirements for backend developers to understand what needs to be built, why it's being built, and how it should function from a user perspective. This document focuses exclusively on business requirements and user workflows.
+---
 
-## Documentation Structure
+**Scope**
 
-The complete documentation is organized into the following logical sequence:
+- **User**: email: required unique identifier, password: hashed authentication, displayName: user's visible name | Relationships: owns Todo entities, has EditHistory entries
+- **Todo**: title: required todo name, description: optional details, startDate: optional scheduling, dueDate: optional deadline, isCompleted: completion status, isDeleted: soft delete flag, createdAt: creation timestamp | Relationships: belongs to User, has EditHistory entries
+- **EditHistory**: timestamp: when edit occurred, titleChange: previous title value, descriptionChange: previous description value, startDateChange: previous start date value, dueDateChange: previous due date value | Relationships: belongs to Todo, associated with User
 
-### 1. [Service Overview](./01-service-overview.md)
-High-level business context including service vision, target user base, competitive landscape, and success metrics.
+- **guest** (guest)
+- **member** (member)
+- **admin** (admin)
 
-### 2. [User Actors and Authentication](./02-user-actors-authentication.md)
-User actor definitions, authentication requirements, account management, and security considerations.
+---
 
-### 3. [Todo Creation and Management](./03-todo-creation-management.md)
-Complete workflows for creating todos, required fields, validation rules, and basic viewing capabilities.
+**Document Map**
 
-### 4. [Todo Completion and Editing](./04-todo-completion-editing.md)
-Workflows for completing todos, editing capabilities, and comprehensive history tracking.
+| File | Role | Downstream |
+|------|------|------------|
+| [00-toc.md](./00-toc.md) | Project summary, scope, glossary, and assumptions | project-setup |
+| [01-actors-and-auth.md](./01-actors-and-auth.md) | Actor definitions, permission matrix, authentication, session, account lifecycle | auth-middleware |
+| [02-domain-model.md](./02-domain-model.md) | Business concepts, relationships, and states from user perspective | database-design |
+| [03-functional-requirements.md](./03-functional-requirements.md) | What operations users can perform, use cases, business workflows | interface-design |
+| [04-business-rules.md](./04-business-rules.md) | Data isolation, business rules, data browsing expectations, error scenarios | service-layer |
+| [05-non-functional.md](./05-non-functional.md) | Performance SLOs, security policies, data integrity, storage requirements | test-infra |
 
-### 5. [Deletion and Trash Management](./05-deletion-trash-management.md)
-Soft deletion processes, trash management, restoration workflows, and permanent deletion.
+**Section Navigation**
 
-### 6. [Filtering and Sorting Capabilities](./06-filtering-sorting-capabilities.md)
-Filtering options, sorting capabilities, and display logic for todo lists.
+<!-- Load sections by ID: `process({ request: { type: "getAnalysisSections", sectionIds: [ID, ...] } })` -->
 
-### 7. [Privacy and Data Isolation](./07-privacy-data-isolation.md)
-Privacy guarantees, data isolation requirements, and access control mechanisms.
+**[01-actors-and-auth.md](./01-actors-and-auth.md)**
+- [Actor Definitions](./01-actors-and-auth.md#actor-definitions)
+  - [1] [guest Actor](./01-actors-and-auth.md#guest-actor) — Define the guest actor's role and capabilities in business terms.
+  - [2] [member Actor](./01-actors-and-auth.md#member-actor) — Define the member actor's role and capabilities in business terms.
+  - [3] [admin Actor](./01-actors-and-auth.md#admin-actor) — Define the admin actor's role and capabilities in business terms.
+- [Authentication Flows](./01-actors-and-auth.md#authentication-flows)
+  - [4] [Registration and Login](./01-actors-and-auth.md#registration-and-login) — Define user registration and login flows including validation and error handling.
+  - [5] [Session and Token Policy](./01-actors-and-auth.md#session-and-token-policy) — Define session duration, token refresh, and expiration policies.
+- [Account Lifecycle](./01-actors-and-auth.md#account-lifecycle)
+  - [6] [Account States and Transitions](./01-actors-and-auth.md#account-states-and-transitions) — Define account states (active, suspended, deleted) and valid transitions.
 
-### 8. [Error Handling Scenarios](./08-error-handling-scenarios.md)
-Error scenarios, validation failures, permission denials, and recovery processes.
+**[02-domain-model.md](./02-domain-model.md)**
+- [Domain Concepts](./02-domain-model.md#domain-concepts)
+  - [7] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain, its purpose, and how users interact with it.
+  - [8] [Todo Concept](./02-domain-model.md#todo-concept) — Describe what Todo represents in the business domain, its purpose, and how users interact with it.
+  - [9] [EditHistory Concept](./02-domain-model.md#edithistory-concept) — Describe what EditHistory represents in the business domain, its purpose, and how users interact with it.
+- [Domain Relationships](./02-domain-model.md#domain-relationships)
+  - [10] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
+  - [11] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe business rules for concept lifecycle and data retention from a user perspective.
+- [Business Categories and State Flows](./02-domain-model.md#business-categories-and-state-flows)
+  - [12] [Business Category Definitions](./02-domain-model.md#business-category-definitions) — Define all business category classifications with their allowed values and descriptions.
+  - [13] [State Transitions](./02-domain-model.md#state-transitions) — Define valid state transition paths for stateful concepts.
 
-### 9. [Performance Expectations](./09-performance-expectations.md)
-Response time expectations, scalability requirements, and user experience standards.
+**[03-functional-requirements.md](./03-functional-requirements.md)**
+- [Core Business Operations](./03-functional-requirements.md#core-business-operations)
+  - [14] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [15] [Todo Operations](./03-functional-requirements.md#todo-operations) — Define business operations for Todo: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [16] [EditHistory Operations](./03-functional-requirements.md#edithistory-operations) — Define business operations for EditHistory: what create, read, update, delete, and list operations must accomplish from a business perspective.
+- [Business Actions and Workflows](./03-functional-requirements.md#business-actions-and-workflows)
+  - [17] [User Actions](./03-functional-requirements.md#user-actions) — Define business actions and workflows for the User domain group from a functional requirements perspective.
+  - [18] [Todo Actions](./03-functional-requirements.md#todo-actions) — Define business actions and workflows for the Todo domain group from a functional requirements perspective.
+  - [19] [EditHistory Actions](./03-functional-requirements.md#edithistory-actions) — Define business actions and workflows for the EditHistory domain group from a functional requirements perspective.
+- [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
+  - [20] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
+  - [21] [Todo Error Scenarios](./03-functional-requirements.md#todo-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Todo operations.
+  - [22] [EditHistory Error Scenarios](./03-functional-requirements.md#edithistory-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all EditHistory operations.
+- [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
+  - [23] [User User Scenarios](./03-functional-requirements.md#user-user-scenarios) — Define end-to-end user scenarios involving User and related concepts, describing business flows from the user's perspective.
+  - [24] [Todo User Scenarios](./03-functional-requirements.md#todo-user-scenarios) — Define end-to-end user scenarios involving Todo and related concepts, describing business flows from the user's perspective.
+  - [25] [EditHistory User Scenarios](./03-functional-requirements.md#edithistory-user-scenarios) — Define end-to-end user scenarios involving EditHistory and related concepts, describing business flows from the user's perspective.
 
-### 10. [Business Rules and Validation](./10-business-rules-validation.md)
-Field validation rules, business logic constraints, and data integrity requirements.
+**[04-business-rules.md](./04-business-rules.md)**
+- [Data Isolation and Ownership](./04-business-rules.md#data-isolation-and-ownership)
+  - [26] [Ownership and Isolation Rules](./04-business-rules.md#ownership-and-isolation-rules) — Define data ownership semantics and isolation boundaries for multi-user access.
+- [Domain Business Rules](./04-business-rules.md#domain-business-rules)
+  - [27] [User Rules](./04-business-rules.md#user-rules) — Define business rules, validation logic, and domain constraints for User.
+  - [28] [Todo Rules](./04-business-rules.md#todo-rules) — Define business rules, validation logic, and domain constraints for Todo.
+  - [29] [EditHistory Rules](./04-business-rules.md#edithistory-rules) — Define business rules, validation logic, and domain constraints for EditHistory.
+- [Business Validation Criteria](./04-business-rules.md#business-validation-criteria)
+  - [30] [User Validation Criteria](./04-business-rules.md#user-validation-criteria) — Define business validation expectations for User, including acceptable data quality criteria.
+  - [31] [Todo Validation Criteria](./04-business-rules.md#todo-validation-criteria) — Define business validation expectations for Todo, including acceptable data quality criteria.
+  - [32] [EditHistory Validation Criteria](./04-business-rules.md#edithistory-validation-criteria) — Define business validation expectations for EditHistory, including acceptable data quality criteria.
+- [Data Browsing Expectations](./04-business-rules.md#data-browsing-expectations)
+  - [33] [List Browsing Expectations](./04-business-rules.md#list-browsing-expectations) — Define business expectations for how users find, filter, and browse lists.
+- [Error Conditions](./04-business-rules.md#error-conditions)
+  - [34] [Error Scenarios](./04-business-rules.md#error-scenarios) — Describe error conditions and expected system responses in natural language.
 
-## User Actors Definition
+**[05-non-functional.md](./05-non-functional.md)**
+- [Performance Requirements](./05-non-functional.md#performance-requirements)
+  - [35] [Performance SLOs](./05-non-functional.md#performance-slos) — Define response time targets, throughput limits, and scalability requirements.
+  - [36] [Rate Limiting and Throttling](./05-non-functional.md#rate-limiting-and-throttling) — Define rate limiting policies and abuse prevention requirements.
+- [Security Requirements](./05-non-functional.md#security-requirements)
+  - [37] [Security Policies](./05-non-functional.md#security-policies) — Define security policies including encryption, input validation, and compliance.
+  - [38] [Availability and Reliability](./05-non-functional.md#availability-and-reliability) — Define availability targets, reliability expectations, and failover policies.
+- [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage)
+  - [39] [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage-1) — Define backup policies, data retention, and storage tier requirements.
+  - [40] [Audit and Observability](./05-non-functional.md#audit-and-observability) — Define audit logging, monitoring, alerting, and observability requirements.
+- [Concurrency and Data Consistency](./05-non-functional.md#concurrency-and-data-consistency)
+  - [41] [Concurrency Control Policies](./05-non-functional.md#concurrency-control-policies) — Define optimistic/pessimistic locking strategies, conflict resolution, and retry semantics for concurrent operations.
+  - [42] [Data Consistency Guarantees](./05-non-functional.md#data-consistency-guarantees) — Define consistency models, transactional boundary requirements, and idempotency guarantees.
 
-The system supports a single authenticated user actor:
+---
 
-### Authenticated User
-- **Description**: Individual users who manage their personal todo lists
-- **Capabilities**: Full access to own todos, profile management, account operations
-- **Limitations**: Cannot access other users' data or system administration functions
+**Canonical Sources**
 
-## Core System Requirements
+Each type of information has one authoritative location. Other files should reference these canonical sources.
 
-### Authentication and Account Management
-- User registration with email and password
-- Secure login and session management
-- Password change and account deletion capabilities
+| Information Type | Canonical File |
+|------------------|---------------|
+| Domain concepts | [02-domain-model.md](./02-domain-model.md) |
+| Error conditions | [04-business-rules.md](./04-business-rules.md) |
+| Permissions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
+| Actor definitions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
 
-### Todo Management Features
-- Create todos with title, description, start date, and due date
-- View todo lists with pagination and detailed views
-- Mark todos as complete/incomplete
-- Edit todos with comprehensive history tracking
+---
 
-### Advanced Features
-- Soft deletion with trash management
-- Filtering by completion status
-- Sorting by multiple criteria
-- Edit history with detailed change tracking
+**Glossary**
 
-## Business Logic Flow
+- **User**: email: required unique identifier, password: hashed authentication, displayName: user's visible name
+- **Todo**: title: required todo name, description: optional details, startDate: optional scheduling, dueDate: optional deadline, isCompleted: completion status, isDeleted: soft delete flag, createdAt: creation timestamp
+- **EditHistory**: timestamp: when edit occurred, titleChange: previous title value, descriptionChange: previous description value, startDateChange: previous start date value, dueDateChange: previous due date value
 
-The application follows these core workflows:
+---
 
-### User Registration and Authentication Flow
-```mermaid
-graph LR
-  A["User Registration"] --> B["Email Verification"]
-  B --> C["User Login"]
-  C --> D["Session Management"]
-  D --> E["Todo Operations"]
-```
+**Constraints**
 
-### Todo Lifecycle Management
-```mermaid
-graph LR
-  A["Create Todo"] --> B["Edit/Update"]
-  B --> C["Complete/Incomplete"]
-  C --> D["Soft Delete"]
-  D --> E["Restore/Permanent Delete"]
-```
-
-### Data Privacy and Isolation
-- Each user's data is completely isolated
-- No sharing or viewing capabilities between users
-- Private todo management with no public features
-
-## Success Criteria
-
-### User Experience Success Metrics
-- Users can efficiently manage personal todo lists
-- Todo creation and editing feels responsive and intuitive
-- Privacy and data security are maintained
-- Edit history provides valuable audit trail
-
-### Business Success Metrics
-- High user retention through reliable service
-- Positive user feedback on privacy features
-- Low error rates and system downtime
-- Scalable architecture supporting growth
-
-## Key Business Requirements
-
-### Privacy-First Design
-THE system SHALL ensure complete data isolation between users, with no capability for users to view or access other users' todos.
-
-### Comprehensive History Tracking
-WHEN a user edits any todo field, THE system SHALL record the complete change history including timestamp and specific field modifications.
-
-### Flexible Todo Management
-THE system SHALL support multiple filtering and sorting options to help users organize their todo lists effectively.
-
-### Secure Account Management
-THE system SHALL provide secure authentication and account management capabilities including password changes and account deletion.
-
-> *Developer Note: This document defines **business requirements only**. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+- File scope: Project summary, scope, glossary, and assumptions
+- Downstream phase: project-setup
+- File scope: Actor definitions, permission matrix, authentication, session, account lifecycle
+- Downstream phase: auth-middleware
+- File scope: Business concepts, relationships, and states from user perspective
+- Downstream phase: database-design
+- File scope: What operations users can perform, use cases, business workflows
+- Downstream phase: interface-design
+- File scope: Data isolation, business rules, data browsing expectations, error scenarios
+- Downstream phase: service-layer
+- File scope: Performance SLOs, security policies, data integrity, storage requirements
+- Downstream phase: test-infra

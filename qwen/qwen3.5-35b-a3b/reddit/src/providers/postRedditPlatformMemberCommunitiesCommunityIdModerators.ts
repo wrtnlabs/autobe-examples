@@ -10,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditPlatformCommunityModeratorCollector } from "../collectors/RedditPlatformCommunityModeratorCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditPlatformCommunityModeratorTransformer } from "../transformers/RedditPlatformCommunityModeratorTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,62 +21,56 @@ export async function postRedditPlatformMemberCommunitiesCommunityIdModerators(p
   communityId: string & tags.Format<"uuid">;
   body: IRedditPlatformCommunityModerator.ICreate;
 }): Promise<IRedditPlatformCommunityModerator> {
+  // Step 1: Verify community exists
+  await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
+    where: { id: props.communityId },
+  });
+  // Step 2: Check requesting user's role in this community
+  const communityMemberRole =
+    await MyGlobal.prisma.reddit_platform_community_moderators.findFirst({
+      where: {
+        community_id: props.communityId,
+        user_id: props.member.id,
+      },
+      select: { id: true },
+    });
+  // Get community owner to check if requester is owner
   const community =
     await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
       where: { id: props.communityId },
-      select: { id: true, owner_id: true },
+      select: { owner_id: true },
     });
-  if (community.owner_id !== props.member.id) {
+  // Verify requester is owner or existing moderator
+  if (community.owner_id !== props.member.id && !communityMemberRole) {
     throw new HttpException("Forbidden", 403);
   }
-  const targetMember =
-    await MyGlobal.prisma.reddit_platform_members.findUniqueOrThrow({
-      where: { id: props.body.user_id },
-      select: { id: true },
-    });
+  // Step 3: Validate target user exists
+  await MyGlobal.prisma.reddit_platform_members.findUniqueOrThrow({
+    where: { id: props.body.user_id },
+  });
+  // Step 4: Check if user already has moderator status
   const existingModerator =
     await MyGlobal.prisma.reddit_platform_community_moderators.findFirst({
       where: {
         community_id: props.communityId,
         user_id: props.body.user_id,
       },
+      select: { id: true },
     });
-  if (existingModerator !== null) {
-    throw new HttpException("Member is already a moderator", 409);
+  if (existingModerator) {
+    throw new HttpException("User is already a moderator", 409);
   }
-  if (targetMember.id === community.owner_id) {
-    throw new HttpException("Cannot add owner as moderator", 409);
-  }
-  const id: string & tags.Format<"uuid"> = v4();
-  await MyGlobal.prisma.reddit_platform_community_moderators.create({
-    data: {
-      id,
-      created_at: new Date(),
-      updated_at: new Date(),
-      community: { connect: { id: props.communityId } },
-      user: { connect: { id: props.body.user_id } },
-    },
-  });
-  await MyGlobal.prisma.reddit_platform_moderator_histories.create({
-    data: {
-      id: v4(),
-      community_id: props.communityId,
-      user_id: props.body.user_id,
-      acted_by_id: props.member.id,
-      action_type: "APPOINTED",
-      notes: `Appointed member ${props.body.user_id} as moderator`,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  const moderatorRecord =
-    await MyGlobal.prisma.reddit_platform_community_moderators.findUniqueOrThrow(
-      {
-        where: { id },
-        ...RedditPlatformCommunityModeratorTransformer.select(),
-      },
-    );
-  return await RedditPlatformCommunityModeratorTransformer.transform(
-    moderatorRecord,
-  );
+  // Step 5: Create moderator assignment
+  const created =
+    await MyGlobal.prisma.reddit_platform_community_moderators.create({
+      data: await RedditPlatformCommunityModeratorCollector.collect({
+        body: props.body,
+        redditPlatformCommunities: {
+          id: props.communityId,
+        },
+      }),
+      ...RedditPlatformCommunityModeratorTransformer.select(),
+    });
+  // Step 6: Return transformed response
+  return await RedditPlatformCommunityModeratorTransformer.transform(created);
 }

@@ -10,13 +10,15 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallWishlistItemCollector {
   export async function collect(props: {
     body: IShoppingMallWishlistItem.ICreate;
+    shoppingMallCustomers: IEntity;
+    shoppingMallCustomerSessions: IEntity;
     shoppingMallWishlists: IEntity;
   }) {
     return {
       id: v4(),
       created_at: new Date(),
       wishlist: { connect: { id: props.shoppingMallWishlists.id } },
-      product: { connect: { id: props.body.shopping_mall_product_id } },
+      product: { connect: { id: props.body.productId } },
     } satisfies Prisma.shopping_mall_wishlist_itemsCreateInput;
   }
 }

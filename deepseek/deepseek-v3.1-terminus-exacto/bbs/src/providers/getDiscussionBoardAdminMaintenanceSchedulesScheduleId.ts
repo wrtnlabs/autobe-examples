@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,14 +18,10 @@ export async function getDiscussionBoardAdminMaintenanceSchedulesScheduleId(prop
   admin: AdminPayload;
   scheduleId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
-  // Fetch maintenance schedule by ID, filtering out soft-deleted records
   const schedule =
     await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
       {
-        where: {
-          id: props.scheduleId,
-          deleted_at: null,
-        },
+        where: { id: props.scheduleId },
         ...DiscussionBoardMaintenanceScheduleTransformer.select(),
       },
     );

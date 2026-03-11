@@ -1,13 +1,7 @@
-export * as guests from "./guests/index";
-export * as admins from "./admins/index";
-export * as audit_logs from "./audit_logs/index";
 export * as sections from "./sections/index";
-export * as articles from "./articles/index";
 export * as tags from "./tags/index";
-export * as admin from "./admin/index";
+export * as articles from "./articles/index";
 export * as admin_requests from "./admin_requests/index";
 export * as ban_records from "./ban_records/index";
-export * as system from "./system/index";
-export * as dashboard from "./dashboard/index";
-export * as reports from "./reports/index";
-export * as monitoring from "./monitoring/index";
+export * as profile from "./profile/index";
+export * as members from "./members/index";

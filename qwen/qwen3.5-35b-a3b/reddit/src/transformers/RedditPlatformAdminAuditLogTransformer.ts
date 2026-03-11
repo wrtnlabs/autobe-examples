@@ -18,6 +18,8 @@ export namespace RedditPlatformAdminAuditLogTransformer {
     return {
       select: {
         id: true,
+        admin: RedditPlatformAdminAtSummaryTransformer.select(),
+        session: RedditPlatformAdminSessionAtSummaryTransformer.select(),
         action_type: true,
         action_status: true,
         target_entity_type: true,
@@ -27,8 +29,6 @@ export namespace RedditPlatformAdminAuditLogTransformer {
         user_agent: true,
         referrer: true,
         created_at: true,
-        admin: RedditPlatformAdminAtSummaryTransformer.select(),
-        session: RedditPlatformAdminSessionAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_platform_admin_audit_logsFindManyArgs;
   }
@@ -37,15 +37,6 @@ export namespace RedditPlatformAdminAuditLogTransformer {
   ): Promise<IRedditPlatformAdminAuditLog> {
     return {
       id: input.id,
-      action_type: input.action_type,
-      action_status: input.action_status,
-      target_entity_type: input.target_entity_type ?? undefined,
-      target_entity_id: input.target_entity_id ?? undefined,
-      action_details: input.action_details ?? undefined,
-      ip_address: input.ip_address ?? undefined,
-      user_agent: input.user_agent ?? undefined,
-      referrer: input.referrer ?? undefined,
-      created_at: input.created_at.toISOString(),
       admin: await RedditPlatformAdminAtSummaryTransformer.transform(
         input.admin,
       ),
@@ -53,7 +44,16 @@ export namespace RedditPlatformAdminAuditLogTransformer {
         ? await RedditPlatformAdminSessionAtSummaryTransformer.transform(
             input.session,
           )
-        : null,
+        : undefined,
+      actionType: input.action_type,
+      actionStatus: input.action_status,
+      targetEntityType: input.target_entity_type ?? undefined,
+      targetEntityId: input.target_entity_id ?? undefined,
+      actionDetails: input.action_details ?? undefined,
+      ipAddress: input.ip_address ?? undefined,
+      userAgent: input.user_agent ?? undefined,
+      referrer: input.referrer ?? undefined,
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

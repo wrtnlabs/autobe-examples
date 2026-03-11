@@ -13,30 +13,35 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteRedditLikeModeratorCommentsCommentId(props: {
   moderator: ModeratorPayload;
-  commentId: string & tags.Format<"uuid">;
+  commentId: string;
 }): Promise<void> {
-  const now = toISOStringSafe(new Date());
   const comment = await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
     where: { id: props.commentId },
     select: {
       id: true,
-      author_id: true,
       post_id: true,
-      deleted_at: true,
+      author_id: true,
     },
   });
-  if (comment.author_id !== props.moderator.id) {
+  const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
+    where: { id: comment.post_id },
+    select: { id: true, community_id: true },
+  });
+  const moderatorRole =
+    await MyGlobal.prisma.reddit_like_moderator_roles.findFirst({
+      where: {
+        user_id: props.moderator.id,
+        community_id: post.community_id,
+        role: { in: ["owner", "moderator"] },
+      },
+    });
+  const isOwner = comment.author_id === props.moderator.id;
+  if (!isOwner && moderatorRole === null) {
     throw new HttpException("Forbidden", 403);
   }
-  if (comment.deleted_at !== null) {
-    return;
-  }
   await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.reddit_like_comments.update({
+    MyGlobal.prisma.reddit_like_comments.delete({
       where: { id: props.commentId },
-      data: {
-        deleted_at: now,
-      },
     }),
     MyGlobal.prisma.reddit_like_posts.update({
       where: { id: comment.post_id },

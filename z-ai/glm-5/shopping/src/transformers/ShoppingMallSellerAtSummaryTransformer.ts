@@ -15,7 +15,6 @@ export namespace ShoppingMallSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         shop_name: true,
         shop_description: true,
         logo_image: true,
@@ -25,14 +24,6 @@ export namespace ShoppingMallSellerAtSummaryTransformer {
         banned: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        products: true,
-        inventoryRecords: true,
-        orderItems: true,
-        shipments: true,
-        cancellationRequests: true,
       },
     } satisfies Prisma.shopping_mall_sellersFindManyArgs;
   }
@@ -41,15 +32,16 @@ export namespace ShoppingMallSellerAtSummaryTransformer {
   ): Promise<IShoppingMallSeller.ISummary> {
     return {
       id: input.id,
+      email: input.email,
       shop_name: input.shop_name,
-      logo_image: input.logo_image,
-      approval_status: input.approval_status as
-        | "pending"
-        | "approved"
-        | "rejected",
+      shop_description: input.shop_description ?? null,
+      logo_image: input.logo_image ?? null,
+      approval_status: input.approval_status,
+      rejection_reason: input.rejection_reason ?? null,
       suspended: input.suspended,
       banned: input.banned,
       created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

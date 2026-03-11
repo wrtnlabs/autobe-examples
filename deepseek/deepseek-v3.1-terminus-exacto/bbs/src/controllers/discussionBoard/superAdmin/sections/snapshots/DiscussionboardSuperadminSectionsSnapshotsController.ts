@@ -2,10 +2,11 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardSection } from "../../../../../api/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionSnapshot } from "../../../../../api/structures/IDiscussionBoardSectionSnapshot";
 import { IPageIDiscussionBoardSectionSnapshot } from "../../../../../api/structures/IPageIDiscussionBoardSectionSnapshot";
-import { SuperAdminAuth } from "../../../../../decorators/SuperAdminAuth";
-import { SuperAdminPayload } from "../../../../../decorators/payload/SuperAdminPayload";
+import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
+import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
 import { getDiscussionBoardSuperAdminSectionsSectionIdSnapshotsSnapshotId } from "../../../../../providers/getDiscussionBoardSuperAdminSectionsSectionIdSnapshotsSnapshotId";
 import { patchDiscussionBoardSuperAdminSectionsSectionIdSnapshots } from "../../../../../providers/patchDiscussionBoardSuperAdminSectionsSectionIdSnapshots";
 import { postDiscussionBoardSuperAdminSectionsSectionIdSnapshots } from "../../../../../providers/postDiscussionBoardSuperAdminSectionsSectionIdSnapshots";
@@ -13,39 +14,36 @@ import { postDiscussionBoardSuperAdminSectionsSectionIdSnapshots } from "../../.
 @Controller("/discussionBoard/superAdmin/sections/:sectionId/snapshots")
 export class DiscussionboardSuperadminSectionsSnapshotsController {
   /**
-   * Create a point-in-time snapshot of a discussion board section for audit trail and version history.
+   * Create a manual audit snapshot of a section's current configuration for compliance and tracking purposes.
    *
-   * This operation captures the complete state of a section including its name, description, status, and display order at the moment of snapshot creation. Snapshots serve as immutable records that preserve section configuration for compliance, audit requirements, and historical tracking purposes.
+   * This administrative operation allows authorized administrators to capture point-in-time snapshots of section configurations. Each snapshot preserves the complete state of a section including its name, description, and metadata fields exactly as they exist at the moment of snapshot creation. Snapshots serve as audit trail records for compliance requirements and change tracking.
    *
-   * Administrators can use this operation to create snapshots before making significant changes to section configurations, enabling rollback capabilities and providing visibility into section modification history. Each snapshot maintains referential integrity with the original section while preserving the section's state as it existed at the time of capture.
+   * The operation requires valid administrative authentication and authorization to modify section configurations. The snapshot reason field allows administrators to document the purpose of the manual snapshot creation, such as compliance audits, configuration backups, or administrative reviews.
    *
-   * The operation requires administrator privileges and validates that the specified section exists before creating the snapshot. The response includes the complete snapshot data with timestamps for accurate historical tracking.
+   * Created snapshots become part of the section's permanent audit trail and can be reviewed through section snapshot listing operations. This operation complements the automatic snapshot creation that occurs during section modifications, providing additional manual control for compliance and auditing workflows.
    *
    * @param connection
-   * @param sectionId Unique identifier of the section to snapshot
+   * @param sectionId ID of the section to create a snapshot for
+   * @param body Configuration for creating the section snapshot
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Create a snapshot record for the specified section by capturing current section data.
-   *
-   * Query the discussion_board_sections table to retrieve the current section data including name, description, status, and display_order.
-   * Create a new record in discussion_board_section_snapshots table with the captured section data.
-   * Set the discussion_board_section_id to reference the target section.
-   * Use current timestamp for created_at and updated_at fields.
-   * Return the complete snapshot object with all captured fields.
-   * Ensure proper error handling for invalid section IDs or database constraints.
+   * @x-autobe-specification Create a manual audit snapshot for a specific section. First validate that the section exists and the user has administrative privileges. Capture the current state of the section including name, description, and metadata. Create a new snapshot record in discussion_board_section_snapshots table with the current timestamp and optional snapshot reason. The snapshot should preserve the exact section configuration at the time of creation for compliance auditing. Return the complete snapshot details including the generated ID and creation timestamp.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardSection.ICreate,
   ): Promise<IDiscussionBoardSectionSnapshot> {
     try {
       return await postDiscussionBoardSuperAdminSectionsSectionIdSnapshots({
         superAdmin,
         sectionId,
+        body,
       });
     } catch (error) {
       console.log(error);
@@ -54,26 +52,26 @@ export class DiscussionboardSuperadminSectionsSnapshotsController {
   }
 
   /**
-   * Retrieve a paginated list of historical snapshots for a specific discussion board section.
+   * Retrieve a filtered and paginated list of historical snapshots for a specific discussion board section.
    *
-   * This operation provides administrators with access to the complete audit trail of section modifications, showing how a section's name and description have evolved over time. Each snapshot represents a point-in-time capture of the section's state, typically created automatically when administrators make changes to section properties.
+   * This operation provides access to the audit trail of section changes over time, allowing administrators to review how sections have evolved through administrative modifications. Each snapshot represents a complete state capture of the section at a specific moment, including name, description, and metadata exactly as they existed when the snapshot was created.
    *
-   * The response includes essential snapshot information such as the section name and description as they existed at the time of capture, along with creation timestamps for chronological tracking. This functionality supports compliance requirements, facilitates rollback capabilities, and provides administrators with comprehensive visibility into section modification history.
+   * Supports filtering by creation date ranges and snapshot reasons for targeted historical analysis. The response includes paginated snapshot summaries optimized for administrative review interfaces, showing key metadata without the full content payload.
    *
-   * Access to section snapshots is restricted to administrators only, as this information is primarily used for audit and administrative purposes. Regular users do not have permission to view section modification history.
+   * Administrators can use this operation to track section evolution, investigate changes, and maintain compliance with organizational content management policies. All snapshots are permanently preserved for audit purposes and cannot be modified or deleted once created.
    *
    * @param connection
    * @param sectionId Unique identifier of the section whose snapshots are being retrieved
-   * @param body Pagination and filtering parameters for snapshot retrieval
+   * @param body Search criteria and pagination parameters for snapshot retrieval
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query discussion_board_section_snapshots table filtered by discussion_board_section_id parameter. Join with discussion_board_sections to validate section existence and access permissions. Apply pagination using cursor-based or offset-based approach. Sort snapshots by created_at descending to show most recent changes first. Return summary information including snapshot ID, name, description, and creation timestamp. Validate that the requesting user has administrator privileges to access section history.
+   * @x-autobe-specification Query discussion_board_section_snapshots table filtered by discussion_board_section_id. Apply date range filtering on created_at field based on request parameters. Support pagination with cursor-based or offset-based implementation. Join with discussion_board_sections table to validate section existence and access permissions. Return snapshot summaries with id, name excerpt, created_at timestamp, and snapshot_reason. Handle section not found errors and empty snapshot lists gracefully.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -92,28 +90,26 @@ export class DiscussionboardSuperadminSectionsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific section snapshot record for audit trail and version history purposes.
+   * Retrieve a specific historical snapshot of a discussion board section configuration.
    *
-   * This operation returns the complete state of a section as it existed at the time the snapshot was captured. Section snapshots are created automatically when administrators modify section properties, providing an immutable record of section evolution over time.
+   * This operation provides access to point-in-time captures of section metadata that are automatically created whenever administrators modify section configurations. Each snapshot preserves the exact name, description, and metadata fields from the discussion_board_section_snapshots table as they existed at the time of capture, enabling compliance auditing and historical tracking of section evolution.
    *
-   * The response includes all snapshot fields including the section name, description, creation timestamp, and relationship to the original section. This enables administrators to review historical section configurations, track changes made by different administrators, and support compliance requirements.
+   * The snapshot includes the section name and description exactly as they appeared when the snapshot was created, along with the creation timestamp and optional snapshot_reason explaining the administrative purpose. This historical record helps super administrators track changes to section configurations over time and provides transparency in section management decisions.
    *
-   * Section snapshots cannot be modified or deleted once created, as they serve as permanent audit records. Related operations include viewing the list of all snapshots for a section using the index operation on the parent section's snapshots endpoint.
-   *
-   * Access to section snapshots is restricted to super administrators only, as these records contain sensitive administrative history and configuration changes.
+   * Users with super administrator privileges can access these snapshots to understand how sections have evolved and to reference previous configurations for compliance or administrative purposes. The operation requires valid section and snapshot identifiers to ensure accurate historical data retrieval from the discussion_board_section_snapshots table.
    *
    * @param connection
-   * @param sectionId The ID of the parent section that owns this snapshot
-   * @param snapshotId The unique identifier of the specific snapshot to retrieve
+   * @param sectionId Identifier of the parent section that owns this snapshot
+   * @param snapshotId Identifier of the specific snapshot to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the discussion_board_section_snapshots table using the provided snapshotId parameter. Validate that the snapshot belongs to the specified section by checking the discussion_board_section_id foreign key relationship. Return the complete snapshot record including all fields for audit trail purposes. Since snapshots are immutable historical records, no filtering or transformation is needed - return the full entity as stored.
+   * @x-autobe-specification Query the discussion_board_section_snapshots table using the provided sectionId and snapshotId parameters. Validate that both IDs exist and that the snapshot belongs to the specified section. Return the complete snapshot record including name, description, created_at timestamp, and snapshot_reason if available. Ensure proper error handling for non-existent sections or snapshots.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
   public async at(
-    @SuperAdminAuth()
-    superAdmin: SuperAdminPayload,
+    @SuperadminAuth()
+    superAdmin: SuperadminPayload,
     @TypedParam("sectionId")
     sectionId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")

@@ -11,7 +11,6 @@ export namespace RedditPlatformCommunitySubscriptionCollector {
   export async function collect(props: {
     body: IRedditPlatformCommunitySubscription.ICreate;
     redditPlatformMembers: IEntity;
-    redditPlatformCommunities: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -21,7 +20,7 @@ export namespace RedditPlatformCommunitySubscriptionCollector {
       updated_at: new Date(),
       deleted_at: null,
       member: { connect: { id: props.redditPlatformMembers.id } },
-      community: { connect: { id: props.redditPlatformCommunities.id } },
+      community: { connect: { id: props.body.reddit_platform_community_id } },
     } satisfies Prisma.reddit_platform_community_subscriptionsCreateInput;
   }
 }

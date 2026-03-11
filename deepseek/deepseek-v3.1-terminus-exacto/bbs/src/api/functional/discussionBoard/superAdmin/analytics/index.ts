@@ -3,33 +3,25 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IDiscussionBoardSystemActivity } from "../../../../structures/IDiscussionBoardSystemActivity";
-import { IPageIDiscussionBoardSystemActivity } from "../../../../structures/IPageIDiscussionBoardSystemActivity";
+import { IDiscussionBoardArticleViewStat } from "../../../../structures/IDiscussionBoardArticleViewStat";
+import { IPageIDiscussionBoardArticleViewStat } from "../../../../structures/IPageIDiscussionBoardArticleViewStat";
 
-export * as article_views from "./article_views/index";
-export * as sections from "./sections/index";
-export * as user_activity from "./user_activity/index";
+export * as downloads from "./downloads/index";
 
 /**
- * Query analytics data across multiple system data sources with advanced filtering capabilities.
+ * Retrieve comprehensive analytics data for platform monitoring and reporting.
  *
- * This operation provides super administrators with comprehensive analytics query functionality across all available analytics data sources in the discussion board platform. The system supports filtering by date ranges, activity types, metric categories, and target entities, enabling detailed analysis of platform usage patterns, performance metrics, and user engagement statistics.
+ * This operation provides administrators with detailed analytics insights including system performance metrics, article engagement statistics, and user activity patterns. Supports advanced filtering by date ranges, metric categories, and specific services or components.
  *
- * Super administrators can use this endpoint to retrieve aggregated analytics data for reporting, monitoring, and optimization purposes. The operation supports pagination for large result sets and allows filtering by specific analytics categories including system activities, performance metrics, article view statistics, section engagement metrics, and audit trail events.
+ * Administrators can use this endpoint to monitor platform health, identify trending content, track user engagement patterns, and generate performance reports. The analytics data supports both real-time monitoring and historical trend analysis for informed decision-making.
  *
- * Security considerations require that only authenticated super administrators have access to this analytics endpoint, as it provides system-wide visibility into platform usage patterns and performance metrics. The response includes summary analytics data optimized for reporting and dashboard display.
- *
- * Related operations include individual analytics endpoints for specific data sources, but this unified endpoint provides the most comprehensive analytics query capability for cross-source analysis and reporting needs.
+ * Security restrictions ensure only authenticated administrators can access analytics data, protecting sensitive platform metrics from unauthorized viewing. Response includes paginated results with summary information optimized for dashboard displays and reporting tools.
  *
  * @param props.connection
  * @param props.body Analytics query parameters including filters, date ranges, and pagination settings
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query multiple analytics data sources based on request parameters. Implement filtering logic for each analytics category: system activities, performance metrics, article view stats, section statistics, and audit logs. Apply date range filtering, activity type matching, and entity targeting. Aggregate results across data sources and return paginated response with analytics summaries.
- *
- * For system activities: filter by activity_type, target_entity_type, date ranges, and success status. For performance metrics: filter by metric_type, source_component, and time ranges. For article view stats: filter by article ID and date ranges. For section statistics: filter by section ID and activity periods. For audit logs: filter by action_type, actor_type, and date ranges.
- *
- * Implement pagination with configurable page sizes and sorting options. Handle empty result sets gracefully and provide comprehensive error handling for invalid filter parameters. Ensure all queries are optimized for performance with appropriate database indexes.
+ * @x-autobe-specification Query analytics data from multiple sources including system health metrics, article view statistics, and comment analytics. Support filtering by date range, metric type, source service, and aggregation level. Join data from discussion_board_system_health_metrics, discussion_board_article_view_stats, and discussion_board_mv_article_comments tables as needed based on filter criteria. Implement pagination with cursor-based or offset-based approach. Apply security checks to ensure only administrators can access analytics data. Return aggregated analytics summaries optimized for reporting dashboards.
  * @path /discussionBoard/superAdmin/analytics
  * @accessor api.functional.discussionBoard.superAdmin.analytics.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -61,10 +53,10 @@ export namespace index {
     /**
      * Analytics query parameters including filters, date ranges, and pagination settings
      */
-    body: IDiscussionBoardSystemActivity.IRequest;
+    body: IDiscussionBoardArticleViewStat.IRequest;
   };
-  export type Body = IDiscussionBoardSystemActivity.IRequest;
-  export type Response = IPageIDiscussionBoardSystemActivity.ISummary;
+  export type Body = IDiscussionBoardArticleViewStat.IRequest;
+  export type Response = IPageIDiscussionBoardArticleViewStat.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -80,8 +72,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/discussionBoard/superAdmin/analytics";
-  export const random = (): IPageIDiscussionBoardSystemActivity.ISummary =>
-    typia.random<IPageIDiscussionBoardSystemActivity.ISummary>();
+  export const random = (): IPageIDiscussionBoardArticleViewStat.ISummary =>
+    typia.random<IPageIDiscussionBoardArticleViewStat.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,

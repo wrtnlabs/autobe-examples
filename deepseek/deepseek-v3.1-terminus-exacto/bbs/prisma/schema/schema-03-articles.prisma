@@ -1,0 +1,547 @@
+/// Core article content representing user-generated posts in the discussion
+/// board.
+///
+/// Stores all article metadata including title, body content, author
+/// reference, and section categorization. Articles serve as the primary
+/// discussion starters in the forum and are the central entity around which
+/// comments, attachments, and tags are organized.
+///
+/// Articles follow a lifecycle from published, edited, to potentially
+/// deleted states while maintaining historical records through snapshots.
+/// Each article is authored by a registered member and categorized within
+/// exactly one thematic section.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_articles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of this article. References the member who created and owns this
+  /// content. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Thematic section this article belongs to for categorization. References
+  /// the section that provides topic context and organizational structure.
+  /// {@link discussion_board_sections.id}
+  discussion_board_section_id String
+  
+  /// Article title describing the post's topic and content focus. Displayed in
+  /// lists and article pages for user recognition.
+  title String
+  
+  /// Full article content containing the user's detailed analysis, discussion,
+  /// or information. Supports markdown or rich text formatting for enhanced
+  /// presentation.
+  body String
+  
+  /// Current lifecycle state of the article. Values: 'published' (visible to
+  /// users), 'edited' (modified since original), 'deleted' (soft deleted).
+  status String
+  
+  /// Timestamp when the article was originally created and published.
+  created_at DateTime
+  
+  /// Timestamp when the article was last modified. Automatically updated on
+  /// edits to track content evolution.
+  updated_at DateTime
+  
+  /// Timestamp when the article was soft deleted, if applicable. Allows for
+  /// content restoration and audit trails while removing from public view.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  tags discussion_board_article_tags[]
+  snapshots discussion_board_article_snapshots[]
+  viewStats discussion_board_article_view_stats[]
+  favorites discussion_board_article_favorites[]
+  reactions discussion_board_article_reactions[]
+  metadatum discussion_board_article_metadata?
+  comments discussion_board_comments[]
+  commentStatistic discussion_board_mv_article_comments?
+  attachments discussion_board_attachments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id, discussion_board_section_id, title], map: "discussion_board_articles_discussion_board_member_id_d_4c37873c")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, status, created_at], map: "discussion_board_articles_discussion_board_section_id__15b5dcf1")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, status, created_at], map: "discussion_board_articles_discussion_board_member_id_s_e1b90506")
+  @@index([status, created_at])
+}
+
+/// Junction table for many-to-many relationships between articles and tags.
+/// Associates articles with tag categories for content discovery and
+/// categorization.
+///
+/// Each record links a single article to a single tag, establishing
+/// bidirectional relationships: an article can have multiple tags, and a tag
+/// can be associated with multiple articles. This structure supports article
+/// filtering by tags, content organization, and search capabilities.
+///
+/// Primary use cases include tag-based browsing, article filtering, and
+/// content discovery through thematic categorization. The composite unique
+/// constraint ensures no duplicate article-tag associations exist.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Timestamp when this article-tag association was created.
+  created_at DateTime
+  
+  /// Timestamp when this article-tag association was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_article_id])
+}
+
+/// Point-in-time snapshots of article content for audit trail and version
+/// history.
+///
+/// This table captures complete article states at specific moments in time,
+/// preserving historical content for compliance, audit purposes, and version
+/// tracking. Each snapshot includes the full article content as it existed
+/// when the snapshot was taken, allowing reconstruction of article history
+/// and tracking of modifications over time.
+///
+/// Snapshots are automatically created when articles are edited, providing a
+/// version history that can be used to view previous states, track content
+/// changes, and maintain editorial accountability. The denormalized
+/// structure ensures each snapshot contains all necessary information
+/// without requiring joins to reconstruct historical states.
+///
+/// {@link discussion_board_articles.id} provides the reference to the parent
+/// article being snapshotted.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent article being snapshotted. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Timestamp when this snapshot was taken, recording the exact moment when
+  /// the article state was captured.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated. Used for internal
+  /// tracking of snapshot metadata changes.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of snapshot records. Null indicates active
+  /// snapshot; non-null indicates when the snapshot was marked as deleted
+  /// while preserving historical data.
+  deleted_at DateTime?
+  
+  /// Article title at the time of snapshot. Captures the exact title value
+  /// when the snapshot was created, denormalized for historical accuracy.
+  title String
+  
+  /// Full article body content at the time of snapshot. Preserves the complete
+  /// text body including formatting and structure as it existed when captured,
+  /// denormalized for historical reconstruction.
+  body String
+  
+  /// Section ID reference at time of snapshot. Records which section the
+  /// article belonged to when the snapshot was taken, denormalized for
+  /// historical context.
+  section_id String
+  
+  /// Author ID reference at time of snapshot. Records which user authored the
+  /// article when the snapshot was created, denormalized for historical
+  /// attribution.
+  author_id String
+  
+  /// Optional human-readable reason for creating this snapshot, such as
+  /// 'content edit', 'admin review', 'version milestone', or 'compliance
+  /// audit'.
+  snapshot_reason String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_snapshots_discussion_board_ar_12be945f")
+  @@index([created_at])
+}
+
+/// View count statistics and analytics for article popularity tracking.
+///
+/// This table tracks detailed view metrics for articles including total view
+/// counts, unique viewer identification, and timestamp data for popularity
+/// analysis. Each record represents a single view event of an article by a
+/// viewer (member, admin, or guest). The data enables analytics such as
+/// trending articles identification, user engagement patterns, and content
+/// popularity ranking.
+///
+/// The table supports both granular view event tracking and aggregated
+/// counters for performance optimization. View events are recorded with
+/// context including timestamp, viewer identification, and anonymized
+/// tracking data for duplicate detection. {@link
+/// discussion_board_articles.id} provides the article context, while
+/// references to member, admin, or guest tables identify the viewer based on
+/// authentication status.
+///
+/// Analytics use cases include: identifying popular content, calculating
+/// article engagement rates, detecting trending topics, and personalizing
+/// content recommendations based on viewing patterns.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Viewed article's {@link discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Viewing member's {@link discussion_board_members.id}, if authenticated as
+  /// a member.
+  discussion_board_member_id String?
+  
+  /// Viewing administrator's {@link discussion_board_admins.id}, if
+  /// authenticated as an admin.
+  discussion_board_admin_id String?
+  
+  /// Viewing super administrator's {@link discussion_board_super_admins.id},
+  /// if authenticated as a super admin.
+  discussion_board_super_admin_id String?
+  
+  /// Viewing guest's {@link discussion_board_guests.id}, if browsing as a
+  /// guest.
+  discussion_board_guest_id String?
+  
+  /// Member session's {@link discussion_board_member_sessions.id} for
+  /// authenticated view tracking.
+  discussion_board_member_session_id String?
+  
+  /// Admin session's {@link discussion_board_admin_sessions.id} for
+  /// authenticated view tracking.
+  discussion_board_admin_session_id String?
+  
+  /// Super admin session's {@link discussion_board_super_admin_sessions.id}
+  /// for authenticated view tracking.
+  discussion_board_super_admin_session_id String?
+  
+  /// Guest session's {@link discussion_board_guest_sessions.id} for anonymous
+  /// view tracking.
+  discussion_board_guest_session_id String?
+  
+  /// Timestamp when the article view occurred.
+  viewed_at DateTime
+  
+  /// SHA-256 hash of the viewer's IP address for unique view detection while
+  /// preserving privacy.
+  ip_address_hash String?
+  
+  /// SHA-256 hash of the viewer's user agent string for device/browser
+  /// fingerprinting.
+  user_agent_hash String?
+  
+  /// Timestamp when this view record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this view record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this view record was soft-deleted (if applicable).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  member discussion_board_members? @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins? @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins? @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  guest discussion_board_guests? @relation(fields: [discussion_board_guest_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions? @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  adminSession discussion_board_admin_sessions? @relation(fields: [discussion_board_admin_session_id], references: [id], onDelete: Cascade)
+  superAdminSession discussion_board_super_admin_sessions? @relation(fields: [discussion_board_super_admin_session_id], references: [id], onDelete: Cascade)
+  guestSession discussion_board_guest_sessions? @relation(fields: [discussion_board_guest_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_article_view_stats_discussion_board_m_3688a58b")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_session_id], map: "discussion_board_article_view_stats_discussion_board_a_86fc32ef")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_session_id], map: "discussion_board_article_view_stats_discussion_board_s_97c46ab9")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_guest_session_id], map: "discussion_board_article_view_stats_discussion_board_g_538309cc")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, viewed_at], map: "discussion_board_article_view_stats_discussion_board_a_9a5cb128")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, viewed_at], map: "discussion_board_article_view_stats_discussion_board_m_42f74f7a")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, viewed_at], map: "discussion_board_article_view_stats_discussion_board_a_be6d55c4")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, viewed_at], map: "discussion_board_article_view_stats_discussion_board_s_671fbf1c")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_guest_id, viewed_at], map: "discussion_board_article_view_stats_discussion_board_g_1675e0c4")
+  @@index([viewed_at])
+  @@index([created_at])
+}
+
+/// Tracks user favorites and bookmarks for articles within the discussion
+/// platform.
+///
+/// Each record represents a specific article that a member has favorited or
+/// bookmarked for future reference. The system prevents duplicate favorites
+/// through a unique constraint combining member and article references.
+/// Favorites support optional categorization for user organization and
+/// include timestamps for creation, updates, and soft deletion tracking.
+///
+/// When a user removes a favorite, the record is soft-deleted (deleted_at
+/// set) rather than hard-deleted to maintain historical preferences and
+/// potential analytics. Favorites are user-specific and private to each
+/// member.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_favorites {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who created this favorite. {@link discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Article that was favorited. {@link discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// Optional user-defined category for organizing favorites (e.g., "to-read",
+  /// "research", "personal").
+  category String?
+  
+  /// Optional user notes about why this article was favorited or what to
+  /// remember about it.
+  notes String?
+  
+  /// Timestamp when the user favorited the article.
+  created_at DateTime
+  
+  /// Timestamp when the favorite record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the user removed the favorite, enabling soft deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id, discussion_board_article_id], map: "discussion_board_article_favorites_discussion_board_me_6b6b05ab")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_article_favorites_discussion_board_me_ac8712cb")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_favorites_discussion_board_ar_3defbd19")
+}
+
+/// Tracks user reactions (like, helpful, etc.) on articles for engagement
+/// analytics.
+///
+/// Each record represents a single reaction instance where a member
+/// expresses their sentiment toward an article. Reactions are simple
+/// positive feedback mechanisms that differ from comments or favorites. This
+/// table enables counting popular articles, identifying trending content,
+/// and understanding user engagement patterns.
+///
+/// The reaction system uses a defined set of reaction types to maintain
+/// consistency across the platform. Each member can only apply one of each
+/// reaction type per article to prevent spam and ensure authentic engagement
+/// metrics. {@link discussion_board_articles.id} is the target article being
+/// reacted to, and {@link discussion_board_members.id} identifies the member
+/// who created the reaction.
+///
+/// Reactions are independently managed entities that users can create and
+/// remove directly, separate from the article content itself. This enables
+/// features like reaction counters, user reaction history, and article
+/// popularity scoring.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_reactions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target article receiving the reaction. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Member who created the reaction. {@link discussion_board_members.id}.
+  discussion_board_member_id String
+  
+  /// Type of reaction expressed (like, helpful, insightful, etc.). Uses
+  /// predefined reaction types from system configuration.
+  reaction_type String
+  
+  /// Timestamp when the reaction was created by the member.
+  created_at DateTime
+  
+  /// Timestamp when the reaction was last updated (if reaction type changed,
+  /// though typically not).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_member_id, discussion_board_article_id, reaction_type], map: "discussion_board_article_reactions_discussion_board_me_acdc328a")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_article_reactions_discussion_board_ar_eb251071")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id], map: "discussion_board_article_reactions_discussion_board_me_950fd531")
+}
+
+/// Additional metadata and extended attributes for articles beyond core
+/// content.
+///
+/// This table stores supplementary information that enhances article
+/// presentation and discovery, including SEO metadata for search engine
+/// optimization, reading time estimates for user convenience, and featured
+/// status flags for editorial curation. Unlike core article content which
+/// focuses on title, body, and section categorization, metadata provides
+/// auxiliary data that improves user experience and content management.
+///
+/// Each article can have exactly one metadata record, establishing a 1:1
+/// relationship with the parent {@link discussion_board_articles} table.
+/// Metadata fields include SEO elements (meta title, description, keywords)
+/// for controlling how articles appear in search results, reading time
+/// calculations based on content length, and editorial flags for
+/// highlighting important content.
+///
+/// When articles are deleted, their associated metadata records are also
+/// removed through cascading deletion to maintain referential integrity.
+///
+/// @namespace Articles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent article's {@link discussion_board_articles.id}. This establishes
+  /// the 1:1 relationship between articles and their metadata records,
+  /// ensuring each article has exactly one set of extended attributes.
+  discussion_board_article_id String
+  
+  /// Custom title for SEO purposes, often shorter or more keyword-focused than
+  /// the regular article title.
+  meta_title String?
+  
+  /// SEO-optimized description that appears in search engine results and
+  /// social media previews.
+  meta_description String?
+  
+  /// Comma-separated keywords for search engine optimization and content
+  /// categorization.
+  meta_keywords String?
+  
+  /// Estimated reading time in minutes calculated based on article content
+  /// length.
+  reading_time_minutes Int?
+  
+  /// Whether the article is marked as featured content for editorial
+  /// highlighting and promotion.
+  is_featured Boolean
+  
+  /// Timestamp when the metadata record was originally created, typically
+  /// matching the article creation time.
+  created_at DateTime
+  
+  /// Timestamp when the metadata record was last modified, tracking updates to
+  /// SEO fields or featured status.
+  updated_at DateTime
+  
+  /// Timestamp when the metadata record was soft deleted, following the
+  /// deletion of the parent article.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_article_metadata_discussion_board_art_c1deed2c")
+  @@index([created_at])
+  @@index([is_featured, created_at])
+}

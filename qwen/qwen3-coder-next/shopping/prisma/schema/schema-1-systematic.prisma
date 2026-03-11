@@ -1,327 +1,558 @@
-/// System-wide audit logs capturing all critical operations for compliance
-/// and troubleshooting. Records who performed what action, when, from which
-/// IP address, and what changes were made. Supports comprehensive audit
-/// trail requirements for security, debugging, and regulatory compliance.
+/// System configuration values for payment gateway settings, shipping rules,
+/// and business hours. Stores key-value pairs for system-wide configuration
+/// accessible across the application.
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_audit_logs {
+model ecommerce_mall_system_configurations {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Type of actor who performed the operation (customer, seller, admin,
-  /// system).
-  actor_type String
+  /// Configuration key (e.g., 'payment_gateway', 'shipping_rules',
+  /// 'business_hours').
+  key String
   
-  /// ID of the actor who performed the operation (references customer, seller,
-  /// admin, or system records).
-  actor_id String
-  
-  /// Type of operation performed (create, read, update, delete, login, logout,
-  /// approve, reject, suspend, unsuspend).
-  operation_type String
-  
-  /// Type of entity affected by the operation (customer, seller, product,
-  /// order, review, etc.).
-  entity_type String
-  
-  /// ID of the entity affected by the operation.
-  entity_id String
-  
-  /// IP address from which the operation was performed.
-  ip_address String
-  
-  /// User agent string of the client performing the operation.
-  user_agent String?
-  
-  /// JSON string containing previous values before the operation (for update
-  /// operations).
-  old_values String?
-  
-  /// JSON string containing new values after the operation.
-  new_values String?
-  
-  /// Human-readable description of the operation performed.
-  description String?
-  
-  /// Timestamp when the audit log entry was created.
-  created_at DateTime
-  
-  /// Timestamp when the audit log entry was last updated.
-  updated_at DateTime
-  
-  /// Timestamp for soft delete tracking. Nullable - null means not deleted.
-  deleted_at DateTime?
-  
-  //----
-  // INDEXES
-  //----
-  @@index([created_at])
-  @@index([actor_id, created_at])
-  @@index([operation_type, created_at])
-  // spellchecker: ignore-next-line
-  @@index([entity_type, entity_id, created_at], map: "shopping_mall_system_audit_logs_entity_type_entity_id__23b08c11")
-  // spellchecker: ignore-next-line
-  @@index([actor_type, operation_type, created_at], map: "shopping_mall_system_audit_logs_actor_type_operation_t_35ff6598")
-}
-
-/// Configuration settings for platform customization, including theme
-/// preferences, feature flags, and global system parameters that affect the
-/// entire shopping mall platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_configurations {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique configuration key for each setting
-  config_key String
-  
-  /// Configuration category for organization
-  category String?
-  
-  /// Whether this configuration is enabled
-  is_enabled Boolean
-  
-  /// Description of what this configuration does
-  description String?
-  
-  /// The last user who modified this configuration
-  updated_by String?
-  
-  /// When this configuration was created
-  created_at DateTime
-  
-  /// When this configuration was last updated
-  updated_at DateTime
-  
-  //----
-  // HAS RELATIONS
-  //   - format: (propertyKey targetModel)
-  //----
-  configurationValues shopping_mall_system_configuration_values[]
-  
-  //----
-  // INDEXES
-  //----
-  @@unique([config_key])
-}
-
-/// Reference data for standardized values used across domains, ensuring
-/// consistency and maintainability of domain-specific values like status
-/// codes and configuration options.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_reference_data {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Unique reference data name for categorization
-  name String
-  
-  /// Unique value within each name category
+  /// Configuration value in JSON format.
   value String
   
-  /// Human-readable label for UI display
-  label String
-  
-  /// Optional description providing context or usage instructions
+  /// Optional description of what this configuration controls.
   description String?
   
-  /// Optional sort order for display priority
-  sort_order Int?
+  /// Creation timestamp.
+  created_at DateTime
   
-  /// Whether this reference data is active and usable
-  is_active Boolean
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp for soft delete.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+}
+
+/// Background job queue records with status, retry count, and execution
+/// history.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_job_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Name of the job type to execute.
+  job_name String
+  
+  /// Priority level for job scheduling.
+  priority Int
+  
+  /// Job execution status.
+  status String
+  
+  /// Current retry attempt count.
+  retry_count Int
+  
+  /// Maximum allowed retry attempts.
+  max_retries Int
+  
+  /// Error message from last failed attempt.
+  last_error String?
+  
+  /// Timestamp when job processing started.
+  started_at DateTime?
+  
+  /// Timestamp when job processing completed.
+  finished_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit preservation.
+  deleted_at DateTime?
   
   //----
   // HAS RELATIONS
   //   - format: (propertyKey targetModel)
   //----
-  cacheInvalidationLogs shopping_mall_system_cache_trackings[]
+  dataPairs ecommerce_mall_job_queue_data[]
   
   //----
   // INDEXES
   //----
-  @@unique([name, value])
-  @@index([name, is_active])
+  @@index([status])
+  @@index([job_name, status])
+  @@index([started_at])
 }
 
-/// Database migration history record tracking schema changes and version
-/// control.
+/// Scheduled task metadata and execution history for batch processing and
+/// cleanup jobs.
+///
+/// Tracks all scheduled tasks in the system including batch processing jobs,
+/// maintenance operations,
+/// and automated cleanup tasks. Each task has a unique identifier,
+/// scheduling configuration,
+/// execution status, and comprehensive history of past executions with
+/// performance metrics.
+///
+/// **Key Concepts:**
+/// - Scheduled tasks represent automated operations running at defined
+/// intervals
+/// - Supports both one-time and recurring tasks with cron-based scheduling
+/// - Tracks execution history for monitoring, debugging, and audit purposes
+/// - Stores execution metrics including duration, success rate, and error
+/// details
+/// - Supports manual retries and task cancellation
+///
+/// **Common Use Cases:**
+/// - Monitoring task execution health and performance
+/// - Debugging failed scheduled operations
+/// - Auditing automated system operations
+/// - Planning capacity and resource allocation
+///
+/// **Relationships:**
+/// - Referenced by job_queues for job execution tracking
+/// - Used by system administrators for operational oversight
+///
+/// **Design Notes:**
+/// - Uses UUID primary keys for distributed system compatibility
+/// - Soft delete via deleted_at for audit trail preservation
+/// - Status field tracks current state of the task
+/// - Cron expression format follows standard cron syntax
+/// - Execution history stored separately for performance
+///
+/// **Timestamp Fields:**
+/// - created_at: When the task definition was first created
+/// - updated_at: When the task definition was last modified
+/// - deleted_at: When the task was soft-deleted (nullable)
+/// - next_execution_at: When the task is scheduled to run next
+/// - last_execution_start_at: When the last execution started
+/// - last_execution_end_at: When the last execution completed
 ///
 /// @namespace Systematic
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_migrations {
+model ecommerce_mall_scheduled_tasks {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Unique identifier for the scheduled task.
   id String @id
   
-  /// The administrator who executed this migration. {@link
-  /// shopping_mall_admins.id}.
-  admin_id String
+  /// Task name for identification and logging.
+  name String
   
-  /// Name of the migration file or script that was executed.
-  migration_name String
+  /// Detailed description of what the task does and why it exists.
+  description String?
   
-  /// Timestamp when this migration was executed in the database.
-  executed_at DateTime
+  /// Cron expression defining the task schedule. Format: minute hour day month
+  /// weekday.
+  cron_expression String
   
-  /// Hash of the migration file content for integrity verification.
-  migration_hash String
+  /// Timezone for cron expression evaluation (e.g., 'UTC', 'Asia/Seoul').
+  timezone String?
   
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  admin shopping_mall_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  /// The next scheduled execution time in the configured timezone.
+  next_execution_at DateTime
   
-  //----
-  // INDEXES
-  //----
-  @@index([admin_id])
-  @@unique([migration_name])
-}
-
-/// Cache invalidation tracking system for efficient cache management across
-/// the platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_cache_trackings {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
+  /// Maximum execution duration in seconds before timeout. Default 3600 (1
+  /// hour).
+  timeout_seconds Int?
   
-  /// Invalidated table name referencing system_reference_data.name.
-  table_name String
+  /// Maximum number of retry attempts on failure. Default 3.
+  max_retries Int?
   
-  /// User who triggered the cache invalidation for audit trail.
-  admin_id String?
+  /// Delay in seconds between retry attempts. Default 60.
+  retry_delay_seconds Int?
   
-  /// Cache key pattern that was invalidated
-  cache_key_pattern String
+  /// Policy for handling concurrent executions: 'allow', 'deny', 'wait'.
+  concurrent_policy String
   
-  /// Description of what was invalidated and why
-  description String
-  
-  /// Timestamp when cache invalidation was performed
-  invalidated_at DateTime
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  cacheTable shopping_mall_system_reference_data @relation(fields: [table_name], references: [id], onDelete: Cascade)
-  admin shopping_mall_admins? @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // INDEXES
-  //----
-  @@index([invalidated_at])
-  @@index([cache_key_pattern])
-  // spellchecker: ignore-next-line
-  @@index([table_name, invalidated_at], map: "shopping_mall_system_cache_trackings_table_name_invali_3fe87193")
-  // spellchecker: ignore-next-line
-  @@index([admin_id, invalidated_at], map: "shopping_mall_system_cache_trackings_admin_id_invalida_49dc90c7")
-}
-
-/// Atomic configuration values for each setting with typed storage for
-/// proper normalization. Stores individual configuration settings as
-/// key-value pairs with explicit data types, ensuring First Normal Form
-/// compliance and enabling efficient configuration management across the
-/// platform.
-///
-/// @namespace Systematic
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_system_configuration_values {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Configuration setting this value belongs to. {@link
-  /// shopping_mall_system_configurations.id}.
-  configuration_id String
-  
-  /// Name of the configuration setting. This is a denormalized copy of the
-  /// configuration name for efficient lookups without joins. Maximum 100
-  /// characters.
-  configuration_name String
-  
-  /// String value for string-type configurations. Maximum 255 characters.
-  /// Exactly one of value_string, value_integer, value_double, value_boolean,
-  /// or value_datetime must be populated.
-  value_string String?
-  
-  /// Integer value for integer-type configurations. Exactly one of
-  /// value_string, value_integer, value_double, value_boolean, or
-  /// value_datetime must be populated.
-  value_integer Int?
-  
-  /// Double value for decimal-type configurations. Exactly one of
-  /// value_string, value_integer, value_double, value_boolean, or
-  /// value_datetime must be populated.
-  value_double Float?
-  
-  /// Boolean value for flag-type configurations. Exactly one of value_string,
-  /// value_integer, value_double, value_boolean, or value_datetime must be
-  /// populated.
-  value_boolean Boolean?
-  
-  /// Datetime value for timestamp-type configurations. Exactly one of
-  /// value_string, value_integer, value_double, value_boolean, or
-  /// value_datetime must be populated.
-  value_datetime DateTime?
-  
-  /// Seller-specific configuration override. If null, this is a system-wide
-  /// configuration. {@link shopping_mall_sellers.id}.
-  seller_id String?
-  
-  /// Whether this configuration value is currently active. Enables
-  /// configuration versioning without deleting previous values.
+  /// Whether the task is currently enabled and should be executed.
   is_active Boolean
   
-  /// When this configuration value was created.
+  /// Current status of the task: 'pending', 'running', 'completed', 'failed',
+  /// 'paused'.
+  status String
+  
+  /// Status of the most recent execution: 'pending', 'running', 'completed',
+  /// 'failed', 'timeout', 'cancelled'.
+  last_execution_status String?
+  
+  /// Timestamp when the last execution started.
+  last_execution_start_at DateTime?
+  
+  /// Timestamp when the last execution completed.
+  last_execution_end_at DateTime?
+  
+  /// Duration of the last execution in seconds.
+  last_execution_duration_seconds Float?
+  
+  /// Error message from the last failed execution.
+  last_execution_error String?
+  
+  /// Total number of successful executions.
+  success_count Int
+  
+  /// Total number of failed executions.
+  failure_count Int
+  
+  /// Reason for the most recent failure.
+  last_failed_reason String?
+  
+  /// Number of retries attempted before final failure.
+  last_failed_retry_count Int?
+  
+  /// Identifier of the user/system that created this task definition.
+  created_by String?
+  
+  /// Identifier of the user/system that last updated this task definition.
+  updated_by String?
+  
+  /// Timestamp when the scheduled task definition was created.
   created_at DateTime
   
-  /// When this configuration value was last updated.
+  /// Timestamp when the scheduled task definition was last updated.
   updated_at DateTime
   
-  /// When this configuration value was soft deleted (null if not deleted).
-  /// Enables recovery of accidentally deleted configurations.
+  //----
+  // INDEXES
+  //----
+  @@index([cron_expression])
+  @@index([next_execution_at])
+  @@index([is_active])
+  @@index([status])
+  @@index([last_execution_status])
+  @@index([name, status])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Rate limit tracking records per IP/user for system-wide request
+/// throttling. Tracks request counts within sliding time windows, reset
+/// timestamps, and blocking status. Used by the rate limiting middleware to
+/// enforce API usage policies.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_rate_limit_trackings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Client IP address being rate limited.
+  ip String
+  
+  /// Optional reference to customer, seller, or admin user if authenticated.
+  user_id String?
+  
+  /// Number of requests made in the current time window.
+  request_count Int
+  
+  /// Start time of the current rate limiting window.
+  window_start DateTime
+  
+  /// End time of the current rate limiting window.
+  window_end DateTime
+  
+  /// Whether this IP/user is currently blocked due to rate limit exceeded.
+  blocked Boolean
+  
+  /// Timestamp when the block expires and rate limiting resets.
+  blocked_until DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ip, user_id, window_start])
+  @@index([ip, window_start])
+  @@index([blocked])
+}
+
+/// API access logs capturing detailed information about each API request
+/// including client IP, request URL, HTTP method, authentication status,
+/// response latency, and timestamps. Used for audit trails, monitoring, and
+/// debugging.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_api_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Client IP address that made the API request.
+  ip String
+  
+  /// Full request URL path including query parameters.
+  href String
+  
+  /// HTTP method of the request (GET, POST, PUT, DELETE, PATCH).
+  method String
+  
+  /// User agent string from the client request.
+  user_agent String?
+  
+  /// Authorization header value for authentication tracking.
+  authorization_header String?
+  
+  /// Hash of request body for integrity verification.
+  request_body_hash String?
+  
+  /// HTTP response status code.
+  response_status Int
+  
+  /// Hash of response body for integrity verification.
+  response_body_hash String?
+  
+  /// Request processing latency in milliseconds.
+  latency_ms Int
+  
+  /// Error message if request failed.
+  error_message String?
+  
+  /// Timestamp when the log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ip, created_at])
+  @@index([href, created_at])
+  @@index([response_status, created_at])
+  @@index([latency_ms, created_at])
+  @@index([error_message, created_at])
+  @@index([created_at])
+}
+
+/// Audit trail for administrator actions including seller approvals, product
+/// deletions, and user bans.
+///
+/// Records administrative actions performed by admins on the platform,
+/// including the action type, admin who performed it, target entity, and
+/// description. Used for compliance and operational auditing.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_admin_action_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action. {@link ecommerce_mall_admins.id}.
+  ecommerce_mall_admin_id String
+  
+  /// Type of administrative action (seller_approve, seller_reject,
+  /// seller_suspend, seller_unsuspend, user_ban, user_unban, product_delete,
+  /// category_create, category_edit, category_delete).
+  action_type String
+  
+  /// ID of the target entity (user, seller, product, category).
+  target_id String
+  
+  /// Detailed description of the action performed.
+  description String
+  
+  /// When the action occurred.
+  created_at DateTime
+  
+  /// When the record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
   deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  configuration shopping_mall_system_configurations @relation(fields: [configuration_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins @relation(fields: [ecommerce_mall_admin_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@index([configuration_id])
   // spellchecker: ignore-next-line
-  @@unique([configuration_name, seller_id, deleted_at], map: "shopping_mall_system_configuration_values_configuratio_5227c0d3")
-  @@index([seller_id])
-  @@index([is_active])
-  // spellchecker: ignore-next-line
-  @@index([configuration_name, is_active], map: "shopping_mall_system_configuration_values_configuratio_beea357e")
+  @@index([ecommerce_mall_admin_id, created_at], map: "ecommerce_mall_admin_action_logs_ecommerce_mall_admin__32ec7085")
+  @@index([target_id])
+  @@index([action_type, created_at])
+}
+
+/// System notification queue (email, in-app notifications) with delivery
+/// status and history
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_notification_queues {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of notification (email|in_app)
+  type String
+  
+  /// Recipient user ID
+  user_id String
+  
+  /// Notification content (HTML for email, JSON for in-app)
+  content String
+  
+  /// Delivery status (pending|sent|failed|delivered)
+  status String
+  
+  /// Delivery error message if failed
+  error_message String?
+  
+  /// Timestamp of last status update
+  updated_at DateTime
+  
+  /// Timestamp when notification was created
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// External API integration logs for payment gateway, shipping carrier, and
+/// other third-party services. Records all request/response details for
+/// debugging, audit, and monitoring purposes.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_integration_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Type of integration (payment_gateway, shipping_carrier, other)
+  integration_type String
+  
+  /// The API endpoint URL that was called
+  api_endpoint String
+  
+  /// HTTP method used for the request
+  request_method String
+  
+  /// Request headers as JSON string
+  request_headers String
+  
+  /// Request body as JSON string
+  request_body String
+  
+  /// HTTP response status code
+  response_status Int
+  
+  /// Response headers as JSON string
+  response_headers String
+  
+  /// Response body as JSON string
+  response_body String
+  
+  /// Error message if the request failed
+  error_message String?
+  
+  /// Execution time in milliseconds
+  duration_ms Int
+  
+  /// Creation timestamp
+  created_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@index([integration_type, created_at])
+  @@index([created_at])
+}
+
+/// Job queue data key-value pairs for flexible JSON payload storage.
+///
+/// This table stores individual key-value pairs that together form the
+/// complete payload for a job queue record. The key-value structure allows
+/// flexible storage of different data types and nested objects while
+/// maintaining a normalized schema. All key-value pairs for a single job are
+/// grouped by the job_queue_id foreign key.
+///
+/// Key design aspects:
+/// - Each record represents a single key-value pair from the job's JSON payload
+/// - Multiple key-value pairs per job share the same job_queue_id
+/// - The 'value' field stores the string representation of the data (JSON
+/// for objects, primitives as strings)
+/// - This enables the job queue system to handle varying payload structures
+/// without schema changes
+/// - The job_queue_id ensures all data for a job is traceable back to its
+/// parent job queue record
+///
+/// Relationships:
+/// - Belongs to a single job queue (ecommerce_mall_job_queues)
+/// - Each job queue can have many key-value data pairs
+///
+/// Temporal fields follow standard pattern: created_at, updated_at,
+/// deleted_at for audit and soft delete support.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_job_queue_data {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent job queue's {@link ecommerce_mall_job_queues.id}.
+  job_queue_id String
+  
+  /// The key name for this payload data field.
+  key String
+  
+  /// The string representation of the data value. JSON objects/arrays are
+  /// serialized as strings.
+  value String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp (nullable for soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  jobQueue ecommerce_mall_job_queues @relation(fields: [job_queue_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([job_queue_id, key])
 }

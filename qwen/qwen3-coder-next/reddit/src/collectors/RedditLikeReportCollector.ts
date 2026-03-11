@@ -11,6 +11,8 @@ export namespace RedditLikeReportCollector {
   export async function collect(props: {
     body: IRedditLikeReport.ICreate;
     redditLikeMembers: IEntity;
+    redditLikePosts?: IEntity;
+    redditLikeComments?: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -21,11 +23,11 @@ export namespace RedditLikeReportCollector {
       updated_at: new Date(),
       deleted_at: null,
       reporter: { connect: { id: props.redditLikeMembers.id } },
-      reportedPost: props.body.reported_post_id
-        ? { connect: { id: props.body.reported_post_id } }
+      reportedPost: props.redditLikePosts
+        ? { connect: { id: props.redditLikePosts.id } }
         : undefined,
-      reportedComment: props.body.reported_comment_id
-        ? { connect: { id: props.body.reported_comment_id } }
+      reportedComment: props.redditLikeComments
+        ? { connect: { id: props.redditLikeComments.id } }
         : undefined,
     } satisfies Prisma.reddit_like_reportsCreateInput;
   }

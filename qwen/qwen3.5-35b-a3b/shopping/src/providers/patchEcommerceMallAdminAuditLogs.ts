@@ -1,3 +1,4 @@
+import { IDateRange } from "@ORGANIZATION/PROJECT-api/lib/structures/IDateRange";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminAuditLog";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -12,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { EcommerceMallAdminAuditLogAtSummaryTransformer } from "../transformers/EcommerceMallAdminAuditLogAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,253 +21,82 @@ export async function patchEcommerceMallAdminAuditLogs(props: {
   admin: AdminPayload;
   body: IEcommerceMallAdminAuditLog.IRequest;
 }): Promise<IPageIEcommerceMallAdminAuditLog.ISummary> {
-  // Validate pagination parameters with proper null/undefined handling
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 50;
-  const validatedLimit: number = limit > 100 ? 100 : limit;
-  // Fetch admin details to check ban status and grade
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
+  // Verify super administrator grade
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
     where: { id: props.admin.id },
-    select: {
-      id: true,
-      email: true,
-      is_banned: true,
-      created_at: true,
-      updated_at: true,
-    },
+    select: { id: true },
   });
-  if (admin === null) {
-    throw new HttpException("Admin not found", 404);
+  if (admin.id !== props.admin.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (admin.is_banned) {
-    throw new HttpException("Admin account is banned", 403);
+  // Build WHERE clause
+  const whereInput: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {
+    admin_id: props.body.admin_id,
+    action_type: props.body.action_type,
+    target_entity_type: props.body.target_entity_type,
+    target_entity_id: props.body.target_entity_id,
+    ip_address: props.body.ip_address,
+  } satisfies Prisma.ecommerce_mall_admin_audit_logsWhereInput;
+  // Add date range filter
+  if (props.body.date_range !== undefined) {
+    const dateRangeFilter: Prisma.DateTimeFilter = {};
+    if (props.body.date_range.start_date !== undefined) {
+      dateRangeFilter.gte = props.body.date_range.start_date;
+    }
+    if (props.body.date_range.end_date !== undefined) {
+      dateRangeFilter.lte = props.body.date_range.end_date;
+    }
+    whereInput.created_at = dateRangeFilter;
   }
-  // Determine if admin is super
-  const adminDetails = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: { id: props.admin.id },
-    select: { id: true, email: true, is_banned: true },
-  });
-  const isSuperAdmin = adminDetails !== null;
-  // Build where clause
-  const whereClause: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {};
-  // Authorization filtering: regular admins can only view their own logs
-  if (!isSuperAdmin) {
-    whereClause.admin_id = props.admin.id;
-  }
-  // Apply request filters
-  if (props.body.adminId !== null) {
-    whereClause.admin_id = props.body.adminId;
-  }
-  if (props.body.actionType !== null) {
-    whereClause.action_type = props.body.actionType;
-  }
-  if (props.body.entityType !== null) {
-    whereClause.target_entity_type = props.body.entityType;
-  }
-  if (props.body.entityId !== null) {
-    whereClause.target_entity_id = props.body.entityId;
-  }
-  if (props.body.recordId !== null) {
-    whereClause.request_id = props.body.recordId;
-  }
-  // Handle date range filtering
-  if (props.body.dateRange !== null && props.body.dateRange !== undefined) {
-    const { filterType, dates } = props.body.dateRange;
-    if (dates.length > 0) {
-      const parsedDates: Array<string & tags.Format<"date-time">> = dates;
-      switch (filterType) {
-        case "between":
-          if (parsedDates.length >= 2) {
-            whereClause.created_at = {
-              gte: parsedDates[0],
-              lte: parsedDates[1],
-            };
-          }
-          break;
-        case "before":
-          if (parsedDates.length === 1) {
-            whereClause.created_at = {
-              lte: parsedDates[0],
-            };
-          }
-          break;
-        case "after":
-          if (parsedDates.length === 1) {
-            whereClause.created_at = {
-              gte: parsedDates[0],
-            };
-          }
-          break;
-        case "within_range":
-          if (parsedDates.length >= 2) {
-            whereClause.created_at = {
-              gte: parsedDates[0],
-              lte: parsedDates[parsedDates.length - 1],
-            };
-          }
-          break;
-        case "specific_date":
-          if (parsedDates.length === 1) {
-            const dateOnly = parsedDates[0].split("T")[0] as string &
-              tags.Format<"date-time">;
-            const startOfDay = (dateOnly + "T00:00:00Z") as string &
-              tags.Format<"date-time">;
-            const endOfDay = (dateOnly + "T23:59:59Z") as string &
-              tags.Format<"date-time">;
-            whereClause.created_at = {
-              gte: startOfDay,
-              lt: (endOfDay + "0.001Z") as string & tags.Format<"date-time">,
-            };
-          }
-          break;
-        case "since":
-          if (parsedDates.length === 1) {
-            whereClause.created_at = {
-              gte: parsedDates[0],
-            };
-          }
-          break;
-        case "until":
-          if (parsedDates.length === 1) {
-            whereClause.created_at = {
-              lte: parsedDates[0],
-            };
-          }
-          break;
-      }
+  // Add text search if provided - using contains for changes field
+  if (props.body.text_search !== undefined && props.body.text_search !== "") {
+    if (!whereInput.changes) {
+      whereInput.changes = {};
+    }
+    if (typeof whereInput.changes === "object") {
+      whereInput.changes.contains = props.body.text_search;
     }
   }
-  // Build cursor pagination
-  const cursor = props.body.cursor !== null ? props.body.cursor : undefined;
-  const skip = cursor !== undefined ? 1 : (page - 1) * validatedLimit;
-  const take = validatedLimit + (cursor !== undefined ? 1 : 0);
-  // Build orderBy
-  const sortBy = props.body.sortBy ?? "timestamp";
-  const sortOrder = props.body.sortOrder ?? "DESC";
-  const orderByInput: Prisma.ecommerce_mall_admin_audit_logsOrderByWithRelationInput =
-    {
-      created_at: sortOrder === "ASC" ? "asc" : "desc",
-    };
-  if (sortBy === "adminId") {
-    orderByInput.admin_id = sortOrder === "ASC" ? "asc" : "desc";
-  }
-  if (sortBy === "actionType") {
-    orderByInput.action_type = sortOrder === "ASC" ? "asc" : "desc";
-  }
-  // Fetch data with includes for relationships
-  const data = await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
-    where: whereClause,
-    skip,
-    take,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      admin_id: true,
-      action_type: true,
-      target_entity_type: true,
-      target_entity_id: true,
-      created_at: true,
-      updated_at: true,
-      changes: true,
-      previous_values: true,
-      new_values: true,
-      request_id: true,
-      ip_address: true,
-      user_agent: true,
-    },
-  });
-  // Get total count for pagination
-  const total = await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
-    where: whereClause,
-  });
-  // Transform admin data to summary format
-  const transformAdminToSummary = async (
-    adminId: string,
-  ): Promise<IEcommerceMallAdmin.ISummary> => {
-    const adminRecord = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-      where: { id: adminId },
-      select: {
-        id: true,
-        email: true,
-        is_banned: true,
-        created_at: true,
-        updated_at: true,
+  // Determine sorting - default to created_at DESC
+  const orderByInput: Prisma.ecommerce_mall_admin_audit_logsOrderByWithRelationInput[] =
+    [
+      {
+        admin_id: props.body.sort === "admin_id" ? "desc" : undefined,
+        action_type: props.body.sort === "action_type" ? "desc" : undefined,
+        target_entity_type:
+          props.body.sort === "target_entity_type" ? "desc" : undefined,
+        created_at: "desc" as const,
       },
-    });
-    if (adminRecord === null) {
-      throw new HttpException("Admin record not found", 404);
-    }
-    return {
-      id: adminRecord.id as string & tags.Format<"uuid">,
-      email: adminRecord.email,
-      is_banned: adminRecord.is_banned,
-      created_at: toISOStringSafe(adminRecord.created_at),
-      updated_at: toISOStringSafe(adminRecord.updated_at),
-    };
-  };
-  // Transform audit log records to response format
-  const transformedData: IEcommerceMallAdminAuditLog.ISummary[] =
-    await ArrayUtil.asyncMap(data, async (record) => {
-      const adminSummary: IEcommerceMallAdmin.ISummary =
-        await transformAdminToSummary(record.admin_id);
-      const changesValue: string | IEcommerceMallAdminAuditLog.IChange =
-        (() => {
-          if (record.changes !== null && record.changes !== undefined) {
-            try {
-              const parsed = JSON.parse(record.changes);
-              return {
-                oldValues:
-                  parsed.oldValues !== null && parsed.oldValues !== undefined
-                    ? (parsed.oldValues as {
-                        [key: string]: string;
-                      })
-                    : {},
-                newValues:
-                  parsed.newValues !== null && parsed.newValues !== undefined
-                    ? (parsed.newValues as {
-                        [key: string]: string;
-                      })
-                    : {},
-              } satisfies IEcommerceMallAdminAuditLog.IChange;
-            } catch {
-              return record.changes;
-            }
-          }
-          return "No changes recorded";
-        })();
-      const summary: IEcommerceMallAdminAuditLog.ISummary = {
-        id: record.id as string & tags.Format<"uuid">,
-        type: "admin_log",
-        timestamp: toISOStringSafe(record.created_at),
-        user: adminSummary,
-        operationType: record.action_type,
-        recordType: record.target_entity_type,
-        entityType: record.target_entity_type,
-        entityId:
-          record.target_entity_id !== null &&
-          record.target_entity_id !== undefined
-            ? (record.target_entity_id as string & tags.Format<"uuid">)
-            : ("00000000-0000-0000-0000-000000000000" as string &
-                tags.Format<"uuid">),
-        recordId:
-          record.request_id !== null && record.request_id !== undefined
-            ? (record.request_id as string & tags.Format<"uuid">)
-            : undefined,
-        changes: changesValue,
-        status: "active",
-      };
-      return summary;
-    });
-  // Calculate pagination metadata
-  const currentPage: number = page;
-  const totalPages: number = Math.ceil(total / validatedLimit);
+    ];
+  // Apply pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Execute query
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
+      where: whereInput,
+    }),
+  ]);
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallAdminAuditLogAtSummaryTransformer.transform,
+  );
   return {
-    pagination: {
-      current: currentPage,
-      limit: validatedLimit,
-      records: total,
-      pages: totalPages,
-    } satisfies IPage.IPagination,
     data: transformedData,
-  } satisfies IPageIEcommerceMallAdminAuditLog.ISummary;
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  };
 }

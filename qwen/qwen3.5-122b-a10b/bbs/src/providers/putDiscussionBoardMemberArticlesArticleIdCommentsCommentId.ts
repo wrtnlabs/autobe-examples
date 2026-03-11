@@ -3,7 +3,6 @@ import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,25 +23,30 @@ export async function putDiscussionBoardMemberArticlesArticleIdCommentsCommentId
   commentId: string & tags.Format<"uuid">;
   body: IDiscussionBoardComment.IUpdate;
 }): Promise<IDiscussionBoardComment> {
-  // Verify article exists and is not soft-deleted
-  await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
-    where: { id: props.articleId, deleted_at: null },
-  });
-  // Verify comment exists, belongs to specified article, and is not soft-deleted
+  // Find comment and verify it exists
   const comment =
-    await MyGlobal.prisma.discussion_board_comments.findFirstOrThrow({
-      where: {
-        id: props.commentId,
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
+    await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
+      where: { id: props.commentId },
+      select: {
+        id: true,
+        discussion_board_article_id: true,
+        discussion_board_member_id: true,
+        deleted_at: true,
       },
-      select: { discussion_board_member_id: true },
     });
-  // Verify ownership
+  // Verify comment is not soft-deleted
+  if (comment.deleted_at !== null) {
+    throw new HttpException("Comment not found", 404);
+  }
+  // Verify articleId matches comment's article reference
+  if (comment.discussion_board_article_id !== props.articleId) {
+    throw new HttpException("Article ID mismatch", 409);
+  }
+  // Verify authorization: member must own the comment
   if (comment.discussion_board_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Update comment content and updated_at timestamp
+  // Update the comment
   await MyGlobal.prisma.discussion_board_comments.update({
     where: { id: props.commentId },
     data: {
@@ -50,7 +54,7 @@ export async function putDiscussionBoardMemberArticlesArticleIdCommentsCommentId
       updated_at: new Date(),
     },
   });
-  // Fetch and transform updated comment
+  // Fetch and transform the updated comment
   const updated =
     await MyGlobal.prisma.discussion_board_comments.findUniqueOrThrow({
       where: { id: props.commentId },

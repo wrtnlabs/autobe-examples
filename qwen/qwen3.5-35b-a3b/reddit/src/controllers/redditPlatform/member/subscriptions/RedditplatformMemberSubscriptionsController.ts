@@ -7,47 +7,70 @@ import { IRedditPlatformCommunitySubscription } from "../../../../api/structures
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditPlatformMemberSubscriptionsSubscriptionId } from "../../../../providers/deleteRedditPlatformMemberSubscriptionsSubscriptionId";
-import { getRedditPlatformMemberSubscriptionsSubscriptionId } from "../../../../providers/getRedditPlatformMemberSubscriptionsSubscriptionId";
 import { patchRedditPlatformMemberSubscriptions } from "../../../../providers/patchRedditPlatformMemberSubscriptions";
 import { postRedditPlatformMemberSubscriptions } from "../../../../providers/postRedditPlatformMemberSubscriptions";
 
 @Controller("/redditPlatform/member/subscriptions")
 export class RedditplatformMemberSubscriptionsController {
   /**
-   * Subscribe a logged-in member to a community, adding them to the community's subscriber list.
+   * Subscribe the authenticated member to a community.
    *
-   * This operation creates a subscription record that links the authenticated member to the specified community. Upon successful subscription, the system automatically increments the community's subscriber count and grants the user posting privileges in that community.
+   * This operation enables a member to subscribe to a community, establishing a subscription relationship that grants the user posting privileges within that community. Upon successful subscription, the system automatically increments the community's subscriber count and records the subscription timestamp.
    *
-   * The operation validates that the user is authenticated as a member and that the target community exists and is active. Duplicate subscriptions are prevented by the database's unique constraint on the member-community pair.
+   * Subscriptions are required before a member can create posts in a community. When a member subscribes, they immediately gain the ability to create text, link, and image posts in that community. The subscription is persistent until the member explicitly unsubscribes or the community is deleted.
+   *
+   * The operation validates that the target community exists and is not deleted before creating the subscription. Duplicate subscription attempts are rejected to prevent redundant records. If the member is already subscribed to the community, an error is returned.
    *
    * **Related Operations**:
-   * - View subscribed communities: `GET /users/me/communities/subscribed`
-   * - Unsubscribe: `DELETE /subscriptions/{subscriptionId}`
-   * - Create post in community: `POST /posts` (requires active subscription)
+   * - `GET /me/subscriptions` - View all communities the member is subscribed to
+   * - `DELETE /subscriptions/{subscriptionId}` - Unsubscribe from a community
+   * - `POST /posts` - Create a post (requires active subscription to target community)
+   * - `GET /communities/:id` - View community details including subscriber count
+   *
+   * **Security Considerations**:
+   * - Authentication is required; only logged-in members can subscribe to communities
+   * - The member_id is derived from the authentication token, not provided in the request
+   * - Community must be active and not deleted
+   * - Duplicate subscription prevention ensures data integrity
    *
    * @param connection
-   * @param body Subscription creation data including the target community
+   * @param body Subscription creation data containing the target community identifier
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new community subscription record for the authenticated member.
+   * @x-autobe-specification Execute the following steps to create a community subscription:
    *
-   * 1. Extract member_id from authentication token claims
-   * 2. Validate community_id exists in reddit_platform_communities table and is not deleted
-   * 3. Verify unique constraint: no existing active subscription for this member-community pair
-   * 4. Create subscription record with:
-   *    - id: generated UUID
-   *    - reddit_platform_member_id: from auth context
-   *    - reddit_platform_community_id: from request
-   *    - subscribed_at: current timestamp
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   * 5. Increment community's subscriber_count by 1
-   * 6. Return the created subscription with full details
-   * 7. Handle unique constraint violation with 409 Conflict error
+   * 1. Extract member_id from the authenticated user's JWT token (do not use request body)
+   * 2. Validate community_id from request body:
+   *    - Query reddit_platform_communities table for the given community_id
+   *    - Verify community exists and deleted_at is null
+   *    - If community not found or deleted, return 404 Not Found
+   * 3. Check for existing subscription:
+   *    - Query reddit_platform_community_subscriptions table for record where reddit_platform_member_id = [extracted member_id] AND reddit_platform_community_id = [provided community_id] AND deleted_at is null
+   *    - If record exists, return 409 Conflict with message "Already subscribed to this community"
+   * 4. Create subscription record:
+   *    - Insert new row into reddit_platform_community_subscriptions with:
+   *      - id: generate new UUID
+   *      - reddit_platform_member_id: extracted from auth token
+   *      - reddit_platform_community_id: from request body
+   *      - subscribed_at: current timestamp (NOW())
+   *      - created_at: current timestamp (NOW())
+   *      - updated_at: current timestamp (NOW())
+   *      - deleted_at: null
+   *    - Set return type to RETURNING *
+   * 5. Return the newly created subscription entity with full details
+   *
+   * **Transaction Boundary**:
+   * The subscription creation should be wrapped in a database transaction to ensure atomicity. If subscriber count update is implemented synchronously, it should be part of the same transaction.
+   *
+   * **Error Handling**:
+   * - 401 Unauthorized: Member not authenticated
+   * - 404 Not Found: Community does not exist or is deleted
+   * - 409 Conflict: Member is already subscribed to this community
+   * - 400 Bad Request: Invalid community_id format
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
-  public async create(
+  public async subscribe(
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
@@ -65,34 +88,23 @@ export class RedditplatformMemberSubscriptionsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of communities that the authenticated user has subscribed to.
+   * Retrieve a paginated list of communities that the authenticated user is currently subscribed to.
    *
-   * This operation provides advanced search capabilities including status filtering (active/deleted), subscription date ranges, community name search, and sorting options. The response includes detailed community information such as name, description, icon URL, and current subscriber count for each subscribed community.
+   * This operation provides comprehensive access to a user's subscription history with advanced filtering and sorting capabilities. Each subscription entry includes the community's name, icon URL, and current subscriber count.
    *
-   * Supports comprehensive pagination with configurable page sizes and cursor-based navigation for efficient large dataset handling. All communities returned are verified to be non-deleted (deleted_at IS NULL) unless the user explicitly requests deleted subscriptions.
-   *
-   * **Security Requirements**: Authentication is required. The system validates that the user_id in the JWT token matches the subscription records being queried. Only the authenticated user can view their own subscriptions; cross-user subscription queries are not permitted.
+   * The endpoint supports pagination for efficient handling of large subscription lists. Users can search communities by name and sort results by different criteria such as subscription date or subscriber count.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for the subscribed communities list
+   * @param body Search criteria and pagination parameters for subscription list
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_platform_community_subscriptions table joined with reddit_platform_communities to return subscribed communities for the authenticated user.
-   *
-   * 1. Extract current user ID from JWT token claim (member_id)
-   * 2. Build query with filters:
-   *    - status: active only (deleted_at IS NULL) by default
-   *    - date ranges on subscribed_at
-   *    - community name substring search (if communityNameSearch provided)
-   *    - sorting by: subscribed_at (DESC), community name (ASC), subscriber_count (DESC)
-   * 3. Apply cursor-based pagination using cursor field (last subscribed_at or id from previous page)
-   * 4. Return joined data: subscription.id, subscribed_at, community fields (name, description, icon_url, subscriber_count)
-   * 5. Handle edge case: empty list when no subscriptions exist
-   *
-   * Service layer validation:
-   * - Verify user is authenticated (JWT token present and valid)
-   * - Ensure user_id matches authenticated member
-   * - Reject query with invalid cursor format
+   * @x-autobe-specification Query reddit_platform_community_subscriptions table filtered by authenticated user ID.
+   * Join with reddit_platform_communities to retrieve community details (name, iconUrl, subscriberCount).
+   * Apply pagination with configurable page size and cursor-based navigation for efficient large result sets.
+   * Support search filter on community name (partial match, case-insensitive).
+   * Support sorting by subscription creation date or community subscriber count.
+   * Filter out any deleted communities from results based on community status.
+   * Return paginated response with total count and list of subscription summaries.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -114,119 +126,28 @@ export class RedditplatformMemberSubscriptionsController {
   }
 
   /**
-   * Retrieve detailed information about a specific community subscription.
+   * Removes a user's subscription to a specific community.
    *
-   * This operation returns complete subscription data including the subscribing member, the subscribed community, subscription timestamp, and soft-delete status.
+   * This endpoint deletes an existing subscription record from the database, effectively unsubscribing the user from the community. The deletion is soft (deleted_at timestamp is set) to maintain audit trail and referential integrity.
    *
-   * **Security & Authorization:**
-   * - Only authenticated users can retrieve subscription details
-   * - Users can view their own subscription records
-   * - Community owners and moderators can view subscription records for communities they manage
-   * - Administrators can view all subscription records
+   * **Security:** Only the owner of the subscription can delete it. The system validates that the authenticated user's ID matches the subscription's member_id.
    *
-   * **Response Data:**
-   * The response includes the subscription ID, member information, community information, subscription creation timestamp, and soft-delete status.
+   * **Side Effects:** Upon successful deletion, a background job is queued to update the community's subscriber_count. This happens asynchronously as specified in the Community Subscriber Count Queue requirements.
    *
-   * **Related Operations:**
-   * - `GET /users/me/communities/subscribed` - List all subscriptions for the current user
-   * - `POST /communities/{communityName}/subscribe` - Create a new subscription
-   * - `DELETE /communities/{communityName}/unsubscribe` - Remove a subscription
+   * **Error Handling:** Returns 404 if the subscription does not exist, 403 if the user is not authorized to delete this subscription, or 401 if not authenticated.
    *
    * @param connection
-   * @param subscriptionId The unique identifier of the subscription to retrieve
+   * @param subscriptionId UUID of the subscription to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_platform_community_subscriptions table for the record matching the provided subscriptionId UUID.
-   *
-   * 1. Validate that subscriptionId is a valid UUID format
-   * 2. Query database for record where id = subscriptionId
-   * 3. Join with reddit_platform_members to retrieve member username and displayName
-   * 4. Join with reddit_platform_communities to retrieve community name and description
-   * 5. Check soft-delete status (deleted_at column)
-   * 6. Apply authorization: verify caller owns the subscription or has moderator/admin privileges
-   * 7. Return subscription data with member and community relationship data
-   * 8. Handle NOT FOUND error (HTTP 404) if subscription does not exist
-   *
-   * **Edge Cases:**
-   * - If deleted_at is populated, the subscription is considered deleted but record still exists
-   * - If member was deleted, member relationship still returns with null fields
-   * - If community was deleted, community relationship still returns with null fields
-   * - Concurrent subscription conflicts are handled by database-level unique constraint
-   *
-   * **Database Query:**
-   * ```sql
-   * SELECT
-   *   s.id, s.subscribed_at, s.deleted_at, s.created_at, s.updated_at,
-   *   m.username as member_username, m.display_name as member_display_name, m.email as member_email,
-   *   c.name as community_name, c.description as community_description, c.icon_url as community_icon_url,
-   *   c.subscriber_count
-   * FROM reddit_platform_community_subscriptions s
-   * LEFT JOIN reddit_platform_members m ON s.reddit_platform_member_id = m.id
-   * LEFT JOIN reddit_platform_communities c ON s.reddit_platform_community_id = c.id
-   * WHERE s.id = $1
-   *   AND (s.deleted_at IS NULL OR $2 = true)  -- $2 allows viewing deleted subscriptions for admins
-   * ```
-   *
-   * **Response Type:** IRedditPlatformCommunitySubscription with nested member and community objects.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":subscriptionId")
-  public async at(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("subscriptionId")
-    subscriptionId: string & tags.Format<"uuid">,
-  ): Promise<IRedditPlatformCommunitySubscription> {
-    try {
-      return await getRedditPlatformMemberSubscriptionsSubscriptionId({
-        member,
-        subscriptionId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Remove a community subscription from your account by deleting the subscription record. This operation allows authenticated members to unsubscribe from a community they are currently subscribed to.
-   *
-   * To use this operation, you must first obtain your subscription ID by viewing your subscribed communities list. The subscription ID uniquely identifies the relationship between you and the community, separate from the community's own identifier.
-   *
-   * **Security & Authorization**:
-   * - Requires member-level authentication
-   * - You can only delete your own subscriptions
-   * - Attempts to access subscriptions belonging to other users are rejected
-   * - The subscription must be active (not already deleted)
-   *
-   * **Database Impact**:
-   * - Soft deletes the subscription record by setting the deleted_at timestamp
-   * - The subscription record is marked as deleted but retained for audit purposes
-   * - A background job updates the community's subscriber count to reflect the removal
-   * - Your ability to post in the community is revoked upon deletion
-   *
-   * **Related Operations**:
-   * - `PATCH /subscriptions` - View your list of subscribed communities with subscription IDs
-   * - `POST /communities/{communityName}/subscribe` - Subscribe to a new community
-   *
-   * **Error Handling**:
-   * - 404 Not Found: Subscription does not exist, already deleted, or does not belong to you
-   * - 403 Forbidden: Subscription belongs to a different user (should not occur with proper authorization)
-   *
-   * @param connection
-   * @param subscriptionId UUID of the subscription to be deleted. This is the unique identifier for the user-community subscription relationship.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the request (member actor required)
-   * 2. Validate subscriptionId is a valid UUID format
-   * 3. Query reddit_platform_community_subscriptions for the record with id = subscriptionId AND reddit_platform_member_id = authenticated_member_id AND deleted_at IS NULL
-   * 4. If no record found, return 404 Not Found with message 'Subscription not found'
-   * 5. If record found but reddit_platform_member_id doesn't match authenticated member, return 403 Forbidden
-   * 6. Check that related community exists and is not deleted
-   * 7. Perform soft delete: UPDATE reddit_platform_community_subscriptions SET deleted_at = NOW() WHERE id = subscriptionId AND reddit_platform_member_id = authenticated_member_id
-   * 8. Query the deleted subscription record to return in response
-   * 9. Schedule background job to update community subscriber count (reddit_platform_community_subscriptions_count_updated)
-   * 10. Return 200 OK with deleted subscription summary
+   * @x-autobe-specification 1. Validate subscriptionId is a valid UUID format
+   * 2. Query reddit_platform_community_subscriptions WHERE id = subscriptionId AND deleted_at IS NULL
+   * 3. Verify the requesting user's ID matches the subscription's reddit_platform_member_id field. Return 403 if mismatch.
+   * 4. If not found, return 404 Not Found
+   * 5. Set deleted_at to current timestamp (soft delete)
+   * 6. Update the subscription record with deleted_at value
+   * 7. Queue a background job to increment community's subscriber_count (reddit_platform_community_subscriptions table has @@index on reddit_platform_community_id for efficient querying)
+   * 8. Return the deleted subscription record with deleted_at populated
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":subscriptionId")

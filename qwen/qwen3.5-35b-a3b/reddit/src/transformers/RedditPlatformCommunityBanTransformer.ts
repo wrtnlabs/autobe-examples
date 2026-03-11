@@ -24,40 +24,24 @@ export namespace RedditPlatformCommunityBanTransformer {
         expires_at: true,
         community: RedditPlatformCommunityAtSummaryTransformer.select(),
         bannedUser: RedditPlatformMemberAtSummaryTransformer.select(),
-        bannedBy: RedditPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_platform_community_bansFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditPlatformCommunityBan> {
-    const expiresAt = input.expires_at;
-    const deletedAt = input.deleted_at;
     return {
       id: input.id,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: deletedAt === null ? null : toISOStringSafe(deletedAt),
-      expires_at: expiresAt === null ? null : toISOStringSafe(expiresAt),
       community: await RedditPlatformCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      bannedUser: await RedditPlatformMemberAtSummaryTransformer.transform(
+      author: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.bannedUser,
       ),
-      bannedBy: await RedditPlatformMemberAtSummaryTransformer.transform(
-        input.bannedBy,
-      ),
-      isActive:
-        deletedAt === null && (expiresAt === null || expiresAt > new Date()),
-      isPermanent: expiresAt === null,
-      durationDays:
-        expiresAt !== null
-          ? Math.floor(
-              (expiresAt.getTime() - input.created_at.getTime()) /
-                (1000 * 60 * 60 * 24),
-            )
-          : null,
-    } satisfies IRedditPlatformCommunityBan;
+      createdAt: input.created_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+      expiresAt: input.expires_at?.toISOString() ?? null,
+      updatedAt: input.updated_at.toISOString(),
+    };
   }
 }

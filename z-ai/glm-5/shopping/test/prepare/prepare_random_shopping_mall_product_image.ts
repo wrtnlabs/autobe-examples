@@ -9,11 +9,8 @@ export function prepare_random_shopping_mall_product_image(
   input?: DeepPartial<IShoppingMallProductImage.ICreate>,
 ): IShoppingMallProductImage.ICreate {
   return {
-    image_url:
-      input?.image_url ??
-      typia.random<string & tags.MinLength<1> & tags.Format<"url">>(),
-    display_order:
-      input?.display_order ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
+    imageUrl: input?.imageUrl ?? typia.random<string & tags.Format<"url">>(),
+    displayOrder:
+      input?.displayOrder ?? typia.random<number & tags.Type<"int32">>(),
   };
 }

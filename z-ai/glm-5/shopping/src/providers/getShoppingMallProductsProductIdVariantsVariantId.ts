@@ -16,20 +16,11 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallProductsProductIdVariantsVariantId(props: {
-  productId: string & tags.Format<"uuid">;
-  variantId: string & tags.Format<"uuid">;
+  productId: string;
+  variantId: string;
 }): Promise<IShoppingMallProductVariant> {
-  // Validate product exists and is not deleted
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { id: props.productId },
-    select: { id: true, deleted_at: true },
-  });
-  if (product === null || product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  // Query variant with all conditions
   const variant =
-    await MyGlobal.prisma.shopping_mall_product_variants.findFirst({
+    await MyGlobal.prisma.shopping_mall_product_variants.findFirstOrThrow({
       where: {
         id: props.variantId,
         shopping_mall_product_id: props.productId,
@@ -37,8 +28,5 @@ export async function getShoppingMallProductsProductIdVariantsVariantId(props: {
       },
       ...ShoppingMallProductVariantTransformer.select(),
     });
-  if (variant === null) {
-    throw new HttpException("Variant not found", 404);
-  }
   return await ShoppingMallProductVariantTransformer.transform(variant);
 }

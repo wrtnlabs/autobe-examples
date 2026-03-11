@@ -1,69 +1,51 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallSeller } from "../../../../api/structures/IEcommerceMallSeller";
-import { IEcommerceMallSellerDetail } from "../../../../api/structures/IEcommerceMallSellerDetail";
 import { IPageIEcommerceMallSeller } from "../../../../api/structures/IPageIEcommerceMallSeller";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getEcommerceMallAdminSellersSellerId } from "../../../../providers/getEcommerceMallAdminSellersSellerId";
 import { patchEcommerceMallAdminSellers } from "../../../../providers/patchEcommerceMallAdminSellers";
-import { postEcommerceMallAdminSellersSellerIdApprove } from "../../../../providers/postEcommerceMallAdminSellersSellerIdApprove";
-import { postEcommerceMallAdminSellersSellerIdBan } from "../../../../providers/postEcommerceMallAdminSellersSellerIdBan";
-import { postEcommerceMallAdminSellersSellerIdReject } from "../../../../providers/postEcommerceMallAdminSellersSellerIdReject";
-import { postEcommerceMallAdminSellersSellerIdUnban } from "../../../../providers/postEcommerceMallAdminSellersSellerIdUnban";
-import { postEcommerceMallAdminSellersSellerIdUnsuspend } from "../../../../providers/postEcommerceMallAdminSellersSellerIdUnsuspend";
 
 @Controller("/ecommerceMall/admin/sellers")
 export class EcommercemallAdminSellersController {
   /**
-   * Retrieve a filtered and paginated list of seller accounts on the ecommerce platform.
+   * Retrieve a paginated list of seller accounts with advanced filtering and sorting capabilities.
    *
-   * This operation provides advanced search capabilities for administrators to manage sellers, including filtering by approval status (pending, approved, rejected), suspension status, ban status, email address partial matching, and registration date ranges.
+   * This operation provides administrators with comprehensive search functionality to browse and manage seller accounts on the ecommerce platform. Search filters include approval status (pending, approved, rejected), suspension status (suspended, active), ban status, email domain patterns, and account creation date ranges.
    *
-   * The operation supports comprehensive pagination with configurable page size and sorting options (newest first, oldest first, or by approval status). Response includes seller summary information optimized for administrative review and management dashboards.
+   * The response returns seller summary information optimized for administrative dashboards and bulk management operations. Pagination with configurable page size allows efficient browsing through large seller catalogs. Sorting by registration date, approval date, or email address helps prioritize actions such as approval reviews or account audits.
    *
-   * Only administrators can access this endpoint. Regular customers and sellers are denied access. The operation is essential for seller approval workflows, suspension management, and account oversight.
+   * Only authorized administrators can access this endpoint. Sellers can only view their own profile details through separate operations.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering sellers
+   * @param body Search criteria, pagination parameters, and sorting options for seller list
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
    * @x-autobe-specification Query the ecommerce_mall_sellers table with pagination and filtering.
    *
-   * Apply search filters on:
-   * - approval_status: exact match for 'pending', 'approved', or 'rejected'
-   * - is_suspended: boolean filter for suspended accounts
-   * - is_banned: boolean filter for banned accounts
-   * - email: partial case-insensitive matching
-   * - created_at range: minimum and maximum timestamps for registration date filtering
-   * - updated_at range: minimum and maximum timestamps for last update filtering
+   * Apply search filters:
+   * - approvalStatus: filter by pending|approved|rejected states
+   * - isSuspended: filter by suspended account status
+   * - isBanned: filter by banned account status
+   * - email: partial match on seller email address
+   * - createdAt: date range filter for account creation date
+   * - updatedAt: date range filter for last modification date
    *
-   * Join with ecommerce_mall_seller_profiles if shop name is requested in projections.
+   * Apply sorting:
+   * - sortBy: 'createdAt' (default), 'updatedAt', or 'email'
+   * - sortOrder: 'asc' (default) or 'desc'
    *
-   * Exclude soft-deleted records (where deleted_at is null) by default.
+   * Return cursor-based or offset-based pagination with configurable page size (default 20, max 100).
    *
-   * Return cursor-based pagination with cursor tokens for navigating large result sets.
+   * Include summary fields only: email, approvalStatus, isSuspended, isBanned, createdAt, updatedAt.
+   * Join with ecommerce_mall_seller_profiles for shopName if requested in search criteria.
    *
-   * Sort by:
-   * - created_at DESC (newest first) - default
-   * - created_at ASC (oldest first)
-   * - updated_at DESC (most recently updated first)
-   * - approval_status (alphabetically)
-   *
-   * Return summary fields only: id, email, approval_status, rejection_reason (admin only), is_suspended, is_banned, shop_name (if joined), created_at.
-   *
-   * Validate that the requesting actor has admin privileges before executing the query.
-   *
-   * Log all search operations for audit trail.
-   *
-   * Handle edge cases:
-   * - Empty result set when no filters match
-   * - Invalid cursor token returns error
-   * - Invalid date formats return validation error
-   * - Page 0 or negative redirects to page 1
-   * - Cursor token expiration (24 hours) returns error
+   * Apply authorization: Only admin-grade users can execute this operation.
+   * Return HTTP 200 with paginated results on success.
+   * Return HTTP 403 if user lacks admin privileges.
+   * Return HTTP 400 for invalid search/filter parameters.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -77,399 +59,6 @@ export class EcommercemallAdminSellersController {
       return await patchEcommerceMallAdminSellers({
         admin,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information about a seller account from the ecommerce platform.
-   *
-   * This operation returns comprehensive seller profile data including account status, approval state, and registration metadata. The response includes the seller's email address, approval status (pending, approved, or rejected), suspension and ban flags, and timestamps for account creation and last update.
-   *
-   * **Security Considerations**:
-   * - The password_hash field is never included in responses
-   * - Banned and suspended sellers remain visible in admin lists for oversight
-   * - Rejection reason is shown only to the seller or administrators
-   * - Account deletion status (deleted_at) is tracked for historical data preservation
-   *
-   * **Authorization**:
-   * - Customers can view seller profiles for approved sellers when browsing products
-   * - Sellers can view their own profile regardless of approval status
-   * - Administrators can view all seller profiles including pending and rejected accounts
-   *
-   * **Related Operations**:
-   * - See PATCH /sellers for seller profile management (seller can edit own shop profile)
-   * - See PATCH /sellers for seller account management (admin can approve/reject/suspend)
-   *
-   * @param connection
-   * @param sellerId Unique identifier of the seller account to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table by primary key identifier.
-   *
-   * **Validation Rules**:
-   * 1. Validate sellerId is a valid UUID format
-   * 2. Check seller account exists (return 404 if not found)
-   * 3. Apply authorization checks based on current user role:
-   *    - Admin: unrestricted access
-   *    - Seller: only access own account
-   *    - Customer: only view approved sellers
-   *
-   * **Data Exclusions**:
-   * - Exclude password_hash from response (security requirement)
-   * - Include deleted_at for soft delete tracking
-   *
-   * **Response Construction**:
-   * - Map database fields to response DTO
-   * - Convert approval_status enum values to API-friendly format
-   * - Format timestamps in ISO 8601 format
-   *
-   * **Error Handling**:
-   * - 404 Not Found: Seller ID does not exist
-   * - 403 Forbidden: Unauthorized access attempt
-   * - 400 Bad Request: Invalid UUID format
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":sellerId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallSellerDetail> {
-    try {
-      return await getEcommerceMallAdminSellersSellerId({
-        admin,
-        sellerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Approve a pending seller registration, changing their approval status from 'pending' to 'approved'.
-   *
-   * This operation allows administrators to grant selling privileges to seller accounts that have completed their registration and are awaiting approval. Upon approval, the seller's approval_status field is updated to 'approved', which enables them to:
-   *
-   * - Create and list products for sale
-   * - Access the seller dashboard
-   * - Create product variants and manage inventory
-   * - Fulfill orders and create shipments
-   *
-   * **Security and Authorization**:
-   * - Requires admin authentication
-   * - Only administrators with sufficient privileges can approve sellers
-   * - The seller's approval_status must currently be 'pending'
-   * - Cannot approve sellers with 'rejected' or 'approved' status
-   *
-   * **Post-Approval Actions**:
-   * - The seller account is activated for selling operations
-   * - The seller receives notification of approval
-   * - Their shop becomes visible in product listings once they create products
-   * - Pending order history (if any) is preserved but cannot be acted upon until approval is granted
-   *
-   * **Error Conditions**:
-   * - Returns error if seller does not exist
-   * - Returns error if seller is already approved or rejected
-   * - Returns error if seller is banned or suspended
-   * - Returns error if admin lacks approval privileges
-   *
-   * @param connection
-   * @param sellerId UUID identifier of the seller account to approve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate that the requesting user is an authenticated administrator
-   * 2. Validate that the admin has sufficient privileges to approve sellers (super admin or regular admin with seller management permissions)
-   * 3. Query the ecommerce_mall_sellers table for the seller record matching the sellerId path parameter
-   * 4. Verify seller exists; if not, return 404 Not Found error
-   * 5. Check the seller's approval_status field; must be 'pending'
-   *    - If status is 'approved', return 400 Bad Request (already approved)
-   *    - If status is 'rejected', return 400 Bad Request (cannot approve rejected seller; they must resubmit)
-   * 6. Check is_banned flag; if true, return 403 Forbidden (cannot approve banned seller)
-   * 7. Check is_suspended flag; if true, return 400 Bad Request (cannot approve suspended seller)
-   * 8. Update the ecommerce_mall_sellers table:
-   *    - Set approval_status to 'approved'
-   *    - Set updated_at to current timestamp
-   *    - Preserve other fields (email, password_hash, rejection_reason, created_at)
-   * 9. Create a snapshot in ecommerce_mall_seller_snapshots (if applicable) or ecommerce_mall_snapshot_audits table capturing the state change
-   * 10. Log the approval action in ecommerce_mall_admin_audit_logs with:
-   *     - admin_id (requesting admin)
-   *     - action_type: 'seller_approved'
-   *     - target_id (sellerId)
-   *     - timestamp
-   * 11. Trigger notification to seller (email notification of approval)
-   * 12. Return the updated seller record with new approval_status: 'approved'
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":sellerId/approve")
-  public async approve(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallSeller> {
-    try {
-      return await postEcommerceMallAdminSellersSellerIdApprove({
-        admin,
-        sellerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Reject a seller's registration request, transitioning their approval status from pending to rejected.
-   *
-   * This operation is designed for administrators to reject seller accounts that do not meet approval criteria. When a seller is rejected, they are notified and can view the rejection reason to resubmit their application.
-   *
-   * The rejection operation requires a valid reason to be provided. This ensures transparency in the approval process and gives sellers specific feedback to address before resubmitting.
-   *
-   * ### Security and Authorization
-   *
-   * - Requires administrator role (admin actor)
-   * - Only administrators can view and manage approval requests
-   * - Seller cannot reject their own registration
-   * - Rejection is irreversible; seller must submit a new registration request
-   *
-   * ### Business Logic
-   *
-   * The system validates that the seller is in 'pending' status before allowing rejection. If the seller is already 'approved' or 'rejected', the operation fails.
-   *
-   * Upon successful rejection:
-   * 1. Seller's approval_status changes from 'pending' to 'rejected'
-   * 2. Rejection reason is stored in the rejection_reason field
-   * 3. Seller can view the rejection reason in their account dashboard
-   * 4. Seller can submit a new registration request (resubmission)
-   *
-   * ### Related Operations
-   *
-   * - GET /sellers/{sellerId} - View seller registration details before rejection
-   * - PATCH /sellers/{sellerId}/approve - Approve instead of reject
-   * - PATCH /sellers - List pending seller requests for administrator review
-   *
-   * @param connection
-   * @param sellerId The unique identifier of the seller to reject
-   * @param body Rejection details including the reason for rejection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate seller exists and retrieve seller record from ecommerce_mall_sellers table
-   * 2. Verify seller's approval_status is 'pending'; reject if 'approved' or 'rejected'
-   * 3. Validate administrator has admin actor role (admin-grade)
-   * 4. Validate rejection_reason is provided and non-empty
-   * 5. Update seller record:
-   *    - Set approval_status = 'rejected'
-   *    - Set rejection_reason = request body reason
-   *    - Update updated_at timestamp
-   * 6. Return updated seller record with new status and rejection reason
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":sellerId/reject")
-  public async reject(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallSeller.IReject,
-  ): Promise<IEcommerceMallSeller> {
-    try {
-      return await postEcommerceMallAdminSellersSellerIdReject({
-        admin,
-        sellerId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Unsuspend a suspended seller account, restoring their ability to create and edit products and making their products visible in search and category listings again.
-   *
-   * This operation is part of the seller access control workflow, allowing administrators to reverse suspension decisions. When a seller is unsuspended, the system restores full selling capabilities and makes all their products searchable and purchasable by customers.
-   *
-   * Security and Authorization:
-   * - Requires administrator authentication (regular admin or super admin)
-   * - The admin must have sufficient privileges to manage seller accounts
-   * - All unsuspension actions are logged in immutable snapshots for audit purposes
-   *
-   * Business Rules and Validation:
-   * - The seller identified by sellerId must currently be suspended (isSuspended=true)
-   * - The sellerId must correspond to a valid existing seller account
-   * - Upon successful unsuspension, all products owned by this seller are restored to search and category visibility
-   * - The seller's ability to create and edit products is immediately restored
-   * - An immutable snapshot is created recording the unsuspension action, including admin who performed it, timestamp, and any reason provided
-   * - Email notification is sent to the seller informing them of the unsuspension
-   *
-   * Related Operations:
-   * - GET /sellers/{sellerId} should be used to view seller details before unsuspension
-   * - GET /sellers/{sellerId}/products can verify product restoration
-   * - POST /sellers/{sellerId}/suspend is the inverse operation for suspending a seller
-   *
-   * @param connection
-   * @param sellerId UUID of the seller account to unsuspend
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Authenticate the admin user and verify they have admin-grade privileges
-   * 2. Validate that sellerId is a valid UUID format
-   * 3. Query ecommerce_mall_sellers table to fetch seller record by id
-   * 4. Verify the seller exists and has isSuspended=true
-   * 5. Begin database transaction
-   * 6. Update ecommerce_mall_sellers: set isSuspended=false
-   * 7. Create snapshot record in ecommerce_mall_snapshot_audits with:
-   *    - recordType: 'Seller'
-   *    - recordId: sellerId
-   *    - changes: 'unsuspend'
-   *    - oldValues: { isSuspended: true }
-   *    - newValues: { isSuspended: false }
-   *    - changedAt: current timestamp
-   *    - changedBy: adminId performing the action
-   * 8. Commit database transaction
-   * 9. Queue email notification to seller with:
-   *    - Account unsuspended status
-   *    - Date/time of unsuspension
-   *    - Admin who performed the action
-   *    - Restored capabilities (product creation, editing, search visibility)
-   * 10. Return updated seller profile with isSuspended=false
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":sellerId/unsuspend")
-  public async unsuspend(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallSeller.ISummary> {
-    try {
-      return await postEcommerceMallAdminSellersSellerIdUnsuspend({
-        admin,
-        sellerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Ban a seller account, preventing them from logging in and accessing the system.
-   *
-   * This operation blocks a seller from accessing their account and selling on the platform. The system sets the seller's is_banned flag to true, which:
-   *
-   * - Prevents the seller from logging in with their credentials
-   * - Hides all the seller's products from search and category listings
-   * - Allows existing orders and shipments to continue processing normally
-   * - Preserves all order history, seller profile, and historical data
-   * - Records the ban reason for administrative reference and audit purposes
-   *
-   * The ban can be reversed by administrators (particularly super administrators) who can unban the account. This allows for temporary disciplinary action when needed while preserving the seller's data for future reinstatement.
-   *
-   * Security considerations:
-   * - Logs the action with the administrator's identity
-   * - Requires a reason to be provided for audit compliance
-   * - Cannot be used on already banned accounts (returns conflict error)
-   *
-   * @param connection
-   * @param sellerId Unique identifier of the seller account to ban
-   * @param body Ban request containing the reason for banning the seller account
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate that seller with sellerId exists and is not already banned
-   * 2. Verify the requesting user has admin role (regular or super admin)
-   * 3. Validate ban reason is provided and meets content requirements (non-empty, max 500 characters)
-   * 4. Set seller.is_banned = true
-   * 5. Record the ban reason in the seller record
-   * 6. Log the action with administrator identity for audit trail
-   * 7. Query the database to fetch updated seller record with current status
-   * 8. Return the updated seller summary
-   *
-   * Business rules:
-   * - Seller must not be already banned (return 409 Conflict if attempting to re-ban)
-   * - Ban reason is mandatory and required for audit compliance
-   * - Existing orders, shipments, and historical data are preserved
-   * - Products automatically become invisible in search and categories
-   * - Seller cannot log in or access seller dashboard
-   * - Only administrators can perform this operation
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":sellerId/ban")
-  public async ban(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallSeller.IBanRequest,
-  ): Promise<IEcommerceMallSeller.ISummary> {
-    try {
-      return await postEcommerceMallAdminSellersSellerIdBan({
-        admin,
-        sellerId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Unban a previously banned seller account to restore their platform access.
-   *
-   * This administrative operation reverses a permanent ban, allowing the seller to log in and manage their existing products. The seller's shop profile, products, and order history remain intact.
-   *
-   * **Authorization**: Only administrator actors (regular or super) can perform this operation.
-   *
-   * **Business Rules**:
-   * - The seller must currently be in a banned state (is_banned = true)
-   * - Unbanning restores the seller's ability to access the seller dashboard
-   * - The seller retains all existing products and order history
-   * - Product visibility follows normal suspension rules if is_suspended is also true
-   *
-   * **Related Operations**:
-   * - POST /sellers/{sellerId}/ban - to ban a seller
-   * - PATCH /sellers/{sellerId} - to update seller profile
-   * - GET /sellers/{sellerId} - to view seller details before/after unban
-   *
-   * @param connection
-   * @param sellerId The unique identifier of the seller to unban
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate seller exists with id = {sellerId}
-   * 2. Verify seller has is_banned = true (cannot unban already unbanned seller)
-   * 3. Check caller has admin actor privilege (regular or super administrator)
-   * 4. Set is_banned = false on seller record
-   * 5. Record updated_at timestamp
-   * 6. Log unban action in admin audit logs with:
-   *    - Admin user ID
-   *    - Timestamp
-   *    - Target seller ID
-   *    - Action type: 'unban'
-   * 7. Return updated seller profile
-   * 8. Throw 404 if seller not found
-   * 9. Throw 403 if caller not admin
-   * 10. Throw 400 if seller is already unbanned
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":sellerId/unban")
-  public async unban(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("sellerId")
-    sellerId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallSeller> {
-    try {
-      return await postEcommerceMallAdminSellersSellerIdUnban({
-        admin,
-        sellerId,
       });
     } catch (error) {
       console.log(error);

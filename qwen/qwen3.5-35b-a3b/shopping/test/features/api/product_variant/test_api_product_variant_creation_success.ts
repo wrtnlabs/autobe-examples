@@ -1,8 +1,12 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import type { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -14,87 +18,64 @@ import typia, { tags } from "typia";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
 import { generate_random_ecommerce_mall_seller_products_variants_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_variants_create";
+import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
 import { prepare_random_ecommerce_mall_product_variant } from "../../../prepare/prepare_random_ecommerce_mall_product_variant";
 
+/**
+ * Test the successful creation of a new product variant for an existing product
+ * owned by an authenticated seller. This scenario validates the primary business
+ * workflow where a seller adds a variant to make their product purchasable.
+ */
 export async function test_api_product_variant_creation_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Seller joins the system
+  // 1. Seller Authentication
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerAuth = await authorize_seller_join(sellerConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    },
+  await authorize_seller_join(sellerConnection, {
+    body: typia.random<IEcommerceMallSeller.IJoin>(),
   });
-  typia.assert(sellerAuth);
-  // 2. Create seller-specific connection with token
-  const sellerAuthenticatedConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: sellerAuth.token.access,
-    },
-  };
-  // 3. Create product variant (product ID assumed to exist from external setup)
-  // Using a random UUID as the existing product ID since product creation API is not available
-  const productId = typia.random<string & tags.Format<"uuid">>();
-  const variantInput = {
-    sku_code: RandomGenerator.alphaNumeric(10).toUpperCase(),
-    option_values: {
-      size: RandomGenerator.pick(["Small", "Medium", "Large", "XL"]),
-      color: RandomGenerator.pick(["Red", "Blue", "Green", "Black"]),
-    },
-    stock_quantity: typia.random<
-      number & tags.Type<"int32"> & tags.Minimum<0> & tags.Maximum<9999>
-    >(),
-    price_override: typia.random<number | null>(),
-  };
-  const variant =
-    await api.functional.ecommerceMall.seller.products.variants.create(
-      sellerAuthenticatedConnection,
+  // 2. Create Product
+  const product: IEcommerceMallProduct =
+    await generate_random_ecommerce_mall_seller_products_create(
+      sellerConnection,
       {
-        productId: productId,
-        body: variantInput,
+        body: typia.random<IEcommerceMallProduct.ICreate>(),
+      },
+    );
+  typia.assert(product);
+  // 3. Verify Product Initially Has Zero Variants
+  TestValidator.equals(
+    "product initially has zero variants",
+    product.variants.length,
+    0,
+  );
+  // 4. Create Variant
+  const variant: IEcommerceMallProductVariant =
+    await generate_random_ecommerce_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: typia.random<IEcommerceMallProductVariant.ICreate>(),
       },
     );
   typia.assert(variant);
-  // 4. Validate variant creation
+  // 5. Verify Variant Has Correct Owner (productId matches created product)
   TestValidator.equals(
-    "variant has unique id",
-    variant.id,
-    typia.assert<string & tags.Format<"uuid">>(variant.id),
+    "variant belongs to correct product",
+    variant.product.id,
+    product.id,
   );
-  TestValidator.equals(
-    "sku_code matches input",
-    variant.skuCode,
-    variantInput.sku_code,
-  );
-  TestValidator.equals(
-    "option_values matches input",
-    variant.optionValues,
-    variantInput.option_values,
-  );
-  TestValidator.equals(
-    "stock_quantity matches input",
-    variant.stockQuantity,
-    variantInput.stock_quantity,
-  );
-  TestValidator.equals(
-    "price_override matches input",
-    variant.priceOverride,
-    variantInput.price_override,
-  );
-  TestValidator.predicate("variant is active", variant.isActive === true);
+  // 6. Verify SKU Code Length Constraint
   TestValidator.predicate(
-    "created_at is valid date-time",
-    new Date(variant.createdAt).getTime() > 0,
+    "sku_code does not exceed 50 characters",
+    () => variant.sku_code.length <= 50,
   );
-  TestValidator.predicate(
-    "updated_at is valid date-time",
-    new Date(variant.updatedAt).getTime() > 0,
-  );
+  // 7. Verify Stock Quantity is Positive Integer
+  TestValidator.predicate("stock_quantity is positive integer", () => {
+    return (
+      variant.stock_quantity >= 1 && Number.isInteger(variant.stock_quantity)
+    );
+  });
 }

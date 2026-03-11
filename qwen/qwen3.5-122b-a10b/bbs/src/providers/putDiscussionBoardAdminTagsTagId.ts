@@ -19,38 +19,43 @@ export async function putDiscussionBoardAdminTagsTagId(props: {
   body: IDiscussionBoardTag.IUpdate;
 }): Promise<IDiscussionBoardTag> {
   // Verify tag exists and is not soft-deleted
-  await MyGlobal.prisma.discussion_board_tags.findUniqueOrThrow({
-    where: { id: props.tagId },
-    select: { id: true, deleted_at: true },
-  });
-  // Validate at least one field is provided
-  if (props.body.name === undefined && props.body.description === undefined) {
-    throw new HttpException(
-      "At least one field (name or description) must be provided",
-      400,
-    );
-  }
-  // Check name uniqueness if name is being updated to a different value
-  if (props.body.name !== undefined) {
-    const existing = await MyGlobal.prisma.discussion_board_tags.findFirst({
-      where: {
-        name: props.body.name,
-        deleted_at: null,
-        id: { not: props.tagId },
-      },
+  const existing =
+    await MyGlobal.prisma.discussion_board_tags.findUniqueOrThrow({
+      where: { id: props.tagId },
+      select: { id: true, name: true, deleted_at: true },
     });
-    if (existing !== null) {
+  // Check unique name constraint if name is being updated
+  if (props.body.name !== undefined) {
+    const trimmedName = props.body.name.trim();
+    if (trimmedName === "") {
+      throw new HttpException(
+        "Tag name cannot be empty or whitespace-only",
+        400,
+      );
+    }
+    // Check if another active tag has the same name (excluding current tag)
+    const conflictingTag =
+      await MyGlobal.prisma.discussion_board_tags.findFirst({
+        where: {
+          id: { not: props.tagId },
+          name: trimmedName,
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+    if (conflictingTag !== null) {
       throw new HttpException("Tag name already exists", 409);
     }
   }
-  // Update the tag (Prisma @updatedAt will auto-update updated_at)
+  // Perform the update
   await MyGlobal.prisma.discussion_board_tags.update({
     where: { id: props.tagId },
     data: {
-      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.name !== undefined && { name: props.body.name.trim() }),
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
+      updated_at: new Date(),
     },
   });
   // Fetch and transform the updated tag

@@ -1,5 +1,4 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -12,7 +11,17 @@ export namespace EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer {
     Prisma.economic_political_board_administrator_rolesGetPayload<
       ReturnType<typeof select>
     >;
-  export function select() {
+  type Select = {
+    select: {
+      id: true;
+      grade: true;
+      promoted_at: true;
+      created_at: true;
+      updated_at: true;
+      promotedByUser: Select;
+    };
+  };
+  export function select(): Select {
     return {
       select: {
         id: true,
@@ -20,36 +29,29 @@ export namespace EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer {
         promoted_at: true,
         created_at: true,
         updated_at: true,
-        user: {
-          select: {
-            id: true,
-          },
-        },
-        promotedByUser: {
-          select: {
-            id: true,
-          },
-        },
+        promotedByUser:
+          EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.economic_political_board_administrator_rolesFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,
   ): Promise<IEconomicPoliticalBoardAdministratorRole.ISummary> {
     return {
       id: input.id,
-      userId: input.user.id,
-      grade: typia.assert<"regular" | "super">(input.grade),
-      promotedByUserId: input.promotedByUser?.id ?? null,
-      promotedAt: input.promoted_at ? toISOStringSafe(input.promoted_at) : null,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      user: {
-        id: input.user.id,
-        displayName: "",
-        email: "placeholder@example.com",
-        bio: "",
-      },
+      grade: typia.assert<
+        IEconomicPoliticalBoardAdministratorRole.ISummary["grade"]
+      >(input.grade),
+      promoted_at: input.promoted_at
+        ? toISOStringSafe(input.promoted_at)
+        : null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      promoted_by_user: input.promotedByUser
+        ? await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
+            input.promotedByUser,
+          )
+        : null,
     };
   }
 }

@@ -1,5 +1,5 @@
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import { IEconomicPoliticalBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticleAttachment";
+import { IEconomicPoliticalBoardAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAttachment";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -7,38 +7,34 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
-import { EconomicPoliticalBoardArticleAttachmentCollector } from "./EconomicPoliticalBoardArticleAttachmentCollector";
+import { EconomicPoliticalBoardAttachmentCollector } from "./EconomicPoliticalBoardAttachmentCollector";
 
 export namespace EconomicPoliticalBoardArticleCollector {
   export async function collect(props: {
     body: IEconomicPoliticalBoardArticle.ICreate;
     economicPoliticalBoardAdministratorRoles: IEntity;
-    economicPoliticalBoardSections: IEntity;
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       id,
       title: props.body.title,
       content: props.body.content,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       author: {
-        connect: {
-          id: props.economicPoliticalBoardAdministratorRoles.id,
-        },
+        connect: { id: props.economicPoliticalBoardAdministratorRoles.id },
       },
       section: {
-        connect: {
-          id: props.economicPoliticalBoardSections.id,
-        },
+        connect: { id: props.body.sectionId },
       },
-      attachments: props.body.attachmentData
+      attachments: props.body.attachments?.length
         ? {
             create: await ArrayUtil.asyncMap(
-              props.body.attachmentData,
-              (attachment, i) =>
-                EconomicPoliticalBoardArticleAttachmentCollector.collect({
+              props.body.attachments,
+              (attachment) =>
+                EconomicPoliticalBoardAttachmentCollector.collect({
                   body: attachment,
                   economicPoliticalBoardArticles: { id },
                 }),
@@ -46,21 +42,14 @@ export namespace EconomicPoliticalBoardArticleCollector {
           }
         : undefined,
       comments: undefined,
-      articleTags: props.body.tagIds
+      articleTags: props.body.tags?.length
         ? {
-            create: props.body.tagIds.map((tagId, i) => ({
-              id: v4(),
-              sequence: i,
-              created_at: new Date(),
-              updated_at: new Date(),
-              article: {
-                connect: {
-                  id,
-                },
-              },
+            create: await ArrayUtil.asyncMap(props.body.tags, (tagName) => ({
+              article: { connect: { id } },
               tag: {
-                connect: {
-                  id: tagId,
+                connectOrCreate: {
+                  where: { name: tagName.toLowerCase() },
+                  create: { name: tagName.toLowerCase() },
                 },
               },
             })),

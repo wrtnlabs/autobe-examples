@@ -17,7 +17,7 @@ export async function authorize_guest_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    displayName: props.body?.displayName ?? null,
+    name: props.body?.name ?? RandomGenerator.name(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),

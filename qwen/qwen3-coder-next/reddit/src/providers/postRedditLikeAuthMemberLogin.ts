@@ -16,9 +16,9 @@ export async function postRedditLikeAuthMemberLogin(props: {
   ip: string;
   body: IRedditLikeMember.ILogin;
 }): Promise<IRedditLikeMember.IAuthorized> {
-  // 1. Find member with password_hash explicitly selected
+  // 1. Load member with password_hash
   const member = await MyGlobal.prisma.reddit_like_members.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
@@ -27,146 +27,93 @@ export async function postRedditLikeAuthMemberLogin(props: {
       bio: true,
       avatar_url: true,
       karma_score: true,
+      password_hash: true,
       created_at: true,
       updated_at: true,
-      deleted_at: true,
-      password_hash: true,
     },
   });
-  if (!member) throw new HttpException("Invalid credentials", 401);
+  if (!member) {
+    throw new HttpException("Invalid credentials", 401);
+  }
   // 2. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 3. Create new session
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 3. Create new session with full Prisma schema requirements
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const session_id = v4() as string & tags.Format<"uuid">;
+  const access = jwt.sign(
+    {
+      type: "member",
+      id: member.id,
+      session_id,
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refresh = jwt.sign(
+    {
+      type: "member",
+      session_id,
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   const session = await MyGlobal.prisma.reddit_like_member_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: session_id,
       member_id: member.id,
-      access_token: "",
-      refresh_token: "",
-      access_token_expires_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refresh_token_expires_at: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      created_at: now.toISOString() as string & tags.Format<"date-time">,
-      updated_at: now.toISOString() as string & tags.Format<"date-time">,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      revoked_at: null,
+      access_token: access,
+      refresh_token: refresh,
+      access_token_expires_at: toISOStringSafe(accessExpires),
+      refresh_token_expires_at: toISOStringSafe(refreshExpires),
       ip: props.ip,
       user_agent: "",
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
-  // 4. Generate JWT tokens
-  const accessPayload = {
-    type: "member" as const,
-    id: member.id,
-    session_id: session.id,
-    created_at: now.toISOString() as string & tags.Format<"date-time">,
-  };
-  const refreshPayload = {
-    type: "member" as const,
-    id: member.id,
-    session_id: session.id,
-    tokenType: "refresh" as const,
-    created_at: now.toISOString() as string & tags.Format<"date-time">,
-  };
-  const access = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refresh = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
+  // 4. Generate token object
   const token: IAuthorizationToken = {
     access,
     refresh,
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 5. Compute statistics
-  const todayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).toISOString() as string & tags.Format<"date-time">;
-  const totalPosts = await MyGlobal.prisma.reddit_like_posts.count();
-  const postsToday = await MyGlobal.prisma.reddit_like_posts.count({
-    where: {
-      created_at: {
-        gte: todayStart,
-      },
-    },
-  });
-  const totalComments = await MyGlobal.prisma.reddit_like_comments.count();
-  const commentsToday = await MyGlobal.prisma.reddit_like_comments.count({
-    where: {
-      created_at: {
-        gte: todayStart,
-      },
-    },
-  });
-  const totalVotes = await MyGlobal.prisma.reddit_like_post_votes.count();
-  const commentVotesToday =
-    await MyGlobal.prisma.reddit_like_comment_votes.count({
-      where: {
-        created_at: {
-          gte: todayStart,
-        },
-      },
-    });
-  const totalCommunities =
-    await MyGlobal.prisma.reddit_like_communities.count();
-  const subscribedCount = await MyGlobal.prisma.reddit_like_subscriptions.count(
-    {
-      where: { status: "subscribed" },
-    },
-  );
-  const pendingReports = await MyGlobal.prisma.reddit_like_reports.count({
-    where: { status: "pending" },
-  });
-  const activeUsers = await MyGlobal.prisma.reddit_like_posts.count({
-    where: {
-      created_at: {
-        gte: todayStart,
-      },
-    },
-  });
-  // 6. Transform member data
+  // 5. Return IRedditLikeMember.IAuthorized
   return {
-    total_posts: totalPosts,
-    posts_today: postsToday,
-    total_comments: totalComments,
-    comments_today: commentsToday,
-    total_votes: totalVotes,
-    comment_votes_today: commentVotesToday,
-    total_communities: totalCommunities,
-    subscribed_count: subscribedCount,
-    pending_reports: pendingReports,
-    active_users: activeUsers,
-    id: member.id,
-    email: member.email,
+    id: member.id as string & tags.Format<"uuid">,
+    email: member.email as string & tags.Format<"email">,
     username: member.username,
     display_name: member.display_name,
     bio: member.bio ?? null,
-    avatar_url: member.avatar_url ?? null,
-    karma_score: member.karma_score,
-    created_at: member.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: member.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at:
-      (member.deleted_at?.toISOString() as string & tags.Format<"date-time">) ??
-      null,
+    avatar_url: member.avatar_url
+      ? (member.avatar_url as string & tags.Format<"uri">)
+      : null,
+    karma_score: member.karma_score as number & tags.Type<"int32">,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: null,
+    member: {
+      id: member.id as string & tags.Format<"uuid">,
+      username: member.username,
+      display_name: member.display_name,
+      bio: member.bio ?? null,
+      avatar_url: member.avatar_url
+        ? (member.avatar_url as string & tags.Format<"uri">)
+        : null,
+      karma_score: member.karma_score as number & tags.Type<"int32">,
+      created_at: toISOStringSafe(member.created_at),
+    },
     token,
   } satisfies IRedditLikeMember.IAuthorized;
 }

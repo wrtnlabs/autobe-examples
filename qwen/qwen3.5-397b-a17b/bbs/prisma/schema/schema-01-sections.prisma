@@ -1,0 +1,91 @@
+/// Discussion board sections for topic organization with name and description.
+///
+/// Sections categorize articles into topic areas (e.g., Politics, Economy,
+/// Current Affairs). Administrators create and manage sections, while all
+/// users can browse sections and view articles within them. Each section has
+/// a unique name and descriptive text explaining its purpose.
+///
+/// Sections are referenced by {@link discussion_board_articles} through the
+/// section foreign key relationship.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Section name for topic categorization. Must be unique across all sections.
+  name String
+  
+  /// Section description explaining the topic scope and purpose.
+  description String
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted. Null if section is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_section_snapshots[]
+  articles discussion_board_articles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of sections for audit trail and change tracking.
+/// Captures the state of a section at specific moments to preserve
+/// historical data for compliance, moderation review, and change tracking.
+/// Each snapshot is immutable and append-only, creating a complete history
+/// of section modifications over time.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent section's {@link discussion_board_sections.id}. References the
+  /// section this snapshot belongs to.
+  discussion_board_section_id String
+  
+  /// Section name at the time of snapshot. Denormalized from parent section to
+  /// preserve historical value.
+  name String
+  
+  /// Section description at the time of snapshot. Denormalized from parent
+  /// section to preserve historical value.
+  description String
+  
+  /// Timestamp when this snapshot was created. Records the point-in-time when
+  /// the section state was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_section_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_section_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_39571b0c")
+}

@@ -3,6 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { ITodoAppMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMemberSession";
 import type { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import type { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -18,44 +19,65 @@ import { prepare_random_todo_app_todo } from "../../../prepare/prepare_random_to
 export async function test_api_todo_creation_with_all_fields(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register a new member
+  // Step 1: Register a new member to get authenticated connection
   const memberConnection: api.IConnection = { host: connection.host };
-  const member = await api.functional.todoApp.auth.member.join(
-    memberConnection,
-    {
-      body: {
-        email: typia.random<string & tags.Format<"email">>(),
-        password: RandomGenerator.alphaNumeric(16),
-      } satisfies ITodoAppMemberSession.IJoin,
-    },
-  );
+  const member = await authorize_member_join(memberConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email"> & tags.MinLength<1> & tags.MaxLength<255>>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies ITodoAppMemberSession.IJoin,
+  });
   typia.assert(member);
-  // 2. Create todo with all fields
+  // Create new connection with token from registration
+  const authenticatedConnection: api.IConnection = {
+    host: connection.host,
+    headers: { Authorization: member.token.access },
+  };
+  // Step 2: Create todo with all optional fields
+  const now = new Date();
   const body = {
-    title: RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 10 }),
-    description: RandomGenerator.paragraph({
-      sentences: 3,
-      wordMin: 3,
-      wordMax: 8,
-    }),
-    start_date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 86400000 * 7).toISOString(), // 7 days from now
+    title: RandomGenerator.name(),
+    description: RandomGenerator.paragraph({ sentences: 3 }),
+    start_date: new Date(now.getTime() + 86400000).toISOString(),
+    due_date: new Date(now.getTime() + 172800000).toISOString(),
   } satisfies ITodoAppTodo.ICreate;
   const todo = await api.functional.todoApp.member.todos.create(
-    memberConnection,
+    authenticatedConnection,
     {
-      body,
+      body: body,
     },
   );
   typia.assert(todo);
-  // 3. Validate all fields
-  TestValidator.equals("title matches", todo.title, body.title);
+  // Step 3: Validate response structure and values
+  TestValidator.predicate("todo created", todo !== null);
+  TestValidator.equals("title matches input", todo.title, body.title);
   TestValidator.equals(
-    "description matches",
+    "description matches input",
     todo.description,
     body.description,
   );
-  TestValidator.equals("start_date matches", todo.start_date, body.start_date);
-  TestValidator.equals("due_date matches", todo.due_date, body.due_date);
-  TestValidator.equals("is_complete is false", todo.is_complete, false);
+  TestValidator.equals(
+    "start_date matches input",
+    todo.start_date,
+    body.start_date,
+  );
+  TestValidator.equals("due_date matches input", todo.due_date, body.due_date);
+  TestValidator.predicate("is_complete is false", todo.is_complete === false);
+  TestValidator.predicate("is_trashed is false", todo.is_trashed === false);
+  TestValidator.predicate("created_at exists", todo.created_at !== null);
+  TestValidator.predicate("updated_at exists", todo.updated_at !== null);
+  TestValidator.equals("deleted_at is null", todo.deleted_at, null);
+  TestValidator.equals(
+    "user id matches member id",
+    todo.user.id,
+    member.member.id,
+  );
+  TestValidator.equals(
+    "user email matches member email",
+    todo.user.email,
+    member.member.email,
+  );
 }

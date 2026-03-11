@@ -3,82 +3,66 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallReview } from "../../../../api/structures/IEcommerceMallReview";
+import { IPageIEcommerceMallReview } from "../../../../api/structures/IPageIEcommerceMallReview";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { getEcommerceMallCustomerReviewsReviewId } from "../../../../providers/getEcommerceMallCustomerReviewsReviewId";
+import { patchEcommerceMallCustomerReviews } from "../../../../providers/patchEcommerceMallCustomerReviews";
 import { postEcommerceMallCustomerReviews } from "../../../../providers/postEcommerceMallCustomerReviews";
 import { putEcommerceMallCustomerReviewsReviewId } from "../../../../providers/putEcommerceMallCustomerReviewsReviewId";
 
 @Controller("/ecommerceMall/customer/reviews")
 export class EcommercemallCustomerReviewsController {
   /**
-   * Create a new product review with star rating and optional text content.
+   * Create a new product review for a purchased and delivered item.
    *
-   * This operation enables customers to express their satisfaction with a purchased product by submitting a star rating (1 to 5 stars) and optional written feedback. The system enforces several business rules to ensure review integrity and prevent abuse.
+   * This operation enables customers to submit product reviews consisting of a star rating (1-5) and optional written feedback. Reviews can only be created for products where the customer has a delivered order item, ensuring authenticity of reviews.
    *
-   * **Review Eligibility Requirements:**
-   * - The customer must have purchased the product
-   * - The order item status must be "delivered" (customer must have received the product)
-   * - The customer must not have already written a review for this product
-   * - The rating must be a valid integer between 1 and 5 inclusive
+   * The system enforces strict business rules:
+   * - Review can only be created for delivered order items
+   * - One review per customer per product (duplicate prevention)
+   * - Rating must be between 1 and 5 stars (required)
+   * - Text content is optional but if provided, will be stored with the review
    *
-   * **Review Structure:**
-   * - Rating is mandatory and must be an integer from 1 (lowest satisfaction) to 5 (highest satisfaction)
-   * - Text content is optional and can be empty or null if the customer only provides a star rating
-   * - The review will be linked to the customer who wrote it and the product being reviewed
+   * Security and validation:
+   * - Customer identity is derived from authentication token
+   * - System verifies purchase history and delivery status before allowing review creation
+   * - Invalid ratings outside 1-5 range are rejected
+   * - Existing customer-product review pairs cannot be duplicated
    *
-   * **Duplicate Review Prevention:**
-   * The system enforces a one-review-per-customer-per-product rule to prevent duplicate submissions. If a customer has already written a review for the product, the system will reject the new review request and direct them to edit their existing review instead.
-   *
-   * **Post-Creation Behavior:**
-   * Upon successful review creation, the review is marked as active (is_active: true) and immediately visible on the product detail page. The product's average rating calculation will automatically include the new review.
-   *
-   * **Authorization:**
-   * Only authenticated customers can write reviews, and only for products they have purchased and received. The system validates ownership and purchase history before allowing review submission.
-   *
-   * **Related Operations:**
-   * - PATCH /reviews/{reviewId} - Edit an existing review (creates snapshot)
-   * - DELETE /reviews/{reviewId} - Delete your own review (preserves snapshot)
-   * - PATCH /products/{productId} - View product details with review summary and average rating
-   * - GET /reviews?productId={productId} - List all active reviews for a product
+   * The created review is immediately visible on the product detail page and contributes to the product's average rating calculation.
    *
    * @param connection
-   * @param body Review creation data containing the star rating and optional text content
+   * @param body Review creation data including rating, optional text content, and product reference
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate request body: ensure rating is an integer between 1 and 5 inclusive
-   * 2. Verify customer authentication: extract customer_id from the authentication context
-   * 3. Verify product existence: check if product_id exists in ecommerce_mall_products
-   * 4. Verify purchase history: query ecommerce_mall_order_items to confirm the customer has an order item for this product
-   * 5. Verify delivery status: ensure at least one order item has item_status = 'delivered'
-   * 6. Check for duplicate review: query ecommerce_mall_reviews for existing review where customer_id AND product_id match
-   *    - If duplicate found: return 409 Conflict with error message directing user to edit existing review
-   * 7. Create the new review record:
-   *    - Set id: auto-generate UUID
-   *    - Set customer_id: from authentication context
-   *    - Set product_id: from request body
-   *    - Set rating: from request body
-   *    - Set text_content: from request body (can be null)
-   *    - Set is_active: true
-   *    - Set created_at: current timestamp
-   *    - Set updated_at: current timestamp
-   *    - Set deleted_at: null
-   * 8. Insert record into ecommerce_mall_reviews table
-   * 9. Return the created review object with all fields
+   * @x-autobe-specification Create a new review record in ecommerce_mall_reviews table.
    *
-   * **Error Handling:**
-   * - 400 Bad Request: Invalid rating value (not 1-5, not an integer)
-   * - 401 Unauthorized: Customer not authenticated
-   * - 404 Not Found: Product does not exist
-   * - 409 Conflict: Customer has already reviewed this product
-   * - 422 Unprocessable Entity: Customer has not purchased the product, or purchase status is not 'delivered'
+   * Service layer logic:
+   * 1. Extract customer_id from authenticated user session
+   * 2. Validate rating is between 1 and 5 (inclusive)
+   * 3. Verify customer has purchased the specified product
+   * 4. Check order item status is 'delivered'
+   * 5. Verify no existing review exists for this customer-product combination
+   * 6. Create review record with:
+   *    - id: auto-generated UUID
+   *    - customer_id: from auth context
+   *    - product_id: from request body
+   *    - rating: from request body
+   *    - text_content: from request body (nullable)
+   *    - is_active: true
+   *    - created_at: current timestamp
+   *    - updated_at: current timestamp
+   *    - deleted_at: null
+   * 7. Return created review with all fields
    *
-   * **Performance Considerations:**
-   * - Use transaction to ensure atomicity of purchase verification and review creation
-   * - Index on (customer_id, product_id) unique constraint provides fast duplicate detection
-   * - Consider caching product average rating; recalculate after review creation
+   * Edge cases:
+   * - If customer has not purchased product: return 403 Forbidden with message
+   * - If order item not delivered: return 400 Bad Request with message
+   * - If review already exists: return 409 Conflict with message
+   * - If rating invalid: return 400 Bad Request with message
    *
-   * **Audit Trail:**
-   * While review creation doesn't create a snapshot (snapshots are for edits and deletions), the review creation is logged in the ecommerce_mall_snapshot_audits table if the platform requires audit of all review operations.
+   * Database transaction: Wrap creation in transaction to ensure data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -100,38 +84,169 @@ export class EcommercemallCustomerReviewsController {
   }
 
   /**
-   * Update an existing customer product review's star rating or text content.
+   * Retrieve a filtered and paginated list of product reviews from the ecommerce mall system.
    *
-   * This operation modifies a review owned by the authenticated customer, allowing changes to the star rating (1-5) and/or optional text content. Upon successful update, the system preserves the previous review state as an immutable snapshot for audit trail and dispute resolution purposes.
+   * This operation provides advanced search capabilities for product reviews, enabling retrieval of reviews based on customer, product, rating, and date criteria. The system returns reviews sorted by newest first with support for pagination to handle large result sets efficiently.
    *
-   * The authenticated customer must be the original author of the review. The review's association with the customer and product cannot be modified through this operation. If the review has is_active set to false (inactive), it can be reactivated by updating.
+   * Reviews returned represent product feedback from customers who have purchased and received the products. Each review includes the star rating (1-5), optional text content, and associated customer and product identifiers.
    *
-   * The update automatically refreshes the product's average rating calculation to exclude inactive reviews and include the new rating value.
+   * The operation supports filtering by active/inactive status to include deleted reviews in administrative searches while excluding them from customer-facing displays by default. When a review is soft-deleted (deleted_at timestamp is set), it is marked as inactive and excluded from the default response.
+   *
+   * The schema for the ecommerce_mall_reviews table includes a unique constraint on (customer_id, product_id) to prevent duplicate reviews from the same customer for the same product.
    *
    * @param connection
-   * @param reviewId ID of the review to update. Must be owned by the authenticated customer.
-   * @param body Fields to update. At least one field must be provided.
+   * @param body Search criteria and pagination parameters for filtering reviews
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate the authenticated customer owns this review by checking customer_id matches current user's ID.
-   * 2. Verify the review exists and is not permanently deleted.
-   * 3. Validate rating parameter if provided: must be integer 1-5 inclusive.
-   * 4. Validate text_content if provided: optional text, any length allowed.
-   * 5. If rating or text_content changes, create immutable snapshot record in ecommerce_mall_snapshot_audits table with:
-   *    - recordType: 'Review'
-   *    - recordId: review.id
-   *    - changes: array of changed field names
-   *    - oldValues: current rating and text_content values
-   *    - newValues: updated rating and text_content values
+   * @x-autobe-specification Query the ecommerce_mall_reviews table with optional filters and pagination.
+   *
+   * Apply search filters from the request body:
+   * - customerId: Filter reviews by specific customer (for admin/own reviews only)
+   * - productId: Filter reviews for specific product (customer-facing)
+   * - isActive: Filter by review active status (true=active, false=deleted)
+   * - ratingMin/ratingMax: Filter reviews within rating range (1-5)
+   * - dateFrom/dateTo: Filter reviews by creation date range
+   * - sortBy: Sort field (createdAt default, rating, product name)
+   * - sortOrder: Sort order (desc default for date, asc for rating)
+   * - page: Current page number (1-indexed)
+   * - pageSize: Number of items per page (default 20, max 100)
+   *
+   * Apply authorization:
+   * - For customerId filter, verify the requesting customer owns the reviews or has admin privileges
+   * - For productId filter, any authenticated customer can access public reviews
+   * - Exclude inactive reviews from default response (isActive=true)
+   *
+   * Construct SQL query with pagination:
+   * - Use COUNT(*) for total count
+   * - Apply ORDER BY with pagination cursor or offset
+   * - Join with customers table for display_name if needed
+   * - Join with products table for product name if needed
+   *
+   * Return paginated result with:
+   * - data: Array of review summaries
+   * - pagination: { page, pageSize, total, totalPages }
+   *
+   * Edge cases:
+   * - Return empty data array if no matching reviews
+   * - Return 400 if invalid filter values (rating outside 1-5, invalid page number)
+   * - Return 403 if customer tries to filter by other customer's reviews without admin privilege
+   * - Handle concurrent review updates atomically to ensure accurate rating calculations
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IEcommerceMallReview.IRequest,
+  ): Promise<IPageIEcommerceMallReview.ISummary> {
+    try {
+      return await patchEcommerceMallCustomerReviews({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single product review by its unique identifier for display on product detail pages.
+   *
+   * This operation fetches a specific review record containing the customer's star rating (1-5), optional text content, associated product reference, and creation timestamp. The review is retrieved along with the customer's display name from their profile.
+   *
+   * The operation returns only active (non-deleted) reviews. Reviews marked as inactive through deletion are not returned from this endpoint. Deleted reviews are preserved in snapshot audit records for dispute resolution purposes but are excluded from normal review listings.
+   *
+   * This operation is typically used when displaying review details for a specific review on product pages, or when an application needs to fetch a particular review for display or validation purposes.
+   *
+   * The response includes the review's rating value, full text content if provided, customer display name, product reference information, and creation date. Deleted reviews are excluded to maintain data integrity and protect customer privacy.
+   *
+   * @param connection
+   * @param reviewId Unique identifier for the review to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query ecommerce_mall_reviews table for the specified reviewId (UUID format).
+   *
+   * Apply active review filter: only return records where isActive = true.
+   *
+   * Join with ecommerce_mall_customers to retrieve customer display name from CustomerProfile (displayName field).
+   *
+   * Join with ecommerce_mall_products to include product reference information.
+   *
+   * Validate reviewId exists as valid UUID format before database query.
+   *
+   * Return 404 Not Found if review does not exist or is marked as inactive (deleted).
+   *
+   * Return 200 OK with complete review object including rating, textContent, customer display name, product info, and createdAt timestamp.
+   *
+   * Implement soft delete handling: if review exists but isActive = false, return 404 rather than returning deleted data.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":reviewId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("reviewId")
+    reviewId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallReview> {
+    try {
+      return await getEcommerceMallCustomerReviewsReviewId({
+        customer,
+        reviewId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing product review with new rating and/or text content.
+   *
+   * This operation allows a customer to modify their own review for a purchased product. The update can include changes to the star rating (1-5) and/or the text content. When a review is updated, the system automatically creates a snapshot preserving the previous rating and text content for audit and dispute resolution purposes.
+   *
+   * Only the original reviewer can update their own review. The system verifies that the authenticated customer is the owner of the review before applying changes. Reviews can only be edited if they have not been deleted (isActive must be true).
+   *
+   * The product's average rating is recalculated after the update to reflect the new rating value. All changes are logged with timestamps for transparency and tracking.
+   *
+   * Related operations:
+   * - GET /reviews/{reviewId} to retrieve the current review before updating
+   * - GET /products/{productId} to view the product's average rating (recalculated after update)
+   * - PATCH /reviews to list all reviews for a product with updated average rating
+   *
+   * @param connection
+   * @param reviewId ID of the review to update
+   * @param body Review update data with optional rating and text content fields
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the request and extract customer identity from session token
+   * 2. Query ecommerce_mall_reviews table for the review record matching reviewId
+   * 3. Verify review exists and belongs to the authenticated customer (customer_id equality)
+   * 4. Validate that review.isActive is true (not deleted)
+   * 5. Validate request body: if rating provided, ensure value is between 1 and 5 inclusive
+   * 6. Create a review snapshot record:
+   *    - recordType: 'ecommerce_mall_reviews'
+   *    - recordId: reviewId
+   *    - oldValues: { rating: originalRating, textContent: originalText }
+   *    - newValues: { rating: updatedRating (if provided), textContent: updatedText (if provided) }
    *    - changedAt: current timestamp
-   *    - changedBy: customer.id
-   * 6. Update review fields:
-   *    - Set rating to new value if provided
-   *    - Set text_content to new value if provided
-   *    - Update updated_at to current timestamp
-   * 7. If review was soft-deleted (is_active=false), reactivate it by setting is_active=true and clearing deleted_at.
-   * 8. Trigger recalculation of product's average rating by querying all active reviews for this product.
-   * 9. Return updated review entity.
+   *    - changedBy: customerId
+   * 7. Update the review record:
+   *    - rating: updated value if provided, otherwise keep original
+   *    - textContent: updated value if provided, otherwise keep original
+   *    - updatedAt: current timestamp
+   * 8. Recalculate product average rating:
+   *    - Query all active reviews for the same productId
+   *    - Calculate average of rating values
+   *    - Update product's review statistics if needed
+   * 9. Return the updated review record with full details
+   * 10. Log the update operation in admin audit logs
+   * 11. Handle errors:
+   *     - 404 if reviewId not found
+   *     - 403 if customer is not the review owner
+   *     - 404 if review is deleted (isActive false)
+   *     - 400 if rating value outside 1-5 range
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reviewId")

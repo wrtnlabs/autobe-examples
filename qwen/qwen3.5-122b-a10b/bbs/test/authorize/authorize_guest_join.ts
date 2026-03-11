@@ -15,12 +15,8 @@ export async function authorize_guest_join(
   },
 ): Promise<IDiscussionBoardGuest.IAuthorized> {
   const joinInput = {
-    device_fingerprint:
-      props.body?.device_fingerprint ?? RandomGenerator.alphabets(32),
-    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
-    referrer:
-      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+    deviceFingerprint:
+      props.body?.deviceFingerprint ?? RandomGenerator.alphaNumeric(32),
   } satisfies IDiscussionBoardGuest.IJoin;
   return await api.functional.discussionBoard.auth.guest.join(connection, {
     body: joinInput,

@@ -22,7 +22,6 @@ export namespace DiscussionBoardSectionTransformer {
         updated_at: true,
         deleted_at: true,
         creator: DiscussionBoardAdminAtSummaryTransformer.select(),
-        _count: { select: { articles: true } },
       },
     } satisfies Prisma.discussion_board_sectionsFindManyArgs;
   }
@@ -32,11 +31,10 @@ export namespace DiscussionBoardSectionTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
+      description: input.description,
       creator: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.creator,
       ),
-      articles_count: input._count.articles,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

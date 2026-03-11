@@ -13,9 +13,10 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallAuthSellerLogin(props: {
+  ip: string;
   body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
-  // 1. Find seller by email with password_hash explicitly selected
+  // Find seller by email with password_hash for verification
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
     where: { email: props.body.email },
     select: {
@@ -34,83 +35,81 @@ export async function postShoppingMallAuthSellerLogin(props: {
       deleted_at: true,
     },
   });
-  // 2. Validate seller exists and is not deleted
-  if (!seller) {
+  if (seller === null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Check for deleted account (soft delete)
-  if (seller.deleted_at !== null) {
-    throw new HttpException("Invalid credentials", 401);
-  }
-  // 4. Check if account is banned
-  if (seller.banned) {
-    throw new HttpException("Invalid credentials", 401);
-  }
-  // 5. Verify password using constant-time comparison
+  // Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
   );
-  if (!isValid) {
+  if (isValid === false) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 6. Calculate token expiration times
+  // Check if banned
+  if (seller.banned === true) {
+    throw new HttpException("Account has been banned", 401);
+  }
+  // Calculate expiration times
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  // 7. Create new session for this login
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const sessionExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // Create new session
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
       seller_id: seller.id,
-      ip: props.body.ip ?? "",
+      ip: props.body.ip !== undefined ? props.body.ip : props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now.toISOString(),
-      expired_at: accessExpires.toISOString(),
+      created_at: now,
+      expired_at: sessionExpires,
     },
   });
-  // 8. Generate JWT tokens
+  // Generate JWT tokens
+  const accessToken = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: session.id,
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // Build response
   const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        created_at: now.toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now.toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
-  // 9. Return IAuthorized response with seller data and tokens
   return {
-    shopName: seller.shop_name,
-    shopDescription: seller.shop_description ?? null,
-    logoImage: seller.logo_image ?? null,
     id: seller.id,
     email: seller.email,
+    shop_name: seller.shop_name,
+    shop_description: seller.shop_description,
+    logo_image: seller.logo_image,
     approval_status: seller.approval_status,
-    rejection_reason: seller.rejection_reason ?? null,
+    rejection_reason: seller.rejection_reason,
     suspended: seller.suspended,
     banned: seller.banned,
-    created_at: toISOStringSafe(seller.created_at),
-    updated_at: toISOStringSafe(seller.updated_at),
+    created_at: seller.created_at.toISOString(),
+    updated_at: seller.updated_at.toISOString(),
+    deleted_at:
+      seller.deleted_at !== null ? seller.deleted_at.toISOString() : null,
     token,
   };
 }

@@ -1,130 +1,52 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIShoppingMallOrder } from "../../../../api/structures/IPageIShoppingMallOrder";
 import { IShoppingMallOrder } from "../../../../api/structures/IShoppingMallOrder";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { getShoppingMallCustomerOrdersOrderId } from "../../../../providers/getShoppingMallCustomerOrdersOrderId";
-import { patchShoppingMallCustomerOrders } from "../../../../providers/patchShoppingMallCustomerOrders";
 
-@Controller("/shoppingMall/customer/orders")
+@Controller("/shoppingMall/customer/orders/:orderId")
 export class ShoppingmallCustomerOrdersController {
   /**
-   * Retrieve a paginated list of orders for the authenticated customer.
+   * Retrieve complete details of a specific order including all purchased items, shipping address, and shipment tracking information.
    *
-   * This operation provides customers with access to their complete order history, displaying all orders they have placed on the platform. Each order in the list includes essential information for quick reference: the unique order number, order date, total price, and current status.
+   * This operation allows authenticated customers to view the full details of their order, including the order number for reference, total price, current order status, and the complete shipping address as captured at checkout time. The shipping address fields are immutable and preserved exactly as provided during checkout regardless of any subsequent changes to the customer's address book.
    *
-   * **Order Status Values:**
-   * - `paid`: All items are paid and awaiting seller shipment
-   * - `shipped`: At least one item has been shipped
-   * - `delivered`: All items have been delivered
-   * - `cancelled`: All items have been cancelled
-   * - `refunded`: All items have been refunded
-   * - `partially_completed`: Mixed states (some items delivered, some cancelled/refunded, etc.)
+   * Each order item includes the product name, description, variant options (such as color, size), quantity, unit price at time of purchase, and individual item status. The order item snapshots preserve the exact product and seller information at the moment of purchase for transaction integrity and dispute resolution.
    *
-   * **Search and Filtering:**
-   * Customers can search orders by order number for quick lookup, or filter by status to view only orders in a specific state. The results are paginated with a default sort of newest orders first.
+   * If shipments have been created for the order, tracking information is provided including carrier name, tracking number, shipment date, and delivery confirmation date. Customers can use this information to track their packages on carrier websites.
    *
-   * **Data Isolation:**
-   * This endpoint returns only orders belonging to the authenticated customer. Order history is preserved even if the customer deletes their account, but deleted customers cannot access this endpoint.
+   * The order_number field serves as a unique customer-facing identifier for order tracking and support inquiries. It is generated automatically at order creation and cannot be modified.
    *
-   * **Related Operations:**
-   * - Use GET /orders/{orderId} to view detailed order information including items and shipments
-   * - Order items within each order can be individually cancelled (before shipment) or refunded (after delivery)
+   * Authorization: Customers can only view orders belonging to them. Administrators can view any order on the platform.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for order listing
+   * @param orderId Unique identifier of the order to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table filtering by the authenticated customer's ID (shopping_mall_customer_id). Join with shopping_mall_order_items to include item count and status breakdown if needed for UI. Apply search filters: exact or partial match on order_number, filter by status enum values. Support pagination with cursor-based approach for large result sets. Sort by created_at descending (newest first) as default. Exclude soft-deleted orders (deleted_at IS NULL). Return paginated results with order summaries including order_number, created_at date, total_price, and status. Consider adding a search query parameter for order number lookup, and status filter array for filtering by order status. The implementation should ensure the customer can only see their own orders through the authentication context.
+   * @x-autobe-specification Query shopping_mall_orders table by id to retrieve the order record. Verify data isolation: the shopping_mall_customer_id must match the authenticated customer's ID, or the requester must be an administrator. If not authorized, return 403 Forbidden.
+   *
+   * Join with shopping_mall_order_items to retrieve all items belonging to this order. For each order item, join with shopping_mall_order_item_snapshots to get the preserved product name, description, price, seller shop name, and seller logo image. Also join with shopping_mall_order_item_snapshot_variant_options to retrieve the variant option key-value pairs (e.g., color=Red, size=Large).
+   *
+   * Join with shopping_mall_shipments to retrieve tracking information if shipments exist for this order. Include carrier_name, tracking_number, shipped_at, and delivered_at fields.
+   *
+   * The response includes:
+   * - Order basic info: id, order_number, total_price, status, created_at, updated_at
+   * - Shipping address: all shipping_* fields from the order record
+   * - Order items array: each item with id, quantity, price, status, and nested snapshot data
+   * - Shipments array: each shipment with id, carrier_name, tracking_number, shipped_at, delivered_at
+   *
+   * Handle case where customer account was deleted (shopping_mall_customer_id is null) - still return order for admin access.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallOrder.IRequest,
-  ): Promise<IPageIShoppingMallOrder.ISummary> {
-    try {
-      return await patchShoppingMallCustomerOrders({
-        customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieves detailed information about a specific order for the authenticated customer.
-   *
-   * This endpoint returns the complete order details including all order items with their purchase-time snapshots, the locked shipping address, and shipment tracking information. Customers use this endpoint to review their purchase details, track delivery status, and initiate cancellation or refund requests for eligible items.
-   *
-   * The order includes preserved product information (name, description, variant options, price) and seller information (shop name, logo) captured at the moment of purchase. This historical data remains unchanged even if the original product or seller profile is modified or deleted afterward.
-   *
-   * Order status is derived from individual item statuses: 'paid' when all items are paid, 'shipped' when any item is shipped, 'delivered' when all items are delivered, 'cancelled' when all items are cancelled, 'refunded' when all items are refunded, or 'partially_completed' for mixed states.
-   *
-   * Each order item independently tracks its fulfillment status, enabling customers to see which items have been shipped, delivered, cancelled, or refunded. Shipments group items from the same seller and provide carrier and tracking information.
-   *
-   * Customers can only view their own orders. The order_number field serves as a unique human-readable identifier for customer support and reference purposes.
-   *
-   * Security: Requires customer authentication. Order ownership is validated against the authenticated customer ID. Administrators have access to all orders.
-   *
-   * @param connection
-   * @param orderId Unique identifier of the order to retrieve. Must be a valid UUID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation Flow:
-   *
-   * 1. Authentication Validation:
-   *    - Extract customer ID from JWT token
-   *    - Validate customer is authenticated (member role required)
-   *
-   * 2. Order Retrieval:
-   *    - Query shopping_mall_orders table by orderId (UUID)
-   *    - Join with shopping_mall_customers to verify ownership
-   *    - Return 404 if order not found
-   *    - Return 403 Forbidden if order belongs to different customer (unless administrator)
-   *
-   * 3. Order Items and Snapshots:
-   *    - Query shopping_mall_order_items where shopping_mall_order_id = orderId
-   *    - For each item, join shopping_mall_order_item_snapshots (one-to-one)
-   *    - Join shopping_mall_order_item_snapshot_variant_options for variant options
-   *    - Include product_id, variant_id, seller_id references
-   *
-   * 4. Shipments Retrieval:
-   *    - Query shopping_mall_shipments where order_id = orderId
-   *    - Group order items by their shipment_id
-   *    - Items with null shipment_id are 'awaiting shipment'
-   *
-   * 5. Response Assembly:
-   *    - Build IShoppingMallOrder response with:
-   *      - Basic order info (id, order_number, total_price, status, created_at)
-   *      - Shipping address (from order fields: shipping_recipient_name, shipping_phone_number, etc.)
-   *      - Order items array with embedded snapshot data
-   *      - Shipments array with tracking info and associated item IDs
-   *
-   * 6. Status Derivation:
-   *    - Order status is stored as cached value, updated whenever item status changes
-   *    - Verify derived status matches stored status, recalculate if needed
-   *
-   * Business Rules:
-   * - Order must belong to authenticated customer (ownership validation)
-   * - Administrator override: can view any order
-   * - Order customer_id may be null if customer account deleted (order preserved)
-   * - Soft-deleted orders (deleted_at not null) should not be accessible to customers
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":orderId")
+  @TypedRoute.Get()
   public async at(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
+    orderId: string,
   ): Promise<IShoppingMallOrder> {
     try {
       return await getShoppingMallCustomerOrdersOrderId({

@@ -6,12 +6,21 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_community(
-  input?: DeepPartial<IRedditPlatformCommunity.ICreate> | undefined,
+  input?: DeepPartial<IRedditPlatformCommunity.ICreate>,
 ): IRedditPlatformCommunity.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.alphabets(12),
+    name:
+      input?.name ??
+      RandomGenerator.alphaNumeric(
+        typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<3> & tags.Maximum<21>
+        >(),
+      ),
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    icon_url: input?.icon_url ?? typia.random<string & tags.Format<"uri">>(),
+      input?.description ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 15 }),
+    icon_url:
+      input?.icon_url ??
+      `https://${RandomGenerator.alphaNumeric(8)}.com/icon.png`,
   };
 }

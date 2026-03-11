@@ -16,7 +16,6 @@ export namespace DiscussionBoardGuestAtSummaryTransformer {
         id: true,
         device_fingerprint: true,
         created_at: true,
-        updated_at: true,
         deleted_at: true,
       },
     } satisfies Prisma.discussion_board_guestsFindManyArgs;
@@ -26,10 +25,9 @@ export namespace DiscussionBoardGuestAtSummaryTransformer {
   ): Promise<IDiscussionBoardGuest.ISummary> {
     return {
       id: input.id,
-      deviceFingerprint: input.device_fingerprint,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      device_fingerprint: input.device_fingerprint,
+      created_at: input.created_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

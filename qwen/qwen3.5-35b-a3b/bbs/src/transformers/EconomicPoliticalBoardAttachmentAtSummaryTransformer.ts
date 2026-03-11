@@ -1,8 +1,6 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
 import { IEconomicPoliticalBoardAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAttachment";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
-import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -34,10 +32,14 @@ export namespace EconomicPoliticalBoardAttachmentAtSummaryTransformer {
   ): Promise<IEconomicPoliticalBoardAttachment.ISummary> {
     return {
       id: input.id,
-      file_name: input.file_name,
-      file_type: input.file_type,
-      file_url: input.file_url,
-      created_at: input.created_at.toISOString(),
+      fileUrl: input.file_url,
+      fileName: input.file_name,
+      fileType: typia.assert<"image" | "file">(input.file_type),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: input.updated_at
+        ? toISOStringSafe(input.updated_at)
+        : undefined,
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       article:
         await EconomicPoliticalBoardArticleAtSummaryTransformer.transform(
           input.article,

@@ -11,9 +11,7 @@ export function prepare_random_reddit_platform_post_image(
   return {
     filename:
       input?.filename ??
-      RandomGenerator.alphaNumeric(8) +
-        "." +
-        RandomGenerator.pick(["jpg", "png", "gif"] as const),
+      `${RandomGenerator.alphaNumeric(8)}.${RandomGenerator.pick(["jpg", "png", "gif"] as const)}`,
     mime_type:
       input?.mime_type ??
       RandomGenerator.pick(["image/jpeg", "image/png", "image/gif"] as const),
@@ -22,5 +20,8 @@ export function prepare_random_reddit_platform_post_image(
       typia.random<
         number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<10485760>
       >(),
+    file_path:
+      input?.file_path ??
+      `uploads/posts/${typia.random<string & tags.Format<"uuid">>()}/${input?.filename ?? `${RandomGenerator.alphaNumeric(8)}.${RandomGenerator.pick(["jpg", "png", "gif"] as const)}`}`,
   };
 }

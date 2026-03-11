@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallReviewSnapshot } from "../../../../../api/structures/IPageIShoppingMallReviewSnapshot";
 import { IShoppingMallReviewSnapshot } from "../../../../../api/structures/IShoppingMallReviewSnapshot";
@@ -12,39 +12,40 @@ import { patchShoppingMallCustomerReviewsReviewIdSnapshots } from "../../../../.
 @Controller("/shoppingMall/customer/reviews/:reviewId/snapshots")
 export class ShoppingmallCustomerReviewsSnapshotsController {
   /**
-   * Retrieve a paginated list of review snapshots for a specific review.
+   * Retrieve a paginated and filtered list of review snapshots for a specific review.
    *
-   * This operation allows customers to view the edit history of their own reviews, and enables administrators to access all review snapshots for dispute resolution and audit purposes. Each snapshot represents the state of a review before an edit was applied, preserving the rating and content at that moment in time.
+   * Review snapshots are immutable audit records created automatically when customers edit their reviews. Each snapshot preserves the complete state of the review (rating and content) as it existed before an edit was applied. These snapshots serve as permanent evidence for dispute resolution, audit trails, and historical tracking.
    *
-   * Review snapshots are immutable records that cannot be modified or deleted. They provide a complete audit trail of all changes made to a review, supporting transparency and accountability in the review system. Even when a review is soft-deleted, all associated snapshots are retained indefinitely for compliance and historical reference.
+   * The shopping_mall_review_snapshots table captures the rating (1-5 stars) and optional text content at the moment before modification, along with a timestamp marking when the edit occurred. Snapshots cannot be modified or deleted by any user, including administrators, ensuring complete audit integrity.
    *
-   * Snapshots are returned in chronological order (oldest first), allowing reviewers and administrators to trace the evolution of a review's content and rating over time.
+   * This operation allows customers to view the edit history of their own reviews and administrators to view snapshots of any review for dispute resolution purposes. Results are ordered chronologically from oldest to newest by default, showing the progression of review modifications over time.
    *
-   * **Authorization Requirements:**
-   * - Customers can only view snapshots of their own reviews
-   * - Administrators (regular or super grade) can view snapshots of any review
-   * - Access is denied if the user does not own the review and is not an administrator
+   * Related operations:
+   * - GET /reviews/{reviewId} - Retrieve the current review state
+   * - PATCH /customers/reviews/{id} - Edit a review (automatically creates a snapshot)
    *
    * @param connection
-   * @param reviewId Unique identifier of the review whose snapshots are being retrieved. This ID references the shopping_mall_reviews table and supports access to snapshots even for soft-deleted reviews.
-   * @param body Pagination parameters for retrieving review snapshots. Supports standard page-based navigation to iterate through the snapshot history.
+   * @param reviewId Unique identifier of the review whose snapshots are being retrieved
+   * @param body Search criteria and pagination parameters for retrieving review snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_review_snapshots table filtering by shopping_mall_review_id = reviewId.
+   * @x-autobe-specification Query shopping_mall_review_snapshots table filtering by shopping_mall_review_id matching the provided reviewId path parameter.
    *
-   * Authorization: Check if the authenticated user is either:
-   * 1. The customer who owns the review (via shopping_mall_reviews.shopping_mall_customer_id)
-   * 2. An administrator (any grade)
+   * Authorization checks:
+   * 1. If authenticated user is a customer, verify they own the review (shopping_mall_customer_id matches current user)
+   * 2. If authenticated user is an administrator, allow access to any review's snapshots
+   * 3. Reject with 403 Forbidden if neither condition is met
    *
-   * For soft-deleted reviews: Allow access if the review exists (even if deleted_at is set). The deleted_at field on the parent review indicates soft deletion, but snapshots remain accessible for audit purposes.
+   * Database query:
+   * - SELECT id, rating, content, created_at FROM shopping_mall_review_snapshots WHERE shopping_mall_review_id = {reviewId}
+   * - Apply pagination from request body (limit, offset or cursor-based)
+   * - Apply sorting (default: created_at ASC for chronological order)
+   * - Count total matching records for pagination metadata
    *
-   * Query joins with shopping_mall_reviews to verify ownership and check deletion status.
-   *
-   * Return snapshots ordered by created_at ASC (oldest first) to show chronological edit history.
-   *
-   * Paginate results using cursor-based pagination with standard limit/offset.
-   *
-   * Fields to return: id, rating, content, created_at. Do NOT include shopping_mall_review_id in response body (path already identifies the review).
+   * Edge cases:
+   * - Return empty array if review has no snapshots (review was never edited)
+   * - Return 404 Not Found if reviewId doesn't exist
+   * - Return 403 Forbidden if customer attempts to view another customer's review snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -52,7 +53,7 @@ export class ShoppingmallCustomerReviewsSnapshotsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
-    reviewId: string & tags.Format<"uuid">,
+    reviewId: string,
     @TypedBody()
     body: IShoppingMallReviewSnapshot.IRequest,
   ): Promise<IPageIShoppingMallReviewSnapshot.ISummary> {
@@ -69,42 +70,37 @@ export class ShoppingmallCustomerReviewsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific review snapshot capturing the review's previous state before an edit.
+   * Retrieve a specific snapshot of a review, preserving the review's state before an edit was applied.
    *
-   * This endpoint provides access to historical review snapshots, enabling customers to view the edit history of their own reviews and allowing administrators to access evidence for dispute resolution. Each snapshot preserves the rating and text content as they existed before a modification was applied, capturing the complete state of the review immediately before the edit.
+   * This operation provides access to historical review content for customers to view their own review edit history. The path segment `/customer/` indicates that this endpoint is designed for the customer actor, who can only access snapshots of reviews they authored (verified through shopping_mall_reviews.shopping_mall_customer_id).
    *
-   * The snapshot is linked to the shopping_mall_reviews table via the shopping_mall_review_id foreign key, which itself connects to shopping_mall_customers, shopping_mall_products, and shopping_mall_orders tables through the parent review. This relationship chain ensures proper authorization validation and enables tracking of which customer wrote the original review, which product was reviewed, and which order contained the purchased item.
+   * Administrators performing audit investigations or dispute resolution may access review snapshots through separate administrative endpoints that allow cross-customer access with elevated privileges.
    *
-   * Authorization is granted to two actor types: (1) the original review author can access snapshots of their own reviews to review their edit history, and (2) administrators can access any snapshot for platform oversight and dispute resolution purposes. Non-author customers cannot view snapshots of reviews written by others.
+   * The snapshot captures the rating (1-5 stars) and text content exactly as they existed before a review modification. Each snapshot is immutable and permanently preserved. Even when the parent review is soft-deleted (marked with deleted_at timestamp), all snapshots remain accessible, ensuring a complete audit trail for accountability and dispute resolution.
    *
-   * Snapshots are immutable records that cannot be modified or deleted by any actor, including administrators. The system supports an unlimited number of snapshots per review, with each snapshot uniquely identified by its createdAt timestamp. Snapshots remain preserved indefinitely even after the parent review is deleted, ensuring audit trail availability and compliance with data retention requirements for transaction-related content. This permanent retention supports dispute resolution where historical evidence of customer feedback may be required.
+   * The shopping_mall_review_snapshots table maintains the relationship to the parent review via shopping_mall_review_id, which in turn links to the customer, product, and order entities for complete traceability. The content field may be null if the original review had no text content at the time of the snapshot.
    *
    * @param connection
-   * @param reviewId UUID of the parent review whose snapshot is being retrieved
-   * @param snapshotId UUID of the specific review snapshot to retrieve
+   * @param reviewId UUID of the parent review whose snapshot is being accessed (global scope)
+   * @param snapshotId UUID of the specific snapshot to retrieve, identifying the preserved state before an edit (scoped to the review)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_review_snapshots table by primary key (snapshotId) while also verifying the snapshot belongs to the specified review (reviewId).
+   * @x-autobe-specification Retrieve a specific snapshot from the shopping_mall_review_snapshots table by the snapshot's UUID, with authorization validation against the parent review.
    *
-   * Authorization checks:
-   * 1. Retrieve the snapshot record with its parent review reference
-   * 2. Retrieve the parent review to identify the original author (shopping_mall_customer_id)
-   * 3. If the requester is the original review author, grant access
-   * 4. If the requester is an administrator, grant access
-   * 5. Otherwise, deny access with 403 Forbidden
-   *
-   * Response includes:
-   * - Snapshot ID
-   * - Rating value (1-5)
-   * - Text content (nullable)
-   * - Creation timestamp
-   * - Reference to parent review
+   * Implementation steps:
+   * 1. Query shopping_mall_review_snapshots by id (snapshotId) and shopping_mall_review_id (reviewId)
+   * 2. Join with shopping_mall_reviews to verify ownership and access rights
+   * 3. Verify the authenticated user is either:
+   *    - The original review author (shopping_mall_reviews.shopping_mall_customer_id matches authenticated customer), OR
+   *    - An administrator (authenticated as administrator actor)
+   * 4. If authorization fails, return 403 Forbidden
+   * 5. If snapshot not found for the given reviewId and snapshotId combination, return 404 Not Found
+   * 6. Return the snapshot with id, rating, content, and created_at fields
    *
    * Edge cases:
-   * - If snapshot does not exist: 404 Not Found
-   * - If snapshot exists but doesn't belong to specified reviewId: 404 Not Found (path mismatch)
-   * - If review has been deleted: still allow snapshot access if user is original author or administrator
-   * - If customer account has been deleted: snapshots remain accessible
+   * - The parent review may be soft-deleted (deleted_at is set); snapshots remain accessible
+   * - The snapshot's content field may be null if the original review had no text
+   * - The reviewId and snapshotId must both be valid UUIDs
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
@@ -112,9 +108,9 @@ export class ShoppingmallCustomerReviewsSnapshotsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
-    reviewId: string & tags.Format<"uuid">,
+    reviewId: string,
     @TypedParam("snapshotId")
-    snapshotId: string & tags.Format<"uuid">,
+    snapshotId: string,
   ): Promise<IShoppingMallReviewSnapshot> {
     try {
       return await getShoppingMallCustomerReviewsReviewIdSnapshotsSnapshotId({

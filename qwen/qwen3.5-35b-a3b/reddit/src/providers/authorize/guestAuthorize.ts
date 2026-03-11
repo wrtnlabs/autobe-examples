@@ -1,5 +1,5 @@
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
-import { MyGlobal } from "../MyGlobal";
+import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
 
@@ -16,11 +16,6 @@ export async function guestAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
-      sessions: {
-        some: {
-          expired_at: { gt: new Date() },
-        },
-      },
     },
   });
 

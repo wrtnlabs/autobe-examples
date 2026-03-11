@@ -14,18 +14,17 @@ export async function authorize_seller_join(
     body?: DeepPartial<IShoppingMallSeller.IJoin>;
   },
 ): Promise<IShoppingMallSeller.IAuthorized> {
-  const joinInput = {
+  const joinInput: IShoppingMallSeller.IJoin = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    shop_name: props.body?.shop_name ?? RandomGenerator.name(1),
-    shop_description:
-      props.body?.shop_description ?? RandomGenerator.paragraph(),
-    logo_image:
-      props.body?.logo_image ?? typia.random<string & tags.Format<"uri">>(),
+    shopName: props.body?.shopName ?? RandomGenerator.name(1),
+    shopDescription: props.body?.shopDescription ?? null,
+    logoImage:
+      props.body?.logoImage ?? typia.random<string & tags.Format<"url">>(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip,
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IShoppingMallSeller.IJoin;
   return await api.functional.shoppingMall.auth.seller.join(connection, {
     body: joinInput,

@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardBanRecord";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -30,10 +29,8 @@ export namespace EconomicPoliticalBoardBanRecordAtSummaryTransformer {
   ): Promise<IEconomicPoliticalBoardBanRecord.ISummary> {
     return {
       id: input.id,
-      user_id: input.user.id,
-      banned_by_admin_id: input.bannedByAdmin.id,
       reason: input.reason,
-      created_at: input.created_at.toISOString(),
+      createdAt: input.created_at.toISOString(),
       user: await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
         input.user,
       ),

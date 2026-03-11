@@ -1,12 +1,17 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditLikeComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeComment";
+import { IRedditLikeCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeCommunity";
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
+import { IRedditLikePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePost";
 import { IRedditLikeReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditLikeCommentAtSummaryTransformer } from "./RedditLikeCommentAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
+import { RedditLikePostAtSummaryTransformer } from "./RedditLikePostAtSummaryTransformer";
 
 export namespace RedditLikeReportAtSummaryTransformer {
   export type Payload = Prisma.reddit_like_reportsGetPayload<
@@ -16,15 +21,14 @@ export namespace RedditLikeReportAtSummaryTransformer {
     return {
       select: {
         id: true,
+        reason: true,
         status: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
         reporter: RedditLikeMemberAtSummaryTransformer.select(),
-        reportedPost: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_postsFindManyArgs,
-        reportedComment: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_commentsFindManyArgs,
+        reportedPost: RedditLikePostAtSummaryTransformer.select(),
+        reportedComment: RedditLikeCommentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_reportsFindManyArgs;
   }
@@ -36,12 +40,19 @@ export namespace RedditLikeReportAtSummaryTransformer {
       reporter: await RedditLikeMemberAtSummaryTransformer.transform(
         input.reporter,
       ),
-      reported_content_type: input.reportedPost ? "post" : "comment",
-      reported_content_id: input.reportedPost
-        ? input.reportedPost.id
-        : input.reportedComment!.id,
-      status: input.status as "pending" | "approved" | "dismissed",
-      created_at: toISOStringSafe(input.created_at),
+      reportedPost: input.reportedPost
+        ? await RedditLikePostAtSummaryTransformer.transform(input.reportedPost)
+        : undefined,
+      reportedComment: input.reportedComment
+        ? await RedditLikeCommentAtSummaryTransformer.transform(
+            input.reportedComment,
+          )
+        : undefined,
+      reason: input.reason,
+      status: input.status,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

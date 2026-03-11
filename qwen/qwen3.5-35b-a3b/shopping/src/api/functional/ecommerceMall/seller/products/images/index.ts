@@ -6,99 +6,52 @@ import typia, { tags } from "typia";
 import { IEcommerceMallProductImage } from "../../../../../structures/IEcommerceMallProductImage";
 
 /**
- * Upload multiple images to a product's visual catalog, enabling sellers to showcase products from different angles and perspectives.
+ * Upload new product images to an existing product catalog entry.
  *
- * This operation allows sellers to batch upload multiple images for a single product in one request. The system validates each image file format (JPEG, PNG, GIF, WebP) and size limits, assigns sequential display order values starting from the next available order after existing images, and creates an immutable snapshot of the product to preserve the image history.
+ * This operation allows sellers to add one or multiple images to showcase their products. Each image requires an URL reference and a display order number that determines the sequence in which images appear to customers. The system supports up to 20 images per product.
  *
- * Security and Permissions:
- * - Only the product owner (seller) can upload images to their products
- * - Super administrators can view product image history through snapshots
- * - Image uploads are subject to rate limiting and storage capacity constraints
+ * Before accepting the upload, THE system validates each image URL format and ensures the total image count does not exceed the 20-image limit per product. Upon successful upload, THE system creates an immutable snapshot of the product preserving the complete image list with all URLs and display orders at that moment.
  *
- * Business Rules:
- * - A product must have at least one image to be published (requirement ID 326)
- * - Maximum 20 images per product (requirement ID 989)
- * - Invalid images in a batch are rejected but processing continues for valid images (requirement ID 989)
- * - Images are assigned display order values that determine thumbnail and gallery presentation order (requirement ID 995)
+ * Security: Only the seller who owns this product can upload images. Non-owner requests are rejected with authorization error. If the product does not exist, THE system returns a 404 error.
  *
- * Snapshot Preservation:
- * - Creates an immutable product snapshot containing complete image list with display order values, all image URLs at time of upload, timestamp, and seller who performed the upload (requirement ID 325)
- * - Snapshots are preserved even after product deletion for dispute resolution purposes
- *
- * Related Operations:
- * - GET /products/{productId} - Retrieve product details including current image list
- * - PATCH /products/{productId}/images - Reorder existing product images
- * - DELETE /products/{productId}/images/{imageId} - Remove specific product image
- *
- * Error Handling:
- * - Returns 403 Forbidden if seller does not own the product
- * - Returns 400 Bad Request if image format is unsupported or exceeds size limit
- * - Returns 409 Conflict if adding images would exceed the 20-image maximum
- * - Returns 404 Not Found if the product does not exist
+ * Related Operation: PATCH /products/{productId} can be used to update product metadata separately from images.
  *
  * @param props.connection
- * @param props.productId ID of the product to upload images to.
- * @param props.body Array of image data to upload. Each image requires a valid URL pointing to the image file. Maximum 20 images per product total (including existing images).
+ * @param props.productId UUID of the product to add images to. Must exist and be owned by the requesting seller.
+ * @param props.body Array of image objects to upload. Each object contains image URL and display order. Maximum 20 images per product allowed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service layer implementation for batch product image upload:
- *
- * 1. Validate product exists and retrieve product record by productId from ecommerce_mall_products table.
- *
- * 2. Verify seller ownership by comparing authenticated seller's ID with product.seller_id. Return 403 Forbidden if ownership mismatch.
- *
- * 3. Count current active images for the product by querying ecommerce_mall_product_images where product_id = {productId} AND deleted_at IS NULL.
- *
- * 4. Validate total image count after upload does not exceed 20 (requirement ID 989). Calculate expected count = currentCount + newImagesCount. If expectedCount > 20, reject with 409 Conflict.
- *
- * 5. Validate each image in the request array:
- *    - Check imageUrl is present and is a valid absolute URL format
- *    - Validate image format against allowed types (JPEG, PNG, GIF, WebP) - typically via Content-Type header or file extension inspection
- *    - Verify image size does not exceed system limits
- *    - Reject individual invalid images but continue processing valid ones (requirement ID 989)
- *
- * 6. Determine starting display_order by querying the maximum display_order value from existing active images for the product. New images receive sequential orders starting from (maxOrder + 1).
- *
- * 7. For each valid image in the batch:
- *    - Create new ecommerce_mall_product_images record with:
- *      * id: generate UUID
- *      * product_id: from path parameter
- *      * image_url: from request
- *      * display_order: assigned sequential value
- *      * created_at: current timestamp
- *      * updated_at: current timestamp
- *      * deleted_at: NULL (active)
- *    - Insert record into database within transaction
- *
- * 8. Create product snapshot per requirement ID 325:
- *    - Record type: 'ProductImageUpload'
- *    - Record ID: productId
- *    - Changes: array of uploaded images with their display orders
- *    - oldValues: current image list before upload (for before-after comparison)
- *    - newValues: complete image list after upload
+ * @x-autobe-specification 1. Validate product exists and current user is the product owner (seller)
+ * 2. Validate productId format (UUID)
+ * 3. Parse request body array of image objects
+ * 4. For each image in array:
+ *    a. Validate imageUrl is valid URI format
+ *    b. Validate displayOrder is non-negative integer
+ * 5. Count existing images for product
+ * 6. If existingCount + newImages > 20, reject with 400 error
+ * 7. For each valid image, create ecommerce_mall_product_images record:
+ *    - product_id from path parameter
+ *    - image_url from request
+ *    - display_order from request
+ *    - createdAt: current timestamp
+ * 8. After all images created, create snapshot record in ecommerce_mall_product_snapshots with:
+ *    - recordType: 'Product'
+ *    - recordId: productId
+ *    - changes: image addition event
+ *    - newValues: complete image list with updated counts
  *    - changedAt: current timestamp
- *    - changedBy: authenticated seller ID
- *    - Store in ecommerce_mall_product_snapshots table
- *
- * 9. Return uploaded images with their assigned display_order values in the response body.
- *
- * 10. Transaction handling: Wrap all image insertions and snapshot creation in database transaction. Rollback on any failure to ensure consistency.
- *
- * 11. Error scenarios:
- *     - 403 Forbidden: seller does not own product
- *     - 400 Bad Request: invalid image URL format or missing required field
- *     - 409 Conflict: would exceed 20-image limit
- *     - 404 Not Found: product does not exist
+ *    - changedBy: seller's user ID
+ * 9. Return array of created image objects with database-assigned IDs
  * @path /ecommerceMall/seller/products/:productId/images
- * @accessor api.functional.ecommerceMall.seller.products.images.uploadImages
+ * @accessor api.functional.ecommerceMall.seller.products.images.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function uploadImages(
+export async function create(
   connection: IConnection,
-  props: uploadImages.Props,
-): Promise<uploadImages.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? uploadImages.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -108,27 +61,27 @@ export async function uploadImages(
           },
         },
         {
-          ...uploadImages.METADATA,
-          path: uploadImages.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace uploadImages {
+export namespace create {
   export type Props = {
     /**
-     * ID of the product to upload images to.
+     * UUID of the product to add images to. Must exist and be owned by the requesting seller.
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Array of image data to upload. Each image requires a valid URL pointing to the image file. Maximum 20 images per product total (including existing images).
+     * Array of image objects to upload. Each object contains image URL and display order. Maximum 20 images per product allowed.
      */
     body: IEcommerceMallProductImage.ICreate;
   };
   export type Body = IEcommerceMallProductImage.ICreate;
-  export type Response = IEcommerceMallProductImage.ISummary;
+  export type Response = IEcommerceMallProductImage.ICreate;
 
   export const METADATA = {
     method: "POST",
@@ -145,16 +98,16 @@ export namespace uploadImages {
 
   export const path = (props: Omit<Props, "body">) =>
     `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images`;
-  export const random = (): IEcommerceMallProductImage.ISummary =>
-    typia.random<IEcommerceMallProductImage.ISummary>();
+  export const random = (): IEcommerceMallProductImage.ICreate =>
+    typia.random<IEcommerceMallProductImage.ICreate>();
   export const simulate = (
     connection: IConnection,
-    props: uploadImages.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: uploadImages.path(props),
+      path: create.path(props),
       contentType: "application/json",
     });
     try {
@@ -174,71 +127,38 @@ export namespace uploadImages {
 }
 
 /**
- * Update an existing product image's display order or image URL.
+ * Update an existing product image's properties including the image URL and display order.
  *
- * This operation allows a seller to modify a product image's properties. The seller must own the associated product (verified by matching the authenticated seller_id with the product's seller_id in the ecommerce_mall_products table). The image must exist, be associated with the specified product, and must not be soft-deleted (deleted_at must be NULL).
+ * This operation allows sellers to modify the image URL (e.g., when replacing an image file) or adjust the display order (e.g., when changing which image appears first as the thumbnail in product listings).
  *
- * **Soft Delete Behavior**:
- * - Only active images (where deleted_at is NULL) can be updated
- * - Soft-deleted images cannot be modified and return a 404 Not Found error
- * - To restore a deleted image, it must be permanently removed and re-uploaded
+ * The product image must exist and belong to the specified product. Only the product's owner (seller) can update its images. When updating display order, the system ensures the image exists within the product's image collection.
  *
- * **Security and Permissions**:
- * - Only the seller who owns the product can update its images
- * - The system validates that the authenticated seller's ID matches the product's seller_id
- * - Unauthorized update attempts return a 403 Forbidden error
- * - The image's product_id must match the productId path parameter
- *
- * **Snapshot Preservation**:
- * When an image update occurs, the system creates an immutable product snapshot in the ecommerce_mall_product_snapshots table, preserving:
- * - Complete image list with display order values at time of change
- * - All image URLs at time of snapshot
- * - Timestamp of the change
- * - Seller who made the change
- *
- * These snapshots are used for dispute resolution, audit trails, and historical accuracy.
- *
- * **Related Operations**:
- * - `GET /ecommerceMall/seller/products/{productId}/images` - Retrieve all images for a product (list)
- * - `POST /ecommerceMall/seller/products/{productId}/images` - Upload a new image to a product
- * - `DELETE /ecommerceMall/seller/products/{productId}/images/{imageId}` - Soft delete an image from a product
- * - `GET /ecommerceMall/seller/products/{productId}` - View product details including image count
- * - `GET /ecommerceMall/seller/products/{productId}/snapshots` - View product edit history snapshots
- *
- * **Database Schema References**:
- * - Updates the ecommerce_mall_product_images table record
- * - Creates a new row in the ecommerce_mall_product_snapshots table
- * - Validates against ecommerce_mall_products.seller_id for ownership
+ * Related operations:
+ * - GET /products/{productId}/images: View all images for a product before making changes
+ * - POST /products/{productId}/images: Upload new images
+ * - DELETE /products/{productId}/images/{imageId}: Remove an image
  *
  * @param props.connection
- * @param props.productId The UUID of the product that owns this image. The image must be associated with this product.
- * @param props.imageId The UUID of the image to update. This image must belong to the specified product.
- * @param props.body The image properties to update. At least one field must be provided (display_order or image_url).
+ * @param props.productId Unique identifier of the product that owns this image
+ * @param props.imageId Unique identifier of the product image to update
+ * @param props.body Image properties to update
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the request and extract the authenticated seller's ID from the session token.
- * 2. Query the product by productId from ecommerce_mall_products table.
- * 3. Verify the product exists and is not soft-deleted (deleted_at is NULL).
- * 4. Verify the authenticated seller_id matches the product's seller_id. Return 403 if mismatch.
- * 5. Query the image by imageId from ecommerce_mall_product_images table.
- * 6. Verify the image exists, is associated with the specified productId, and is not soft-deleted.
- * 7. Validate request body:
- *    - If display_order is provided: must be a non-negative integer
- *    - If image_url is provided: must be a valid URI format
- *    - At least one field must be provided for update
- * 8. Begin database transaction.
- * 9. Update the image record with new display_order and/or image_url values.
- * 10. Set updated_at to current timestamp.
- * 11. Create a product snapshot in ecommerce_mall_product_snapshots:
- *     - recordType: 'product'
- *     - recordId: productId
- *     - changes: capture modified field names
- *     - oldValues: previous image list with display orders
- *     - newValues: updated image list
- *     - changedBy: authenticated seller's ID
- *     - changedAt: current timestamp
- * 12. Commit transaction.
- * 13. Return the updated product image with all fields including new display_order or image_url.
+ * @x-autobe-specification 1. Validate that productId and imageId are valid UUIDs
+ * 2. Query ecommerce_mall_product_images for the image with matching id and product_id
+ * 3. Verify the image is not soft-deleted (deleted_at is NULL)
+ * 4. Verify the requesting seller owns the product (seller_id matches product.seller_id)
+ * 5. Validate display_order is a valid integer if provided (non-negative for reordering)
+ * 6. Validate image_url is a valid URI format if provided
+ * 7. Update the image record with new values
+ * 8. Update updated_at timestamp to current time
+ * 9. Create a product snapshot (ecommerce_mall_product_snapshots) capturing the before/after state
+ * 10. Return the updated image entity with all fields
+ *
+ * Error handling:
+ * - 404: Image not found or already soft-deleted
+ * - 403: Seller does not own the product
+ * - 400: Invalid display_order or image_url format
  * @path /ecommerceMall/seller/products/:productId/images/:imageId
  * @accessor api.functional.ecommerceMall.seller.products.images.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -268,17 +188,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The UUID of the product that owns this image. The image must be associated with this product.
+     * Unique identifier of the product that owns this image
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * The UUID of the image to update. This image must belong to the specified product.
+     * Unique identifier of the product image to update
      */
     imageId: string & tags.Format<"uuid">;
 
     /**
-     * The image properties to update. At least one field must be provided (display_order or image_url).
+     * Image properties to update
      */
     body: IEcommerceMallProductImage.IUpdate;
   };
@@ -316,6 +236,122 @@ export namespace update {
       assert.param("productId")(() => typia.assert(props.productId));
       assert.param("imageId")(() => typia.assert(props.imageId));
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Remove a product image from the seller's product gallery.
+ *
+ * This operation allows a product owner (seller) to delete an individual image from their product's image gallery. The image is soft-deleted (marked with deleted_at timestamp) rather than permanently removed, preserving audit trail information.
+ *
+ * The seller must own the product to perform deletion. The system verifies seller ownership before allowing the operation to proceed. Sellers cannot delete images from products they do not own.
+ *
+ * The operation ensures data integrity by preventing deletion of the last remaining image on a product. Products must maintain at least one image for proper display in search results and product listings. If deletion is requested for the final image, the system rejects the operation with an appropriate error.
+ *
+ * Upon successful deletion, the display order values of remaining images are automatically recalculated to maintain sequential ordering. This resequencing ensures consistent thumbnail presentation.
+ *
+ * The deleted image remains accessible through the product's snapshot history, allowing sellers and administrators to review the image's previous state. The image file itself is preserved for historical reference but is excluded from active product display and search results.
+ *
+ * @param props.connection
+ * @param props.productId Target product's ID. The seller must own this product to delete its images.
+ * @param props.imageId Target image's ID to be deleted from the product gallery.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification DELETE operation to soft-deletion of product image from ecommerce_mall_product_images table.
+ *
+ * 1. Verify seller authentication via session token
+ * 2. Fetch product record from ecommerce_mall_products where id = productId
+ * 3. Verify product ownership: product.seller_id == authenticated seller.id
+ * 4. If product not found, return 404 Not Found
+ * 5. If seller does not own product, return 403 Forbidden
+ * 6. Fetch image record from ecommerce_mall_product_images where id = imageId AND product_id = productId
+ * 7. If image not found or belongs to different product, return 404 Not Found
+ * 8. Count active images for this product: WHERE product_id = productId AND deleted_at IS NULL
+ * 9. If active count == 1, reject deletion - products must maintain at least one image, return 400 Bad Request
+ * 10. Update image record: SET deleted_at = NOW() (soft delete)
+ * 11. Update display_order values of remaining active images: resequence to 0, 1, 2... in current display order
+ * 12. Create product snapshot capturing the state before deletion
+ * 13. Return 204 No Content (or return deleted image details if required)
+ *
+ * Error cases:
+ * - 404 Product not found
+ * - 403 Forbidden (seller doesn't own product)
+ * - 404 Image not found
+ * - 400 Bad Request (cannot delete last image)
+ * @path /ecommerceMall/seller/products/:productId/images/:imageId
+ * @accessor api.functional.ecommerceMall.seller.products.images.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * Target product's ID. The seller must own this product to delete its images.
+     */
+    productId: string & tags.Format<"uuid">;
+
+    /**
+     * Target image's ID to be deleted from the product gallery.
+     */
+    imageId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/ecommerceMall/seller/products/:productId/images/:imageId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("imageId")(() => typia.assert(props.imageId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -17,10 +17,12 @@ export async function getEcommerceMallAdminSnapshotAuditsAuditId(props: {
   admin: AdminPayload;
   auditId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallSnapshotAudit> {
-  const snapshotAudit =
+  // Query the snapshot audit record with all fields
+  const audit =
     await MyGlobal.prisma.ecommerce_mall_snapshot_audits.findUniqueOrThrow({
       where: { id: props.auditId },
       ...EcommerceMallSnapshotAuditTransformer.select(),
     });
-  return await EcommerceMallSnapshotAuditTransformer.transform(snapshotAudit);
+  // Transform and return the audit record
+  return EcommerceMallSnapshotAuditTransformer.transform(audit);
 }

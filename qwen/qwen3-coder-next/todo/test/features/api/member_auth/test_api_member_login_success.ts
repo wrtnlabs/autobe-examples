@@ -15,94 +15,85 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_member_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create a new member account first using a separate connection
-  const memberConnection: api.IConnection = { host: connection.host };
-  const joinEmail = typia.random<string & tags.Format<"email">>();
-  const joinPassword = RandomGenerator.alphaNumeric(16);
-  const joinResponse = await api.functional.todoApp.auth.member.join(
-    memberConnection,
-    {
-      body: {
-        email: joinEmail,
-        password: joinPassword,
-      } satisfies ITodoAppMemberSession.IJoin,
-    },
-  );
-  typia.assert(joinResponse);
-  // Step 2: Login with the created credentials using a new connection
+  // Step 1: Register a new member
+  const registerConnection: api.IConnection = { host: connection.host };
+  const registerEmail = typia.random<string & tags.MinLength<1> & tags.MaxLength<255> & tags.Format<"email">>();
+  const registerPassword = "SecurePassword123!";
+  await authorize_member_join(registerConnection, {
+    body: {
+      email: registerEmail,
+      password: registerPassword,
+      href: "https://example.com/register",
+      referrer: "https://referrer.com",
+    } satisfies ITodoAppMemberSession.IJoin,
+  });
+  // Step 2: Login with valid credentials
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginResponse = await api.functional.todoApp.auth.member.login(
-    loginConnection,
-    {
-      body: {
-        email: joinEmail,
-        password: joinPassword,
-        href: "https://example.com/login",
-        referrer: "https://example.com",
-        ip: "127.0.0.1",
-      } satisfies ITodoAppMemberSession.ILogin,
-    },
-  );
-  typia.assert(loginResponse);
+  const loginResponse = await authorize_member_login(loginConnection, {
+    body: {
+      email: registerEmail,
+      password: registerPassword,
+    } satisfies ITodoAppMemberSession.ILogin,
+  });
   // Step 3: Validate response structure
+  typia.assert(loginResponse);
+  // Step 4: Validate member information
   TestValidator.equals(
-    "should have access_token",
-    typeof loginResponse.access_token,
-    "string",
+    "member email matches",
+    loginResponse.member.email,
+    registerEmail,
   );
-  TestValidator.equals(
-    "should have refresh_token",
-    typeof loginResponse.refresh_token,
-    "string",
+  TestValidator.predicate("member has id", loginResponse.member.id.length > 0);
+  TestValidator.predicate(
+    "member has displayName",
+    loginResponse.member.displayName.length > 0,
+  );
+  // Step 5: Validate access token structure
+  TestValidator.predicate(
+    "access_token exists",
+    loginResponse.access_token.access_token.length > 0,
   );
   TestValidator.predicate(
-    "access_token should be non-empty",
-    loginResponse.access_token.length > 0,
+    "refresh_token exists",
+    loginResponse.refresh_token.refresh_token.length > 0,
   );
   TestValidator.predicate(
-    "refresh_token should be non-empty",
-    loginResponse.refresh_token.length > 0,
-  );
-  // Step 4: Validate user information
-  TestValidator.equals(
-    "should have user info",
-    loginResponse.user !== null && loginResponse.user !== undefined,
-    true,
-  );
-  TestValidator.equals(
-    "user should have member_id",
-    typeof loginResponse.user.todo_app_member_id,
-    "string",
-  );
-  // Step 5: Validate session metadata
-  TestValidator.equals(
-    "should have ip address",
-    typeof loginResponse.ip,
-    "string",
-  );
-  TestValidator.equals(
-    "should have user_agent",
-    typeof loginResponse.user_agent,
-    "string",
-  );
-  // Step 6: Validate token expiration times
-  const now = new Date().getTime();
-  const accessExpiresAt = new Date(loginResponse.access_expires_at).getTime();
-  const refreshExpiresAt = new Date(loginResponse.refresh_expires_at).getTime();
-  TestValidator.predicate(
-    "access_token should expire in reasonable time",
-    accessExpiresAt > now + 15 * 60 * 1000,
+    "access_expires_at exists",
+    loginResponse.access_token.access_expires_at.length > 0,
   );
   TestValidator.predicate(
-    "access_token should not expire too far",
-    accessExpiresAt < now + 60 * 60 * 1000,
+    "refresh_expires_at exists",
+    loginResponse.refresh_token.refresh_expires_at.length > 0,
+  );
+  // Step 6: Validate token expiration timestamps
+  const now = new Date().toISOString();
+  TestValidator.predicate(
+    "access token not expired",
+    loginResponse.access_token.access_expires_at > now,
   );
   TestValidator.predicate(
-    "refresh_token should expire in reasonable time",
-    refreshExpiresAt > now + 24 * 60 * 60 * 1000,
+    "refresh token not expired",
+    loginResponse.refresh_token.refresh_expires_at > now,
+  );
+  // Step 7: Validate token structure
+  TestValidator.predicate(
+    "token.access exists",
+    loginResponse.token.access.length > 0,
   );
   TestValidator.predicate(
-    "refresh_token should not expire too far",
-    refreshExpiresAt < now + 30 * 24 * 60 * 60 * 1000,
+    "token.refresh exists",
+    loginResponse.token.refresh.length > 0,
+  );
+  TestValidator.predicate(
+    "token.expired_at exists",
+    loginResponse.token.expired_at.length > 0,
+  );
+  TestValidator.predicate(
+    "token.refreshable_until exists",
+    loginResponse.token.refreshable_until.length > 0,
+  );
+  TestValidator.predicate(
+    "token.refreshable_until in future",
+    loginResponse.token.refreshable_until > now,
   );
 }

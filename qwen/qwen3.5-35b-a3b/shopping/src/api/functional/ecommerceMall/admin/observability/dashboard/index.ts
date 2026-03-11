@@ -3,75 +3,51 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IEcommerceMallDashboard } from "../../../../../structures/IEcommerceMallDashboard";
-import { IPageIEcommerceMallDashboard } from "../../../../../structures/IPageIEcommerceMallDashboard";
+import { IEcommerceMallObservabilityDashboard } from "../../../../../structures/IEcommerceMallObservabilityDashboard";
 
 /**
- * Retrieve a comprehensive observability dashboard with real-time metrics and statistics from multiple system sources.
+ * Retrieve comprehensive system-wide observability metrics and statistics for monitoring ecommerce platform health and performance.
  *
- * This operation aggregates system health indicators, performance metrics, and operational statistics for administrators, system operators, and assigned support personnel. The dashboard provides visibility into system-wide performance and operational status, enabling data-driven decision-making for platform management.
+ * This dashboard provides real-time insights into order lifecycle tracking, review analytics, inventory status, seller approval queues, and system operational state. The metrics are aggregated from multiple database entities including orders, reviews, product variants, seller profiles, and audit logs to give a complete picture of platform performance.
  *
- * The dashboard displays current system health status using color-coded indicators: green (all systems operational), yellow (degraded performance), and red (critical incidents requiring immediate attention). Performance metrics include request latency distribution (p50, p90, p99 percentiles), error rates, active user counts across all actor types, and order throughput statistics.
+ * **Data Sources**:
+ * - Database metrics: Computed fresh from ecommerce_mall_orders, ecommerce_mall_reviews, ecommerce_mall_product_variants, ecommerce_mall_admin_request_requests, ecommerce_mall_admin_audit_logs tables
+ * - Infrastructure metrics: Retrieved from external monitoring systems (API latency, connection pool usage, cache performance)
  *
- * Inventory monitoring shows current stock levels with visual indicators for variants below threshold—those with stockQuantity under 10 units are displayed in warning state to alert administrators of potential stockout risks. The seller approval queue section displays pending count, average wait time for pending approvals, and a list of oldest pending requests sorted by submission date.
+ * **Dashboard Features**:
+ * - Real-time order statistics with status breakdowns (paid, shipped, delivered, cancelled, refunded)
+ * - Seller approval queue with wait time analytics
+ * - Inventory alert system for low-stock variants (below 10 units threshold)
+ * - Review analytics including moderation queue counts
+ * - System health indicators with automated status determination
  *
- * Order lifecycle tracking provides counts for orders in each fulfillment stage: created, shipped, delivered, cancelled, and refunded, enabling visibility into the overall order flow and identifying potential bottlenecks. Review analytics display total review count, average star rating across all reviews, active review count versus deleted reviews (soft-deleted via deleted_at field), and review creation rate over time.
+ * **Access Control**:
+ * This endpoint is accessible to administrators and authorized support personnel only. Regular customers and sellers cannot access system-wide observability metrics. Access is enforced via role-based authorization checks at the service layer.
  *
- * The operation supports comprehensive filtering by time range (from last 1 hour to last 12 months), service component, geographic region, and user type (customer, seller, or admin) for drill-down analysis. Dashboard metrics update with a maximum 1-minute refresh interval to maintain near-real-time visibility while optimizing database performance. Administrators can export the current dashboard state as a screenshot or PDF report for administrative documentation and reporting purposes.
+ * All metrics are updated with maximum 1-minute refresh interval as per observability dashboard requirements. The dashboard supports custom time range selection and can export current state as screenshots or PDF reports for administrative reporting.
  *
  * @param props.connection
- * @param props.body Query parameters and filters for dashboard metrics. All parameters are optional.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Aggregate metrics from multiple source tables using efficient queries:
+ * @x-autobe-specification Query multiple database tables to compute aggregated metrics for the observability dashboard:
+ * 1. Order lifecycle: Count orders from ecommerce_mall_orders by overallStatus (paid, shipped, delivered, cancelled, refunded) for current period
+ * 2. Seller approval queue: Count pending requests from ecommerce_mall_admin_request_requests, calculate average wait time (days since createdAt for pending), fetch oldest 10 pending requests
+ * 3. Inventory alerts: Query ecommerce_mall_product_variants where stockQuantity < 10 to identify variants in warning state
+ * 4. Review analytics: Count total reviews from ecommerce_mall_reviews, calculate average rating, count reviews with isActive=false (pending moderation), count reviews that might match spam patterns
+ * 5. System status: Check if system is operational based on API health, database connection pool utilization, and payment processing success rate metrics
+ * 6. Seller metrics: Count total products from ecommerce_mall_products, count order items from ecommerce_mall_order_items
+ * 7. Audit log metrics: Count total audit entries from ecommerce_mall_admin_audit_logs
  *
- * 1. System Health Metrics:
- *    - Calculate overall status: green (all operational), yellow (degraded), red (critical)
- *    - Monitor error rates from access logs over rolling windows
- *    - Track API latency distribution percentiles (p50, p90, p99)
- *    - Count active user sessions from ecommerce_mall_customer_sessions, ecommerce_mall_seller_sessions, and ecommerce_mall_admin_sessions
+ * Return aggregated metrics in IObservabilityDashboard.ISummary structure. All metrics should be computed fresh from database queries (not from cached/pre-computed tables) as per real-time dashboard requirements with maximum 1-minute refresh interval.
  *
- * 2. Performance Metrics:
- *    - Query ecommerce_mall_admin_audit_logs for error rates
- *    - Calculate average API latency from request timestamps
- *    - Monitor payment processing success rate from order creation events
- *
- * 3. Inventory Status:
- *    - Join ecommerce_mall_product_variants with ecommerce_mall_inventory_records
- *    - Identify variants with stockQuantity < 10 (warning state)
- *    - Aggregate current stock levels by category
- *
- * 4. Seller Approval Queue:
- *    - Count ecommerce_mall_sellers where approvalStatus = 'pending'
- *    - Calculate average wait time since createdAt for pending sellers
- *    - List oldest pending requests sorted by createdAt ascending
- *
- * 5. Order Lifecycle Tracking:
- *    - Count orders by overallStatus from ecommerce_mall_orders
- *    - Group by time range (current period)
- *    - Track orders in each state: created, shipped, delivered, cancelled, refunded
- *
- * 6. Review Analytics:
- *    - Count total reviews from ecommerce_mall_reviews
- *    - Calculate average rating from rating field
- *    - Count reviews with isActive = false (pending moderation)
- *    - Flag reviews matching spam detection criteria
- *
- * 7. Audit Log Metrics:
- *    - Count total log entries in date range from ecommerce_mall_admin_audit_logs
- *    - Track log creation rate per hour
- *
- * Support time range filtering (last 1 hour to 12 months) with maximum 1-minute refresh interval for real-time monitoring. All metrics must be computed on-demand with appropriate database indexing for performance. Cache computed metrics for up to 1 minute to reduce database load while maintaining near-real-time visibility. Implement cursor-based pagination for large result sets.
+ * Permissions: This endpoint is accessible to admins (as per section 1310 - 'administrators, system operators, and assigned support personnel').
  * @path /ecommerceMall/admin/observability/dashboard
- * @accessor api.functional.ecommerceMall.admin.observability.dashboard.index
+ * @accessor api.functional.ecommerceMall.admin.observability.dashboard.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+export async function at(connection: IConnection): Promise<at.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? at.simulate(connection)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -81,22 +57,153 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(),
+          ...at.METADATA,
+          path: at.path(),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Response = IEcommerceMallObservabilityDashboard.ISummary;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/ecommerceMall/admin/observability/dashboard",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/ecommerceMall/admin/observability/dashboard";
+  export const random = (): IEcommerceMallObservabilityDashboard.ISummary =>
+    typia.random<IEcommerceMallObservabilityDashboard.ISummary>();
+  export const simulate = (_connection: IConnection): Response => {
+    return random();
+  };
+}
+
+/**
+ * Retrieves comprehensive observability dashboard metrics for system monitoring and administrative oversight.
+ *
+ * This operation provides a unified view of critical system health indicators, operational metrics, and business analytics across the ecommerce platform. It aggregates data from multiple sources including order transactions, product reviews, inventory levels, seller approvals, and audit logs to deliver actionable insights for administrators, system operators, and support personnel.
+ *
+ * The dashboard supports real-time monitoring with metrics refreshed at maximum 1-minute intervals. Users can filter and drill down data by configurable time ranges (from last 1 hour to last 12 months), service components, geographic regions, and user types (customer, seller, or administrator). This enables targeted investigation of system behavior across different dimensions.
+ *
+ * Security: Access is restricted to authorized admin-grade actors only. All metric data is server-side computed—no raw data exposure to clients. Audit logs record all dashboard access for compliance monitoring.
+ *
+ * @param props.connection
+ * @param props.body Dashboard filter criteria and time range configuration. Specifies which metrics to include, time period for data aggregation, and drill-down dimensions for detailed views.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification Service layer implementation:
+ *
+ * 1. AUTHORIZATION CHECK:
+ *    - Verify requesting user has admin_grade (regular or super)
+ *    - Reject with 403 if user lacks admin privileges
+ *    - Log dashboard access to audit trail
+ *
+ * 2. TIME RANGE COMPUTATION:
+ *    - Parse from request: startDate, endDate, or predefined ranges (1h, 24h, 7d, 30d, 90d, 180d, 365d)
+ *    - Default to last 24 hours if not specified
+ *    - Validate range does not exceed 12 months maximum
+ *
+ * 3. DATA AGGREGATION QUERIES:
+ *
+ *    a) System Health:
+ *       - Query ecommerce_mall_admin_audit_logs for recent error counts by action_type
+ *       - Calculate error rate over time window (last 5-minute window per section 1309)
+ *       - Identify critical alerts from alerting thresholds
+ *
+ *    b) Order Lifecycle Metrics:
+ *       - Query ecommerce_mall_orders with overall_status filter
+ *       - Count by status: created, shipped, delivered, cancelled, refunded
+ *       - Calculate totals for current period vs previous period
+ *       - Join with ecommerce_mall_order_items for item-level metrics
+ *
+ *    c) Review Analytics:
+ *       - Query ecommerce_mall_reviews for rating distribution (1-5 stars)
+ *       - Calculate average rating across all active reviews
+ *       - Count pending moderation and spam-flagged reviews
+ *       - Track new reviews per time period
+ *
+ *    d) Inventory Health:
+ *       - Query ecommerce_mall_inventory_records for recent stock changes
+ *       - Cross-reference with ecommerce_mall_product_variants for current stock_quantity
+ *       - Identify variants below threshold (<10 units per section 1310)
+ *       - Flag critical stock levels for reorder alerts
+ *
+ *    e) Seller Approval Queue:
+ *       - Query ecommerce_mall_sellers with approval_status = 'pending'
+ *       - Count pending requests and calculate average wait time (created_at to now)
+ *       - Retrieve oldest pending requests (limit 5) for queue overview
+ *
+ *    f) User Activity:
+ *       - Count active users by type (customer via ecommerce_mall_customers, seller via ecommerce_mall_sellers, admin via ecommerce_mall_admins)
+ *       - Track active sessions (ecommerce_mall_customer_sessions, ecommerce_mall_seller_sessions, ecommerce_mall_admin_sessions) within time window
+ *       - Calculate concurrent user metric
+ *
+ * 4. TIME-SERIES DATA:
+ *    - For each metric type, generate time-series arrays for chart visualization
+ *    - Granularity: hourly for <24h range, daily for 24h-30d, weekly for >30d
+ *    - Store as {timestamp, value} objects for frontend rendering
+ *
+ * 5. FILTER APPLICATION:
+ *    - Apply user_type filter (customer/seller/admin) to relevant metrics
+ *    - Apply service filter to system health metrics
+ *    - Apply geographic filter if provided (from user session metadata)
+ *
+ * 6. PAGINATION:
+ *    - If request includes pagination params, paginate seller approval queue list
+ *    - Default page size: 10, max: 100 (per section 1307 log pagination pattern)
+ *    - Return total pending count separately from paginated list
+ *
+ * 7. RESPONSE BUILDING:
+ *    - Construct IEcommerceMallObservabilityDashboard with all computed metrics
+ *    - Include systemStatus indicator (green/yellow/red based on error rates)
+ *    - Attach timeSeries data for each metric for charting
+ *    - Include filter context (applied filters, time range) for reproducibility
+ *
+ * 8. EDGE CASES:
+ *    - If no data exists for time range (new system), return zero counts with default status green
+ *    - If calculation exceeds 10s, return partial dashboard with cached recent data
+ *    - Handle timezone conversion: all timestamps normalized to ISO 8601 UTC
+ * @path /ecommerceMall/admin/observability/dashboard
+ * @accessor api.functional.ecommerceMall.admin.observability.dashboard.getDashboard
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function getDashboard(
+  connection: IConnection,
+  props: getDashboard.Props,
+): Promise<getDashboard.Response> {
+  return true === connection.simulate
+    ? getDashboard.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...getDashboard.METADATA,
+          path: getDashboard.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace getDashboard {
   export type Props = {
     /**
-     * Query parameters and filters for dashboard metrics. All parameters are optional.
+     * Dashboard filter criteria and time range configuration. Specifies which metrics to include, time period for data aggregation, and drill-down dimensions for detailed views.
      */
-    body: IEcommerceMallDashboard.IRequest;
+    body: IEcommerceMallObservabilityDashboard.IRequest;
   };
-  export type Body = IEcommerceMallDashboard.IRequest;
-  export type Response = IPageIEcommerceMallDashboard.ISummary;
+  export type Body = IEcommerceMallObservabilityDashboard.IRequest;
+  export type Response = IEcommerceMallObservabilityDashboard;
 
   export const METADATA = {
     method: "PATCH",
@@ -112,16 +219,16 @@ export namespace index {
   } as const;
 
   export const path = () => "/ecommerceMall/admin/observability/dashboard";
-  export const random = (): IPageIEcommerceMallDashboard.ISummary =>
-    typia.random<IPageIEcommerceMallDashboard.ISummary>();
+  export const random = (): IEcommerceMallObservabilityDashboard =>
+    typia.random<IEcommerceMallObservabilityDashboard>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: getDashboard.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(),
+      path: getDashboard.path(),
       contentType: "application/json",
     });
     try {

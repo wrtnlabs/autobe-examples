@@ -1,7 +1,5 @@
 import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -20,13 +18,13 @@ export namespace EcommerceMallCancellationRequestTransformer {
     return {
       select: {
         id: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
         reason: true,
         request_status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
         statusSnapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
@@ -36,15 +34,15 @@ export namespace EcommerceMallCancellationRequestTransformer {
   ): Promise<IEcommerceMallCancellationRequest> {
     return {
       id: input.id,
+      reason: input.reason,
+      requestStatus: typia.assert<"pending" | "approved" | "rejected">(
+        input.request_status,
+      ),
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
       orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
         input.orderItem,
-      ),
-      reason: input.reason,
-      requestStatus: typia.assert<"pending" | "approved" | "rejected">(
-        input.request_status,
       ),
       createdAt: toISOStringSafe(input.created_at),
       updatedAt: toISOStringSafe(input.updated_at),

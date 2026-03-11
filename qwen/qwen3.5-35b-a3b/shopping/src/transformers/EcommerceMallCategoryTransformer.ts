@@ -22,10 +22,18 @@ export namespace EcommerceMallCategoryTransformer {
         updated_at: true,
         deleted_at: true,
         parent: EcommerceMallCategoryAtSummaryTransformer.select(),
-        children: true,
-        snapshots: true,
-        products: true,
-        productSnapshots: true,
+        children: { select: { id: true } },
+        products: { select: { id: true } },
+        snapshots: { select: { id: true } },
+        productSnapshots: { select: { id: true } },
+      },
+      include: {
+        _count: {
+          select: {
+            children: true,
+            products: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_categoriesFindManyArgs;
   }
@@ -35,16 +43,18 @@ export namespace EcommerceMallCategoryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
+      description: input.description,
       is_leaf: input.is_leaf,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      product_count: input._count.products,
+      subcategory_count: input._count.children,
       parent: input.parent
         ? await EcommerceMallCategoryAtSummaryTransformer.transform(
             input.parent,
           )
         : null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

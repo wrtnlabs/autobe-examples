@@ -2,8 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import type { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
-import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
+import type { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,100 +10,87 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
-import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
-import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
-import { generate_random_discussion_board_super_admin_maintenance_schedules_create } from "../../../generate/generate_random_discussion_board_super_admin_maintenance_schedules_create";
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { generate_random_discussion_board_admin_maintenance_schedules_create } from "../../../generate/generate_random_discussion_board_admin_maintenance_schedules_create";
 import { prepare_random_discussion_board_maintenance_schedule } from "../../../prepare/prepare_random_discussion_board_maintenance_schedule";
 
 export async function test_api_maintenance_schedule_timing_validation(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create super admin connection
-  const superAdminConnection: api.IConnection = { host: connection.host };
-  await authorize_super_admin_join(superAdminConnection, {
+  // 1. Authenticate as administrator
+  const adminConnection: api.IConnection = { host: connection.host };
+  await authorize_admin_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IDiscussionBoardSuperAdmin.IJoin,
+    } satisfies IDiscussionBoardAdmin.IJoin,
   });
-  // Create initial maintenance schedule
-  const now = new Date();
-  const futureStart = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
-  const futureEnd = new Date(futureStart.getTime() + 30 * 60 * 1000); // 30 minutes duration
-  const schedule =
-    await generate_random_discussion_board_super_admin_maintenance_schedules_create(
-      superAdminConnection,
+  // 2. Test valid timing configuration using utility function
+  const validSchedule =
+    await generate_random_discussion_board_admin_maintenance_schedules_create(
+      adminConnection,
       {
         body: {
-          maintenance_type: "system_update",
-          description: RandomGenerator.paragraph({ sentences: 3 }),
-          scheduled_start_time: futureStart.toISOString(),
-          scheduled_end_time: futureEnd.toISOString(),
-          estimated_duration_minutes: 30,
-          impact_level: "low",
-          status: "scheduled",
-          notes: RandomGenerator.paragraph({ sentences: 1 }),
-        } satisfies IDiscussionBoardMaintenanceSchedule.ICreate,
+          planned_start_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+          planned_end_at: new Date(Date.now() + 7200000).toISOString(), // 2 hours from now
+        },
       },
     );
-  typia.assert(schedule);
-  // Test 1: scheduled_end_time before scheduled_start_time
+  typia.assert(validSchedule);
+  // 3. Test invalid timing: planned_end_at before planned_start_at
   await TestValidator.error(
-    "should reject end time before start time",
+    "planned_end_at before planned_start_at should be rejected",
     async () => {
-      await api.functional.discussionBoard.superAdmin.maintenance_schedules.update(
-        superAdminConnection,
+      await generate_random_discussion_board_admin_maintenance_schedules_create(
+        adminConnection,
         {
-          scheduleId: schedule.id,
           body: {
-            scheduled_end_time: futureStart.toISOString(),
-            scheduled_start_time: futureEnd.toISOString(),
-          } satisfies IDiscussionBoardMaintenanceSchedule.IUpdate,
+            planned_start_at: new Date(Date.now() + 7200000).toISOString(), // 2 hours from now
+            planned_end_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now (invalid)
+          },
         },
       );
     },
   );
-  // Test 2: overlapping maintenance window (end time overlaps with existing schedule)
+  // 4. Test invalid timing: identical start and end times
   await TestValidator.error(
-    "should reject overlapping maintenance window",
+    "identical start and end times should be rejected",
     async () => {
-      await api.functional.discussionBoard.superAdmin.maintenance_schedules.update(
-        superAdminConnection,
+      const identicalTime = new Date(Date.now() + 3600000).toISOString();
+      await generate_random_discussion_board_admin_maintenance_schedules_create(
+        adminConnection,
         {
-          scheduleId: schedule.id,
           body: {
-            scheduled_start_time: new Date(
-              futureStart.getTime() - 15 * 60 * 1000,
-            ).toISOString(), // 15 minutes before original start
-            scheduled_end_time: new Date(
-              futureStart.getTime() + 15 * 60 * 1000,
-            ).toISOString(), // 15 minutes after original start (overlap)
-          } satisfies IDiscussionBoardMaintenanceSchedule.IUpdate,
+            planned_start_at: identicalTime,
+            planned_end_at: identicalTime,
+          },
         },
       );
     },
   );
-  // Test 3: Valid update should succeed
-  const validUpdate =
-    await api.functional.discussionBoard.superAdmin.maintenance_schedules.update(
-      superAdminConnection,
+  // 5. Test another valid timing configuration
+  const validSchedule2 =
+    await generate_random_discussion_board_admin_maintenance_schedules_create(
+      adminConnection,
       {
-        scheduleId: schedule.id,
         body: {
-          description: "Updated description",
-          notes: "Updated notes",
-        } satisfies IDiscussionBoardMaintenanceSchedule.IUpdate,
+          planned_start_at: new Date(Date.now() + 86400000).toISOString(), // 1 day from now
+          planned_end_at: new Date(Date.now() + 172800000).toISOString(), // 2 days from now
+        },
       },
     );
-  typia.assert(validUpdate);
-  TestValidator.equals(
-    "description updated",
-    validUpdate.description,
-    "Updated description",
+  typia.assert(validSchedule2);
+  // 6. Validate that valid schedules have correct timing
+  TestValidator.predicate(
+    "valid schedule should have planned_end_at after planned_start_at",
+    new Date(validSchedule.planned_end_at) >
+      new Date(validSchedule.planned_start_at),
   );
-  TestValidator.equals("notes updated", validUpdate.notes, "Updated notes");
+  TestValidator.predicate(
+    "valid schedule2 should have planned_end_at after planned_start_at",
+    new Date(validSchedule2.planned_end_at) >
+      new Date(validSchedule2.planned_start_at),
+  );
 }

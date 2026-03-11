@@ -1,83 +1,20 @@
 import { tags } from "typia";
 
 import { IAuthorizationToken } from "./IAuthorizationToken";
-import { IEconomicPoliticalBoardMember } from "./IEconomicPoliticalBoardMember";
 
 export namespace IEconomicPoliticalBoardAdmin {
   /**
-   * Administrator account registration for the Economic/Political Discussion Board system.
+   * Authentication response containing the admin user identifier and JWT tokens for API access.
    *
-   * Creates a new administrator account by validating email format and uniqueness. Upon successful registration, automatically creates a User record with hashed password and a corresponding Profile record. The operation also checks for existing bans and rejects registration if the user was previously banned.
-   */
-  export type IJoin = {
-    /**
-     * Administrator's unique email address. Must be unique across all users and follow standard email format.
-     *
-     * @x-autobe-specification Email validated against users table for format (RFC 5322) and uniqueness. Stored in users.email column after registration.
-     */
-    email: string &
-      tags.MinLength<1> &
-      tags.MaxLength<255> &
-      tags.Format<"email">;
-
-    /**
-     * Administrator's password (will be securely hashed before storage).
-     *
-     * @x-autobe-specification User-provided password that will be hashed using bcrypt/argon2 before storing in users.password_hashed column. Minimum 8 characters with complexity requirements.
-     */
-    password: string &
-      tags.MinLength<8> &
-      tags.MaxLength<128> &
-      tags.Format<"password">;
-
-    /**
-     * Request origin URL for session tracking.
-     *
-     * @x-autobe-specification Session context field capturing the request origin URL. Stored in session table for session tracking and security. Required field for admin IJoin DTO.
-     */
-    href: string & tags.Format<"uri">;
-
-    /**
-     * Referrer URL for analytics and session tracking.
-     *
-     * @x-autobe-specification Session context field capturing the referrer URL. Stored in session table for analytics and tracking. Required field for admin IJoin DTO.
-     */
-    referrer: string & tags.Format<"uri">;
-
-    /**
-     * Client IP address (optional for SSR cases).
-     *
-     * @x-autobe-specification Session context field capturing the client IP address. Stored in session table. Optional for SSR cases where client cannot determine own IP. Format: IPv4.
-     */
-    ip?: (string & tags.Format<"ipv4">) | undefined;
-  };
-
-  /**
-   * Request payload for refreshing an administrator's access token. Provides the current refresh token to obtain a new access token, enabling continued authenticated access without re-entering credentials. The refresh token must be a valid JWT issued during the admin's most recent login or refresh operation.
-   */
-  export type IRefresh = {
-    /**
-     * Authentication refresh token for obtaining a new access token.
-     *
-     * @x-autobe-specification JWT refresh token string. This token is extracted from the admin's session token data and validated against the token blacklist/rotation policy. When validated successfully, a new access token is generated and optionally a new refresh token is issued (depending on rotation policy). Input is consumed for validation, not persisted.
-     */
-    refresh_token: string;
-  };
-
-  /**
-   * Authentication response for administrator users containing the admin's user ID and JWT tokens for continued API access.
+   * This response is returned by all authentication endpoints (registration, login, and token refresh) and provides the credentials needed to access protected API endpoints. The id field identifies the authenticated admin user, while the token field contains the complete authorization token structure including access and refresh tokens with their expiration timestamps.
    *
-   * This type represents the response from all admin authentication endpoints including registration, login, and token refresh operations. It provides the authenticated admin with their unique user identifier and the JWT tokens necessary for making authenticated API requests.
-   *
-   * The `id` field contains the administrator's user ID extracted from the JWT token claims. The `token` field contains a complete IAuthorizationToken object with both the short-lived access token for immediate API calls and the long-lived refresh token for session renewal.
-   *
-   * Both tokens are embedded with the admin's user claims including their userId, email address, and adminGrade (regular or super) if they exist in the administrator roles table. This response type enables seamless authenticated sessions for administrators accessing the Economic/Political Discussion Board system.
+   * Security considerations: The access token is short-lived (15 minutes) to minimize exposure if intercepted. The refresh token allows session continuation for up to 7 days. Clients should store tokens securely (e.g., httpOnly cookies or secure storage) and proactively refresh tokens before expiration to maintain seamless access.
    */
   export type IAuthorized = {
     /**
-     * Administrator's unique user identifier extracted from JWT token claims.
+     * Unique identifier of the authenticated admin user.
      *
-     * @x-autobe-specification Extracted from JWT token claims (userId sub claim). The JWT access token is generated during authentication and contains encoded claims including user identity. This id is parsed from the JWT payload as the "sub" (subject) claim which holds the userId value.
+     * @x-autobe-specification Authenticated user's unique identifier. Extracted from JWT claims after successful credential validation. Corresponds to the user_id field in the economic_political_board_administrator_roles table (which references the User table). The ID is included in the JWT payload and decoded to populate this response field.
      */
     id: string & tags.Format<"uuid">;
 
@@ -90,90 +27,87 @@ export namespace IEconomicPoliticalBoardAdmin {
   };
 
   /**
-   * Request body for administrator authentication in the Economic/Political Discussion Board system. Contains the credentials required for an admin user to log in, including email and password. The system validates email format, verifies password hash against stored credentials, checks ban status, and generates JWT tokens upon successful authentication.
+   * Request body for admin authentication endpoint. Contains credentials (email and password) to verify admin identity and obtain access tokens.
    */
   export type ILogin = {
     /**
-     * Administrator's email address used for authentication.
+     * User's email address used for authentication.
      *
-     * @x-autobe-specification Email format validated. Data sourced from economic_political_board_users.email column. Used for user identification and password lookup during authentication.
+     * @x-autobe-specification Direct mapping from User.email for authentication lookup. The email is used to query the User table to retrieve the corresponding passwordHash for comparison.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * Administrator's password for authentication. Password is hashed server-side for security.
+     * User's account password for authentication.
      *
-     * @x-autobe-specification Password submitted by user, transformed to hash for comparison with economic_political_board_users.password_hashed column. Secure comparison to prevent timing attacks.
+     * @x-autobe-specification Mapped from User.password_hashed via bcrypt/Argon2 verification. Client provides plaintext password which is hashed and compared against the stored passwordHash.
      */
     password: string & tags.Format<"password">;
   };
 
   /**
-   * Lightweight administrator role summary for API responses, containing grade level, promotion metadata, and user reference. Used in list views to present administrator information without exposing full user entity details. Includes the admin's display name and profile information via the user reference.
+   * Request body for refreshing authentication tokens. Contains the refresh token required to obtain new access and refresh tokens without re-entering credentials.
    */
-  export type ISummary = {
+  export type IRefresh = {
     /**
-     * Unique identifier for this administrator role record.
+     * Refresh token for obtaining new access and refresh tokens without re-authentication.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.id. UUID primary key generated at record creation.
+     * @x-autobe-specification JWT refresh token string. Service layer validates signature, expiration, and revocation status against database. New refresh token issued with 7-day expiration on successful validation.
      */
-    id: string & tags.Format<"uuid">;
+    refresh: string;
+  };
+
+  /**
+   * Request body for creating a new administrator account on the Economic/Political Discussion Board. Provides authentication credentials (email, password) and profile information (display name, bio) during registration. Session tracking fields (referrer, href) record the registration source for audit purposes. The system validates email uniqueness and format, hashes the password securely, and creates both a User account and linked Profile record upon successful registration. Returns JWT tokens for immediate authentication.
+   */
+  export type IJoin = {
+    /**
+     * Unique email address for the administrator account. Used for authentication and account identification.
+     *
+     * @x-autobe-specification User email address for authentication. Backend stores in User.email with unique constraint. Service validates RFC 5322 format and checks uniqueness against existing User records before insertion. Throws validation error if email already exists.
+     */
+    email: string & tags.Format<"email">;
 
     /**
-     * The user ID of the administrator who holds this role.
+     * Secure password for authentication. Stored as hashed value in the database. Minimum 8 characters with complexity requirements.
      *
-     * @x-autobe-database-schema-property user_id
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.user_id. UUID foreign key referencing user.id in economic_political_board_administrator_roles table.
+     * @x-autobe-specification Plain text password provided by user. Backend transforms using bcrypt or Argon2 hashing algorithm before storing in User.password_hashed field. Service enforces minimum 8 characters and complexity requirements (uppercase, lowercase, number, special character). Password is never stored or logged in plain text.
      */
-    userId: string & tags.Format<"uuid">;
+    password: string & tags.Format<"password">;
 
     /**
-     * Administrator grade level. 'regular' for standard administrative access, 'super' for elevated privileges including promotion/demotion authority.
+     * Public display name shown on the administrator's profile. Required field for profile creation.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.grade. Enum values: 'regular' for standard administrative access, 'super' for elevated privileges including promotion/demotion authority.
+     * @x-autobe-specification Public display name for Profile record. Required field. Service creates Profile record with this displayName upon user registration. Stored in Profile.displayName column. Can be updated later via Profile update API.
      */
-    grade: "regular" | "super";
+    displayName: string & tags.MinLength<1>;
 
     /**
-     * The ID of the administrator who promoted this user to their current grade. Null if promotion predates this tracking field.
+     * Optional biography text describing the administrator. Can be empty or contain personal/professional information.
      *
-     * @x-autobe-database-schema-property promoted_by_user_id
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.promoted_by_user_id. UUID foreign key referencing promotedByUser.id. Nullable when promotion predates this tracking field introduction.
+     * @x-autobe-specification Optional biography text for Profile record. Service creates Profile record with bio field (can be empty string). Stored in Profile.bio column. Can be updated later via Profile update API. No length restrictions enforced at DTO level.
      */
-    promotedByUserId: (string & tags.Format<"uuid">) | null;
+    bio?: string | undefined;
 
     /**
-     * Timestamp when this administrator was promoted to their current grade level. Null if promotion predates this tracking field.
+     * URL of the page from which the registration was initiated. Used for audit and tracking registration source.
      *
-     * @x-autobe-database-schema-property promoted_at
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.promoted_at. ISO 8601 date-time timestamp. Nullable when promotion predates this tracking field introduction.
+     * @x-autobe-specification Session context field recording the registration source URL. Captured from HTTP Referer header or frontend-provided value. Stored in session tracking table for audit purposes. Not mapped to any single database table; tracked separately. Format: URI.
      */
-    promotedAt: (string & tags.Format<"date-time">) | null;
+    href: string & tags.Format<"uri">;
 
     /**
-     * Timestamp when this administrator role record was created.
+     * Referring URL that led to the registration page. Helps track registration sources and user journey.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.created_at. ISO 8601 date-time timestamp automatically set by database at record creation.
+     * @x-autobe-specification Session context field recording the referring page or traffic source. Captured from HTTP Referer header or frontend-provided referrer parameter. Stored in session tracking table for analytics and security audit. Format: URI.
      */
-    createdAt: string & tags.Format<"date-time">;
+    referrer: string & tags.Format<"uri">;
 
     /**
-     * Timestamp when this administrator role record was last updated.
+     * Client IP address captured during registration for audit purposes. Used to track registration location and detect abuse patterns.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.updated_at. ISO 8601 date-time timestamp automatically updated by database on each record modification.
+     * @x-autobe-specification Client IP address captured during registration. Optional in request body (can be null if server-side rendering provides fallback from request object). Service layer always captures IP from request headers. Stored in session tracking table. Format: IPv4 address (e.g., '192.168.1.1'). Used for location tracking, abuse detection, and security auditing.
      */
-    updatedAt: string & tags.Format<"date-time">;
-
-    /**
-     * The user account associated with this administrator role, including display name and profile information.
-     *
-     * @x-autobe-database-schema-property user
-     * @x-autobe-specification Join via economic_political_board_administrator_roles.user_id to economic_political_board_administrator_roles user table, then to Profile table on user.id = Profile.userId. Returns IEconomicPoliticalBoardMember.ISummary containing id, email, displayName, and bio fields.
-     */
-    user: IEconomicPoliticalBoardMember.ISummary;
+    ip?: (string & tags.Format<"ipv4">) | undefined;
   };
 }

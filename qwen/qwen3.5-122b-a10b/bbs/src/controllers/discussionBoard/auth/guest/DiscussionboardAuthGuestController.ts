@@ -9,23 +9,30 @@ import { postDiscussionBoardAuthGuestRefresh } from "../../../../providers/postD
 @Controller("/discussionBoard/auth/guest")
 export class DiscussionboardAuthGuestController {
   /**
-   * Create a new guest session for anonymous browsing access to the discussion board. This endpoint accepts device fingerprint information to identify and track guest users without requiring traditional email/password authentication.
+   * Creates a new guest account for unauthenticated visitors to access the discussion board system. This operation registers a temporary guest identity identified by device fingerprint, enabling browsing of sections, articles, and comments without requiring email/password credentials.
    *
-   * The operation creates or retrieves a guest account based on the provided device fingerprint, then establishes a new session with connection metadata including IP address, current page URL, and referrer information. This session tracking enables security auditing and maintains guest continuity across requests.
+   * The join operation accepts a device fingerprint as the primary identifier, which uniquely identifies the guest's device/browser combination. An optional display name can be provided to personalize the guest experience. Upon successful registration, the system generates a unique guest identifier and creates corresponding records in both the discussion_board_guests table (for guest identity) and discussion_board_guest_sessions table (for JWT token storage).
    *
-   * Guest users can browse sections, view articles and comments, and search content without full authentication. The device fingerprint serves as the primary identifier for anonymous users, allowing session persistence across multiple requests from the same device.
+   * Security considerations include validation of device fingerprint format to prevent injection attacks, rate limiting to prevent mass guest account creation, and secure token generation using industry-standard JWT algorithms. The access_token and refresh_token returned enable subsequent authenticated requests through the refresh operation.
    *
-   * Security considerations include validation of device fingerprint format, IP address logging for audit trails, and session expiration based on configured token lifetime. The join operation is the entry point for guest authentication flow, followed by refresh operations to renew expired tokens.
-   *
-   * Related operations include the refresh endpoint for token renewal when guest sessions expire. Guests do not have login credentials and therefore cannot use the login operation available to member and admin actors.
+   * This operation is essential for the guest authentication workflow, as it establishes the initial identity that allows unauthenticated visitors to participate in the discussion board while maintaining session state through token-based authentication.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Guest session creation request with device fingerprint and connection metadata for anonymous identification.
+   * @param body Guest registration information including device fingerprint and optional display name for identification purposes.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Create a new guest session with device fingerprint identification. The service layer will: 1) Validate device_fingerprint format (non-empty string), 2) Check if device_fingerprint already exists in discussion_board_guests table, 3) If exists, return existing guest ID; if not, create new guest record, 4) Create session record in discussion_board_guest_sessions with ip, href, referrer from request, 5) Generate JWT access and refresh tokens with guest actor claims, 6) Return authorized response with tokens and guest information. Edge cases: duplicate device fingerprint returns existing session, invalid fingerprint format returns validation error.
+   * @x-autobe-specification 1. Receive POST request with device fingerprint and optional display name
+   * 2. Validate deviceFingerprint is present and non-empty (minimum 1 character)
+   * 3. Validate displayName if provided (minimum 1 character, maximum 50 characters)
+   * 4. Generate unique UUID for guestId
+   * 5. Create new record in discussion_board_guests table with generated guestId, deviceFingerprint, displayName (if provided), createdAt timestamp
+   * 6. Generate JWT access_token and refresh_token pairs
+   * 7. Create session record in discussion_board_guest_sessions table with guestId, access_token, refresh_token, expiresAt timestamps
+   * 8. Return IDiscussionBoardGuest.IAuthorized response with guestId, displayName, access_token, refresh_token, and token expiration information
+   * 9. Handle duplicate device fingerprint by returning existing guest account or rejecting based on business policy
+   * 10. Implement rate limiting to prevent abuse (max 10 join requests per device per hour)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -47,23 +54,33 @@ export class DiscussionboardAuthGuestController {
   }
 
   /**
-   * Refresh guest session tokens to extend authenticated browsing access without requiring re-authentication. This endpoint accepts a valid refresh token and returns new access and refresh tokens for continued session access.
+   * Renews JWT access and refresh tokens for an existing guest session. This operation extends the authenticated session lifetime without requiring re-registration, enabling continuous browsing access for guest users.
    *
-   * The refresh operation validates the existing refresh token against the discussion_board_guest_sessions table, ensuring the session is still active and the guest account has not been deleted. This maintains security while providing seamless continuation of the guest browsing experience.
+   * The refresh operation accepts a valid refresh_token that was issued during the initial join operation or a previous refresh. The server validates the token signature, extracts the guest identifier, and verifies the session exists in the discussion_board_guest_sessions table. Upon successful validation, new access_token and refresh_token pairs are generated and the session record is updated with fresh expiration timestamps.
    *
-   * Token refresh is essential for guest users who maintain sessions across multiple page views and interactions. The operation updates the session's expiration timestamp in the database, extending the session lifetime based on configured token policies.
+   * Security considerations include token rotation (invalidating the old refresh_token after use to prevent replay attacks), expiration validation to prevent use of expired tokens, and session validation to ensure the guest account remains active. The operation implements rate limiting to prevent token refresh abuse.
    *
-   * Security considerations include refresh token rotation, session expiration validation, and soft-delete status checking for guest accounts. Failed refresh attempts due to expired or invalid tokens require the guest to re-authenticate through the join operation.
-   *
-   * Related operations include the join endpoint for initial guest session creation. The refresh operation enables continuous access without interrupting the user's browsing experience when tokens approach expiration.
+   * This operation is critical for maintaining guest session continuity while enforcing the token expiration policies defined in the system. Guests can continue browsing sections, articles, and comments as long as they periodically refresh their tokens before expiration.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Guest token refresh request containing the current refresh token for session renewal.
+   * @param body Token refresh request containing the current refresh_token to be validated and renewed.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Refresh guest session tokens using existing refresh token. The service layer will: 1) Validate refresh token format and signature, 2) Verify token hasn't expired, 3) Look up guest session in discussion_board_guest_sessions table, 4) Check session hasn't expired (expired_at timestamp), 5) Verify guest account is not soft-deleted (deleted_at is null), 6) Generate new access and refresh tokens, 7) Update session expired_at timestamp, 8) Return new authorized response. Edge cases: expired refresh token returns 401, deleted guest account returns 401, invalid token format returns 400.
+   * @x-autobe-specification 1. Receive POST request with refresh_token from previous join or refresh operation
+   * 2. Validate refresh_token is present and properly formatted JWT
+   * 3. Decode and verify refresh_token signature using server secret key
+   * 4. Extract guestId from token payload
+   * 5. Query discussion_board_guest_sessions table for matching session record
+   * 6. Validate session exists and refresh_token matches stored value
+   * 7. Check session expiration - reject if refresh_token has expired
+   * 8. Check guest account status - reject if guest account has been deleted or invalidated
+   * 9. Generate new access_token and refresh_token pair
+   * 10. Update discussion_board_guest_sessions table with new tokens and updated expiration timestamps
+   * 11. Return IDiscussionBoardGuest.IAuthorized response with new tokens
+   * 12. Implement token rotation - invalidate old refresh_token after successful refresh
+   * 13. Handle concurrent refresh attempts with optimistic locking on session table
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

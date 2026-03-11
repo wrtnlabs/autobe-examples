@@ -20,8 +20,5 @@ export async function getRedditPlatformGuestsGuestId(props: {
     where: { id: props.guestId },
     ...RedditPlatformGuestTransformer.select(),
   });
-  if (guest.deleted_at !== null) {
-    throw new HttpException("Gone", 410);
-  }
   return await RedditPlatformGuestTransformer.transform(guest);
 }

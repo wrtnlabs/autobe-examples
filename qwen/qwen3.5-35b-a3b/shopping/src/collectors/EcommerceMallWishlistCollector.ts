@@ -18,7 +18,7 @@ export namespace EcommerceMallWishlistCollector {
       created_at: new Date(),
       updated_at: new Date(),
       customer: { connect: { id: props.ecommerceMallCustomers.id } },
-      product: { connect: { id: props.body.ecommerceMallProductId } },
+      product: { connect: { id: props.body.product_id } },
     } satisfies Prisma.ecommerce_mall_wishlistsCreateInput;
   }
 }

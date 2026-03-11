@@ -14,81 +14,45 @@ import { RedditPlatformGuestAtSummaryTransformer } from "../transformers/RedditP
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function patchRedditPlatformGuests(props: {
   body: IRedditPlatformGuest.IRequest;
 }): Promise<IPageIRedditPlatformGuest.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const sanitizedLimit = limit > 100 ? 100 : limit < 1 ? 1 : limit;
-  const skip = (page - 1) * sanitizedLimit;
+  const skip = (page - 1) * limit;
   const whereInput: Prisma.reddit_platform_guestsWhereInput = {
     deleted_at: null,
-  };
-  if (props.body.deviceFingerprint) {
-    whereInput.email = { contains: props.body.deviceFingerprint };
-  }
-  if (props.body.sessionCreatedAtFrom || props.body.sessionCreatedAtTo) {
-    whereInput.sessions = { some: {} };
-    const sessionWhere: Prisma.reddit_platform_guest_sessionsWhereInput = {};
-    const sessionConditions: Prisma.reddit_platform_guest_sessionsWhereInput[] =
-      [];
-    if (props.body.sessionCreatedAtFrom) {
-      sessionConditions.push({
-        created_at: { gte: props.body.sessionCreatedAtFrom },
-      });
-    }
-    if (props.body.sessionCreatedAtTo) {
-      sessionConditions.push({
-        created_at: { lte: props.body.sessionCreatedAtTo },
-      });
-    }
-    if (sessionConditions.length > 0) {
-      (sessionWhere as any).created_at = { AND: sessionConditions };
-    }
-    (whereInput.sessions as any).some = sessionWhere;
-  }
-  if (props.body.lastActivityFrom || props.body.lastActivityTo) {
-    whereInput.sessions = whereInput.sessions ?? { some: {} };
-    const sessionWhere: Prisma.reddit_platform_guest_sessionsWhereInput =
-      whereInput.sessions.some ?? {};
-    const sessionConditions: Prisma.reddit_platform_guest_sessionsWhereInput[] =
-      [];
-    if (props.body.lastActivityFrom) {
-      sessionConditions.push({
-        created_at: { gte: props.body.lastActivityFrom },
-      });
-    }
-    if (props.body.lastActivityTo) {
-      sessionConditions.push({
-        created_at: { lte: props.body.lastActivityTo },
-      });
-    }
-    if (sessionConditions.length > 0) {
-      (sessionWhere as any).created_at = { AND: sessionConditions };
-    }
-    (whereInput.sessions as any).some = sessionWhere;
-  }
+    ...(props.body.email !== undefined && {
+      email: { contains: props.body.email, mode: "insensitive" as const },
+    }),
+    ...(props.body.username !== undefined && {
+      username: { contains: props.body.username, mode: "insensitive" as const },
+    }),
+    ...(props.body.displayName !== undefined && {
+      display_name: {
+        contains: props.body.displayName,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.minKarma !== undefined && {
+      karma: { gte: props.body.minKarma },
+    }),
+    ...(props.body.maxKarma !== undefined && {
+      karma: { lte: props.body.maxKarma },
+    }),
+  } satisfies Prisma.reddit_platform_guestsWhereInput;
   const orderByInput = (
-    props.body.sortBy === "lastActivity"
-      ? {
-          sessions: {
-            _count: props.body.sortOrder === "asc" ? "asc" : ("desc" as const),
-          },
-        }
-      : props.body.sortBy === "id"
-        ? { id: props.body.sortOrder === "asc" ? "asc" : ("desc" as const) }
-        : {
-            created_at:
-              props.body.sortOrder === "asc" ? "asc" : ("desc" as const),
-          }
+    props.body.sortBy === "updatedAt"
+      ? { updated_at: props.body.sortOrder === "asc" ? "asc" : "desc" }
+      : props.body.sortBy === "karma"
+        ? { karma: props.body.sortOrder === "asc" ? "asc" : "desc" }
+        : { created_at: props.body.sortOrder === "asc" ? "asc" : "desc" }
   ) satisfies Prisma.reddit_platform_guestsOrderByWithRelationInput;
   const data = await MyGlobal.prisma.reddit_platform_guests.findMany({
     where: whereInput,
-    skip,
-    take: sanitizedLimit,
     orderBy: orderByInput,
+    skip,
+    take: limit,
     ...RedditPlatformGuestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.reddit_platform_guests.count({
@@ -101,9 +65,9 @@ export async function patchRedditPlatformGuests(props: {
     ),
     pagination: {
       current: page,
-      limit: sanitizedLimit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / sanitizedLimit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

@@ -23,5 +23,16 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException("You're not enrolled");
   }
 
+  const session = await MyGlobal.prisma.discussion_board_guest_sessions.findFirst({
+    where: {
+      discussion_board_guest_id: payload.id,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Your session has expired");
+  }
+
   return payload;
 }

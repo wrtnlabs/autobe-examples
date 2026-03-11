@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,14 +16,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppMemberTrashTodoIdRestore(props: {
   member: MemberPayload;
-  todoId: string & tags.Format<"uuid">;
+  todoId: string;
 }): Promise<ITodoAppTodo> {
-  const { prisma } = MyGlobal;
-  const todo = await prisma.todo_app_todos.findUniqueOrThrow({
+  const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
     where: { id: props.todoId },
-    ...TodoAppTodoTransformer.select(),
+    select: {
+      id: true,
+      todo_app_user_id: true,
+      is_trashed: true,
+      deleted_at: true,
+    },
   });
-  if (todo.user.id !== props.member.id) {
+  if (todo.todo_app_user_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
   if (!todo.is_trashed) {
@@ -31,13 +36,13 @@ export async function postTodoAppMemberTrashTodoIdRestore(props: {
   if (todo.deleted_at !== null) {
     throw new HttpException("Todo has been permanently deleted", 404);
   }
-  const updatedTodo = await prisma.todo_app_todos.update({
+  await MyGlobal.prisma.todo_app_todos.update({
     where: { id: props.todoId },
-    data: {
-      is_trashed: false,
-      updated_at: new Date(),
-    },
+    data: { is_trashed: false },
+  });
+  const restored = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
+    where: { id: props.todoId },
     ...TodoAppTodoTransformer.select(),
   });
-  return await TodoAppTodoTransformer.transform(updatedTodo);
+  return await TodoAppTodoTransformer.transform(restored);
 }

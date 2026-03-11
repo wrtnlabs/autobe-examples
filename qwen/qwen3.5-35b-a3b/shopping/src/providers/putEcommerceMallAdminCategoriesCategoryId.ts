@@ -25,55 +25,90 @@ export async function putEcommerceMallAdminCategoriesCategoryId(props: {
         id: true,
         name: true,
         description: true,
-        is_leaf: true,
         parent_category_id: true,
+        is_leaf: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            is_leaf: true,
+            parent_category_id: true,
+          },
+        },
       },
     });
   if (existingCategory.deleted_at !== null) {
-    throw new HttpException("Category has been soft-deleted", 404);
+    throw new HttpException("Category not found", 404);
   }
-  const conflictCategory =
-    await MyGlobal.prisma.ecommerce_mall_categories.findFirst({
-      where: {
-        name: props.body.name,
-        parent_category_id: existingCategory.parent_category_id,
-        id: { not: props.categoryId },
-        deleted_at: null,
-      },
-    });
-  if (conflictCategory !== null) {
-    throw new HttpException(
-      "Category name must be unique within the same parent level",
-      409,
-    );
+  const newName = props.body.name;
+  if (newName !== undefined) {
+    const nameConflict =
+      await MyGlobal.prisma.ecommerce_mall_categories.findFirst({
+        where: {
+          name: newName,
+          parent_category_id: existingCategory.parent_category_id,
+          id: { not: props.categoryId },
+        },
+      });
+    if (nameConflict !== null) {
+      throw new HttpException("Category name already exists", 409);
+    }
   }
-  const updatedCategory =
-    await MyGlobal.prisma.ecommerce_mall_categories.update({
-      where: { id: props.categoryId },
-      data: {
-        ...(props.body.name !== undefined && { name: props.body.name }),
-        ...(props.body.description !== undefined && {
-          description: props.body.description,
-        }),
-        updated_at: new Date(),
-      },
-      ...EcommerceMallCategoryTransformer.select(),
-    });
-  await MyGlobal.prisma.ecommerce_mall_category_snapshots.create({
+  const newParentId = props.body.parent_category_id;
+  if (
+    newParentId !== undefined &&
+    newParentId !== null &&
+    newParentId !== existingCategory.parent_category_id
+  ) {
+    const newParent =
+      await MyGlobal.prisma.ecommerce_mall_categories.findUnique({
+        where: { id: newParentId },
+        select: { id: true, parent_category_id: true, is_leaf: true },
+      });
+    if (newParent === null) {
+      throw new HttpException("Parent category not found", 404);
+    }
+    if (newParent.parent_category_id !== null) {
+      throw new HttpException("Parent category cannot be a subcategory", 400);
+    }
+    if (newParentId === existingCategory.id) {
+      throw new HttpException("Category cannot be its own parent", 400);
+    }
+  }
+  const oldValues = {
+    name: existingCategory.name,
+    description: existingCategory.description,
+    parent_category_id: existingCategory.parent_category_id,
+    is_leaf: existingCategory.is_leaf,
+  };
+  await MyGlobal.prisma.ecommerce_mall_categories.update({
+    where: { id: props.categoryId },
     data: {
-      id: v4(),
-      ecommerce_mall_category_id: props.categoryId,
-      snapshot_created_at: new Date(),
-      name: props.body.name ?? existingCategory.name,
-      description: props.body.description ?? existingCategory.description,
-      is_leaf: existingCategory.is_leaf,
-      created_at: existingCategory.created_at,
-      updated_at: existingCategory.updated_at,
-      parent_category_id: existingCategory.parent_category_id,
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.parent_category_id !== undefined && {
+        parent_category_id: props.body.parent_category_id,
+      }),
+      ...(props.body.is_leaf !== undefined && { is_leaf: props.body.is_leaf }),
+      updated_at: new Date(),
     },
   });
-  return await EcommerceMallCategoryTransformer.transform(updatedCategory);
+  const updated =
+    await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
+      where: { id: props.categoryId },
+      include: {
+        _count: { select: { products: true, children: true } },
+        products: { select: { id: true } },
+        productSnapshots: { select: { id: true } },
+        snapshots: { select: { id: true } },
+        parent: true,
+        children: { select: { id: true } },
+      },
+    });
+  return await EcommerceMallCategoryTransformer.transform(updated);
 }

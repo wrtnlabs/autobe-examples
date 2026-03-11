@@ -2,70 +2,66 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIRedditPlatformCommunityModerator } from "../../../../../api/structures/IPageIRedditPlatformCommunityModerator";
 import { IRedditPlatformCommunityModerator } from "../../../../../api/structures/IRedditPlatformCommunityModerator";
+import { IRedditPlatformCommunityModeratorDetail } from "../../../../../api/structures/IRedditPlatformCommunityModeratorDetail";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { getRedditPlatformAdminCommunitiesCommunityNameModeratorsUserId } from "../../../../../providers/getRedditPlatformAdminCommunitiesCommunityNameModeratorsUserId";
-import { patchRedditPlatformAdminCommunitiesCommunityIdModerators } from "../../../../../providers/patchRedditPlatformAdminCommunitiesCommunityIdModerators";
+import { deleteRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId } from "../../../../../providers/deleteRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId";
+import { getRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId } from "../../../../../providers/getRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId";
+import { postRedditPlatformAdminCommunitiesCommunityIdModerators } from "../../../../../providers/postRedditPlatformAdminCommunitiesCommunityIdModerators";
 
-@Controller("/redditPlatform/admin/communities")
+@Controller("/redditPlatform/admin/communities/:communityId/moderators")
 export class RedditplatformAdminCommunitiesModeratorsController {
   /**
-   * Retrieve a filtered and paginated list of moderators for a specific community.
+   * Retrieve detailed information about a specific moderator within a community.
    *
-   * This operation allows authenticated users to query the moderator records for a given community, with support for filtering by user ID, pagination for large result sets, and sorting by appointment date or other criteria.
+   * This operation returns the moderator role information and the associated member's profile details, including username, display name, bio, avatar URL, and karma score. It is designed for community moderators and owners to view the complete list of moderators managing their communities.
    *
-   * The response includes moderator summary information optimized for display in moderator management interfaces, including user profile references (username, display_name, avatar_url, karma_score) and community associations. Pagination uses cursor-based navigation for efficient retrieval of large datasets.
+   * Only users with moderator status in the target community can access this endpoint. This ensures that moderator information is only visible to those with legitimate administrative responsibilities within the community.
    *
-   * Authorized users include community owners and platform administrators who can view all moderators. Individual moderators can view their own moderator assignments across communities. The operation enforces access control to prevent unauthorized access to moderator information.
+   * The response includes both the moderator relationship metadata (appointment timestamp) and the user's public profile information, providing a comprehensive view of who is managing the community alongside the requester.
    *
-   * **Required Pre-execution:**
-   *
-   * Before calling this operation, users should have valid authentication credentials. Community-specific moderator listing requires appropriate authorization - only community owners and assigned moderators can view full details for their respective communities.
-   *
-   * **Related Operations:**
-   *
-   * - `GET /communities/{communityId}` must be pre-executed to get community details before listing moderators for a specific community
-   * - `GET /users/{userId}` can be used to retrieve detailed user profile information for individual moderators
+   * Related operations:
+   * - `GET /communities/:id` - View community details and summary information
+   * - `GET /communities/:id/members` - List all members of a community
+   * - `DELETE /communities/{communityId}/moderators/{moderatorId}` - Remove moderator status from a user
    *
    * @param connection
-   * @param communityId The unique identifier of the community for which moderators are being listed
-   * @param body Search criteria and pagination parameters for moderator listing
+   * @param communityId The UUID of the community where the moderator serves
+   * @param moderatorId The UUID of the moderator user within this community
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_platform_community_moderators table with pagination and filtering.
+   * @x-autobe-specification Query the reddit_platform_community_moderators table to find the moderator record matching both the community_id and user_id parameters.
    *
-   * Apply search filters on community_id (from path parameter) to get moderators for the specific community, and user_id filter for filtering by specific user.
+   * Perform JOIN with reddit_platform_members to retrieve the user's profile information (username, display_name, bio, avatar_url, karma_score).
    *
-   * Join with reddit_platform_members for user profile information (username, display_name, avatar_url, karma_score, is_active).
+   * Authorization: Verify that the authenticated member has moderator status in the target community by checking the reddit_platform_community_moderators table. Reject the request if the authenticated user lacks moderator privileges in this community.
    *
-   * Return cursor-based pagination for large result sets.
+   * Return the combined moderator role data and member profile data.
    *
-   * Apply authorization checks - authenticated users can only view moderators for communities they own or moderate.
-   *
-   * Sort by created_at (appointment date) in ascending order by default, with support for reverse ordering (DESC).
-   *
-   * Include user karma_score and is_active status in the response for moderator quality assessment.
-   *
-   * Validate community_id exists before querying to prevent invalid lookups - return 404 if community not found.
+   * Edge cases:
+   * - If no moderator record exists with the specified IDs, return 404 Not Found
+   * - If the moderator record exists but the associated user was deleted, handle gracefully by returning available moderator info with limited user details
+   * - Ensure the community_id and moderator_id are valid UUIDs
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch(":communityId/moderators")
-  public async index(
+  @TypedRoute.Get(":moderatorId")
+  public async at(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IRedditPlatformCommunityModerator.IRequest,
-  ): Promise<IPageIRedditPlatformCommunityModerator.ISummary> {
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
+  ): Promise<IRedditPlatformCommunityModeratorDetail> {
     try {
-      return await patchRedditPlatformAdminCommunitiesCommunityIdModerators({
-        admin,
-        communityId,
-        body,
-      });
+      return await getRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId(
+        {
+          admin,
+          communityId,
+          moderatorId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;
@@ -73,57 +69,100 @@ export class RedditplatformAdminCommunitiesModeratorsController {
   }
 
   /**
-   * Retrieve detailed information about a specific community moderator and their assigned community.
+   * Removes a moderator role from a specified user within a community.
    *
-   * This operation returns the moderator user's profile information along with the community they have moderator privileges for. Moderators are users who have been granted elevated permissions within specific communities to help manage content and enforce community guidelines.
+   * This operation deletes the moderator appointment record from the reddit_platform_community_moderators table, effectively revoking all moderator privileges from the specified user in the target community. The user will no longer be able to delete posts or comments, ban/unban other users, or view content reports for that community.
    *
-   * The moderator relationship is stored in the reddit_platform_community_moderators table, which links users to communities through their community_id and user_id foreign keys. The table has a unique constraint on the combination of community_id and user_id (@@unique([community_id, user_id])), ensuring each user can only have moderator status once per community. The reddit_platform_members table stores user profile information including username, displayName, avatarUrl, and karmaScore, while the reddit_platform_communities table stores community details including name, description, iconUrl, and subscriberCount.
+   * Only the community owner has the authority to remove moderators. Moderators are explicitly prohibited from removing other moderators or the community owner, as defined in the moderator hierarchy rules. If a moderator attempts this operation, the request will be rejected with an authorization error.
    *
-   * Security considerations:
-   * - This endpoint requires authentication and admin-level access as defined in the authorization configuration
-   * - Only system administrators can view detailed moderator assignment information
-   * - Basic community information (name, description, iconUrl) may be accessible to other actors through different endpoints
-   * - The response excludes circular reference arrays (community.moderators, user.moderatorOfCommunities) to prevent infinite recursion
+   * The operation performs a direct database deletion of the moderation record (community_id + user_id unique constraint match). No cascade effects occur on the user's other community moderations or their content.
    *
-   * The returned data includes the moderator's user profile from reddit_platform_members and the community details from reddit_platform_communities. The moderator's created_at timestamp shows when the appointment was granted in the reddit_platform_community_moderators table.
+   * **Authorization:** Requires authentication. The authenticated user must be the owner of the target community.
+   *
+   * **Related operations:**
+   * - POST /communities/{communityId}/moderators - Add a moderator to a community (owner only)
+   * - GET /communities/{communityId} - View community details including current moderators
+   * - DELETE /communities/{communityId}/bans/{userId} - Unban a user from a community (owner or moderator)
    *
    * @param connection
-   * @param communityName The unique name/identifier of the community
-   * @param userId The ID of the moderator user
+   * @param communityId The unique identifier of the community where the moderator role will be removed.
+   * @param moderatorId The unique identifier of the user whose moderator role will be removed from the community.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the reddit_platform_community_moderators table for a record matching the provided communityName and userId path parameters.
-   *
-   * 1. Convert communityName path parameter to the corresponding community ID by querying reddit_platform_communities.name
-   * 2. Convert userId path parameter to the corresponding user ID
-   * 3. Execute JOIN query on reddit_platform_community_moderators with reddit_platform_members (as user) and reddit_platform_communities (as community)
-   * 4. Filter WHERE community_id = {communityId} AND user_id = {userId}
-   * 5. Return ISingleRedditPlatformModerator with:
-   *    - user: full user profile from reddit_platform_members
-   *    - community: community details from reddit_platform_communities (excluding the moderator's users array)
-   *    - created_at: moderator appointment timestamp
-   * 6. Return 404 Not Found if no moderator record exists for the given community and user combination
-   * 7. Validate that the path parameters are valid UUIDs before querying
-   * 8. No caching of sensitive moderator assignment data
+   * @x-autobe-specification 1. Validate JWT token and extract authenticated user ID from request headers
+   * 2. Verify the authenticated user exists and has an active account (is_active = true)
+   * 3. Query reddit_platform_communities table to retrieve community by communityId
+   * 4. Verify community exists and is not soft-deleted (deleted_at IS NULL)
+   * 5. Check if authenticated user is the owner of this community (owner_id == authenticated_user_id)
+   * 6. If NOT owner, return 403 Forbidden with message: 'Only the community owner can remove moderators'
+   * 7. Query reddit_platform_community_moderators table to find the moderator record matching (community_id = communityId AND user_id = moderatorId)
+   * 8. If no matching record found, return 404 Not Found with message: 'User is not a moderator of this community'
+   * 9. Delete the moderator record from reddit_platform_community_moderators (cascade deletion will handle the unique constraint on [community_id, user_id])
+   * 10. Return 204 No Content with no response body
+   * 11. Optionally log the action to reddit_platform_moderation_audit_logs for compliance tracking (moderator removed by owner)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":communityName/moderators/:userId")
-  public async at(
+  @TypedRoute.Delete(":moderatorId")
+  public async erase(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("communityName")
-    communityName: string,
-    @TypedParam("userId")
-    userId: string & tags.Format<"uuid">,
-  ): Promise<IRedditPlatformCommunityModerator> {
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
+  ): Promise<void> {
     try {
-      return await getRedditPlatformAdminCommunitiesCommunityNameModeratorsUserId(
+      return await deleteRedditPlatformAdminCommunitiesCommunityIdModeratorsModeratorId(
         {
           admin,
-          communityName,
-          userId,
+          communityId,
+          moderatorId,
         },
       );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add a new moderator to a community.
+   *
+   * This operation creates a moderator assignment relationship between a user and a community, granting them moderation privileges. The requesting user must be either the community owner or an existing moderator with authority to add other moderators.
+   *
+   * The operation verifies that the target user does not already have moderator status in this community before creating the assignment. Upon successful creation, the new moderator gains the ability to view reports, delete posts and comments, and ban users within this specific community.
+   *
+   * Only users with owner or moderator role in the community can add new moderators. The system maintains audit records of all moderator assignment actions for compliance purposes.
+   *
+   * @param connection
+   * @param communityId Unique identifier of the community where a moderator will be added
+   * @param body User ID of the member to be added as a moderator
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification 1. Validate authentication - ensure user is logged in
+   * 2. Verify communityId exists in reddit_platform_communities table
+   * 3. Check requesting user's role in this community - must be owner or existing moderator in reddit_platform_community_moderators
+   * 4. Validate userId in request body exists in reddit_platform_members table
+   * 5. Check if user already has moderator status in this community - return conflict if exists
+   * 6. Create new record in reddit_platform_community_moderators table with communityId, userId, and current timestamp
+   * 7. Return the created moderator assignment with user details
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditPlatformCommunityModerator.ICreate,
+  ): Promise<IRedditPlatformCommunityModerator> {
+    try {
+      return await postRedditPlatformAdminCommunitiesCommunityIdModerators({
+        admin,
+        communityId,
+        body,
+      });
     } catch (error) {
       console.log(error);
       throw error;

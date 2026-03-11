@@ -1,13 +1,11 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIShoppingMallReview } from "../../../../api/structures/IPageIShoppingMallReview";
 import { IShoppingMallReview } from "../../../../api/structures/IShoppingMallReview";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { deleteShoppingMallCustomerReviewsReviewId } from "../../../../providers/deleteShoppingMallCustomerReviewsReviewId";
-import { patchShoppingMallCustomerReviews } from "../../../../providers/patchShoppingMallCustomerReviews";
 import { postShoppingMallCustomerReviews } from "../../../../providers/postShoppingMallCustomerReviews";
 import { putShoppingMallCustomerReviewsReviewId } from "../../../../providers/putShoppingMallCustomerReviewsReviewId";
 
@@ -16,38 +14,70 @@ export class ShoppingmallCustomerReviewsController {
   /**
    * Create a new review for a purchased product.
    *
-   * This operation allows authenticated customers to submit a review for a product they have purchased through a delivered order. The review includes a mandatory star rating from 1 to 5 and optional text content providing detailed feedback about the product.
+   * This endpoint allows authenticated customers to submit reviews for products they have purchased through verified orders. Reviews can only be created after the order item status becomes 'delivered', ensuring authentic feedback from actual buyers.
    *
-   * The system enforces several business rules to ensure review authenticity and fairness. Customers can only review products they have actually purchased, verified through the order reference. Each customer may write only one review per product per order, preventing review manipulation. Reviews can only be submitted after the order item has been delivered, ensuring customers have received and can evaluate the product.
+   * **Business Requirements:**
+   * - Customer must have purchased the product (verified through order)
+   * - Order item must have 'delivered' status
+   * - Only one review per product per order is allowed
+   * - Rating must be between 1 and 5 stars
+   * - Text content is optional
    *
-   * This operation references the shopping_mall_reviews table which stores the customer reference, product reference, order reference for purchase verification, rating value, and optional text content. The unique constraint on customer_id, product_id, and order_id ensures one review per product per order.
+   * **Security and Validation:**
+   * - Requires customer authentication
+   * - Validates order item belongs to authenticated customer
+   * - Validates order item status is 'delivered'
+   * - Enforces unique constraint: one review per product per order per customer
    *
-   * Related operations include GET /products/{productId}/reviews for viewing reviews on a product page, PUT /reviews/{reviewId} for editing an existing review (which creates a snapshot), and DELETE /reviews/{reviewId} for soft-deleting a review (snapshots are preserved).
+   * **Related Operations:**
+   * - Use GET /products/:id/reviews to retrieve reviews for a product
+   * - Use PATCH /customers/reviews/:id to edit an existing review
+   * - Use DELETE /customers/reviews/:id to remove a review
    *
    * @param connection
-   * @param body Review creation data including product, order for verification, rating, and optional content
+   * @param body Review creation data including order item reference, rating, and optional text content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
    * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate customer from JWT token
-   * 2. Validate request body fields:
-   *    - productId: must reference existing product
-   *    - orderId: must reference existing order belonging to the authenticated customer
-   *    - rating: must be integer between 1 and 5
-   *    - content: optional string, max length validation if provided
-   * 3. Verify purchase eligibility:
-   *    - Query shopping_mall_order_items to find items matching the order and product
-   *    - Verify at least one order item exists with status 'delivered'
-   *    - If no delivered item found, return 400 error indicating product not delivered
-   * 4. Check unique constraint:
-   *    - Query shopping_mall_reviews for existing review with same customer_id, product_id, and order_id
-   *    - If exists, return 400 error indicating review already exists for this product in this order
-   * 5. Create review record:
-   *    - Insert into shopping_mall_reviews with customer_id, product_id, order_id, rating, content, created_at, updated_at
-   *    - deleted_at is null (active review)
-   * 6. Fetch customer display_name for response
-   * 7. Return created review with customer display name, product info, and timestamps
+   * 2. Validate request body:
+   *    - orderItem (UUID): must reference an existing shopping_mall_order_items record
+   *    - rating (Integer): must be between 1 and 5
+   *    - content (String, optional): max length validation
+   *
+   * 3. Retrieve order item by orderItem ID:
+   *    - Query shopping_mall_order_items table
+   *    - Include relations: order (for customer verification), product, variant
+   *
+   * 4. Verify ownership:
+   *    - orderItem.order.shopping_mall_customer_id must equal authenticated customer's ID
+   *
+   * 5. Verify delivery status:
+   *    - orderItem.status must be 'delivered'
+   *
+   * 6. Check uniqueness constraint:
+   *    - Query shopping_mall_reviews where:
+   *      - shopping_mall_customer_id = authenticated customer ID
+   *      - shopping_mall_product_id = orderItem.product ID
+   *      - shopping_mall_order_id = orderItem.order ID
+   *    - If review exists, reject with 409 Conflict
+   *
+   * 7. Create review record:
+   *    - Set shopping_mall_customer_id from authenticated user
+   *    - Set shopping_mall_product_id from orderItem.product
+   *    - Set shopping_mall_order_id from orderItem.order
+   *    - Set rating and content from request
+   *    - Set created_at and updated_at to current timestamp
+   *
+   * 8. Return created review with 201 status
+   *
+   * Error handling:
+   * - 401 Unauthorized: Invalid or missing authentication
+   * - 403 Forbidden: Order item doesn't belong to customer
+   * - 409 Conflict: Review already exists for this product in this order
+   * - 422 Unprocessable Entity: Order item not yet delivered
+   * - 400 Bad Request: Invalid rating or content
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -69,141 +99,57 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of product reviews.
+   * Update a customer's review for a delivered product.
    *
-   * This operation provides comprehensive search capabilities for review management, enabling customers to view their review history and administrators to moderate platform reviews. Reviews are linked to specific product purchases through order references, ensuring authenticity and preventing fake reviews.
+   * This operation allows authenticated customers to edit their own product reviews. The customer can modify the star rating (1-5) and optional text content of their previously submitted review.
    *
-   * The shopping_mall_reviews table stores customer feedback with ratings (1-5 stars) and optional text content. Each review references the customer who wrote it, the product being reviewed, and the order through which the product was purchased. This structure enforces the one-review-per-product-per-order constraint through a unique constraint on (shopping_mall_customer_id, shopping_mall_product_id, shopping_mall_order_id).
+   * ## Authorization
    *
-   * Reviews support soft deletion via the deleted_at field. When a customer deletes a review, the deleted_at timestamp is set but the review record is preserved for historical transparency. Soft-deleted reviews display as 'deleted user' in public contexts.
+   * Only the customer who authored the review can edit it. The system verifies that the authenticated user matches the review's shopping_mall_customer_id before allowing the update. Sellers cannot modify or delete reviews about their products.
    *
-   * Filtering options include product-specific review listings, customer review history, rating ranges for quality analysis, date ranges for temporal review browsing, and full-text content search. The default sort order is newest first, as specified in the review display requirements.
+   * ## Snapshot Creation
    *
-   * Access permissions differ by actor: customers can only view their own reviews (authenticated customer_id filter applied automatically), while administrators can view all reviews including deleted ones for moderation purposes. Sellers can view reviews on their products but cannot modify or delete them.
+   * When a review is edited, the system automatically creates an immutable snapshot in shopping_mall_review_snapshots before applying changes. The snapshot preserves the previous rating and content values along with a timestamp, maintaining an audit trail for dispute resolution and historical reference.
    *
-   * @param connection
-   * @param body Search criteria including product ID, customer ID, rating range, date range, content search, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_reviews table with pagination and filtering capabilities.
+   * ## Validation Rules
    *
-   * Implementation steps:
-   * 1. Build WHERE clause from IRequest filters:
-   *    - shopping_mall_product_id: exact match if provided
-   *    - shopping_mall_customer_id: exact match if provided (for customer's own review history)
-   *    - rating: filter by rating range (min/max) if provided
-   *    - created_at: filter by date range (from/to) if provided
-   *    - content: full-text search using gin_trgm_ops index if provided
-   *    - deleted_at: include/exclude soft-deleted reviews based on flag
+   * - Rating must be an integer between 1 and 5
+   * - Content is optional but must be valid text if provided
+   * - Review must exist and not be soft-deleted (deleted_at must be null)
+   * - Customer must be the original author
    *
-   * 2. Apply sorting:
-   *    - Default: created_at DESC (newest first per requirement [380])
-   *    - Allow sorting by created_at ASC, rating ASC/DESC
+   * ## Related Operations
    *
-   * 3. Execute paginated query:
-   *    - Use cursor-based pagination for large result sets
-   *    - Include total count in pagination metadata
-   *
-   * 4. Join related tables for display:
-   *    - shopping_mall_customers for reviewer display_name
-   *    - shopping_mall_products for product name
-   *    - Handle deleted customers/products gracefully (show 'deleted user' or 'deleted product')
-   *
-   * 5. Return IPageIShoppingMallReview.ISummary with:
-   *    - Review summary data
-   *    - Pagination metadata
-   *    - Customer and product references
-   *
-   * Access control:
-   * - Customers can only view their own reviews (filter by authenticated customer_id)
-   * - Administrators can view all reviews
-   * - Filter out deleted reviews by default unless explicitly requested
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedBody()
-    body: IShoppingMallReview.IRequest,
-  ): Promise<IPageIShoppingMallReview.ISummary> {
-    try {
-      return await patchShoppingMallCustomerReviews({
-        customer,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing product review written by the authenticated customer.
-   *
-   * This operation allows customers to modify their existing review's rating and text content. Reviews can only be edited by the customer who originally wrote them. Each edit automatically creates a snapshot preserving the previous state, ensuring a complete audit trail for dispute resolution and historical reference.
-   *
-   * The shopping_mall_reviews table stores review data including rating (1-5 stars), optional text content, and timestamps. The shopping_mall_review_snapshots table maintains immutable historical records of each edit for accountability and transparency in the review system.
-   *
-   * **Authentication:**
-   * - Requires authenticated customer session
-   * - Only the review author can edit (shopping_mall_reviews.shopping_mall_customer_id must match authenticated customer)
-   *
-   * **Constraints:**
-   * - Review must exist and not be deleted
-   * - Rating must be between 1 and 5 (stored in shopping_mall_reviews.rating as Integer)
-   * - Content is optional text (stored in shopping_mall_reviews.content)
-   * - Each edit creates a snapshot preserving previous state
-   *
-   * **Related Operations:**
-   * - POST /reviews - Create a new review
-   * - GET /products/{productId}/reviews - List reviews for a product
-   * - DELETE /reviews/{reviewId} - Delete a review
-   *
-   * **Database Reference:**
-   * - shopping_mall_reviews.id - Primary key (UUID)
-   * - shopping_mall_reviews.rating - Star rating 1-5 (required)
-   * - shopping_mall_reviews.content - Text content (optional)
-   * - shopping_mall_reviews.updated_at - Last modification timestamp
-   * - shopping_mall_review_snapshots - Edit history table
+   * - POST /customers/reviews - Create a new review for a delivered product
+   * - DELETE /customers/reviews/{reviewId} - Delete a review
+   * - GET /products/{productId}/reviews - View reviews for a product
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to update. Must be a valid UUID referencing an existing review owned by the authenticated customer.
-   * @param body Review update data containing the new rating and optional text content.
+   * @param reviewId Unique identifier of the review to update (UUID format)
+   * @param body Updated review data including rating and optional content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update an existing customer review for a delivered product.
+   * @x-autobe-specification Update a customer's review with the following steps:
    *
-   * **Service Logic:**
-   * 1. Authenticate the customer from JWT token
-   * 2. Query review by reviewId from shopping_mall_reviews table
-   * 3. Verify review exists and belongs to authenticated customer
-   * 4. Verify review is not deleted (deleted_at is null)
-   * 5. Create a snapshot of current review state in shopping_mall_review_snapshots:
-   *    - Capture current rating and content
-   *    - Set created_at to current timestamp
-   *    - Link snapshot to review via shopping_mall_review_id
-   * 6. Update review with new rating and content from request
-   * 7. Update updated_at timestamp to current time
-   * 8. Return updated review entity
+   * 1. **Authentication**: Verify the customer is authenticated via JWT session token
+   * 2. **Authorization**: Query shopping_mall_reviews by id where shopping_mall_customer_id matches the authenticated customer's id and deleted_at is null
+   * 3. **Ownership Check**: If review not found or customer_id mismatch, return 403 Forbidden
+   * 4. **Snapshot Creation**: Before updating, create a snapshot in shopping_mall_review_snapshots:
+   *    - shopping_mall_review_id = current review id
+   *    - rating = current rating value
+   *    - content = current content value
+   *    - created_at = current timestamp
+   * 5. **Update Review**: Update shopping_mall_reviews record:
+   *    - rating = new rating from request body
+   *    - content = new content from request body
+   *    - updated_at = current timestamp
+   * 6. **Return Response**: Return the updated review with all fields including related customer info
    *
-   * **Database Operations:**
-   * - SELECT review by id with customer ownership check
-   * - INSERT snapshot record before update
-   * - UPDATE review with new values
-   *
-   * **Business Rules:**
-   * - Only the review author can edit
-   * - Rating must be integer between 1 and 5
-   * - Content is optional text (can be null or empty string)
-   * - Each edit creates an immutable snapshot for audit trail
-   * - Deleted reviews cannot be edited
-   *
-   * **Error Handling:**
-   * - 404 if review not found
-   * - 403 if not review owner
-   * - 409 if review is deleted
-   * - 400 for invalid rating (not 1-5)
+   * Error handling:
+   * - 401 Unauthorized if not authenticated
+   * - 403 Forbidden if not the review author
+   * - 404 Not Found if review doesn't exist
+   * - 400 Bad Request if rating out of range (1-5)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reviewId")
@@ -211,7 +157,7 @@ export class ShoppingmallCustomerReviewsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
-    reviewId: string & tags.Format<"uuid">,
+    reviewId: string,
     @TypedBody()
     body: IShoppingMallReview.IUpdate,
   ): Promise<IShoppingMallReview> {
@@ -228,26 +174,37 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Remove a customer's review from public display through soft deletion.
+   * Allows customers to delete their own product reviews.
    *
-   * This operation allows customers to delete reviews they have written for purchased products. The deletion is implemented as a soft delete, preserving the review record in the database while marking it as deleted via the deleted_at timestamp.
+   * This operation performs a soft deletion by setting the deleted_at timestamp on the review record, preserving the data for historical and audit purposes. The system verifies that the requesting customer is the original author of the review before allowing deletion.
    *
-   * Only the original author (customer) can delete a review. Sellers are explicitly prohibited from deleting customer reviews of their products. If a seller has concerns about a review, they must contact an administrator for review moderation.
+   * Upon successful deletion, the review is excluded from public display on product detail pages, removed from the product's average rating calculation, and excluded from the total review count. All review snapshots created during previous edits are preserved indefinitely for audit trails and dispute resolution.
    *
-   * When a review is deleted, the following effects apply:
-   * - The review is removed from the product detail page display
-   * - The review is excluded from the product's average rating calculation
-   * - The review is excluded from the total review count
-   * - All associated review snapshots are preserved for audit purposes
-   * - Historical records remain available for dispute resolution
+   * The deleted_at field from the shopping_mall_reviews table records the timestamp of deletion. This field is nullable and remains null for active reviews. Once deleted, a review cannot be restored.
    *
-   * The deleted review's information may still appear in administrative views and historical records for audit and dispute resolution purposes.
+   * This endpoint enforces strict ownership validation: only the customer who wrote the review can delete it. Sellers attempting to delete customer reviews of their products will receive an authorization error. Administrators can view deleted reviews for oversight purposes but cannot restore them.
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to delete (UUID format)
+   * @param reviewId Unique identifier of the review to delete. The customer must be the original author of this review.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Verify that the authenticated customer is the original author of the review by matching the customer ID with shopping_mall_reviews.shopping_mall_customer_id. If not authorized, reject with 403 Forbidden. Perform soft delete by setting deleted_at to current timestamp. Do NOT permanently remove the record from storage. Preserve all associated shopping_mall_review_snapshots records. After deletion, the review will be excluded from product detail page display and average rating calculations. Sellers cannot delete reviews - this must be enforced at the authorization layer.
+   * @x-autobe-specification Implementation Steps:
+   *
+   * 1. **Authentication Verification**: Extract customer ID from JWT session token. Return 401 Unauthorized if not authenticated.
+   *
+   * 2. **Review Lookup**: Query shopping_mall_reviews table by reviewId (UUID). Return 404 Not Found if review does not exist.
+   *
+   * 3. **Ownership Validation**: Compare shopping_mall_customer_id from the review record with the authenticated customer's ID. Return 403 Forbidden if the customer is not the original author.
+   *
+   * 4. **Already Deleted Check**: Verify deleted_at is null. Return 400 Bad Request if review is already deleted.
+   *
+   * 5. **Soft Delete Execution**: Update the review record setting deleted_at to current timestamp (now()). Do NOT physically delete the record.
+   *
+   * 6. **Snapshot Preservation**: Take no action on shopping_mall_review_snapshots - all snapshots remain intact via cascade rules and are preserved indefinitely.
+   *
+   * 7. **Average Rating Recalculation**: Trigger recalculation of the product's average rating by querying all non-deleted reviews (deleted_at IS NULL) for the associated shopping_mall_product_id.
+   *
+   * Database Transaction: Wrap steps 5-7 in a single transaction to ensure data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":reviewId")
@@ -255,7 +212,7 @@ export class ShoppingmallCustomerReviewsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
-    reviewId: string & tags.Format<"uuid">,
+    reviewId: string,
   ): Promise<void> {
     try {
       return await deleteShoppingMallCustomerReviewsReviewId({

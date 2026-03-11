@@ -33,9 +33,9 @@ export namespace ShoppingMallProductImageTransformer {
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      image_url: input.image_url,
-      display_order: input.display_order,
-      created_at: input.created_at.toISOString(),
+      imageUrl: input.image_url,
+      displayOrder: input.display_order,
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

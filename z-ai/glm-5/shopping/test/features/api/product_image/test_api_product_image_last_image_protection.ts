@@ -15,39 +15,39 @@ import typia, { tags } from "typia";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
 import { generate_random_shopping_mall_seller_products_images_create } from "../../../generate/generate_random_shopping_mall_seller_products_images_create";
+import { generate_random_shopping_mall_seller_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_seller_products_create";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
 import { prepare_random_shopping_mall_product_image } from "../../../prepare/prepare_random_shopping_mall_product_image";
 
 export async function test_api_product_image_last_image_protection(
   connection: api.IConnection,
 ): Promise<void> {
-  // Create seller connection
+  // Step 1: Create seller account and authenticate
   const sellerConnection: api.IConnection = { host: connection.host };
   const seller = await authorize_seller_join(sellerConnection, {});
   typia.assert(seller);
-  // Create a product
-  const product = await generate_random_shopping_mall_seller_products_create(
-    sellerConnection,
-    {},
-  );
+  // Step 2: Create a product (product initially has 0 images)
+  const product =
+    await generate_random_shopping_mall_seller_seller_products_create(
+      sellerConnection,
+      {},
+    );
   typia.assert(product);
-  // Upload exactly 1 image (the only image for this product)
+  // Step 3: Upload exactly one image to the product
   const image =
     await generate_random_shopping_mall_seller_products_images_create(
       sellerConnection,
       {
-        params: {
-          productId: product.id,
-        },
+        params: { productId: product.id },
       },
     );
   typia.assert(image);
-  // Attempt to delete the only image - should fail with business rule error
-  // This validates the minimum image protection rule: products must retain at least one image
-  await TestValidator.error(
-    "cannot delete the last remaining image from product",
+  // Step 4: Attempt to delete the last image - should fail with 400 Bad Request
+  // This validates the business rule that prevents sellers from leaving a product with zero images
+  await TestValidator.httpError(
+    "cannot delete the last remaining image",
+    400,
     async () => {
       await api.functional.shoppingMall.seller.products.images.erase(
         sellerConnection,

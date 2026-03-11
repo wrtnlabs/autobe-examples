@@ -15,15 +15,19 @@ export async function authorize_admin_join(
   },
 ): Promise<IEconomicPoliticalBoardAdmin.IAuthorized> {
   const joinInput = {
-    email: props.body?.email ?? (typia.random<string & tags.Format<"email">>() satisfies string as string & tags.MinLength<1> & tags.MaxLength<255> & tags.Format<"email">),
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    displayName: props.body?.displayName ?? RandomGenerator.name(),
+    bio: props.body?.bio ?? RandomGenerator.paragraph({ sentences: 2 }),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? undefined,
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IEconomicPoliticalBoardAdmin.IJoin;
   return await api.functional.economicPoliticalBoard.auth.admin.join(
     connection,
-    { body: joinInput },
+    {
+      body: joinInput,
+    },
   );
 }

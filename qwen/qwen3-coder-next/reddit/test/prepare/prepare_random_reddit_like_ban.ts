@@ -6,7 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_like_ban(
-  input?: DeepPartial<IRedditLikeBan.ICreate>,
+  input?: DeepPartial<IRedditLikeBan.ICreate> | undefined,
 ): IRedditLikeBan.ICreate {
   return {
     reddit_like_user_id:

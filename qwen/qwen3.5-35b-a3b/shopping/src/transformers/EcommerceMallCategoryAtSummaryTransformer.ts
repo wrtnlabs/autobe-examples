@@ -7,32 +7,10 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallCategoryAtSummaryTransformer {
-  export type Payload = Prisma.ecommerce_mall_categoriesGetPayload<{
-    select: {
-      id: true;
-      name: true;
-      description: true;
-      is_leaf: true;
-      created_at: true;
-      updated_at: true;
-      deleted_at: true;
-      parent: {
-        select: {
-          id: true;
-          name: true;
-          is_leaf: true;
-          created_at: true;
-          updated_at: true;
-          deleted_at: true;
-        };
-      };
-      children: true;
-      snapshots: true;
-      products: true;
-      productSnapshots: true;
-    };
-  }>;
-  export function select() {
+  export type Payload = Prisma.ecommerce_mall_categoriesGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select(): Prisma.ecommerce_mall_categoriesFindManyArgs {
     return {
       select: {
         id: true,
@@ -40,22 +18,8 @@ export namespace EcommerceMallCategoryAtSummaryTransformer {
         description: true,
         is_leaf: true,
         created_at: true,
-        updated_at: true,
         deleted_at: true,
-        parent: {
-          select: {
-            id: true,
-            name: true,
-            is_leaf: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-        children: true,
-        snapshots: true,
-        products: true,
-        productSnapshots: true,
+        parent_category_id: true,
       },
     } satisfies Prisma.ecommerce_mall_categoriesFindManyArgs;
   }
@@ -65,20 +29,11 @@ export namespace EcommerceMallCategoryAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      is_leaf: input.is_leaf,
-      parent: input.parent
-        ? {
-            id: input.parent.id,
-            name: input.parent.name,
-            is_leaf: input.parent.is_leaf,
-            created_at: input.parent.created_at.toISOString(),
-            updated_at: input.parent.updated_at.toISOString(),
-            deleted_at: input.parent.deleted_at?.toISOString() ?? null,
-          }
-        : undefined,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      description: input.description ?? undefined,
+      parent: null,
+      isLeaf: input.is_leaf,
+      createdAt: toISOStringSafe(input.created_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

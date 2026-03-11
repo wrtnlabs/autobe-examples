@@ -21,22 +21,33 @@ export async function putRedditLikeMemberPostsPostId(props: {
   body: IRedditLikePost.IUpdate;
 }): Promise<IRedditLikePost> {
   const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-    where: { id: props.postId },
-    select: { author_id: true },
+    where: { id: props.postId, deleted_at: null },
+    select: {
+      id: true,
+      author_id: true,
+      type: true,
+      title: true,
+      content: true,
+      url: true,
+      image_url: true,
+    },
   });
   if (post.author_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const updated = await MyGlobal.prisma.reddit_like_posts.update({
+  const updateData: Prisma.reddit_like_postsUpdateInput = {
+    title: props.body.title ?? post.title,
+    content: props.body.content ?? post.content,
+    url: props.body.url ?? post.url,
+    image_url: props.body.image_url ?? post.image_url,
+    updated_at: new Date(),
+  };
+  await MyGlobal.prisma.reddit_like_posts.update({
     where: { id: props.postId },
-    data: {
-      title: props.body.title,
-      type: props.body.type,
-      content: props.body.content,
-      url: props.body.url,
-      image_url: props.body.image_url,
-      updated_at: new Date(),
-    },
+    data: updateData,
+  });
+  const updated = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
+    where: { id: props.postId },
     ...RedditLikePostTransformer.select(),
   });
   return await RedditLikePostTransformer.transform(updated);

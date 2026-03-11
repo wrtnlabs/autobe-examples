@@ -1,3 +1,4 @@
+import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSectionSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSectionSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -18,7 +19,11 @@ export async function getDiscussionBoardAdminSectionsSectionIdSnapshotsSnapshotI
   sectionId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSectionSnapshot> {
-  // First verify the snapshot exists and belongs to the specified section
+  // First verify the section exists and admin has access to it
+  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+    where: { id: props.sectionId, deleted_at: null },
+  });
+  // Retrieve the specific snapshot belonging to this section
   const snapshot =
     await MyGlobal.prisma.discussion_board_section_snapshots.findUniqueOrThrow({
       where: {
@@ -27,5 +32,6 @@ export async function getDiscussionBoardAdminSectionsSectionIdSnapshotsSnapshotI
       },
       ...DiscussionBoardSectionSnapshotTransformer.select(),
     });
+  // Transform database record to DTO
   return await DiscussionBoardSectionSnapshotTransformer.transform(snapshot);
 }

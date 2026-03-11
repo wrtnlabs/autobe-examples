@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -13,7 +12,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallReviewCollector } from "../collectors/EcommerceMallReviewCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 import { EcommerceMallReviewTransformer } from "../transformers/EcommerceMallReviewTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -24,56 +22,60 @@ export async function postEcommerceMallCustomerReviews(props: {
   body: IEcommerceMallReview.ICreate;
 }): Promise<IEcommerceMallReview> {
   const { customer, body } = props;
-  // Verify product exists
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findUnique({
-    where: { id: body.product_id },
-  });
-  if (product === null) {
-    throw new HttpException("Product not found", 404);
+  const customer_id: string & tags.Format<"uuid"> = customer.id;
+  const product_id: string & tags.Format<"uuid"> = body.product_id;
+  const rating: number & tags.Type<"int32"> = body.rating;
+  const text_content: string | null | undefined = body.text_content;
+  // Validate rating range (business logic validation)
+  if (rating < 1 || rating > 5) {
+    throw new HttpException("Rating must be between 1 and 5", 400);
   }
   // Verify customer has purchased the product with delivered status
-  const purchasedOrderItems =
+  const purchasedOrderItem =
     await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
       where: {
-        product: {
-          id: body.product_id,
-        },
+        product: { id: product_id },
         item_status: "delivered",
         order: {
-          customer_id: customer.id,
+          customer_id: customer_id,
         },
       },
+      select: { id: true },
     });
-  if (purchasedOrderItems === null) {
+  if (!purchasedOrderItem) {
     throw new HttpException(
-      "You have not purchased this product or it has not been delivered",
-      422,
+      "Customer has not purchased this product or it has not been delivered",
+      403,
     );
   }
-  // Check for duplicate review
+  // Verify no existing review exists for this customer-product combination
   const existingReview =
     await MyGlobal.prisma.ecommerce_mall_reviews.findUnique({
       where: {
         customer_id_product_id: {
-          customer_id: customer.id,
-          product_id: body.product_id,
+          customer_id,
+          product_id,
         },
       },
+      select: { id: true },
     });
-  if (existingReview !== null) {
-    throw new HttpException(
-      "You have already written a review for this product",
-      409,
-    );
+  if (existingReview) {
+    throw new HttpException("Review already exists for this product", 409);
   }
   // Create the review
-  const created = await MyGlobal.prisma.ecommerce_mall_reviews.create({
-    data: await EcommerceMallReviewCollector.collect({
-      body,
-      ecommerceMallCustomers: { id: customer.id },
-    }),
+  const createdReview = await MyGlobal.prisma.ecommerce_mall_reviews.create({
+    data: {
+      id: v4(),
+      rating,
+      text_content: text_content ?? null,
+      is_active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      customer: { connect: { id: customer_id } },
+      product: { connect: { id: product_id } },
+    },
     ...EcommerceMallReviewTransformer.select(),
   });
-  // Transform and return
-  return await EcommerceMallReviewTransformer.transform(created);
+  return await EcommerceMallReviewTransformer.transform(createdReview);
 }

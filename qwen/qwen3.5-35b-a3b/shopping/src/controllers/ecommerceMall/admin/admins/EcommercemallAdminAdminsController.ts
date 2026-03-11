@@ -8,46 +8,47 @@ import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getEcommerceMallAdminAdminsAdminId } from "../../../../providers/getEcommerceMallAdminAdminsAdminId";
 import { patchEcommerceMallAdminAdmins } from "../../../../providers/patchEcommerceMallAdminAdmins";
-import { postEcommerceMallAdminAdminsAdminIdDemote } from "../../../../providers/postEcommerceMallAdminAdminsAdminIdDemote";
-import { postEcommerceMallAdminAdminsAdminIdPromote } from "../../../../providers/postEcommerceMallAdminAdminsAdminIdPromote";
+import { patchEcommerceMallAdminAdminsAdminIdPromote } from "../../../../providers/patchEcommerceMallAdminAdminsAdminIdPromote";
 
 @Controller("/ecommerceMall/admin/admins")
 export class EcommercemallAdminAdminsController {
   /**
-   * Retrieve a filtered and paginated list of administrator accounts across the ecommerce mall platform.
+   * Retrieve a filtered and paginated list of administrator accounts on the ecommerce mall platform.
    *
-   * This operation provides administrators with the ability to search through the admin account registry using various filter criteria including email address matching, ban status filtering, and date range queries for account creation or modification.
+   * This operation provides comprehensive search capabilities for managing administrator accounts, including filtering by administrator grade (regular or super administrator), approval status, email, name, and account state (active, suspended, or banned).
    *
-   * **Authorization Rules**:
-   * - Super administrators can view all administrator accounts with complete details
-   * - Regular administrators can only access their own account information
-   * - Banned administrator accounts cannot execute this operation
+   * Supports advanced pagination with configurable page sizes and sorting options. The response includes administrator summary information optimized for administrative dashboards and management interfaces.
    *
-   * Supports comprehensive pagination with configurable page size and cursor-based navigation for efficient retrieval of large admin account lists. Response includes admin summary information optimized for administrative dashboards and oversight displays. The response intentionally excludes sensitive authentication data such as password hashes.
-   *
-   * Related operations:
-   * - `GET /ecommerceMall/admin/admins/{adminId}` - Retrieve individual admin account details
-   * - `PATCH /ecommerceMall/admin/admin-requests` - View admin access requests
+   * Only administrators can access this endpoint, with regular administrators viewing only their own account and super administrators viewing all accounts on the platform.
    *
    * @param connection
-   * @param body Search criteria, pagination parameters, and sorting options for admin account list retrieval
+   * @param body Search criteria and pagination parameters for filtering administrator accounts
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admins table with pagination and filtering capabilities.
+   * @x-autobe-specification Query the ecommerce_mall_admins table with pagination and filtering.
    *
-   * Apply search filters on email (partial match), is_banned status, created_at range, and updated_at range as specified in the request body.
+   * Apply search filters:
+   * - email: exact match or partial match on email address
+   * - grade: filter by administrator grade (regular or super)
+   * - approvalStatus: filter by admin request approval status (pending, approved, rejected)
+   * - isActive: filter by account active/suspended status
+   * - isBanned: filter by banned status
+   * - createdAt: filter by date range for account creation
    *
-   * Sort results by specified field (id, email, created_at, updated_at) with configurable sort direction (asc/desc).
+   * Join with ecommerce_mall_admin_request_requests if filtering by approval status.
    *
-   * Return cursor-based pagination for large result sets to enable efficient scrolling through admin account lists.
+   * Return cursor-based pagination for large result sets to optimize performance.
    *
-   * Exclude password_hash from response to protect authentication credentials.
+   * Apply access control:
+   * - Super administrators can view all admin accounts
+   * - Regular administrators can only view their own account (filter by own ID)
    *
-   * Verify requesting user has admin privileges before returning results.
+   * Sort results by configurable fields (email, grade, createdAt, etc.) with ASC/DESC order.
    *
-   * Restrict access based on admin grade - super admins can view all admins, regular admins may have limited visibility.
-   *
-   * Include pagination metadata: total count, page number, page size, has more pages indicator.
+   * Handle edge cases:
+   * - Return empty array when no results match filters
+   * - Validate pagination parameters (page size max 100, page number >= 1)
+   * - Reject requests from unauthorized actors
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -69,35 +70,44 @@ export class EcommercemallAdminAdminsController {
   }
 
   /**
-   * Retrieve detailed information about a specific administrator account from the ecommerce mall system.
+   * Retrieve detailed information about a specific administrator account by their unique identifier.
    *
-   * This endpoint returns comprehensive data about an administrator including their email address, account status (active or banned), ban reason if applicable, and creation timestamp. The response provides oversight capabilities for system administrators to review admin accounts.
+   * This operation returns the administrator's account information including their email address, ban status, ban reason (if applicable), and account creation/modification timestamps. The response excludes sensitive authentication data such as password hashes for security purposes.
    *
-   * Administrators can view other administrator accounts to perform oversight functions. The returned data excludes sensitive fields such as password_hash for security purposes. Password hashes are never exposed in API responses.
+   * **Authorization Requirements:**
    *
-   * This operation supports administrative audit and account management workflows across all admin accounts in the system.
+   * Only authenticated administrators can access this endpoint. The access level depends on the administrator's grade:
+   *
+   * - Regular administrators can only view their own profile (self-view)
+   * - Super administrators can view any administrator's profile on the platform
+   * - Non-administrator actors (customers, sellers) receive access denied errors
+   *
+   * **Security Considerations:**
+   *
+   * The response intentionally excludes the password_hash field. While email addresses are visible, no sensitive authentication credentials or tokens are included in the response. All access to this endpoint is logged for audit purposes.
    *
    * @param connection
-   * @param adminId The unique identifier of the administrator account to retrieve
+   * @param adminId Unique identifier of the administrator account to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admins table to retrieve a single administrator record by its UUID.
+   * @x-autobe-specification Query ecommerce_mall_admins table for single admin record by UUID ID.
    *
-   * 1. Accept the adminId path parameter and validate it is a valid UUID format.
-   * 2. Execute a SELECT query on ecommerce_mall_admins table filtering by id = :adminId.
-   * 3. Apply soft delete check - only return records where deleted_at IS NULL.
-   * 4. Exclude sensitive fields (password_hash) from the response for security.
-   * 5. Include only read-only fields: id, email, is_banned, ban_reason, created_at, updated_at.
-   * 6. Return 404 Not Found if the admin record does not exist or is soft-deleted.
-   * 7. Ensure only authorized actors with admin privileges can access this endpoint.
-   * 8. Log the access attempt for audit trail purposes.
+   * Implementation steps:
+   * 1. Validate adminId is valid UUID format
+   * 2. Authenticate requesting user - must be admin actor
+   * 3. Authorization check:
+   *    - If requesting admin's ID equals path adminId: allow (self-view)
+   *    - If requesting user is super administrator: allow (view any admin)
+   *    - Otherwise: reject with 403 Forbidden
+   * 4. Query ecommerce_mall_admins WHERE id = adminId
+   * 5. Return 404 if admin not found
+   * 6. Exclude password_hash from response for security
+   * 7. Return admin account summary with: id, email, is_banned, ban_reason, created_at, updated_at
    *
    * Error handling:
-   * - 404: Admin account not found (does not exist or has been soft-deleted)
-   * - 401: Unauthorized access (actor lacks required privileges)
-   * - 403: Forbidden (actor does not have permission to view admin accounts)
-   *
-   * The operation does not modify any data and should not trigger any cascading effects.
+   * - 401: Unauthenticated - no valid session token
+   * - 403: Unauthorized - regular admin cannot view other admin's profile
+   * - 404: Admin not found with given ID
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":adminId")
@@ -121,49 +131,67 @@ export class EcommercemallAdminAdminsController {
   /**
    * Promote a regular administrator to super administrator grade.
    *
-   * This operation allows super administrators to grant elevated privileges to other regular administrators. The promoted user gains access to all super administrator-only functions including admin request approval, grade promotion/demotion capabilities, and system-wide administrative access.
+   * This operation enables super administrators to grant elevated privileges to other administrators by changing their grade from regular to super administrator. The promoted user immediately gains all super administrator privileges including the ability to approve admin requests, promote other administrators, and access all system-wide administrative functions.
    *
-   * SECURITY REQUIREMENTS:
-   * - Only users with super administrator grade can perform this operation
-   * - Self-promotion is strictly prohibited
-   * - The target administrator must currently have regular administrator grade
-   * - A snapshot is automatically created when the grade change occurs
+   * Security is strictly enforced: super administrators cannot promote themselves, and the operation will be rejected if the target user is already a super administrator or if the requesting user lacks super administrator privileges. The system validates that at least one super administrator will remain after any potential future operations.
    *
-   * Related Operations:
-   * - GET /admins/{adminId} - View administrator details before promotion
-   * - GET /admins - List administrators with grade information
+   * Every promotion action creates an immutable snapshot recording the grade change, including the previous grade, new grade, performing administrator, timestamp, and reason for the change. These snapshots are preserved for audit trails, dispute resolution, and compliance tracking.
    *
    * @param connection
-   * @param adminId UUID of the regular administrator to promote to super administrator grade.
-   * @param body Promotion request containing the target administrator ID and optional metadata.
+   * @param adminId UUID of the administrator to be promoted to super administrator
+   * @param body Promotion metadata including reason and performing administrator context
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement the following logic:
+   * @x-autobe-specification Implement admin grade promotion with strict validation:
    *
-   * 1. AUTHORIZATION: Verify the requesting user has super administrator grade
-   *    - If not super admin, reject with 403 Forbidden
+   * 1. Authentication & Authorization:
+   *    - Verify the requesting user is authenticated as an administrator
+   *    - Check that the requesting user has super administrator grade
+   *    - Reject with 403 Forbidden if user is regular administrator
+   *    - Reject with 401 Unauthorized if not authenticated
    *
-   * 2. VALIDATE TARGET: Ensure the target admin ID exists and has regular admin grade
-   *    - If target admin does not exist, reject with 404 Not Found
-   *    - If target admin is already super admin, reject with 409 Conflict (cannot promote super admin twice)
-   *    - If target admin is the requesting user, reject with 409 Conflict (self-promotion forbidden)
+   * 2. Self-Promotion Prevention:
+   *    - Compare requesting user ID with adminId path parameter
+   *    - Reject with 409 Conflict if they match (self-promotion attempt)
+   *    - Log the attempted self-administration action
    *
-   * 3. EXECUTE PROMOTION:
-   *    - Update the target admin's adminGrade from 'regular' to 'super'
-   *    - Create an admin_request_snapshot recording the grade change
-   *    - Record the timestamp and the promoting super admin's ID
+   * 3. Target Grade Validation:
+   *    - Fetch the target administrator by adminId
+   *    - Verify the target exists (404 Not Found if not)
+   *    - Check target's current grade is 'regular' (not already super)
+   *    - Reject with 409 Conflict if target is already super administrator
+   *    - Verify target is not banned (is_banned = false)
+   *    - Reject with 400 Bad Request if target account is banned
    *
-   * 4. AUDIT LOGGING:
-   *    - Create an audit log entry in ecommerce_mall_admin_audit_logs
-   *    - action_type: 'admin_promote'
-   *    - Record previous and new values for change tracking
+   * 4. Grade Change Execution:
+   *    - Begin database transaction
+   *    - Update the target administrator's grade field to 'super'
+   *    - Set updated_at timestamp to current time
+   *    - Commit transaction
    *
-   * 5. RETURN RESPONSE:
-   *    - Return the updated admin object with super administrator grade
-   *    - Include the promotion timestamp in the response
+   * 5. Snapshot Creation:
+   *    - Create immutable ecommerce_mall_admin_request_snapshots record
+   *    - Record fields: id (UUID), ecommerce_mall_admin_request_request_id (null for promotions), changed_by (requesting admin's ID), reason ('Admin promoted to super administrator by {performing_admin}'), request_status ('approved'), created_at (original created_at from target admin), changed_at (current timestamp)
+   *    - This snapshot preserves the grade change for audit purposes
+   *
+   * 6. Notification:
+   *    - Generate system notification to the promoted user
+   *    - Document new privileges granted
+   *    - Log the promotion event in admin activity logs
+   *
+   * 7. Response:
+   *    - Return updated administrator record with new super grade
+   *    - Include grade, updated_at, and all current admin fields
+   *
+   * Error Codes:
+   * - 401: Unauthorized - user not authenticated
+   * - 403: Forbidden - user is regular administrator, not super
+   * - 404: Not Found - target administrator does not exist
+   * - 409: Conflict - self-promotion attempt or target already super
+   * - 400: Bad Request - target account is banned
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":adminId/promote")
+  @TypedRoute.Patch(":adminId/promote")
   public async promote(
     @AdminAuth()
     admin: AdminPayload,
@@ -173,100 +201,7 @@ export class EcommercemallAdminAdminsController {
     body: IEcommerceMallAdmin.IPromoteRequest,
   ): Promise<IEcommerceMallAdmin> {
     try {
-      return await postEcommerceMallAdminAdminsAdminIdPromote({
-        admin,
-        adminId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Demote a super administrator to regular administrator grade.
-   *
-   * This operation allows super administrators to downgrade another super administrator's privileges from super administrator grade to regular administrator grade. The demoted user retains regular administrator permissions but loses exclusive super administrator privileges such as promoting/demoting other admins, approving admin requests, and accessing system configuration.
-   *
-   * CRITICAL SECURITY CONSTRAINTS:
-   *
-   * - Only super administrators can execute this operation
-   * - Self-demotion is strictly prohibited - a super administrator cannot demote themselves
-   * - The target admin must currently hold super administrator grade
-   * - Regular administrators attempting this operation will receive access denied
-   *
-   * The demotion takes effect immediately upon execution. The target admin's grade is changed from "super" to "regular", their super administrator privileges are revoked, and an immutable snapshot of the grade change is created for audit and dispute resolution purposes. This snapshot includes the previous grade, new grade, performing super administrator, timestamp, and the reason for demotion.
-   *
-   * AFTER DEMOTION:
-   *
-   * The demoted user loses the ability to:
-   * - Promote other administrators to super administrator
-   * - Demote super administrators to regular administrator
-   * - Approve or reject administrator access requests
-   * - Access system-wide administrative configuration options
-   *
-   * The demoted user retains their regular administrator permissions including user account management (ban/unban), seller approval management, category management, product oversight, and order oversight operations.
-   *
-   * @param connection
-   * @param adminId The UUID of the target administrator to be demoted from super administrator to regular administrator grade
-   * @param body Demotion request including reason for grade change
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate requesting user is authenticated super administrator
-   *    - Check session token for ecommerce_mall_admins record
-   *    - Verify is_banned is false
-   *    - Verify admin_grade is "super"
-   *
-   * 2. Validate target admin exists and is super administrator
-   *    - Query ecommerce_mall_admins by adminId path parameter
-   *    - Verify target admin's is_banned is false
-   *    - Verify target admin's admin_grade is "super"
-   *
-   * 3. Prevent self-demotion
-   *    - Compare requesting user ID with adminId path parameter
-   *    - If they match, reject with 403 Forbidden and error: "Self-demotion is not permitted"
-   *
-   * 4. Validate at least one super admin will remain
-   *    - Count total active super administrator accounts
-   *    - If count equals 1, reject with 403 Forbidden and error: "At least one super administrator must remain on the system"
-   *
-   * 5. Execute demotion transaction:
-   *    - Begin database transaction
-   *    - Update ecommerce_mall_admins:
-   *      * Set admin_grade to "regular"
-   *      * Set updated_at to current timestamp
-   *    - Create ecommerce_mall_admin_request_snapshots record:
-   *      * recordType: "admin_grade_change"
-   *      * recordId: target adminId
-   *      * changes: { "admin_grade": { "from": "super", "to": "regular" } }
-   *      * oldValues: { "admin_grade": "super" }
-   *      * newValues: { "admin_grade": "regular" }
-   *      * changedBy: requesting adminId
-   *      * changedAt: current timestamp
-   *      * reason: provided in request body
-   *    - Commit transaction
-   *
-   * 6. Return updated admin record with regular grade
-   *
-   * Error handling:
-   * - 401 Unauthorized: Admin not authenticated
-   * - 403 Forbidden: Not super admin, self-demotion attempt, target not super admin, last super admin demotion prevented
-   * - 404 Not Found: Target admin does not exist
-   * - 422 Unprocessable Entity: Invalid request body
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":adminId/demote")
-  public async demote(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("adminId")
-    adminId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallAdmin.IDemoteRequest,
-  ): Promise<IEcommerceMallAdmin.IAtDemote> {
-    try {
-      return await postEcommerceMallAdminAdminsAdminIdDemote({
+      return await patchEcommerceMallAdminAdminsAdminIdPromote({
         admin,
         adminId,
         body,

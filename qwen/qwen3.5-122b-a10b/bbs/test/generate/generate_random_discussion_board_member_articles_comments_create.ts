@@ -4,7 +4,6 @@ import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/stru
 import type { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import type { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -29,7 +28,7 @@ export async function generate_random_discussion_board_member_articles_comments_
     await api.functional.discussionBoard.member.articles.comments.create(
       connection,
       {
-        articleId: props.params?.articleId!,
+        articleId: props.params?.articleId ?? typia.random<string & tags.Format<"uuid">>(),
         body: prepared,
       },
     );

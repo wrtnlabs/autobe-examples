@@ -19,10 +19,10 @@ export async function getRedditPlatformAdminAuditLogsLogId(props: {
   admin: AdminPayload;
   logId: string & tags.Format<"uuid">;
 }): Promise<IRedditPlatformAdminAuditLog> {
-  const log =
+  const auditLog =
     await MyGlobal.prisma.reddit_platform_admin_audit_logs.findUniqueOrThrow({
       where: { id: props.logId },
       ...RedditPlatformAdminAuditLogTransformer.select(),
     });
-  return await RedditPlatformAdminAuditLogTransformer.transform(log);
+  return await RedditPlatformAdminAuditLogTransformer.transform(auditLog);
 }

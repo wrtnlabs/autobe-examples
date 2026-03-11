@@ -6,29 +6,130 @@ import { IDiscussionBoardBanRecord } from "../../../../api/structures/IDiscussio
 import { IPageIDiscussionBoardBanRecord } from "../../../../api/structures/IPageIDiscussionBoardBanRecord";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getDiscussionBoardAdminBanRecordsBanId } from "../../../../providers/getDiscussionBoardAdminBanRecordsBanId";
+import { getDiscussionBoardAdminBanRecordsBanRecordId } from "../../../../providers/getDiscussionBoardAdminBanRecordsBanRecordId";
 import { patchDiscussionBoardAdminBanRecords } from "../../../../providers/patchDiscussionBoardAdminBanRecords";
-import { postDiscussionBoardAdminBanRecordsBanIdUnban } from "../../../../providers/postDiscussionBoardAdminBanRecordsBanIdUnban";
-import { putDiscussionBoardAdminBanRecordsBanId } from "../../../../providers/putDiscussionBoardAdminBanRecordsBanId";
+import { patchDiscussionBoardAdminBanRecordsBanRecordIdUnban } from "../../../../providers/patchDiscussionBoardAdminBanRecordsBanRecordIdUnban";
+import { postDiscussionBoardAdminBanRecords } from "../../../../providers/postDiscussionBoardAdminBanRecords";
+import { putDiscussionBoardAdminBanRecordsBanRecordId } from "../../../../providers/putDiscussionBoardAdminBanRecordsBanRecordId";
 
 @Controller("/discussionBoard/admin/ban-records")
 export class DiscussionboardAdminBan_recordsController {
   /**
-   * Retrieve a filtered and paginated list of user ban records with full moderation audit trail information.
+   * Create a new user ban record to restrict a member's platform access. This operation is exclusively available to administrators (both regular and super administrators) for content moderation and user management purposes.
    *
-   * This operation provides administrators with comprehensive access to all ban records in the system, enabling review of moderation actions, ban history, and user restriction status. Each record includes the banned user's profile information, the administrator who imposed the ban, the stated reason for banning, and timestamps for both the ban and any subsequent unban action.
+   * When an administrator issues a ban, the system records the ban reason, the timestamp when the ban was issued, and the identity of the administrator who created the ban. The ban record remains immutable after creation to maintain audit trail integrity.
    *
-   * The endpoint supports advanced filtering capabilities including searching by member identifier or name, filtering by ban reason keywords, date range queries for ban periods, and status filtering to distinguish between currently active bans (unbanned_at is null) and historical bans (unbanned_at is set). Pagination controls allow administrators to navigate through large ban record datasets efficiently.
+   * Upon successful ban creation, the target member's account status is immediately updated to 'banned', preventing all future login attempts and session creations. The system automatically terminates any existing active sessions for the banned user. All previously created articles and comments by the banned user remain visible on the platform, but no new interactions from the banned account are permitted.
    *
-   * Security requirements mandate administrator-level access for this operation. Guest users and regular members are denied access. The operation respects data isolation principles - all administrators can view all ban records regardless of who created them, ensuring transparency in moderation actions. Banned users themselves cannot access this endpoint as they lack authenticated session access.
+   * The ban reason is a required field that documents the moderation decision and violation details. This information is stored in the ban record and also propagated to the member's account for visibility in the banned user list view.
    *
-   * Related operations include POST /admin/bans for creating new ban records, DELETE /admin/bans/:userId for unbanning users, and GET /users/:id for viewing individual user profiles with their current ban status.
+   * Related operations:
+   * - `GET /ban-records` - Retrieve paginated list of all ban records
+   * - `GET /ban-records/{banRecordId}` - Retrieve specific ban record details
+   * - `POST /ban-records/{banRecordId}/unban` - Unban a previously banned user
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering ban records
+   * @param body Ban creation request containing target member identifier and ban reason
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query discussion_board_ban_records table with pagination and filtering capabilities. Join with discussion_board_members to include banned user information (display_name, email, ban_status). Join with discussion_board_admins to include administrator information who created the ban. Apply search filters on: member_id, member email/display_name, ban reason text search, banned_at date range, unbanned_at status (active/historical bans), discussion_board_admin_id. Implement cursor-based or offset-based pagination with configurable page size. Sort by banned_at descending (newest bans first) by default, support ascending order. Return ban record summaries excluding sensitive data. Enforce admin-only authorization - reject guest and member requests. Validate that requesting admin has ban management permissions.
+   * @x-autobe-specification 1. Authenticate request as admin actor (regular or super admin)
+   * 2. Validate discussion_board_member_id exists in discussion_board_members table
+   * 3. Check target member is not already banned (query discussion_board_ban_records for active ban where unbanned_at is null)
+   * 4. Validate reason is non-empty string (min length 1, max length 1000)
+   * 5. Create ban record with:
+   *    - discussion_board_member_id: from request body
+   *    - discussion_board_admin_id: from authenticated admin session
+   *    - reason: from request body
+   *    - banned_at: current timestamp (server time)
+   *    - unbanned_at: null (active ban)
+   * 6. Update discussion_board_members table:
+   *    - Set ban_status to 'banned'
+   *    - Set ban_reason to the provided reason
+   *    - Update updated_at timestamp
+   * 7. Terminate all active sessions for the banned member from discussion_board_member_sessions
+   * 8. Return created ban record with full details
+   * 9. Create audit log entry in discussion_board_audit_logs
+   *
+   * Error handling:
+   * - 401: Admin authentication required
+   * - 403: Insufficient permissions
+   * - 404: Target member not found
+   * - 409: Member already has active ban
+   * - 400: Invalid or missing reason
+   * - 500: Database transaction failure
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedBody()
+    body: IDiscussionBoardBanRecord.ICreate,
+  ): Promise<IDiscussionBoardBanRecord> {
+    try {
+      return await postDiscussionBoardAdminBanRecords({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a filtered and paginated list of user ban records from the discussion board moderation system.
+   *
+   * This operation provides administrators with comprehensive visibility into user ban actions, including the banned user details, ban reasons, timestamps, and the administrator who performed each ban. The endpoint supports advanced filtering by ban status (active or historical), date ranges, specific members, and administrators.
+   *
+   * Security and Access Control:
+   * Only administrators with appropriate moderation privileges can access this endpoint. Regular members and guests are strictly prohibited from viewing ban records to maintain privacy and prevent abuse. The system validates administrator credentials and authorization levels before processing the request.
+   *
+   * Ban Record Information:
+   * Each ban record contains the banned member's identifier, the administrator who created the ban, the documented reason for the ban, the timestamp when the ban was applied, and optionally the timestamp when the user was unbanned. Active bans are identified by unbanned_at being null, while historical bans have an unbanned_at timestamp set.
+   *
+   * Pagination and Performance:
+   * The endpoint returns results in a paginated format with configurable page sizes and cursor-based navigation for efficient handling of large ban record datasets. Default page sizes and maximum limits are enforced to prevent performance degradation.
+   *
+   * Related Operations:
+   * - GET /ban-records/{banRecordId}: Retrieve detailed information about a specific ban record
+   * - POST /ban-records: Create a new ban record (admin-only)
+   * - PATCH /ban-records/{banRecordId}/unban: Unban a user and set the unbanned_at timestamp
+   *
+   * @param connection
+   * @param body Search criteria, pagination parameters, and sorting options for filtering ban records
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Query discussion_board_ban_records table with pagination and filtering capabilities.
+   *
+   * Implementation steps:
+   * 1. Validate administrator authentication and authorization (admin actor required)
+   * 2. Parse search criteria from request body: pagination (page, pageSize), filters (memberId, adminId, dateRange, isActive), sorting (field, direction)
+   * 3. Build database query with WHERE conditions based on filters:
+   *    - memberId filter: discussion_board_member_id = ?
+   *    - adminId filter: discussion_board_admin_id = ?
+   *    - dateRange filter: banned_at BETWEEN ? AND ?
+   *    - isActive filter: unbanned_at IS NULL (active) OR unbanned_at IS NOT NULL (historical)
+   * 4. Apply ORDER BY clause based on sorting parameters (default: banned_at DESC)
+   * 5. Execute paginated query with LIMIT and OFFSET
+   * 6. Join with discussion_board_members and discussion_board_admins tables to include member and admin summary information
+   * 7. Count total records matching filters for pagination metadata
+   * 8. Return paginated response with IPageIDiscussionBoardBanRecord.ISummary structure
+   *
+   * Error handling:
+   * - 401 Unauthorized: Invalid or missing authentication
+   * - 403 Forbidden: User lacks administrator privileges
+   * - 400 Bad Request: Invalid filter parameters or pagination values
+   * - 500 Internal Server Error: Database query failures
+   *
+   * Concurrency considerations:
+   * - Ban record reads are idempotent and do not require locking
+   * - Ensure consistent read isolation level to prevent phantom reads during pagination
+   *
+   * Validation rules:
+   * - pageSize must be between 1 and 100
+   * - Date ranges cannot exceed 2 years for performance
+   * - memberId and adminId must be valid UUIDs if provided
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -50,34 +151,58 @@ export class DiscussionboardAdminBan_recordsController {
   }
 
   /**
-   * Retrieve detailed information about a specific user ban record from the discussion board moderation system.
+   * Retrieve detailed information about a specific user ban record by its unique identifier. This operation provides comprehensive ban details including the affected user, the administrator who imposed the ban, the reason for banning, and relevant timestamps.
    *
-   * This operation provides administrators with complete visibility into a ban action, including the banned user's identity (display_name, email, ban_status), the administrator who imposed the ban (display_name, grade), the documented reason for the ban stored in the reason field, and all relevant timestamps (banned_at, unbanned_at, created_at, updated_at). The ban record serves as an audit trail for moderation accountability and compliance purposes.
+   * **Authorization Requirements**
    *
-   * Access to this endpoint is restricted to administrator-level users only (regular or super administrators). Regular members and guests cannot view ban record information. The operation returns the complete ban record with all fields from the discussion_board_ban_records table, including the associated user and administrator references through foreign key relationships.
+   * Only administrator accounts can access ban record information. Regular members and guest users will receive an authorization error when attempting to access this endpoint. Both super administrators and regular administrators have access to view ban records.
    *
-   * When a user is unbanned, the unbanned_at timestamp is populated in the record but the ban record remains in the system for historical audit purposes. This allows administrators to review the complete ban history of any user while maintaining accountability for moderation actions. The reason field documents the specific moderation decision and violation details that led to the ban.
+   * **Ban Record Information**
    *
-   * Related operations include listing all ban records (PATCH /discussionBoard/admin/ban-records) and unbanning a user (DELETE /discussionBoard/admin/ban-records/{banId}).
+   * The response includes the complete ban record with the following key information:
+   * - Ban record unique identifier
+   * - Reference to the banned user account
+   * - Reference to the administrator who created the ban
+   * - Detailed reason for the ban action
+   * - Timestamp when the ban was imposed
+   * - Timestamp when the user was unbanned (if applicable)
+   * - Record creation and update timestamps
+   *
+   * **Active vs Historical Bans**
+   *
+   * The `unbanned_at` field indicates whether a ban is currently active. When `unbanned_at` is null, the user remains banned and cannot log in. When `unbanned_at` has a value, the ban has been lifted but the record remains for audit trail purposes. Banned users retain their content visibility as per the content retention policy.
+   *
+   * **Related Operations**
+   *
+   * - Use `PATCH /ban-records` to search and list ban records with pagination
+   * - Use `POST /ban-records` to create a new ban record (admin only)
+   * - Use `PUT /ban-records/{banRecordId}` to update ban record details including unbanning by setting `unbanned_at` (admin only)
+   * - Use `DELETE /ban-records/{banRecordId}` to soft delete a ban record from the system (admin only, permanently removes from visibility)
+   *
+   * **Error Conditions**
+   *
+   * - 404 Not Found: The specified ban record ID does not exist or has been soft-deleted
+   * - 403 Forbidden: The requesting user does not have administrator privileges
+   * - 401 Unauthorized: The user is not authenticated
    *
    * @param connection
-   * @param banId The unique identifier of the ban record (UUID format)
+   * @param banRecordId Unique identifier of the ban record to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_ban_records table by primary key id (UUID). Verify the requesting user has administrator privileges before returning the ban record. Include related discussion_board_members and discussion_board_admins data through joins or separate queries. Return the complete ban record with all fields: id, discussion_board_member_id, discussion_board_admin_id, reason, banned_at, unbanned_at, created_at, updated_at. Apply authorization middleware to restrict access to admin users only. Handle 404 response if ban record does not exist. Return 403 if user lacks administrator privileges.
+   * @x-autobe-specification Query discussion_board_ban_records table by primary key id. Validate the requesting user has admin privileges before proceeding. Join with discussion_board_members to include banned user information and discussion_board_admins to include administering moderator details. Return 404 if ban record not found. Return 403 if user lacks admin authorization. Include all ban record fields: id, discussion_board_member_id, discussion_board_admin_id, reason, banned_at, unbanned_at, created_at, updated_at. Apply soft delete filter to exclude records where deleted_at is not null.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":banId")
+  @TypedRoute.Get(":banRecordId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("banId")
-    banId: string & tags.Format<"uuid">,
+    @TypedParam("banRecordId")
+    banRecordId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardBanRecord> {
     try {
-      return await getDiscussionBoardAdminBanRecordsBanId({
+      return await getDiscussionBoardAdminBanRecordsBanRecordId({
         admin,
-        banId,
+        banRecordId,
       });
     } catch (error) {
       console.log(error);
@@ -86,39 +211,86 @@ export class DiscussionboardAdminBan_recordsController {
   }
 
   /**
-   * Update a user ban record to unban the user and restore their account access.
+   * Update an existing ban record with new information or unban a user.
    *
-   * This operation allows administrators to remove ban restrictions from a user by updating the ban record's unbanned_at timestamp. The operation performs a cross-table update: it sets the unbanned_at field on the discussion_board_ban_records table AND updates the ban_status field to 'active' on the related discussion_board_members table via the discussion_board_member_id foreign key relationship.
+   * This operation allows administrators to modify ban record details such as the ban reason or to unban a user by setting the unbanned timestamp. When unban is performed, the system automatically restores the user's login access following standard authentication procedures.
    *
-   * When a user is unbanned, their ban_status is automatically restored to 'active' on the discussion_board_members table, and they regain login and content creation capabilities immediately. The ban record remains in the database with the unbanned_at timestamp set for audit trail purposes, in accordance with the data retention policy.
+   * **Security Considerations**:
    *
-   * The operation requires administrator privileges and validates that the target ban record exists and has an active ban (unbanned_at is NULL). Only administrators with unban permissions can perform this action.
+   * Only administrators with appropriate privileges can access this endpoint. The system validates that the requesting user has administrator permissions before processing the update. Regular members and guest users are denied access with an authorization error.
    *
-   * Upon successful unban, the system ensures immediate restoration of user access following standard authentication procedures. All existing articles and comments from the previously banned user remain visible and accessible.
+   * **Business Logic**:
    *
-   * Related operations: GET /discussionBoard/admin/ban-records to list banned users, POST /discussionBoard/admin/bans to create new ban records.
+   * When updating the ban reason, the system records the change in the audit trail. When unban is requested (by providing an unbanned_at timestamp), the system:
+   *
+   * 1. Verifies the target user has an active ban record (unbanned_at is null)
+   * 2. Sets the unbanned_at timestamp to the current time
+   * 3. Automatically restores the user's login and content creation capabilities
+   * 4. Records the unban action in the audit log
+   *
+   * If the user is already unbanned, the operation will update the record but no state change occurs.
+   *
+   * **Related Operations**:
+   *
+   * - `PATCH /ban-records` - List all ban records with filtering and pagination
+   * - `GET /ban-records/{banRecordId}` - Retrieve detailed ban record information
+   * - `DELETE /ban-records/{banRecordId}` - Permanently remove a ban record (if soft-delete is supported)
    *
    * @param connection
-   * @param banId Target ban record's ID (global scope)
-   * @param body Unban confirmation and optional reason for unbanning
+   * @param banRecordId Unique identifier of the ban record to update (UUID format)
+   * @param body Update data for the ban record. Can include reason modification or unban timestamp.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update ban record to unban a user. Validate: 1) Ban record exists with id matching path parameter, 2) Ban record has unbanned_at NULL (active ban), 3) Requesting user is administrator with unban permissions. On success: set unbanned_at to current timestamp, update ban_status to 'active' on discussion_board_members table, restore user login access. Return updated ban record with unbanned_at set. Handle concurrency with optimistic locking or re-fetch before update. Log action to audit trail.
+   * @x-autobe-specification Service layer implementation for updating ban records:
+   *
+   * 1. **Authorization Check**: Verify requesting user has admin role. Reject with 403 if not authorized.
+   *
+   * 2. **Record Retrieval**: Query discussion_board_ban_records table by id (UUID). Return 404 if not found.
+   *
+   * 3. **Validation**:
+   *    - If unbanned_at is being set: verify current unbanned_at is null (user is currently banned)
+   *    - If reason is being updated: validate string length and format
+   *    - Ensure banned_at is not modified (immutable field)
+   *    - Ensure discussion_board_member_id and discussion_board_admin_id are not modified (immutable foreign keys)
+   *
+   * 4. **Unban Logic** (when unbanned_at is provided):
+   *    - Begin database transaction
+   *    - Update unbanned_at to current timestamp
+   *    - Update updated_at to current timestamp
+   *    - Commit transaction
+   *    - Trigger audit log entry for unban action
+   *    - Clear any active session tokens for the unbanned user
+   *
+   * 5. **Reason Update Logic** (when reason is provided without unban):
+   *    - Begin database transaction
+   *    - Update reason field
+   *    - Update updated_at to current timestamp
+   *    - Commit transaction
+   *    - Trigger audit log entry for reason modification
+   *
+   * 6. **Concurrency Handling**: Implement optimistic locking with retry logic (up to 3 attempts with exponential backoff) to handle concurrent updates.
+   *
+   * 7. **Error Handling**:
+   *    - 403 Forbidden: User lacks administrator privileges
+   *    - 404 Not Found: Ban record does not exist
+   *    - 409 Conflict: User is already unbanned (when attempting to unban)
+   *    - 422 Unprocessable Entity: Invalid request body format or validation failure
+   *    - 500 Internal Server Error: Database operation failed
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":banId")
+  @TypedRoute.Put(":banRecordId")
   public async update(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("banId")
-    banId: string & tags.Format<"uuid">,
+    @TypedParam("banRecordId")
+    banRecordId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardBanRecord.IUpdate,
   ): Promise<IDiscussionBoardBanRecord> {
     try {
-      return await putDiscussionBoardAdminBanRecordsBanId({
+      return await putDiscussionBoardAdminBanRecordsBanRecordId({
         admin,
-        banId,
+        banRecordId,
         body,
       });
     } catch (error) {
@@ -128,61 +300,61 @@ export class DiscussionboardAdminBan_recordsController {
   }
 
   /**
-   * Unban a previously banned user by removing their ban restriction and restoring full platform access.
+   * Unban a previously banned user by lifting the login restriction and restoring full platform access.
    *
-   * This operation lifts the login restriction imposed on a banned user, allowing them to authenticate and access all platform features normally. The ban record is preserved in the system with an unbanned_at timestamp for audit trail and moderation accountability purposes.
+   * This operation removes the ban status from a user account, allowing them to log in and access all platform features immediately. The ban record is preserved with an unbanned_at timestamp for audit and accountability purposes, maintaining a complete history of moderation actions.
    *
-   * **Security Requirements**:
-   * - Only administrators (regular or super) can execute this operation
-   * - The requesting administrator's identity is recorded in the system
-   * - Non-administrator attempts are rejected with access denied error
+   * Only administrators (regular or super) can perform this operation. The administrator's identity is captured from the authentication context and recorded in the system for audit trail purposes.
    *
-   * **Business Logic**:
-   * - The target user's ban_status is updated from 'banned' to 'active'
-   * - The ban record's unbanned_at timestamp is set to the current time
-   * - All content created by the user (articles, comments, attachments) remains intact and visible
-   * - The user can immediately log in and perform all member actions after unban
+   * When a user is unbanned, the system:
+   * - Updates the ban record with the unbanned_at timestamp
+   * - Changes the member's ban_status from 'banned' to 'active'
+   * - Clears the ban_reason field from the member record
+   * - Preserves all articles and comments created by the previously banned user
+   * - Maintains the ban record in history for accountability
    *
-   * **Related Operations**:
-   * - `POST /admin/bans` - Create a new ban record for a user
-   * - `GET /admin/bans` - List all banned users with ban reasons
-   * - `GET /ban-records/{banId}` - View detailed ban record information
+   * The unban operation takes effect immediately. The user can attempt to log in with their existing credentials on the next authentication attempt.
    *
-   * **Error Conditions**:
-   * - If the ban record does not exist, returns 404 Not Found
-   * - If the user is already unbanned (unbanned_at is set), returns 400 Bad Request indicating no action necessary
-   * - If the requesting user lacks administrator privileges, returns 403 Forbidden
+   * Related operations:
+   * - `GET /ban-records` - Retrieve list of ban records for review
+   * - `GET /ban-records/{banRecordId}` - View detailed ban record information
+   * - `PATCH /members/{memberId}` - Update member profile information
    *
    * @param connection
-   * @param banId Unique identifier of the ban record to unban (UUID format)
+   * @param banRecordId UUID of the ban record to unban (global scope)
+   * @param body Unban action confirmation
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate the requesting user has administrator role (regular or super admin)
-   * 2. Query discussion_board_ban_records table by id = {banId}
-   * 3. If ban record not found, return 404 error
-   * 4. Check if unbanned_at is already set - if yes, return 400 error (user already unbanned)
-   * 5. Verify the ban record's discussion_board_member_id references a valid member
-   * 6. Update discussion_board_members table:
-   *    - Set ban_status = 'active'
-   *    - Set ban_reason = null
-   * 7. Update discussion_board_ban_records table:
-   *    - Set unbanned_at = current timestamp (UTC)
-   *    - Set updated_at = current timestamp
-   * 8. Optionally create audit log entry in discussion_board_audit_logs recording the unban action
-   * 9. Return the updated ban record with unbanned_at timestamp populated
+   * @x-autobe-specification 1. Authenticate and verify the requesting user is an administrator (grade: 'regular' or 'super').
+   * 2. Find the ban record by id (banRecordId path parameter).
+   * 3. Verify the ban record exists and is currently active (unbanned_at IS NULL).
+   * 4. Verify the target member exists and is currently banned (ban_status = 'banned').
+   * 5. Update the ban record: set unbanned_at to current timestamp, updated_at to current timestamp.
+   * 6. Update the member record: set ban_status to 'active', ban_reason to NULL, updated_at to current timestamp.
+   * 7. Create an audit log entry for the unban action (discussion_board_audit_logs).
+   * 8. Return the updated ban record.
+   *
+   * Error cases:
+   * - 404: Ban record not found
+   * - 403: Requesting user is not an administrator
+   * - 400: User is not currently banned (unbanned_at already set)
+   * - 409: Concurrent modification detected
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":banId/unban")
+  @TypedRoute.Patch(":banRecordId/unban")
   public async unban(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("banId")
-    banId: string & tags.Format<"uuid">,
+    @TypedParam("banRecordId")
+    banRecordId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardBanRecord.IUnban,
   ): Promise<IDiscussionBoardBanRecord> {
     try {
-      return await postDiscussionBoardAdminBanRecordsBanIdUnban({
+      return await patchDiscussionBoardAdminBanRecordsBanRecordIdUnban({
         admin,
-        banId,
+        banRecordId,
+        body,
       });
     } catch (error) {
       console.log(error);

@@ -19,100 +19,86 @@ export async function patchEcommerceMallCategories(props: {
 }): Promise<IPageIEcommerceMallCategory.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const search = props.body.search;
-  const parentCategoryId = props.body.parent_category_id;
-  const isLeaf = props.body.is_leaf;
-  const sortBy = props.body.sort_by ?? "name";
-  const sortOrder = props.body.sort_order ?? "asc";
-  const cursor = props.body.cursor;
-  const cursorValues = cursor
-    ? (JSON.parse(Buffer.from(cursor, "base64").toString("utf-8")) as {
-        id: string & tags.Format<"uuid">;
-      })
-    : null;
-  // Build where conditions
-  const whereConditions: Prisma.ecommerce_mall_categoriesWhereInput = {
-    deleted_at: null,
-    ...(search
+  // Validate page size boundaries (10-100 inclusive)
+  const validatedLimit = Math.max(10, Math.min(limit, 100));
+  const validatedPage = Math.max(1, page);
+  const skip = (validatedPage - 1) * validatedLimit;
+  // Build where conditions for filtering
+  const whereInput: Prisma.ecommerce_mall_categoriesWhereInput = {
+    // Default: exclude soft-deleted categories unless includeInactive is true
+    ...(props.body.includeInactive ? {} : { deleted_at: null }),
+    // Name partial match (case-insensitive)
+    ...(props.body.name !== undefined
+      ? { name: { contains: props.body.name, mode: "insensitive" as const } }
+      : {}),
+    // Description partial match (case-insensitive)
+    ...(props.body.description !== undefined
+      ? {
+          description: {
+            contains: props.body.description,
+            mode: "insensitive" as const,
+          },
+        }
+      : {}),
+    // Parent category filter
+    ...(props.body.parentCategoryId !== undefined
+      ? { parent_category_id: props.body.parentCategoryId }
+      : {}),
+    // Combined search across name and description fields
+    ...(props.body.searchQuery !== undefined
       ? {
           OR: [
             {
               name: {
-                contains: search,
-                mode: "insensitive",
+                contains: props.body.searchQuery,
+                mode: "insensitive" as const,
               },
             },
             {
               description: {
-                contains: search,
-                mode: "insensitive",
+                contains: props.body.searchQuery,
+                mode: "insensitive" as const,
               },
             },
           ],
         }
       : {}),
-    ...(parentCategoryId !== undefined
-      ? {
-          parent_category_id: parentCategoryId,
-        }
-      : {}),
-    ...(isLeaf !== undefined
-      ? {
-          is_leaf: isLeaf,
-        }
-      : {}),
-    ...(cursorValues
-      ? {
-          id: {
-            gt: cursorValues.id,
-          },
-        }
-      : {}),
-  };
-  // Build order by with parent first for tree structure
-  const orderByInput = [
-    {
-      parent_category_id: sortOrder,
-    },
-    {
-      [sortBy]: sortOrder,
-    },
-  ] satisfies Prisma.ecommerce_mall_categoriesOrderByWithRelationInput[];
+  } satisfies Prisma.ecommerce_mall_categoriesWhereInput;
+  // Build order by condition based on sortBy parameter
+  const sortOrder =
+    props.body.sortOrder === "desc"
+      ? Prisma.SortOrder.desc
+      : Prisma.SortOrder.asc;
+  const orderByInput =
+    props.body.sortBy === "created_at"
+      ? { created_at: sortOrder }
+      : { name: sortOrder };
+  // Execute findMany query with transformer select
   const data = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
-    where: whereConditions,
-    take: limit,
+    where: whereInput,
+    skip,
+    take: validatedLimit,
     orderBy: orderByInput,
     ...EcommerceMallCategoryAtSummaryTransformer.select(),
   });
-  const totalCount = await MyGlobal.prisma.ecommerce_mall_categories.count({
-    where: whereConditions,
+  // Execute count query for pagination metadata
+  const total = await MyGlobal.prisma.ecommerce_mall_categories.count({
+    where: whereInput,
   });
-  const records = await ArrayUtil.asyncMap(
+  // Transform results using existing transformer
+  const transformedData = await ArrayUtil.asyncMap(
     data,
     EcommerceMallCategoryAtSummaryTransformer.transform,
   );
-  const nextPageData = await MyGlobal.prisma.ecommerce_mall_categories.findMany(
-    {
-      where: { ...whereConditions, id: { gt: data[data.length - 1]?.id } },
-      take: 1,
-      orderBy: orderByInput,
-    },
-  );
-  const nextCursor =
-    nextPageData.length > 0
-      ? Buffer.from(
-          JSON.stringify({
-            id: nextPageData[0].id,
-          }),
-        ).toString("base64")
-      : null;
+  // Build pagination metadata with proper calculations
+  const pagination: IPage.IPagination = {
+    current: validatedPage,
+    limit: validatedLimit,
+    records: total,
+    pages: total === 0 ? 0 : Math.ceil(total / validatedLimit),
+  } satisfies IPage.IPagination;
   return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: totalCount,
-      pages: Math.ceil(totalCount / limit),
-    } satisfies IPage.IPagination,
-    data: records,
-  };
+    data: transformedData,
+    pagination,
+  } satisfies IPageIEcommerceMallCategory.ISummary;
 }

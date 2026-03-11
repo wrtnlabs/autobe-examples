@@ -15,17 +15,21 @@ export async function authorize_guest_join(
     body?: DeepPartial<IRedditPlatformGuest.IJoin>;
   },
 ): Promise<IRedditPlatformGuest.IAuthorized> {
-  const joinInput = {
+  const joinInput: IRedditPlatformGuest.IJoin = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
     username: props.body?.username ?? RandomGenerator.name(1),
-    display_name: props.body?.display_name ?? RandomGenerator.name(1),
-    bio: props.body?.bio ?? null,
+    display_name: props.body?.display_name ?? RandomGenerator.name(2),
+    bio: props.body?.bio ?? RandomGenerator.paragraph() ?? null,
+    avatar_url:
+      props.body?.avatar_url ??
+      typia.random<string & tags.Format<"uri">>() ??
+      null,
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IRedditPlatformGuest.IJoin;
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>() ?? null,
+  };
   return await api.functional.redditPlatform.auth.guest.join(connection, {
     body: joinInput,
   });

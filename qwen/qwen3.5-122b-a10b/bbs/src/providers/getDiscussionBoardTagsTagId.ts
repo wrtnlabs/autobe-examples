@@ -16,10 +16,7 @@ export async function getDiscussionBoardTagsTagId(props: {
   tagId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardTag> {
   const tag = await MyGlobal.prisma.discussion_board_tags.findUniqueOrThrow({
-    where: {
-      id: props.tagId,
-      deleted_at: null,
-    },
+    where: { id: props.tagId, deleted_at: null },
     ...DiscussionBoardTagTransformer.select(),
   });
   return await DiscussionBoardTagTransformer.transform(tag);

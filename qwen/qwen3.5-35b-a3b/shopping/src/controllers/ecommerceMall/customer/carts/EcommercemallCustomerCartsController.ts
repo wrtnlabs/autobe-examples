@@ -2,93 +2,164 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IEcommerceMallCartItem } from "../../../../api/structures/IEcommerceMallCartItem";
 import { IEcommerceMallShoppingCart } from "../../../../api/structures/IEcommerceMallShoppingCart";
-import { IPageIEcommerceMallCartItem } from "../../../../api/structures/IPageIEcommerceMallCartItem";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { getEcommerceMallCustomerCartsCartId } from "../../../../providers/getEcommerceMallCustomerCartsCartId";
 import { patchEcommerceMallCustomerCarts } from "../../../../providers/patchEcommerceMallCustomerCarts";
+import { postEcommerceMallCustomerCarts } from "../../../../providers/postEcommerceMallCustomerCarts";
 
 @Controller("/ecommerceMall/customer/carts")
 export class EcommercemallCustomerCartsController {
   /**
-   * Retrieve a paginated list of cart items across the customer's shopping cart sessions with search filters and sorting capabilities.
+   * Create a new shopping cart session for an authenticated customer account.
    *
-   * This endpoint provides comprehensive cart item retrieval with support for filtering by availability status, date ranges for when variants were added, and sorting options. Each cart item includes the variant details, captured price at addition time, current stock availability, and variant option values.
+   * This operation creates a new cart container that tracks the customer's shopping session across their browsing and purchasing activities. Each cart is uniquely associated with a customer account and stores metadata including creation timestamp and last modification time.
    *
-   * The operation returns paginated results with metadata including total count, page information, and navigation links. Support for cursor-based pagination enables efficient handling of large result sets.
+   * When a customer logs into their account for the first time or explicitly requests a new cart session, this operation initializes a fresh cart record in the system. The cart serves as the container for all subsequent cart item operations (adding, updating, removing products) during that session.
    *
-   * **Related Operations**:
+   * The cart is automatically persisted between browsing sessions for authenticated customers, ensuring that items added to the cart are preserved when the customer logs out and logs back in. Multiple cart sessions can exist simultaneously for the same customer (e.g., when logged in from multiple devices).
    *
-   * - `GET /carts/{cartId}` - Retrieve a specific shopping cart with its complete item list
-   * - `GET /products/{productId}/variants/{variantId}` - Get variant details for reference
+   * **Related API Operations:**
+   * - `PATCH /cartItems` must be executed to add products to the cart after creation.
+   * - `GET /carts/{cartId}` retrieves the cart and its associated items.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for cart items
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement cart item list retrieval with the following logic:
+   * @x-autobe-specification Create a new shopping cart session for the authenticated customer.
    *
-   * **Query Execution:**
-   * 1. Query ecommerce_mall_cart_items table JOINed with ecommerce_mall_product_variants and ecommerce_mall_shopping_carts
-   * 2. Apply filtering based on request parameters:
-   *    - availability: filter by current variant stock status (available, low_stock, out_of_stock)
-   *    - variantAddedSince: filter by created_at timestamp
-   *    - variantAddedBefore: filter by created_at timestamp
-   *    - cartId: filter by specific cart session
-   * 3. Calculate availability status by comparing cart quantity vs current variant stockQuantity
-   * 4. Sort results based on sortOrder parameter (createdAt_asc, createdAt_desc, price_asc, price_desc)
-   * 5. Apply cursor-based pagination with pageSize and cursor parameters
+   * 1. Extract customer_id from the authenticated user's JWT session token (customer actor only).
+   * 2. Generate a new UUID for the cart id field.
+   * 3. Set created_at and updated_at to the current timestamp (UTC).
+   * 4. Insert the new cart record into ecommerce_mall_shopping_carts table.
+   * 5. Return the newly created cart with all fields populated.
    *
-   * **Data Transformation:**
-   * 1. Join variant data to include skuCode, optionValues, current stockQuantity, isActive status
-   * 2. Include parent cart metadata (cartId, customer association)
-   * 3. Compute availability status:
-   *    - 'available': stockQuantity >= cart quantity
-   *    - 'low_stock': stockQuantity > 0 AND stockQuantity < cart quantity
-   *    - 'out_of_stock': stockQuantity = 0 OR stockQuantity < cart quantity
-   * 4. Exclude soft-deleted cart items (deleted_at IS NULL) unless explicitly requested
+   * Validation:
+   * - Only authenticated customers can create carts (customer actor).
+   * - If the customer already has an active cart, this operation may either return an error or return the existing cart depending on business logic (typically return existing cart to avoid duplicate carts).
+   * - customer_id from JWT must match the authenticated user; reject if mismatch.
    *
-   * **Business Rules:**
-   * 1. Enforce customer ownership - only return cart items belonging to the authenticated customer's carts
-   * 2. Validate cart existence before returning items
-   * 3. Handle deleted product variants gracefully - include item with variant info marked as deleted
-   * 4. Preserve price snapshot at addition time (do not recalculate from current variant price)
-   * 5. Apply optimistic locking on cart reads if concurrent modifications detected
+   * Transaction: This operation should be performed in a database transaction to ensure data consistency.
    *
-   * **Edge Cases:**
-   * 1. If variant is deleted, return cart item with null variant details but preserved price
-   * 2. If cart is deleted, skip the item entirely (no orphaned cart items)
-   * 3. Handle concurrent cart modifications with version checking
-   * 4. Return empty result set if no items match criteria
+   * Edge cases:
+   * - Customer already has a cart: Return the existing cart or reject with conflict error (409).
+   * - Customer account is banned: Reject the request with appropriate error.
+   * - Concurrent cart creation from multiple devices: Handle by returning existing cart or creating separate cart per session based on business requirements.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @CustomerAuth()
+    customer: CustomerPayload,
+  ): Promise<IEcommerceMallShoppingCart> {
+    try {
+      return await postEcommerceMallCustomerCarts({
+        customer,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Manage shopping cart contents through a unified cart operations endpoint.
    *
-   * **Performance Considerations:**
-   * 1. Use composite index on (cart_id, created_at) for efficient filtering
-   * 2. Limit query result set with pagination
-   * 3. Avoid N+1 queries by JOINing variant data upfront
-   * 4. Cache availability status calculations for high-traffic endpoints
+   * This operation provides comprehensive cart management capabilities including adding product variants to cart, updating quantities for existing items, removing items from cart, and syncing cart state across sessions. The endpoint handles cart session lifecycle and preserves price snapshots at the time items are added.
    *
-   * **Validation:**
-   * 1. Validate pageSize is within acceptable range (1-100)
-   * 2. Validate cursor format (base64 encoded timestamp or composite key)
-   * 3. Validate date format for variantAddedSince/Before parameters
-   * 4. Reject invalid sortOrder values with 400 Bad Request
+   * The cart operations follow these business rules: when adding a variant that already exists in the cart, quantities are merged instead of creating duplicate lines; prices are captured at addition time and remain immutable even if the product price changes later; unavailable items (out of stock or deleted variants) are marked but preserved for customer review; deleted products are automatically removed from carts with customer notifications.
    *
-   * **Error Handling:**
-   * 1. Return 400 for invalid pagination parameters
-   * 2. Return 401/403 if customer is not authenticated or lacks access
-   * 3. Return 404 if referenced cart ID does not exist (when filtering by cartId)
-   * 4. Return 500 for database errors or unexpected query failures
+   * Security considerations: customers can only access and modify their own carts through authenticated sessions. The system validates variant availability and stock quantities before allowing cart modifications. Guest carts are merged with customer accounts upon login.
+   *
+   * Related API operations: GET /products retrieves product and variant information for cart additions; PATCH /orders completes checkout by converting cart items to order items and releasing reserved stock quantities.
+   *
+   * @param connection
+   * @param body Cart operations to perform: add, update quantity, remove items, or sync cart state.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Implement cart management through the following logic:
+   *
+   * 1. AUTHORIZATION:
+   *    - Verify customer authentication from session token
+   *    - Load customer record and validate not banned
+   *    - Retrieve or create cart session for customer (lazy initialization)
+   *
+   * 2. REQUEST PARSING:
+   *    - Parse cartOperations array from request body
+   *    - Validate each operation has valid type (add, updateQuantity, remove, sync)
+   *    - Validate variantId references valid ProductVariant record
+   *
+   * 3. OPERATION EXECUTION:
+   *    - ADD variant:
+   *      a. Load ProductVariant and verify isActive = true
+   *      b. Check stockQuantity > 0
+   *      c. Query existing CartItem where cart_id = current cart AND variant_id = target variant
+   *      d. If exists: update quantity = existing_quantity + new_quantity, preserve addedAt timestamp
+   *      e. If not exists: create CartItem with variant price snapshot, set addedAt to current timestamp
+   *      f. Capture price snapshot from variant.priceOverride ?? variant.product.basePrice
+   *      g. Create InventoryRecord with negative quantityChange if reserving stock
+   *
+   *    - UPDATE QUANTITY:
+   *      a. Find CartItem by cart_id and variant_id
+   *      b. Validate new quantity >= 1
+   *      c. Check variant stockQuantity >= new quantity
+   *      d. Update CartItem.quantity = new quantity
+   *      e. Update cart.updated_at to current timestamp
+   *
+   *    - REMOVE:
+   *      a. Find CartItem by cart_id and variant_id
+   *      b. Delete CartItem record
+   *      c. Update cart.updated_at to current timestamp
+   *      d. Create InventoryRecord with positive quantityChange (release reserved stock)
+   *
+   *    - SYNC:
+   *      a. Load provided cart items array
+   *      b. Compare with current cart state
+   *      c. Create/update/remove items to match provided state
+   *      d. Merge quantities for duplicate variants as per add rules
+   *
+   * 4. UNAVAILABLE ITEM HANDLING:
+   *    - Before returning response, check all CartItems
+   *    - For each item, verify variant.isActive = true
+   *    - Mark items as unavailable if variant deleted or out of stock
+   *    - Exclude unavailable items from total calculation
+   *
+   * 5. PRICE SNAPSHOT PRESERVATION:
+   *    - Store variant.price at cart item creation time
+   *    - Never update captured price even if product/variant price changes
+   *    - Display captured price in cart line items and order summaries
+   *
+   * 6. DELETED PRODUCT HANDLING:
+   *    - Query for CartItems where variant.product.isActive = false
+   *    - Remove these items automatically with customer notification
+   *    - Return warning in response payload
+   *
+   * 7. RESPONSE CONSTRUCTION:
+   *    - Return cart metadata (id, customerId, createdAt, updatedAt)
+   *    - Return cartItems with price snapshots, availability status
+   *    - Calculate and return subtotal, tax, total
+   *    - Include warnings for unavailable or deleted items
+   *
+   * 8. TRANSACTION GUARANTEES:
+   *    - Use ACID transaction for all cart modifications
+   *    - Atomic update of CartItem quantity and InventoryRecord creation
+   *    - Rollback on any validation failure or constraint violation
+   *
+   * 9. EDGE CASES:
+   *    - Empty cart: return cart with empty items array
+   *    - Duplicate add: merge quantities instead of creating duplicates
+   *    - Remove last item: keep cart record (may be reused)
+   *    - Concurrent updates: use optimistic locking on CartItem record
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async index(
+  public async manage(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IEcommerceMallCartItem.IRequest,
-  ): Promise<IPageIEcommerceMallCartItem.ISummary> {
+    body: IEcommerceMallShoppingCart.IManage,
+  ): Promise<IEcommerceMallShoppingCart.ISummary> {
     try {
       return await patchEcommerceMallCustomerCarts({
         customer,
@@ -101,38 +172,27 @@ export class EcommercemallCustomerCartsController {
   }
 
   /**
-   * Retrieve a specific shopping cart with all its line items for the authenticated customer.
+   * Retrieve a specific shopping cart by its unique identifier.
    *
-   * This endpoint returns the complete cart metadata including creation and last modification timestamps, along with all cart items. Each cart item contains the product variant reference, quantity, and the price at the time the item was added to the cart.
+   * This operation returns the complete shopping cart information including the cart metadata (ID, customer association, timestamps) and all associated cart items. Each cart item includes the product variant details, current quantity, and the unit price at the time the item was added to the cart.
    *
-   * The cart is uniquely associated with the logged-in customer account. The system automatically creates a cart when a customer first logs in. Only the cart owner or system administrators can access cart details.
+   * The cart is uniquely associated with a customer account and serves as a persistent container for products customers intend to purchase. Cart items preserve their original prices even if product prices change in the catalog, ensuring customers can checkout at the price they saw when adding items to their cart.
    *
-   * If the cart is empty (no CartItems), the response will include the cart metadata with an empty items array. The cart total is calculated client-side from CartItem subtotals.
-   *
-   * The cart's updated_at timestamp indicates when the last modification occurred. This is useful for detecting concurrent modifications in real-time scenarios.
+   * This operation is typically used when customers view their cart page, when the system merges guest carts with customer carts during login, or when calculating cart totals for display purposes.
    *
    * @param connection
-   * @param cartId Target cart's unique identifier
+   * @param cartId The unique identifier of the shopping cart to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_shopping_carts table by cart ID with customer_id filtering to ensure data isolation.
-   *
-   * 1. Validate cartId exists and belongs to the authenticated customer
-   * 2. Load all CartItems for this cart, joined with ProductVariants for display data
-   * 3. Calculate cart total by summing (variant.priceOverride or product.basePrice) × quantity
-   * 4. Return cart metadata and items with appropriate field exposure
-   * 5. Handle cart not found and unauthorized access scenarios
-   *
-   * Business Rules:
-   * - Reject if cart does not exist
-   * - Reject if cart belongs to different customer (403 Forbidden)
-   * - Exclude deleted/removed variants from cart items
-   * - Preserve original prices in cart items regardless of current product pricing
-   *
-   * Error Cases:
-   * - 404: Cart not found
-   * - 403: Cart belongs to another customer
-   * - 410: Cart was removed due to deleted products
+   * @x-autobe-specification Query ecommerce_mall_shopping_carts table for the cart with the specified cartId UUID.
+   * Join with ecommerce_mall_cart_items to retrieve all items belonging to this cart, ordered by addition timestamp.
+   * For each cart item, include the associated ProductVariant details (SKU code, option values, original price).
+   * Include Product information (name, base price) for context.
+   * Calculate and include subtotal for each item (unit price × quantity).
+   * Calculate and include total cart value (sum of all item subtotals).
+   * Return null if cart does not exist or if cart belongs to different customer (authorization check).
+   * Validate cart ownership against the authenticated customer's session before returning data.
+   * Apply data isolation rules to prevent cross-customer cart access.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":cartId")

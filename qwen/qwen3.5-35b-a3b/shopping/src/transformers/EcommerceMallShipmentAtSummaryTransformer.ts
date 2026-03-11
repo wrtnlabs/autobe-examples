@@ -1,3 +1,4 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
@@ -34,11 +35,9 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
   ): Promise<IEcommerceMallShipment.ISummary> {
     return {
       id: input.id,
-      carrier_name: input.carrier_name,
-      tracking_number: input.tracking_number,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? undefined,
+      carrierName: input.carrier_name,
+      trackingNumber: input.tracking_number,
+      createdAt: input.created_at.toISOString(),
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),

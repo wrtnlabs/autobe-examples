@@ -17,10 +17,20 @@ export async function getEcommerceMallAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAdmin> {
-  const retrieved =
-    await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
-      where: { id: props.adminId },
-      ...EcommerceMallAdminTransformer.select(),
-    });
-  return await EcommerceMallAdminTransformer.transform(retrieved);
+  if (props.admin.id !== props.adminId) {
+    const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow(
+      {
+        where: { id: props.adminId },
+        ...EcommerceMallAdminTransformer.select(),
+      },
+    );
+    if (admin.is_banned) {
+      throw new HttpException("Admin is banned", 403);
+    }
+  }
+  const result = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
+    where: { id: props.adminId },
+    ...EcommerceMallAdminTransformer.select(),
+  });
+  return await EcommerceMallAdminTransformer.transform(result);
 }

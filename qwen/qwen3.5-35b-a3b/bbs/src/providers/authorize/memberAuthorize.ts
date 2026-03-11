@@ -14,7 +14,7 @@ export async function memberAuthorize(request: {
 
   const member = await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst({
     where: {
-      user_id: payload.id,
+      id: payload.id,
     },
   });
 

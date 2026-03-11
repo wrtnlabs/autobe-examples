@@ -6,42 +6,58 @@ import typia, { tags } from "typia";
 import { IEconomicPoliticalBoardComment } from "../../../../../structures/IEconomicPoliticalBoardComment";
 
 /**
- * Create a new comment on the specified article.
+ * Create a new comment on an article to participate in the discussion.
  *
- * This operation allows authenticated members to post a comment on any article in the economic/political discussion board. The comment will be associated with the article via the articleId path parameter and the authenticated user's identity will be recorded as the author.
+ * This operation allows authenticated members to contribute to article discussions by posting comments. The comment is associated with the specified article and authored by the authenticated user. Comments support community engagement and enable users to express their opinions on published articles.
  *
- * The comment content is required and must be provided in the request body. Upon successful creation, the system will:
+ * The comment creation process validates that the target article exists and is accessible. The article must not be in a soft-deleted state. The comment content is required and must not be empty. Authentication is enforced - only registered members can create comments; guests cannot post content.
  *
- * 1. Verify the target article exists and is accessible
- * 2. Record the comment with the authenticated user's ID as the author
- * 3. Set the creation timestamp (created_at) to the current time
- * 4. Initialize the update timestamp (updated_at) to the same value
- * 5. Initialize deleted_at to null (active comment)
- * 6. Make the comment immediately visible in the article's comment list
+ * Comments are displayed in chronological order (oldest first) when viewing an article's discussion. Upon successful creation, the comment becomes immediately visible to all users viewing the article, and the article's comment count is incremented to reflect the new discussion contribution.
  *
- * Only authenticated members can create comments. Guests viewing articles can read existing comments but cannot create new ones. If the specified article does not exist, the request will be rejected with an appropriate error.
- *
- * The comment will be included in the article's comment listing, which displays comments in chronological order (oldest first) as defined in the comment display rules.
+ * The system maintains single-level comments without nested replies. Each comment is a top-level discussion entry that all users can view but only the author can edit or delete.
  *
  * @param props.connection
- * @param props.articleId UUID of the article to comment on
- * @param props.body Comment creation data containing the comment content
+ * @param props.articleId The unique identifier of the article to comment on
+ * @param props.body Comment creation data with required content field
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract articleId from path parameters
- * 2. Authenticate the request to obtain the current user's ID (author_id)
- * 3. Query economic_political_board_articles table to verify article exists and is not soft-deleted (deleted_at IS NULL)
- * 4. Validate that request body contains required 'content' field with non-empty string
- * 5. Generate a new UUID for the comment ID
- * 6. Insert record into economic_political_board_comments with:
- *    - id: new UUID
- *    - author_id: authenticated user's ID
- *    - article_id: path parameter value
- *    - content: request body content
- *    - created_at: current timestamp
- *    - updated_at: current timestamp
- *    - deleted_at: null
- * 7. Return the created comment object with all fields
+ * @x-autobe-specification Create a new comment record in the economic_political_board_comments table.
+ *
+ * Business Logic:
+ * 1. Extract articleId from path parameter (UUID format)
+ * 2. Validate the article exists by querying economic_political_board_articles
+ * 3. Validate the article is not soft-deleted (deleted_at is NULL)
+ * 4. If article not found or deleted, return 404 Not Found
+ * 5. Extract authentication context from request headers (JWT token)
+ * 6. Verify user is authenticated (member role, not banned)
+ * 7. If user is banned, return 401 Unauthorized with ban status
+ * 8. If user not authenticated, return 401 Unauthorized
+ * 9. Validate request body: extract and validate 'content' field
+ * 10. If content is empty or null, return 400 Bad Request with validation error
+ * 11. Insert new record into economic_political_board_comments:
+ *     - id: Generate new UUID
+ *     - author_id: From authenticated user's ID
+ *     - article_id: From path parameter
+ *     - content: From request body
+ *     - created_at: Current UTC timestamp
+ *     - updated_at: Current UTC timestamp
+ *     - deleted_at: NULL (active comment)
+ * 12. Increment article's comment count (if supported by schema)
+ * 13. Return the created comment with all fields (201 Created)
+ * 14. Set Location header to /articles/{articleId}/comments/{commentId}
+ *
+ * Validation Rules:
+ * - articleId must be valid UUID format
+ * - content must be non-empty string (length > 0)
+ * - User must be authenticated (JWT token present and valid)
+ * - User account must not be banned
+ * - Article must exist and not be soft-deleted
+ *
+ * Error Responses:
+ * - 401 Unauthorized: User not authenticated or session expired
+ * - 403 Forbidden: User account is banned
+ * - 404 Not Found: Article does not exist or is deleted
+ * - 400 Bad Request: Validation failed (empty content, invalid UUID format)
  * @path /economicPoliticalBoard/member/articles/:articleId/comments
  * @accessor api.functional.economicPoliticalBoard.member.articles.comments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -71,12 +87,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * UUID of the article to comment on
+     * The unique identifier of the article to comment on
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * Comment creation data containing the comment content
+     * Comment creation data with required content field
      */
     body: IEconomicPoliticalBoardComment.ICreate;
   };
@@ -127,72 +143,43 @@ export namespace create {
 }
 
 /**
- * Update an existing comment on an article with new content.
+ * Update an existing comment's content within an article discussion.
  *
- * This operation allows the comment author to modify their own comment content. The authenticated user must be the original author of the comment to perform this operation. The system validates that the comment exists on the specified article and belongs to the requesting user before applying changes.
+ * This operation allows the comment author or an administrator to modify the text content of a comment that was previously posted on an article. The operation validates that the requesting user either owns the comment or has administrative privileges before allowing the update.
  *
- * The operation enforces a time-based edit window - comments can only be edited within a specific period after creation. After this window expires, the comment becomes read-only and cannot be modified through this endpoint. The system automatically updates the updatedAt timestamp when the comment is successfully modified.
+ * The comment's content is updated while preserving the original creation timestamp. The updatedAt timestamp is refreshed to reflect when the modification occurred. Only the content field can be updated; other fields like authorId, articleId, and createdAt remain immutable.
  *
- * Security Considerations:
- * - Only the comment author can update their own comment
- * - Authentication is required (member role)
- * - The article must exist and contain the comment
- * - If the user is banned, they cannot modify comments
+ * If the associated article does not exist, the system SHALL reject the update request. When the comment owner is a banned user, they may still edit their historical comments as noted in the comment listing rules.
  *
- * Validation Rules:
- * - Comment content must not be empty
- * - Content length must be within system limits
- * - Comment must exist on the specified article
- * - Comment must belong to the authenticated user
- * - Edit window must not have expired
- * - Content must pass security filtering (no prohibited characters)
- *
- * Related Operations:
- * - GET /articles/{articleId}/comments/{commentId} to retrieve comment before editing
- * - DELETE /articles/{articleId}/comments/{commentId} to remove the comment
+ * The operation is designed to be idempotent - calling it multiple times with the same content will produce the same result.
  *
  * @param props.connection
- * @param props.articleId The unique identifier of the article containing this comment.
- * @param props.commentId The unique identifier of the comment to update.
- * @param props.body Comment update data containing the new content.
+ * @param props.articleId The unique identifier of the article containing this comment
+ * @param props.commentId The unique identifier of the comment to update
+ * @param props.body Update data for the comment
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PUT operation for comment update with the following logic:
- *
- * 1. Extract path parameters: articleId (UUID), commentId (UUID)
- *
- * 2. Validate authentication: Ensure user is authenticated (member or admin role). If guest, return 401 Unauthorized.
- *
- * 3. Verify comment ownership:
- *    - Query economic_political_board_comments for the specific comment
- *    - Check if comment.authorId equals the authenticated user's ID
- *    - If not owner, return 403 Forbidden
- *
- * 4. Validate comment exists on article:
- *    - Ensure comment.articleId matches the path parameter articleId
- *    - If mismatch, return 404 Not Found
- *
- * 5. Verify edit window:
- *    - Calculate time difference between current time and comment.createdAt
- *    - If exceeded time window (e.g., 60 minutes), return 409 Conflict
- *
- * 6. Check user ban status:
- *    - Verify authenticated user is not banned (isBanned = false)
- *    - If banned, return 403 Forbidden
- *
- * 7. Validate request body:
- *    - Ensure content field is provided and not empty
- *    - Validate content length against business rules (min 1, max 10000 characters)
- *    - Sanitize content for security (remove prohibited patterns)
- *
- * 8. Update comment record:
- *    - Set content field to new value
+ * @x-autobe-specification 1. Verify the article exists in economic_political_board_articles table
+ * 2. Verify the comment exists in economic_political_board_comments table and belongs to the specified article
+ * 3. Check authorization:
+ *    - If comment.authorId equals current user's userId, allow update
+ *    - If current user has admin role, allow update
+ *    - Otherwise, return 403 Forbidden
+ * 4. Validate request body:
+ *    - content field is required
+ *    - content must not be empty string
+ *    - content must not exceed maximum text length (typically 10000 characters)
+ * 5. Update the comment record:
+ *    - Set content to the provided value
  *    - Set updatedAt to current timestamp
- *    - Execute database transaction
+ * 6. Atomically update the comment as per transaction boundary rules
+ * 7. Return the updated comment with all fields
  *
- * 9. Return updated comment:
- *    - Return full IComment with updated content and timestamps
- *    - Include author's display name via profile join
+ * Edge cases:
+ * - Comment was already deleted by admin: return 404
+ * - Article was deleted: return 404
+ * - Requesting user is banned: allow if they own the comment, reject otherwise
+ * - Concurrent modification: use optimistic locking if available
  * @path /economicPoliticalBoard/member/articles/:articleId/comments/:commentId
  * @accessor api.functional.economicPoliticalBoard.member.articles.comments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -222,17 +209,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The unique identifier of the article containing this comment.
+     * The unique identifier of the article containing this comment
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * The unique identifier of the comment to update.
+     * The unique identifier of the comment to update
      */
     commentId: string & tags.Format<"uuid">;
 
     /**
-     * Comment update data containing the new content.
+     * Update data for the comment
      */
     body: IEconomicPoliticalBoardComment.IUpdate;
   };
@@ -284,60 +271,48 @@ export namespace update {
 }
 
 /**
- * Delete a specific comment from an article. This operation removes the comment from the discussion thread by marking it as deleted (soft deletion). Only the original comment author can delete their own comment.
+ * Delete a comment from an article.
+ *
+ * This operation removes a comment from the discussion board. The comment will be permanently deleted and cannot be recovered.
+ *
+ * **Authorization Requirements**:
+ * - Comment authors can delete their own comments
+ * - Administrators can delete any comment regardless of author
+ *
+ * **Business Rules**:
+ * - The system validates that the comment belongs to the specified article
+ * - The system verifies the requesting user has delete permission (owner or admin)
+ * - If the comment does not exist, the system rejects the request
+ * - If the user is not the comment author and not an admin, the system rejects the request
+ *
+ * **Related Operations**:
+ * - `GET /articles/{articleId}/comments` - List all comments on an article
+ * - `POST /comments` - Create a new comment
+ * - `PUT /comments/{commentId}` - Update an existing comment
+ *
+ * **Error Handling**:
+ * - 404 Not Found: If the article or comment does not exist
+ * - 403 Forbidden: If the user is not the comment author and not an administrator
+ * - 401 Unauthorized: If the user is not authenticated
  *
  * @param props.connection
- * @param props.articleId Parent article's ID that contains this comment
- * @param props.commentId Target comment's ID to delete
+ * @param props.articleId The unique identifier of the article containing the comment
+ * @param props.commentId The unique identifier of the comment to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Execute soft deletion of the comment by setting deleted_at to current timestamp.
+ * @x-autobe-specification 1. Verify the article exists by querying economic_political_board_articles where id = articleId
+ * 2. Verify the comment exists by querying economic_political_board_comments where id = commentId AND articleId matches the provided articleId
+ * 3. Check authentication: require valid JWT token from authenticated user
+ * 4. Check authorization:
+ *    - If request.user.id == comment.authorId, allow deletion (owner)
+ *    - If request.user has admin role, allow deletion (admin)
+ *    - Otherwise, reject with 403 Forbidden
+ * 5. Delete the comment record from economic_political_board_comments table
+ * 6. Update the article's commentCount by decrementing by 1 (query economic_political_board_articles and update)
+ * 7. Return 204 No Content
  *
- * Preconditions:
- * 1. Verify comment exists in economic_political_board_comments table
- * 2. Verify comment belongs to the specified article (article_id matches)
- * 3. Verify requesting user is the comment author (author_id matches authenticated user's ID)
- * 4. Verify comment is not already deleted (deleted_at is NULL)
- *
- * Business Logic:
- * - Only the comment author can delete their own comment
- * - If user attempts to delete another user's comment, reject with 403 Forbidden
- * - If comment does not exist, reject with 404 Not Found
- * - If comment is already deleted, reject with 410 Gone
- * - If article ID does not match the comment's article, reject with 400 Bad Request
- *
- * Soft Deletion Process:
- * - Set deleted_at to current timestamp (UTC)
- * - Keep comment data intact for audit trail
- * - Update updated_at timestamp
- * - Delete is permanent in terms of API visibility (not recoverable through normal operations)
- *
- * Database Operation:
- * ```sql
- * UPDATE economic_political_board_comments
- * SET deleted_at = NOW(), updated_at = NOW()
- * WHERE id = :commentId
- *   AND article_id = :articleId
- *   AND author_id = :userId
- *   AND deleted_at IS NULL;
- * ```
- *
- * Error Handling:
- * - 401 Unauthorized: No valid authentication token
- * - 403 Forbidden: Comment does not belong to authenticated user
- * - 404 Not Found: Comment or article does not exist
- * - 410 Gone: Comment is already deleted
- *
- * Related Operations:
- * - GET /articles/{articleId}/comments - List all non-deleted comments on article
- * - PUT /comments/{commentId} - Update own comment
- * - DELETE /articles/{articleId}/comments/{commentId} - Delete comment (this operation)
- *
- * Security Notes:
- * - Authentication required (member or admin role)
- * - No authorization for guests to delete comments
- * - Comment authorship is verified against authenticated user ID
- * - Cascading delete rules ensure data integrity on parent entity deletion
+ * Database schema reference:
+ * - economic_political_board_comments: id (int, primary), content (text), authorId (int), articleId (int), createdAt (datetime), updatedAt (datetime)
  * @path /economicPoliticalBoard/member/articles/:articleId/comments/:commentId
  * @accessor api.functional.economicPoliticalBoard.member.articles.comments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -366,12 +341,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Parent article's ID that contains this comment
+     * The unique identifier of the article containing the comment
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * Target comment's ID to delete
+     * The unique identifier of the comment to delete
      */
     commentId: string & tags.Format<"uuid">;
   };

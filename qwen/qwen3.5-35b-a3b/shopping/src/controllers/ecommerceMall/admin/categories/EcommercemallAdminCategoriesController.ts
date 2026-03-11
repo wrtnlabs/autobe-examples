@@ -12,29 +12,39 @@ import { putEcommerceMallAdminCategoriesCategoryId } from "../../../../providers
 @Controller("/ecommerceMall/admin/categories")
 export class EcommercemallAdminCategoriesController {
   /**
-   * Create a new product category in the hierarchical catalog structure managed by administrators.
+   * Create a new category in the product catalog's hierarchical structure.
    *
-   * This endpoint allows authorized administrators to create top-level categories or subcategories within the product organization system. Categories serve as the primary organizational structure for products, enabling customers to browse and discover items through a tree-based hierarchy.
+   * This endpoint allows administrators to create new categories or subcategories for organizing products. Categories can be arranged in a tree structure with one level of nesting (parent categories with subcategories). Each category must have a unique name within its parent level, and the name is required while the description is optional.
    *
-   * The category creation requires a unique name within its parent level (or at root if no parent is specified). Optionally, administrators can specify a parent category to create a subcategory (one level of nesting only as per business rules). The system automatically manages the is_leaf status based on whether children are added later.
+   * When creating a subcategory, the selected parent category must be a top-level category (not already a subcategory). The system enforces a maximum of one level of nesting to maintain a flat, customer-friendly browsing experience. Categories created through this endpoint are immediately active and available for product assignment.
    *
-   * Upon successful creation, the system records the timestamp of creation and assigns a unique UUID identifier. The new category becomes immediately available for product assignment and customer browsing.
+   * The operation requires administrator privileges. Only users with admin role can execute this endpoint. Non-administrator users will receive an authorization error when attempting to create categories.
    *
    * @param connection
-   * @param body Category creation data with required name and optional fields for description, parent category, and leaf status.
+   * @param body Category creation data including name, optional description, and optional parent category reference
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Verify the requesting user has admin actor privileges (regular admin or super admin grade). Reject with 403 Forbidden if not authorized.
-   * 2. Validate request body: name field is required and non-empty string, max 500 characters. description is optional but if provided, validate it's a string. parent_category_id is optional UUID that must reference an existing category if provided.
-   * 3. Check parent_category constraint: if parent_category_id is provided, validate the parent category exists in ecommerce_mall_categories table, is not already a subcategory (parent_category_id is null required), and has not been soft-deleted (deleted_at is null).
-   * 4. Enforce nesting limit: verify the parent category is not itself a subcategory (has null parent_category_id). Reject with 400 error: 'Subcategories can only be one level deep. Please select a parent category without subcategories.' if parent is a subcategory.
-   * 5. Validate name uniqueness: query ecommerce_mall_categories with WHERE name = [request name] AND parent_category_id = [request parent_category_id OR NULL]. If a match exists, reject with 400 error: 'A category with this name already exists under the same parent. Please choose a different name.'
-   * 6. Determine is_leaf value: initially set to true (new categories start as leaves until products/subcategories are added). This will be automatically updated via database triggers or service logic when children are created.
-   * 7. Generate new UUID for id field using secure random UUID v4 generation.
-   * 8. Set created_at and updated_at to current timestamp (UTC).
-   * 9. Insert new record into ecommerce_mall_categories table with all validated fields.
-   * 10. Return the newly created category with full details including id, parent_category_id, name, description, is_leaf, created_at, and updated_at.
-   * 11. Handle concurrent creation conflicts: use database UNIQUE constraint on (name, parent_category_id) to prevent duplicate names at same level. If unique constraint violation occurs, return 409 Conflict with appropriate error message.
+   * @x-autobe-specification Create a new category by inserting a record into ecommerce_mall_categories table.
+   *
+   * 1. Validate admin actor authorization - reject if user is not admin
+   * 2. Validate required fields: name must be provided (non-empty)
+   * 3. Check name uniqueness: query for existing category with same name and parent_category_id (or both null for root categories)
+   * 4. Validate parent category if provided:
+   *    - Query ecommerce_mall_categories to verify parent_category_id exists
+   *    - Check that parent category is not already a subcategory (parent_category_id must be null)
+   *    - Reject with error if attempting to create subcategory of subcategory
+   * 5. Generate UUID for id field
+   * 6. Set current timestamp for created_at and updated_at
+   * 7. Set is_leaf to false (parent category that may contain children)
+   * 8. Insert record into ecommerce_mall_categories table
+   * 9. Return created category with all fields including id, timestamps, and calculated is_leaf value
+   *
+   * Error handling:
+   * - AuthorizationError if user is not administrator
+   * - Validation error if name is missing or empty
+   * - Validation error if name already exists at same parent level
+   * - Validation error if parent category does not exist
+   * - Validation error if parent category is already a subcategory
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -56,28 +66,57 @@ export class EcommercemallAdminCategoriesController {
   }
 
   /**
-   * Update an existing category's name and description.
+   * Update an existing category's properties including name, description, parent category assignment, and leaf status.
    *
-   * This operation allows administrators to modify category information including the category name and optional description. When a category is updated, THE system SHALL preserve all products assigned to that category and record the change as a snapshot for audit purposes.
+   * This operation allows administrators to modify category information in the product catalog hierarchy. When updating a category, the system validates that the new name is unique within the same parent level (or at root if no parent), ensures subcategory nesting limits are respected (max one level deep), and preserves the category's products and history.
    *
-   * The category name must remain unique within the same parent level (or at root if no parent). THE system SHALL validate this constraint and reject updates that would create name conflicts.
+   * The operation performs full validation before applying changes:
+   * - Category name must be unique within its parent level
+   * - Parent category assignment must not exceed nesting limits (subcategories cannot be children of other subcategories)
+   * - If changing parent category, products within this category will remain with the new parent
+   * - Category updates are recorded as snapshots for audit purposes
    *
-   * Only administrators have permission to edit categories. Regular customers and sellers cannot modify category structures. Updated categories immediately reflect across the platform with changed display information.
+   * Security: Only administrators with appropriate privileges can execute this operation. The category must exist and must not be soft-deleted.
+   *
+   * Related Operations:
+   * - GET /categories/{categoryId} - Retrieve category details before editing
+   * - DELETE /categories/{categoryId} - Remove a category (moves products to uncategorized)
+   * - GET /categories - Browse category list with hierarchical display
    *
    * @param connection
-   * @param categoryId UUID of the category to update
-   * @param body Category fields to update. Name must be unique within the same parent category level. Description is optional.
+   * @param categoryId The unique identifier of the category to update.
+   * @param body Category properties to update. All fields are optional, but at least one must be provided.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate that the requesting user has admin role
-   * 2. Fetch the category by categoryId UUID
-   * 3. Verify category is not soft-deleted (deleted_at is null)
-   * 4. Apply update to name and description fields from request body
-   * 5. Check for name uniqueness constraint: name + parent_category_id must be unique across all non-deleted categories
-   * 6. If name would conflict with existing category at same parent level, return 409 Conflict
-   * 7. Update the updated_at timestamp to current time
-   * 8. Create a snapshot record in ecommerce_mall_category_snapshots table capturing old and new values
-   * 9. Return the complete updated category object with all fields
+   * @x-autobe-specification 1. Extract categoryId path parameter and validate UUID format
+   * 2. Query ecommerce_mall_categories table for record with matching id
+   * 3. Verify category exists and deleted_at is null (not soft-deleted)
+   * 4. Verify requesting user has admin role (check admin actor privilege)
+   * 5. Validate request body:
+   *    - name: string, 1-500 characters, required
+   *    - description: string, optional, null allowed
+   *    - parent_category_id: UUID, optional
+   *    - is_leaf: boolean, optional
+   * 6. If name provided, check uniqueness:
+   *    - Query ecommerce_mall_categories WHERE name = newName AND parent_category_id = current.parent_category_id
+   *    - Exclude current category from uniqueness check
+   *    - If conflict exists, return 409 Conflict error
+   * 7. If parent_category_id provided and differs from current:
+   *    - Validate parent is not a subcategory (parent.parent_category_id must be null)
+   *    - If parent is a subcategory, return 400 Bad Request error
+   *    - If current category is itself a child of the intended new parent, return 400 error (circular)
+   * 8. Apply updates:
+   *    - Set name, description, parent_category_id, is_leaf from request
+   *    - Set updated_at to current timestamp
+   * 9. Create snapshot record in ecommerce_mall_category_snapshots:
+   *    - recordType: 'ecommerce_mall_categories'
+   *    - recordId: categoryId
+   *    - oldValues: {name, description, parent_category_id, is_leaf} before update
+   *    - newValues: {name, description, parent_category_id, is_leaf} after update
+   *    - changedBy: admin user identifier
+   *    - changedAt: current timestamp
+   * 10. Commit database transaction
+   * 11. Return updated category with full details
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":categoryId")
@@ -102,63 +141,51 @@ export class EcommercemallAdminCategoriesController {
   }
 
   /**
-   * Soft delete a category from the product catalog hierarchy.
+   * Permanently remove a category from the ecommerce platform's product catalog.
    *
-   * This operation marks a category as deleted (soft delete) rather than permanently removing it from the database. The category record is preserved with a deleted_at timestamp, maintaining the audit trail while removing it from active catalog views. Only administrators have permission to execute category deletion. The operation enforces the one-level nesting constraint by preventing deletion of categories with subcategories - all subcategories must be deleted first.
+   * This operation is restricted to administrator users only. It completely deletes the specified category from the system, removing all category metadata and structural relationships.
    *
-   * When a category is deleted, all products directly assigned to that category are moved to uncategorized status. Products remain intact with all their data (name, description, variants, images, pricing) preserved. This ensures business continuity and prevents data loss during catalog restructuring.
+   * When a category is deleted, all products currently assigned to that category are automatically moved to uncategorized status. This ensures products remain accessible and searchable even after their category is removed. The products retain all their data including name, description, variants, images, and pricing.
    *
-   * The system creates an immutable snapshot of the deletion event, recording the category state before deletion, the administrator who performed the deletion, and the timestamp. This snapshot supports audit trails and dispute resolution.
+   * Before deletion, the system validates that the category has no subcategories. If subcategories exist, the deletion is rejected to prevent orphaned hierarchy data. This safeguard ensures administrators explicitly handle subcategory reassignment before category removal.
    *
-   * **Authorization**: Admin actor only (regular admin and super admin grades). Non-admin users attempting this operation will receive 401 Unauthorized.
+   * A snapshot of the category is created and preserved for administrative audit purposes. The snapshot includes the category name, description, parent reference, leaf status, creation timestamp, and deletion timestamp. This historical record supports compliance tracking and dispute resolution.
    *
-   * **Dependencies**: Must verify category exists and has no subcategories before deletion. Related operations:
-   * - GET /ecommerceMall/admin/categories/{categoryId}: Pre-execute to verify category exists and check subcategory count
-   * - PATCH /ecommerceMall/admin/categories/{categoryId}: Use for editing category instead of deletion when changes needed
-   * - DELETE /ecommerceMall/admin/categories/{subcategoryId}: Must execute for all subcategories first if category has children
+   * The deletion operation is permanent. Deleted categories cannot be restored or recovered by any user type, including administrators. If a similar category is needed, it must be recreated manually with new identifiers.
    *
-   * **Cascading Effects**: Products moved to uncategorized (category_id = NULL), snapshot created, category marked as deleted (deleted_at timestamp set). Deleted categories cannot be recovered per requirements.
-   *
-   * **Soft Delete Semantics**: The category record is NOT removed from the database. Instead, the deleted_at field is set to the current timestamp. This preserves audit data while excluding the category from active catalog views. The deleted_at column exists in ecommerce_mall_categories table per schema definition.
+   * Security considerations: Only users with administrator privileges can execute this operation. Authentication is enforced via JWT session tokens. The operation is logged for security monitoring and compliance auditing.
    *
    * @param connection
-   * @param categoryId UUID identifier of the category to delete. The category must not have any subcategories assigned to it.
+   * @param categoryId The unique identifier of the category to delete.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Verify administrator authorization via request context
-   * 2. Validate categoryId is a valid UUID format
-   * 3. Query ecommerce_mall_categories to verify category exists
-   * 4. Check if category has any subcategories (parentCategory_id = categoryId)
-   *    - If subcategories exist: return 409 Conflict with error message listing subcategory count
-   * 5. Query ecommerce_mall_products for products directly assigned to this category
-   *    - Count affected products for snapshot
-   * 6. Update all affected products: set category_id to NULL (uncategorized status)
-   * 7. Create ecommerce_mall_category_snapshot with:
-   *    - category_id: the deleted category ID
-   *    - name_before: category name
-   *    - description_before: category description
-   *    - parent_category_id_before: parent category reference (if any)
-   *    - is_leaf_before: category is_leaf flag
-   *    - name_after: null
-   *    - description_after: null
-   *    - parent_category_id_after: null
-   *    - is_leaf_after: null
-   *    - changed_by: administrator ID from request context
-   *    - changed_at: current timestamp
-   * 8. Delete the category record from ecommerce_mall_categories
-   * 9. Return 204 No Content (standard DELETE response)
+   * @x-autobe-specification 1. Authenticate and authorize the request - verify user has admin role.
+   * 2. Validate category ID format - must be valid UUID.
+   * 3. Query ecommerce_mall_categories table for the category with given ID.
+   * 4. If category not found, return 404 Not Found with error message.
+   * 5. Check if category.deleted_at is not null - return 400 error if already deleted.
+   * 6. Query ecommerce_mall_products table to count products with this category_id.
+   * 7. If product count > 0, return 400 Bad Request with error listing the number of products that must be reassigned first.
+   * 8. Create category snapshot record in ecommerce_mall_category_snapshots table:
+   *    - Copy current category values (name, description, parent_category_id, is_leaf)
+   *    - Record administrator who performed deletion (from JWT payload)
+   *    - Set deleted_at timestamp
+   *    - Record products affected for audit trail
+   * 9. Soft-delete the category: set deleted_at to current timestamp (or hard delete based on business requirement - per requirements, category is permanently removed).
+   * 10. If hard delete: physically remove the category record from ecommerce_mall_categories table.
+   * 11. Update all products that referenced this category to set category_id to NULL (uncategorized).
+   * 12. Return 200 OK with no body (operation completed successfully).
+   * 13. Log the deletion operation in admin audit logs if available.
    *
-   * **Error Handling**:
-   * - 401 Unauthorized: User is not an administrator
+   * Error cases:
+   * - 401 Unauthorized: Admin authentication required
+   * - 403 Forbidden: User lacks admin privileges
    * - 404 Not Found: Category does not exist
-   * - 409 Conflict: Category has subcategories that must be deleted first
-   * - 400 Bad Request: Invalid categoryId format
+   * - 400 Bad Request: Category has products assigned, or already deleted
    *
-   * **Business Rules**:
-   * - One-level nesting only: categories cannot have sub-subcategories
-   * - Products are preserved but reassigned to uncategorized
-   * - Snapshot creation is mandatory for audit trail
-   * - Deletion is permanent (no soft delete, no recovery)
+   * Performance notes:
+   * - Use database transaction to ensure atomic snapshot creation and category deletion.
+   * - Index on category_id in products table for efficient product reassignment query.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":categoryId")

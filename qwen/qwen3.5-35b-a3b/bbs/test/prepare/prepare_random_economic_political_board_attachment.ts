@@ -10,7 +10,9 @@ export function prepare_random_economic_political_board_attachment(
 ): IEconomicPoliticalBoardAttachment.ICreate {
   return {
     file_url: input?.file_url ?? typia.random<string & tags.Format<"uri">>(),
-    file_name: input?.file_name ?? RandomGenerator.alphaNumeric(12) + ".pdf",
+    file_name:
+      input?.file_name ??
+      `${RandomGenerator.alphaNumeric(8)}.${RandomGenerator.pick(["pdf", "png", "jpg", "gif", "doc", "xlsx"] as const)}`,
     file_type:
       input?.file_type ?? RandomGenerator.pick(["image", "file"] as const),
   };

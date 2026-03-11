@@ -13,9 +13,10 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppAuthAdminLogin(props: {
+  ip: string;
   body: ITodoAppAdminSession.ILogin;
 }): Promise<ITodoAppAdminSession.IAuthorized> {
-  // 1. Find admin with explicit password_hash selection
+  // Find admin with password_hash
   const admin = await MyGlobal.prisma.todo_app_admins.findFirst({
     where: {
       email: props.body.email,
@@ -24,71 +25,93 @@ export async function postTodoAppAuthAdminLogin(props: {
     select: {
       id: true,
       email: true,
+      created_at: true,
+      updated_at: true,
       password_hash: true,
     },
   });
-  if (!admin) throw new HttpException("Invalid credentials", 401);
-  // 2. Verify password
+  if (!admin) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 3. Calculate expiration times as string & Format<'date-time'>
-  const now = new Date();
-  const accessExpiresTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpiresTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const accessExpires = toISOStringSafe(accessExpiresTime);
-  const refreshExpires = toISOStringSafe(refreshExpiresTime);
-  // 4. Generate JWT tokens using toISOStringSafe for proper datetime format
-  const tokenPayload = {
-    type: "admin" as const,
-    id: admin.id as string & tags.Format<"uuid">,
-    session_id: v4() as string & tags.Format<"uuid">,
-    created_at: toISOStringSafe(now) as string & tags.Format<"date-time">,
-  };
-  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refresh = jwt.sign(
-    {
-      ...tokenPayload,
-      tokenType: "refresh" as const,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 5. Create session with all fields including tokens in one operation
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // Calculate token expiration times
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Create new session
   const session = await MyGlobal.prisma.todo_app_admin_sessions.create({
     data: {
-      id: tokenPayload.session_id,
-      admin_id: admin.id as string & tags.Format<"uuid">,
-      ip: props.body.ip,
-      href: props.body.href,
+      id: v4() as string & tags.Format<"uuid">,
+      admin_id: admin.id,
+      ip: props.body.ip ?? props.ip,
       referrer: props.body.referrer ?? null,
-      created_at: toISOStringSafe(now) as string & tags.Format<"date-time">,
-      updated_at: toISOStringSafe(now) as string & tags.Format<"date-time">,
-      expires_at: accessExpires as string & tags.Format<"date-time">,
+      href: props.body.href ?? null,
+      access_token: "",
+      refresh_token: "",
+      expires_at: toISOStringSafe(accessExpires),
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
       deleted_at: null,
-      access_token: access,
-      refresh_token: refresh,
     },
     select: {
       id: true,
+      admin_id: true,
+      ip: true,
+      referrer: true,
+      href: true,
       access_token: true,
       refresh_token: true,
+      expires_at: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  // 6. Return authorized response with properly typed values
-  return {
-    id: admin.id as string & tags.Format<"uuid">,
-    email: admin.email as string & tags.Format<"email">,
-    token: {
-      access,
-      refresh,
-      expired_at: accessExpires as string & tags.Format<"date-time">,
-      refreshable_until: refreshExpires as string & tags.Format<"date-time">,
+  // Generate JWT tokens
+  const accessPayload = {
+    type: "admin" as const,
+    id: admin.id,
+    session_id: session.id,
+    created_at: toISOStringSafe(new Date()),
+  };
+  const refreshPayload = {
+    type: "admin" as const,
+    id: admin.id,
+    session_id: session.id,
+    created_at: toISOStringSafe(new Date()),
+  };
+  // Sign JWT tokens
+  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+  });
+  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "7d",
+  });
+  // Update session with tokens
+  await MyGlobal.prisma.todo_app_admin_sessions.update({
+    where: { id: session.id },
+    data: {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      updated_at: toISOStringSafe(new Date()),
     },
+  });
+  // Return IAuthorized
+  return {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: toISOStringSafe(session.expires_at),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(session.expires_at),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    } satisfies IAuthorizationToken,
   } satisfies ITodoAppAdminSession.IAuthorized;
 }

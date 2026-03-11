@@ -22,7 +22,9 @@ export async function sellerAuthorize(request: {
   });
 
   if (seller === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException(
+      "You're not enrolled, banned, or not approved yet.",
+    );
   }
 
   return payload;

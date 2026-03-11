@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,85 +19,61 @@ export async function putDiscussionBoardAdminMaintenanceSchedulesScheduleId(prop
   scheduleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardMaintenanceSchedule.IUpdate;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
-  // Validate schedule exists
+  // Validate schedule exists and is active
   const existingSchedule =
-    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
-      {
-        where: { id: props.scheduleId },
+    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUnique({
+      where: {
+        id: props.scheduleId,
+        deleted_at: null,
       },
-    );
-  // Check if schedule can be updated
-  if (
-    existingSchedule.status === "completed" ||
-    existingSchedule.status === "cancelled"
-  ) {
-    throw new HttpException(
-      "Cannot update completed or cancelled maintenance schedule",
-      400,
-    );
+    });
+  if (!existingSchedule) {
+    throw new HttpException("Maintenance schedule not found", 404);
   }
-  // Validate timing constraints
-  if (props.body.scheduled_start_time && props.body.scheduled_end_time) {
-    const startTime = new Date(props.body.scheduled_start_time);
-    const endTime = new Date(props.body.scheduled_end_time);
-    if (endTime <= startTime) {
+  // Validate date range if both dates are provided
+  if (props.body.planned_start_at && props.body.planned_end_at) {
+    const start = props.body.planned_start_at;
+    const end = props.body.planned_end_at;
+    if (start >= end) {
       throw new HttpException(
-        "Scheduled end time must be after scheduled start time",
+        "Planned start time must be before planned end time",
         400,
       );
     }
   }
-  // Build update data
-  const currentTime = new Date().toISOString();
-  const updateData: Record<string, any> = {
-    updated_at: currentTime,
+  // Build type-safe update data
+  const updateData: Prisma.discussion_board_maintenance_schedulesUpdateInput = {
+    updated_at: new Date().toISOString(),
   };
-  // Handle regular field updates
-  if (props.body.maintenance_type !== undefined)
+  if (props.body.maintenance_type !== undefined) {
     updateData.maintenance_type = props.body.maintenance_type;
-  if (props.body.description !== undefined)
+  }
+  if (props.body.title !== undefined) {
+    updateData.title = props.body.title;
+  }
+  if (props.body.description !== undefined) {
     updateData.description = props.body.description;
-  if (props.body.scheduled_start_time !== undefined) {
-    updateData.scheduled_start_time = new Date(props.body.scheduled_start_time);
   }
-  if (props.body.scheduled_end_time !== undefined) {
-    updateData.scheduled_end_time = new Date(props.body.scheduled_end_time);
+  if (props.body.planned_start_at !== undefined) {
+    updateData.planned_start_at = props.body.planned_start_at;
   }
-  if (props.body.impact_level !== undefined)
-    updateData.impact_level = props.body.impact_level;
-  if (props.body.notes !== undefined) updateData.notes = props.body.notes;
-  // Handle status transitions with proper timing
-  if (props.body.status !== undefined) {
-    updateData.status = props.body.status;
-    if (
-      props.body.status === "in-progress" &&
-      existingSchedule.status !== "in-progress"
-    ) {
-      updateData.actual_start_time = currentTime;
-      updateData.performed_by_admin_id = props.admin.id;
-    } else if (
-      props.body.status === "completed" &&
-      existingSchedule.status !== "completed"
-    ) {
-      if (!existingSchedule.actual_start_time) {
-        updateData.actual_start_time = currentTime;
-      }
-      updateData.actual_end_time = currentTime;
-      updateData.performed_by_admin_id = props.admin.id;
-    }
+  if (props.body.planned_end_at !== undefined) {
+    updateData.planned_end_at = props.body.planned_end_at;
   }
-  // Perform update
-  await MyGlobal.prisma.discussion_board_maintenance_schedules.update({
-    where: { id: props.scheduleId },
-    data: updateData,
-  });
-  // Retrieve updated record with relations
-  const updated =
-    await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
-      {
-        where: { id: props.scheduleId },
-        ...DiscussionBoardMaintenanceScheduleTransformer.select(),
-      },
-    );
-  return await DiscussionBoardMaintenanceScheduleTransformer.transform(updated);
+  if (props.body.actual_start_at !== undefined) {
+    updateData.actual_start_at = props.body.actual_start_at;
+  }
+  if (props.body.actual_end_at !== undefined) {
+    updateData.actual_end_at = props.body.actual_end_at;
+  }
+  // Update the schedule
+  const updatedSchedule =
+    await MyGlobal.prisma.discussion_board_maintenance_schedules.update({
+      where: { id: props.scheduleId },
+      data: updateData,
+      ...DiscussionBoardMaintenanceScheduleTransformer.select(),
+    });
+  return await DiscussionBoardMaintenanceScheduleTransformer.transform(
+    updatedSchedule,
+  );
 }

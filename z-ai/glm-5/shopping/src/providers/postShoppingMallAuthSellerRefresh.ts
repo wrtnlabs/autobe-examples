@@ -22,7 +22,7 @@ export async function postShoppingMallAuthSellerRefresh(props: {
     type: string;
   };
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
     }) as typeof decoded;
   } catch {
@@ -32,34 +32,7 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   if (decoded.type !== "seller") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Find seller and validate account
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
-    where: { id: decoded.id },
-    select: {
-      id: true,
-      email: true,
-      shop_name: true,
-      shop_description: true,
-      logo_image: true,
-      approval_status: true,
-      rejection_reason: true,
-      suspended: true,
-      banned: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-  if (!seller) {
-    throw new HttpException("Seller not found", 401);
-  }
-  if (seller.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-  if (seller.banned) {
-    throw new HttpException("Account is banned", 403);
-  }
-  // 4. Validate session exists and is valid
+  // 3. Validate session exists and is not expired
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst(
     {
       where: {
@@ -71,20 +44,26 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 5. Check if session has expired
-  const now = new Date();
-  if (now > session.expired_at) {
-    throw new HttpException("Session expired", 401);
+  // 4. Validate seller account
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
+    where: { id: decoded.id },
+  });
+  if (seller.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Generate new tokens (session_id remains the same for continuity)
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  if (seller.banned) {
+    throw new HttpException("Account has been banned", 403);
+  }
+  // 5. Generate new tokens (SAME session_id - critical for session continuity)
+  const now = Date.now();
+  const accessExpiresAt = new Date(now + 60 * 60 * 1000);
+  const refreshExpiresAt = new Date(now + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
     {
       type: "seller",
-      id: seller.id,
+      id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now.toISOString(),
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -92,39 +71,38 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   const refreshToken = jwt.sign(
     {
       type: "seller",
-      id: seller.id,
+      id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now.toISOString(),
+      tokenType: "refresh",
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration
+  // 6. Update session expiration
   await MyGlobal.prisma.shopping_mall_seller_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    data: { expired_at: refreshExpiresAt },
   });
-  // 8. Return response with seller profile and new tokens
+  // 7. Return authorized seller with new tokens
   return {
-    id: seller.id as string & tags.Format<"uuid">,
-    email: seller.email as string & tags.Format<"email">,
-    shopName: seller.shop_name,
-    shopDescription: seller.shop_description ?? null,
-    logoImage: seller.logo_image ?? null,
-    approval_status: seller.approval_status as
-      | "pending"
-      | "approved"
-      | "rejected",
-    rejection_reason: seller.rejection_reason ?? null,
+    id: seller.id,
+    email: seller.email,
+    shop_name: seller.shop_name,
+    shop_description: seller.shop_description,
+    logo_image: seller.logo_image,
+    approval_status: seller.approval_status,
+    rejection_reason: seller.rejection_reason,
     suspended: seller.suspended,
     banned: seller.banned,
-    created_at: seller.created_at.toISOString(),
-    updated_at: seller.updated_at.toISOString(),
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
+    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+      expired_at: toISOStringSafe(accessExpiresAt),
+      refreshable_until: toISOStringSafe(refreshExpiresAt),
     },
   };
 }

@@ -18,7 +18,10 @@ export async function authorize_admin_join(
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
     display_name: props.body?.display_name ?? RandomGenerator.name(),
-    bio: props.body?.bio ?? RandomGenerator.paragraph({ sentences: 3 }),
+    bio:
+      props.body?.bio ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
+    grade: props.body?.grade ?? RandomGenerator.pick(["regular", "super"]),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),

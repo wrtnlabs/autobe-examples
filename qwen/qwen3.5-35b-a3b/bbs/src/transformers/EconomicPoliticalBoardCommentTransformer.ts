@@ -1,16 +1,13 @@
-import { IEconomicPoliticalBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdmin";
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
 import { IEconomicPoliticalBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardComment";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
-import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EconomicPoliticalBoardAdminAtSummaryTransformer } from "./EconomicPoliticalBoardAdminAtSummaryTransformer";
+import { EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer } from "./EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer";
 import { EconomicPoliticalBoardArticleAtSummaryTransformer } from "./EconomicPoliticalBoardArticleAtSummaryTransformer";
 
 export namespace EconomicPoliticalBoardCommentTransformer {
@@ -25,7 +22,8 @@ export namespace EconomicPoliticalBoardCommentTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        author: EconomicPoliticalBoardAdminAtSummaryTransformer.select(),
+        author:
+          EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
         article: EconomicPoliticalBoardArticleAtSummaryTransformer.select(),
       },
     } satisfies Prisma.economic_political_board_commentsFindManyArgs;
@@ -33,23 +31,20 @@ export namespace EconomicPoliticalBoardCommentTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEconomicPoliticalBoardComment> {
-    const author =
-      await EconomicPoliticalBoardAdminAtSummaryTransformer.transform(
-        input.author,
-      );
     return {
       id: input.id,
-      author,
-      authorName: author.user.displayName,
-      isBanned: false,
-      content: input.content,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      author:
+        await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
+          input.author,
+        ),
       article:
         await EconomicPoliticalBoardArticleAtSummaryTransformer.transform(
           input.article,
         ),
-    } satisfies IEconomicPoliticalBoardComment;
+      content: input.content,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    };
   }
 }

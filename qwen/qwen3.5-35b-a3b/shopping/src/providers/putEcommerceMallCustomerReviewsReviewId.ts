@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -23,88 +22,114 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReview.IUpdate;
 }): Promise<IEcommerceMallReview> {
-  const existing =
+  const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
+    {
+      where: { id: props.reviewId },
+      select: {
+        id: true,
+        customer_id: true,
+        product_id: true,
+        rating: true,
+        text_content: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            is_banned: true,
+            created_at: true,
+          },
+        },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            base_price: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                parent: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    is_leaf: true,
+                    created_at: true,
+                    deleted_at: true,
+                  },
+                },
+                is_leaf: true,
+              },
+            },
+            seller: {
+              select: {
+                id: true,
+                email: true,
+                approval_status: true,
+                rejection_reason: true,
+                is_suspended: true,
+                is_banned: true,
+                created_at: true,
+                updated_at: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  );
+  if (review.customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (!review.is_active) {
+    throw new HttpException("Review not found", 404);
+  }
+  if (
+    props.body.rating !== undefined &&
+    (props.body.rating < 1 || props.body.rating > 5)
+  ) {
+    throw new HttpException("Rating must be between 1 and 5", 400);
+  }
+  const now = new Date();
+  await MyGlobal.prisma.ecommerce_mall_snapshot_audits.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      record_type: "ecommerce_mall_reviews" as const,
+      record_id: props.reviewId,
+      changes: "rating,text_content",
+      old_values: JSON.stringify({
+        rating: review.rating,
+        textContent: review.text_content ?? null,
+      }),
+      new_values: JSON.stringify({
+        rating: props.body.rating ?? review.rating,
+        textContent: props.body.text_content ?? review.text_content,
+      }),
+      changed_at: now,
+      changed_by: props.customer.id,
+      created_at: now,
+      updated_at: now,
+    },
+  });
+  await MyGlobal.prisma.ecommerce_mall_reviews.update({
+    where: { id: props.reviewId },
+    data: {
+      ...(props.body.rating !== undefined && { rating: props.body.rating }),
+      ...(props.body.text_content !== undefined && {
+        text_content: props.body.text_content,
+      }),
+      updated_at: now,
+    },
+  });
+  const updatedReview =
     await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
       where: { id: props.reviewId },
       ...EcommerceMallReviewTransformer.select(),
     });
-  if (existing.customer.id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const changes: Array<{
-    field: "rating" | "text_content";
-    oldValue: number | string | null;
-    newValue: number | string | null;
-  }> = [];
-  if (props.body.rating !== undefined) {
-    if (existing.rating !== props.body.rating) {
-      changes.push({
-        field: "rating",
-        oldValue: existing.rating,
-        newValue: props.body.rating,
-      });
-    }
-  }
-  if (props.body.text_content !== undefined) {
-    const newValue = props.body.text_content ?? null;
-    if (existing.text_content !== newValue) {
-      changes.push({
-        field: "text_content",
-        oldValue: existing.text_content,
-        newValue,
-      });
-    }
-  }
-  if (changes.length > 0) {
-    const now = toISOStringSafe(new Date());
-    await MyGlobal.prisma.ecommerce_mall_snapshot_audits.create({
-      data: {
-        id: v4(),
-        record_type: "Review",
-        record_id: existing.id,
-        changes: changes.map((c) => c.field).join(","),
-        old_values: JSON.stringify(
-          changes.reduce((acc: Record<string, unknown>, c) => {
-            acc[c.field] = c.oldValue;
-            return acc;
-          }, {}),
-        ),
-        new_values: JSON.stringify(
-          changes.reduce((acc: Record<string, unknown>, c) => {
-            acc[c.field] = c.newValue;
-            return acc;
-          }, {}),
-        ),
-        changed_at: now,
-        changed_by: props.customer.id,
-        created_at: now,
-        updated_at: now,
-      },
-    });
-  }
-  const updateData: {
-    rating?: number;
-    text_content?: string | null;
-    updated_at: string & tags.Format<"date-time">;
-    is_active?: boolean;
-    deleted_at?: null;
-  } = {
-    updated_at: toISOStringSafe(new Date()),
-  };
-  if (props.body.rating !== undefined) {
-    updateData.rating = props.body.rating;
-  }
-  if (props.body.text_content !== undefined) {
-    updateData.text_content = props.body.text_content;
-  }
-  if (!existing.is_active) {
-    updateData.is_active = true;
-    updateData.deleted_at = null;
-  }
-  const updated = await MyGlobal.prisma.ecommerce_mall_reviews.update({
-    where: { id: props.reviewId },
-    data: updateData,
-    ...EcommerceMallReviewTransformer.select(),
-  });
-  return await EcommerceMallReviewTransformer.transform(updated);
+  return await EcommerceMallReviewTransformer.transform(updatedReview);
 }

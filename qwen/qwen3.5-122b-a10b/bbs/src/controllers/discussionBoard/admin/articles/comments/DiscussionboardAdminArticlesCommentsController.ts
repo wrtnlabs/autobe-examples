@@ -1,67 +1,112 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IDiscussionBoardComment } from "../../../../../api/structures/IDiscussionBoardComment";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 import { deleteDiscussionBoardAdminArticlesArticleIdCommentsCommentId } from "../../../../../providers/deleteDiscussionBoardAdminArticlesArticleIdCommentsCommentId";
+import { putDiscussionBoardAdminArticlesArticleIdCommentsCommentId } from "../../../../../providers/putDiscussionBoardAdminArticlesArticleIdCommentsCommentId";
 
 @Controller("/discussionBoard/admin/articles/:articleId/comments/:commentId")
 export class DiscussionboardAdminArticlesCommentsController {
   /**
-   * Permanently remove a comment from an article.
+   * Update an existing comment on a discussion board article.
    *
-   * This operation deletes a specific comment by marking it as deleted (soft deletion) and removing it from the article's comment list. The comment content and author information are preserved in the database for audit purposes but hidden from normal queries.
+   * This operation allows the comment author or an administrator to modify the content of an existing comment. The comment must belong to the specified article, and the current user must be either the comment's owner or have administrator privileges.
    *
-   * **Authorization Rules**:
+   * The operation performs validation to ensure the article ID in the path matches the comment's actual article reference, maintaining data integrity. Both the article and comment must exist and the comment must not be soft-deleted.
    *
-   * - **Comment Author**: Members can delete their own comments at any time
-   * - **Administrators**: Admin users can delete any comment on any article for content moderation purposes
-   * - **Banned Users**: Banned members cannot perform any comment operations
+   * Upon successful update, the comment's content and updated_at timestamp are modified, and the complete updated comment object is returned. The created_at timestamp remains unchanged to preserve the original creation time.
    *
-   * **Deletion Behavior**:
-   *
-   * When a comment is deleted:
-   * 1. The comment is soft-deleted via the deleted_at timestamp
-   * 2. The comment is removed from the article's comment listing
-   * 3. The comment remains in the database for audit trail purposes
-   * 4. Article comment count is updated to reflect the removal
-   *
-   * **Related Operations**:
-   *
-   * - `GET /articles/{articleId}/comments` - Retrieve all comments for an article
-   * - `PUT /comments/{commentId}` - Edit an existing comment
-   * - `POST /articles/{articleId}/comments` - Create a new comment on an article
+   * Related operations:
+   * - `GET /articles/{articleId}/comments` - Retrieve all comments on an article
+   * - `GET /articles/{articleId}/comments/{commentId}` - Retrieve a specific comment
+   * - `DELETE /articles/{articleId}/comments/{commentId}` - Delete a comment
    *
    * @param connection
-   * @param articleId Target article's unique identifier (global scope)
-   * @param commentId Target comment's unique identifier (global scope)
+   * @param articleId Target article's ID (global scope)
+   * @param commentId Target comment's ID (global scope)
+   * @param body Comment update information
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Delete a comment from an article. Implementation steps:
+   * @x-autobe-specification Update an existing comment on a discussion board article. Implementation steps:
    *
    * 1. Validate articleId and commentId are valid UUIDs
-   * 2. Fetch the comment by commentId from discussion_board_comments table
-   * 3. Verify comment exists; return 404 if not found
-   * 4. Verify comment is not already deleted (deleted_at is null); return 409 if already deleted
-   * 5. Fetch the article by articleId to verify it exists
-   * 6. Verify articleId matches comment's discussion_board_article_id; return 400 if mismatch
-   * 7. Check authorization:
-   *    - If current user is the comment author (discussion_board_member_id matches), allow deletion
-   *    - If current user is an administrator, allow deletion
-   *    - Otherwise return 403 Forbidden
-   * 8. Check if current user is banned; return 403 if banned
-   * 9. Set deleted_at to current timestamp (soft deletion)
-   * 10. Update the discussion_board_comments record
-   * 11. Return 204 No Content on success
+   * 2. Query discussion_board_comments table by id = commentId
+   * 3. Verify comment exists and is not soft-deleted (deleted_at IS NULL)
+   * 4. Fetch associated article by discussion_board_article_id = articleId
+   * 5. Validate articleId matches comment's article reference (discussion_board_article_id)
+   * 6. Verify authorization: current user is comment owner (discussion_board_member_id) OR is admin
+   * 7. Update content field and set updated_at to current timestamp
+   * 8. Return updated comment object with all fields
    *
-   * Edge cases:
-   * - Comment not found: 404 Not Found
-   * - Article not found: 404 Not Found
-   * - Comment already deleted: 409 Conflict
-   * - Unauthorized: 403 Forbidden
-   * - Banned user: 403 Forbidden
-   * - Article-comment ID mismatch: 400 Bad Request
+   * Validation rules:
+   * - content: required, minLength 1, maxLength 10000 characters
+   * - articleId must match comment's article reference
+   * - Comment must not be soft-deleted
+   * - User must own comment or be admin
+   *
+   * Error responses:
+   * - 404: Comment not found or article not found
+   * - 403: User not authorized (not owner and not admin)
+   * - 400: Validation error on content
+   * - 409: Article ID mismatch
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put()
+  public async update(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IDiscussionBoardComment.IUpdate,
+  ): Promise<IDiscussionBoardComment> {
+    try {
+      return await putDiscussionBoardAdminArticlesArticleIdCommentsCommentId({
+        admin,
+        articleId,
+        commentId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a specific comment from an article through soft deletion. This operation marks the comment as deleted by setting the deleted_at timestamp while preserving the record for audit purposes.
+   *
+   * **Authorization Rules**:
+   * - **Members**: Can only delete their own comments (where discussion_board_member_id matches the authenticated user)
+   * - **Administrators**: Can delete any comment regardless of author for content moderation purposes
+   *
+   * **Business Rules**:
+   * - The comment must belong to the specified article (discussion_board_article_id must match the articleId in the path)
+   * - Soft deletion preserves the comment record with deleted_at timestamp while hiding it from normal queries
+   * - Article deletion cascades to all associated comments automatically via foreign key constraint
+   * - Comment content, author information, and timestamps are preserved in the database after deletion
+   *
+   * **Error Conditions**:
+   * - 404 Not Found: Comment with the specified commentId does not exist
+   * - 403 Forbidden: Member attempting to delete another user's comment
+   * - 400 Bad Request: Comment does not belong to the specified article
+   *
+   * **Related Operations**:
+   * - `GET /articles/{articleId}/comments` - List all comments on an article
+   * - `POST /articles/{articleId}/comments` - Create a new comment on an article
+   * - `PUT /comments/{commentId}` - Update comment content (before deletion)
+   *
+   * @param connection
+   * @param articleId UUID of the article containing the comment (global scope)
+   * @param commentId UUID of the comment to delete (global scope)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification 1. Validate articleId and commentId are valid UUIDs. 2. Query discussion_board_comments table for comment with matching id. 3. Verify comment exists and belongs to the specified article (discussion_board_article_id matches articleId). 4. Check authorization: if requester is member, verify discussion_board_member_id matches current user; if admin, allow any comment. 5. Set deleted_at to current timestamp (soft delete). 6. Update discussion_board_comments.updated_at to current timestamp. 7. Return 200 OK with no body on success. 8. Return 404 if comment not found. 9. Return 403 if unauthorized (member trying to delete another's comment). 10. Return 400 if articleId and commentId don't match (comment doesn't belong to specified article).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete()

@@ -1,7 +1,7 @@
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -18,10 +18,8 @@ export namespace DiscussionBoardArticleTagTransformer {
     return {
       select: {
         id: true,
-        tag_name: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         article: DiscussionBoardArticleAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_article_tagsFindManyArgs;
@@ -31,14 +29,12 @@ export namespace DiscussionBoardArticleTagTransformer {
   ): Promise<IDiscussionBoardArticleTag> {
     return {
       id: input.id,
-      tag_name: input.tag_name,
-      discussion_board_article_id: input.article.id,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
       article: await DiscussionBoardArticleAtSummaryTransformer.transform(
         input.article,
       ),
+      tag: "MISSING_TAG_DATA", // CANNOT BE IMPLEMENTED: DTO expects tag property but no tag column exists in discussion_board_article_tags
     };
   }
 }

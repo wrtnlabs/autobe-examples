@@ -17,6 +17,11 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
         rating: true,
         content: true,
         created_at: true,
+        review: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs;
   }

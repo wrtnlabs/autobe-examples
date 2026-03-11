@@ -9,12 +9,8 @@ export function prepare_random_discussion_board_article_tag(
   input?: DeepPartial<IDiscussionBoardArticleTag.ICreate>,
 ): IDiscussionBoardArticleTag.ICreate {
   return {
-    tag_name:
-      input?.tag_name ??
-      RandomGenerator.alphabets(
-        typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<50>
-        >(),
-      ),
+    discussion_board_article_id:
+      input?.discussion_board_article_id ??
+      typia.random<string & tags.Format<"uuid">>(),
   };
 }

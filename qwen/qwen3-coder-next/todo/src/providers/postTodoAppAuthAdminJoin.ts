@@ -13,81 +13,68 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postTodoAppAuthAdminJoin(props: {
+  ip: string;
   body: ITodoAppAdminSession.IJoin;
 }): Promise<ITodoAppAdminSession.IAuthorized> {
-  // Check for duplicate admin
-  const existingAdmin = await MyGlobal.prisma.todo_app_admins.findFirst({
-    where: { email: props.body.email },
+  const existing = await MyGlobal.prisma.todo_app_admins.findFirst({
+    where: { email: props.body.email, deleted_at: null },
   });
-  if (existingAdmin) {
-    throw new HttpException("Email already registered", 409);
-  }
-  // Generate timestamps
-  const now = new Date().toISOString() as string & tags.Format<"date-time">;
-  const accessExpires = new Date(
-    Date.now() + 60 * 60 * 1000,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const refreshExpires = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString() as string & tags.Format<"date-time">;
-  // Generate JWT tokens
-  const accessPayload = {
-    type: "admin" as const,
-    id: v4(),
-    session_id: v4(),
-    created_at: now,
-  };
-  const refreshPayload = {
-    type: "admin" as const,
-    id: accessPayload.id,
-    session_id: accessPayload.session_id,
-    tokenType: "refresh" as const,
-    created_at: now,
-  };
-  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-  // Create admin account
+  if (existing) throw new HttpException("Email already registered", 409);
+  const adminExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const admin = await MyGlobal.prisma.todo_app_admins.create({
     data: {
-      id: accessPayload.id,
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
-      created_at: now,
-      updated_at: now,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
       deleted_at: null,
     },
   });
-  // Create admin session
   const session = await MyGlobal.prisma.todo_app_admin_sessions.create({
     data: {
-      id: accessPayload.session_id,
+      id: v4() as string & tags.Format<"uuid">,
       admin_id: admin.id,
-      ip: props.body.ip ?? "",
+      ip: props.body.ip ?? props.ip,
       referrer: props.body.referrer ?? "",
       href: props.body.href ?? "",
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_at: accessExpires,
-      created_at: now,
-      updated_at: now,
+      access_token: jwt.sign(
+        {
+          type: "admin",
+          id: admin.id,
+          session_id: v4() as string & tags.Format<"uuid">,
+          created_at: toISOStringSafe(new Date()),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh_token: jwt.sign(
+        {
+          type: "admin",
+          id: admin.id,
+          session_id: v4() as string & tags.Format<"uuid">,
+          tokenType: "refresh",
+          created_at: toISOStringSafe(new Date()),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      expires_at: toISOStringSafe(adminExpires),
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
       deleted_at: null,
     },
   });
-  // Build response
   return {
-    id: admin.id,
-    email: admin.email,
+    access: session.access_token,
+    refresh: session.refresh_token,
+    expired_at: toISOStringSafe(session.expires_at),
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      access: session.access_token,
+      refresh: session.refresh_token,
+      expired_at: toISOStringSafe(session.expires_at),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   } satisfies ITodoAppAdminSession.IAuthorized;
 }

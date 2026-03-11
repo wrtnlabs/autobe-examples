@@ -12,6 +12,7 @@ export namespace ShoppingMallInventoryRecordCollector {
     body: IShoppingMallInventoryRecord.ICreate;
     shoppingMallProductVariants: IEntity;
     shoppingMallSellers: IEntity;
+    shoppingMallSellerSessions: IEntity;
   }) {
     const id: string = v4();
     return {

@@ -1,9 +1,4 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardArticleSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleSnapshot";
-import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
-import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -25,12 +20,14 @@ export async function getDiscussionBoardAdminArticlesArticleIdSnapshotsSnapshotI
 }): Promise<IDiscussionBoardArticleSnapshot> {
   const snapshot =
     await MyGlobal.prisma.discussion_board_article_snapshots.findUniqueOrThrow({
-      where: {
-        id: props.snapshotId,
-        discussion_board_article_id: props.articleId,
-        deleted_at: null,
-      },
+      where: { id: props.snapshotId, deleted_at: null },
       ...DiscussionBoardArticleSnapshotTransformer.select(),
     });
+  if (snapshot.discussionBoardArticle.id !== props.articleId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified article",
+      404,
+    );
+  }
   return await DiscussionBoardArticleSnapshotTransformer.transform(snapshot);
 }

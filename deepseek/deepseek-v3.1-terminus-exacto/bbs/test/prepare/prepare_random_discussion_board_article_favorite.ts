@@ -6,8 +6,23 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_article_favorite(
-  input?: DeepPartial<IDiscussionBoardArticleFavorite.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardArticleFavorite.ICreate>,
 ): IDiscussionBoardArticleFavorite.ICreate {
-  input;
-  return {};
+  return {
+    discussion_board_article_id:
+      input?.discussion_board_article_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+    category:
+      input?.category ??
+      RandomGenerator.pick([
+        "to-read",
+        "research",
+        "personal",
+        "favorites",
+        "important",
+      ] as const),
+    notes:
+      input?.notes ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
+  };
 }

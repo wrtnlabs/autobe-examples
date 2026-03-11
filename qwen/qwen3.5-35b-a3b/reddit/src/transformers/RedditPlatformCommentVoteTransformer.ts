@@ -32,14 +32,14 @@ export namespace RedditPlatformCommentVoteTransformer {
   ): Promise<IRedditPlatformCommentVote> {
     return {
       id: input.id,
-      voteType: input.vote_type as "UPVOTE" | "DOWNVOTE" | null,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt:
+      vote_type: typia.assert<"UPVOTE" | "DOWNVOTE" | null>(input.vote_type),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at:
         input.deleted_at !== null && input.deleted_at !== undefined
           ? toISOStringSafe(input.deleted_at)
           : null,
-      author: await RedditPlatformMemberAtSummaryTransformer.transform(
+      member: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
       comment: await RedditPlatformCommentAtSummaryTransformer.transform(

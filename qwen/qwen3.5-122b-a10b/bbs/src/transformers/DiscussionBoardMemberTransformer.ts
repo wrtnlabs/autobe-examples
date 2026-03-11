@@ -14,8 +14,6 @@ export namespace DiscussionBoardMemberTransformer {
     return {
       select: {
         id: true,
-        email: true,
-        password_hash: true,
         display_name: true,
         bio: true,
         ban_status: true,
@@ -23,14 +21,18 @@ export namespace DiscussionBoardMemberTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        memberSessions: true,
-        passwordResets: true,
-        emailVerifications: true,
-        auditLogs: true,
-        articles: true,
-        comments: true,
-        adminRequests: true,
-        banRecords: true,
+        _count: {
+          select: {
+            articles: true,
+            comments: true,
+          },
+        },
+        articles: {
+          select: { id: true },
+        } satisfies Prisma.discussion_board_articlesFindManyArgs,
+        comments: {
+          select: { id: true },
+        } satisfies Prisma.discussion_board_commentsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_membersFindManyArgs;
   }
@@ -39,14 +41,15 @@ export namespace DiscussionBoardMemberTransformer {
   ): Promise<IDiscussionBoardMember> {
     return {
       id: input.id,
-      email: input.email,
-      displayName: input.display_name,
-      bio: input.bio ?? undefined,
-      banStatus: input.ban_status,
-      banReason: input.ban_reason ?? undefined,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      display_name: input.display_name,
+      bio: input.bio ?? null,
+      ban_status: input.ban_status,
+      ban_reason: input.ban_reason ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      article_count: input._count.articles,
+      comment_count: input._count.comments,
     };
   }
 }

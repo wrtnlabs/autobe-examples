@@ -33,42 +33,43 @@ export async function postRedditLikeAuthModeratorRefresh(props: {
   if (decoded.type !== "moderator") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and is active
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
+  // 3. Validate session
   const session =
     await MyGlobal.prisma.reddit_like_moderator_sessions.findFirst({
       where: {
         id: decoded.session_id,
         reddit_like_moderator_id: decoded.id,
-        expired_at: { gt: now },
+        expired_at: { gte: new Date() },
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate moderator not deleted
+  // 4. Validate moderator
   const moderator =
     await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
       where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        display_name: true,
+        karma_score: true,
+        deleted_at: true,
+      },
     });
   if (moderator.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens
-  const accessExpires = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
+  // 5. Generate new tokens (SAME session_id)
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const token = {
     access: jwt.sign(
       {
         type: decoded.type,
         id: decoded.id,
         session_id: decoded.session_id,
-        created_at: toISOStringSafe(new Date()) as string &
-          tags.Format<"date-time">,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -79,14 +80,13 @@ export async function postRedditLikeAuthModeratorRefresh(props: {
         id: decoded.id,
         session_id: decoded.session_id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()) as string &
-          tags.Format<"date-time">,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
   // 6. Update session expiration
   await MyGlobal.prisma.reddit_like_moderator_sessions.update({
@@ -94,28 +94,15 @@ export async function postRedditLikeAuthModeratorRefresh(props: {
     data: { expired_at: refreshExpires },
   });
   return {
-    id: moderator.id as string & tags.Format<"uuid">,
-    email: moderator.email as string & tags.Format<"email">,
-    email_verified_at: (moderator.email_verified_at
-      ? toISOStringSafe(moderator.email_verified_at)
-      : toISOStringSafe(new Date(0))) as string & tags.Format<"date-time">,
-    username: moderator.username,
+    id: moderator.id,
+    email: moderator.email,
     display_name: moderator.display_name,
-    bio: moderator.bio ?? "",
-    avatar_url: moderator.avatar_url ?? "",
-    karma_score: moderator.karma_score as number & tags.Type<"int32">,
-    created_at: toISOStringSafe(moderator.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(moderator.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at: (moderator.deleted_at
-      ? toISOStringSafe(moderator.deleted_at)
-      : toISOStringSafe(new Date(0))) as string & tags.Format<"date-time">,
+    karma_score: moderator.karma_score,
     token: {
       access: token.access,
       refresh: token.refresh,
       expired_at: token.expired_at,
       refreshable_until: token.refreshable_until,
-    } satisfies IAuthorizationToken,
+    },
   };
 }

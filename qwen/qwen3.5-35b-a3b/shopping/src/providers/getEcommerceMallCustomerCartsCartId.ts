@@ -1,10 +1,4 @@
-import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShoppingCart";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -26,11 +20,11 @@ export async function getEcommerceMallCustomerCartsCartId(props: {
 }): Promise<IEcommerceMallShoppingCart> {
   const cart =
     await MyGlobal.prisma.ecommerce_mall_shopping_carts.findUniqueOrThrow({
-      where: {
-        id: props.cartId,
-        customer_id: props.customer.id,
-      },
+      where: { id: props.cartId },
       ...EcommerceMallShoppingCartTransformer.select(),
     });
+  if (cart.customer.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await EcommerceMallShoppingCartTransformer.transform(cart);
 }

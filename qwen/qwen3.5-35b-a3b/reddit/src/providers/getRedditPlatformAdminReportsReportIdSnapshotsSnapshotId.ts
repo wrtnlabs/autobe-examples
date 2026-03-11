@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
 import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import { IRedditPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReport";
 import { IRedditPlatformReportSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReportSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -20,32 +21,13 @@ export async function getRedditPlatformAdminReportsReportIdSnapshotsSnapshotId(p
   reportId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IRedditPlatformReportSnapshot> {
-  // Verify snapshot exists and belongs to the specified report
   const snapshot =
-    await MyGlobal.prisma.reddit_platform_report_snapshots.findUnique({
+    await MyGlobal.prisma.reddit_platform_report_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
         reddit_platform_report_id: props.reportId,
       },
-    });
-  if (snapshot === null) {
-    throw new HttpException("Snapshot not found", 404);
-  }
-  // Verify report exists
-  const report = await MyGlobal.prisma.reddit_platform_reports.findUnique({
-    where: { id: props.reportId },
-    select: { community_id: true },
-  });
-  if (report === null) {
-    throw new HttpException("Report not found", 404);
-  }
-  // Fetch snapshot with all relationships
-  const snapshotWithRelations =
-    await MyGlobal.prisma.reddit_platform_report_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
       ...RedditPlatformReportSnapshotTransformer.select(),
     });
-  return await RedditPlatformReportSnapshotTransformer.transform(
-    snapshotWithRelations,
-  );
+  return await RedditPlatformReportSnapshotTransformer.transform(snapshot);
 }

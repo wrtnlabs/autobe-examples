@@ -13,49 +13,46 @@ export class ShoppingmallCustomerWishlistsController {
   /**
    * Retrieve a paginated list of products in the authenticated customer's wishlist.
    *
-   * This operation allows customers to view their saved products for future consideration. The wishlist serves as a monitoring list separate from the shopping cart, helping customers track products they may want to purchase later.
+   * This operation provides customers with a view of their saved products for future consideration. The wishlist serves as a monitoring tool rather than a purchase commitment, separate from the active shopping cart workflow.
    *
-   * Each wishlist entry displays product summary information including the main thumbnail image (first image by display order), product name, price information (either the base price or a price range if variants have different pricing), and the seller's shop name. Products are sorted by most recently added first.
+   * Each wishlist item displays the product's main image (the image with lowest display_order value), product name, base price or price range derived from the product's variants, and the seller's shop name. Products are sorted by most recently added first.
    *
-   * The system automatically maintains wishlist integrity by filtering out products that have been deleted by sellers or belong to suspended or banned sellers. These products are silently excluded from the response without notification to the customer, in accordance with the automatic cleanup policy.
+   * The wishlist content is automatically maintained - products deleted by sellers are automatically removed, and products from suspended or banned sellers are excluded from display without customer action.
    *
-   * Pagination is handled via cursor-based navigation, allowing customers to browse through large wishlists efficiently. The response includes pagination metadata to support infinite scrolling or traditional pagination UI patterns.
+   * **Authentication Required**: This operation requires customer authentication. The wishlist is automatically scoped to the authenticated customer's account.
    *
-   * Security: This operation requires customer authentication. The wishlist is automatically scoped to the authenticated customer, preventing cross-user access. Each customer has exactly one wishlist associated with their account.
+   * **Product Availability**: Displayed prices reflect current product pricing at the time of viewing, not the price when added to the wishlist. Variant availability reflects the current state of the product's inventory.
    *
    * @param connection
-   * @param body Pagination and sorting parameters for wishlist viewing
+   * @param body Pagination and sorting parameters for wishlist items
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the authenticated customer's wishlist with pagination support.
+   * @x-autobe-specification Implementation steps:
    *
-   * 1. Authentication: Verify customer session and get customer ID from JWT token.
+   * 1. **Authentication Context**: Extract authenticated customer ID from JWT token. Verify customer is not banned.
    *
-   * 2. Query Flow:
-   *    - Find the customer's wishlist (one-to-one relationship via shopping_mall_customer_id)
-   *    - Join wishlist_items with products on shopping_mall_product_id
-   *    - Join with product_images to get the main thumbnail (lowest display_order per product)
-   *    - Join with sellers to get shop_name
-   *    - Filter out: products with deleted_at IS NOT NULL, sellers with suspended=true or banned=true
-   *    - Apply pagination using cursor-based approach (ordered by wishlist_items.created_at DESC - most recently added first)
+   * 2. **Wishlist Retrieval**: Query shopping_mall_wishlists table using customer_id from authentication context. If no wishlist exists (first access before adding any products), return empty paginated result.
    *
-   * 3. Response Construction:
-   *    - For each wishlist item, include: product.id, product.name, product.base_price
-   *    - Calculate price range if product has variants with different prices (query product_variants)
-   *    - Get main image URL (image with lowest display_order for the product)
-   *    - Include seller shop_name
-   *    - Include wishlist_item.created_at for 'added date'
+   * 3. **Join Query**: Perform LEFT JOIN from shopping_mall_wishlist_items to shopping_mall_products, then to shopping_mall_sellers, shopping_mall_product_images (for main image), and shopping_mall_product_variants (for price range calculation).
    *
-   * 4. Pagination:
-   *    - Use cursor-based pagination on wishlist_items.created_at
-   *    - Default page size: 20 items
-   *    - Return pagination metadata: hasMore, cursor for next page
+   * 4. **Filtering Conditions**:
+   *    - Exclude products where shopping_mall_products.deleted_at IS NOT NULL
+   *    - Exclude products from sellers where shopping_mall_sellers.suspended = true OR shopping_mall_sellers.banned = true
+   *    - Exclude products from sellers where shopping_mall_sellers.approval_status != 'approved'
    *
-   * 5. Edge Cases:
-   *    - Empty wishlist: return empty data array with pagination metadata
-   *    - All products filtered out: return empty data array
-   *    - Product has no images: return placeholder or null for thumbnail
-   *    - Product has no variants: show base_price as single price
+   * 5. **Main Image Selection**: For each product, select the product image with MIN(display_order). Use subquery or window function.
+   *
+   * 6. **Price Range Calculation**: Query all non-deleted variants for each product. Calculate MIN(price) and MAX(price) where price is not NULL, falling back to product's base_price. If all variants have same price or only one variant, display single price; otherwise display price range.
+   *
+   * 7. **Pagination**: Apply standard pagination using limit/offset from request body. Default sort by shopping_mall_wishlist_items.created_at DESC (most recent first).
+   *
+   * 8. **Response Assembly**: For each item, construct:
+   *    - Wishlist item ID and created_at
+   *    - Product ID, name, description, main image URL
+   *    - Price or price range
+   *    - Seller shop name
+   *
+   * 9. **Empty State**: If wishlist exists but contains no valid products (all filtered out), return empty data array with pagination metadata.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()

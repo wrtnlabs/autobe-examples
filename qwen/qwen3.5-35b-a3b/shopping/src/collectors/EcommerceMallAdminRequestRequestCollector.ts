@@ -11,6 +11,7 @@ export namespace EcommerceMallAdminRequestRequestCollector {
   export async function collect(props: {
     body: IEcommerceMallAdminRequestRequest.ICreate;
     ecommerceMallAdmins: IEntity;
+    ecommerceMallAdminSessions: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -21,6 +22,9 @@ export namespace EcommerceMallAdminRequestRequestCollector {
       updated_at: new Date(),
       deleted_at: null,
       admin: { connect: { id: props.ecommerceMallAdmins.id } },
+      snapshots: undefined,
+      customerRequests: undefined,
+      sellerRequests: undefined,
     } satisfies Prisma.ecommerce_mall_admin_request_requestsCreateInput;
   }
 }

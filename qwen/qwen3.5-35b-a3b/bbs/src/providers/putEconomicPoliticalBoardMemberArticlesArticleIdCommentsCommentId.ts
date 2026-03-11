@@ -1,9 +1,6 @@
-import { IEconomicPoliticalBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdmin";
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
 import { IEconomicPoliticalBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardComment";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
-import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,55 +21,41 @@ export async function putEconomicPoliticalBoardMemberArticlesArticleIdCommentsCo
   commentId: string & tags.Format<"uuid">;
   body: IEconomicPoliticalBoardComment.IUpdate;
 }): Promise<IEconomicPoliticalBoardComment> {
-  // Verify article exists
-  await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
-    where: { id: props.articleId, deleted_at: null },
-  });
-  // Find comment and verify ownership in single query
+  // 1. Verify comment exists (includes article_id validation)
   const comment =
     await MyGlobal.prisma.economic_political_board_comments.findUniqueOrThrow({
-      where: {
-        id: props.commentId,
-        article_id: props.articleId,
-        author_id: props.member.id,
-      },
-      ...EconomicPoliticalBoardCommentTransformer.select(),
+      where: { id: props.commentId },
     });
-  // Check if user is banned
-  const banRecord =
-    await MyGlobal.prisma.economic_political_board_ban_records.findFirst({
-      where: { user_id: props.member.id },
-    });
-  if (banRecord !== null) {
+  // 2. Validate comment belongs to specified article
+  if (comment.article_id !== props.articleId) {
+    throw new HttpException("Comment does not belong to this article", 404);
+  }
+  // 3. Validate comment ownership - member must own the comment
+  if (comment.author_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Verify edit window (60 minutes from creation)
-  const createdAt = new Date(comment.created_at);
-  const now = new Date();
-  const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
-  if (diffMinutes > 60) {
-    throw new HttpException("Edit window expired", 409);
+  // 4. Validate content is provided and not empty (1-10000 chars per DTO)
+  const content = props.body.content;
+  if (content === undefined || content.length < 1 || content.length > 10000) {
+    throw new HttpException(
+      "Content must be between 1 and 10000 characters",
+      400,
+    );
   }
-  // Validate content
-  if (
-    props.body.content === undefined ||
-    props.body.content === null ||
-    props.body.content.trim().length === 0
-  ) {
-    throw new HttpException("Content cannot be empty", 400);
-  }
-  if (props.body.content.length > 10000) {
-    throw new HttpException("Content too long", 400);
-  }
-  // Update comment
+  // 5. Update comment with new content and updated_at timestamp
+  await MyGlobal.prisma.economic_political_board_comments.update({
+    where: { id: props.commentId },
+    data: {
+      content,
+      updated_at: new Date(),
+    },
+  });
+  // 6. Re-fetch with full joins using transformer
   const updated =
-    await MyGlobal.prisma.economic_political_board_comments.update({
+    await MyGlobal.prisma.economic_political_board_comments.findUniqueOrThrow({
       where: { id: props.commentId },
-      data: {
-        content: props.body.content,
-        updated_at: new Date(),
-      },
       ...EconomicPoliticalBoardCommentTransformer.select(),
     });
+  // 7. Transform and return
   return await EconomicPoliticalBoardCommentTransformer.transform(updated);
 }

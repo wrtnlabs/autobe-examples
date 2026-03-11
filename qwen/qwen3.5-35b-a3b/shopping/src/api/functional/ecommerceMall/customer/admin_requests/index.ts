@@ -6,32 +6,48 @@ import typia from "typia";
 import { IEcommerceMallAdminRequestRequest } from "../../../../structures/IEcommerceMallAdminRequestRequest";
 
 /**
- * Create a new administrator access request to escalate from a regular user to an administrator role.
+ * Submit an administrator access request to apply for elevated system privileges.
  *
- * This endpoint allows platform users (customers or sellers) to request administrative privileges by submitting a formal request with a detailed reason. The request enters a pending state and must be reviewed and approved by a super administrator before privileges are granted.
+ * This endpoint allows registered users (customers or sellers) to request administrative access by submitting a formal application with a reason explaining their need for elevated privileges. The request is created with a "pending" status and must be reviewed by a super administrator before approval.
  *
- * The request includes the submitting user's identity (automatically associated via authentication), a required reason field explaining the need for elevated privileges, and an initial status of pending. Each user can have only one pending request at a time; existing pending or resolved requests must be addressed before new submissions.
+ * ### Security and Validation
  *
- * Upon successful creation, the system returns the complete admin request record including the generated UUID identifier, associated user information, request status, and timestamps. The created request becomes visible in the super administrator's request queue for review.
+ * - Only authenticated non-admin users can submit requests
+ * - Each user can have only one pending request at a time
+ * - Previous approved or rejected requests do not block new submissions
+ * - The reason field is required and must contain non-empty text
+ * - Banned users cannot submit admin requests
+ *
+ * ### Request Processing
+ *
+ * Upon successful submission, the system creates an AdminRequest record with status "pending" and notifies super administrators of the new request. The response includes the complete request details including the assigned request ID, submission timestamp, and current status. Super administrators will review the request and either approve or reject it, with the decision recorded in the system.
+ *
+ * ### Related Operations
+ *
+ * - GET /admin-requests/{requestId} - View details of a specific admin request
+ * - PATCH /admin-requests - List and filter admin requests (super administrators only)
+ * - PATCH /admin-requests/{requestId}/approve - Approve an admin request (super administrators only)
+ * - PATCH /admin-requests/{requestId}/reject - Reject an admin request (super administrators only)
  *
  * @param props.connection
- * @param props.body Information for creating a new administrator access request
+ * @param props.body Admin access request submission data including the reason for requesting privileges
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Create a new admin request record with the following logic:
+ * @x-autobe-specification Create a new admin access request record in the admin_request_requests table.
  *
- * 1. Extract the requesting user's ID from the authentication context (ecommerce_mall_admin_id)
- * 2. Validate the request reason field is present and contains at least one non-whitespace character
- * 3. Verify the user's account is not banned (check is_banned flag on associated admin record)
- * 4. Check that the user does not already have a pending admin request (query by admin_id with status='pending')
- * 5. If any validation fails, return appropriate error (400 for validation, 409 for duplicate pending request)
- * 6. Generate a new UUID for the request ID
- * 7. Set request_status to 'pending'
- * 8. Record the current timestamp for created_at and updated_at
- * 9. Insert the new record into ecommerce_mall_admin_request_requests table
- * 10. Return the complete created admin request record with all fields
- *
- * Database transaction required to ensure atomicity of the insert operation.
+ * 1. Extract authenticated user ID from request context and verify user is not already an admin
+ * 2. Validate that reason field is provided and non-empty
+ * 3. Check that the user does not already have a pending admin request by querying admin_request_requests where requester matches user_id and status = 'pending'
+ * 4. If a pending request exists, reject with error
+ * 5. Create AdminRequest record with:
+ *    - reason: from request body
+ *    - request_status: 'pending'
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ * 6. Create polymorphic link record:
+ *    - If user is customer: create admin_request_request_of_customers record
+ *    - If user is seller: create admin_request_request_of_sellers record
+ * 7. Return the created AdminRequest with full details including ID and timestamps
  * @path /ecommerceMall/customer/admin-requests
  * @accessor api.functional.ecommerceMall.customer.admin_requests.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -61,7 +77,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Information for creating a new administrator access request
+     * Admin access request submission data including the reason for requesting privileges
      */
     body: IEcommerceMallAdminRequestRequest.ICreate;
   };

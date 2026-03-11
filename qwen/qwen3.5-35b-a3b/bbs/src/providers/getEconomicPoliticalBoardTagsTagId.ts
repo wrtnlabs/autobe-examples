@@ -17,10 +17,7 @@ export async function getEconomicPoliticalBoardTagsTagId(props: {
 }): Promise<IEconomicPoliticalBoardTag> {
   const tag =
     await MyGlobal.prisma.economic_political_board_tags.findUniqueOrThrow({
-      where: {
-        id: props.tagId,
-        deleted_at: null,
-      },
+      where: { id: props.tagId, deleted_at: null },
       ...EconomicPoliticalBoardTagTransformer.select(),
     });
   return await EconomicPoliticalBoardTagTransformer.transform(tag);

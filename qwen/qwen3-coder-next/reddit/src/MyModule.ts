@@ -1,61 +1,60 @@
 import { Module } from "@nestjs/common";
 
-import { RedditlikeAdminAnalyticsDashboardController } from "./controllers/redditLike/admin/analytics/dashboard/RedditlikeAdminAnalyticsDashboardController";
+import { RedditlikeAdminBansController } from "./controllers/redditLike/admin/bans/RedditlikeAdminBansController";
+import { RedditlikeAdminCommunitiesBansController } from "./controllers/redditLike/admin/communities/bans/RedditlikeAdminCommunitiesBansController";
+import { RedditlikeAdminCommunitiesModerator_rolesController } from "./controllers/redditLike/admin/communities/moderator-roles/RedditlikeAdminCommunitiesModerator_rolesController";
+import { RedditlikeAdminCommunitiesMyController } from "./controllers/redditLike/admin/communities/my/RedditlikeAdminCommunitiesMyController";
 import { RedditlikeAdminCommunitiesReportsController } from "./controllers/redditLike/admin/communities/reports/RedditlikeAdminCommunitiesReportsController";
-import { RedditlikeAdminModerationActionsController } from "./controllers/redditLike/admin/moderation/actions/RedditlikeAdminModerationActionsController";
-import { RedditlikeAdminModeratorsConductController } from "./controllers/redditLike/admin/moderators/conduct/RedditlikeAdminModeratorsConductController";
+import { RedditlikeAdminDashboardController } from "./controllers/redditLike/admin/dashboard/RedditlikeAdminDashboardController";
+import { RedditlikeAdminModerationConductController } from "./controllers/redditLike/admin/moderation/conduct/RedditlikeAdminModerationConductController";
+import { RedditlikeAdminModerator_rolesController } from "./controllers/redditLike/admin/moderator-roles/RedditlikeAdminModerator_rolesController";
+import { RedditlikeAdminReportsController } from "./controllers/redditLike/admin/reports/RedditlikeAdminReportsController";
 import { RedditlikeAdminSearchContentController } from "./controllers/redditLike/admin/search/content/RedditlikeAdminSearchContentController";
-import { RedditlikeAdminUsersController } from "./controllers/redditLike/admin/users/RedditlikeAdminUsersController";
-import { RedditlikeAdminsController } from "./controllers/redditLike/admins/RedditlikeAdminsController";
 import { RedditlikeAuthAdminController } from "./controllers/redditLike/auth/admin/RedditlikeAuthAdminController";
 import { RedditlikeAuthGuestController } from "./controllers/redditLike/auth/guest/RedditlikeAuthGuestController";
 import { RedditlikeAuthMemberController } from "./controllers/redditLike/auth/member/RedditlikeAuthMemberController";
 import { RedditlikeAuthModeratorController } from "./controllers/redditLike/auth/moderator/RedditlikeAuthModeratorController";
-import { RedditlikeCommentsController } from "./controllers/redditLike/comments/RedditlikeCommentsController";
-import { RedditlikeCommentsRevisionsController } from "./controllers/redditLike/comments/revisions/RedditlikeCommentsRevisionsController";
-import { RedditlikeCommentsVotesController } from "./controllers/redditLike/comments/votes/summary/RedditlikeCommentsVotesController";
 import { RedditlikeCommunitiesController } from "./controllers/redditLike/communities/RedditlikeCommunitiesController";
-import { RedditlikeCommunitiesBanned_usersController } from "./controllers/redditLike/communities/banned-users/RedditlikeCommunitiesBanned_usersController";
-import { RedditlikeCommunitiesModeratorsController } from "./controllers/redditLike/communities/moderators/RedditlikeCommunitiesModeratorsController";
-import { RedditlikeCommunitiesPostsController } from "./controllers/redditLike/communities/posts/RedditlikeCommunitiesPostsController";
-import { RedditlikeGuestCommunitiesFeedController } from "./controllers/redditLike/guest/communities/feed/RedditlikeGuestCommunitiesFeedController";
-import { RedditlikeGuestFeedPopularController } from "./controllers/redditLike/guest/feed/popular/RedditlikeGuestFeedPopularController";
-import { RedditlikeGuestsController } from "./controllers/redditLike/guests/RedditlikeGuestsController";
-import { RedditlikeMemberActivityDashboardController } from "./controllers/redditLike/member/activity/dashboard/RedditlikeMemberActivityDashboardController";
+import { RedditlikeGuestCommunitiesPostsController } from "./controllers/redditLike/guest/communities/posts/RedditlikeGuestCommunitiesPostsController";
+import { RedditlikeGuestPopularController } from "./controllers/redditLike/guest/popular/RedditlikeGuestPopularController";
+import { RedditlikeGuestPostsController } from "./controllers/redditLike/guest/posts/RedditlikeGuestPostsController";
+import { RedditlikeGuestPostsCommentsController } from "./controllers/redditLike/guest/posts/comments/RedditlikeGuestPostsCommentsController";
+import { RedditlikeGuestPostsPopularController } from "./controllers/redditLike/guest/posts/popular/RedditlikeGuestPostsPopularController";
+import { RedditlikeGuestPostsRevisionsController } from "./controllers/redditLike/guest/posts/revisions/RedditlikeGuestPostsRevisionsController";
+import { RedditlikeGuestPostsSnapshotsController } from "./controllers/redditLike/guest/posts/snapshots/RedditlikeGuestPostsSnapshotsController";
+import { RedditlikeGuestPostsVote_summaryController } from "./controllers/redditLike/guest/posts/vote-summary/RedditlikeGuestPostsVote_summaryController";
+import { RedditlikeGuestVote_statisticsController } from "./controllers/redditLike/guest/vote-statistics/RedditlikeGuestVote_statisticsController";
 import { RedditlikeMemberCommentsController } from "./controllers/redditLike/member/comments/RedditlikeMemberCommentsController";
+import { RedditlikeMemberCommentsReportsController } from "./controllers/redditLike/member/comments/reports/RedditlikeMemberCommentsReportsController";
 import { RedditlikeMemberCommentsVoteController } from "./controllers/redditLike/member/comments/vote/RedditlikeMemberCommentsVoteController";
 import { RedditlikeMemberCommunitiesController } from "./controllers/redditLike/member/communities/RedditlikeMemberCommunitiesController";
-import { RedditlikeMemberCommunitiesBanController } from "./controllers/redditLike/member/communities/ban/RedditlikeMemberCommunitiesBanController";
-import { RedditlikeMemberCommunitiesFeedController } from "./controllers/redditLike/member/communities/feed/RedditlikeMemberCommunitiesFeedController";
-import { RedditlikeMemberCommunitiesModeratorsController } from "./controllers/redditLike/member/communities/moderators/RedditlikeMemberCommunitiesModeratorsController";
-import { RedditlikeMemberCommunitiesSubscribeController } from "./controllers/redditLike/member/communities/subscribe/RedditlikeMemberCommunitiesSubscribeController";
-import { RedditlikeMemberFeedHomeController } from "./controllers/redditLike/member/feed/home/RedditlikeMemberFeedHomeController";
-import { RedditlikeMemberFeedPopularController } from "./controllers/redditLike/member/feed/popular/RedditlikeMemberFeedPopularController";
-import { RedditlikeMemberKarmaController } from "./controllers/redditLike/member/karma/RedditlikeMemberKarmaController";
+import { RedditlikeMemberCommunitiesMyController } from "./controllers/redditLike/member/communities/my/RedditlikeMemberCommunitiesMyController";
+import { RedditlikeMemberCommunitiesPostsController } from "./controllers/redditLike/member/communities/posts/RedditlikeMemberCommunitiesPostsController";
+import { RedditlikeMemberHomeController } from "./controllers/redditLike/member/home/RedditlikeMemberHomeController";
+import { RedditlikeMemberPopularController } from "./controllers/redditLike/member/popular/RedditlikeMemberPopularController";
 import { RedditlikeMemberPostsController } from "./controllers/redditLike/member/posts/RedditlikeMemberPostsController";
 import { RedditlikeMemberPostsCommentsController } from "./controllers/redditLike/member/posts/comments/RedditlikeMemberPostsCommentsController";
+import { RedditlikeMemberPostsHomeController } from "./controllers/redditLike/member/posts/home/RedditlikeMemberPostsHomeController";
+import { RedditlikeMemberPostsPopularController } from "./controllers/redditLike/member/posts/popular/RedditlikeMemberPostsPopularController";
+import { RedditlikeMemberPostsReportsController } from "./controllers/redditLike/member/posts/reports/RedditlikeMemberPostsReportsController";
+import { RedditlikeMemberPostsRevisionsController } from "./controllers/redditLike/member/posts/revisions/RedditlikeMemberPostsRevisionsController";
+import { RedditlikeMemberPostsSnapshotsController } from "./controllers/redditLike/member/posts/snapshots/RedditlikeMemberPostsSnapshotsController";
+import { RedditlikeMemberPostsVote_summaryController } from "./controllers/redditLike/member/posts/vote-summary/RedditlikeMemberPostsVote_summaryController";
 import { RedditlikeMemberPostsVotesController } from "./controllers/redditLike/member/posts/votes/RedditlikeMemberPostsVotesController";
-import { RedditlikeMemberReportsController } from "./controllers/redditLike/member/reports/RedditlikeMemberReportsController";
+import { RedditlikeMemberProfileController } from "./controllers/redditLike/member/profile/RedditlikeMemberProfileController";
 import { RedditlikeMemberSubscriptionsController } from "./controllers/redditLike/member/subscriptions/RedditlikeMemberSubscriptionsController";
-import { RedditlikeMemberUsersController } from "./controllers/redditLike/member/users/RedditlikeMemberUsersController";
-import { RedditlikeMemberUsersMeSubscribed_communitiesController } from "./controllers/redditLike/member/users/me/subscribed-communities/RedditlikeMemberUsersMeSubscribed_communitiesController";
-import { RedditlikeMembersController } from "./controllers/redditLike/members/RedditlikeMembersController";
-import { RedditlikeModeratorBansController } from "./controllers/redditLike/moderator/bans/RedditlikeModeratorBansController";
+import { RedditlikeMemberVote_statisticsController } from "./controllers/redditLike/member/vote-statistics/RedditlikeMemberVote_statisticsController";
 import { RedditlikeModeratorCommentsController } from "./controllers/redditLike/moderator/comments/RedditlikeModeratorCommentsController";
-import { RedditlikeModeratorCommunitiesBansController } from "./controllers/redditLike/moderator/communities/bans/RedditlikeModeratorCommunitiesBansController";
+import { RedditlikeModeratorCommentsVoteController } from "./controllers/redditLike/moderator/comments/vote/RedditlikeModeratorCommentsVoteController";
+import { RedditlikeModeratorCommunitiesModerator_rolesController } from "./controllers/redditLike/moderator/communities/moderator-roles/RedditlikeModeratorCommunitiesModerator_rolesController";
+import { RedditlikeModeratorCommunitiesMyController } from "./controllers/redditLike/moderator/communities/my/RedditlikeModeratorCommunitiesMyController";
 import { RedditlikeModeratorCommunitiesReportsController } from "./controllers/redditLike/moderator/communities/reports/RedditlikeModeratorCommunitiesReportsController";
-import { RedditlikeModeratorCommunitiesReviewController } from "./controllers/redditLike/moderator/communities/review/RedditlikeModeratorCommunitiesReviewController";
-import { RedditlikeModeratorPostsController } from "./controllers/redditLike/moderator/posts/RedditlikeModeratorPostsController";
+import { RedditlikeModeratorModerator_rolesController } from "./controllers/redditLike/moderator/moderator-roles/RedditlikeModeratorModerator_rolesController";
+import { RedditlikeModeratorPassword_resetsController } from "./controllers/redditLike/moderator/password-resets/RedditlikeModeratorPassword_resetsController";
+import { RedditlikeModeratorPostsCommentsController } from "./controllers/redditLike/moderator/posts/comments/RedditlikeModeratorPostsCommentsController";
+import { RedditlikeModeratorProfileController } from "./controllers/redditLike/moderator/profile/RedditlikeModeratorProfileController";
 import { RedditlikeModeratorReportsController } from "./controllers/redditLike/moderator/reports/RedditlikeModeratorReportsController";
-import { RedditlikeModeratorReportsModerator_actionController } from "./controllers/redditLike/moderator/reports/moderator-action/RedditlikeModeratorReportsModerator_actionController";
-import { RedditlikeModeratorsController } from "./controllers/redditLike/moderators/RedditlikeModeratorsController";
-import { RedditlikeController } from "./controllers/redditLike/popular/RedditlikeController";
-import { RedditlikePostsController } from "./controllers/redditLike/posts/RedditlikePostsController";
-import { RedditlikePostsCommentsController } from "./controllers/redditLike/posts/comments/RedditlikePostsCommentsController";
-import { RedditlikePostsRevisionsController } from "./controllers/redditLike/posts/revisions/RedditlikePostsRevisionsController";
-import { RedditlikePostsVotesController } from "./controllers/redditLike/posts/votes/summary/RedditlikePostsVotesController";
-import { RedditlikeUsersController } from "./controllers/redditLike/users/RedditlikeUsersController";
-import { RedditlikeUsersPostsController } from "./controllers/redditLike/users/posts/RedditlikeUsersPostsController";
+import { RedditlikeModeratorSessionsController } from "./controllers/redditLike/moderator/sessions/RedditlikeModeratorSessionsController";
 
 @Module({
   controllers: [
@@ -63,58 +62,57 @@ import { RedditlikeUsersPostsController } from "./controllers/redditLike/users/p
     RedditlikeAuthMemberController,
     RedditlikeAuthModeratorController,
     RedditlikeAuthAdminController,
-    RedditlikeMembersController,
-    RedditlikeModeratorsController,
-    RedditlikeCommunitiesModeratorsController,
-    RedditlikeAdminsController,
-    RedditlikeGuestsController,
-    RedditlikeMemberUsersController,
-    RedditlikeUsersController,
-    RedditlikeAdminUsersController,
+    RedditlikeMemberProfileController,
+    RedditlikeModeratorProfileController,
+    RedditlikeModeratorSessionsController,
+    RedditlikeModeratorPassword_resetsController,
     RedditlikeCommunitiesController,
+    RedditlikeMemberSubscriptionsController,
     RedditlikeMemberCommunitiesController,
-    RedditlikeMemberCommunitiesSubscribeController,
-    RedditlikeMemberUsersMeSubscribed_communitiesController,
-    RedditlikeMemberCommunitiesModeratorsController,
-    RedditlikeMemberCommunitiesBanController,
-    RedditlikeCommunitiesBanned_usersController,
     RedditlikeMemberPostsController,
-    RedditlikePostsController,
-    RedditlikeModeratorPostsController,
-    RedditlikePostsRevisionsController,
-    RedditlikeMemberPostsCommentsController,
-    RedditlikePostsCommentsController,
+    RedditlikeMemberPostsHomeController,
+    RedditlikeGuestPostsPopularController,
+    RedditlikeMemberPostsPopularController,
+    RedditlikeGuestCommunitiesPostsController,
+    RedditlikeMemberCommunitiesPostsController,
+    RedditlikeGuestPostsController,
+    RedditlikeGuestPostsSnapshotsController,
+    RedditlikeMemberPostsSnapshotsController,
+    RedditlikeGuestPostsRevisionsController,
+    RedditlikeMemberPostsRevisionsController,
     RedditlikeMemberPostsVotesController,
-    RedditlikeMemberCommentsVoteController,
-    RedditlikePostsVotesController,
-    RedditlikeCommentsVotesController,
+    RedditlikeGuestPostsVote_summaryController,
+    RedditlikeMemberPostsVote_summaryController,
+    RedditlikeGuestPostsCommentsController,
+    RedditlikeMemberPostsCommentsController,
     RedditlikeMemberCommentsController,
     RedditlikeModeratorCommentsController,
-    RedditlikeCommentsRevisionsController,
-    RedditlikeCommunitiesPostsController,
-    RedditlikeUsersPostsController,
-    RedditlikeCommentsController,
-    RedditlikeModeratorReportsController,
-    RedditlikeMemberReportsController,
-    RedditlikeModeratorBansController,
-    RedditlikeModeratorCommunitiesBansController,
-    RedditlikeMemberSubscriptionsController,
-    RedditlikeMemberKarmaController,
-    RedditlikeMemberActivityDashboardController,
-    RedditlikeMemberFeedHomeController,
-    RedditlikeGuestFeedPopularController,
-    RedditlikeMemberFeedPopularController,
-    RedditlikeGuestCommunitiesFeedController,
-    RedditlikeMemberCommunitiesFeedController,
+    RedditlikeModeratorPostsCommentsController,
+    RedditlikeMemberCommentsVoteController,
+    RedditlikeModeratorCommentsVoteController,
+    RedditlikeModeratorCommunitiesModerator_rolesController,
+    RedditlikeAdminCommunitiesModerator_rolesController,
+    RedditlikeModeratorModerator_rolesController,
+    RedditlikeAdminModerator_rolesController,
     RedditlikeModeratorCommunitiesReportsController,
-    RedditlikeAdminAnalyticsDashboardController,
-    RedditlikeAdminSearchContentController,
     RedditlikeAdminCommunitiesReportsController,
-    RedditlikeAdminModerationActionsController,
-    RedditlikeAdminModeratorsConductController,
-    RedditlikeModeratorCommunitiesReviewController,
-    RedditlikeModeratorReportsModerator_actionController,
-    RedditlikeController,
+    RedditlikeModeratorReportsController,
+    RedditlikeAdminReportsController,
+    RedditlikeMemberPostsReportsController,
+    RedditlikeMemberCommentsReportsController,
+    RedditlikeAdminCommunitiesBansController,
+    RedditlikeAdminBansController,
+    RedditlikeMemberCommunitiesMyController,
+    RedditlikeModeratorCommunitiesMyController,
+    RedditlikeAdminCommunitiesMyController,
+    RedditlikeMemberHomeController,
+    RedditlikeGuestPopularController,
+    RedditlikeMemberPopularController,
+    RedditlikeGuestVote_statisticsController,
+    RedditlikeMemberVote_statisticsController,
+    RedditlikeAdminDashboardController,
+    RedditlikeAdminSearchContentController,
+    RedditlikeAdminModerationConductController,
   ],
 })
 export class MyModule {}

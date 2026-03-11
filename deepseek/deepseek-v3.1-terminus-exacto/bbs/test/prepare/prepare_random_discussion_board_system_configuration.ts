@@ -6,7 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_system_configuration(
-  input?: DeepPartial<IDiscussionBoardSystemConfiguration.ICreate>,
+  input?: DeepPartial<IDiscussionBoardSystemConfiguration.ICreate> | undefined,
 ): IDiscussionBoardSystemConfiguration.ICreate {
   const data_type =
     input?.data_type ??
@@ -14,44 +14,56 @@ export function prepare_random_discussion_board_system_configuration(
       "string",
       "integer",
       "boolean",
-      "number",
       "json",
+      "datetime",
+      "uri",
     ] as const);
-  const generateConfigValue = () => {
+  // Generate value based on data_type, respecting DeepPartial input
+  const value = (() => {
+    if (input?.value !== undefined) {
+      return input.value; // Can be string, null, or undefined
+    }
     switch (data_type) {
-      case "string":
-        return RandomGenerator.paragraph({ sentences: 1 });
       case "integer":
-        return typia.random<number & tags.Type<"int32">>().toString();
+        return typia.random<number & tags.Type<"uint32">>().toString();
       case "boolean":
-        return RandomGenerator.pick(["true", "false"] as const);
-      case "number":
-        return typia.random<number & tags.Type<"double">>().toString();
+        return Math.random() > 0.5 ? "true" : "false";
       case "json":
         return JSON.stringify({
-          value: RandomGenerator.alphabets(5),
-          enabled: RandomGenerator.pick([true, false] as const),
+          test: RandomGenerator.alphabets(5),
+          value: typia.random<number & tags.Type<"uint32">>(),
+          active: Math.random() > 0.5,
+          tags: ArrayUtil.repeat(
+            typia.random<
+              number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
+            >(),
+            () => RandomGenerator.alphabets(4),
+          ),
         });
-      default:
-        return "default";
+      case "datetime":
+        return new Date(Date.now() + Math.random() * 1000000000).toISOString();
+      case "uri":
+        return (
+          "https://" +
+          RandomGenerator.alphabets(6).toLowerCase() +
+          ".example.com/" +
+          RandomGenerator.alphabets(3)
+        );
+      default: // 'string' and fallback
+        return RandomGenerator.paragraph({ sentences: 1 });
     }
-  };
+  })();
   return {
-    config_key: input?.config_key ?? RandomGenerator.alphabets(10),
-    config_value: input?.config_value ?? generateConfigValue(),
+    key:
+      input?.key ??
+      RandomGenerator.alphabets(2).toLowerCase() +
+        "." +
+        RandomGenerator.alphabets(3).toLowerCase() +
+        "." +
+        RandomGenerator.alphabets(4).toLowerCase(),
+    value: value,
     data_type: data_type,
     description:
       input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    category:
-      input?.category ??
-      RandomGenerator.pick([
-        "authentication",
-        "content",
-        "performance",
-        "security",
-        "ui",
-        "api",
-      ] as const),
-    is_sensitive: input?.is_sensitive ?? false,
   };
 }

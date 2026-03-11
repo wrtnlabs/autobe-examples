@@ -9,7 +9,7 @@ export async function moderatorAuthorize(request: {
   const payload: ModeratorPayload = jwtAuthorize({ request }) as ModeratorPayload;
 
   if (payload.type !== "moderator") {
-    throw new UnauthorizedException("Invalid token type");
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
   const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
@@ -20,7 +20,7 @@ export async function moderatorAuthorize(request: {
   });
 
   if (moderator === null) {
-    throw new ForbiddenException("Moderator not found or deleted");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

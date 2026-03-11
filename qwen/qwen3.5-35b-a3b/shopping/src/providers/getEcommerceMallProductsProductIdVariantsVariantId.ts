@@ -21,14 +21,11 @@ export async function getEcommerceMallProductsProductIdVariantsVariantId(props: 
 }): Promise<IEcommerceMallProductVariant> {
   const variant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: { id: props.variantId },
+      where: {
+        id: props.variantId,
+        product_id: props.productId,
+      },
       ...EcommerceMallProductVariantTransformer.select(),
     });
-  if (variant.product.id !== props.productId) {
-    throw new HttpException("Variant not found", 404);
-  }
-  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-    where: { id: props.productId },
-  });
   return await EcommerceMallProductVariantTransformer.transform(variant);
 }

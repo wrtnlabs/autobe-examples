@@ -1,12 +1,12 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdminAtSummaryTransformer";
+import { DiscussionBoardStatusTypeAtSummaryTransformer } from "./DiscussionBoardStatusTypeAtSummaryTransformer";
 
 export namespace DiscussionBoardMaintenanceScheduleAtSummaryTransformer {
   export type Payload = Prisma.discussion_board_maintenance_schedulesGetPayload<
@@ -16,22 +16,11 @@ export namespace DiscussionBoardMaintenanceScheduleAtSummaryTransformer {
     return {
       select: {
         id: true,
+        title: true,
         maintenance_type: true,
-        description: true,
-        scheduled_start_time: true,
-        scheduled_end_time: true,
-        actual_start_time: true,
-        actual_end_time: true,
-        status: true,
-        estimated_duration_minutes: true,
-        actual_duration_minutes: true,
-        impact_level: true,
-        notes: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        scheduledByAdmin: DiscussionBoardAdminAtSummaryTransformer.select(),
-        performedByAdmin: DiscussionBoardAdminAtSummaryTransformer.select(),
+        planned_start_at: true,
+        planned_end_at: true,
+        statusType: DiscussionBoardStatusTypeAtSummaryTransformer.select(),
       },
     } satisfies Prisma.discussion_board_maintenance_schedulesFindManyArgs;
   }
@@ -40,21 +29,13 @@ export namespace DiscussionBoardMaintenanceScheduleAtSummaryTransformer {
   ): Promise<IDiscussionBoardMaintenanceSchedule.ISummary> {
     return {
       id: input.id,
+      title: input.title,
       maintenance_type: input.maintenance_type,
-      status: input.status,
-      scheduled_start_time: input.scheduled_start_time.toISOString(),
-      scheduled_end_time: input.scheduled_end_time.toISOString(),
-      impact_level: input.impact_level,
-      estimated_duration_minutes: input.estimated_duration_minutes,
-      scheduledByAdmin:
-        await DiscussionBoardAdminAtSummaryTransformer.transform(
-          input.scheduledByAdmin,
-        ),
-      performedByAdmin: input.performedByAdmin
-        ? await DiscussionBoardAdminAtSummaryTransformer.transform(
-            input.performedByAdmin,
-          )
-        : null,
+      planned_start_at: input.planned_start_at.toISOString(),
+      planned_end_at: input.planned_end_at.toISOString(),
+      statusType: await DiscussionBoardStatusTypeAtSummaryTransformer.transform(
+        input.statusType,
+      ),
     };
   }
 }

@@ -6,8 +6,8 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
-import { IShoppingMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequestSnapshot";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -26,75 +26,75 @@ export async function postShoppingMallCustomerRefundRequests(props: {
   customer: CustomerPayload;
   body: IShoppingMallRefundRequest.ICreate;
 }): Promise<IShoppingMallRefundRequest> {
-  // Query order item with relations for validation
-  const orderItem =
-    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: { id: props.body.orderItemId },
-      select: {
-        id: true,
-        status: true,
-        order: {
-          select: {
-            id: true,
-            shopping_mall_customer_id: true,
-          },
-        },
-        shipment: {
-          select: {
-            delivered_at: true,
-            shipped_at: true,
-          },
+  // 1. Find the order item with order and shipment relations
+  const orderItem = await MyGlobal.prisma.shopping_mall_order_items.findUnique({
+    where: { id: props.body.orderItemId },
+    select: {
+      id: true,
+      status: true,
+      shopping_mall_order_id: true,
+      shopping_mall_shipment_id: true,
+      order: {
+        select: {
+          id: true,
+          shopping_mall_customer_id: true,
         },
       },
-    });
-  // Validate customer ownership
+      shipment: {
+        select: {
+          id: true,
+          delivered_at: true,
+        },
+      },
+    },
+  });
+  // 2. Return 404 if order item not found
+  if (orderItem === null) {
+    throw new HttpException("Order item not found", 404);
+  }
+  // 3. Check ownership - order must belong to authenticated customer
   if (orderItem.order.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate delivered status
+  // 4. Validate status is 'delivered'
   if (orderItem.status !== "delivered") {
     throw new HttpException(
-      "Order item must be delivered to request refund",
+      "Refund can only be requested for delivered items",
       400,
     );
   }
-  // Validate 7-day eligibility window from delivery
-  const shipment = orderItem.shipment;
-  if (!shipment) {
-    throw new HttpException("Order item has no shipment", 400);
+  // 5. Check 7-day eligibility window
+  if (orderItem.shipment === null || orderItem.shipment.delivered_at === null) {
+    throw new HttpException("Delivery date not found", 400);
   }
-  // Calculate delivery date: actual delivery or auto-delivery (14 days after shipped)
-  const deliveredAt =
-    shipment.delivered_at ??
-    new Date(
-      new Date(shipment.shipped_at).getTime() + 14 * 24 * 60 * 60 * 1000,
-    );
-  const deliveredTimestamp = deliveredAt.getTime();
+  const deliveryDate = orderItem.shipment.delivered_at;
+  const now = new Date();
   const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-  const currentTimestamp = Date.now();
-  if (currentTimestamp - deliveredTimestamp > sevenDaysInMs) {
+  const eligibilityDeadline = new Date(deliveryDate.getTime() + sevenDaysInMs);
+  if (now > eligibilityDeadline) {
     throw new HttpException(
-      "Refund request must be within 7 days of delivery",
+      "Refund request must be made within 7 days of delivery",
       400,
     );
   }
-  // Check for existing refund request (unique constraint per order item)
+  // 6. Check for duplicate refund request
   const existingRequest =
     await MyGlobal.prisma.shopping_mall_refund_requests.findUnique({
       where: { shopping_mall_order_item_id: props.body.orderItemId },
     });
-  if (existingRequest) {
+  if (existingRequest !== null) {
     throw new HttpException(
-      "Refund request already exists for this order item",
+      "A refund request already exists for this order item",
       409,
     );
   }
-  // Create refund request using collector
+  // 7. Create refund request using Collector
   const created = await MyGlobal.prisma.shopping_mall_refund_requests.create({
     data: await ShoppingMallRefundRequestCollector.collect({
       body: props.body,
     }),
     ...ShoppingMallRefundRequestTransformer.select(),
   });
+  // 8. Return transformed response
   return await ShoppingMallRefundRequestTransformer.transform(created);
 }

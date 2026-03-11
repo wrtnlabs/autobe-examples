@@ -1,5 +1,10 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -8,6 +13,10 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
+import { EcommerceMallProductImageTransformer } from "./EcommerceMallProductImageTransformer";
+import { EcommerceMallProductSnapshotTransformer } from "./EcommerceMallProductSnapshotTransformer";
+import { EcommerceMallProductVariantTransformer } from "./EcommerceMallProductVariantTransformer";
+import { EcommerceMallReviewTransformer } from "./EcommerceMallReviewTransformer";
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallProductTransformer {
@@ -27,13 +36,20 @@ export namespace EcommerceMallProductTransformer {
         deleted_at: true,
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
         category: EcommerceMallCategoryAtSummaryTransformer.select(),
+        variants: EcommerceMallProductVariantTransformer.select(),
+        images: EcommerceMallProductImageTransformer.select(),
+        snapshots: EcommerceMallProductSnapshotTransformer.select(),
+        reviews: EcommerceMallReviewTransformer.select(),
         wishlistEntries: true,
         orderItems: true,
-        reviews: true,
-        variants: true,
-        images: true,
-        snapshots: true,
         variantSnapshots: true,
+        _count: {
+          select: {
+            wishlistEntries: true,
+            orderItems: true,
+            reviews: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_productsFindManyArgs;
   }
@@ -43,8 +59,8 @@ export namespace EcommerceMallProductTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? undefined,
-      base_price: input.base_price,
+      description: input.description ?? null,
+      base_price: Number(input.base_price),
       is_active: input.is_active,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
@@ -55,6 +71,25 @@ export namespace EcommerceMallProductTransformer {
       category: await EcommerceMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
+      variants: await ArrayUtil.asyncMap(
+        input.variants,
+        EcommerceMallProductVariantTransformer.transform,
+      ),
+      images: await ArrayUtil.asyncMap(
+        input.images,
+        EcommerceMallProductImageTransformer.transform,
+      ),
+      snapshots: await ArrayUtil.asyncMap(
+        input.snapshots,
+        EcommerceMallProductSnapshotTransformer.transform,
+      ),
+      reviews: await ArrayUtil.asyncMap(
+        input.reviews,
+        EcommerceMallReviewTransformer.transform,
+      ),
+      wishlist_entries_count: input._count.wishlistEntries,
+      order_items_count: input._count.orderItems,
+      reviews_count: input._count.reviews,
     };
   }
 }

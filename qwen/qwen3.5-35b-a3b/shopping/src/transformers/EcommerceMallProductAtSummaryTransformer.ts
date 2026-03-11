@@ -19,21 +19,10 @@ export namespace EcommerceMallProductAtSummaryTransformer {
       select: {
         id: true,
         name: true,
-        description: true,
         base_price: true,
         is_active: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
         category: EcommerceMallCategoryAtSummaryTransformer.select(),
-        wishlistEntries: true,
-        orderItems: true,
-        reviews: true,
-        variants: true,
-        images: true,
-        snapshots: true,
-        variantSnapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_productsFindManyArgs;
   }
@@ -43,16 +32,14 @@ export namespace EcommerceMallProductAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
-      base_price: Number(input.base_price),
-      is_active: input.is_active,
-      created_at: input.created_at.toISOString(),
-      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.seller,
-      ),
+      basePrice: Number(input.base_price),
       category: await EcommerceMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
-    } satisfies IEcommerceMallProduct.ISummary;
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
+      isActive: input.is_active,
+    };
   }
 }

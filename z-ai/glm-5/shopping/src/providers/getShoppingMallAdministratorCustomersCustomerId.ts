@@ -15,14 +15,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallAdministratorCustomersCustomerId(props: {
   administrator: AdministratorPayload;
-  customerId: string & tags.Format<"uuid">;
+  customerId: string;
 }): Promise<IShoppingMallCustomer> {
   const customer =
-    await MyGlobal.prisma.shopping_mall_customers.findFirstOrThrow({
-      where: {
-        id: props.customerId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+      where: { id: props.customerId },
       ...ShoppingMallCustomerTransformer.select(),
     });
   return await ShoppingMallCustomerTransformer.transform(customer);

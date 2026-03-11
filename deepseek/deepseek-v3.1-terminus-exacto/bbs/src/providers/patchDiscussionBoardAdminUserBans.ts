@@ -1,11 +1,9 @@
 import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
-import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
-import { IDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardBanRecord";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
+import { IDiscussionBoardUserBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUserBan";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
-import { IPageIDiscussionBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardBanRecord";
+import { IPageIDiscussionBoardUserBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardUserBan";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,84 +13,124 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { DiscussionBoardBanRecordAtSummaryTransformer } from "../transformers/DiscussionBoardBanRecordAtSummaryTransformer";
+import { DiscussionBoardUserBanAtSummaryTransformer } from "../transformers/DiscussionBoardUserBanAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdminUserBans(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardBanRecord.IRequest;
-}): Promise<IPageIDiscussionBoardBanRecord.ISummary> {
+  body: IDiscussionBoardUserBan.IRequest;
+}): Promise<IPageIDiscussionBoardUserBan.ISummary> {
+  // Authorization implicitly handled by AdminAuth decorator
+  // Build filter conditions based on request body
+  const whereInput: Prisma.discussion_board_user_bansWhereInput = {
+    deleted_at: null, // Exclude soft-deleted records
+  };
+  // Create separate array for AND conditions
+  const andConditions: Prisma.discussion_board_user_bansWhereInput[] = [];
+  // Filter by member_id
+  if (props.body.member_id !== undefined && props.body.member_id !== null) {
+    andConditions.push({ member_id: props.body.member_id });
+  }
+  // Filter by admin_id
+  if (props.body.admin_id !== undefined && props.body.admin_id !== null) {
+    andConditions.push({ admin_id: props.body.admin_id });
+  }
+  // Filter by status
+  if (props.body.status !== undefined && props.body.status !== null) {
+    andConditions.push({ status: props.body.status });
+  }
+  // Filter by reason using trigram search (ILike with wildcards)
+  if (props.body.reason !== undefined && props.body.reason !== null) {
+    andConditions.push({
+      reason: { contains: props.body.reason, mode: "insensitive" },
+    });
+  }
+  // Filter by banned_at date range
+  if (
+    props.body.banned_at_from !== undefined &&
+    props.body.banned_at_from !== null
+  ) {
+    andConditions.push({
+      banned_at: { gte: new Date(props.body.banned_at_from) },
+    });
+  }
+  if (
+    props.body.banned_at_to !== undefined &&
+    props.body.banned_at_to !== null
+  ) {
+    andConditions.push({
+      banned_at: { lte: new Date(props.body.banned_at_to) },
+    });
+  }
+  // Filter by expires_at date range
+  if (
+    props.body.expires_at_from !== undefined &&
+    props.body.expires_at_from !== null
+  ) {
+    andConditions.push({
+      expires_at: { gte: new Date(props.body.expires_at_from) },
+    });
+  }
+  if (
+    props.body.expires_at_to !== undefined &&
+    props.body.expires_at_to !== null
+  ) {
+    andConditions.push({
+      expires_at: { lte: new Date(props.body.expires_at_to) },
+    });
+  }
+  // Filter by unbanned_at date range
+  if (
+    props.body.unbanned_at_from !== undefined &&
+    props.body.unbanned_at_from !== null
+  ) {
+    andConditions.push({
+      unbanned_at: { gte: new Date(props.body.unbanned_at_from) },
+    });
+  }
+  if (
+    props.body.unbanned_at_to !== undefined &&
+    props.body.unbanned_at_to !== null
+  ) {
+    andConditions.push({
+      unbanned_at: { lte: new Date(props.body.unbanned_at_to) },
+    });
+  }
+  // Add AND conditions if any exist
+  if (andConditions.length > 0) {
+    whereInput.AND = andConditions;
+  }
+  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const where = {
-    ...(props.body.banStatus !== undefined &&
-      props.body.banStatus !== null && { ban_status: props.body.banStatus }),
-    ...(props.body.appealStatus !== undefined &&
-      props.body.appealStatus !== null && {
-        appeal_status: props.body.appealStatus,
-      }),
-    ...(props.body.bannedUserId !== undefined &&
-      props.body.bannedUserId !== null && {
-        banned_user_id: props.body.bannedUserId,
-      }),
-    ...(props.body.banningAdministratorId !== undefined &&
-      props.body.banningAdministratorId !== null && {
-        banning_administrator_id: props.body.banningAdministratorId,
-      }),
-    ...(props.body.banStartedAtFrom !== undefined &&
-      props.body.banStartedAtFrom !== null && {
-        ban_started_at: { gte: new Date(props.body.banStartedAtFrom) },
-      }),
-    ...(props.body.banStartedAtTo !== undefined &&
-      props.body.banStartedAtTo !== null && {
-        ban_started_at: { lte: new Date(props.body.banStartedAtTo) },
-      }),
-    ...(props.body.banEndsAtFrom !== undefined &&
-      props.body.banEndsAtFrom !== null && {
-        ban_ends_at: { gte: new Date(props.body.banEndsAtFrom) },
-      }),
-    ...(props.body.banEndsAtTo !== undefined &&
-      props.body.banEndsAtTo !== null && {
-        ban_ends_at: { lte: new Date(props.body.banEndsAtTo) },
-      }),
-    ...(props.body.search !== undefined &&
-      props.body.search !== null && {
-        ban_reason: { contains: props.body.search },
-      }),
-  } satisfies Prisma.discussion_board_user_bansWhereInput;
-  const data = await MyGlobal.prisma.discussion_board_user_bans.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    ...DiscussionBoardBanRecordAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.discussion_board_user_bans.count({
-    where,
-  });
+  // Fetch paginated ban records with transformer's select
+  const [banRecords, totalCount] = await Promise.all([
+    MyGlobal.prisma.discussion_board_user_bans.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { banned_at: "desc" },
+      ...DiscussionBoardUserBanAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.discussion_board_user_bans.count({
+      where: whereInput,
+    }),
+  ]);
+  // Transform records to DTO format
   const transformedData = await ArrayUtil.asyncMap(
-    data,
-    DiscussionBoardBanRecordAtSummaryTransformer.transform,
+    banRecords,
+    DiscussionBoardUserBanAtSummaryTransformer.transform,
   );
+  // Return paginated response
   return {
     data: transformedData,
     pagination: {
-      pagination: {
-        current: page satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<0> as number & tags.Type<"int32"> & tags.Minimum<0>,
-        limit: limit satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<0> as number & tags.Type<"int32"> & tags.Minimum<0>,
-        records: total satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<0> as number & tags.Type<"int32"> & tags.Minimum<0>,
-        pages: Math.ceil(total / limit) satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<0> as number & tags.Type<"int32"> & tags.Minimum<0>,
-      } satisfies IPage.IPagination,
-    } satisfies IPageIDiscussionBoardBanRecord.ISummary["pagination"],
-  } satisfies IPageIDiscussionBoardBanRecord.ISummary;
+      current: page,
+      limit: limit,
+      records: totalCount,
+      pages: Math.ceil(totalCount / limit),
+    } satisfies IPage.IPagination,
+  };
 }

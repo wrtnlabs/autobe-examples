@@ -6,30 +6,36 @@ import { IDiscussionBoardSystemConfiguration } from "../../../../api/structures/
 import { IPageIDiscussionBoardSystemConfiguration } from "../../../../api/structures/IPageIDiscussionBoardSystemConfiguration";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { deleteDiscussionBoardAdminSystemConfigurationsConfigurationId } from "../../../../providers/deleteDiscussionBoardAdminSystemConfigurationsConfigurationId";
-import { getDiscussionBoardAdminSystemConfigurationsConfigurationId } from "../../../../providers/getDiscussionBoardAdminSystemConfigurationsConfigurationId";
+import { deleteDiscussionBoardAdminSystemConfigurationsConfigId } from "../../../../providers/deleteDiscussionBoardAdminSystemConfigurationsConfigId";
+import { getDiscussionBoardAdminSystemConfigurationsConfigId } from "../../../../providers/getDiscussionBoardAdminSystemConfigurationsConfigId";
 import { patchDiscussionBoardAdminSystemConfigurations } from "../../../../providers/patchDiscussionBoardAdminSystemConfigurations";
 import { postDiscussionBoardAdminSystemConfigurations } from "../../../../providers/postDiscussionBoardAdminSystemConfigurations";
-import { putDiscussionBoardAdminSystemConfigurationsConfigurationId } from "../../../../providers/putDiscussionBoardAdminSystemConfigurationsConfigurationId";
+import { putDiscussionBoardAdminSystemConfigurationsConfigId } from "../../../../providers/putDiscussionBoardAdminSystemConfigurationsConfigId";
 
 @Controller("/discussionBoard/admin/system-configurations")
 export class DiscussionboardAdminSystem_configurationsController {
   /**
-   * Create a new system configuration parameter for the discussion board platform.
+   * Create a new system configuration entry with unique key identifier and typed value.
    *
-   * This endpoint allows authorized administrators to define new configuration settings that control platform behavior and features. Each configuration consists of a unique key identifier, value, data type specification, descriptive information, and category classification.
+   * This operation allows administrators to define platform-wide configuration settings that control various aspects of the discussion board system. Each configuration requires a unique key following dot notation convention (e.g., "articles.pagination.page_size"), a specified data type for proper value interpretation, and a descriptive explanation of the configuration's purpose.
    *
-   * The configuration system provides centralized management of platform parameters that can be modified without code changes. Configuration values support various data types including strings, integers, booleans, numbers, and JSON objects for complex settings.
+   * The system enforces key uniqueness to prevent configuration conflicts and supports multiple data types including string, integer, boolean, JSON, datetime, and URI formats. Configuration values are stored as strings but parsed according to the specified data_type field to ensure consistent interpretation across all system components.
    *
-   * Configuration entries are organized by functional categories such as authentication, content, performance, and security. Sensitive configurations can be flagged to protect confidential information in logs and UI displays.
-   *
-   * All configuration changes are audited with creation and modification timestamps. The system ensures configuration key uniqueness to prevent conflicts and maintain data integrity.
+   * Administrators should use this operation to establish default settings, enable/disable features, and configure operational parameters that affect the entire platform. All configuration changes are audit-trailed with creation timestamps and support soft deletion through the deleted_at field for configuration deprecation without breaking historical references.
    *
    * @param connection
-   * @param body System configuration creation data including key, value, type, and metadata
+   * @param body Configuration creation parameters including key, value, data type, and description
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new system configuration entry in the discussion_board_system_configurations table. Validate that config_key is unique (check existing entries). Generate a UUID for the id field. Set created_at and updated_at to current timestamp. The data_type field must be one of: 'string', 'integer', 'boolean', 'number', 'json'. Validate that config_value can be parsed according to the specified data_type. Return the complete created configuration object with all fields populated.
+   * @x-autobe-specification Validate input parameters including key uniqueness check. Create new system configuration record with UUID generation. Set creation and update timestamps. Return complete configuration object.
+   *
+   * Implementation steps:
+   * 1. Validate required fields: key, data_type, description
+   * 2. Check key uniqueness against existing configurations
+   * 3. Generate UUID for the new record
+   * 4. Set created_at and updated_at to current timestamp
+   * 5. Insert record into discussion_board_system_configurations table
+   * 6. Return the complete created configuration object
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -51,23 +57,19 @@ export class DiscussionboardAdminSystem_configurationsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of system configuration parameters for platform administration.
+   * Search and filter system configuration settings with advanced filtering capabilities.
    *
-   * This operation provides comprehensive search capabilities for system administrators to manage platform configuration settings. Administrators can filter configurations by category, data type, sensitivity status (using the `is_sensitive` field), and perform keyword searches across configuration keys and descriptions. The operation supports advanced pagination with configurable page sizes and sorting options.
+   * This operation provides administrators with comprehensive search functionality for system-wide configuration settings stored in the discussion_board_system_configurations table. Administrators can search by configuration key patterns using partial matching, filter by specific data types (string, integer, boolean, json, datetime, uri), and search within configuration value content. The operation supports date range filtering for configuration creation (created_at) and modification (updated_at) timestamps.
    *
-   * The response includes configuration summaries optimized for administrative interfaces, showing key parameters without exposing sensitive configuration values when the `is_sensitive` flag is set to true. This operation is essential for system administrators who need to review, modify, or audit platform configuration settings across different functional areas.
+   * Advanced filtering includes the ability to search for active configurations (deleted_at is null) or deprecated configurations (deleted_at is not null). Results are paginated with configurable page sizes and support sorting by key, creation date, or modification date. Each configuration summary includes key, data_type, value preview, and status indicators.
    *
-   * Security considerations require that sensitive configuration values identified by the `is_sensitive` field may be masked or redacted in the response to prevent exposure of critical system parameters. Administrators must have appropriate privileges as defined in the administrator hierarchy system to access configuration management functionality.
+   * This operation is essential for system administrators to manage platform-wide settings, monitor configuration changes through the audit trail fields, and maintain operational consistency across all application domains. Access is restricted to authenticated administrators only.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering system configurations including category, data type, sensitivity status, and keyword search options
+   * @param body Search criteria and pagination parameters for system configurations
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_system_configurations table with comprehensive filtering capabilities. Apply search filters based on the request body parameters including category matching, data type filtering, sensitivity status, and keyword search across config_key and description fields.
-   *
-   * Implement pagination using cursor-based or offset-based approach depending on performance requirements. For keyword searches, use full-text search capabilities on the description field with GIN index support. When is_sensitive is true in the request, ensure sensitive configuration values are appropriately masked in the response.
-   *
-   * Join with administrator session validation to ensure only authorized administrators can access configuration data. Implement rate limiting to prevent excessive configuration listing requests. Cache frequently accessed configuration lists for performance optimization.
+   * @x-autobe-specification Query discussion_board_system_configurations table with pagination and filtering capabilities. Apply search filters on configuration key, data type, and value content. Support filtering by creation date range and active/inactive status based on deleted_at field. Return cursor-based pagination for large result sets. Include proper authorization checks for administrator access only.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -91,38 +93,34 @@ export class DiscussionboardAdminSystem_configurationsController {
   /**
    * Retrieve a specific system configuration by its unique identifier.
    *
-   * This API operation provides access to individual configuration parameters that control the behavior and features of the discussion board platform. Each configuration entry represents a system parameter that influences platform functionality, such as rate limits, content policies, display settings, or feature toggles.
+   * This operation provides administrators with detailed access to individual system configuration settings stored in the centralized configuration registry. Each configuration entry includes the unique key identifier, typed value, data type specification, descriptive documentation, and temporal metadata for audit purposes.
    *
-   * The operation queries the discussion_board_system_configurations table which stores all configurable parameters that control the behavior and features of the platform. Administrators can modify these settings to customize platform functionality, enable/disable features, and adjust operational parameters without requiring code changes.
+   * System configurations are used across all application domains to control platform behavior, feature flags, and operational parameters. Administrators can use this endpoint to verify current settings, review configuration documentation, and understand how specific settings impact system functionality.
    *
-   * Administrators can use this operation to review specific configuration settings when managing platform behavior. The response includes all configuration details including the parameter key, current value, data type, description, category, and sensitivity status. For sensitive configuration values (marked with is_sensitive flag), consider implementing masking or obfuscation in the response to prevent exposure of sensitive information in logs and UI displays.
+   * The response includes the complete configuration object with all metadata fields, allowing administrators to see both the current value and the configuration's purpose and constraints as defined in the description field.
    *
-   * Security considerations require that sensitive configuration values may be masked or restricted in certain contexts to prevent exposure of sensitive information. Administrators should have appropriate permissions to access configuration management functions, which corresponds to the admin role in the authorization system.
+   * Access to this operation is typically restricted to administrative users who need to manage system-wide settings and understand configuration dependencies across different platform components.
    *
-   * This operation complements the configuration listing operation which provides paginated results of all system configurations. Individual configuration retrieval is essential for detailed inspection and modification workflows within the system administration interface.
+   * This operation complements the list operation (PATCH /system-configurations) which provides paginated search capabilities for browsing multiple configurations with filtering options.
    *
    * @param connection
-   * @param configurationId Unique identifier of the system configuration to retrieve
+   * @param configId Unique identifier of the system configuration to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the discussion_board_system_configurations table using the provided configurationId parameter. Validate that the configuration exists and is not soft-deleted (deleted_at is null). Return the complete configuration object with all fields including id, config_key, config_value, data_type, description, category, is_sensitive, created_at, and updated_at.
-   *
-   * Ensure proper error handling for non-existent configurations, returning appropriate HTTP status codes. The operation should respect the soft-delete mechanism by excluding configurations marked as deleted.
-   *
-   * No complex joins or additional data processing required since this is a simple single-record retrieval from a standalone configuration table.
+   * @x-autobe-specification Query the discussion_board_system_configurations table by the provided configId parameter. Validate that the configId is a valid UUID format before querying. Return the complete configuration record including id, key, value, data_type, description, created_at, updated_at, and deleted_at fields. If the configuration is soft-deleted (deleted_at is not null), still return the record but include the deletion timestamp. If no configuration exists with the given ID, return a 404 Not Found error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":configurationId")
+  @TypedRoute.Get(":configId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("configurationId")
-    configurationId: string & tags.Format<"uuid">,
+    @TypedParam("configId")
+    configId: string & tags.Format<"uuid">,
   ): Promise<IDiscussionBoardSystemConfiguration> {
     try {
-      return await getDiscussionBoardAdminSystemConfigurationsConfigurationId({
+      return await getDiscussionBoardAdminSystemConfigurationsConfigId({
         admin,
-        configurationId,
+        configId,
       });
     } catch (error) {
       console.log(error);
@@ -131,49 +129,37 @@ export class DiscussionboardAdminSystem_configurationsController {
   }
 
   /**
-   * Update an existing system configuration entry with new parameter values.
+   * Update an existing system configuration entry with new values.
    *
-   * This operation allows authorized administrators to modify system configuration settings that control platform behavior and features. Administrators can update configuration values, data types, descriptions, categories, and sensitivity flags while maintaining the configuration key as an immutable identifier.
+   * This operation allows administrators to modify configuration settings while maintaining the integrity of the immutable key and data_type fields. The operation validates that the configuration exists and applies atomic updates to the value and description fields. Configuration updates are audit-trailed through automatic timestamp updates in the updated_at field, preserving historical consistency.
    *
-   * The operation validates that the target configuration exists and applies the specified updates to the modifiable fields. It automatically updates the timestamp to track when the configuration was last modified, providing an audit trail for configuration changes.
+   * The system configuration schema (discussion_board_system_configurations) stores centralized platform-wide settings including feature flags, operational parameters, and global settings. Each configuration includes a unique key identifier following dot notation convention (e.g., 'component.feature.setting'), typed values (string, integer, double, boolean, json, datetime, uri), and descriptive documentation for administrators.
    *
-   * Configuration updates are transactional and atomic, ensuring that either all specified changes are applied successfully or none are applied if validation fails. The operation returns the complete updated configuration object including all fields for verification purposes.
+   * Administrators can use this operation to adjust system behavior dynamically without requiring deployment changes. The response includes the complete updated configuration object with all timestamp fields for verification, ensuring consistency across all system components that reference this configuration.
    *
-   * Security considerations require administrator-level privileges to modify system configurations, as these settings control critical platform functionality. Sensitive configuration values are properly handled according to their sensitivity flags.
-   *
-   * This operation integrates with the system's configuration management workflow, allowing administrators to fine-tune platform behavior without requiring code changes. The configuration system supports various data types including strings, integers, booleans, and JSON structures for flexible parameter management.
+   * This operation complements the GET operation for retrieving single configurations and the PATCH operation for searching configuration lists. Only users with administrator privileges can modify system configurations.
    *
    * @param connection
-   * @param configurationId Unique identifier of the system configuration to update
-   * @param body Updated configuration parameters including value, data type, description, category, and sensitivity flag
+   * @param configId Unique identifier of the system configuration to update
+   * @param body Updated configuration values including value and description fields
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the target configuration exists by ID before proceeding with updates. Check administrator authorization level to ensure the user has permission to modify system configurations.
-   *
-   * Update only modifiable fields: config_value, data_type, description, category, is_sensitive. The config_key field remains immutable as it serves as the unique reference identifier.
-   *
-   * Apply data type validation based on the specified data_type field to ensure configuration values conform to their expected formats. For boolean types, validate true/false values; for integer types, validate numeric format; for JSON types, validate valid JSON structure.
-   *
-   * Automatically update the updated_at timestamp to reflect the modification time. Maintain referential integrity by preserving the configuration ID and key relationships.
-   *
-   * Return the complete updated configuration object including all fields (id, config_key, config_value, data_type, description, category, is_sensitive, created_at, updated_at) for verification. Handle sensitive configuration values appropriately based on the is_sensitive flag.
-   *
-   * Implement proper error handling for non-existent configurations, validation failures, and authorization errors. Provide clear error messages for troubleshooting configuration update issues.
+   * @x-autobe-specification Update an existing system configuration by ID. Validate that the configuration exists and the configId is valid UUID. Update only the value and description fields while preserving the key and data_type which should remain immutable. Update the updated_at timestamp automatically. Return the complete updated configuration object including all fields for verification.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":configurationId")
+  @TypedRoute.Put(":configId")
   public async update(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("configurationId")
-    configurationId: string & tags.Format<"uuid">,
+    @TypedParam("configId")
+    configId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IDiscussionBoardSystemConfiguration.IUpdate,
   ): Promise<IDiscussionBoardSystemConfiguration> {
     try {
-      return await putDiscussionBoardAdminSystemConfigurationsConfigurationId({
+      return await putDiscussionBoardAdminSystemConfigurationsConfigId({
         admin,
-        configurationId,
+        configId,
         body,
       });
     } catch (error) {
@@ -183,53 +169,33 @@ export class DiscussionboardAdminSystem_configurationsController {
   }
 
   /**
-   * Soft delete a system configuration by setting its deleted_at timestamp.
+   * Permanently removes a system configuration entry from the platform.
    *
-   * This operation marks a system configuration as deleted by setting the deleted_at field to the current timestamp, effectively removing the configuration from active use while preserving the record for audit and historical purposes. The configuration will no longer be returned in standard queries but can be recovered if needed.
+   * This operation performs a soft deletion of the specified system configuration by setting the deleted_at timestamp. The configuration is removed from active use but preserved in the database for audit trail purposes. Administrators can use this operation to deprecate outdated configurations or remove settings that are no longer needed.
    *
-   * Soft deletion is preferred over hard deletion for system configurations to maintain audit trails and allow configuration recovery in case of accidental deletion. The operation ensures that configuration history is preserved while making the configuration inactive.
+   * The deletion process maintains referential integrity by ensuring that any references to the deleted configuration are properly handled according to business rules. All configuration changes are audit-trailed through the temporal fields in the database schema.
    *
-   * Administrators with appropriate permissions can perform this operation to remove outdated or unnecessary system configurations. The operation is idempotent - calling it multiple times on the same configuration will have the same effect as calling it once.
-   *
-   * This operation complements the configuration management workflow, allowing administrators to manage the lifecycle of system settings while maintaining data integrity and audit compliance.
+   * This operation requires administrator privileges and provides confirmation of successful deletion by returning the deleted configuration details. Soft deletion allows for potential restoration scenarios while maintaining historical accuracy for system configuration management.
    *
    * @param connection
-   * @param configurationId The unique identifier of the system configuration to soft delete
+   * @param configId Unique identifier of the system configuration to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update the discussion_board_system_configurations table to set deleted_at = NOW() where id = configurationId.
-   *
-   * Validate that the configuration exists and is not already deleted before performing the update.
-   *
-   * Return the soft-deleted configuration record with the updated deleted_at timestamp.
-   *
-   * Ensure proper authorization checks - only authorized administrators should be able to delete system configurations.
-   *
-   * Handle the case where the configurationId does not exist by returning an appropriate error response.
-   *
-   * Implement transaction safety to ensure the update is atomic and consistent.
-   *
-   * Update the updated_at field to reflect the modification timestamp.
-   *
-   * Return the complete configuration object including the new deleted_at value for confirmation.
-   *
-   * Ensure the operation is idempotent - multiple calls should not cause errors or duplicate deletions.
+   * @x-autobe-specification Retrieve the system configuration by configId from discussion_board_system_configurations table. Validate that the configuration exists and is not already deleted. Update the deleted_at field with current timestamp to implement soft deletion. Return the deleted configuration details for confirmation. Ensure atomic transaction for data consistency.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":configurationId")
+  @TypedRoute.Delete(":configId")
   public async erase(
     @AdminAuth()
     admin: AdminPayload,
-    @TypedParam("configurationId")
-    configurationId: string & tags.Format<"uuid">,
+    @TypedParam("configId")
+    configId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteDiscussionBoardAdminSystemConfigurationsConfigurationId(
-        {
-          admin,
-          configurationId,
-        },
-      );
+      return await deleteDiscussionBoardAdminSystemConfigurationsConfigId({
+        admin,
+        configId,
+      });
     } catch (error) {
       console.log(error);
       throw error;

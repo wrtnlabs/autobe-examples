@@ -21,7 +21,11 @@ export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         parent_category_id: true,
-        category: true,
+        category: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_category_snapshotsFindManyArgs;
   }
@@ -30,13 +34,13 @@ export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
   ): Promise<IEcommerceMallCategorySnapshot.ISummary> {
     return {
       id: input.id,
-      snapshotCreatedAt: input.snapshot_created_at.toISOString(),
+      snapshot_created_at: input.snapshot_created_at.toISOString(),
       name: input.name,
-      description: input.description ?? null,
-      isLeaf: input.is_leaf,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      parentCategoryId: input.parent_category_id ?? null,
+      description: input.description,
+      is_leaf: input.is_leaf,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      parent_category_id: input.parent_category_id ?? null,
     };
   }
 }

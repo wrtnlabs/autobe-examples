@@ -7,47 +7,41 @@ import { IPageIRedditPlatformComment } from "../../../../structures/IPageIReddit
 import { IRedditPlatformComment } from "../../../../structures/IRedditPlatformComment";
 
 /**
- * Retrieve a filtered and paginated list of comments on a specific post, with support for multiple sorting methods and nested reply depth control.
+ * Retrieve a paginated list of comments on a specific post with sorting and filtering options.
  *
- * This operation returns all non-deleted comments associated with the specified post, including top-level comments and their nested reply threads. Comments can be sorted by best score, newest first, or controversial votes, allowing users to control how discussion content is displayed.
+ * This operation returns all non-deleted comments associated with the specified post, including nested reply threads. Comments are retrieved with their author information, vote scores, and timestamps. The operation supports various sorting options (newest, oldest, best, controversial) and pagination for efficient retrieval of large comment threads.
  *
- * The endpoint provides comprehensive pagination support with configurable page size and cursor-based navigation for efficient large result set handling. Each comment includes vote score, author username, creation timestamp, and nested reply structure with hierarchical indentation.
+ * Authorization: Any authenticated member or guest user can view comments on posts they have access to. Banned users can view comments on posts in their banned community but cannot create new comments. The operation respects soft delete flags, excluding comments marked as deleted while preserving thread structure.
  *
- * Security considerations:
- * - Requires the post to exist and not be deleted
- * - Banned users from the post's community cannot view comments on that post
- * - Deleted comments are hidden from all responses while maintaining thread structure
- * - Users can view comments on public posts they have access to
- * - This operation requires member authentication to verify access permissions
- *
- * The operation validates that the post exists, is accessible, and is not deleted before returning comments. It respects community access restrictions and applies appropriate filtering based on user permissions and comment deletion status. When comments are retrieved, the system joins with reddit_platform_members to display author usernames and applies the sorting criteria specified in the request parameters.
+ * Related Operations: GET /posts/{postId} must be pre-executed to verify post existence and access permissions. POST /comments can be used to create new comments on this post. GET /comments/{commentId} retrieves individual comment details with full nested replies.
  *
  * @param props.connection
- * @param props.postId The unique identifier of the post to retrieve comments for. The post must exist and be accessible to the requesting user.
- * @param props.body Search criteria including sorting method, pagination parameters, and nested reply depth limit
+ * @param props.postId Target post's unique identifier. The post must exist and be accessible to retrieve its comments.
+ * @param props.body Search criteria and pagination parameters for retrieving comments on a post
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_platform_comments table for all comments where post_id matches the given postId and deleted_at is null.
+ * @x-autobe-specification Query reddit_platform_comments table where post_id matches the provided postId parameter and deleted_at is null.
  *
- * 1. Validate that the post exists and is accessible to the requesting user
- * 2. If user is authenticated, verify the user is not banned from the post's community
- * 3. Apply sorting based on the sortingType parameter:
- *    - BEST: ORDER BY vote_score DESC, created_at DESC
- *    - NEW: ORDER BY created_at DESC
- *    - CONTROVERSIAL: ORDER BY ABS(vote_score) ASC, vote_count DESC
- * 4. Apply pagination with cursor-based or offset-based approach
- * 5. Join with reddit_platform_members to get author usernames
- * 6. Exclude deleted comments (deleted_at IS NOT NULL)
- * 7. For nested replies, structure results hierarchically up to replyDepth limit
- * 8. Calculate vote scores from reddit_platform_comment_votes aggregated data
- * 9. Return paginated results with metadata including total count and next cursor
+ * Filtering and Sorting:
+ * - Apply sort parameter: 'newest' sorts by created_at DESC, 'oldest' sorts by created_at ASC, 'best' sorts by vote_score DESC, 'controversial' sorts by absolute difference between upvotes and downvotes
+ * - Support pagination: extract page and limit parameters from request body for cursor-based or offset-based pagination
+ * - Return total count of matching comments for pagination metadata
  *
- * Edge cases:
- * - Post does not exist: Return 404 error
- * - Post is deleted: Return 404 error
- * - User banned from community: Return 403 error
- * - Post has no comments: Return empty array with pagination metadata
- * - Deep nested replies exceed replyDepth: Truncate at specified depth
+ * Nested Replies:
+ * - After retrieving top-level comments (where parent_id is null), fetch nested replies for each comment where parent_id matches the top-level comment ID
+ * - Order replies chronologically by created_at ASC within each thread level
+ * - Include reply count in comment metadata
+ *
+ * Authorization:
+ * - Verify user has access to view the post (public posts accessible to all, private communities require subscription)
+ * - Check if requesting user is banned from the post's community (banned users can view but not create)
+ * - Apply soft delete filtering (deleted_at IS NULL)
+ *
+ * Response Structure:
+ * - Return paginated response with 'pagination' object containing page, limit, total count, and next/prev cursor if applicable
+ * - Each comment entry includes: id, author (username, display_name, avatar_url), content, vote_score, created_at, updated_at, deleted_at, reply_count
+ * - Exclude deleted comments entirely from results
+ * - Handle edge cases: empty comment thread returns empty data array with pagination metadata, invalid postId returns 404 error
  * @path /redditPlatform/posts/:postId/comments
  * @accessor api.functional.redditPlatform.posts.comments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -77,12 +71,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * The unique identifier of the post to retrieve comments for. The post must exist and be accessible to the requesting user.
+     * Target post's unique identifier. The post must exist and be accessible to retrieve its comments.
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria including sorting method, pagination parameters, and nested reply depth limit
+     * Search criteria and pagination parameters for retrieving comments on a post
      */
     body: IRedditPlatformComment.IRequest;
   };

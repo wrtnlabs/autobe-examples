@@ -1,7 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import type { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import type { IEconomicPoliticalBoardArticleAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticleAttachment";
 import type { IEconomicPoliticalBoardAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAttachment";
 import type { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import type { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
@@ -26,7 +25,9 @@ export async function generate_random_economic_political_board_member_articles_c
   const result: IEconomicPoliticalBoardArticle =
     await api.functional.economicPoliticalBoard.member.articles.create(
       connection,
-      { body: prepared },
+      {
+        body: prepared,
+      },
     );
   return result;
 }

@@ -7,56 +7,46 @@ import { IPageIRedditPlatformAdminAuditLog } from "../../../../structures/IPageI
 import { IRedditPlatformAdminAuditLog } from "../../../../structures/IRedditPlatformAdminAuditLog";
 
 /**
- * Retrieve audit logs from the Reddit platform, supporting both administrator actions and moderator actions.
+ * Retrieve a filtered and paginated list of administrator audit log records for compliance monitoring, security auditing, and operational transparency.
  *
- * This operation provides access to audit trails that record administrative and moderation activities within the platform. Audit logs enable security monitoring, compliance auditing, and operational transparency by tracking all platform governance activities.
+ * This operation provides advanced search capabilities for reviewing all administrative actions performed across the Reddit platform. Users can filter by administrator identity, action type, date range, target entity type, action status, and execution context. Results are paginated with configurable page sizes and sorting options.
  *
- * The operation retrieves records from the reddit_platform_admin_audit_logs table (admin actions such as user suspension and content deletion) and the reddit_platform_moderation_audit_logs table (moderator actions including appointing moderators, banning users, and handling reports). Internal query logic combines results from both sources into a unified paginated response.
+ * Supports comprehensive filtering on IP address, user agent, and referrer information for forensic analysis. The operation ensures only authorized administrators can access audit data through JWT token validation and role-based access control.
  *
- * Results support filtering by date range, actor identity, action type, and community context (for moderation logs). The endpoint implements cursor-based pagination with configurable page sizes for efficient handling of large audit datasets. Sorting is supported by creation timestamp and action type.
- *
- * Related operations:
- * - GET /redditPlatform/admins/{adminId} for viewing admin account details
- * - PATCH /redditPlatform/admins/{adminId}/sessions for session management
+ * Audit logs are immutable append-only records, so this operation only retrieves existing logs without modifying or deleting any data. Each log entry includes details about the action performed, the administrator who executed it, the session used, and any target resources affected.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for audit log retrieval
+ * @param props.body Search criteria and pagination parameters for audit log filtering
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Execute a search query across admin and moderation audit logs with the following implementation details:
+ * @x-autobe-specification Query reddit_platform_admin_audit_logs table with pagination and filtering.
  *
- * 1. Authorization: Verify admin actor authentication via JWT token. Reject with 403 if actor is not an admin.
+ * Apply filters on:
+ * - admin_id: Specific administrator ID (UUID)
+ * - action_type: Action type (e.g., USER_SUSPEND, POST_DELETE, COMMUNITY_MODERATE)
+ * - action_status: Action result (SUCCESS, FAILED)
+ * - target_entity_type: Type of targeted entity (USER, POST, COMMENT, COMMUNITY, REPORT)
+ * - target_entity_id: Specific target entity ID (UUID)
+ * - date range: created_at between specified timestamps
+ * - ip_address: IP address filter
+ * - session_id: Session ID filter
  *
- * 2. Query construction: Build dynamic SQL query based on request filters:
- *    - audit_log_type filter: WHERE type = 'ADMIN' OR type = 'MODERATOR' or separate UNION of both tables
- *    - date_range filters: created_at BETWEEN start_date AND end_date
- *    - admin_id filter (for admin logs): WHERE admin_id = $1
- *    - moderator_id filter (for mod logs): WHERE moderator_id = $1
- *    - action_type filter: WHERE action_type IN ($1, $2, ...)
- *    - action_status filter (admin logs): WHERE action_status IN ($1, ...)
- *    - target_entity_type filter (admin logs): WHERE target_entity_type = $1
- *    - community_id filter (mod logs): WHERE community_id = $1
- *    - action_target_type filter: WHERE action_target_type = $1
- *    - Pagination: LIMIT $limit OFFSET $offset or cursor-based pagination with $after parameter
- *    - Sorting: ORDER BY created_at DESC (default), with support for created_at ASC, admin_id ASC/DESC, action_type ASC/DESC
+ * Apply sorting on:
+ * - created_at: Chronological order (descending by default)
+ * - action_type: Alphabetical order
+ * - action_status: Status order
  *
- * 3. Response assembly:
- *    - Union results from both audit log tables into unified response structure
- *    - Include audit_log_type field to distinguish between 'ADMIN' and 'MODERATOR'
- *    - Map moderator_id from mod logs to actor_id field for consistency
- *    - Map session_id from admin logs (may be null for some actions)
- *    - Include ip_address, user_agent, and referrer where available
- *    - Calculate total_count for pagination metadata
+ * Apply pagination:
+ * - page: Page number (1-indexed)
+ * - limit: Items per page (default: 20, max: 100)
  *
- * 4. Performance considerations:
- *    - Use database indexes: admin_id+created_at, moderator_id+created_at, action_type, created_at, community_id+created_at
- *    - Limit result set to 100 items maximum (enforced by pagination limit)
- *    - Implement query timeout of 30 seconds to prevent long-running audits
+ * Return total count of matching records and cursor-based pagination data.
  *
- * 5. Error handling:
- *    - Return 400 for invalid date formats, out-of-range pagination values, or invalid sorting fields
- *    - Return 404 if no logs match the filter criteria (empty data array with pagination metadata)
- *    - Return 500 for database query failures or timeouts
+ * Join with reddit_platform_admins to include administrator display_name for each log entry.
+ *
+ * Validate JWT token and ensure user has admin role before returning any data.
+ *
+ * Sort by created_at DESC by default, support custom sort fields via query parameters.
  * @path /redditPlatform/admin/audit-logs
  * @accessor api.functional.redditPlatform.admin.audit_logs.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -86,7 +76,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for audit log retrieval
+     * Search criteria and pagination parameters for audit log filtering
      */
     body: IRedditPlatformAdminAuditLog.IRequest;
   };
@@ -135,39 +125,42 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific administrator audit log entry by its unique identifier.
+ * Retrieve a single administrator audit log entry by its unique identifier.
  *
- * This operation returns the complete audit log record for a single administrative action, including details about the administrator who performed the action, the session information, the action type and status, and the targeted entity. Audit logs provide a comprehensive trail of all administrative activities on the platform for compliance, security monitoring, and operational transparency purposes.
+ * This endpoint provides detailed visibility into specific administrative actions taken on the platform. Each audit log entry captures a comprehensive record of the action including the type of operation performed, its success status, the entity that was affected, and the context in which the action was executed (IP address, user agent, referrer).
  *
- * The returned audit log entry contains:
- * - The administrator identity and associated session information
- * - The type of administrative action performed (e.g., 'USER_SUSPEND', 'POST_DELETE', 'COMMUNITY_MODERATE')
- * - The result status of the action (e.g., 'SUCCESS', 'FAILED')
- * - Details about the targeted entity if applicable (entity type and ID)
- * - Additional action parameters stored in JSON format
- * - Request context information including IP address, user agent, and referrer
- * - The exact timestamp when the action was performed
+ * Administrators use this endpoint to investigate specific incidents, verify compliance requirements, or review the details of particular administrative actions. The log entry includes polymorphic references to the target entity (posts, comments, users, communities, reports) allowing for contextual investigation of actions taken on various platform resources.
  *
- * This endpoint is typically used for:
- * - Security incident investigation and forensic analysis
- * - Compliance auditing and regulatory reporting
- * - Operational monitoring and administrative accountability
- * - Reviewing specific administrative actions taken on the platform
+ * This operation requires administrator authentication as audit logs contain sensitive information about platform administration and security-related actions. The returned data should not be exposed to regular members or guests.
+ *
+ * The audit log entry is immutable - once created, it is never modified or deleted. This endpoint returns the complete audit record as stored in the database, ensuring audit integrity.
  *
  * @param props.connection
  * @param props.logId Unique identifier of the audit log entry to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the reddit_platform_admin_audit_logs table for the audit log entry matching the provided logId.
+ * @x-autobe-specification Query reddit_platform_admin_audit_logs table for single record by id UUID.
  *
- * Implementation steps:
- * 1. Validate that logId is a valid UUID format
- * 2. Execute SELECT query on reddit_platform_admin_audit_logs WHERE id = :logId
- * 3. If no record found, return 404 Not Found error
- * 4. Join with reddit_platform_admins to resolve admin details if required
- * 5. Return the complete audit log record with all fields
+ * Validate that:
+ * - logId is a valid UUID format
+ * - Calling administrator has sufficient authorization to view this audit log
  *
- * The audit_logs table is append-only (never modified or deleted after creation), ensuring data integrity for audit purposes. All audit entries must be treated as immutable records for compliance and security auditing.
+ * Query:
+ * - SELECT all fields from reddit_platform_admin_audit_logs WHERE id = $1
+ * - Join with reddit_platform_admins to get administrator display information
+ * - Optional: Join with reddit_platform_admin_sessions for session details if session_id is present
+ *
+ * Return the complete audit log record including:
+ * - Action type and status
+ * - Target entity details (entity type and ID)
+ * - Execution context (IP, user agent, referrer)
+ * - Timestamp of action
+ * - Associated admin information
+ *
+ * Handle error cases:
+ * - Audit log not found: Return 404 with 'Audit log entry not found'
+ * - Unauthorized access: Return 403 with 'Access to this audit log is restricted'
+ * - Invalid UUID format: Return 400 with 'Invalid audit log identifier format'
  * @path /redditPlatform/admin/audit-logs/:logId
  * @accessor api.functional.redditPlatform.admin.audit_logs.getByLogid
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -242,54 +235,48 @@ export namespace getByLogid {
 }
 
 /**
- * Retrieve detailed audit trail information for a specific administrative action performed on the Reddit platform.
+ * Retrieves detailed information about a specific administrative audit log entry by its unique identifier.
  *
- * This endpoint provides access to comprehensive audit log records that track all administrator actions for compliance, security monitoring, and operational transparency. Each audit log entry captures a specific action performed by an administrator, including the action type, relevant details, affected resources, and execution context.
+ * This operation provides access to audit trail records that document administrator actions performed across the Reddit platform. Each audit log entry captures essential context for security monitoring, compliance auditing, and operational transparency.
  *
- * The returned audit log entry includes complete information about the administrative action, including the administering administrator's identity, session context, action type and status, targeted entity details (if applicable), and request context such as IP address, user agent, and HTTP referrer.
+ * The returned data includes the administrator who performed the action, the action type (such as USER_SUSPEND, POST_DELETE, COMMUNITY_MODERATE), the execution result status, and references to the targeted entity (posts, comments, users, communities, or reports). Additional forensic details such as IP address, user agent, and request referrer are included when available.
  *
- * **Security Considerations**:
- * - Access is restricted to administrator actors
- * - Audit logs contain sensitive security and compliance information
- * - All access to audit logs is logged for accountability
- *
- * **Related Operations**:
- * - `GET /audit-logs` (index) - List/search audit logs with filters and pagination
- * - `GET /admins/{adminId}` - View administrator information
+ * This endpoint is critical for security incident investigation, administrative accountability verification, and compliance reporting. Audit logs are immutable append-only records that should never be modified or deleted once created.
  *
  * @param props.connection
- * @param props.auditLogId The unique identifier of the audit log entry to retrieve.
+ * @param props.id The unique identifier of the audit log entry to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve audit log entry by UUID from reddit_platform_admin_audit_logs table.
+ * @x-autobe-specification Query the reddit_platform_admin_audit_logs table by primary key id (UUID).
  *
- * 1. Validate that auditLogId is a valid UUID format
- * 2. Query reddit_platform_admin_audit_logs table WHERE id = auditLogId
- * 3. If not found, return 404 Not Found
- * 4. Verify the requesting admin has permission to view audit logs (all admins have read access)
- * 5. Return complete audit log record with all fields
- * 6. Include admin name and session details if related entities exist
+ * 1. Validate that the provided id parameter is a valid UUID format
+ * 2. Perform database query: SELECT * FROM reddit_platform_admin_audit_logs WHERE id = $1
+ * 3. If no record is found, return 404 Not Found error
+ * 4. Apply admin authorization check - require admin actor with appropriate permissions
+ * 5. Return the complete audit log record including:
+ *    - id, admin_id, session_id
+ *    - action_type, action_status
+ *    - target_entity_type, target_entity_id
+ *    - action_details (JSON)
+ *    - ip_address, user_agent, referrer
+ *    - created_at timestamp
+ * 6. Format response as IRedditPlatformAdminAuditLog DTO
+ * 7. Ensure all string fields are returned as-is from database
  *
- * Business Rules:
- * - Audit logs are immutable append-only records
- * - Never return soft-deleted data (audit logs are never deleted)
- * - Maintain referential integrity with admin and session entities
- * - Include all request context fields for forensic analysis
- *
- * Edge Cases:
- * - Audit log ID does not exist: Return 404
- * - Requesting admin lacks authorization: Return 403 Forbidden
- * - Related admin/session has been deleted: Return null for those fields
- * @path /redditPlatform/admin/audit-logs/:auditLogId
- * @accessor api.functional.redditPlatform.admin.audit_logs.getByAuditlogid
+ * Error handling:
+ * - 404: No audit log found with specified id
+ * - 401/403: Unauthorized - user does not have admin privileges
+ * - 400: Invalid UUID format in path parameter
+ * @path /redditPlatform/admin/audit-logs/:id
+ * @accessor api.functional.redditPlatform.admin.audit_logs.getById
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function getByAuditlogid(
+export async function getById(
   connection: IConnection,
-  props: getByAuditlogid.Props,
-): Promise<getByAuditlogid.Response> {
+  props: getById.Props,
+): Promise<getById.Response> {
   return true === connection.simulate
-    ? getByAuditlogid.simulate(connection, props)
+    ? getById.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -299,24 +286,24 @@ export async function getByAuditlogid(
           },
         },
         {
-          ...getByAuditlogid.METADATA,
-          path: getByAuditlogid.path(props),
+          ...getById.METADATA,
+          path: getById.path(props),
           status: null,
         },
       );
 }
-export namespace getByAuditlogid {
+export namespace getById {
   export type Props = {
     /**
-     * The unique identifier of the audit log entry to retrieve.
+     * The unique identifier of the audit log entry to retrieve
      */
-    auditLogId: string & tags.Format<"uuid">;
+    id: string & tags.Format<"uuid">;
   };
   export type Response = IRedditPlatformAdminAuditLog;
 
   export const METADATA = {
     method: "GET",
-    path: "/redditPlatform/admin/audit-logs/:auditLogId",
+    path: "/redditPlatform/admin/audit-logs/:id",
     request: null,
     response: {
       type: "application/json",
@@ -325,21 +312,21 @@ export namespace getByAuditlogid {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditPlatform/admin/audit-logs/${encodeURIComponent(props.auditLogId ?? "null")}`;
+    `/redditPlatform/admin/audit-logs/${encodeURIComponent(props.id ?? "null")}`;
   export const random = (): IRedditPlatformAdminAuditLog =>
     typia.random<IRedditPlatformAdminAuditLog>();
   export const simulate = (
     connection: IConnection,
-    props: getByAuditlogid.Props,
+    props: getById.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: getByAuditlogid.path(props),
+      path: getById.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("auditLogId")(() => typia.assert(props.auditLogId));
+      assert.param("id")(() => typia.assert(props.id));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -1,1 +1,1 @@
-export * as delivery from "./delivery/index";
+export * as confirm_delivery from "./confirm_delivery/index";

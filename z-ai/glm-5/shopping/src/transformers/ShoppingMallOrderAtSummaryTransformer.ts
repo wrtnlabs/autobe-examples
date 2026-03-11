@@ -17,10 +17,15 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
       select: {
         id: true,
         order_number: true,
-        total_price: true,
         status: true,
+        total_price: true,
         created_at: true,
         customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+        orderItems: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_ordersFindManyArgs;
   }
@@ -29,15 +34,16 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
   ): Promise<IShoppingMallOrder.ISummary> {
     return {
       id: input.id,
-      order_number: input.order_number,
-      total_price: input.total_price,
+      orderNumber: input.order_number,
       status: input.status,
+      totalPrice: input.total_price,
       customer: input.customer
         ? await ShoppingMallCustomerAtSummaryTransformer.transform(
             input.customer,
           )
         : null,
-      created_at: input.created_at.toISOString(),
+      itemsCount: input.orderItems.length,
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

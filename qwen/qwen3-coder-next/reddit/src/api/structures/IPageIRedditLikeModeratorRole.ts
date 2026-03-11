@@ -22,25 +22,4 @@ export namespace IPageIRedditLikeModeratorRole {
      */
     data: IRedditLikeModeratorRole.ISummary[];
   };
-
-  /**
-   * A page.
-   *
-   * Collection of records with pagination information.
-   */
-  export type IConduct = {
-    /**
-     * Page information.
-     *
-     * @x-autobe-specification Pagination information for the page.
-     */
-    pagination: IPage.IPagination;
-
-    /**
-     * List of records.
-     *
-     * @x-autobe-specification List of records of type IRedditLikeModeratorRole.IConduct.
-     */
-    data: IRedditLikeModeratorRole.IConduct[];
-  };
 }

@@ -10,38 +10,61 @@ import { patchRedditPlatformCommunities } from "../../../providers/patchRedditPl
 @Controller("/redditPlatform/communities")
 export class RedditplatformCommunitiesController {
   /**
-   * Retrieve a paginated and filtered list of all communities on the Reddit platform.
+   * Retrieve a filtered and paginated list of all communities available on the Reddit-like platform.
    *
-   * This operation provides advanced browsing capabilities including name-based search and sorting options. All users (guests and members) can browse communities without authentication restrictions.
+   * This endpoint allows users to browse all communities with optional search functionality, sorting options, and pagination. Both guest (logged-out) and member (logged-in) users can access this endpoint without authentication requirements, as community listings are public.
    *
-   * The response includes community summary information optimized for list displays in feeds and community directories. Each community entry shows the name, description (if available), icon URL, and current subscriber count.
+   * The search functionality performs case-insensitive partial matching on community names to help users discover communities of interest. Results can be sorted by different criteria including newest first, most subscribers, or alphabetical order.
    *
-   * Search functionality supports case-insensitive partial name matching to help users discover communities by topic or name. Pagination ensures efficient loading even with large community catalogs.
+   * Pagination is implemented to efficiently handle large numbers of communities, with each page containing a configurable number of results. The response includes total count information to support client-side pagination controls.
+   *
+   * Each community in the result set includes essential information: unique identifier, name (used in URLs), description, icon URL, subscriber count, and creation timestamp. This summary format is optimized for list displays and feed rendering.
+   *
+   * Related API operations:
+   * - `GET /communities/{id}` - Retrieve detailed information for a specific community
+   * - `POST /communities` - Create a new community (requires authentication)
+   * - `GET /communities/{id}/subscribe` - Subscribe to or unsubscribe from a community
+   * - `GET /me/subscriptions` - View communities you are subscribed to
    *
    * @param connection
-   * @param body Search criteria, sorting, and pagination parameters for community browsing
+   * @param body Search criteria, sorting options, and pagination parameters for community listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_platform_communities table with pagination and filtering.
+   * @x-autobe-specification Query the reddit_platform_communities table with the following logic:
    *
-   * Apply search filters:
-   * - name: Case-insensitive partial match (LIKE '%query%')
-   * - subscriber_count: Min/max range filtering
-   * - deleted_at: Exclude soft-deleted communities (deleted_at IS NULL)
+   * 1. Build query with optional filters:
+   *    - Search filter: Apply case-insensitive partial match on name column using ILIKE with wildcards (e.g., %searchQuery%)
+   *    - Exclude soft-deleted communities where deleted_at is not null
    *
-   * Sorting options:
-   * - subscriber_count: ASC or DESC
-   * - created_at: ASC (newest first) or DESC (oldest first)
-   * - name: ASC (alphabetical)
+   * 2. Apply sorting based on sort parameter:
+   *    - 'newest': ORDER BY created_at DESC
+   *    - 'oldest': ORDER BY created_at ASC
+   *    - 'popular': ORDER BY subscriber_count DESC
+   *    - 'alphabetical': ORDER BY name ASC
    *
-   * Pagination:
-   * - Return cursor-based or offset-based pagination with configurable page size
-   * - Default page size: 20 communities per page
-   * - Maximum page size: 100 communities per page
+   * 3. Apply pagination:
+   *    - Use offset-based pagination with configurable page size (default: 20, max: 100)
+   *    - Calculate total count for pagination metadata using COUNT(*)
+   *    - Return data slice based on page and limit parameters
    *
-   * Return paginated result with metadata including total count, current page, and total pages.
-   * Ensure case-insensitive search using LOWER() or ILIKE operator.
-   * Filter out soft-deleted communities where deleted_at IS NOT NULL.
+   * 4. Select only necessary fields for summary view:
+   *    - id, name, description, icon_url, subscriber_count, created_at
+   *
+   * 5. Handle edge cases:
+   *    - Empty search: Return all communities matching pagination
+   *    - No communities exist: Return empty data array with pagination metadata
+   *    - Invalid sort value: Default to 'newest' sorting
+   *    - Invalid page/limit: Validate and apply defaults
+   *
+   * 6. Security considerations:
+   *    - No authentication required for browsing
+   *    - Rate limiting applies based on user IP
+   *    - Search queries should be sanitized to prevent SQL injection
+   *
+   * 7. Performance considerations:
+   *    - Use index on name column for Gin trigram search optimization
+   *    - Consider caching frequently accessed popular communities
+   *    - Limit search query length to prevent expensive wildcard queries
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -62,40 +85,43 @@ export class RedditplatformCommunitiesController {
   /**
    * Retrieve detailed information about a specific community by its unique identifier.
    *
-   * This operation provides access to community details including the community name (used in URLs like r/{name}), optional description, icon image URL, current subscriber count, and creator information. Communities are public resources that can be browsed by both authenticated members and guests without requiring login.
+   * This operation returns comprehensive community data including the community name, description, icon image URL, subscriber count, and metadata such as creation and last update timestamps. The endpoint provides a snapshot of the community's current state for display in community detail pages or profile views.
    *
-   * The response includes all essential community metadata such as creation timestamp, last update time, and owner details. If the community has been soft-deleted, this operation will return a 404 Not Found error to maintain data privacy and prevent access to removed communities.
+   * The community must be active and not soft-deleted to be returned. Communities that have been deleted (deleted_at is set) will not be accessible through this endpoint, ensuring users only see active communities.
+   *
+   * Both authenticated members and unauthenticated guests can access this endpoint, as communities are public-facing entities on the Reddit platform. The operation does not require authentication but the response structure remains consistent regardless of actor type.
    *
    * Related operations:
-   * - Use GET /communities to browse all communities with pagination
-   * - Use GET /communities/search to find communities by name
-   * - Use POST /communities/:name/subscribe to subscribe to a community
-   * - Use PATCH /communities/:name to update community details (owner only)
-   * - Use DELETE /communities/:name to delete a community (owner only)
-   *
-   * Authentication is not required for this operation as community browsing is open to all users.
+   * - GET /communities: Browse all communities in a paginated list
+   * - GET /communities/search: Search communities by name with filters
+   * - GET /me/subscriptions: View communities you are subscribed to (authenticated only)
+   * - GET /communities/{communityId}/posts: View posts within this community
    *
    * @param connection
    * @param communityId Unique identifier of the community to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_platform_communities table for a single community record matching the provided communityId UUID.
+   * @x-autobe-specification Query the reddit_platform_communities table for a record matching the provided communityId UUID.
    *
-   * 1. Validate that communityId is a valid UUID format
-   * 2. Execute SELECT query on reddit_platform_communities WHERE id = :communityId
-   * 3. Filter out soft-deleted communities (deleted_at IS NULL) unless explicitly requested
-   * 4. Join with reddit_platform_members table to fetch owner information (id, username, displayName)
-   * 5. Return the complete community object with all fields
+   * Apply the following validation and filtering logic:
+   * 1. Verify the communityId is a valid UUID format
+   * 2. Look up the community record by id field
+   * 3. Filter out soft-deleted communities (deleted_at IS NULL)
+   * 4. If no active community is found, return 404 Not Found
    *
-   * Edge cases:
-   * - If community not found (no matching record), return 404 Not Found
-   * - If community is soft-deleted (deleted_at IS NOT NULL), return 404 Not Found to hide deleted communities
-   * - Ensure subscriber_count is returned as an integer
+   * Join with reddit_platform_members to resolve owner information if requested, including owner username and display name for the response.
    *
-   * Performance considerations:
-   * - Use database index on id field for O(1) lookup
-   * - Consider caching frequently accessed communities
-   * - Return only necessary fields to minimize response size
+   * Return the complete community record with all active fields:
+   * - id: String (UUID)
+   * - owner_id: String (UUID) reference to owner
+   * - name: String (unique community name)
+   * - description: String? (optional description)
+   * - icon_url: String? (optional icon image URL)
+   * - subscriber_count: Int (current subscriber count)
+   * - created_at: DateTime (community creation timestamp)
+   * - updated_at: DateTime (last modification timestamp)
+   *
+   * Ensure the response does not include the deleted_at field unless explicitly requested for administrative purposes, as this is a public-facing endpoint.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":communityId")

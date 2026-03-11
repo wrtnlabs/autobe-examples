@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -37,18 +36,18 @@ export namespace EcommerceMallReviewTransformer {
   ): Promise<IEcommerceMallReview> {
     return {
       id: input.id,
+      rating: input.rating,
+      textContent: input.text_content ?? undefined,
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      rating: input.rating,
-      text_content: input.text_content ?? undefined,
-      is_active: input.is_active,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: null,
+      isActive: input.is_active,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

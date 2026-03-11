@@ -11,18 +11,19 @@ export namespace ShoppingMallAddressCollector {
   export async function collect(props: {
     body: IShoppingMallAddress.ICreate;
     shoppingMallCustomers: IEntity;
+    shoppingMallCustomerSessions: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      recipient_name: props.body.recipient_name,
-      phone_number: props.body.phone_number,
-      street_address: props.body.street_address,
+      recipient_name: props.body.recipientName,
+      phone_number: props.body.phoneNumber,
+      street_address: props.body.streetAddress,
       city: props.body.city,
-      state_province: props.body.state_province,
-      postal_code: props.body.postal_code,
+      state_province: props.body.stateProvince,
+      postal_code: props.body.postalCode,
       country: props.body.country,
-      is_default: props.body.is_default ?? false,
+      is_default: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

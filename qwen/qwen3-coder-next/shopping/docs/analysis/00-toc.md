@@ -1,1165 +1,348 @@
-# E-Commerce Shopping Mall Platform
+### Table of Contents
 
-## 1. Overview
+**ecommerceMall** is a backend service with the following actors and domain entities.
 
-### 1.1 Service Vision
-
-The E-Commerce Shopping Mall Platform is a comprehensive marketplace system that connects customers, sellers, and administrators in a seamless online shopping experience. The platform enables multiple sellers to list products, customers to browse and purchase items, and administrators to ensure smooth operation and policy compliance.
-
-### 1.2 Target Users
-
-- **Customers**: Individual shoppers seeking products from various sellers
-- **Sellers**: Businesses and individuals managing their own product listings and inventory
-- **Administrators**: System operators ensuring platform integrity, seller approval, and policy enforcement
-- **Super Administrators**: High-level system managers with complete oversight capabilities
-
-### 1.3 Core Features
-
-- Customer account registration and profile management
-- Seller registration with approval workflow
-- Product creation, management, and categorization
-- Complex inventory tracking with stock history
-- Multi-item order processing with flexible shipping
-- Multi-stage payment and refund handling
-- Review and rating system for products
-- Customer wishlist functionality
-- Advanced search and filtering capabilities
-- Comprehensive administrator tools for oversight
-
-### 1.4 Business Model
-
-The platform operates on a commission-based model where:
-
-- **Sellers** pay listing fees and/or transaction commissions
-- **Customers** pay for products and shipping (fees vary by seller)
-- **Administrators** ensure platform security and compliance
-- **No guest browsing** – all users must register to access features
-
-### 1.5 Success Metrics
-
-- Number of active sellers and products
-- Monthly transaction volume and revenue
-- Customer retention rate and repeat purchase frequency
-- Average order value and cart abandonment rate
-- Seller satisfaction and growth rate
-- Platform security incidents and resolution time
-
-## 2. Functional Requirements
-
-### 2.1 Customer Account Management
-
-#### 2.1.1 Registration
-
-**WHEN** a customer visits the platform for the first time,
-**THEN** they are required to register an account before accessing any features.
-
-**WHEN** a customer registers,
-**THEY** must provide their email address and create a password.
-
-**THE** registration process creates a customer account with the following initial profile information:
-- Display name (optional, defaults to email prefix)
-- Phone number (optional)
-- Default address set (initially empty)
-
-**WHEN** registration is successful,
-**THEN** the customer is automatically logged in and can access customer features.
-
-**WHEN** registration fails (e.g., email already exists),
-**THEN** the customer receives a clear error message explaining the issue.
-
-#### 2.1.2 Login
-
-**WHEN** an existing customer returns to the platform,
-**THEN** they must log in using their email and password.
-
-**WHEN** login credentials are valid,
-**THEN** the customer is authenticated and granted access to their account.
-
-**WHEN** login credentials are invalid,
-**THEN** the customer receives an appropriate error message (credentials incorrect).
-
-**WHEN** a customer account has been deleted,
-**THEN** login attempts with those credentials are rejected.
-
-#### 2.1.3 Account Deletion
-
-**WHEN** a customer requests account deletion,
-**THEY** must confirm the deletion action (two-step process to prevent accidental deletion).
-
-**WHEN** account deletion is processed,
-**THEN** the following data is permanently removed:
-- Customer profile information (display name, phone number, etc.)
-- All shipping addresses associated with the account
-- Wishlist entries
-- Active cart items
-
-**WHEN** account deletion is processed,
-**THEN** the following data is preserved (not deleted):
-- All order history and order snapshots (for seller records and legal compliance)
-- All reviews (but displayed as "deleted user" instead of the customer's name)
-- Any pending cancellation or refund requests (for audit trail)
-
-**WHEN** account deletion is complete,
-**THEN** the customer is logged out and cannot log in again with those credentials.
-
-**WHEN** a customer attempts to delete an account that has pending orders (paid or shipped status),
-**THEN** the deletion is blocked and the customer receives a message explaining why.
-
-#### 2.1.4 Password Management
-
-**WHEN** a customer wants to change their password,
-**THEN** they must provide their current password for verification.
-
-**WHEN** the current password is verified,
-**THEN** the customer can set a new password meeting security requirements.
-
-**WHEN** password change is successful,
-**THEN** the customer receives confirmation and the change is logged.
-
-**WHEN** a customer forgets their password,
-**THEN** they can request a password reset via email verification.
-
-**WHEN** password reset is requested,
-**THEN** a secure reset link is sent to the customer's registered email address.
-
-**WHEN** the reset link is used,
-**THEN** the customer can set a new password without providing the current one.
-
-#### 2.1.5 Profile Management
-
-**WHEN** a customer views their profile,
-**THEN** they can see their current display name and phone number.
-
-**WHEN** a customer edits their profile,
-**THEY** can update their display name and phone number.
-
-**WHEN** profile information is updated,
-**THEN** the changes are saved and immediately reflected across the platform.
-
-**WHEN** a customer updates their profile information,
-**THEN** a snapshot is created preserving the previous state.
-
-### 2.2 Address Management
-
-#### 2.2.1 Address Creation
-
-**WHEN** a customer adds a new shipping address,
-**THEY** must provide the following information:
-- Recipient name
-- Phone number
-- Street address
-- City
-- State/Province
-- Postal code
-- Country
-
-**WHEN** an address is successfully added,
-**THEN** it appears in the customer's address list.
-
-**WHEN** a customer adds their first address,
-**THEN** it automatically becomes the default shipping address.
-
-#### 2.2.2 Address Listing and Selection
-
-**WHEN** a customer views their addresses,
-**THEN** they can see a list of all their saved addresses.
-
-**WHEN** viewing the address list,
-**THEN** the default shipping address is clearly marked.
-
-**WHEN** a customer selects an address for checkout,
-**THEN** they can choose from their saved addresses or use the default.
-
-**WHEN** a customer selects a non-default address,
-**THEN** it becomes the temporary shipping address for that order.
-
-#### 2.2.3 Address Editing
-
-**WHEN** a customer edits an existing address,
-**THEN** they can modify any of the address fields.
-
-**WHEN** address editing is successful,
-**THEN** the changes are saved and a snapshot is created.
-
-**WHEN** a customer edits their default shipping address,
-**THEN** the default status is preserved unless explicitly changed.
-
-#### 2.2.4 Address Deletion
-
-**WHEN** a customer deletes an address,
-**THEN** the address is removed from their address list.
-
-**WHEN** a customer deletes their default shipping address,
-**THEN** another address is automatically promoted to default status.
-
-**WHEN** a customer attempts to delete an address that is set as the shipping address for a pending order,
-**THEN** the deletion is blocked and the customer receives a message explaining why.
-
-### 2.3 Seller Account Management
-
-#### 2.3.1 Registration
-
-**WHEN** an individual or business wants to sell on the platform,
-**THEN** they can register as a seller with their email and password.
-
-**WHEN** seller registration is completed,
-**THEN** the seller account is created with "pending" approval status.
-
-**WHEN** a seller registers,
-**THEY** can provide initial shop information (shop name, description, logo).
-
-**WHEN** a seller registers,
-**THEN** they can view their account approval status.
-
-#### 2.3.2 Approval Process
-
-**WHEN** a seller's approval status is "pending",
-**THEN** they can view their pending status but cannot sell products yet.
-
-**WHEN** a seller is approved by an administrator,
-**THEN** they gain full seller privileges to list products and manage their shop.
-
-**WHEN** a seller is rejected by an administrator,
-**THEN** they receive the rejection reason provided by the administrator.
-
-**WHEN** a seller is rejected,
-**THEN** they can submit a new registration request with updated information.
-
-**WHEN** a seller's approval status is changed,
-**THEN** they receive a notification about the status change.
-
-#### 2.3.3 Account Management
-
-**WHEN** a seller wants to change their password,
-**THEN** they can follow the same password management flow as customers.
-
-**WHEN** a seller views their profile,
-**THEN** they can see their current shop name, description, and logo.
-
-**WHEN** a seller wants to delete their account,
-**THEN** they can only proceed if:
-- They have no pending orders (orders with "paid" or "shipped" status)
-- They have no pending cancellation or refund requests
-
-**WHEN** a seller's account deletion meets all requirements,
-**THEN** the following data is permanently removed:
-- Seller profile information (shop name, description, logo)
-- All products and variants owned by the seller
-- All inventory records for the seller's products
-
-**WHEN** a seller's account deletion is processed,
-**THEN** the following data is preserved:
-- Order history and order snapshots (for customer records and legal compliance)
-- Shop name and logo in past orders (preserved as historical reference)
-- All product snapshots created during the seller's account lifetime
-
-**WHEN** a seller attempts to delete an account that doesn't meet requirements,
-**THEN** the deletion is blocked and the seller receives a message explaining why.
-
-#### 2.3.4 Profile Management
-
-**WHEN** a seller views their shop profile,
-**THEN** they can see their shop name, description, and logo.
-
-**WHEN** a seller edits their shop profile,
-**THEY** can update their shop name, description, and logo.
-
-**WHEN** shop profile information is updated,
-**THEN** a snapshot is created preserving the previous state.
-
-**WHEN** shop profile information is updated,
-**THEN** the changes are immediately visible to customers.
-
-### 2.4 Category Management
-
-#### 2.4.1 Category Structure
-
-**CATEGORIES** are organized in a two-level hierarchy:
-- **Level 1**: Top-level categories (e.g., "Electronics", "Clothing", "Home")
-- **Level 2**: Subcategories nested under top-level categories (e.g., "Smartphones" under "Electronics")
-
-**CATEGORIES** can have at most one level of nesting (no deeper hierarchy).
-
-**CATEGORIES** are created and managed exclusively by administrators.
-
-#### 2.4.2 Category Information
-
-**EACH** category has the following information:
-- Name (required, unique within its level)
-- Description (optional but recommended)
-
-**EACH** category can have multiple subcategories.
-
-**EACH** subcategory belongs to exactly one parent category.
-
-#### 2.4.3 Category Operations
-
-**WHEN** a customer views the list of all categories,
-**THEN** they can see the complete category hierarchy.
-
-**WHEN** a customer views a category,
-**THEN** they can see:
-- The category name and description
-- All subcategories
-- Products in that category (including products in subcategories)
-
-**WHEN** a customer views a subcategory,
-**THEN** they can navigate to its parent category.
-
-**WHEN** an administrator creates a category,
-**THEN** they can specify the parent category (or leave blank for top-level).
-
-**WHEN** an administrator edits a category,
-**THEN** they can update the name and description.
-
-**WHEN** an administrator deletes a category,
-**THEN** products in that category become uncategorized unless they have other categories assigned.
-
-### 2.5 Product Management
-
-#### 2.5.1 Product Creation
-
-**WHEN** a seller creates a product,
-**THEY** must provide the following required information:
-- Name (required, minimum 1 character, maximum 200 characters)
-- Description (required, minimum 10 characters, maximum 5,000 characters)
-- Category (required, must be a valid category ID)
-- Base price (required, must be positive, maximum 2 decimal places)
-
-**WHEN** a seller creates a product,
-**THEY** can optionally provide:
-- Product images (at least one image recommended)
-- Product variants (at least one variant required for purchasable products)
-
-**WHEN** a product is created,
-**THEN** it is associated with the seller who created it.
-
-**WHEN** a product is created,
-**THEN** it appears in the seller's product list but is not visible to customers.
-
-**WHEN** a product is created with at least one variant,
-**THEN** the product can be purchased by customers.
-
-**WHEN** a product is created without any variants,
-**THEN** the product is visible in search but shown as "unavailable".
-
-#### 2.5.2 Product Listing
-
-**WHEN** a customer views the product list (search results, category page),
-**THEN** each product displays:
-- Main image (thumbnail from the first uploaded image)
-- Product name
-- Base price (or price range if variants have different prices)
-- Seller shop name (linked to seller profile)
-- Average rating (if reviews exist)
-
-**WHEN** a product has variants with different prices,
-**THEN** the price range is displayed (e.g., "$10 - $25").
-
-**WHEN** a product has no available variants (all out of stock or deleted),
-**THEN** it is shown as "out of stock" or "unavailable".
-
-**WHEN** a product is deleted by its seller,
-**THEN** it is removed from search results and category listings.
-
-#### 2.5.3 Product Editing
-
-**WHEN** a seller edits their product,
-**THEY** can modify any of the editable fields:
-- Name
-- Description
-- Category
-- Base price
-- Product images (add, remove, reorder)
-
-**WHEN** a seller edits a product,
-**THEN** the changes are saved and a product snapshot is created.
-
-**WHEN** a product snapshot is created,
-**THEN** it includes all product fields at the time of editing.
-
-**WHEN** a product has variants and is edited,
-**THEN** existing variants are also snapshotted if their information changes.
-
-#### 2.5.4 Product Deletion
-
-**WHEN** a seller deletes their product,
-**THEN** the following data is permanently removed:
-- Product information
-- All variants associated with the product
-- All inventory records for the product variants
-
-**WHEN** a seller attempts to delete a product,
-**THEN** the deletion is blocked if:
-- Any variant has pending order items (status "paid" or "shipped")
-- Any variant has pending cancellation requests
-- Any variant has pending refund requests
-
-**WHEN** product deletion is blocked,
-**THEN** the seller receives a message explaining which items prevent deletion.
-
-**WHEN** a product is deleted,
-**THEN** it is removed from all customer wishlists.
-
-**WHEN** a product is deleted,
-**THEN** past orders and snapshots are preserved for historical reference.
-
-#### 2.5.5 Product Snapshots
-
-**WHEN** a product is edited,
-**THEN** a product snapshot is automatically created.
-
-**EACH** product snapshot includes:
-- Product name, description, category
-- Base price at the time of editing
-- All product images (with order preserved)
-- All variant information at that moment
-
-**WHEN** a variant is edited,
-**THEN** a variant snapshot is created as part of the product snapshot.
-
-**EACH** variant snapshot includes:
-- SKU code
-- Option values (color, size, etc.)
-- Price (variant price or null if using base price)
-- Stock quantity at that moment
-
-**WHEN** a product is deleted,
-**THEN** all associated product snapshots are preserved.
-
-**WHEN** an administrator or seller views product snapshots,
-**THEN** they can see the complete history of changes.
-
-### 2.6 Product Images
-
-#### 2.6.1 Image Management
-
-**WHEN** a seller uploads images for a product,
-**THEY** can upload multiple images (recommended maximum 10).
-
-**WHEN** images are uploaded,
-**THEN** they are associated with the product.
-
-**WHEN** a seller sets the first uploaded image,
-**THEN** it becomes the main thumbnail for product listings.
-
-#### 2.6.2 Image Reordering
-
-**WHEN** a seller reorders product images,
-**THEN** the first image in the reordered list becomes the main thumbnail.
-
-**WHEN** image order is changed,
-**THEN** a product snapshot is created if other product edits are made.
-
-#### 2.6.3 Image Deletion
-
-**WHEN** a seller deletes a product image,
-**THEN** the image is removed from the product.
-
-**WHEN** the main thumbnail is deleted,
-**THEN** the next image in the list automatically becomes the main thumbnail.
-
-**WHEN** image deletion is successful,
-**THEN** a product snapshot is created.
-
-### 2.7 Product Variants (SKU)
-
-#### 2.7.1 Variant Creation
-
-**WHEN** a seller adds variants to a product,
-**THEY** must create at least one variant for the product to be purchasable.
-
-**EACH** variant must have:
-- SKU code (required, unique identifier, maximum 50 characters)
-- Option values (e.g., "Red", "Large" for color/size combinations)
-- Stock quantity (required, must be non-negative integer)
-
-**WHEN** option values are specified,
-**THEY** must represent a valid combination of the product's defined options.
-
-**WHEN** a variant is created,
-**THEN** it is associated with the parent product.
-
-#### 2.7.2 Variant Pricing
-
-**EACH** variant has a price field that can either:
-- Use the product's base price (default behavior)
-- Override the base price with a specific variant price
-
-**WHEN** a variant uses the base price,
-**THEN** the price is automatically updated when the base price changes.
-
-**WHEN** a variant overrides the base price,
-**THEN** the variant price remains fixed regardless of base price changes.
-
-**WHEN** a product has variants with different prices,
-**THEN** the price range is displayed in product listings.
-
-#### 2.7.3 Variant Editing
-
-**WHEN** a seller edits a variant,
-**THEY** can modify:
-- SKU code
-- Option values
-- Variant price (add, remove, or change price)
-
-**WHEN** a variant is edited,
-**THEN** a variant snapshot is created as part of the product snapshot.
-
-**WHEN** a variant's stock quantity is changed via inventory operations,
-**THEN** a stock inventory record is created (not a variant snapshot).
-
-#### 2.7.4 Variant Deletion
-
-**WHEN** a seller deletes a variant,
-**THEN** the variant is removed from the product.
-
-**WHEN** a seller attempts to delete a variant,
-**THEN** the deletion is blocked if:
-- Any order item has this variant with status "paid" or "shipped"
-- Any cancellation request exists for this variant
-- Any refund request exists for this variant
-
-**WHEN** variant deletion is blocked,
-**THEN** the seller receives a message explaining which orders prevent deletion.
-
-**WHEN** a product's last variant is deleted,
-**THEN** the product becomes "unavailable" for purchase.
-
-### 2.8 Inventory Management
-
-#### 2.8.1 Stock Tracking
-
-**EACH** product variant has a stock quantity that tracks available units.
-
-**CURRENT** stock is calculated by summing all inventory records for the variant.
-
-**WHEN** stock quantity reaches 0,
-**THEN** the variant is shown as "out of stock".
-
-**WHEN** a variant is out of stock,
-**THEN** it cannot be added to the customer's cart.
-
-#### 2.8.2 Inventory Records
-
-**EACH** inventory record contains:
-- Quantity change (positive for restocking, negative for orders/adjustments)
-- Reason for the change (e.g., "order", "restock", "adjustment")
-- Timestamp of the change
-- Associated order ID (if applicable)
-
-**WHEN** inventory records are created,
-**THEN** they are preserved permanently for audit purposes.
-
-**WHEN** a seller views inventory history for a variant,
-**THEN** they can see all inventory records with full details.
-
-#### 2.8.3 Stock Addition (Restocking)
-
-**WHEN** a seller adds stock to a variant,
-**THEY** must specify:
-- Quantity to add (positive integer)
-- Reason for restocking (e.g., "supplier shipment", "return from customer")
-
-**WHEN** stock is successfully added,
-**THEN** a positive inventory record is created and stock quantity increases.
-
-#### 2.8.4 Stock Subtraction (Adjustment/Loss)
-
-**WHEN** a seller subtracts stock from a variant,
-**THEY** must specify:
-- Quantity to subtract (positive integer)
-- Reason for subtraction (e.g., "damage", "loss", "breakage")
-
-**WHEN** stock is successfully subtracted,
-**THEN** a negative inventory record is created and stock quantity decreases.
-
-**WHEN** stock subtraction causes stock to go negative,
-**THEN** the operation is blocked and the seller receives an error message.
-
-#### 2.8.5 Stock Deduction (Order Placement)
-
-**WHEN** an order is placed successfully,
-**THEN** stock quantities are automatically decreased for each purchased variant.
-
-**WHEN** stock deduction is processed,
-**THEN** a negative inventory record is created with reason "order".
-
-#### 2.8.6 Stock Restoration (Order Cancellation/Refund)
-
-**WHEN** an order item is cancelled,
-**THEN** the stock quantity is restored for the purchased variant.
-
-**WHEN** stock is restored due to cancellation,
-**THEN** a positive inventory record is created with reason "order cancellation".
-
-**WHEN** an order item is refunded,
-**THEN** the stock quantity is restored for the purchased variant.
-
-**WHEN** stock is restored due to refund,
-**THEN** a positive inventory record is created with reason "refund".
-
-### 2.9 Product Search
-
-#### 2.9.1 Search Functionality
-
-**WHEN** a customer searches for products,
-**THEY** can search by product name (partial matches allowed).
-
-**WHEN** search results are displayed,
-**THEN** they show products from all sellers (cross-seller search).
-
-**WHEN** search results are displayed,
-**THEN** they are paginated (20 products per page by default).
-
-**WHEN** a customer views search results,
-**THEN** they can see basic product information as described in product listing requirements.
-
-#### 2.9.2 Search Filters
-
-**WHEN** a customer searches products,
-**THEY** can apply the following filters:
-- **Category filter**: Show only products in specific category (including subcategories)
-- **Price range filter**: Set minimum and maximum price limits
-- **In-stock filter**: Show only products with available stock
-
-**WHEN** multiple filters are applied,
-**THEN** results are combined (logical AND operation).
-
-**WHEN** filters are applied,
-**THEN** the filter state is preserved when navigating pages.
-
-#### 2.9.3 Search Sorting
-
-**WHEN** search results are displayed,
-**THEY** can be sorted by the following options:
-- **Newest first**: Sort by product creation date, newest first
-- **Price (low to high)**: Sort by price ascending
-- **Price (high to low)**: Sort by price descending
-
-**WHEN** no sort order is specified,
-**THEN** results are sorted by relevance (search term matching and recency).
-
-### 2.10 Product Detail Page
-
-#### 2.10.1 Product Information Display
-
-**WHEN** a customer views a product detail page,
-**THEN** the page displays:
-- All product images (gallery or carousel format)
-- Product name and description
-- Category information (linked to category page)
-- Seller shop name (linked to seller profile page)
-- Price information (base price or price range for variants)
-
-#### 2.10.2 Variant Selection
-
-**WHEN** a customer views a product detail page,
-**THEN** they can see all available variants with:
-- Variant option values (e.g., "Red / Large")
-- Price for that variant
-- Stock quantity and status ("In Stock", "Limited Stock", "Out of Stock")
-
-**WHEN** a customer selects a variant,
-**THEN** the price updates to show that variant's specific price.
-
-**WHEN** a customer selects an out-of-stock variant,
-**THEN** they cannot add it to the cart.
-
-#### 2.10.3 Rating and Reviews
-
-**WHEN** a customer views a product detail page,
-**THEN** they can see:
-- Average rating (calculated from all non-deleted reviews)
-- Total review count
-- Option to view all reviews
-
-**WHEN** reviews are displayed,
-**THEN** they are sorted by newest first.
-
-**WHEN** a customer views a review,
-**THEN** they can see:
-- Reviewer name (or "Deleted User" for deleted accounts)
-- Rating (1-5 stars)
-- Review text (if provided)
-- Review date
-
-### 2.11 Wishlist Management
-
-#### 2.11.1 Wishlist Creation and Viewing
-
-**WHEN** a customer adds a product to their wishlist,
-**THEN** the product is added to their wishlist.
-
-**WHEN** a customer views their wishlist,
-**THEN** they can see all products they've added.
-
-**WHEN** a wishlist is displayed,
-**THEN** it is paginated (20 products per page by default).
-
-**WHEN** a wishlist product is displayed,
-**THEN** it shows:
-- Product name
-- Main image
-- Base price (or price range)
-- Seller shop name
-- Option to remove from wishlist
-
-#### 2.11.2 Wishlist Operations
-
-**WHEN** a customer removes a product from their wishlist,
-**THEN** the product is removed from their wishlist.
-
-**WHEN** a product is deleted by its seller,
-**THEN** it is automatically removed from all customers' wishlists.
-
-**WHEN** a customer views their wishlist,
-**THEN** products that are out of stock or deleted are marked as unavailable.
-
-### 2.12 Shopping Cart
-
-#### 2.12.1 Cart Creation and Viewing
-
-**WHEN** a customer adds a variant to their cart,
-**THEY** must specify:
-- Product variant (specific SKU, not just product)
-- Quantity (positive integer)
-
-**WHEN** a customer views their cart,
-**THEN** they can see all items with:
-- Product name
-- Variant options (e.g., "Red / Large")
-- Price per item
-- Quantity
-- Subtotal (price × quantity)
-
-**WHEN** a customer views their cart,
-**THEN** they can see the total price of all items.
-
-**WHEN** a customer views their cart,
-**THEN** the cart is paginated (20 items per page by default).
-
-#### 2.12.2 Cart Operations
-
-**WHEN** a customer adds the same variant to their cart,
-**THEN** the quantities are combined (not added as separate line items).
-
-**WHEN** a customer changes the quantity of an item in their cart,
-**THEN** the quantity updates and subtotal recalculates.
-
-**WHEN** a customer removes an item from their cart,
-**THEN** the item is removed from the cart.
-
-#### 2.12.3 Cart Validation
-
-**WHEN** a variant's stock is less than the cart quantity,
-**THEN** a warning is displayed ("Only X items available, reduce quantity").
-
-**WHEN** a variant is out of stock,
-**THEN** it is marked as unavailable in the cart.
-
-**WHEN** a variant is deleted by the seller,
-**THEN** it is marked as unavailable in the cart.
-
-**WHEN** a customer attempts to proceed to checkout with unavailable items,
-**THEN** they are prevented from checking out those items.
-
-### 2.13 Checkout and Order Placement
-
-#### 2.13.1 Checkout Process
-
-**WHEN** a customer proceeds to checkout from their cart,
-**THEN** they review the order summary including:
-- List of items with prices and quantities
-- Selected shipping address
-- Total price
-
-**WHEN** a customer selects a shipping address,
-**THEN** they can choose from their saved addresses or use the default.
-
-**WHEN** a customer views the order summary,
-**THEN** they can confirm or cancel the checkout process.
-
-#### 2.13.2 Order Placement
-
-**WHEN** a customer confirms and places the order,
-**THEN** payment is initiated through the external payment gateway.
-
-**WHEN** payment processing fails,
-**THEN** the order is not created and the customer can retry.
-
-**WHEN** payment processing succeeds,
-**THEN** the order is created with the following actions:
-- Stock quantities are decreased for each purchased variant
-- Cart items are removed for the purchased variants
-- An order record is created
-- Order items are created for each purchased variant
-
-#### 2.13.3 Order Snapshots
-
-**WHEN** an order is placed successfully,
-**THEN** a snapshot of each purchased product is saved with the order item.
-
-**WHEN** a product snapshot is saved,
-**THEN** it preserves:
-- Product name, description, category at time of purchase
-- Base price at time of purchase
-- All product images (in order) at time of purchase
-
-**WHEN** an order is placed successfully,
-**THEN** a snapshot of each purchased variant is saved with the order item.
-
-**WHEN** a variant snapshot is saved,
-**THEN** it preserves:
-- SKU code at time of purchase
-- Option values at time of purchase
-- Price at time of purchase (variant price or base price)
-
-**WHEN** an order is placed successfully,
-**THEN** a snapshot of each seller's profile is saved with order items for that seller.
-
-**WHEN** a seller profile snapshot is saved,
-**THEN** it preserves:
-- Shop name at time of purchase
-- Shop logo at time of purchase
-
-**WHEN** an order item is snapshotted,
-**THEN** the snapshot is immutable and cannot be modified.
-
-### 2.14 Order Structure and Management
-
-#### 2.14.1 Order Creation
-
-**WHEN** an order is placed successfully,
-**THEN** it contains one or more order items.
-
-**EACH** order item represents a purchased product variant with a quantity.
-
-**WHEN** a customer buys multiple quantities of the same variant,
-**THEN** it becomes one order item (not multiple items).
-
-**WHEN** a customer buys products from multiple sellers,
-**THEN** each seller's items become separate order items.
-
-**WHEN** an order is created,
-**THEN** each order item has its own status (initially "paid").
-
-#### 2.14.2 Order History
-
-**WHEN** a customer views their order history,
-**THEN** they can see a list of all their orders.
-
-**WHEN** orders are displayed,
-**THEN** they are sorted by newest first.
-
-**WHEN** an order is displayed in the list,
-**THEN** it shows:
-- Order number
-- Order date
-- Total price
-- Overall order status
-
-**WHEN** a customer views an order's full details,
-**THEN** they can see:
-- List of items with product name, variant, quantity, price, and status
-- Shipping address used for the order
-- List of shipments with tracking information
-
-#### 2.14.3 Order Status
-
-**EACH** order item has its own status:
-- **Paid**: Payment completed, waiting for seller to ship
-- **Shipped**: Seller has shipped the item
-- **Delivered**: Item has been delivered
-- **Cancelled**: Item was cancelled
-- **Refunded**: Item was refunded
-
-**THE** overall order status is derived from its items:
-- If all items are paid → order is "paid"
-- If any item is shipped (and none delivered yet) → order is "shipped"
-- If all items are delivered → order is "delivered"
-- If all items are cancelled → order is "cancelled"
-- If all items are refunded → order is "refunded"
-- If mixed states exist → order is "partially completed"
-
-#### 2.14.4 Order Item Cancellation
-
-**WHEN** a customer requests cancellation for an order item with status "paid",
-**THEY** must provide a cancellation reason.
-
-**WHEN** a cancellation request is submitted,
-**THEN** the seller of that item receives a notification.
-
-**WHEN** a seller responds to a cancellation request,
-**THEN** a snapshot of the request state is created.
-
-**WHEN** a cancellation request is approved,
-**THEN** that item is cancelled and refund is processed.
-
-**WHEN** stock is restored due to cancellation,
-**THEN** a positive inventory record is created with reason "order cancellation".
-
-**WHEN** some items in an order are cancelled but others continue,
-**THEN** the remaining items process normally.
-
-**WHEN** all items in an order are cancelled,
-**THEN** the entire order status becomes "cancelled".
-
-**WHEN** an order item has status "shipped", "delivered", "cancelled", or "refunded",
-**THEN** cancellation is not possible.
-
-#### 2.14.5 Order Item Refunds
-
-**WHEN** a customer requests a refund for a delivered order item,
-**THEY** must provide a refund reason.
-
-**WHEN** a refund request is submitted,
-**THEN** the seller of that item receives a notification.
-
-**WHEN** a seller responds to a refund request,
-**THEN** a snapshot of the request state is created.
-
-**WHEN** a refund request is approved,
-**THEN** that item is refunded and stock is restored.
-
-**WHEN** stock is restored due to refund,
-**THEN** a positive inventory record is created with reason "refund".
-
-**WHEN** a refund request is within 7 days of delivery,
-**THEN** it can be submitted.
-
-**WHEN** a refund request is after 7 days of delivery,
-**THEN** it is rejected (time limit enforcement).
-
-**WHEN** some items in an order are refunded but others are delivered,
-**THEN** the remaining items are unaffected.
-
-**WHEN** all items in an order are refunded,
-**THEN** the entire order status becomes "refunded".
-
-### 2.15 Shipping and Tracking
-
-#### 2.15.1 Shipment Concept
-
-**A** shipment is a package sent by a seller.
-
-**A** shipment can contain one or more order items from the same seller.
-
-**Different** sellers always ship separately (different shipments).
-
-**A** seller can choose to ship items individually or bundle multiple items into one shipment.
-
-#### 2.15.2 Shipping Process
-
-**WHEN** a seller needs to ship order items,
-**THEN** they can select which of their items to include in a shipment.
-
-**WHEN** a seller creates a shipment,
-**THEY** must enter:
-- Carrier name
-- Tracking number
-
-**WHEN** a shipment is created,
-**THEN** all items in the shipment change to status "shipped".
-
-**WHEN** a seller views their shipping queue,
-**THEN** they can see order items that need shipping.
-
-#### 2.15.3 Delivery Confirmation
-
-**WHEN** a customer views a shipment,
-**THEN** they can see tracking information (carrier name, tracking number).
-
-**WHEN** a customer confirms delivery of a shipment,
-**THEN** all items in that shipment change to status "delivered".
-
-**WHEN** a customer does not confirm delivery,
-**THEN** items automatically change to "delivered" after 14 days from shipping.
-
-**WHEN** items are marked as delivered,
-**THEN** the customer can write reviews for those products.
-
-### 2.16 Review System
-
-#### 2.16.1 Review Creation
-
-**WHEN** a customer has delivered order items for a product,
-**THEN** they can write a review for that product.
-
-**WHEN** a customer writes a review,
-**THEY** must provide:
-- Rating (1 to 5 stars, required)
-- Text content (optional)
-
-**WHEN** a customer writes a review,
-**THEN** only one review per product per order is allowed.
-
-**WHEN** a review is submitted,
-**THEN** it appears on the product detail page.
-
-#### 2.16.2 Review Display and Calculation
-
-**WHEN** a product's average rating is calculated,
-**THEN** it is computed from all non-deleted reviews.
-
-**WHEN** reviews are displayed on a product page,
-**THEN** they are sorted by newest first.
-
-**WHEN** a review is displayed,
-**THEN** it shows:
-- Reviewer name (or "Deleted User" for deleted accounts)
-- Rating (1-5 stars)
-- Review text (if provided)
-- Review date
-
-#### 2.16.3 Review Editing and Deletion
-
-**WHEN** a customer edits their own review,
-**THEN** a snapshot of the previous review state is created.
-
-**WHEN** a customer deletes their own review,
-**THEN** the review is marked as deleted but snapshots are preserved.
-
-**WHEN** a review is deleted,
-**THEN** it is no longer included in the average rating calculation.
-
-**WHEN** a customer views their reviews,
-**THEN** they can see all their submitted reviews with edit and delete options.
-
-### 2.17 Seller Dashboard
-
-#### 2.17.1 Shop Summary
-
-**WHEN** a seller views their dashboard,
-**THEN** they can see a summary of their shop including:
-- Total number of products
-- Total number of order items (for their products)
-- Number of pending cancellation requests
-- Number of pending refund requests
-
-#### 2.17.2 Order Management
-
-**WHEN** a seller views order items for their products,
-**THEN** they can see all order items with status, quantity, and customer information.
-
-**WHEN** a seller filters order items,
-**THEN** they can filter by status (paid, shipped, delivered, cancelled, refunded).
-
-**WHEN** a seller views order item details,
-**THEN** they can process cancellations and refunds.
-
-### 2.18 Administrator System
-
-#### 2.18.1 Administrator Roles
-
-**ADMINISTRATORS** have two grades:
-- **Regular administrator**: Standard administrative capabilities
-- **Super administrator**: Complete system oversight and user management
-
-**WHEN** a user (customer or seller) submits an administrator request,
-**THEY** must provide a reason for the request.
-
-**WHEN** a super administrator reviews an administrator request,
-**THEN** they can approve or reject the request.
-
-**WHEN** an administrator request is approved,
-**THEN** the user becomes a regular administrator.
-
-**WHEN** a super administrator promotes a regular administrator,
-**THEN** they become a super administrator.
-
-**WHEN** a super administrator demotes another super administrator,
-**THEN** they become a regular administrator.
-
-**WHEN** a super administrator attempts to demote themselves,
-**THEN** the demotion is blocked.
-
-#### 2.18.2 Seller Management
-
-**WHEN** an administrator views pending seller approvals,
-**THEN** they can see all registration requests awaiting review.
-
-**WHEN** an administrator reviews a seller registration,
-**THEN** they can approve or reject the request.
-
-**WHEN** a seller registration is rejected,
-**THEN** the administrator must provide a rejection reason.
-
-**WHEN** a seller is rejected,
-**THEN** they can submit a new registration request.
-
-**WHEN** an administrator suspends a seller account,
-**THEN** the following restrictions apply:
-- Seller's products are hidden from search and category listings
-- Seller's products cannot be purchased
-- Seller can still process existing orders (ship items, respond to cancellation/refund requests)
-- Seller cannot create new products or edit existing products
-
-**WHEN** an administrator unsuspends a seller account,
-**THEN** the seller's products become visible again and normal operations resume.
-
-#### 2.18.3 Category Management
-
-**WHEN** an administrator creates a category,
-**THEN** they can specify the parent category (top-level or subcategory).
-
-**WHEN** an administrator edits a category,
-**THEN** they can update the name and description.
-
-**WHEN** an administrator deletes a category,
-**THEN** products in that category become uncategorized (unless they have other categories).
-
-#### 2.18.4 Product Oversight
-
-**WHEN** an administrator views all products,
-**THEN** they can see products from all sellers.
-
-**WHEN** an administrator views a product,
-**THEN** they can see all product snapshots.
-
-**WHEN** an administrator deletes a product,
-**THEN** it is removed from all listings and customer views.
-
-**WHEN** an administrator deletes a product,
-**THEN** all associated inventory records and snapshots are preserved.
-
-#### 2.18.5 Order Oversight
-
-**WHEN** an administrator views all orders,
-**THEN** they can see orders from all customers and sellers.
-
-**WHEN** an administrator force-cancels an order item,
-**THEN** the item is cancelled and stock is restored.
-
-**WHEN** an administrator force-cancels an entire order,
-**THEN** all items are cancelled and stock is restored.
-
-**WHEN** an administrator force-refunds an order item,
-**THEN** the item is refunded and stock is restored.
-
-**WHEN** an administrator force-refunds an entire order,
-**THEN** all items are refunded and stock is restored.
-
-#### 2.18.6 User Management
-
-**WHEN** an administrator views customer accounts,
-**THEN** they can see all customer information.
-
-**WHEN** an administrator bans a customer,
-**THEN** the customer cannot log in to their account.
-
-**WHEN** a customer is banned,
-**THEN** their existing orders remain active and can be processed.
-
-**WHEN** an administrator unbans a customer,
-**THEN** the customer can log in again.
-
-**WHEN** an administrator views seller accounts,
-**THEN** they can see all seller information and approval status.
-
-**WHEN** an administrator bans a seller,
-**THEN** the seller cannot log in but existing orders remain active.
+**Actors**: customer, seller, admin
+**Entities**: User, CustomerProfile, SellerProfile, Address, Category, Product, ProductImage, ProductVariant, ProductSnapshot, ProductSnapshotVariant, InventoryRecord, CartItem, WishlistItem, Order, OrderItem, Shipment, ShipmentItem, CancellationRequest, RefundRequest, Review, ReviewSnapshot, AdminRequest, AdminRole
 
 ---
 
-> *Developer Note: This document defines business requirements only. All technical implementations (architecture, APIs, database design, etc.) are at the discretion of the development team.*
+**Scope**
+
+- **User**: email: string, required, unique, password: string, required, role: string (customer|seller|admin), createdAt: datetime, updatedAt: datetime | Relationships: hasOne CustomerProfile via userId, hasOne SellerProfile via userId, hasMany Addresses via userId, hasMany Products via sellerId, hasMany Reviews via userId, hasMany WishlistItems via userId, hasMany CartItems via userId, hasMany OrderItems via customerId, hasMany CancellationRequests via customerId, hasMany RefundRequests via customerId, hasOne Customer Account if role=customer, hasOne Seller Account if role=seller
+- **CustomerProfile**: userId: reference, required, displayName: string, required, phoneNumber: string, required, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via userId, hasMany Addresses via profileId
+- **SellerProfile**: userId: reference, required, shopName: string, required, shopDescription: text, optional, logoUrl: string, optional, approvalStatus: string (pending|approved|rejected), rejectionReason: text, optional, createdAt: datetime, updatedAt: datetime, isSuspended: boolean | Relationships: belongsTo User via userId, hasMany Products via sellerId, hasMany OrderItems via sellerId
+- **Address**: userId: reference, required, profileId: reference, required, recipientName: string, required, phoneNumber: string, required, streetAddress: string, required, city: string, required, stateProvince: string, required, postalCode: string, required, country: string, required, isDefault: boolean, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via userId, belongsTo CustomerProfile via profileId
+- **Category**: name: string, required, description: text, optional, parentId: reference, optional, createdAt: datetime, updatedAt: datetime | Relationships: hasMany Subcategories via parentId, hasMany Products via categoryId
+- **Product**: sellerId: reference, required, categoryId: reference, required, name: string, required, description: text, required, basePrice: decimal, required, isAvailable: boolean, createdAt: datetime, updatedAt: datetime, deletedAt: datetime, optional | Relationships: belongsTo SellerProfile via sellerId, belongsTo Category via categoryId, hasMany ProductImages via productId, hasMany ProductVariants via productId, hasMany OrderItems via productId, hasMany ProductSnapshots via productId
+- **ProductImage**: productId: reference, required, imageUrl: string, required, sortOrder: integer, isMain: boolean, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo Product via productId
+- **ProductVariant**: productId: reference, required, skuCode: string, required, unique, optionValues: json, required (e.g., {color: 'Red', size: 'Large'}), priceOverride: decimal, optional, stockQuantity: integer, default 0, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo Product via productId, hasMany InventoryRecords via variantId, hasMany OrderItems via variantId, hasMany ProductVariantSnapshots via variantId
+- **ProductSnapshot**: productId: reference, required, sellerId: reference, required, categoryId: reference, required, snapshotType: string ('edit'|'order'|'refund'|'cancel'), name: string, required, description: text, required, basePrice: decimal, required, createdAt: datetime | Relationships: belongsTo Product via productId, belongsTo SellerProfile via sellerId, belongsTo Category via categoryId, hasMany ProductSnapshotVariants via snapshotId
+- **ProductSnapshotVariant**: snapshotId: reference, required, skuCode: string, required, optionValues: json, required, priceOverride: decimal, optional, createdAt: datetime | Relationships: belongsTo ProductSnapshot via snapshotId
+- **InventoryRecord**: variantId: reference, required, quantityChange: integer, required, reason: string, required (restock|order|adjustment|cancel|refund), referenceId: string, optional (orderId, etc.), createdAt: datetime | Relationships: belongsTo ProductVariant via variantId
+- **CartItem**: userId: reference, required, variantId: reference, required, quantity: integer, required, min 1, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via userId, belongsTo ProductVariant via variantId
+- **WishlistItem**: userId: reference, required, productId: reference, required, createdAt: datetime | Relationships: belongsTo User via userId, belongsTo Product via productId
+- **Order**: customerId: reference, required, shippingAddressId: reference, required, totalPrice: decimal, required, orderStatus: string (paid|shipped|delivered|cancelled|refunded|partiallyCompleted), createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via customerId, belongsTo Address via shippingAddressId, hasMany OrderItems via orderId, hasMany Shipments via orderId
+- **OrderItem**: orderId: reference, required, productId: reference, required, variantId: reference, required, sellerId: reference, required, productName: string, required (snapshot), productDescription: text, required (snapshot), variantOptions: json, required (snapshot), productPrice: decimal, required (snapshot), quantity: integer, required, min 1, itemStatus: string (paid|shipped|delivered|cancelled|refunded), createdAt: datetime, updatedAt: datetime | Relationships: belongsTo Order via orderId, belongsTo Product via productId, belongsTo ProductVariant via variantId, belongsTo SellerProfile via sellerId, hasMany CancellationRequests via orderItemId, hasMany RefundRequests via orderItemId
+- **Shipment**: orderId: reference, required, sellerId: reference, required, carrierName: string, optional, trackingNumber: string, optional, shipmentStatus: string (pending|shipped), createdAt: datetime, updatedAt: datetime | Relationships: belongsTo Order via orderId, belongsTo SellerProfile via sellerId, hasMany ShipmentItems via shipmentId
+- **ShipmentItem**: shipmentId: reference, required, orderItemId: reference, required, createdAt: datetime | Relationships: belongsTo Shipment via shipmentId, belongsTo OrderItem via orderItemId
+- **CancellationRequest**: orderItemId: reference, required, customerId: reference, required, sellerId: reference, required, reason: text, required, status: string (pending|approved|rejected), respondedAt: datetime, optional, snapshotData: json, optional, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo OrderItem via orderItemId, belongsTo User via customerId, belongsTo SellerProfile via sellerId
+- **RefundRequest**: orderItemId: reference, required, customerId: reference, required, sellerId: reference, required, reason: text, required, status: string (pending|approved|rejected), respondedAt: datetime, optional, snapshotData: json, optional, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo OrderItem via orderItemId, belongsTo User via customerId, belongsTo SellerProfile via sellerId
+- **Review**: customerId: reference, required, productId: reference, required, orderItemId: reference, required, rating: integer, required (1-5), textContent: text, optional, createdAt: datetime, updatedAt: datetime, deletedAt: datetime, optional | Relationships: belongsTo User via customerId, belongsTo Product via productId, belongsTo OrderItem via orderItemId, hasMany ReviewSnapshots via reviewId
+- **ReviewSnapshot**: reviewId: reference, required, rating: integer, required, textContent: text, optional, snapshotType: string ('edit'), createdAt: datetime | Relationships: belongsTo Review via reviewId
+- **AdminRequest**: userId: reference, required, reason: text, required, status: string (pending|approved|rejected), approvalNotes: text, optional, createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via userId
+- **AdminRole**: userId: reference, required, grade: string (regular|super), createdAt: datetime, updatedAt: datetime | Relationships: belongsTo User via userId
+
+- **customer** (member)
+- **seller** (member)
+- **admin** (admin)
+
+---
+
+**Document Map**
+
+| File | Role | Downstream |
+|------|------|------------|
+| [00-toc.md](./00-toc.md) | Project summary, scope, glossary, and assumptions | project-setup |
+| [01-actors-and-auth.md](./01-actors-and-auth.md) | Actor definitions, permission matrix, authentication, session, account lifecycle | auth-middleware |
+| [02-domain-model.md](./02-domain-model.md) | Business concepts, relationships, and states from user perspective | database-design |
+| [03-functional-requirements.md](./03-functional-requirements.md) | What operations users can perform, use cases, business workflows | interface-design |
+| [04-business-rules.md](./04-business-rules.md) | Data isolation, business rules, data browsing expectations, error scenarios | service-layer |
+| [05-non-functional.md](./05-non-functional.md) | Performance SLOs, security policies, data integrity, storage requirements | test-infra |
+
+**Section Navigation**
+
+<!-- Load sections by ID: `process({ request: { type: "getAnalysisSections", sectionIds: [ID, ...] } })` -->
+
+**[01-actors-and-auth.md](./01-actors-and-auth.md)**
+- [Actor Definitions](./01-actors-and-auth.md#actor-definitions)
+  - [1] [customer Actor](./01-actors-and-auth.md#customer-actor) — Define the customer actor's role and capabilities in business terms.
+  - [2] [seller Actor](./01-actors-and-auth.md#seller-actor) — Define the seller actor's role and capabilities in business terms.
+  - [3] [admin Actor](./01-actors-and-auth.md#admin-actor) — Define the admin actor's role and capabilities in business terms.
+- [Authentication Flows](./01-actors-and-auth.md#authentication-flows)
+  - [4] [Registration and Login](./01-actors-and-auth.md#registration-and-login) — Define user registration and login flows including validation and error handling.
+  - [5] [Session and Token Policy](./01-actors-and-auth.md#session-and-token-policy) — Define session duration, token refresh, and expiration policies.
+- [Account Lifecycle](./01-actors-and-auth.md#account-lifecycle)
+  - [6] [Account States and Transitions](./01-actors-and-auth.md#account-states-and-transitions) — Define account states (active, suspended, deleted) and valid transitions.
+
+**[02-domain-model.md](./02-domain-model.md)**
+- [Domain Concepts](./02-domain-model.md#domain-concepts)
+  - [7] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain, its purpose, and how users interact with it.
+  - [8] [CustomerProfile Concept](./02-domain-model.md#customerprofile-concept) — Describe what CustomerProfile represents in the business domain, its purpose, and how users interact with it.
+  - [9] [SellerProfile Concept](./02-domain-model.md#sellerprofile-concept) — Describe what SellerProfile represents in the business domain, its purpose, and how users interact with it.
+  - [10] [Address Concept](./02-domain-model.md#address-concept) — Describe what Address represents in the business domain, its purpose, and how users interact with it.
+  - [11] [Category Concept](./02-domain-model.md#category-concept) — Describe what Category represents in the business domain, its purpose, and how users interact with it.
+  - [12] [Product Concept](./02-domain-model.md#product-concept) — Describe what Product represents in the business domain, its purpose, and how users interact with it.
+  - [13] [ProductImage Concept](./02-domain-model.md#productimage-concept) — Describe what ProductImage represents in the business domain, its purpose, and how users interact with it.
+  - [14] [ProductVariant Concept](./02-domain-model.md#productvariant-concept) — Describe what ProductVariant represents in the business domain, its purpose, and how users interact with it.
+  - [15] [ProductSnapshot Concept](./02-domain-model.md#productsnapshot-concept) — Describe what ProductSnapshot represents in the business domain, its purpose, and how users interact with it.
+  - [16] [ProductSnapshotVariant Concept](./02-domain-model.md#productsnapshotvariant-concept) — Describe what ProductSnapshotVariant represents in the business domain, its purpose, and how users interact with it.
+  - [17] [InventoryRecord Concept](./02-domain-model.md#inventoryrecord-concept) — Describe what InventoryRecord represents in the business domain, its purpose, and how users interact with it.
+  - [18] [CartItem Concept](./02-domain-model.md#cartitem-concept) — Describe what CartItem represents in the business domain, its purpose, and how users interact with it.
+  - [19] [WishlistItem Concept](./02-domain-model.md#wishlistitem-concept) — Describe what WishlistItem represents in the business domain, its purpose, and how users interact with it.
+  - [20] [Order Concept](./02-domain-model.md#order-concept) — Describe what Order represents in the business domain, its purpose, and how users interact with it.
+  - [21] [OrderItem Concept](./02-domain-model.md#orderitem-concept) — Describe what OrderItem represents in the business domain, its purpose, and how users interact with it.
+  - [22] [Shipment Concept](./02-domain-model.md#shipment-concept) — Describe what Shipment represents in the business domain, its purpose, and how users interact with it.
+  - [23] [ShipmentItem Concept](./02-domain-model.md#shipmentitem-concept) — Describe what ShipmentItem represents in the business domain, its purpose, and how users interact with it.
+  - [24] [CancellationRequest Concept](./02-domain-model.md#cancellationrequest-concept) — Describe what CancellationRequest represents in the business domain, its purpose, and how users interact with it.
+  - [25] [RefundRequest Concept](./02-domain-model.md#refundrequest-concept) — Describe what RefundRequest represents in the business domain, its purpose, and how users interact with it.
+  - [26] [Review Concept](./02-domain-model.md#review-concept) — Describe what Review represents in the business domain, its purpose, and how users interact with it.
+  - [27] [ReviewSnapshot Concept](./02-domain-model.md#reviewsnapshot-concept) — Describe what ReviewSnapshot represents in the business domain, its purpose, and how users interact with it.
+  - [28] [AdminRequest Concept](./02-domain-model.md#adminrequest-concept) — Describe what AdminRequest represents in the business domain, its purpose, and how users interact with it.
+  - [29] [AdminRole Concept](./02-domain-model.md#adminrole-concept) — Describe what AdminRole represents in the business domain, its purpose, and how users interact with it.
+- [Domain Relationships](./02-domain-model.md#domain-relationships)
+  - [30] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
+  - [31] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe business rules for concept lifecycle and data retention from a user perspective.
+- [Business Categories and State Flows](./02-domain-model.md#business-categories-and-state-flows)
+  - [32] [Business Category Definitions](./02-domain-model.md#business-category-definitions) — Define all business category classifications with their allowed values and descriptions.
+  - [33] [State Transitions](./02-domain-model.md#state-transitions) — Define valid state transition paths for stateful concepts.
+
+**[03-functional-requirements.md](./03-functional-requirements.md)**
+- [Core Business Operations](./03-functional-requirements.md#core-business-operations)
+  - [34] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [35] [CustomerProfile Operations](./03-functional-requirements.md#customerprofile-operations) — Define business operations for CustomerProfile: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [36] [SellerProfile Operations](./03-functional-requirements.md#sellerprofile-operations) — Define business operations for SellerProfile: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [37] [Address Operations](./03-functional-requirements.md#address-operations) — Define business operations for Address: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [38] [Category Operations](./03-functional-requirements.md#category-operations) — Define business operations for Category: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [39] [Product Operations](./03-functional-requirements.md#product-operations) — Define business operations for Product: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [40] [ProductImage Operations](./03-functional-requirements.md#productimage-operations) — Define business operations for ProductImage: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [41] [ProductVariant Operations](./03-functional-requirements.md#productvariant-operations) — Define business operations for ProductVariant: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [42] [ProductSnapshot Operations](./03-functional-requirements.md#productsnapshot-operations) — Define business operations for ProductSnapshot: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [43] [ProductSnapshotVariant Operations](./03-functional-requirements.md#productsnapshotvariant-operations) — Define business operations for ProductSnapshotVariant: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [44] [InventoryRecord Operations](./03-functional-requirements.md#inventoryrecord-operations) — Define business operations for InventoryRecord: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [45] [CartItem Operations](./03-functional-requirements.md#cartitem-operations) — Define business operations for CartItem: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [46] [WishlistItem Operations](./03-functional-requirements.md#wishlistitem-operations) — Define business operations for WishlistItem: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [47] [Order Operations](./03-functional-requirements.md#order-operations) — Define business operations for Order: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [48] [OrderItem Operations](./03-functional-requirements.md#orderitem-operations) — Define business operations for OrderItem: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [49] [Shipment Operations](./03-functional-requirements.md#shipment-operations) — Define business operations for Shipment: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [50] [ShipmentItem Operations](./03-functional-requirements.md#shipmentitem-operations) — Define business operations for ShipmentItem: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [51] [CancellationRequest Operations](./03-functional-requirements.md#cancellationrequest-operations) — Define business operations for CancellationRequest: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [52] [RefundRequest Operations](./03-functional-requirements.md#refundrequest-operations) — Define business operations for RefundRequest: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [53] [Review Operations](./03-functional-requirements.md#review-operations) — Define business operations for Review: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [54] [ReviewSnapshot Operations](./03-functional-requirements.md#reviewsnapshot-operations) — Define business operations for ReviewSnapshot: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [55] [AdminRequest Operations](./03-functional-requirements.md#adminrequest-operations) — Define business operations for AdminRequest: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [56] [AdminRole Operations](./03-functional-requirements.md#adminrole-operations) — Define business operations for AdminRole: what create, read, update, delete, and list operations must accomplish from a business perspective.
+- [Business Actions and Workflows](./03-functional-requirements.md#business-actions-and-workflows)
+  - [57] [User Actions](./03-functional-requirements.md#user-actions) — Define business actions and workflows for the User domain group from a functional requirements perspective.
+  - [58] [CustomerProfile Actions](./03-functional-requirements.md#customerprofile-actions) — Define business actions and workflows for the CustomerProfile domain group from a functional requirements perspective.
+  - [59] [SellerProfile Actions](./03-functional-requirements.md#sellerprofile-actions) — Define business actions and workflows for the SellerProfile domain group from a functional requirements perspective.
+  - [60] [Address Actions](./03-functional-requirements.md#address-actions) — Define business actions and workflows for the Address domain group from a functional requirements perspective.
+  - [61] [Category Actions](./03-functional-requirements.md#category-actions) — Define business actions and workflows for the Category domain group from a functional requirements perspective.
+  - [62] [Product Actions](./03-functional-requirements.md#product-actions) — Define business actions and workflows for the Product domain group from a functional requirements perspective.
+  - [63] [ProductImage Actions](./03-functional-requirements.md#productimage-actions) — Define business actions and workflows for the ProductImage domain group from a functional requirements perspective.
+  - [64] [ProductVariant Actions](./03-functional-requirements.md#productvariant-actions) — Define business actions and workflows for the ProductVariant domain group from a functional requirements perspective.
+  - [65] [ProductSnapshot Actions](./03-functional-requirements.md#productsnapshot-actions) — Define business actions and workflows for the ProductSnapshot domain group from a functional requirements perspective.
+  - [66] [ProductSnapshotVariant Actions](./03-functional-requirements.md#productsnapshotvariant-actions) — Define business actions and workflows for the ProductSnapshotVariant domain group from a functional requirements perspective.
+  - [67] [InventoryRecord Actions](./03-functional-requirements.md#inventoryrecord-actions) — Define business actions and workflows for the InventoryRecord domain group from a functional requirements perspective.
+  - [68] [CartItem Actions](./03-functional-requirements.md#cartitem-actions) — Define business actions and workflows for the CartItem domain group from a functional requirements perspective.
+  - [69] [WishlistItem Actions](./03-functional-requirements.md#wishlistitem-actions) — Define business actions and workflows for the WishlistItem domain group from a functional requirements perspective.
+  - [70] [Order Actions](./03-functional-requirements.md#order-actions) — Define business actions and workflows for the Order domain group from a functional requirements perspective.
+  - [71] [OrderItem Actions](./03-functional-requirements.md#orderitem-actions) — Define business actions and workflows for the OrderItem domain group from a functional requirements perspective.
+  - [72] [Shipment Actions](./03-functional-requirements.md#shipment-actions) — Define business actions and workflows for the Shipment domain group from a functional requirements perspective.
+  - [73] [ShipmentItem Actions](./03-functional-requirements.md#shipmentitem-actions) — Define business actions and workflows for the ShipmentItem domain group from a functional requirements perspective.
+  - [74] [CancellationRequest Actions](./03-functional-requirements.md#cancellationrequest-actions) — Define business actions and workflows for the CancellationRequest domain group from a functional requirements perspective.
+  - [75] [RefundRequest Actions](./03-functional-requirements.md#refundrequest-actions) — Define business actions and workflows for the RefundRequest domain group from a functional requirements perspective.
+  - [76] [Review Actions](./03-functional-requirements.md#review-actions) — Define business actions and workflows for the Review domain group from a functional requirements perspective.
+  - [77] [ReviewSnapshot Actions](./03-functional-requirements.md#reviewsnapshot-actions) — Define business actions and workflows for the ReviewSnapshot domain group from a functional requirements perspective.
+  - [78] [AdminRequest Actions](./03-functional-requirements.md#adminrequest-actions) — Define business actions and workflows for the AdminRequest domain group from a functional requirements perspective.
+  - [79] [AdminRole Actions](./03-functional-requirements.md#adminrole-actions) — Define business actions and workflows for the AdminRole domain group from a functional requirements perspective.
+- [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
+  - [80] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
+  - [81] [CustomerProfile Error Scenarios](./03-functional-requirements.md#customerprofile-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all CustomerProfile operations.
+  - [82] [SellerProfile Error Scenarios](./03-functional-requirements.md#sellerprofile-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all SellerProfile operations.
+  - [83] [Address Error Scenarios](./03-functional-requirements.md#address-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Address operations.
+  - [84] [Category Error Scenarios](./03-functional-requirements.md#category-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Category operations.
+  - [85] [Product Error Scenarios](./03-functional-requirements.md#product-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Product operations.
+  - [86] [ProductImage Error Scenarios](./03-functional-requirements.md#productimage-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ProductImage operations.
+  - [87] [ProductVariant Error Scenarios](./03-functional-requirements.md#productvariant-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ProductVariant operations.
+  - [88] [ProductSnapshot Error Scenarios](./03-functional-requirements.md#productsnapshot-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ProductSnapshot operations.
+  - [89] [ProductSnapshotVariant Error Scenarios](./03-functional-requirements.md#productsnapshotvariant-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ProductSnapshotVariant operations.
+  - [90] [InventoryRecord Error Scenarios](./03-functional-requirements.md#inventoryrecord-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all InventoryRecord operations.
+  - [91] [CartItem Error Scenarios](./03-functional-requirements.md#cartitem-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all CartItem operations.
+  - [92] [WishlistItem Error Scenarios](./03-functional-requirements.md#wishlistitem-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all WishlistItem operations.
+  - [93] [Order Error Scenarios](./03-functional-requirements.md#order-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Order operations.
+  - [94] [OrderItem Error Scenarios](./03-functional-requirements.md#orderitem-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all OrderItem operations.
+  - [95] [Shipment Error Scenarios](./03-functional-requirements.md#shipment-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Shipment operations.
+  - [96] [ShipmentItem Error Scenarios](./03-functional-requirements.md#shipmentitem-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ShipmentItem operations.
+  - [97] [CancellationRequest Error Scenarios](./03-functional-requirements.md#cancellationrequest-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all CancellationRequest operations.
+  - [98] [RefundRequest Error Scenarios](./03-functional-requirements.md#refundrequest-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all RefundRequest operations.
+  - [99] [Review Error Scenarios](./03-functional-requirements.md#review-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Review operations.
+  - [100] [ReviewSnapshot Error Scenarios](./03-functional-requirements.md#reviewsnapshot-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ReviewSnapshot operations.
+  - [101] [AdminRequest Error Scenarios](./03-functional-requirements.md#adminrequest-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all AdminRequest operations.
+  - [102] [AdminRole Error Scenarios](./03-functional-requirements.md#adminrole-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all AdminRole operations.
+- [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
+  - [103] [User User Scenarios](./03-functional-requirements.md#user-user-scenarios) — Define end-to-end user scenarios involving User and related concepts, describing business flows from the user's perspective.
+  - [104] [CustomerProfile User Scenarios](./03-functional-requirements.md#customerprofile-user-scenarios) — Define end-to-end user scenarios involving CustomerProfile and related concepts, describing business flows from the user's perspective.
+  - [105] [SellerProfile User Scenarios](./03-functional-requirements.md#sellerprofile-user-scenarios) — Define end-to-end user scenarios involving SellerProfile and related concepts, describing business flows from the user's perspective.
+  - [106] [Address User Scenarios](./03-functional-requirements.md#address-user-scenarios) — Define end-to-end user scenarios involving Address and related concepts, describing business flows from the user's perspective.
+  - [107] [Category User Scenarios](./03-functional-requirements.md#category-user-scenarios) — Define end-to-end user scenarios involving Category and related concepts, describing business flows from the user's perspective.
+  - [108] [Product User Scenarios](./03-functional-requirements.md#product-user-scenarios) — Define end-to-end user scenarios involving Product and related concepts, describing business flows from the user's perspective.
+  - [109] [ProductImage User Scenarios](./03-functional-requirements.md#productimage-user-scenarios) — Define end-to-end user scenarios involving ProductImage and related concepts, describing business flows from the user's perspective.
+  - [110] [ProductVariant User Scenarios](./03-functional-requirements.md#productvariant-user-scenarios) — Define end-to-end user scenarios involving ProductVariant and related concepts, describing business flows from the user's perspective.
+  - [111] [ProductSnapshot User Scenarios](./03-functional-requirements.md#productsnapshot-user-scenarios) — Define end-to-end user scenarios involving ProductSnapshot and related concepts, describing business flows from the user's perspective.
+  - [112] [ProductSnapshotVariant User Scenarios](./03-functional-requirements.md#productsnapshotvariant-user-scenarios) — Define end-to-end user scenarios involving ProductSnapshotVariant and related concepts, describing business flows from the user's perspective.
+  - [113] [InventoryRecord User Scenarios](./03-functional-requirements.md#inventoryrecord-user-scenarios) — Define end-to-end user scenarios involving InventoryRecord and related concepts, describing business flows from the user's perspective.
+  - [114] [CartItem User Scenarios](./03-functional-requirements.md#cartitem-user-scenarios) — Define end-to-end user scenarios involving CartItem and related concepts, describing business flows from the user's perspective.
+  - [115] [WishlistItem User Scenarios](./03-functional-requirements.md#wishlistitem-user-scenarios) — Define end-to-end user scenarios involving WishlistItem and related concepts, describing business flows from the user's perspective.
+  - [116] [Order User Scenarios](./03-functional-requirements.md#order-user-scenarios) — Define end-to-end user scenarios involving Order and related concepts, describing business flows from the user's perspective.
+  - [117] [OrderItem User Scenarios](./03-functional-requirements.md#orderitem-user-scenarios) — Define end-to-end user scenarios involving OrderItem and related concepts, describing business flows from the user's perspective.
+  - [118] [Shipment User Scenarios](./03-functional-requirements.md#shipment-user-scenarios) — Define end-to-end user scenarios involving Shipment and related concepts, describing business flows from the user's perspective.
+  - [119] [ShipmentItem User Scenarios](./03-functional-requirements.md#shipmentitem-user-scenarios) — Define end-to-end user scenarios involving ShipmentItem and related concepts, describing business flows from the user's perspective.
+  - [120] [CancellationRequest User Scenarios](./03-functional-requirements.md#cancellationrequest-user-scenarios) — Define end-to-end user scenarios involving CancellationRequest and related concepts, describing business flows from the user's perspective.
+  - [121] [RefundRequest User Scenarios](./03-functional-requirements.md#refundrequest-user-scenarios) — Define end-to-end user scenarios involving RefundRequest and related concepts, describing business flows from the user's perspective.
+  - [122] [Review User Scenarios](./03-functional-requirements.md#review-user-scenarios) — Define end-to-end user scenarios involving Review and related concepts, describing business flows from the user's perspective.
+  - [123] [ReviewSnapshot User Scenarios](./03-functional-requirements.md#reviewsnapshot-user-scenarios) — Define end-to-end user scenarios involving ReviewSnapshot and related concepts, describing business flows from the user's perspective.
+  - [124] [AdminRequest User Scenarios](./03-functional-requirements.md#adminrequest-user-scenarios) — Define end-to-end user scenarios involving AdminRequest and related concepts, describing business flows from the user's perspective.
+  - [125] [AdminRole User Scenarios](./03-functional-requirements.md#adminrole-user-scenarios) — Define end-to-end user scenarios involving AdminRole and related concepts, describing business flows from the user's perspective.
+- [External Integrations](./03-functional-requirements.md#external-integrations)
+  - [126] [Integration Contracts](./03-functional-requirements.md#integration-contracts) — Define external API dependencies, authentication methods, request/response formats, and error handling for third-party integrations.
+- [File Storage](./03-functional-requirements.md#file-storage)
+  - [127] [File Upload and Management](./03-functional-requirements.md#file-upload-and-management) — Define file upload capabilities, supported formats, processing requirements, and access control for stored files.
+- [Background Processing](./03-functional-requirements.md#background-processing)
+  - [128] [Job Specifications](./03-functional-requirements.md#job-specifications) — Define background jobs, queue configurations, retry policies, and scheduling rules for asynchronous processing.
+
+**[04-business-rules.md](./04-business-rules.md)**
+- [Data Isolation and Ownership](./04-business-rules.md#data-isolation-and-ownership)
+  - [129] [Ownership and Isolation Rules](./04-business-rules.md#ownership-and-isolation-rules) — Define data ownership semantics and isolation boundaries for multi-user access.
+- [Domain Business Rules](./04-business-rules.md#domain-business-rules)
+  - [130] [User Rules](./04-business-rules.md#user-rules) — Define business rules, validation logic, and domain constraints for User.
+  - [131] [CustomerProfile Rules](./04-business-rules.md#customerprofile-rules) — Define business rules, validation logic, and domain constraints for CustomerProfile.
+  - [132] [SellerProfile Rules](./04-business-rules.md#sellerprofile-rules) — Define business rules, validation logic, and domain constraints for SellerProfile.
+  - [133] [Address Rules](./04-business-rules.md#address-rules) — Define business rules, validation logic, and domain constraints for Address.
+  - [134] [Category Rules](./04-business-rules.md#category-rules) — Define business rules, validation logic, and domain constraints for Category.
+  - [135] [Product Rules](./04-business-rules.md#product-rules) — Define business rules, validation logic, and domain constraints for Product.
+  - [136] [ProductImage Rules](./04-business-rules.md#productimage-rules) — Define business rules, validation logic, and domain constraints for ProductImage.
+  - [137] [ProductVariant Rules](./04-business-rules.md#productvariant-rules) — Define business rules, validation logic, and domain constraints for ProductVariant.
+  - [138] [ProductSnapshot Rules](./04-business-rules.md#productsnapshot-rules) — Define business rules, validation logic, and domain constraints for ProductSnapshot.
+  - [139] [ProductSnapshotVariant Rules](./04-business-rules.md#productsnapshotvariant-rules) — Define business rules, validation logic, and domain constraints for ProductSnapshotVariant.
+  - [140] [InventoryRecord Rules](./04-business-rules.md#inventoryrecord-rules) — Define business rules, validation logic, and domain constraints for InventoryRecord.
+  - [141] [CartItem Rules](./04-business-rules.md#cartitem-rules) — Define business rules, validation logic, and domain constraints for CartItem.
+  - [142] [WishlistItem Rules](./04-business-rules.md#wishlistitem-rules) — Define business rules, validation logic, and domain constraints for WishlistItem.
+  - [143] [Order Rules](./04-business-rules.md#order-rules) — Define business rules, validation logic, and domain constraints for Order.
+  - [144] [OrderItem Rules](./04-business-rules.md#orderitem-rules) — Define business rules, validation logic, and domain constraints for OrderItem.
+  - [145] [Shipment Rules](./04-business-rules.md#shipment-rules) — Define business rules, validation logic, and domain constraints for Shipment.
+  - [146] [ShipmentItem Rules](./04-business-rules.md#shipmentitem-rules) — Define business rules, validation logic, and domain constraints for ShipmentItem.
+  - [147] [CancellationRequest Rules](./04-business-rules.md#cancellationrequest-rules) — Define business rules, validation logic, and domain constraints for CancellationRequest.
+  - [148] [RefundRequest Rules](./04-business-rules.md#refundrequest-rules) — Define business rules, validation logic, and domain constraints for RefundRequest.
+  - [149] [Review Rules](./04-business-rules.md#review-rules) — Define business rules, validation logic, and domain constraints for Review.
+  - [150] [ReviewSnapshot Rules](./04-business-rules.md#reviewsnapshot-rules) — Define business rules, validation logic, and domain constraints for ReviewSnapshot.
+  - [151] [AdminRequest Rules](./04-business-rules.md#adminrequest-rules) — Define business rules, validation logic, and domain constraints for AdminRequest.
+  - [152] [AdminRole Rules](./04-business-rules.md#adminrole-rules) — Define business rules, validation logic, and domain constraints for AdminRole.
+- [Business Validation Criteria](./04-business-rules.md#business-validation-criteria)
+  - [153] [User Validation Criteria](./04-business-rules.md#user-validation-criteria) — Define business validation expectations for User, including acceptable data quality criteria.
+  - [154] [CustomerProfile Validation Criteria](./04-business-rules.md#customerprofile-validation-criteria) — Define business validation expectations for CustomerProfile, including acceptable data quality criteria.
+  - [155] [SellerProfile Validation Criteria](./04-business-rules.md#sellerprofile-validation-criteria) — Define business validation expectations for SellerProfile, including acceptable data quality criteria.
+  - [156] [Address Validation Criteria](./04-business-rules.md#address-validation-criteria) — Define business validation expectations for Address, including acceptable data quality criteria.
+  - [157] [Category Validation Criteria](./04-business-rules.md#category-validation-criteria) — Define business validation expectations for Category, including acceptable data quality criteria.
+  - [158] [Product Validation Criteria](./04-business-rules.md#product-validation-criteria) — Define business validation expectations for Product, including acceptable data quality criteria.
+  - [159] [ProductImage Validation Criteria](./04-business-rules.md#productimage-validation-criteria) — Define business validation expectations for ProductImage, including acceptable data quality criteria.
+  - [160] [ProductVariant Validation Criteria](./04-business-rules.md#productvariant-validation-criteria) — Define business validation expectations for ProductVariant, including acceptable data quality criteria.
+  - [161] [ProductSnapshot Validation Criteria](./04-business-rules.md#productsnapshot-validation-criteria) — Define business validation expectations for ProductSnapshot, including acceptable data quality criteria.
+  - [162] [ProductSnapshotVariant Validation Criteria](./04-business-rules.md#productsnapshotvariant-validation-criteria) — Define business validation expectations for ProductSnapshotVariant, including acceptable data quality criteria.
+  - [163] [InventoryRecord Validation Criteria](./04-business-rules.md#inventoryrecord-validation-criteria) — Define business validation expectations for InventoryRecord, including acceptable data quality criteria.
+  - [164] [CartItem Validation Criteria](./04-business-rules.md#cartitem-validation-criteria) — Define business validation expectations for CartItem, including acceptable data quality criteria.
+  - [165] [WishlistItem Validation Criteria](./04-business-rules.md#wishlistitem-validation-criteria) — Define business validation expectations for WishlistItem, including acceptable data quality criteria.
+  - [166] [Order Validation Criteria](./04-business-rules.md#order-validation-criteria) — Define business validation expectations for Order, including acceptable data quality criteria.
+  - [167] [OrderItem Validation Criteria](./04-business-rules.md#orderitem-validation-criteria) — Define business validation expectations for OrderItem, including acceptable data quality criteria.
+  - [168] [Shipment Validation Criteria](./04-business-rules.md#shipment-validation-criteria) — Define business validation expectations for Shipment, including acceptable data quality criteria.
+  - [169] [ShipmentItem Validation Criteria](./04-business-rules.md#shipmentitem-validation-criteria) — Define business validation expectations for ShipmentItem, including acceptable data quality criteria.
+  - [170] [CancellationRequest Validation Criteria](./04-business-rules.md#cancellationrequest-validation-criteria) — Define business validation expectations for CancellationRequest, including acceptable data quality criteria.
+  - [171] [RefundRequest Validation Criteria](./04-business-rules.md#refundrequest-validation-criteria) — Define business validation expectations for RefundRequest, including acceptable data quality criteria.
+  - [172] [Review Validation Criteria](./04-business-rules.md#review-validation-criteria) — Define business validation expectations for Review, including acceptable data quality criteria.
+  - [173] [ReviewSnapshot Validation Criteria](./04-business-rules.md#reviewsnapshot-validation-criteria) — Define business validation expectations for ReviewSnapshot, including acceptable data quality criteria.
+  - [174] [AdminRequest Validation Criteria](./04-business-rules.md#adminrequest-validation-criteria) — Define business validation expectations for AdminRequest, including acceptable data quality criteria.
+  - [175] [AdminRole Validation Criteria](./04-business-rules.md#adminrole-validation-criteria) — Define business validation expectations for AdminRole, including acceptable data quality criteria.
+- [Data Browsing Expectations](./04-business-rules.md#data-browsing-expectations)
+  - [176] [List Browsing Expectations](./04-business-rules.md#list-browsing-expectations) — Define business expectations for how users find, filter, and browse lists.
+- [Error Conditions](./04-business-rules.md#error-conditions)
+  - [177] [Error Scenarios](./04-business-rules.md#error-scenarios) — Describe error conditions and expected system responses in natural language.
+- [Integration Error Handling](./04-business-rules.md#integration-error-handling)
+  - [178] [Integration Failure Policies](./04-business-rules.md#integration-failure-policies) — Define retry strategies, circuit breaker policies, fallback behavior, and error escalation for external service failures.
+- [File Validation Rules](./04-business-rules.md#file-validation-rules)
+  - [179] [File Validation and Policies](./04-business-rules.md#file-validation-and-policies) — Define file type restrictions, virus scanning requirements, content validation, and retention policies for uploaded files.
+- [Job Failure Policies](./04-business-rules.md#job-failure-policies)
+  - [180] [Job Failure and Recovery](./04-business-rules.md#job-failure-and-recovery) — Define failure handling, recovery procedures, and notification requirements for background jobs.
+
+**[05-non-functional.md](./05-non-functional.md)**
+- [Performance Requirements](./05-non-functional.md#performance-requirements)
+  - [181] [Performance SLOs](./05-non-functional.md#performance-slos) — Define response time targets, throughput limits, and scalability requirements.
+  - [182] [Rate Limiting and Throttling](./05-non-functional.md#rate-limiting-and-throttling) — Define rate limiting policies and abuse prevention requirements.
+- [Security Requirements](./05-non-functional.md#security-requirements)
+  - [183] [Security Policies](./05-non-functional.md#security-policies) — Define security policies including encryption, input validation, and compliance.
+  - [184] [Availability and Reliability](./05-non-functional.md#availability-and-reliability) — Define availability targets, reliability expectations, and failover policies.
+- [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage)
+  - [185] [Data Integrity and Storage](./05-non-functional.md#data-integrity-and-storage-1) — Define backup policies, data retention, and storage tier requirements.
+  - [186] [Audit and Observability](./05-non-functional.md#audit-and-observability) — Define audit logging, monitoring, alerting, and observability requirements.
+- [Concurrency and Data Consistency](./05-non-functional.md#concurrency-and-data-consistency)
+  - [187] [Concurrency Control Policies](./05-non-functional.md#concurrency-control-policies) — Define optimistic/pessimistic locking strategies, conflict resolution, and retry semantics for concurrent operations.
+  - [188] [Data Consistency Guarantees](./05-non-functional.md#data-consistency-guarantees) — Define consistency models, transactional boundary requirements, and idempotency guarantees.
+- [External Dependency SLOs](./05-non-functional.md#external-dependency-slos)
+  - [189] [External Dependency SLOs](./05-non-functional.md#external-dependency-slos-1) — Define availability expectations, timeout thresholds, and degradation policies for external service dependencies.
+- [Storage Capacity](./05-non-functional.md#storage-capacity)
+  - [190] [Storage Capacity Requirements](./05-non-functional.md#storage-capacity-requirements) — Define storage requirements and capacity planning for file storage.
+- [Queue Performance](./05-non-functional.md#queue-performance)
+  - [191] [Queue Performance SLOs](./05-non-functional.md#queue-performance-slos) — Define performance requirements for background job processing.
+
+---
+
+**Canonical Sources**
+
+Each type of information has one authoritative location. Other files should reference these canonical sources.
+
+| Information Type | Canonical File |
+|------------------|---------------|
+| Domain concepts | [02-domain-model.md](./02-domain-model.md) |
+| Error conditions | [04-business-rules.md](./04-business-rules.md) |
+| Permissions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
+| Actor definitions | [01-actors-and-auth.md](./01-actors-and-auth.md) |
+
+---
+
+**Glossary**
+
+- **User**: email: string, required, unique, password: string, required, role: string (customer|seller|admin), createdAt: datetime, updatedAt: datetime
+- **CustomerProfile**: userId: reference, required, displayName: string, required, phoneNumber: string, required, createdAt: datetime, updatedAt: datetime
+- **SellerProfile**: userId: reference, required, shopName: string, required, shopDescription: text, optional, logoUrl: string, optional, approvalStatus: string (pending|approved|rejected), rejectionReason: text, optional, createdAt: datetime, updatedAt: datetime, isSuspended: boolean
+- **Address**: userId: reference, required, profileId: reference, required, recipientName: string, required, phoneNumber: string, required, streetAddress: string, required, city: string, required, stateProvince: string, required, postalCode: string, required, country: string, required, isDefault: boolean, createdAt: datetime, updatedAt: datetime
+- **Category**: name: string, required, description: text, optional, parentId: reference, optional, createdAt: datetime, updatedAt: datetime
+- **Product**: sellerId: reference, required, categoryId: reference, required, name: string, required, description: text, required, basePrice: decimal, required, isAvailable: boolean, createdAt: datetime, updatedAt: datetime, deletedAt: datetime, optional
+- **ProductImage**: productId: reference, required, imageUrl: string, required, sortOrder: integer, isMain: boolean, createdAt: datetime, updatedAt: datetime
+- **ProductVariant**: productId: reference, required, skuCode: string, required, unique, optionValues: json, required (e.g., {color: 'Red', size: 'Large'}), priceOverride: decimal, optional, stockQuantity: integer, default 0, createdAt: datetime, updatedAt: datetime
+- **ProductSnapshot**: productId: reference, required, sellerId: reference, required, categoryId: reference, required, snapshotType: string ('edit'|'order'|'refund'|'cancel'), name: string, required, description: text, required, basePrice: decimal, required, createdAt: datetime
+- **ProductSnapshotVariant**: snapshotId: reference, required, skuCode: string, required, optionValues: json, required, priceOverride: decimal, optional, createdAt: datetime
+- **InventoryRecord**: variantId: reference, required, quantityChange: integer, required, reason: string, required (restock|order|adjustment|cancel|refund), referenceId: string, optional (orderId, etc.), createdAt: datetime
+- **CartItem**: userId: reference, required, variantId: reference, required, quantity: integer, required, min 1, createdAt: datetime, updatedAt: datetime
+- **WishlistItem**: userId: reference, required, productId: reference, required, createdAt: datetime
+- **Order**: customerId: reference, required, shippingAddressId: reference, required, totalPrice: decimal, required, orderStatus: string (paid|shipped|delivered|cancelled|refunded|partiallyCompleted), createdAt: datetime, updatedAt: datetime
+- **OrderItem**: orderId: reference, required, productId: reference, required, variantId: reference, required, sellerId: reference, required, productName: string, required (snapshot), productDescription: text, required (snapshot), variantOptions: json, required (snapshot), productPrice: decimal, required (snapshot), quantity: integer, required, min 1, itemStatus: string (paid|shipped|delivered|cancelled|refunded), createdAt: datetime, updatedAt: datetime
+- **Shipment**: orderId: reference, required, sellerId: reference, required, carrierName: string, optional, trackingNumber: string, optional, shipmentStatus: string (pending|shipped), createdAt: datetime, updatedAt: datetime
+- **ShipmentItem**: shipmentId: reference, required, orderItemId: reference, required, createdAt: datetime
+- **CancellationRequest**: orderItemId: reference, required, customerId: reference, required, sellerId: reference, required, reason: text, required, status: string (pending|approved|rejected), respondedAt: datetime, optional, snapshotData: json, optional, createdAt: datetime, updatedAt: datetime
+- **RefundRequest**: orderItemId: reference, required, customerId: reference, required, sellerId: reference, required, reason: text, required, status: string (pending|approved|rejected), respondedAt: datetime, optional, snapshotData: json, optional, createdAt: datetime, updatedAt: datetime
+- **Review**: customerId: reference, required, productId: reference, required, orderItemId: reference, required, rating: integer, required (1-5), textContent: text, optional, createdAt: datetime, updatedAt: datetime, deletedAt: datetime, optional
+- **ReviewSnapshot**: reviewId: reference, required, rating: integer, required, textContent: text, optional, snapshotType: string ('edit'), createdAt: datetime
+- **AdminRequest**: userId: reference, required, reason: text, required, status: string (pending|approved|rejected), approvalNotes: text, optional, createdAt: datetime, updatedAt: datetime
+- **AdminRole**: userId: reference, required, grade: string (regular|super), createdAt: datetime, updatedAt: datetime
+
+---
+
+**Constraints**
+
+- File scope: Project summary, scope, glossary, and assumptions
+- Downstream phase: project-setup
+- File scope: Actor definitions, permission matrix, authentication, session, account lifecycle
+- Downstream phase: auth-middleware
+- File scope: Business concepts, relationships, and states from user perspective
+- Downstream phase: database-design
+- File scope: What operations users can perform, use cases, business workflows
+- Downstream phase: interface-design
+- File scope: Data isolation, business rules, data browsing expectations, error scenarios
+- Downstream phase: service-layer
+- File scope: Performance SLOs, security policies, data integrity, storage requirements
+- Downstream phase: test-infra
+
+**Active Features**
+
+- external-integration
+- file-storage
+- background-processing

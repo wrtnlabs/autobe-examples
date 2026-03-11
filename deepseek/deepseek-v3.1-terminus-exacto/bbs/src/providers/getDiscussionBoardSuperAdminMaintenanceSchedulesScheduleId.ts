@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,22 +9,19 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
 import { DiscussionBoardMaintenanceScheduleTransformer } from "../transformers/DiscussionBoardMaintenanceScheduleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardSuperAdminMaintenanceSchedulesScheduleId(props: {
-  superAdmin: SuperAdminPayload;
+  superAdmin: SuperadminPayload;
   scheduleId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
   const schedule =
     await MyGlobal.prisma.discussion_board_maintenance_schedules.findUniqueOrThrow(
       {
-        where: {
-          id: props.scheduleId,
-          deleted_at: null,
-        },
+        where: { id: props.scheduleId },
         ...DiscussionBoardMaintenanceScheduleTransformer.select(),
       },
     );

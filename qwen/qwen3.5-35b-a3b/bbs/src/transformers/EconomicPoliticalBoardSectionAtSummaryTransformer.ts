@@ -7,24 +7,9 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EconomicPoliticalBoardSectionAtSummaryTransformer {
-  export type Payload = Prisma.economic_political_board_sectionsGetPayload<{
-    select: {
-      id: true;
-      name: true;
-      description: true;
-      created_at: true;
-      updated_at: true;
-      deleted_at: true;
-      articles: {
-        select: {};
-      };
-      _count: {
-        select: {
-          articles: true;
-        };
-      };
-    };
-  }>;
+  export type Payload = Prisma.economic_political_board_sectionsGetPayload<
+    ReturnType<typeof select>
+  >;
   export function select() {
     return {
       select: {
@@ -37,7 +22,6 @@ export namespace EconomicPoliticalBoardSectionAtSummaryTransformer {
         articles: {
           select: {},
         } satisfies Prisma.economic_political_board_articlesFindManyArgs,
-        _count: { select: { articles: true } },
       },
     } satisfies Prisma.economic_political_board_sectionsFindManyArgs;
   }
@@ -47,9 +31,10 @@ export namespace EconomicPoliticalBoardSectionAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
+      description: input.description ?? undefined,
       created_at: input.created_at.toISOString(),
-      articleCount: input._count.articles,
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

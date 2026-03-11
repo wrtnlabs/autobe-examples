@@ -1,11 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import type { IEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistration";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
-import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
-import type { IShoppingMallSellerSessions } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSessions";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,64 +12,45 @@ import typia, { tags } from "typia";
 import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
-import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
-import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
-import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
 export async function test_api_seller_registration_approval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin account and login
+  // Create admin connection and login
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminCredentials = {
-    email: "admin@test.com",
-    password: "12345678",
-  } satisfies IShoppingMallAdmin.IJoin;
-  await authorize_admin_join(adminConnection, { body: adminCredentials });
-  // 2. Register pending seller
-  const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerJoinInput = {
-    email: "seller@test.com",
-    password: "12345678",
-    shop_name: RandomGenerator.name(),
-    shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-    logo_image_url: null,
-  } satisfies IShoppingMallSeller.IJoin;
-  const sellerAuthorized = await authorize_seller_join(sellerConnection, {
-    body: sellerJoinInput,
-  });
-  typia.assert(sellerAuthorized);
-  typia.assert<IShoppingMallSeller.ISummary>(sellerAuthorized.data.profile);
-  const sellerId = sellerAuthorized.data.profile.id;
-  // 3. Admin approves the seller registration
-  const approvalInput = {
-    action: "approve" as const,
-  } satisfies IShoppingMallSellerProfile.IApproval;
-  await api.functional.shoppingMall.admin.sellers.approvals.approveSellerRegistration(
+  const adminUser = await api.functional.ecommerceMall.auth.admin.join(
     adminConnection,
     {
-      sellerId,
-      body: approvalInput,
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+      } satisfies IEcommerceMallAdmin.IJoin,
     },
   );
-  // 4. Verify seller status changed to active by re-fetching seller profile
-  sellerConnection.headers = {};
-  await authorize_seller_login(sellerConnection, {
-    body: {
-      email: sellerJoinInput.email,
-      password: sellerJoinInput.password,
-    } satisfies IShoppingMallSeller.ILogin,
-  });
-  typia.assert(sellerConnection.headers?.["Authorization"]);
-  // 5. Verify approval record exists (indirectly through seller's approval_status)
-  const sellerSummary = sellerAuthorized.data.profile;
-  TestValidator.equals(
-    "approval_status is approved",
-    sellerSummary.approval_status,
-    "active",
-  );
+  // Update connection with auth token from admin login
+  adminConnection.headers = {
+    Authorization: adminUser.token.access,
+  };
+  // Generate a random seller registration ID for testing
+  const sellerRegistrationId = typia.random<string & tags.Format<"uuid">>();
+  // Approve seller registration
+  const result =
+    await api.functional.ecommerceMall.admin.seller_registrations.update(
+      adminConnection,
+      {
+        sellerRegistrationId,
+        body: {
+          approval_status: "approved",
+        } satisfies IEcommerceMallSellerRegistration.IUpdate,
+      },
+    );
+  // Verify the approval response
+  typia.assert(result);
+  // Verify approval status is 'approved'
+  TestValidator.equals("approval status", result.approval_status, "approved");
+  // Verify responded_at is set
   TestValidator.predicate(
-    "created_at exists",
-    Boolean(sellerSummary.created_at),
+    "responded_at is set",
+    result.responded_at !== null && result.responded_at !== undefined,
   );
 }

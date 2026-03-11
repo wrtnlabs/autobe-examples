@@ -8,55 +8,136 @@ import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { getEcommerceMallCustomerCancellationRequestsCancellationRequestId } from "../../../../providers/getEcommerceMallCustomerCancellationRequestsCancellationRequestId";
 import { patchEcommerceMallCustomerCancellationRequests } from "../../../../providers/patchEcommerceMallCustomerCancellationRequests";
+import { postEcommerceMallCustomerCancellationRequests } from "../../../../providers/postEcommerceMallCustomerCancellationRequests";
 
 @Controller("/ecommerceMall/customer/cancellation-requests")
 export class EcommercemallCustomerCancellation_requestsController {
   /**
-   * Retrieve a filtered and paginated list of cancellation requests for the authenticated customer.
+   * Create a new cancellation request for an order item that has not yet been shipped.
    *
-   * This operation enables customers to search and browse their own cancellation requests with comprehensive filtering and sorting capabilities. The endpoint supports filtering by request status (pending, approved, rejected), creation date range, and order item association. Results are returned with cursor-based pagination for efficient large result set handling.
+   * This operation allows customers to request cancellation of specific order items from their orders. The order item must be in "paid" status, meaning it has not been shipped to the customer yet. Upon successful creation, the cancellation request is set to "pending" status and the seller responsible for the order item is notified to review the request.
    *
-   * The operation excludes soft-deleted cancellation requests from results, as the ecommerce_mall_cancellation_requests table supports soft deletion via the deleted_at field for audit trail preservation. Active requests include seller response status and timestamps from the ecommerce_mall_order_items table when requests have been processed.
+   * The cancellation request requires a customer-provided reason explaining why the item should be cancelled. This reason text is mandatory and will be visible to the seller when they review the request.
    *
-   * All cancellation request data includes denormalized product, variant, and seller profile snapshots stored in the ecommerce_mall_order_items table. The operation respects data isolation rules, ensuring customers can only view their own cancellation requests.
+   * **Important Validation Rules:**
+   *
+   * - The order item must have status "paid" - items with "shipped", "delivered", or other statuses cannot be cancelled
+   * - The customer must be the original purchaser of the order item
+   * - The order item must not already have an existing cancellation request with "approved" or "rejected" status
+   * - The customer account must not be banned
+   *
+   * **Workflow:**
+   *
+   * 1. Customer submits cancellation request with reason text
+   * 2. System validates order item status and customer ownership
+   * 3. Cancellation request is created with "pending" status
+   * 4. Seller receives notification to review the request
+   * 5. Seller can approve (which cancels the item and processes refund) or reject (which notifies customer)
+   *
+   * **Related Operations:**
+   *
+   * - GET /cancellation-requests/{cancellationRequestId} - View cancellation request details
+   * - PATCH /cancellation-requests - List and search customer's cancellation requests
+   * - GET /orders/{orderId}/items/{orderItemId} - Check order item status before requesting cancellation
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for cancellation requests
+   * @param body Cancellation request creation data including the order item to cancel and reason text
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with pagination and filtering.
+   * @x-autobe-specification Create a new cancellation request record in the ecommerce_mall_cancellation_requests table.
+   *
+   * **Implementation Steps:**
+   *
+   * 1. Extract and validate request body data (reason text)
+   * 2. Query the order_item_id from request to retrieve the order item
+   * 3. Validate order item status is "paid" - reject with error if not
+   * 4. Verify the order item belongs to the authenticated customer
+   * 5. Check for existing cancellation requests for this order item
+   * 6. Verify the customer account is not banned
+   * 7. Create the cancellation request with:
+   *    - id: generate UUID
+   *    - customer_id: from authenticated user
+   *    - order_item_id: from request body
+   *    - reason: from request body
+   *    - request_status: "pending"
+   *    - created_at: current UTC timestamp
+   *    - updated_at: current UTC timestamp
+   * 8. Trigger seller notification mechanism
+   * 9. Return the created cancellation request with full details
+   *
+   * **Error Handling:**
+   *
+   * - 400 Bad Request: order item status is not "paid"
+   * - 403 Forbidden: order item does not belong to the customer
+   * - 409 Conflict: cancellation request already exists for this order item
+   * - 403 Forbidden: customer account is banned
+   * - 404 Not Found: order item does not exist
+   *
+   * **Concurrency Considerations:**
+   *
+   * - Lock the order item during validation to prevent concurrent operations
+   * - If seller attempts to ship while cancellation is pending, reject the shipment
+   * - Use server timestamp for ordering conflicting operations
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IEcommerceMallCancellationRequest.ICreate,
+  ): Promise<IEcommerceMallCancellationRequest> {
+    try {
+      return await postEcommerceMallCustomerCancellationRequests({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a filtered and paginated list of cancellation request records from the ecommerce platform.
+   *
+   * This operation provides comprehensive search and filtering capabilities for cancellation requests, allowing customers to view their own requests and sellers to view requests related to their products. The results can be filtered by request status (pending, approved, rejected), date ranges, and associated order items.
+   *
+   * Supports cursor-based pagination for efficient handling of large result sets. Response includes cancellation request summary information along with relevant order item and customer/seller context.
+   *
+   * Authorization: Customers can only view their own cancellation requests. Sellers can view cancellation requests for order items from their products. Administrators can view all cancellation requests.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for cancellation request list
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table with pagination and filtering.
    *
    * Apply search filters:
-   * - requestStatus: exact match or list filter (pending|approved|rejected)
-   * - createdFrom/createdTo: ISO 8601 date range for creation timestamp
-   * - customerId: UUID filter for specific customer
-   * - orderItemId: UUID filter for specific order item
-   * - sellerId: UUID filter to retrieve requests for seller's products
-   * - search: partial text search on reason field
+   * - orderItemId: filter by specific order item (UUID)
+   * - status: filter by request status (pending, approved, rejected)
+   * - createdAt range: filter by creation date range (startDate, endDate)
+   * - customerId: filter by customer who created the request (customers only)
+   * - sellerId: filter by seller whose products are involved (sellers only)
    *
    * Apply sorting:
-   * - createdAt (ASC/DESC) - default: DESC
-   * - updatedAt (ASC/DESC)
-   * - requestStatus (ASC/DESC)
-   * - itemId (ASC/DESC)
+   * - sortBy: field name (createdAt, updatedAt, requestStatus)
+   * - sortOrder: asc or desc
    *
-   * Pagination uses cursor-based approach:
-   * - pageCursor: optional cursor from previous page
-   * - pageSize: 10-100 (default: 20)
+   * Join with related tables:
+   * - ecommerce_mall_order_items: for order item details and product ownership
+   * - ecommerce_mall_customers: for customer display name (if customerId filter)
    *
-   * Authorization:
-   * - Customer: filter by customerId == authenticated user
-   * - Seller: join with order_items to filter by seller ID
-   * - Admin: no customer/seller filter applied
+   * Apply authorization:
+   * - Verify customer can only view their own requests
+   * - Verify seller can only view requests for their products
+   * - Admins bypass customer/seller restrictions
    *
-   * Join operations:
-   * - ecommerce_mall_order_items (for seller product association)
-   * - ecommerce_mall_customers (for customer profile data)
-   * - ecommerce_mall_product_snapshots (for snapshot references when response recorded)
+   * Return cursor-based pagination:
+   * - Return nextCursor and hasNextPage for client navigation
+   * - Page size limited to 50 records maximum
    *
-   * Return IPageIEcommerceMallCancellationRequest.ISummary with:
-   * - pagination: { pageCursor, hasMore, totalCount }
-   * - data: array of IEcommerceMallCancellationRequest.ISummary objects
+   * Create audit log entry for the query with timestamp and user ID.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -78,49 +159,29 @@ export class EcommercemallCustomerCancellation_requestsController {
   }
 
   /**
-   * Retrieve the details of a specific customer cancellation request for an order item.
+   * Retrieve detailed information about a specific cancellation request.
    *
-   * This operation returns the complete cancellation request including the reason provided by the customer, current status (pending/approved/rejected), and associated order item information. Cancellation requests are created when customers want to cancel order items that have not yet been shipped (status must be "paid").
+   * This operation returns the complete cancellation request record including the cancellation reason provided by the customer, the current request status (pending, approved, or rejected), and the associated order item reference.
    *
-   * The cancellation request workflow requires the customer to provide a reason for cancellation when submitting the request. Once submitted, the request enters "pending" status and the seller responsible for the order item can approve or reject it. Approved cancellations restore stock to the product variant, while rejected requests can be resubmitted by the customer.
+   * The cancellation request details include the creation timestamp and last update timestamp, allowing users to track the request timeline. If the request has been approved or rejected, the response contains the status reflecting the seller's decision.
    *
-   * Authorization: Only the customer who created the cancellation request or the seller responsible for the associated order item can retrieve this information. The operation respects soft delete by excluding requests with a deleted_at timestamp from results.
-   *
-   * Related operations:
-   * - PATCH /cancellation-requests: List and search for cancellation requests with filters
-   * - POST /cancellation-requests: Create a new cancellation request
-   * - GET /order-items/{orderId}/cancellation-requests: Get all cancellation requests for a specific order item
+   * Customers can only retrieve cancellation requests they submitted. Sellers can view cancellation requests for order items from their products. Administrators have access to all cancellation requests across the system.
    *
    * @param connection
    * @param cancellationRequestId The unique identifier of the cancellation request to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table for a record matching the provided cancellationRequestId.
+   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table for the record matching the cancellationRequestId path parameter.
    *
-   * Authorization checks:
-   * 1. Verify the authenticated user is either:
-   *    - The customer who created the request (customer_id matches current user's customer profile ID), OR
-   *    - The seller responsible for the associated order item (join with ecommerce_mall_order_items to get the product, then verify seller_id matches current user's seller ID)
-   * 2. Reject with 403 Forbidden if user lacks authorization
-   * 3. Reject with 404 Not Found if request does not exist or has deleted_at set
+   * Authorization:
+   * - For customer actor: verify the cancellation request's orderItem belongs to an order owned by the authenticated customer
+   * - For seller actor: verify the cancellation request's orderItem belongs to a product owned by the authenticated seller
+   * - For admin actor: allow access to any cancellation request
    *
-   * Query logic:
-   * - Fetch cancellation request with customer and orderItem relations
-   * - Include orderItem's product and product's seller information for authorization verification
-   * - Exclude soft-deleted records (WHERE deleted_at IS NULL)
+   * Return 404 if the cancellation request does not exist.
+   * Return 403 if the authenticated actor does not have permission to access the requested cancellation request.
    *
-   * Response includes:
-   * - Request ID, customer reference, order item reference
-   * - Cancellation reason text
-   * - Current request status (pending/approved/rejected)
-   * - Timestamps: created_at, updated_at
-   * - Order item details: status (must be "paid" for valid cancellations)
-   * - Product and seller information for context
-   *
-   * Error handling:
-   * - 404: Request not found or soft-deleted
-   * - 403: User not authorized to view this request
-   * - 500: Internal server error during query
+   * The response includes all fields: id, reason, requestStatus, orderItemId, createdAt, updatedAt.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":cancellationRequestId")

@@ -1,10 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { TodoAppUserAtSummaryTransformer } from "./TodoAppUserAtSummaryTransformer";
 
 export namespace TodoAppTodoTransformer {
   export type Payload = Prisma.todo_app_todosGetPayload<
@@ -23,29 +25,23 @@ export namespace TodoAppTodoTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        user: {
-          select: { id: true },
-        },
-        editHistoryEntries: true,
-        trashEntry: true,
+        user: TodoAppUserAtSummaryTransformer.select(),
       },
     } satisfies Prisma.todo_app_todosFindManyArgs;
   }
   export async function transform(input: Payload): Promise<ITodoAppTodo> {
     return {
       id: input.id,
-      todo_app_user_id: input.user.id,
       title: input.title,
       description: input.description ?? null,
-      start_date: input.start_date?.toISOString() ?? null,
-      due_date: input.due_date?.toISOString() ?? null,
+      start_date: input.start_date ? toISOStringSafe(input.start_date) : null,
+      due_date: input.due_date ? toISOStringSafe(input.due_date) : null,
       is_complete: input.is_complete,
       is_trashed: input.is_trashed,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      restored_at: null,
-      permanently_deleted_at: null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      user: await TodoAppUserAtSummaryTransformer.transform(input.user),
     };
   }
 }

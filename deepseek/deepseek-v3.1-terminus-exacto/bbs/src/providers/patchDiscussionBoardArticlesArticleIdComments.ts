@@ -1,5 +1,5 @@
 import { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
-import { IDiscussionBoardUser } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardUser";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardComment";
@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { DiscussionBoardCommentAtSummaryTransformer } from "../transformers/DiscussionBoardCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,72 +19,47 @@ export async function patchDiscussionBoardArticlesArticleIdComments(props: {
   articleId: string & tags.Format<"uuid">;
   body: IDiscussionBoardComment.IRequest;
 }): Promise<IPageIDiscussionBoardComment.ISummary> {
-  // Verify article exists
+  // Validate article exists
   await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
     where: { id: props.articleId },
   });
-  // Parse pagination parameters
+  // Build pagination parameters
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 50, 100); // Max 100 per system constraints
+  const limit = Math.max(1, Math.min(props.body.limit ?? 100, 100));
   const skip = (page - 1) * limit;
-  // Build WHERE clause
-  const whereClause: Prisma.discussion_board_commentsWhereInput = {
-    article: { id: props.articleId },
+  // Build where clause
+  const whereInput: Prisma.discussion_board_commentsWhereInput = {
+    discussion_board_article_id: props.articleId,
     deleted_at: null,
     ...(props.body.search && {
       content: { contains: props.body.search, mode: "insensitive" },
     }),
-    ...(props.body.author_display_name && {
-      author: { display_name: { equals: props.body.author_display_name } },
+    ...(props.body.authorId && {
+      discussion_board_member_id: props.body.authorId,
     }),
-    ...(props.body.created_at_start && {
-      created_at: { gte: props.body.created_at_start },
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
     }),
-    ...(props.body.created_at_end && {
-      created_at: { lte: props.body.created_at_end },
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
     }),
-    ...(props.body.updated_at_start && {
-      updated_at: { gte: props.body.updated_at_start },
-    }),
-    ...(props.body.updated_at_end && {
-      updated_at: { lte: props.body.updated_at_end },
-    }),
-  };
-  // Query data sequentially
+  } satisfies Prisma.discussion_board_commentsWhereInput;
+  // Query data with pagination
   const data = await MyGlobal.prisma.discussion_board_comments.findMany({
-    where: whereClause,
-    include: {
-      author: {
-        select: {
-          id: true,
-          display_name: true,
-          bio: true,
-          created_at: true,
-        },
-      },
-    } satisfies Prisma.discussion_board_commentsInclude,
-    orderBy: { created_at: "asc" },
+    where: whereInput,
     skip,
     take: limit,
+    orderBy: { created_at: "asc" },
+    ...DiscussionBoardCommentAtSummaryTransformer.select(),
   });
+  // Query total count
   const total = await MyGlobal.prisma.discussion_board_comments.count({
-    where: whereClause,
+    where: whereInput,
   });
-  // Transform data to response format
-  const transformedData = data.map(
-    (comment) =>
-      ({
-        id: comment.id,
-        content: comment.content,
-        author: {
-          id: comment.author.id,
-          display_name: comment.author.display_name,
-          bio: comment.author.bio === null ? undefined : comment.author.bio,
-          created_at: toISOStringSafe(comment.author.created_at),
-        } satisfies IDiscussionBoardUser.ISummary,
-        created_at: toISOStringSafe(comment.created_at),
-        updated_at: toISOStringSafe(comment.updated_at),
-      }) satisfies IDiscussionBoardComment.ISummary,
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    DiscussionBoardCommentAtSummaryTransformer.transform,
   );
   return {
     data: transformedData,
@@ -93,5 +69,5 @@ export async function patchDiscussionBoardArticlesArticleIdComments(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIDiscussionBoardComment.ISummary;
+  };
 }

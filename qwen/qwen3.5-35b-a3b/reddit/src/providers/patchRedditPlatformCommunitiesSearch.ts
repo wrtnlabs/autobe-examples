@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditPlatformCommunityAtSummaryTransformer } from "../transformers/RedditPlatformCommunityAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,73 +19,52 @@ export async function patchRedditPlatformCommunitiesSearch(props: {
   body: IRedditPlatformCommunity.IRequest;
 }): Promise<IPageIRedditPlatformCommunity.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(Math.max(props.body.limit ?? 20, 1), 100);
-  const sortField = props.body.sort ?? "created_at";
-  const sortOrder = props.body.order ?? "desc";
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build WHERE clause
+  const searchQuery = props.body.searchQuery?.trim();
+  if (searchQuery) {
+    const hasValidChars = /[a-zA-Z0-9\u4e00-\u9fa5]/.test(searchQuery);
+    if (!hasValidChars) {
+      throw new HttpException("Invalid search characters", 400);
+    }
+  }
+  const sortOrderValue = (props.body.sortOrder ??
+    (props.body.sortBy === "name" ? "asc" : "desc")) as "asc" | "desc";
+  const orderByInput =
+    props.body.sortBy === "name"
+      ? { name: sortOrderValue }
+      : props.body.sortBy === "created_at"
+        ? { created_at: sortOrderValue }
+        : { subscriber_count: sortOrderValue };
   const whereInput: Prisma.reddit_platform_communitiesWhereInput = {
     deleted_at: null,
-    ...(props.body.name && { name: { contains: props.body.name } }),
-    ...(props.body.minSubscribers !== undefined &&
-    props.body.minSubscribers !== null
-      ? { subscriber_count: { gte: props.body.minSubscribers } }
-      : {}),
-    ...(props.body.maxSubscribers !== undefined &&
-    props.body.maxSubscribers !== null
-      ? { subscriber_count: { lte: props.body.maxSubscribers } }
-      : {}),
-  };
-  // Build ORDER BY
-  const orderByInput: Prisma.reddit_platform_communitiesOrderByWithRelationInput =
-    sortField === "name"
-      ? { name: sortOrder }
-      : sortField === "subscriber_count"
-        ? { subscriber_count: sortOrder }
-        : { created_at: sortOrder };
-  // Query communities
+    ...(searchQuery && {
+      name: {
+        contains: searchQuery,
+        mode: "insensitive" as const,
+      },
+    }),
+  } satisfies Prisma.reddit_platform_communitiesWhereInput;
   const data = await MyGlobal.prisma.reddit_platform_communities.findMany({
     where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
-    include: {
-      owner: true,
-    },
+    ...RedditPlatformCommunityAtSummaryTransformer.select(),
   });
-  // Get total count
   const total = await MyGlobal.prisma.reddit_platform_communities.count({
     where: whereInput,
   });
-  // Transform to response
-  const transformedData = data.map((community) => {
-    const author = {
-      id: community.owner.id,
-      username: community.owner.username,
-      displayName: community.owner.display_name,
-      bio: community.owner.bio ?? null,
-      avatarUrl: community.owner.avatar_url ?? null,
-      karmaScore: community.owner.karma_score,
-      createdAt: community.owner.created_at.toISOString(),
-      subscriptionCount: 0,
-    } satisfies IRedditPlatformMember.ISummary;
-    return {
-      id: community.id,
-      name: community.name,
-      description: community.description ?? null,
-      icon_url: community.icon_url ?? null,
-      subscriber_count: community.subscriber_count,
-      author,
-      created_at: community.created_at.toISOString(),
-    } satisfies IRedditPlatformCommunity.ISummary;
-  });
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditPlatformCommunityAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

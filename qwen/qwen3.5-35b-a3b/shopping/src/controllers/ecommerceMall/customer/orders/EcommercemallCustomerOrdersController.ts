@@ -12,67 +12,53 @@ import { patchEcommerceMallCustomerOrders } from "../../../../providers/patchEco
 @Controller("/ecommerceMall/customer/orders")
 export class EcommercemallCustomerOrdersController {
   /**
-   * Retrieve a filtered and paginated list of customer order history with advanced search capabilities.
+   * Retrieve a filtered and paginated list of order records with optional search criteria.
    *
-   * This operation provides comprehensive order listing functionality for customers to browse their purchase history. Orders are sorted by creation date with the newest orders appearing first, as per business requirements. The operation supports filtering by order status, date ranges, and optional text search.
+   * This endpoint supports advanced filtering by order number, overall status, date ranges (createdAt), and price ranges (totalPrice). Results are sorted by creation date (newest first) by default, as specified in the order date sorting requirements.
    *
-   * Customers can search their orders by order number or view all orders with pagination support. Each order in the list includes essential information: order number, total price, overall status, and creation date. The operation respects customer data isolation - customers can only retrieve their own orders.
+   * Authorization is actor-specific:
+   * - **Customers**: Can only view their own orders (filtered by customer relationship)
+   * - **Administrators**: Can view all orders system-wide with full filtering capabilities
+   * - **Sellers**: Can view orders containing their product items (requires join with order_items)
    *
-   * Shipping address information from the original order is preserved immutably at order creation time per business rules, and customers can view this information when viewing individual order details via GET /orders/{id}.
+   * Each order record includes essential transaction information such as orderNumber, totalPrice, overallStatus (paid, shipped, delivered, cancelled, refunded, partiallyCompleted), and timestamps. The response uses cursor-based pagination for efficient retrieval of large result sets, ensuring optimal performance for order history browsing.
+   *
+   * Related operations: GET /orders/{orderId} for detailed order information, POST /orders for new order creation.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for order history listing
+   * @param body Search criteria and pagination parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement customer order history listing with the following logic:
+   * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
    *
-   * 1. AUTHORIZATION: Verify customer is authenticated and extract customer_id from JWT token. Use this to filter orders - customers can only view their own orders.
+   * 1. **Authorization Layer**:
+   *    - Customer actor: Add WHERE clause filtering by customer.id = current_user.id
+   *    - Admin actor: No filtering, access to all orders
+   *    - Seller actor: Join with ecommerce_mall_order_items to filter orders containing seller's products
    *
-   * 2. SEARCH FILTERS: Apply filters from request body:
-   *    - status: Filter by overall_status (paid, shipped, delivered, cancelled, refunded, partiallyCompleted) if provided
-   *    - startDate/endDate: Filter by created_at range if provided
-   *    - searchTerm: Search order_number for partial match (case-insensitive) if provided
-   *    - sortBy: Support 'created_at' (default: DESC) or 'total_price' (ASC/DESC) if provided
-   *    - includeDeleted: Include soft-deleted orders (admin only) - default false
+   * 2. **Search Filters**:
+   *    - orderNumber: Partial match filter (LIKE)
+   *    - overallStatus: Exact match filter (paid, shipped, delivered, cancelled, refunded, partiallyCompleted)
+   *    - createdAtRange: Date range filter (min/max dates)
+   *    - totalPriceRange: Numeric range filter (min/max total price)
+   *    - actor-based implicit filters applied based on current_user
    *
-   * 3. PAGINATION: Apply cursor-based or offset-based pagination:
-   *    - page: Current page number (1-indexed), default 1
-   *    - limit: Items per page (max 50), default 20
-   *    - Calculate offset = (page - 1) * limit
+   * 3. **Pagination**:
+   *    - Implement cursor-based pagination using createdAt as cursor for efficient large result set navigation
+   *    - Return hasNextPage boolean and cursor for next page
+   *    - Default page size: 20, max page size: 100
    *
-   * 4. DATABASE QUERY:
-   *    - Query ecommerce_mall_orders table
-   *    - WHERE: customer_id = {authCustomerId} AND (apply status filter if provided) AND (apply date range if provided) AND (apply search on order_number if provided)
-   *    - ORDER BY: created_at DESC (default), or {sortBy}
-   *    - LIMIT: {limit}, OFFSET: {offset}
-   *    - Total count query without LIMIT/OFFSET for pagination metadata
+   * 4. **Sorting**:
+   *    - Default: createdAt DESC (newest first, as per requirements)
+   *    - Allow sorting by totalPrice DESC, createdAt ASC on request
    *
-   * 5. STATUS DERIVATION: Overall order status is derived from OrderItem statuses per business rules:
-   *    - All items delivered = 'delivered'
-   *    - All items cancelled = 'cancelled'
-   *    - All items refunded = 'refunded'
-   *    - Mix of delivered and other statuses = 'partiallyCompleted'
-   *    - All items shipped = 'shipped'
-   *    - All items paid = 'paid'
+   * 5. **Joins**:
+   *    - For seller-filtered queries: INNER JOIN ecommerce_mall_order_items ON order_id = orders.id
+   *    - For seller-filtered queries: WHERE seller_id = current_user.id
    *
-   * 6. RESPONSE FORMATTING:
-   *    - Map each order to IEcommerceMallOrder.ISummary
-   *    - Include: id, order_number, total_price, overall_status, created_at, updated_at, deleted_at (if included)
-   *    - Wrap in IPageIEcommerceMallOrder.ISummary with pagination: { pagination: { total, page, limit, hasMore }, data: [...] }
-   *
-   * 7. EDGE CASES:
-   *    - No orders found: Return empty data array with pagination metadata
-   *    - Invalid page or limit: Return 400 error
-   *    - Concurrent order status changes: Rely on database transaction isolation (section 1305)
-   *    - Soft-deleted orders: Only include if includeDeleted=true and user has permission
-   *
-   * 8. RELATED OPERATIONS:
-   *    - GET /orders/{id}: Retrieve detailed order information including shipping address
-   *    - PATCH /orders/{id}/shipments: View/create shipments for order items
-   *    - PATCH /orders/{id}/cancellation-requests: Create cancellation requests
-   *    - PATCH /orders/{id}/refund-requests: Create refund requests
-   *
-   * Refer to database schema comments for ecommerce_mall_orders table for field definitions and business rules.
+   * 6. **Response Structure**:
+   *    - Return IPageIEcommerceMallOrder.ISummary with pagination metadata and order summary data
+   *    - Exclude sensitive fields from summary (customer details, full address)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -94,57 +80,38 @@ export class EcommercemallCustomerOrdersController {
   }
 
   /**
-   * Retrieve detailed information for a specific order by its unique identifier.
+   * Retrieve detailed information for a specific customer order, including all associated order items, product details, variant information, and shipments with tracking data.
    *
-   * This operation provides comprehensive order details including the order number, total price at purchase time, overall order status, and all associated OrderItems and Shipments. The overall order status is derived from the individual OrderItem statuses (paid, shipped, delivered, cancelled, refunded, or partiallyCompleted) as specified in the Order Concept domain model.
+   * This endpoint allows customers to view complete order information by order ID. The response includes the order header (order number, date, total price, overall status), all order items with product snapshots and variant details, and all shipments with carrier tracking information. This operation is essential for the customer order history viewing workflow where customers need to see full details of each order they have placed.
    *
-   * Access to order details is restricted to the customer who placed the order. The system enforces data isolation to prevent customers from viewing orders they do not own. The operation returns the complete order entity including nested relationships to OrderItems (with product snapshots, variant information, and item status) and Shipments (with carrier information and tracking numbers).
+   * The order data includes immutable snapshots of product, variant, and seller profile information as they existed at the time of purchase, ensuring historical accuracy even if the original product or seller information changes later.
    *
-   * For orders that have been soft-deleted for history preservation, the system still returns the order details with appropriate status flags. The operation provides all information necessary for customers to track their purchases, view shipment status, and reference order details for support inquiries or dispute resolution.
+   * Security: Customers can only access orders belonging to their authenticated account. Authorization is enforced at the service layer by verifying the order's customer_id matches the authenticated customer's ID.
+   *
+   * Dependencies: Requires customer authentication. Related operations include the order history list endpoint (PATCH /orders) for browsing orders, and shipment detail endpoints for tracking information.
+   *
+   * If the specified order does not exist, or if the order does not belong to the authenticated customer, the system SHALL return a 404 Not Found error.
    *
    * @param connection
-   * @param orderId Unique identifier of the order to retrieve
+   * @param orderId The unique identifier of the order to retrieve. The order must belong to the authenticated customer.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_orders table by the provided orderId UUID.
+   * @x-autobe-specification 1. Validate orderId is a valid UUID format
+   * 2. Query ecommerce_mall_orders table filtering by id = orderId AND customer_id = authenticated_customer_id
+   * 3. If order not found OR order does not belong to customer, return 404 error
+   * 4. Load associated order items from ecommerce_mall_order_items WHERE ecommerce_mall_order_id = orderId
+   * 5. Load associated shipments from ecommerce_mall_shipments WHERE order_id = orderId AND deleted_at IS NULL
+   * 6. For each order item, preserve product_snapshot, variant_snapshot, and seller_profile_snapshot as stored JSON
+   * 7. Calculate total price from unit_price * quantity for each item if not stored (though stored in table)
+   * 8. Combine order, items, and shipments into response structure
+   * 9. Return 200 OK with complete order data
    *
-   * 1. Validate that the order exists and is not soft-deleted (deleted_at IS NULL), or if soft-deleted, return the order with a flag indicating deleted status.
-   *
-   * 2. Apply data isolation: Verify that the authenticated customer_id matches the order's customer_id. Return 404 Not Found if the customer does not own the order (to avoid revealing order existence to unauthorized users).
-   *
-   * 3. Perform eager joins to load related data:
-   *    - Join with ecommerce_mall_customers to get customer details (display name)
-   *    - Join with ecommerce_mall_order_items to get all OrderItems with their productSnapshot, variantSnapshot, and sellerProfileSnapshot
-   *    - Join with ecommerce_mall_shipments to get all Shipments for this order
-   *    - Join with ecommerce_mall_shipment_items to map OrderItems to Shipments
-   *
-   * 4. For each OrderItem, include:
-   *    - itemStatus (paid/shipped/delivered/cancelled/refunded)
-   *    - quantity and unitPrice at purchase time
-   *    - productSnapshot (JSON) containing product name and details at time of purchase
-   *    - variantSnapshot (JSON) containing variant optionValues and priceOverride
-   *    - sellerProfileSnapshot (JSON) containing shopName and shopDescription
-   *    - product and variant UUIDs for reference
-   *
-   * 5. For each Shipment, include:
-   *    - carrierName and trackingNumber
-   *    - created_at and updated_at timestamps
-   *    - List of associated OrderItems (from shipment_items junction table)
-   *
-   * 6. Calculate and include derived fields:
-   *    - overall_status derived from OrderItem statuses per section 02-domain-model Order Concept state machine
-   *    - total_price as the sum of all OrderItem line totals (quantity * unitPrice)
-   *
-   * 7. Handle concurrency: Use row-level locking (SELECT FOR UPDATE) if any write operations are anticipated after retrieval. For read-only access, standard transaction isolation (READ COMMITTED) is sufficient.
-   *
-   * 8. Error handling:
-   *    - 404 Not Found: Order does not exist or does not belong to authenticated customer
-   *    - 401 Unauthorized: Customer is banned or account is deleted
-   *    - 403 Forbidden: Customer account is suspended
-   *
-   * 9. Performance optimization: Add index on (customer_id, id) for efficient customer-scoped order lookups.
-   *
-   * 10. Security: Sanitize all JSON snapshot data to prevent XSS attacks when displaying product information in the UI.
+   * Edge cases:
+   * - Soft deleted orders (deleted_at is not NULL): still return if customer owns it
+   * - Items that were cancelled or refunded: include in response with current item_status
+   * - Multiple shipments for same order: include all active shipments
+   * - Products/variants deleted after purchase: snapshots preserve original data
+   * - Concurrent access: standard database locking applies
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":orderId")

@@ -16,25 +16,16 @@ export async function deleteEconomicPoliticalBoardAdminArticlesArticleIdComments
   articleId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify comment exists, belongs to article, and is not already deleted
-  const comment =
-    await MyGlobal.prisma.economic_political_board_comments.findUniqueOrThrow({
-      where: {
-        id: props.commentId,
-        article_id: props.articleId,
-        deleted_at: null,
-      },
-    });
-  // Admins have full deletion rights - no ownership check needed
-  // Soft deletion: set deleted_at and updated_at timestamps using ISO string format
-  await MyGlobal.prisma.economic_political_board_comments.update({
+  await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
+    where: { id: props.articleId },
+  });
+  await MyGlobal.prisma.economic_political_board_comments.findUniqueOrThrow({
     where: {
       id: props.commentId,
       article_id: props.articleId,
     },
-    data: {
-      deleted_at: new Date().toISOString() as string & tags.Format<"date-time">,
-      updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
-    },
+  });
+  await MyGlobal.prisma.economic_political_board_comments.delete({
+    where: { id: props.commentId },
   });
 }

@@ -13,17 +13,13 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 /**
- * Administrator login authentication for the Economic/Political Discussion Board system.
+ * Authenticate user credentials and issue JWT tokens. Service layer queries the User table by email field, verifies passwordHash matches the provided password (using bcrypt/Argon2 comparison), and checks isBanned flag. If user is banned (isBanned=true), rejects login with ban notification. Generates access token (15-minute expiration) and refresh token (7-day expiration) using JWT algorithm. Stores token metadata for session tracking. Returns both tokens in response for client-side storage and usage. Handles error cases: email not found, password mismatch, account banned, account deleted.
  *
- * Cannot implement: The operation specification requires validating credentials against
- * 'economic_political_board_users' table with 'email' and 'password_hash' fields,
- * but this table does not exist in the database schema. The loaded schemas include
- * 'economic_political_board_administrator_roles' which has 'user_id' but no email
- * or password fields. This is a fundamental schema-API mismatch that cannot be resolved.
+ * Cannot implement: Schema missing User table with email and password_hash fields required for admin authentication, and session table for session tracking.
  */
 export async function postEconomicPoliticalBoardAuthAdminLogin(props: {
+  ip: string;
   body: IEconomicPoliticalBoardAdmin.ILogin;
 }): Promise<IEconomicPoliticalBoardAdmin.IAuthorized> {
-  // Unrecoverable: Required 'economic_political_board_users' table not found in database schema
   return typia.random<IEconomicPoliticalBoardAdmin.IAuthorized>();
 }

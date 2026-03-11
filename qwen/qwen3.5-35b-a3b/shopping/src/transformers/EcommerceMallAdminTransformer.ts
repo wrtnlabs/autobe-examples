@@ -15,17 +15,10 @@ export namespace EcommerceMallAdminTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         is_banned: true,
         ban_reason: true,
         created_at: true,
         updated_at: true,
-        sessions: true,
-        passwordResetRequests: true,
-        emailVerifications: true,
-        auditLogs: true,
-        adminRequestSnapshotsChangedBies: true,
-        adminRequests: true,
       },
     } satisfies Prisma.ecommerce_mall_adminsFindManyArgs;
   }
@@ -35,10 +28,10 @@ export namespace EcommerceMallAdminTransformer {
     return {
       id: input.id,
       email: input.email,
-      is_banned: input.is_banned,
-      ban_reason: input.ban_reason ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-    } satisfies IEcommerceMallAdmin;
+      isBanned: input.is_banned,
+      banReason: input.ban_reason ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+    };
   }
 }

@@ -27,7 +27,7 @@ export namespace ShoppingMallAdministratorAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      grade: input.grade as "regular" | "super",
+      grade: input.grade,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
     };

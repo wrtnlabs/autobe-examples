@@ -17,6 +17,11 @@ export namespace ShoppingMallProductImageAtSummaryTransformer {
         image_url: true,
         display_order: true,
         created_at: true,
+        product: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_imagesFindManyArgs;
   }

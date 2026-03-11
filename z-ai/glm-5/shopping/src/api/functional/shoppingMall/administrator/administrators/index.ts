@@ -1,45 +1,71 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallAdministrator } from "../../../../structures/IPageIShoppingMallAdministrator";
 import { IShoppingMallAdministrator } from "../../../../structures/IShoppingMallAdministrator";
 
 /**
- * Retrieve a paginated and filtered list of administrator accounts.
+ * Retrieve a filtered and paginated list of administrator accounts.
  *
- * This operation allows super administrators to view and manage administrator accounts on the platform. Super administrators can search for administrators by email, filter by privilege grade (regular or super), and view account creation details.
+ * This operation provides administrators with visibility into the platform's administrative team, supporting account management, oversight, and audit activities. Both regular and super administrators can access this endpoint to view administrator profiles.
  *
- * Administrators are platform managers responsible for overseeing operations and enforcing platform policies. Each administrator has a grade that determines their privilege level: regular administrators can approve sellers, manage categories, and oversee products and orders; super administrators have additional privileges including reviewing administrator requests and promoting/demoting other administrators.
+ * **Search Capabilities**
  *
- * Soft-deleted administrator accounts (those with a deleted_at timestamp) are automatically excluded from the results to maintain a clean view of active administrators. This ensures that only current, active administrator accounts are displayed in management interfaces.
+ * The endpoint supports partial email matching, filtering by administrator grade (regular or super) matching the `grade` column values in shopping_mall_administrators table, and creation date range queries. Results are paginated with configurable page sizes and support sorting by email, grade, or creation date.
  *
- * Search results include administrator identification, email, grade, and account metadata. Results can be sorted and paginated for efficient browsing.
+ * **Data Visibility**
  *
- * Authorization: Only super administrators can access this endpoint. Regular administrators are denied access to this operation.
+ * The response includes administrator identifiers, email addresses, grade levels, and timestamps. Password hashes are never exposed. By default, only active administrators (where `deleted_at` is NULL) are returned; soft-deleted accounts can be included by setting the includeDeleted filter to include records where the `deleted_at` column has a value.
+ *
+ * **Grade-Based Access and Authority**
+ *
+ * Regular administrators can view the administrator list to understand the team structure. Super administrators use this list for promotion/demotion decisions and to identify which accounts have the authority to review AdministratorRequests. Per platform policy, only super administrators (grade='super') can review and decide AdministratorRequests.
+ *
+ * **Related Operations**
+ *
+ * - Use GET /administrators/{id} to retrieve detailed information about a specific administrator
+ * - Super administrators can manage grades through promotion/demotion endpoints
+ * - Super administrators can review administrator requests - this list helps identify eligible reviewers
  *
  * @param props.connection
- * @param props.body Search criteria for filtering administrators including email search, grade filter, and pagination options
+ * @param props.body Search criteria including email filter, grade filter, date range, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_administrators table with pagination, filtering, and sorting.
+ * @x-autobe-specification Query shopping_mall_administrators table with pagination and filtering support.
  *
- * Apply filters:
- * - email: Case-insensitive partial match (LIKE %email%)
- * - grade: Exact match ('regular' or 'super')
- * - created_at: Date range filtering (from and to)
+ * **Implementation Steps**
  *
- * Support sorting by:
- * - created_at (asc/desc)
- * - updated_at (asc/desc)
- * - email (asc/desc)
+ * 1. Validate administrator authentication - both regular and super grades have access
+ * 2. Build WHERE clause from search criteria:
+ *    - email: ILIKE '%{email}%' for partial matching
+ *    - grade: Exact match ('regular' or 'super')
+ *    - created_at range: created_at >= from AND created_at <= to
+ *    - includeDeleted: If false/omitted, filter deleted_at IS NULL
+ * 3. Apply pagination with cursor-based or offset-based approach
+ * 4. Apply sorting (default: created_at DESC)
+ * 5. Select fields: id, email, grade, created_at, updated_at
+ * 6. Never select password_hash
+ * 7. Return paginated result with total count
  *
- * Return cursor-based pagination with configurable page size.
+ * **Database Query**
+ * ```sql
+ * SELECT id, email, grade, created_at, updated_at
+ * FROM shopping_mall_administrators
+ * WHERE deleted_at IS NULL
+ *   AND ($email::text IS NULL OR email ILIKE '%' || $email || '%')
+ *   AND ($grade::text IS NULL OR grade = $grade)
+ *   AND ($from::timestamptz IS NULL OR created_at >= $from)
+ *   AND ($to::timestamptz IS NULL OR created_at <= $to)
+ * ORDER BY created_at DESC
+ * LIMIT $limit OFFSET $offset
+ * ```
  *
- * Authorization: Only super administrators can access this endpoint.
- *
- * Include administrator grade in response to show privilege level for each administrator.
+ * **Edge Cases**
+ * - Empty result set: Return valid pagination object with empty data array
+ * - Invalid grade filter: Return validation error
+ * - Date range validation: Ensure 'from' is before 'to'
  * @path /shoppingMall/administrator/administrators
  * @accessor api.functional.shoppingMall.administrator.administrators.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -69,7 +95,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria for filtering administrators including email search, grade filter, and pagination options
+     * Search criteria including email filter, grade filter, date range, and pagination parameters
      */
     body: IShoppingMallAdministrator.IRequest;
   };
@@ -118,26 +144,19 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific administrator account.
+ * Retrieve detailed information about a specific administrator account by its unique identifier.
  *
- * This endpoint allows administrators to view complete details of an administrator account in the platform. The operation returns administrator profile data including email address, privilege grade, and account timestamps.
+ * This endpoint allows administrators to view complete profile information of other administrators on the platform, including their email address, privilege grade (regular or super), account creation timestamp, last modification timestamp, and deletion status.
  *
- * Administrators use this endpoint to review administrator account details as part of platform oversight and management workflows. The grade field indicates whether the administrator has regular privileges (seller approval, category management, user banning, product oversight, forced order operations) or super administrator privileges (all regular privileges plus administrator request approval and promotion/demotion authority).
+ * The response includes all public administrator profile fields while excluding sensitive authentication credentials. Administrators can use this endpoint to view colleague accounts, verify administrator statuses, and access account metadata for oversight purposes.
  *
- * The response excludes sensitive authentication data such as the password hash. Soft-deleted administrator accounts (where deleted_at is set) are not accessible through this endpoint.
+ * Both regular administrators and super administrators have read access to this endpoint. The returned information supports platform oversight functions such as administrator management, audit trails, and team coordination.
  *
  * @param props.connection
- * @param props.administratorId Unique identifier of the administrator account to retrieve (UUID format)
+ * @param props.administratorId Unique identifier of the administrator account to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Retrieve a single administrator record by UUID identifier from the shopping_mall_administrators table. The implementation should:
- *
- * 1. Validate the administratorId path parameter as a valid UUID
- * 2. Query the administrators table for the specified id
- * 3. Filter out deleted records (where deleted_at is not null)
- * 4. Return the administrator entity with all fields except password_hash
- *
- * The response includes id, email, grade (regular or super), created_at, and updated_at timestamps. This operation is restricted to administrator actor access only, supporting platform oversight capabilities where administrators can view administrator account information for accountability and management purposes.
+ * @x-autobe-specification Query the shopping_mall_administrators table by primary key (id) to retrieve a single administrator record. Validate that the requesting user is an authenticated administrator (either regular or super grade). Return the administrator entity if found. For soft-deleted administrators (deleted_at is not null), include the deletion timestamp in the response to maintain audit trail visibility. Exclude the password_hash field from the response to prevent credential exposure. Return 404 Not Found if no administrator exists with the provided UUID. Return 403 Forbidden if the requester is not an administrator.
  * @path /shoppingMall/administrator/administrators/:administratorId
  * @accessor api.functional.shoppingMall.administrator.administrators.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -166,9 +185,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the administrator account to retrieve (UUID format)
+     * Unique identifier of the administrator account to retrieve
      */
-    administratorId: string & tags.Format<"uuid">;
+    administratorId: string;
   };
   export type Response = IShoppingMallAdministrator;
 
@@ -214,69 +233,55 @@ export namespace at {
 }
 
 /**
- * Promote a regular administrator to super administrator grade.
+ * Promotes a regular administrator to super administrator grade.
  *
- * This operation allows a super administrator to elevate a regular administrator's privileges to super administrator level. Super administrators have full administrative access including the ability to review and approve administrator requests, as well as promote and demote other administrators.
+ * This operation is restricted to super administrators only and grants elevated privileges to the target administrator, including administrator request approval authority, promotion capability, and demotion authority.
  *
- * **Authorization Requirements**:
- * - Only super administrators can perform this operation
- * - Regular administrators attempting this operation will receive a 403 Forbidden response
+ * The promotion takes effect immediately upon confirmation. The system records which super administrator performed the promotion along with a timestamp for audit purposes.
  *
- * **Business Rules**:
- * - The target administrator must currently have 'regular' grade
- * - A super administrator cannot promote themselves (they are already super)
- * - The promotion takes effect immediately
- * - All promotion actions are recorded with the promoting administrator's identity and timestamp
+ * Business Rules:
+ * - Only super administrators can perform promotions
+ * - Regular administrators cannot be promoted without explicit confirmation
+ * - The promoted administrator immediately gains all super administrator privileges
+ * - Self-promotion is not applicable (you cannot promote yourself)
+ * - At least one confirmation is required from any super administrator
  *
- * **Related Operations**:
- * - GET /administrators - List all administrators (to view candidates for promotion)
- * - POST /administrators/{administratorId}/demote - Demote a super administrator to regular
- *
- * **Database Reference**:
- * This operation updates the 'grade' field in the shopping_mall_administrators table from 'regular' to 'super'. The administrators table contains: id (UUID primary key), email (unique), password_hash, grade ('regular' or 'super'), created_at, updated_at, and deleted_at (soft delete timestamp).
+ * Related Operations:
+ * - PATCH /administrators/{administratorId}/demote - Demote a super administrator to regular grade
+ * - PATCH /super-admin/admin-requests/{id}/approve - Approve administrator role requests
  *
  * @param props.connection
- * @param props.administratorId Unique identifier of the regular administrator to be promoted to super administrator grade
- * @param props.body Promotion confirmation request containing explicit acknowledgment of the promotion action
+ * @param props.administratorId Target administrator's unique identifier to be promoted to super administrator grade
+ * @param props.body Confirmation required for promotion to super administrator grade with elevated privileges
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
  * @x-autobe-specification Implementation steps:
  *
- * 1. **Authentication Verification**: Extract and validate the JWT token from the Authorization header to identify the requesting administrator.
+ * 1. Authenticate and verify the requesting user is a super administrator (grade === 'super'). Return 403 Forbidden if not.
  *
- * 2. **Authorization Check**: Verify the requesting administrator has 'super' grade. If not, return 403 Forbidden error.
+ * 2. Retrieve the target administrator by administratorId from shopping_mall_administrators table.
  *
- * 3. **Target Administrator Lookup**: Query the shopping_mall_administrators table by administratorId to retrieve the target administrator record.
+ * 3. Validate the target administrator exists and is not deleted (deleted_at is null).
  *
- * 4. **Target Validation**:
- *    - Verify the target administrator exists and is not soft-deleted (deleted_at is null)
- *    - Verify the target administrator's current grade is 'regular' (cannot promote someone who is already 'super')
- *    - Verify the target administrator is not the same as the requesting administrator (self-promotion is already prevented since they're already super)
+ * 4. Validate the target administrator's current grade is 'regular'. Return 400 Bad Request if already 'super'.
  *
- * 5. **Confirmation Validation**: Validate that the confirmation field in the request body is explicitly set to true.
+ * 5. Verify the confirmation field in request body is true. Return 400 Bad Request if confirmation is missing or false.
  *
- * 6. **Grade Update**: Update the target administrator's grade from 'regular' to 'super' and set updated_at to current timestamp.
+ * 6. Validate the target administratorId is not the same as the requesting administrator's ID (self-promotion check). Return 400 Bad Request if attempting self-promotion.
  *
- * 7. **Audit Logging**: Create an audit log entry recording:
- *    - The promoting administrator's ID
- *    - The promoted administrator's ID
- *    - Timestamp of the promotion
- *    - Action type: 'promotion'
+ * 7. Update the administrator's grade to 'super' and set updated_at to current timestamp.
  *
- * 8. **Response**: Return the updated administrator object with the new grade.
+ * 8. Log the promotion action with:
+ *    - Promoting administrator's ID
+ *    - Target administrator's ID
+ *    - Timestamp of promotion
  *
- * 9. **Notification**: Optionally trigger a notification to the promoted administrator informing them of their new privileges.
+ * 9. Return the updated administrator object with grade='super'.
  *
- * **Database Operations**:
- * - SELECT on shopping_mall_administrators (for both requester and target verification)
- * - UPDATE on shopping_mall_administrators (grade field update)
- *
- * **Error Handling**:
- * - 401 Unauthorized: Invalid or missing authentication token
- * - 403 Forbidden: Requesting administrator is not super administrator
- * - 404 Not Found: Target administrator does not exist
- * - 400 Bad Request: Target administrator is already super administrator
- * - 400 Bad Request: Confirmation not provided
+ * Edge cases:
+ * - If target administrator is soft-deleted (deleted_at not null), return 404 Not Found
+ * - If administratorId is not a valid UUID, return 400 Bad Request
+ * - If confirmation is not provided, return 400 Bad Request with message explaining confirmation requirement
  * @path /shoppingMall/administrator/administrators/:administratorId/promote
  * @accessor api.functional.shoppingMall.administrator.administrators.promote
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -306,12 +311,12 @@ export async function promote(
 export namespace promote {
   export type Props = {
     /**
-     * Unique identifier of the regular administrator to be promoted to super administrator grade
+     * Target administrator's unique identifier to be promoted to super administrator grade
      */
-    administratorId: string & tags.Format<"uuid">;
+    administratorId: string;
 
     /**
-     * Promotion confirmation request containing explicit acknowledgment of the promotion action
+     * Confirmation required for promotion to super administrator grade with elevated privileges
      */
     body: IShoppingMallAdministrator.IPromote;
   };
@@ -319,7 +324,7 @@ export namespace promote {
   export type Response = IShoppingMallAdministrator;
 
   export const METADATA = {
-    method: "POST",
+    method: "PATCH",
     path: "/shoppingMall/administrator/administrators/:administratorId/promote",
     request: {
       type: "application/json",
@@ -366,54 +371,30 @@ export namespace promote {
 /**
  * Demotes a super administrator to regular administrator grade.
  *
- * This operation allows super administrators to reduce the privilege level of another super administrator from 'super' to 'regular'. After demotion, the administrator retains standard administrative privileges but loses access to super administrator-exclusive functions including administrator request approval and administrator promotion/demotion authority.
+ * This operation allows super administrators to demote other super administrators to regular administrator grade. Upon demotion, the target administrator loses access to super administrator-only functions such as administrator request approval and promotion/demotion authority.
  *
- * The operation enforces critical business constraints to maintain platform security. Self-demotion is explicitly prohibited - a super administrator cannot demote themselves to prevent accidental loss of administrative access. Additionally, at least one super administrator must always exist in the system; attempting to demote the last remaining super administrator will be rejected.
+ * The requesting super administrator cannot demote themselves - attempting to do so will result in an error. This restriction prevents the scenario where a platform loses all super administrators.
  *
- * The target administrator's shopping_mall_administrators record is updated with grade='regular' and the updated_at timestamp is refreshed to reflect the modification time. Only active administrators (not soft-deleted) can be targeted for demotion.
+ * If the target administrator is already a regular administrator, the operation will fail with an appropriate error. At least one super administrator must remain in the system at all times.
  *
- * This operation is restricted to super administrators only. Regular administrators and non-administrator users are denied access.
+ * The demotion action is recorded with the timestamp and the identity of the super administrator who performed the action, maintaining an audit trail for administrative actions.
+ *
+ * This operation requires super administrator privileges. Regular administrators are not authorized to perform demotion operations.
  *
  * @param props.connection
- * @param props.administratorId Unique identifier of the administrator to demote. Must be a valid UUID referencing an existing super administrator in the shopping_mall_administrators table.
+ * @param props.administratorId The unique identifier of the super administrator to demote to regular administrator grade
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implementation Steps:
- *
- * 1. **Authentication & Authorization**:
- *    - Extract the authenticated administrator from the JWT token
- *    - Verify the authenticated administrator's grade is 'super'
- *    - Return 403 Forbidden if not a super administrator
- *
- * 2. **Target Validation**:
- *    - Retrieve the target administrator by administratorId from the database
- *    - Return 404 Not Found if the administrator does not exist
- *    - Return 404 Not Found if the administrator is soft-deleted (deleted_at IS NOT NULL)
- *
- * 3. **Self-Demotion Check**:
- *    - Compare administratorId with authenticated user's ID
- *    - Return 400 Bad Request if they match (self-demotion not permitted)
- *    - Error message: 'Self-demotion is not permitted. Contact another super administrator.'
- *
- * 4. **Grade Check**:
- *    - Verify the target administrator's grade is 'super'
- *    - Return 400 Bad Request if grade is 'regular' (nothing to demote)
- *    - Error message: 'Target administrator is not a super administrator.'
- *
- * 5. **Minimum Super Administrator Protection**:
- *    - Count the total number of active super administrators in the system
- *    - If this demotion would result in zero super administrators, reject
- *    - Return 400 Bad Request with message: 'Cannot demote the last super administrator. At least one super administrator must exist.'
- *
- * 6. **Perform Demotion**:
- *    - Update the target administrator's grade from 'super' to 'regular'
- *    - Update the updated_at timestamp to current time
- *    - Save changes to database
- *
- * 7. **Response**:
- *    - Return the updated administrator object with grade='regular'
- *
- * **Transaction**: This should be wrapped in a transaction to ensure atomic grade update and count validation.
+ * @x-autobe-specification 1. Validate that the requesting user is a super administrator (authorization check)
+ * 2. Retrieve the target administrator by administratorId from the shopping_mall_administrators table
+ * 3. Verify that the target administrator exists and is not deleted (deleted_at is null)
+ * 4. Verify that the requesting administrator is not attempting to demote themselves (compare requesting admin ID with target ID)
+ * 5. Verify that the target administrator currently has 'super' grade (cannot demote a regular administrator)
+ * 6. Check that demoting this administrator will not leave the system without any super administrators (count remaining super admins)
+ * 7. Update the target administrator's grade from 'super' to 'regular'
+ * 8. Update the updated_at timestamp
+ * 9. Record the demotion action with timestamp and actor information for audit purposes
+ * 10. Return the updated administrator record
  * @path /shoppingMall/administrator/administrators/:administratorId/demote
  * @accessor api.functional.shoppingMall.administrator.administrators.demote
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -442,14 +423,14 @@ export async function demote(
 export namespace demote {
   export type Props = {
     /**
-     * Unique identifier of the administrator to demote. Must be a valid UUID referencing an existing super administrator in the shopping_mall_administrators table.
+     * The unique identifier of the super administrator to demote to regular administrator grade
      */
-    administratorId: string & tags.Format<"uuid">;
+    administratorId: string;
   };
   export type Response = IShoppingMallAdministrator;
 
   export const METADATA = {
-    method: "POST",
+    method: "PATCH",
     path: "/shoppingMall/administrator/administrators/:administratorId/demote",
     request: null,
     response: {

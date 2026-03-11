@@ -9,41 +9,29 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { DiscussionBoardSystemConfigurationCollector } from "../collectors/DiscussionBoardSystemConfigurationCollector";
-import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
 import { DiscussionBoardSystemConfigurationTransformer } from "../transformers/DiscussionBoardSystemConfigurationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardSuperAdminSystemConfigurations(props: {
-  superAdmin: SuperAdminPayload;
+  superAdmin: SuperadminPayload;
   body: IDiscussionBoardSystemConfiguration.ICreate;
 }): Promise<IDiscussionBoardSystemConfiguration> {
-  // Validate that config_key is unique
+  // Check if key already exists (must be unique)
   const existing =
-    await MyGlobal.prisma.discussion_board_system_configurations.findUnique({
-      where: {
-        config_key: props.body.config_key,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.discussion_board_system_configurations.findFirst({
+      where: { key: props.body.key, deleted_at: null },
     });
-  if (existing !== null) {
+  if (existing) {
     throw new HttpException("Configuration key already exists", 400);
   }
-  // Validate data_type is one of the allowed values
-  const allowedDataTypes = ["string", "integer", "boolean", "number", "json"];
-  if (!allowedDataTypes.includes(props.body.data_type)) {
-    throw new HttpException("Invalid data type specified", 400);
-  }
-  // Use collector to prepare data
-  const data = await DiscussionBoardSystemConfigurationCollector.collect({
-    body: props.body,
-  });
-  // Create configuration record
   const created =
     await MyGlobal.prisma.discussion_board_system_configurations.create({
-      data: data,
+      data: await DiscussionBoardSystemConfigurationCollector.collect({
+        body: props.body,
+      }),
       ...DiscussionBoardSystemConfigurationTransformer.select(),
     });
-  // Transform to response format
   return await DiscussionBoardSystemConfigurationTransformer.transform(created);
 }

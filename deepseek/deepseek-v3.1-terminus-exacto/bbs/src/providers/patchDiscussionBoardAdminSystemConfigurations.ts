@@ -1,12 +1,6 @@
-import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
-import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
-import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IDiscussionBoardSystemConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSystemConfiguration";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
-import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
-import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
 import { IPageIDiscussionBoardSystemConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSystemConfiguration";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,73 +18,64 @@ export async function patchDiscussionBoardAdminSystemConfigurations(props: {
   admin: AdminPayload;
   body: IDiscussionBoardSystemConfiguration.IRequest;
 }): Promise<IPageIDiscussionBoardSystemConfiguration.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.max(1, Math.min(100, props.body.limit ?? 100));
   const skip = (page - 1) * limit;
-  // Build WHERE clause with proper null handling
+  // Build WHERE clause
   const whereInput: Prisma.discussion_board_system_configurationsWhereInput = {
     deleted_at: null,
-    ...(props.body.category !== undefined &&
-      props.body.category !== null && { category: props.body.category }),
-    ...(props.body.data_type !== undefined &&
-      props.body.data_type !== null && { data_type: props.body.data_type }),
-    ...(props.body.is_sensitive !== undefined &&
-      props.body.is_sensitive !== null && {
-        is_sensitive: props.body.is_sensitive,
-      }),
-    ...(props.body.search !== undefined &&
-      props.body.search !== null && {
-        OR: [
-          {
-            config_key: {
-              contains: props.body.search,
-              mode: "insensitive" as const,
-            },
-          },
-          {
-            description: {
-              contains: props.body.search,
-              mode: "insensitive" as const,
-            },
-          },
-        ],
-      }),
   };
-  // Execute queries sequentially
-  const data =
-    await MyGlobal.prisma.discussion_board_system_configurations.findMany({
+  // Apply search filter
+  if (props.body.search && props.body.search.trim().length > 0) {
+    whereInput.OR = [
+      { key: { contains: props.body.search, mode: "insensitive" } },
+      { value: { contains: props.body.search, mode: "insensitive" } },
+    ];
+  }
+  // Apply data_type filter
+  if (props.body.data_type !== undefined && props.body.data_type !== null) {
+    whereInput.data_type = props.body.data_type;
+  }
+  // Build ORDER BY clause with type safety
+  const orderByField = props.body.sort ?? "created_at";
+  const orderDirection = props.body.sort_direction ?? "desc";
+  const orderByInput: Prisma.discussion_board_system_configurationsOrderByWithRelationInput =
+    {};
+  if (
+    orderByField === "key" ||
+    orderByField === "created_at" ||
+    orderByField === "updated_at"
+  ) {
+    orderByInput[orderByField] = orderDirection;
+  } else {
+    orderByInput.created_at = orderDirection;
+  }
+  // Execute queries
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.discussion_board_system_configurations.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" as const },
-    });
-  const total =
-    await MyGlobal.prisma.discussion_board_system_configurations.count({
+      orderBy: orderByInput,
+    }),
+    MyGlobal.prisma.discussion_board_system_configurations.count({
       where: whereInput,
-    });
-  // Transform data to ISummary format
-  const transformedData = data.map(
-    (item) =>
-      ({
-        config_key: item.config_key,
-        data_type: item.data_type,
-        category: item.category,
-        is_sensitive: item.is_sensitive,
-      }) satisfies IDiscussionBoardSystemConfiguration.ISummary,
-  );
-  // Build pagination structure correctly
-  const pagination: IPage.IPagination = {
-    current: page satisfies number & tags.Type<"int32">,
-    limit: limit satisfies number & tags.Type<"int32">,
-    records: total satisfies number & tags.Type<"int32">,
-    pages: Math.ceil(total / limit) satisfies number & tags.Type<"int32">,
-  };
-  // Return the correct structure
+    }),
+  ]);
+  // Transform data to DTO
+  const transformedData = data.map((config) => ({
+    id: config.id as string & tags.Format<"uuid">,
+    key: config.key,
+    data_type: config.data_type,
+    value: config.value,
+  }));
   return {
-    pagination: {
-      pagination,
-      data: transformedData,
-    } satisfies IPageIDiscussionBoardSection.IPagination,
     data: transformedData,
-  } satisfies IPageIDiscussionBoardSystemConfiguration.ISummary;
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  };
 }

@@ -1,0 +1,510 @@
+/// Main table storing all active todo items with their core properties and
+/// ownership information.
+///
+/// This table represents the central business entity of the todo
+/// application, containing all active todo items that users create, view,
+/// edit, and manage. Each todo belongs to exactly one member user and
+/// maintains its current state including title, description, scheduling
+/// dates, and completion status.
+///
+/// Todos support soft deletion through the deleted_at field, allowing users
+/// to restore items from trash. The table tracks creation and modification
+/// timestamps for audit purposes and supports various filtering and sorting
+/// operations through appropriate indexing.
+///
+/// Key relationships:
+/// - Each todo belongs to a member user ({@link multi_user_todo_members.id})
+/// - Completion status changes are tracked in a separate table ({@link
+/// multi_user_todo_todo_completion_statuses})
+/// - Deleted todos are moved to trash entries ({@link
+/// multi_user_todo_todo_trash_entries})
+/// - Edit history is maintained in the EditHistory component
+/// - Snapshots provide point-in-time state capture ({@link
+/// multi_user_todo_todo_snapshots})
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// The main title or name of the todo item. This is the primary identifier
+  /// that users see in todo lists.
+  title String
+  
+  /// Optional detailed description providing additional context about the todo
+  /// item. Can be left empty if not needed.
+  description String?
+  
+  /// Optional scheduled start date for when work on the todo should begin.
+  /// Used for sorting and filtering operations.
+  start_date DateTime?
+  
+  /// Optional deadline date for when the todo should be completed. Used for
+  /// sorting and filtering operations.
+  due_date DateTime?
+  
+  /// Indicates whether the todo has been marked as complete. Defaults to false
+  /// for new todos.
+  is_completed Boolean
+  
+  /// Timestamp when the todo was originally created. Used for sorting and
+  /// audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified. Updated on every edit
+  /// operation.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft-deleted. Null indicates the todo is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  trashEntry multi_user_todo_todo_trash_entries?
+  snapshots multi_user_todo_todo_snapshots[]
+  viewStats multi_user_todo_todo_view_stats[]
+  completionStatuses multi_user_todo_todo_completion_statuses[]
+  editHistories multi_user_todo_edit_histories[]
+  editHistorySnapshots multi_user_todo_edit_history_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, is_completed, created_at], map: "multi_user_todo_todos_multi_user_todo_member_id_is_com_193b796f")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, is_completed, due_date], map: "multi_user_todo_todos_multi_user_todo_member_id_is_com_110beea0")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, is_completed, start_date], map: "multi_user_todo_todos_multi_user_todo_member_id_is_com_49b70da4")
+  @@index([multi_user_todo_member_id, deleted_at])
+}
+
+/// Stores soft-deleted todos that can be restored or permanently deleted.
+/// This table serves as the trash management system, allowing users to
+/// recover accidentally deleted todos or permanently remove them from the
+/// system.
+///
+/// Each entry represents a todo that has been soft-deleted from the active
+/// todo list. The original todo data is preserved here until either restored
+/// to active status or permanently deleted. This enables the trash
+/// functionality where users can view their deleted todos, restore them, or
+/// permanently remove them.
+///
+/// Relationships:
+/// - References the original {@link multi_user_todo_todos} through foreign key
+/// - Managed through parent todo operations rather than independent API
+/// endpoints
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_trash_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original todo that was soft-deleted. {@link
+  /// multi_user_todo_todos.id}.
+  multi_user_todo_todo_id String
+  
+  /// Timestamp when the todo was moved to trash. Used for sorting and
+  /// filtering trash entries.
+  deleted_at DateTime
+  
+  /// Timestamp when the todo was restored from trash. Null if still in trash.
+  restored_at DateTime?
+  
+  /// Timestamp when the todo was permanently deleted from trash. Null if still
+  /// recoverable.
+  permanently_deleted_at DateTime?
+  
+  /// Creation timestamp for audit trail.
+  created_at DateTime
+  
+  /// Last update timestamp for audit trail.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([multi_user_todo_todo_id])
+  @@index([deleted_at])
+  @@index([restored_at])
+  @@index([permanently_deleted_at])
+}
+
+/// Point-in-time snapshots of todos for audit and recovery purposes.
+///
+/// This table captures the complete state of a todo at specific moments in
+/// time,
+/// providing a historical record for audit trails and recovery scenarios. Each
+/// snapshot represents a frozen state of a todo, including all its properties
+/// (title, description, start date, due date, completion status) as they
+/// existed
+/// at the time of capture. Snapshots are immutable records that support
+/// rollback capabilities and change tracking.
+///
+/// Snapshots are typically created during significant todo lifecycle events
+/// such
+/// as edits, completions, or restorations from trash. They enable users to view
+/// historical states of their todos and support system-level audit
+/// requirements.
+///
+/// Relationships:
+/// - Each snapshot belongs to exactly one todo ({@link
+/// multi_user_todo_todos.id})
+/// - Todos can have multiple snapshots over their lifecycle
+/// - Snapshots reference the todo they capture at creation time
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The todo that this snapshot captures. {@link multi_user_todo_todos.id}.
+  multi_user_todo_todo_id String
+  
+  /// The title of the todo at the time of snapshot creation.
+  title String
+  
+  /// The description of the todo at the time of snapshot creation, if present.
+  description String?
+  
+  /// The start date of the todo at the time of snapshot creation, if set.
+  start_date DateTime?
+  
+  /// The due date of the todo at the time of snapshot creation, if set.
+  due_date DateTime?
+  
+  /// The completion status of the todo at the time of snapshot creation.
+  is_completed Boolean
+  
+  /// Whether the todo was deleted at the time of snapshot creation.
+  is_deleted Boolean
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_todo_snapshots_multi_user_todo_todo_id_f9615577")
+  @@index([created_at])
+}
+
+/// Stores user-defined filter configurations for quick todo list filtering.
+///
+/// Each saved filter configuration allows users to quickly apply their
+/// preferred filtering settings without manually selecting options each
+/// time. Filters can be configured for completion status (all, complete,
+/// incomplete) and other filtering criteria as the application evolves.
+///
+/// Users can create, update, and delete their own filter settings. Each
+/// filter setting belongs to exactly one user {@link
+/// multi_user_todo_members.id} and is managed through the user's profile
+/// settings.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_filter_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner of this filter configuration. {@link multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// User-friendly name for this saved filter configuration.
+  name String
+  
+  /// Type of filter being saved (e.g., 'completion_status', 'date_range',
+  /// 'priority').
+  filter_type String
+  
+  /// Whether this filter should be applied by default when viewing todos.
+  is_default Boolean
+  
+  /// When this filter configuration was created.
+  created_at DateTime
+  
+  /// When this filter configuration was last modified.
+  updated_at DateTime
+  
+  /// When this filter configuration was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  filterSettingValues multi_user_todo_todo_filter_setting_values[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([multi_user_todo_member_id, name], map: "multi_user_todo_todo_filter_settings_multi_user_todo_m_0b0ffcb6")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, filter_type], map: "multi_user_todo_todo_filter_settings_multi_user_todo_m_9e4f1172")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, is_default], map: "multi_user_todo_todo_filter_settings_multi_user_todo_m_93eb09eb")
+}
+
+/// Tracks usage statistics and view counts for todo management analytics.
+///
+/// This table records each view event when users access their todo lists or
+/// individual todo details. Each entry represents a single view operation,
+/// capturing the user who performed the view, the todo being viewed (if
+/// applicable), and the timestamp of the view. This data supports analytics
+/// on user engagement patterns, popular todo management features, and usage
+/// trends over time.
+///
+/// The statistics help identify which todo management features are most
+/// frequently used and when users are most active with their todo lists.
+/// This information can inform UI improvements, feature prioritization, and
+/// performance optimization decisions.
+///
+/// Relationships:
+/// - References {@link multi_user_todo_members.id} for user context
+/// - References {@link multi_user_todo_todos.id} for todo context (when
+/// viewing individual todos)
+/// - Part of the Todo component analytics subsystem
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who performed the view operation. {@link multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// Todo being viewed (null for list views). {@link multi_user_todo_todos.id}.
+  multi_user_todo_todo_id String?
+  
+  /// Type of view operation performed: 'list' for todo list views, 'detail'
+  /// for individual todo views.
+  view_type String
+  
+  /// Timestamp when the view operation occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  todo multi_user_todo_todos? @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_todo_view_stats_multi_user_todo_member_4cb6a778")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_todo_view_stats_multi_user_todo_todo_i_ef625676")
+}
+
+/// Tracks completion status changes for todos with timestamps for audit
+/// purposes.
+///
+/// Each record represents a single status change event when a todo is marked
+/// as complete or incomplete. This provides a complete audit trail of
+/// completion status transitions over time, allowing users to see when their
+/// todos were completed and potentially when they were marked incomplete
+/// again.
+///
+/// The table maintains referential integrity with the main {@link
+/// multi_user_todo_todos} table and ensures that every status change is
+/// recorded with precise timing information for accountability and
+/// historical tracking.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_completion_statuses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo whose completion status changed. {@link
+  /// multi_user_todo_todos.id}.
+  multi_user_todo_todo_id String
+  
+  /// Whether the todo was marked as completed (true) or incomplete (false) in
+  /// this status change.
+  is_completed Boolean
+  
+  /// Timestamp when the completion status change occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_todo_completion_statuses_multi_user_to_52a61bd4")
+}
+
+/// Stores user preferences for default todo list sorting methods and
+/// directions.
+///
+/// Each user can configure their preferred sorting method (creation date,
+/// start date, or due date) and direction (ascending or descending) for
+/// their todo list view. These preferences are applied by default when users
+/// view their todo lists unless overridden by temporary sorting selections.
+///
+/// This table maintains a 1:1 relationship with {@link
+/// multi_user_todo_members} through a unique constraint on the member
+/// foreign key, ensuring each user has exactly one sorting preference
+/// setting.
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_sorting_preferences {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who owns these sorting preferences. {@link
+  /// multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// Preferred sorting method for todo lists. Valid values: 'creation_date',
+  /// 'start_date', 'due_date'.
+  sorting_method String
+  
+  /// Sorting direction preference. True for ascending, false for descending.
+  sorting_direction Boolean
+  
+  /// Timestamp when the sorting preference was created.
+  created_at DateTime
+  
+  /// Timestamp when the sorting preference was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([multi_user_todo_member_id], map: "multi_user_todo_todo_sorting_preferences_multi_user_to_5ca49246")
+  // spellchecker: ignore-next-line
+  @@index([sorting_method, sorting_direction], map: "multi_user_todo_todo_sorting_preferences_sorting_metho_0c2b72a3")
+}
+
+/// Stores individual filter configuration values as key-value pairs for
+/// proper 1NF normalization.
+///
+/// Each record represents a single filter setting value associated with a
+/// specific filter configuration. This table ensures atomic values and
+/// eliminates repeating groups that would violate First Normal Form if
+/// stored directly in the parent filter settings table.
+///
+/// The key-value structure allows flexible filter configuration while
+/// maintaining data integrity through proper normalization. Values are
+/// stored with appropriate data types based on the filter configuration
+/// requirements.
+///
+/// This table supports the filter functionality by providing granular
+/// control over individual filter parameters and their values. {@link
+/// multi_user_todo_todo_filter_settings.id}
+///
+/// @namespace Todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_filter_setting_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent filter setting configuration. {@link
+  /// multi_user_todo_todo_filter_settings.id}
+  multi_user_todo_todo_filter_setting_id String
+  
+  /// Filter parameter key identifying the specific filter setting type.
+  key String
+  
+  /// Filter parameter value stored as string for flexibility across different
+  /// filter types.
+  value String
+  
+  /// Timestamp when this filter setting value was created.
+  created_at DateTime
+  
+  /// Timestamp when this filter setting value was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  filterSetting multi_user_todo_todo_filter_settings @relation(fields: [multi_user_todo_todo_filter_setting_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([multi_user_todo_todo_filter_setting_id, key], map: "multi_user_todo_todo_filter_setting_values_multi_user__f3a0477a")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_filter_setting_id, created_at], map: "multi_user_todo_todo_filter_setting_values_multi_user__feff012d")
+}

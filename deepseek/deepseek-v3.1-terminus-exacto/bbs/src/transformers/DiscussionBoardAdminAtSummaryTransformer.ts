@@ -15,8 +15,7 @@ export namespace DiscussionBoardAdminAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        display_name: true,
-        created_at: true,
+        admin_grade: true,
       },
     } satisfies Prisma.discussion_board_adminsFindManyArgs;
   }
@@ -26,8 +25,7 @@ export namespace DiscussionBoardAdminAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      display_name: input.display_name,
-      created_at: input.created_at.toISOString(),
+      admin_grade: input.admin_grade,
     };
   }
 }

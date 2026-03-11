@@ -1,4 +1,6 @@
 import { IEcommerceMallAdminRequestRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequest";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallAdminRequestRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequestRequest";
@@ -20,64 +22,77 @@ export async function patchEcommerceMallAdminAdminRequests(props: {
   body: IEcommerceMallAdminRequestRequest.IRequest;
 }): Promise<IPageIEcommerceMallAdminRequestRequest.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  if (page < 1) {
-    throw new HttpException("Page must be greater than or equal to 1", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Limit must be between 1 and 100", 400);
-  }
+  const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
+  const dateConditions: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (props.body.from_date !== undefined) {
+    dateConditions.gte = new Date(props.body.from_date);
+  }
+  if (props.body.to_date !== undefined) {
+    dateConditions.lte = new Date(props.body.to_date);
+  }
   const whereInput: Prisma.ecommerce_mall_admin_request_requestsWhereInput = {
     deleted_at: null,
     ...(props.body.request_status !== undefined && {
-      request_status: props.body.request_status,
-    }),
-    ...(props.body.created_at_start !== undefined && {
-      created_at: { gte: new Date(props.body.created_at_start) },
-    }),
-    ...(props.body.created_at_end !== undefined && {
-      created_at: { lte: new Date(props.body.created_at_end) },
+      request_status: { in: props.body.request_status },
     }),
     ...(props.body.requester_type !== undefined && {
-      ...(props.body.requester_type === "customer"
-        ? { customerRequests: { some: {} } }
-        : { sellerRequests: { some: {} } }),
+      OR: props.body.requester_type.map((type) =>
+        type === "customer"
+          ? {
+              customerRequests: {
+                some: {
+                  is: true,
+                },
+              },
+            }
+          : {
+              sellerRequests: {
+                some: {
+                  is: true,
+                },
+              },
+            },
+      ) as Prisma.ecommerce_mall_admin_request_requestsWhereInput[],
     }),
-    ...(props.body.reason_search !== undefined && {
-      reason: { contains: props.body.reason_search, mode: "insensitive" },
+    ...(Object.keys(dateConditions).length > 0 && {
+      created_at: dateConditions,
     }),
-  } as Prisma.ecommerce_mall_admin_request_requestsWhereInput;
-  const sortOrder = props.body.sort_order ?? "desc";
-  const orderByInput = (
-    props.body.sort_by === "updated_at"
-      ? { updated_at: sortOrder }
-      : props.body.sort_by === "request_status"
-        ? { request_status: sortOrder }
-        : { created_at: sortOrder }
-  ) as Prisma.ecommerce_mall_admin_request_requestsOrderByWithRelationInput;
+  } satisfies Prisma.ecommerce_mall_admin_request_requestsWhereInput;
+  const orderByCondition: Prisma.ecommerce_mall_admin_request_requestsOrderByWithRelationInput =
+    props.body.sort_by === "request_status"
+      ? {
+          request_status:
+            props.body.sort_order === "descending" ? "desc" : "asc",
+        }
+      : {
+          created_at: props.body.sort_order === "descending" ? "desc" : "asc",
+        };
   const data =
     await MyGlobal.prisma.ecommerce_mall_admin_request_requests.findMany({
       where: whereInput,
-      orderBy: orderByInput,
       skip,
       take: limit,
+      orderBy: orderByCondition,
       ...EcommerceMallAdminRequestRequestAtSummaryTransformer.select(),
     });
   const total =
     await MyGlobal.prisma.ecommerce_mall_admin_request_requests.count({
       where: whereInput,
     });
+  const transformedData = await ArrayUtil.asyncMap(data, (item) =>
+    EcommerceMallAdminRequestRequestAtSummaryTransformer.transform(item),
+  );
   return {
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallAdminRequestRequestAtSummaryTransformer.transform,
-    ),
-  } satisfies IPageIEcommerceMallAdminRequestRequest.ISummary;
+  };
 }

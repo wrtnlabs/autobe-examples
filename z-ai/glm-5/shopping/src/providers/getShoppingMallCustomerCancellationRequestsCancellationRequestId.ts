@@ -7,6 +7,7 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -22,7 +23,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallCustomerCancellationRequestsCancellationRequestId(props: {
   customer: CustomerPayload;
-  cancellationRequestId: string & tags.Format<"uuid">;
+  cancellationRequestId: string;
 }): Promise<IShoppingMallCancellationRequest> {
   const cancellationRequest =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
@@ -31,7 +32,8 @@ export async function getShoppingMallCustomerCancellationRequestsCancellationReq
         ...ShoppingMallCancellationRequestTransformer.select(),
       },
     );
-  // Verify customer owns the order containing this cancellation request
+  // Authorization: verify customer owns the order containing this cancellation request
+  // Use the nested customer relation (customer can be null if account was deleted)
   if (cancellationRequest.orderItem.order.customer?.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }

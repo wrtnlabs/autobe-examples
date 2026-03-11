@@ -1,70 +1,98 @@
 import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallAddress } from "../../../../../api/structures/IShoppingMallAddress";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { putShoppingMallCustomerAddressesAddressIdDefault } from "../../../../../providers/putShoppingMallCustomerAddressesAddressIdDefault";
+import { patchShoppingMallCustomerAddressesAddressIdDefault } from "../../../../../providers/patchShoppingMallCustomerAddressesAddressIdDefault";
 
 @Controller("/shoppingMall/customer/addresses/:addressId/default")
 export class ShoppingmallCustomerAddresses_defaultController {
   /**
-   * Sets a specific shipping address as the customer's default shipping address.
+   * Designate a specific shipping address as the customer's default shipping address.
    *
-   * This operation designates one address from the customer's saved addresses as the default, which will be automatically pre-selected during checkout. The system enforces that only one address per customer can be the default at any time.
+   * This operation allows authenticated customers to mark one of their saved addresses as the default, which will be automatically pre-selected during checkout for convenience. The system enforces that exactly one address per customer can be designated as default at any time.
    *
-   * **Business Rules**:
-   * - The authenticated customer must own the address (verified against shopping_mall_customer_id)
+   * When this operation succeeds:
+   * 1. The target address's is_default field is set to true
+   * 2. All other addresses belonging to the same customer have their is_default field set to false
+   * 3. This update is performed atomically in a single transaction
+   *
+   * **Authorization Requirements:**
+   * - Only the customer who owns the address can perform this operation
+   * - The address must exist and belong to the authenticated customer
    * - The address must not be soft-deleted (deleted_at must be null)
-   * - Setting a new default automatically removes default status from any previously designated default address
-   * - If this is the customer's first address, it should already be marked as default upon creation
    *
-   * **Database Reference**:
-   * This operation updates the shopping_mall_addresses table's is_default boolean field. The shopping_mall_customer_id foreign key ensures address ownership, and the deleted_at field tracks soft deletion.
+   * **Business Rules:**
+   * - If the address is already the default, the operation succeeds without changes (idempotent)
+   * - Only one address per customer can be default at any given time
+   * - The default address is automatically pre-selected during checkout
    *
-   * **Authorization**: Customer actor only. Each customer manages their own addresses.
+   * **Error Handling:**
+   * - 404 Not Found: Address does not exist or has been deleted
+   * - 403 Forbidden: Address belongs to a different customer
+   *
+   * **Related Operations:**
+   * - Use GET /addresses to list all customer addresses with default status
+   * - Use POST /addresses to create a new address (first address auto-becomes default)
+   * - Use DELETE /addresses/{addressId} to remove an address (cannot delete default unless another is designated first)
    *
    * @param connection
-   * @param addressId Unique identifier of the address to set as default. Must belong to the authenticated customer and not be soft-deleted.
+   * @param addressId UUID of the shipping address to designate as default. Must belong to the authenticated customer.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+   * @x-autobe-specification Implementation steps for setting default address:
    *
-   * 1. **Authentication & Authorization**: Verify the authenticated user is a customer (not seller, not administrator)
+   * 1. **Authentication Validation**: Extract customer ID from JWT session token. Verify customer account is active (not banned, not deleted).
    *
-   * 2. **Address Lookup**: Query shopping_mall_addresses table for the specified addressId, filtering by:
-   *    - id = {addressId}
-   *    - shopping_mall_customer_id = authenticated_customer_id
+   * 2. **Address Retrieval**: Query shopping_mall_addresses table for the specified addressId with conditions:
+   *    - id = addressId (UUID)
    *    - deleted_at IS NULL (not soft-deleted)
    *
-   * 3. **Ownership Validation**: If no address found, return 404 NOT_FOUND. If found but owned by different customer, return 403 FORBIDDEN.
+   * 3. **Ownership Verification**: Compare address's shopping_mall_customer_id with authenticated customer's ID. If mismatch, return 403 Forbidden.
    *
-   * 4. **Transaction**:
-   *    a. Unset previous default: UPDATE shopping_mall_addresses SET is_default = false, updated_at = NOW() WHERE shopping_mall_customer_id = authenticated_customer_id AND is_default = true
-   *    b. Set new default: UPDATE shopping_mall_addresses SET is_default = true, updated_at = NOW() WHERE id = {addressId}
+   * 4. **Atomic Default Update Transaction**:
+   *    ```sql
+   *    BEGIN TRANSACTION;
+   *    -- Remove default from all customer's addresses
+   *    UPDATE shopping_mall_addresses
+   *    SET is_default = false, updated_at = NOW()
+   *    WHERE shopping_mall_customer_id = :customerId
+   *      AND is_default = true;
    *
-   * 5. **Return**: Fetch and return the updated address record with all fields
+   *    -- Set target address as default
+   *    UPDATE shopping_mall_addresses
+   *    SET is_default = true, updated_at = NOW()
+   *    WHERE id = :addressId;
+   *    COMMIT;
+   *    ```
    *
-   * **Edge Cases**:
-   * - If the address is already default, the operation is idempotent (no error, just returns current state)
-   * - If customer has no other addresses, this sets their first/only address as default
+   * 5. **Response**: Return the updated address with all fields including:
+   *    - id (UUID)
+   *    - recipientName
+   *    - phoneNumber
+   *    - streetAddress
+   *    - city
+   *    - stateProvince
+   *    - postalCode
+   *    - country
+   *    - isDefault (now true)
+   *    - createdAt
+   *    - updatedAt
    *
-   * **Error Responses**:
-   * - 401: Not authenticated
-   * - 403: Address belongs to different customer
-   * - 404: Address not found or already deleted
+   * 6. **Concurrency Consideration**: Use row-level locking or optimistic locking with updated_at timestamp to prevent race conditions if customer rapidly sets different addresses as default.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
-  public async setDefault(
+  @TypedRoute.Patch()
+  public async updateDefault(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("addressId")
-    addressId: string & tags.Format<"uuid">,
+    addressId: string,
   ): Promise<IShoppingMallAddress> {
     try {
-      return await putShoppingMallCustomerAddressesAddressIdDefault({
+      return await patchShoppingMallCustomerAddressesAddressIdDefault({
         customer,
         addressId,
       });

@@ -4,46 +4,47 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IRedditPlatformCommunity } from "../../../../structures/IRedditPlatformCommunity";
-import { IRedditPlatformCommunitySubscription } from "../../../../structures/IRedditPlatformCommunitySubscription";
 
 export * as moderators from "./moderators/index";
 export * as bans from "./bans/index";
+export * as moderation_audit_logs from "./moderation_audit_logs/index";
+export * as moderator_histories from "./moderator_histories/index";
+export * as posts from "./posts/index";
+export * as moderation from "./moderation/index";
 
 /**
- * Create a new community on the Reddit-like platform.
+ * Create a new community on the Reddit platform.
  *
- * This operation allows authenticated members to create a new community (similar to a subreddit). The creating member becomes the community owner with full administrative privileges including the ability to add moderators, delete content, and manage community settings.
+ * This operation allows authenticated members to create a new community (subreddit) that will serve as a dedicated space for discussions around specific topics. The creating member automatically becomes the community owner with full administrative privileges.
  *
- * The community name must be unique across the entire platform and is used in URLs (e.g., r/{name}) and community identification. Communities support an optional description that explains the community's purpose and topics, as well as an optional icon image for visual branding.
+ * The community requires a unique name across the entire platform, which will be used in URLs (e.g., r/{communityName}) and displayed to users. An optional description can be provided to help users understand the community's purpose, and an optional icon image URL can be set for visual branding.
  *
- * Upon successful creation, the community is initialized with a subscriber count of 0 and associated with the creating member as the owner. The community owner can immediately begin inviting other members as moderators and posting content within their new community.
+ * Upon successful creation, the system initializes the subscriber_count to 0 and assigns the creating member as the owner. The owner will have exclusive rights to moderate the community, add other moderators, manage bans, and delete content within the community.
  *
- * Requires member authentication. Guest users must sign in before creating communities.
+ * Only authenticated members can create communities. The community name must be unique and follow platform naming conventions. Communities that are soft-deleted may have their names reserved, preventing immediate re-registration with the same name.
  *
  * @param props.connection
- * @param props.body Community creation data including name, optional description, and optional icon URL
+ * @param props.body Community creation information including unique name and optional description and icon
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new community record in reddit_platform_communities table.
+ * @x-autobe-specification 1. Validate authentication: Extract user_id from JWT token claims
+ * 2. Validate request body: Check required name field is present and meets format requirements
+ * 3. Check name uniqueness: Query reddit_platform_communities for existing name with deleted_at IS NULL
+ * 4. If name exists, return 409 Conflict error
+ * 5. Validate optional fields: description (max 500 chars), icon_url (valid URL format)
+ * 6. Generate UUID for id field
+ * 7. Set current timestamp for created_at and updated_at
+ * 8. Set owner_id from authenticated user's ID
+ * 9. Initialize subscriber_count to 0
+ * 10. Insert new record into reddit_platform_communities
+ * 11. Return the created community object with all fields
  *
- * 1. Validate authentication: User must be logged in as a member actor
- * 2. Validate request body:
- *    - name: Required, unique string matching regex for community name format
- *    - description: Optional string, max length validation
- *    - icon_url: Optional URI string, format validation
- * 3. Check name uniqueness: Query reddit_platform_communities WHERE name = ? AND deleted_at IS NULL
- *    - If duplicate exists, return 409 Conflict error
- * 4. Create record with:
- *    - id: Generate new UUID
- *    - owner_id: Current authenticated member's id
- *    - name: From request body
- *    - description: From request body (or null)
- *    - icon_url: From request body (or null)
- *    - subscriber_count: 0 (initial value)
- *    - created_at: Current timestamp (UTC)
- *    - updated_at: Current timestamp (UTC)
- *    - deleted_at: null
- * 5. Return the newly created community object with all fields including generated id and owner_id
+ * Validation errors:
+ * - Missing name: 400 Bad Request
+ * - Duplicate name: 409 Conflict
+ * - Invalid URL format: 400 Bad Request
+ * - Name too long: 400 Bad Request
+ * - Not authenticated: 401 Unauthorized
  * @path /redditPlatform/member/communities
  * @accessor api.functional.redditPlatform.member.communities.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -73,7 +74,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Community creation data including name, optional description, and optional icon URL
+     * Community creation information including unique name and optional description and icon
      */
     body: IRedditPlatformCommunity.ICreate;
   };
@@ -122,38 +123,35 @@ export namespace create {
 }
 
 /**
- * Update an existing community's attributes including description and icon image.
+ * Update an existing community's properties.
  *
- * This operation allows the community owner to modify community metadata such as the community description text and icon image URL. The community is identified by its unique UUID identifier in the path parameter.
+ * This operation allows the community owner to modify the community's name, description, and icon URL. The community owner has full administrative privileges over their created community.
  *
- * Only the owner of the community has authorization to perform this update operation. The system validates that the authenticated user is the community owner before applying any changes.
+ * The community name must be unique across the entire platform. If the requested name is already taken by another community, the update will fail with a validation error. The subscriber count is automatically maintained by the system and cannot be directly modified through this endpoint.
  *
- * The operation performs partial updates, meaning you can update individual fields without re-sending all community attributes. Only the fields included in the request body will be modified; fields omitted from the request remain unchanged.
+ * Security: Only the member who owns this community (owner_id matches authenticated user ID) can update it. Attempting to update a community you do not own will result in an authorization error.
  *
- * Updated communities are reflected in community listing and search results immediately. The updated_at timestamp is automatically set to the current time.
+ * The operation will automatically update the updated_at timestamp to reflect when the modification occurred. Soft-deleted communities (deleted_at is set) cannot be updated through this endpoint.
  *
  * @param props.connection
- * @param props.communityId The unique UUID identifier of the community to update
- * @param props.body Partial update data for community attributes
+ * @param props.communityId The UUID identifier of the community to update
+ * @param props.body Community properties to update. At least one property must be provided.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Execute community update operation:
- *
- * 1. Validate communityId exists in reddit_platform_communities table
- * 2. Verify authenticated user's id matches community.owner_id field
- * 3. Extract updateable fields from request body (description, icon_url)
- * 4. Apply updates to community record
- * 5. Set updated_at to current timestamp
- * 6. Return updated community with full details
- *
- * Error handling:
- * - Throw 404 if community not found
- * - Throw 403 if authenticated user is not owner
- * - Throw 400 if update data validation fails
- *
- * Database transaction: Update in single atomic operation.
- *
- * No cascade updates to subscribers or posts.
+ * @x-autobe-specification 1. Authenticate the request and extract the authenticated member ID from JWT token
+ * 2. Query reddit_platform_communities table for community where id = {communityId}
+ * 3. Verify community exists; if not, return 404 Not Found
+ * 4. Verify community is not soft-deleted (deleted_at IS NULL); if deleted, return 410 Gone
+ * 5. Verify community.owner_id equals authenticated member ID; if not, return 403 Forbidden
+ * 6. Validate request body properties:
+ *    - name: if provided, must be 3-21 characters, alphanumeric plus underscores and hyphens only
+ *    - Check name uniqueness across all communities (including non-deleted ones)
+ *    - If name uniqueness check fails, return 409 Conflict
+ *    - description: if provided, must be <= 500 characters
+ *    - icon_url: if provided, must be valid URI format
+ * 7. Update community record with provided fields
+ * 8. Set updated_at to current timestamp
+ * 9. Return updated community object with all fields
  * @path /redditPlatform/member/communities/:communityId
  * @accessor api.functional.redditPlatform.member.communities.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,12 +181,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The unique UUID identifier of the community to update
+     * The UUID identifier of the community to update
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
-     * Partial update data for community attributes
+     * Community properties to update. At least one property must be provided.
      */
     body: IRedditPlatformCommunity.IUpdate;
   };
@@ -239,52 +237,78 @@ export namespace update {
 }
 
 /**
- * Permanently delete a community from the platform, including all posts and comments created within that community.
+ * Mark a community and all its content as deleted using soft delete semantics.
  *
- * **Authorization**: Only the community owner can delete their community. This operation cannot be performed by moderators, subscribers, or any other user.
+ * This operation allows the community owner to mark a community as deleted by setting the deleted_at timestamp on the community record. The community and its content are marked for deletion but data is preserved in the database for audit and compliance purposes. According to the schema, the reddit_platform_communities table uses a deleted_at field for soft deletion.
  *
- * **Deletion Cascade**: Upon successful deletion, the system SHALL:
- * - Soft delete the community record itself (set deleted_at)
- * - Soft delete all posts created within the community
- * - Soft delete all comments associated with those posts
- * - Remove all subscription records for this community
- * - Remove all moderator associations
- * - Remove all ban records
+ * **Authorization**: Only the community owner (member stored in the owner_id field of the reddit_platform_communities table) can perform this operation. Moderators, even with elevated privileges, cannot delete communities.
  *
- * **Pre-deletion Validation**: Before allowing deletion, the system SHALL verify:
- * - The authenticated user is the community owner (not just any member)
- * - The community is not already soft-deleted (deleted_at IS NULL)
+ * **Soft Delete Behavior**: The system marks the following records for deletion by setting their deleted_at timestamps:
+ * - The community itself (reddit_platform_communities)
+ * - All posts within the community (reddit_platform_posts)
+ * - All comments on those posts (reddit_platform_comments)
+ * - All user-subscriber associations (reddit_platform_community_subscriptions)
+ * - All moderator role assignments (reddit_platform_community_moderators) - note: this table has no deleted_at field, so these are hard deleted
+ * - All ban records (reddit_platform_community_bans)
+ * - All moderation audit log entries (reddit_platform_moderation_audit_logs)
  *
- * **Error Handling**: The system SHALL reject the request with appropriate errors if:
- * - The user is not the owner (403 Forbidden)
- * - The community does not exist (404 Not Found)
- * - The community is already soft-deleted (409 Conflict)
+ * **Data Preservation**: Unlike hard delete, soft delete preserves all data in the database. This enables:
+ * - Historical audit trails for compliance
+ * - Ability to restore data if needed (application logic dependent)
+ * - Reference integrity for any external systems that may reference the data
+ *
+ * **Community Inaccessibility**: Once marked as deleted, the community becomes inaccessible through normal API operations. It will not appear in community feeds, search results, or subscriber lists.
+ *
+ * **Owner Relationship**: The owner_id relationship ensures only the legitimate community owner can execute this operation, protecting against unauthorized deletion.
+ *
+ * **Post-Deletion Behavior**: The community data remains in the database but is marked as deleted. The owner_id field remains intact for audit purposes. Any karma scores and engagement metrics associated with deleted content are preserved in the vote statistics tables.
  *
  * @param props.connection
- * @param props.communityId The unique identifier of the community to delete
+ * @param props.communityId The unique identifier of the community to be deleted. Must be a valid UUID format corresponding to an existing community owned by the authenticated user.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate authentication: Ensure request is from authenticated member
- * 2. Look up community by communityId from path parameter
- * 3. Verify community exists and is not soft-deleted (deleted_at IS NULL)
- * 4. Verify the authenticated user's ID matches community.owner_id
- * 5. Check subscriber_count = 0 (zero active subscribers)
- * 6. Begin database transaction
- * 7. CASCADE DELETE:
- *    - DELETE FROM reddit_platform_posts WHERE reddit_platform_community_id = communityId
- *    - DELETE FROM reddit_platform_comments WHERE post_id IN (SELECT id FROM reddit_platform_posts WHERE reddit_platform_community_id = communityId) OR post_id IS NULL
- *    - DELETE FROM reddit_platform_community_subscriptions WHERE reddit_platform_community_id = communityId
- *    - DELETE FROM reddit_platform_community_moderators WHERE community_id = communityId
- *    - DELETE FROM reddit_platform_community_bans WHERE community_id = communityId
- * 8. DELETE FROM reddit_platform_communities WHERE id = communityId
- * 9. Commit transaction
- * 10. Return 204 No Content status
+ * @x-autobe-specification Execute the following steps in a single database transaction:
  *
- * Error cases:
- * - 404: Community not found
- * - 403: User is not the owner
- * - 409: Community has active subscribers (subscriber_count > 0)
- * - 409: Community already deleted
+ * 1. **Authorization Validation**:
+ *    - Verify the authenticated user is the community owner (owner_id field)
+ *    - Retrieve the community record by communityId from reddit_platform_communities
+ *    - If community does not exist or user is not owner, return 404 or 403 error
+ *
+ * 2. **Pre-Deletion Validation**:
+ *    - Check if community is already deleted (deleted_at is not null)
+ *    - If already deleted, return 404 (not found)
+ *
+ * 3. **Cascade Deletion** (in dependency order):
+ *    - Delete all moderation_audit_logs entries for this community
+ *    - Delete all ban records from reddit_platform_community_bans (community_id = id)
+ *    - Delete all moderator assignments from reddit_platform_community_moderators (community_id = id)
+ *    - Delete all subscriptions from reddit_platform_community_subscriptions (reddit_platform_community_id = id)
+ *    - For each post in the community (reddit_platform_posts):
+ *      - Soft delete the post (set deleted_at to current timestamp)
+ *      - Cascade deletes will handle comment deletion
+ *    - For each engagement stat record (reddit_platform_post_engagement_stats):
+ *      - Soft delete the engagement stat (set deleted_at)
+ *    - Delete the community record (soft delete by setting deleted_at)
+ *
+ * 4. **Transaction Management**:
+ *    - All operations must execute in a single database transaction
+ *    - If any step fails, rollback the entire transaction
+ *    - Ensure referential integrity is maintained throughout
+ *
+ * 5. **Response**: Return the deleted community record (before soft deletion) with all fields, including the new deleted_at timestamp
+ *
+ * 6. **Error Handling**:
+ *    - 404 Not Found: Community does not exist or already deleted
+ *    - 403 Forbidden: Authenticated user is not the community owner
+ *    - 409 Conflict: Attempting to delete a community that is already soft-deleted
+ *    - 500 Internal Server Error: Database constraint violations or transaction failures
+ *
+ * 7. **Audit Logging**:
+ *    - Create an entry in reddit_platform_moderation_audit_logs before deletion
+ *    - Record: action_type = 'delete_community', moderator_id = current user, community_id = target
+ *    - Include action_reason if provided in request body (optional)
+ *
+ * 8. **Cleanup**: Clear any cached community data in the application cache layer
  * @path /redditPlatform/member/communities/:communityId
  * @accessor api.functional.redditPlatform.member.communities.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -313,7 +337,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The unique identifier of the community to delete
+     * The unique identifier of the community to be deleted. Must be a valid UUID format corresponding to an existing community owned by the authenticated user.
      */
     communityId: string & tags.Format<"uuid">;
   };
@@ -339,228 +363,6 @@ export namespace erase {
       method: METADATA.method,
       host: connection.host,
       path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("communityId")(() => typia.assert(props.communityId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Subscribe a logged-in user to a community, enabling post creation within that community and adding the user to the community's subscriber list.
- *
- * This operation establishes a subscription relationship between the authenticated member and the specified community. Upon successful subscription, the community's subscriber_count is incremented by one, and the user gains permission to create posts in that community as per business requirement.
- *
- * The system prevents duplicate subscriptions through database-level uniqueness constraints on the member-community pair. If a user attempts to subscribe to a community they are already subscribed to, the operation returns a 409 Conflict error indicating the subscription already exists.
- *
- * Required actor: member (authenticated user). Guests cannot subscribe and will receive 401 Unauthorized.
- *
- * Related operations:
- * - GET /communities/{communityId} - View community details before subscribing
- * - DELETE /communities/{communityId}/unsubscribe - Remove subscription
- * - POST /posts - Create posts requires community subscription
- *
- * @param props.connection
- * @param props.communityId Unique identifier of the community to subscribe to
- * @param props.body Subscription confirmation request
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Execute community subscription with the following steps:
- * 1. Verify user authentication - extract member_id from JWT token in Authorization header
- * 2. Validate community_id path parameter exists and is not soft-deleted
- * 3. Query reddit_platform_community_subscriptions for existing subscription (member_id, community_id)
- * 4. If subscription exists, return 409 Conflict with message 'Already subscribed'
- * 5. Begin database transaction
- * 6. Insert new record into reddit_platform_community_subscriptions with:
- *    - reddit_platform_member_id: from authenticated user
- *    - reddit_platform_community_id: from path parameter
- *    - subscribed_at: current timestamp (NOW())
- *    - created_at: current timestamp
- * 7. Update reddit_platform_communities: increment subscriber_count by 1
- * 8. Commit transaction
- * 9. Query and return full subscription record with joined member and community data
- * 10. Handle concurrency - if duplicate insert occurs, catch error and return 409
- *
- * Edge cases:
- * - Community deleted_at is set: return 404 Not Found
- * - Community does not exist: return 404 Not Found
- * - User is banned from community: return 403 Forbidden
- * - Member account is not active (is_active=false): return 403 Forbidden
- *
- * Concurrency control: Use database-level UNIQUE constraint on (reddit_platform_member_id, reddit_platform_community_id) to prevent duplicate subscriptions. Wrap insertion and count increment in a transaction for atomicity.
- * @path /redditPlatform/member/communities/:communityId/subscribe
- * @accessor api.functional.redditPlatform.member.communities.subscribe
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function subscribe(
-  connection: IConnection,
-  props: subscribe.Props,
-): Promise<subscribe.Response> {
-  return true === connection.simulate
-    ? subscribe.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...subscribe.METADATA,
-          path: subscribe.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace subscribe {
-  export type Props = {
-    /**
-     * Unique identifier of the community to subscribe to
-     */
-    communityId: string & tags.Format<"uuid">;
-
-    /**
-     * Subscription confirmation request
-     */
-    body: IRedditPlatformCommunitySubscription.ICreate;
-  };
-  export type Body = IRedditPlatformCommunitySubscription.ICreate;
-  export type Response = IRedditPlatformCommunitySubscription;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/redditPlatform/member/communities/:communityId/subscribe",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/subscribe`;
-  export const random = (): IRedditPlatformCommunitySubscription =>
-    typia.random<IRedditPlatformCommunitySubscription>();
-  export const simulate = (
-    connection: IConnection,
-    props: subscribe.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: subscribe.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("communityId")(() => typia.assert(props.communityId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Remove a user's subscription from a specified community, allowing them to unsubscribe and receive updates about community activity. This operation deletes the subscription relationship between the authenticated member and the target community.
- *
- * The system will remove the subscription record from the reddit_platform_community_subscriptions table using soft delete (setting deleted_at timestamp) and automatically decrement the community's subscriber_count by one to reflect the updated subscriber list.
- *
- * Only authenticated members can unsubscribe from communities. The operation requires the community to exist and be accessible (not permanently deleted). Once unsubscribed, the user will no longer see this community's posts in their home feed and loses the ability to create posts in that community until re-subscribing.
- *
- * The response includes the updated community information showing the new subscriber count after the decrement operation completes.
- *
- * @param props.connection
- * @param props.communityId The UUID identifier of the community to unsubscribe from
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate authentication: Require member actor to be authenticated via JWT session token
- * 2. Extract communityId from path parameter (UUID format)
- * 3. Query reddit_platform_communities table for community record
- * 4. Validate community exists and is not permanently deleted (deleted_at is null)
- * 5. Query reddit_platform_community_subscriptions table for subscription record matching:
- *    - reddit_platform_member_id = current authenticated member's ID
- *    - reddit_platform_community_id = extracted communityId
- *    - deleted_at = null (active subscription)
- * 6. If no active subscription found, return 404 error
- * 7. Perform soft delete on subscription record: set deleted_at = current timestamp
- * 8. Decrement community subscriber_count: UPDATE reddit_platform_communities SET subscriber_count = subscriber_count - 1 WHERE id = communityId
- * 9. Return updated community record with new subscriber_count in response
- * @path /redditPlatform/member/communities/:communityId/unsubscribe
- * @accessor api.functional.redditPlatform.member.communities.unsubscribe
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function unsubscribe(
-  connection: IConnection,
-  props: unsubscribe.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? unsubscribe.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...unsubscribe.METADATA,
-          path: unsubscribe.path(props),
-          status: null,
-        },
-      );
-}
-export namespace unsubscribe {
-  export type Props = {
-    /**
-     * The UUID identifier of the community to unsubscribe from
-     */
-    communityId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/redditPlatform/member/communities/:communityId/unsubscribe",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/redditPlatform/member/communities/${encodeURIComponent(props.communityId ?? "null")}/unsubscribe`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: unsubscribe.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: unsubscribe.path(props),
       contentType: "application/json",
     });
     try {

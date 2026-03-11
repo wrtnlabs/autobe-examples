@@ -17,26 +17,25 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
   // 1. Verify refresh token
   let decoded: {
+    type: string;
     id: string;
     session_id: string;
-    type: "admin";
     created_at: string;
   };
   try {
-    decoded = typia.assert<{
-      id: string;
-      session_id: string;
-      type: "admin";
-      created_at: string;
-    }>(
-      jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-        issuer: "autobe",
-      }),
-    );
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate session exists and is active
+  // 2. Validate type
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  // 3. Validate session exists and not expired
   const session =
     await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
       where: {
@@ -47,12 +46,12 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // Check if session is expired
+  const now = new Date();
   const sessionExpiredAt = new Date(session.expired_at);
-  if (sessionExpiredAt < new Date()) {
-    throw new HttpException("Session expired", 401);
+  if (sessionExpiredAt <= now) {
+    throw new HttpException("Session has expired", 401);
   }
-  // 3. Validate admin account exists and is not deleted
+  // 4. Validate admin account exists and not deleted
   const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
     {
       where: { id: decoded.id },
@@ -61,51 +60,54 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
   if (admin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 4. Generate new tokens with SAME session_id
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const newAccessToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "30m", issuer: "autobe" },
-  );
-  const newRefreshToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 5. Update session expiration
+  // 5. Generate new tokens with SAME session_id
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "15m", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
+  };
+  // 6. Update session expiration
   await MyGlobal.prisma.discussion_board_admin_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // 6. Return authorized response
+  // 7. Return admin profile with tokens
   const result: IDiscussionBoardAdmin.IAuthorized = {
-    id: admin.id,
-    email: admin.email,
+    id: admin.id as string & tags.Format<"uuid">,
     display_name: admin.display_name,
     bio: admin.bio,
-    grade: typia.assert<"regular" | "super">(admin.grade),
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
+    grade: admin.grade,
+    created_at: toISOStringSafe(admin.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(admin.updated_at) as string &
+      tags.Format<"date-time">,
+    email: admin.email as string & tags.Format<"email">,
     deleted_at: null,
-    token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+    token: token,
   };
   return result;
 }

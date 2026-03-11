@@ -19,37 +19,31 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallSellerProductsProductIdVariants(props: {
   seller: SellerPayload;
-  productId: string & tags.Format<"uuid">;
+  productId: string;
   body: IShoppingMallProductVariant.ICreate;
 }): Promise<IShoppingMallProductVariant> {
-  // Verify product exists, is not deleted, and seller owns it
-  const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      deleted_at: null,
-    },
-  });
-  if (product === null) {
-    throw new HttpException("Product not found", 404);
-  }
+  // Verify product exists, is not deleted, and belongs to the seller
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: {
+        id: props.productId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        shopping_mall_seller_id: true,
+      },
+    });
+  // Verify ownership
   if (product.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check SKU code uniqueness globally
-  const existingVariant =
-    await MyGlobal.prisma.shopping_mall_product_variants.findUnique({
-      where: { sku_code: props.body.skuCode },
-    });
-  if (existingVariant !== null) {
-    throw new HttpException("SKU code already exists", 409);
-  }
   // Create variant using collector
-  const createInput = await ShoppingMallProductVariantCollector.collect({
-    body: props.body,
-    shoppingMallProducts: { id: props.productId },
-  });
   const created = await MyGlobal.prisma.shopping_mall_product_variants.create({
-    data: createInput,
+    data: await ShoppingMallProductVariantCollector.collect({
+      body: props.body,
+      shoppingMallProducts: { id: props.productId },
+    }),
     ...ShoppingMallProductVariantTransformer.select(),
   });
   return await ShoppingMallProductVariantTransformer.transform(created);

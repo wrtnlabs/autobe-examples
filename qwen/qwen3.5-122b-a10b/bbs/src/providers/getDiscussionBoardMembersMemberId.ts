@@ -8,20 +8,20 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { DiscussionBoardMemberAtSummaryTransformer } from "../transformers/DiscussionBoardMemberAtSummaryTransformer";
+import { DiscussionBoardMemberTransformer } from "../transformers/DiscussionBoardMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getDiscussionBoardMembersMemberId(props: {
   memberId: string & tags.Format<"uuid">;
-}): Promise<IDiscussionBoardMember.ISummary> {
+}): Promise<IDiscussionBoardMember> {
   const member =
     await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
-      where: { id: props.memberId },
-      ...DiscussionBoardMemberAtSummaryTransformer.select(),
+      where: {
+        id: props.memberId,
+        deleted_at: null,
+      },
+      ...DiscussionBoardMemberTransformer.select(),
     });
-  if (member.deleted_at !== null) {
-    throw new HttpException("Member not found", 404);
-  }
-  return await DiscussionBoardMemberAtSummaryTransformer.transform(member);
+  return await DiscussionBoardMemberTransformer.transform(member);
 }

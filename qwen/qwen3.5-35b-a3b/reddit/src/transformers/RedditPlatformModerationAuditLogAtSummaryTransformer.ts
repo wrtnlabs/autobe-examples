@@ -39,14 +39,19 @@ export namespace RedditPlatformModerationAuditLogAtSummaryTransformer {
   ): Promise<IRedditPlatformModerationAuditLog.ISummary> {
     return {
       id: input.id,
-      actionType: input.action_type,
+      action_type: input.action_type,
+      action_target_type: input.action_target_type,
+      action_target_post_id: input.actionTargetPost?.id ?? null,
+      action_target_comment_id: input.actionTargetComment?.id ?? null,
+      action_target_user_id: input.actionTargetUser?.id ?? null,
+      action_reason: input.action_reason ?? undefined,
+      created_at: input.created_at.toISOString(),
       moderator: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.moderator,
       ),
       community: await RedditPlatformCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      createdAt: input.created_at.toISOString(),
     };
   }
 }

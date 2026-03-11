@@ -31,23 +31,15 @@ export namespace EcommerceMallSnapshotAuditTransformer {
   ): Promise<IEcommerceMallSnapshotAudit> {
     return {
       id: input.id,
-      recordType: typia.assert<
-        | "product"
-        | "product_variant"
-        | "seller_profile"
-        | "order_item"
-        | "review"
-        | "cancellation_request"
-        | "refund_request"
-      >(input.record_type),
+      recordType: input.record_type,
       recordId: input.record_id,
       changes: JSON.parse(input.changes),
       oldValues: JSON.parse(input.old_values),
       newValues: JSON.parse(input.new_values),
-      changedAt: toISOStringSafe(input.changed_at),
+      changedAt: input.changed_at.toISOString(),
       changedBy: input.changed_by,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
     };
   }
 }

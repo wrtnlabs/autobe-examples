@@ -14,21 +14,39 @@ import { patchDiscussionBoardAdminArticlesArticleIdCommentsCommentIdSnapshots } 
 )
 export class DiscussionboardAdminArticlesCommentsSnapshotsController {
   /**
-   * Retrieve a filtered and paginated list of historical snapshots for a specific comment on an article. This operation provides audit trail visibility into comment modification history, capturing all previous states of a comment before edits or deletions.
+   * Retrieve a paginated list of historical snapshots for a specific comment on an article.
    *
-   * Snapshots are automatically created by the system when a comment is edited or deleted, preserving the complete modification history for accountability and moderation purposes. Each snapshot contains the comment content, article reference, author information, and timestamps at the time the snapshot was created.
+   * This operation provides access to the audit trail of comment modifications, capturing point-in-time states whenever a comment was edited or deleted. Each snapshot preserves the comment's content, author information, and timestamps at the moment of the change.
    *
-   * This operation is restricted to administrators who need to review comment history for content moderation, dispute resolution, or compliance auditing. Regular members cannot access snapshot data to protect user privacy and prevent misuse of historical data.
+   * The snapshots are stored in the `discussion_board_comment_snapshots` table, which contains denormalized data including the article ID (`discussion_board_article_id`), member ID (`discussion_board_member_id`), and original comment timestamps (`comment_created_at`, `comment_updated_at`). This denormalization enables efficient querying without requiring joins to parent comment or article entities.
    *
-   * The response includes comprehensive pagination metadata allowing clients to navigate through large modification histories. Snapshots are sorted by creation timestamp in descending order, showing the most recent changes first for efficient review.
+   * Snapshots are automatically created by the system when comments are modified or removed, maintaining an immutable historical record for accountability and moderation purposes. Access to snapshots requires administrator privileges and the target article must be accessible to the requesting user. Snapshots follow the same visibility rules as their parent comments and articles.
    *
    * @param connection
-   * @param articleId Target article's unique identifier (global scope)
-   * @param commentId Target comment's unique identifier within the article (global scope)
-   * @param body Snapshot filtering, sorting, and pagination parameters
+   * @param articleId Target article's unique identifier (UUID)
+   * @param commentId Target comment's unique identifier (UUID)
+   * @param body Pagination and filtering parameters for snapshot retrieval
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query discussion_board_comment_snapshots table filtered by discussion_board_comment_id. The comment_id is derived from the path parameter commentId. Join with discussion_board_articles to verify article existence and discussion_board_members to include author information in response. Apply pagination with configurable page size and offset. Support filtering by snapshot_created_at date range. Sort by snapshot_created_at descending (newest first) to show most recent modifications first. Verify the requesting user has administrator privileges before returning results. If comment does not exist or has no snapshots, return empty data array with zero total count. Ensure referential integrity by validating that the comment belongs to the specified article.
+   * @x-autobe-specification Query discussion_board_comment_snapshots table filtering by discussion_board_comment_id with pagination support.
+   *
+   * Implementation steps:
+   * 1. Validate articleId and commentId path parameters exist and are properly formatted UUIDs
+   * 2. Verify the comment belongs to the specified article (discussion_board_article_id matches)
+   * 3. Check user authorization - authenticated user must have access to the parent article
+   * 4. Query snapshots table with WHERE discussion_board_comment_id = {commentId}
+   * 5. Apply pagination from request body (page, limit, cursor)
+   * 6. Order by snapshot_created_at DESC (newest snapshots first for audit review)
+   * 7. Return paginated response with snapshot summaries including id, content, snapshot_created_at, comment_created_at, comment_updated_at
+   * 8. Include total count and pagination metadata
+   *
+   * Edge cases:
+   * - Comment not found: return 404
+   * - Article not found: return 404
+   * - Comment belongs to different article: return 404
+   * - No snapshots exist: return empty data array with pagination metadata
+   * - Unauthenticated request: return 401
+   * - User lacks article access: return 403
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -58,37 +76,37 @@ export class DiscussionboardAdminArticlesCommentsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific comment snapshot by its unique identifier.
+   * Retrieve a specific historical snapshot of a comment from the discussion board.
    *
-   * This operation returns the historical state of a comment at the time it was edited or deleted. Comment snapshots are automatically created when a comment is modified or removed, capturing the content and metadata at that point in time for audit trail and moderation purposes.
+   * This operation fetches a point-in-time snapshot of a comment, capturing the comment's state at the moment it was edited or deleted. Snapshots are automatically created by the system to maintain an audit trail of comment modifications and deletions, enabling administrators and users to review the historical evolution of comment content.
    *
-   * The snapshot includes denormalized data from the parent comment, including the original article reference, author information, and timestamps. This ensures historical accuracy even if the parent comment is later modified or deleted.
+   * The snapshot contains denormalized data including the comment's content at the time of snapshot, the article it belonged to, the member who authored it, and all relevant timestamps. This denormalization ensures efficient retrieval without requiring joins to parent entities.
    *
-   * **Authorization**: Only administrators (regular or super) and the original comment author can access comment snapshots. This restriction protects the audit trail while enabling legitimate moderation and accountability use cases.
+   * Snapshots are immutable once created and serve critical audit and moderation purposes. They allow administrators to review comment modification history for content moderation decisions and enable users to understand how comments have evolved over time.
    *
-   * **Related Operations**:
-   * - `GET /articles/{articleId}/comments/{commentId}` - Retrieve the current state of a comment
-   * - `PATCH /articles/{articleId}/comments` - List all comments on an article
-   * - `POST /articles/{articleId}/comments` - Create a new comment on an article
+   * Access to this endpoint is available to all authenticated actors (guests, members, and administrators) since snapshot data contains no additional sensitive information beyond what is already visible in the parent comment and article context.
    *
    * @param connection
-   * @param articleId Target article's unique identifier (global scope)
-   * @param commentId Target comment's unique identifier (scoped to article)
-   * @param snapshotId Target snapshot's unique identifier (scoped to comment)
+   * @param articleId Target article's unique identifier (UUID)
+   * @param commentId Target comment's unique identifier (UUID)
+   * @param snapshotId Target snapshot's unique identifier (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a specific comment snapshot by its ID. The operation must:
+   * @x-autobe-specification Query discussion_board_comment_snapshots table by primary key snapshotId.
    *
-   * 1. Validate all three path parameters exist and are valid UUIDs
-   * 2. Verify the snapshot belongs to the specified comment (discussion_board_comment_id = commentId)
-   * 3. Verify the comment belongs to the specified article (discussion_board_article_id = articleId)
-   * 4. Check authorization - only administrators or the original comment author can access snapshots
-   * 5. Query discussion_board_comment_snapshots table with the snapshotId
-   * 6. Return the complete snapshot data including content, timestamps, and denormalized parent references
-   * 7. Return 404 if snapshot not found or does not belong to the specified comment/article
-   * 8. Return 403 if user lacks authorization to view the snapshot
+   * Verify the snapshot exists and belongs to the specified commentId and articleId (validate referential integrity).
    *
-   * The snapshot contains denormalized data from the parent comment for historical accuracy, including the original article_id and member_id at the time of snapshot creation.
+   * Validate that the target article exists and is accessible (check article's deleted_at status).
+   *
+   * Validate that the target comment exists (check comment's deleted_at status).
+   *
+   * Return the complete snapshot record including all denormalized fields: id, discussion_board_comment_id, content, discussion_board_article_id, discussion_board_member_id, comment_created_at, comment_updated_at, snapshot_created_at.
+   *
+   * Return 404 if snapshot, comment, or article not found.
+   *
+   * Return 403 if article is inaccessible (deleted without proper permissions).
+   *
+   * No complex business logic required - this is a simple read operation with referential integrity validation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")

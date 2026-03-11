@@ -17,6 +17,13 @@ export namespace EconomicPoliticalBoardTagAtSummaryTransformer {
         name: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        articleTags: true,
+        _count: {
+          select: {
+            articleTags: true,
+          },
+        },
       },
     } satisfies Prisma.economic_political_board_tagsFindManyArgs;
   }
@@ -26,8 +33,8 @@ export namespace EconomicPoliticalBoardTagAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
+      article_count: input._count.articleTags,
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
     };
   }
 }

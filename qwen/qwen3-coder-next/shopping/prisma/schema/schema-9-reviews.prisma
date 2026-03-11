@@ -1,142 +1,188 @@
-/// Customer reviews with ratings and text content for products
+/// Customer reviews for products with rating (1-5 stars) and optional text
+/// content. Each review is owned by a customer and associated with a
+/// specific product and order item. Reviews can be edited (creating
+/// snapshots) or deleted (preserved in snapshots).
 ///
 /// @namespace Reviews
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_reviews {
+model ecommerce_mall_reviews {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged order item's {@link shopping_mall_order_items.id}
-  shopping_mall_order_item_id String
+  /// Customer who wrote the review. {@link ecommerce_mall_customers.id}.
+  customer_id String
   
-  /// Belonged product's {@link shopping_mall_products.id}
-  shopping_mall_product_id String
+  /// Product being reviewed. {@link ecommerce_mall_products.id}.
+  product_id String
   
-  /// Customer who wrote this review's {@link shopping_mall_customers.id}
-  shopping_mall_customer_id String
+  /// Order item proof of purchase. {@link ecommerce_mall_order_items.id}.
+  order_item_id String
   
-  /// Rating score from 1 to 5 stars
+  /// Customer rating (1-5 stars, required).
   rating Int
   
-  /// Review text content provided by customer (optional)
+  /// Optional review text content.
   text_content String?
   
-  /// Soft delete flag for reviews
-  is_deleted Boolean
-  
-  /// Timestamp when the review was deleted (soft delete)
-  deleted_at DateTime?
-  
-  /// Timestamp when the review was created
+  /// Review creation timestamp.
   created_at DateTime
   
-  /// Timestamp when the review was last updated
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Nullable for active reviews.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_review_snapshots[]
+  helpfulnessVotes ecommerce_mall_review_helpfulness_votes[]
+  images ecommerce_mall_review_images[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_item_id])
+  @@index([customer_id, created_at])
+  @@index([product_id, created_at])
+}
+
+/// Historical snapshots of reviews for audit trail and dispute resolution.
+/// Created whenever a review is edited or updated. Snapshots are immutable
+/// and preserve the review state (rating, text) at that point in time.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original review that this snapshot captures. {@link
+  /// ecommerce_mall_reviews.id}.
+  ecommerce_mall_review_id String
+  
+  /// Rating value from 1 to 5 stars given by the customer.
+  rating Int
+  
+  /// Optional text content of the review. Can be null if customer didn't
+  /// provide text.
+  text_content String?
+  
+  /// Type of snapshot: 'edit' for review edits or 'deleted' for reviews marked
+  /// for deletion. Identifies the business event that triggered this snapshot.
+  snapshot_type String
+  
+  /// Timestamp when this snapshot was created (immutable).
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review ecommerce_mall_reviews @relation(fields: [ecommerce_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_review_id, created_at], map: "ecommerce_mall_review_snapshots_ecommerce_mall_review__d71d2e83")
+}
+
+/// Helpfulness votes on reviews from other customers. Each vote records
+/// which customer found which review helpful, with a timestamp of when the
+/// vote was cast. Supports customer feedback on review quality and
+/// usefulness.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_review_helpfulness_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review being voted on. {@link ecommerce_mall_reviews.id}.
+  review_id String
+  
+  /// The customer who cast the helpfulness vote. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// When the helpfulness vote was cast.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review ecommerce_mall_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([customer_id, review_id], map: "ecommerce_mall_review_helpfulness_votes_customer_id_re_4e2f365b")
+  // spellchecker: ignore-next-line
+  @@index([review_id, created_at], map: "ecommerce_mall_review_helpfulness_votes_review_id_crea_137962c3")
+}
+
+/// Optional images uploaded with reviews to provide visual context or
+/// evidence. Each review can have multiple images with sort order and
+/// timestamps. Images are automatically deleted when the associated review
+/// is deleted.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_review_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Review that this image belongs to. {@link ecommerce_mall_reviews.id}.
+  ecommerce_mall_review_id String
+  
+  /// URL of the uploaded review image.
+  image_url String
+  
+  /// Order of this image relative to other images for the same review. Lower
+  /// numbers appear first.
+  sort_order Int
+  
+  /// When this image was uploaded.
+  created_at DateTime
+  
+  /// When this image was last modified.
   updated_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
-  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
-  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // HAS RELATIONS
-  //   - format: (propertyKey targetModel)
-  //----
-  snapshots shopping_mall_review_snapshots[]
-  votes shopping_mall_review_votes[]
-  
-  //----
-  // INDEXES
-  //----
-  @@unique([shopping_mall_order_item_id])
-  @@index([shopping_mall_product_id, created_at])
-  @@index([shopping_mall_customer_id, created_at])
-}
-
-/// Historical snapshots of review edits for audit trail and dispute
-/// resolution. Each review edit creates a new snapshot preserving the rating
-/// and text content at that point in time.
-///
-/// @namespace Reviews
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_review_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Belonged review's {@link shopping_mall_reviews.id}. References the
-  /// original review that this snapshot captures.
-  shopping_mall_review_id String
-  
-  /// Rating value (1 to 5 stars) at the time of this snapshot.
-  rating Int
-  
-  /// Review text content at the time of this snapshot. Empty string when no
-  /// text was provided.
-  text_content String
-  
-  /// Timestamp when this snapshot was created (review edit time).
-  created_at DateTime
-  
-  /// Timestamp when this snapshot record was created in the database.
-  record_created_at DateTime
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  review ecommerce_mall_reviews @relation(fields: [ecommerce_mall_review_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
   // spellchecker: ignore-next-line
-  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
-}
-
-/// Customer review helpfulness votes from other users for quality assessment
-/// and review ranking.
-///
-/// @namespace Reviews
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model shopping_mall_review_votes {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Reviewer who voted on the review. {@link shopping_mall_customers.id}.
-  customer_id String
-  
-  /// Target review that received the vote. {@link shopping_mall_reviews.id}.
-  review_id String
-  
-  /// Whether the vote indicates the review was helpful.
-  was_helpful Boolean
-  
-  /// Timestamp when the vote was recorded.
-  created_at DateTime
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
-  review shopping_mall_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // INDEXES
-  //----
-  @@unique([customer_id, review_id])
-  @@index([review_id])
-  @@index([customer_id, created_at])
+  @@index([ecommerce_mall_review_id, sort_order], map: "ecommerce_mall_review_images_ecommerce_mall_review_id__9954e626")
 }

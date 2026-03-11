@@ -1,4 +1,3 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -6,7 +5,6 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 
 export namespace EcommerceMallOrderItemAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<
@@ -25,13 +23,6 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        order: EcommerceMallOrderAtSummaryTransformer.select(),
-        product: true,
-        productVariant: true,
-        statusSnapshots: true,
-        shipmentItem: true,
-        cancellationRequests: true,
-        refundRequests: true,
       },
     } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
   }
@@ -40,19 +31,15 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
   ): Promise<IEcommerceMallOrderItem.ISummary> {
     return {
       id: input.id,
-      order: await EcommerceMallOrderAtSummaryTransformer.transform(
-        input.order,
-      ),
+      item_status: input.item_status,
       quantity: input.quantity,
-      unitPrice: Number(input.unit_price),
-      itemStatus: typia.assert<
-        "shipped" | "delivered" | "cancelled" | "paid" | "refunded"
-      >(input.item_status),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      productSnapshot: input.product_snapshot,
-      variantSnapshot: input.variant_snapshot,
-      sellerProfileSnapshot: input.seller_profile_snapshot,
-    };
+      unit_price: Number(input.unit_price),
+      product_snapshot: JSON.parse(input.product_snapshot),
+      variant_snapshot: JSON.parse(input.variant_snapshot),
+      seller_profile_snapshot: JSON.parse(input.seller_profile_snapshot),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    } satisfies IEcommerceMallOrderItem.ISummary;
   }
 }

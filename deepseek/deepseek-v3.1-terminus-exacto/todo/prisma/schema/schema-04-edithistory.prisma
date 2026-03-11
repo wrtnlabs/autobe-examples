@@ -1,0 +1,179 @@
+/// Main edit history entries recording each todo modification event.
+///
+/// Each entry represents a single edit operation performed on a todo,
+/// capturing the timestamp and user who made the change. This table serves
+/// as the central audit trail for tracking todo modifications over time.
+///
+/// Edit history entries are created whenever a user modifies a todo's title,
+/// description, start date, or due date. The granular field-level changes
+/// are tracked in {@link multi_user_todo_edit_history_field_changes} for
+/// detailed audit capabilities.
+///
+/// Relationships:
+/// - References the {@link multi_user_todo_todos} table to identify which
+/// todo was edited
+/// - References the {@link multi_user_todo_members} table to identify who
+/// made the edit
+/// - Has many field change records in {@link
+/// multi_user_todo_edit_history_field_changes}
+/// - Has snapshot records in {@link multi_user_todo_edit_history_snapshots}
+/// for point-in-time state capture
+///
+/// @namespace EditHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo that was edited. {@link multi_user_todo_todos.id}.
+  multi_user_todo_todo_id String
+  
+  /// Reference to the user who made the edit. {@link
+  /// multi_user_todo_members.id}.
+  multi_user_todo_member_id String
+  
+  /// Timestamp when the edit was performed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  fieldChanges multi_user_todo_edit_history_field_changes[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_edit_histories_multi_user_todo_todo_id_b98ac189")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_edit_histories_multi_user_todo_member__c0b09c27")
+}
+
+/// Tracks individual field changes within each edit history entry for
+/// granular audit trail.
+///
+/// Each record represents a specific field modification made during a todo
+/// edit operation. This table captures the field name, previous value, and
+/// new value for each changed field, providing detailed audit information
+/// for compliance and debugging purposes.
+///
+/// This table is subsidiary to {@link multi_user_todo_edit_histories} and
+/// provides the granular field-level tracking required by the edit history
+/// functionality.
+///
+/// @namespace EditHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_edit_history_field_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent edit history entry that contains this field change. {@link
+  /// multi_user_todo_edit_histories.id}.
+  multi_user_todo_edit_history_id String
+  
+  /// Name of the field that was modified (e.g., 'title', 'description',
+  /// 'start_date', 'due_date').
+  field_name String
+  
+  /// The value of the field before the edit operation. Stored as string for
+  /// flexibility across different field types.
+  previous_value String?
+  
+  /// The value of the field after the edit operation. Stored as string for
+  /// flexibility across different field types.
+  new_value String
+  
+  /// Timestamp when this field change was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  editHistory multi_user_todo_edit_histories @relation(fields: [multi_user_todo_edit_history_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_edit_history_id, created_at], map: "multi_user_todo_edit_history_field_changes_multi_user__2cd0cd25")
+  @@index([field_name])
+}
+
+/// Point-in-time snapshots of todo state for audit trail completeness.
+///
+/// This table captures the complete state of a todo at specific moments in
+/// time,
+/// providing a historical record for audit purposes. Each snapshot represents
+/// the exact state of a todo when a significant event occurred, such as before
+/// and after major edits or at regular intervals for compliance tracking.
+///
+/// Snapshots are append-only and serve as immutable records of todo evolution
+/// over time. They complement the granular edit history by providing complete
+/// state captures rather than incremental changes.
+///
+/// Related entities: {@link multi_user_todo_todos} for the todo being
+/// snapshotted,
+/// {@link multi_user_todo_edit_histories} for detailed change tracking.
+///
+/// @namespace EditHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_edit_history_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo being snapshotted. {@link multi_user_todo_todos.id}
+  multi_user_todo_todo_id String
+  
+  /// The title of the todo at the time of snapshot.
+  title String
+  
+  /// The description of the todo at the time of snapshot.
+  description String?
+  
+  /// The start date of the todo at the time of snapshot.
+  start_date DateTime?
+  
+  /// The due date of the todo at the time of snapshot.
+  due_date DateTime?
+  
+  /// The completion status of the todo at the time of snapshot.
+  is_completed Boolean
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated. Required for temporal
+  /// tracking compliance.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, created_at], map: "multi_user_todo_edit_history_snapshots_multi_user_todo_82238724")
+  @@index([created_at])
+}

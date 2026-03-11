@@ -27,10 +27,6 @@ export namespace EcommerceMallProductVariantTransformer {
         updated_at: true,
         deleted_at: true,
         product: EcommerceMallProductAtSummaryTransformer.select(),
-        cartItems: true,
-        orderItems: true,
-        inventoryHistories: true,
-        snapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
   }
@@ -42,14 +38,15 @@ export namespace EcommerceMallProductVariantTransformer {
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      skuCode: input.sku_code,
-      optionValues: JSON.parse(input.option_values),
-      priceOverride: input.price_override ?? null,
-      stockQuantity: input.stock_quantity,
-      isActive: input.is_active,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      sku_code: input.sku_code,
+      option_values: JSON.parse(input.option_values),
+      price_override: input.price_override ?? null,
+      stock_quantity: input.stock_quantity,
+      is_active: input.is_active,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at:
+        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

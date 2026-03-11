@@ -10,38 +10,34 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticle.ICreate;
-    discussionBoardMember: IEntity;
-    discussionBoardMemberSession: IEntity;
+    discussionBoardMembers: IEntity;
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       id,
       title: props.body.title,
       body: props.body.body,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       section: {
         connect: { id: props.body.discussion_board_section_id },
       },
       member: {
-        connect: { id: props.discussionBoardMember.id },
+        connect: { id: props.discussionBoardMembers.id },
       },
       articleTags:
-        props.body.tags && props.body.tags.length > 0
+        props.body.tagIds && props.body.tagIds.length > 0
           ? {
               create: await ArrayUtil.asyncMap(
-                props.body.tags,
+                props.body.tagIds,
                 async (tagId) => ({
                   id: v4(),
-                  article: {
-                    connect: { id },
-                  },
-                  tag: {
-                    connect: { id: tagId },
-                  },
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
+                  discussion_board_article_id: id,
+                  discussion_board_tag_id: tagId,
+                  created_at: now,
+                  updated_at: now,
                   deleted_at: null,
                 }),
               ),

@@ -19,31 +19,45 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postShoppingMallSellerProductsProductIdImages(props: {
   seller: SellerPayload;
-  productId: string & tags.Format<"uuid">;
+  productId: string;
   body: IShoppingMallProductImage.ICreate;
 }): Promise<IShoppingMallProductImage> {
-  // 1. Verify product exists and is not deleted
-  const product =
-    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+  // 1. Verify product exists, not deleted, and belongs to seller
+  const product = await MyGlobal.prisma.shopping_mall_products.findFirstOrThrow(
+    {
       where: {
         id: props.productId,
         deleted_at: null,
       },
-    });
-  // 2. Check ownership - seller must own the product
+      select: { id: true, shopping_mall_seller_id: true },
+    },
+  );
   if (product.shopping_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Access denied: You do not own this product", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  // 3. Create image using collector
-  const createInput = await ShoppingMallProductImageCollector.collect({
-    body: props.body,
-    shoppingMallProducts: { id: props.productId },
-  });
-  // 4. Insert into database with transformer select for response
+  // 2. Calculate display_order if not provided
+  let displayOrder: number;
+  if (props.body.displayOrder !== undefined) {
+    displayOrder = props.body.displayOrder;
+  } else {
+    const maxOrder =
+      await MyGlobal.prisma.shopping_mall_product_images.aggregate({
+        where: { shopping_mall_product_id: props.productId },
+        _max: { display_order: true },
+      });
+    displayOrder = (maxOrder._max.display_order ?? -1) + 1;
+  }
+  // 3. Create image record using Collector
   const created = await MyGlobal.prisma.shopping_mall_product_images.create({
-    data: createInput,
+    data: await ShoppingMallProductImageCollector.collect({
+      body: {
+        imageUrl: props.body.imageUrl,
+        displayOrder: displayOrder,
+      },
+      shoppingMallProducts: { id: props.productId },
+    }),
     ...ShoppingMallProductImageTransformer.select(),
   });
-  // 5. Transform and return
+  // 4. Transform and return response
   return await ShoppingMallProductImageTransformer.transform(created);
 }

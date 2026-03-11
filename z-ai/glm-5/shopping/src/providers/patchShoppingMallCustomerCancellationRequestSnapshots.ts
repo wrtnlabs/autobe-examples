@@ -3,13 +3,6 @@ import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallCancellationRequestSnapshot";
 import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
 import { IShoppingMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequestSnapshot";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -32,37 +25,40 @@ export async function patchShoppingMallCustomerCancellationRequestSnapshots(prop
   body: IShoppingMallCancellationRequestSnapshot.IRequest;
 }): Promise<IPageIShoppingMallCancellationRequestSnapshot.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build WHERE clause with customer ownership and optional filters
-  const whereInput: Prisma.shopping_mall_cancellation_request_snapshotsWhereInput =
-    {
-      cancellationRequest: {
-        orderItem: {
-          order: {
-            shopping_mall_customer_id: props.customer.id,
-          },
+  const whereInput = {
+    cancellationRequest: {
+      orderItem: {
+        order: {
+          shopping_mall_customer_id: props.customer.id,
         },
       },
-      ...(props.body.cancellation_request_id !== undefined && {
-        shopping_mall_cancellation_request_id:
-          props.body.cancellation_request_id,
-      }),
-      ...(props.body.status !== undefined && {
+    },
+    ...(props.body.shopping_mall_cancellation_request_id !== undefined && {
+      shopping_mall_cancellation_request_id:
+        props.body.shopping_mall_cancellation_request_id,
+    }),
+    ...(props.body.status !== undefined &&
+      props.body.status !== null && {
         status: props.body.status,
       }),
-      ...((props.body.from_created_at !== undefined ||
-        props.body.to_created_at !== undefined) && {
-        created_at: {
-          ...(props.body.from_created_at !== undefined && {
-            gte: new Date(props.body.from_created_at),
-          }),
-          ...(props.body.to_created_at !== undefined && {
-            lte: new Date(props.body.to_created_at),
-          }),
-        },
-      }),
-    };
+    ...(((props.body.from !== undefined && props.body.from !== null) ||
+      (props.body.to !== undefined && props.body.to !== null)) && {
+      created_at: {
+        ...(props.body.from !== undefined &&
+          props.body.from !== null && { gte: new Date(props.body.from) }),
+        ...(props.body.to !== undefined &&
+          props.body.to !== null && { lte: new Date(props.body.to) }),
+      },
+    }),
+    ...(props.body.search !== undefined && {
+      reason: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
+  } satisfies Prisma.shopping_mall_cancellation_request_snapshotsWhereInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_cancellation_request_snapshots.findMany({
       where: whereInput,
@@ -76,15 +72,15 @@ export async function patchShoppingMallCustomerCancellationRequestSnapshots(prop
     }),
   ]);
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallCancellationRequestSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCancellationRequestSnapshotAtSummaryTransformer.transform,
-    ),
   };
 }

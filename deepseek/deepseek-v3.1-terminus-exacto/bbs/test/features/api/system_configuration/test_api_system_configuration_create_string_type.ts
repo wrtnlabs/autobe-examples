@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
+import type { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import type { IDiscussionBoardSystemConfiguration } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSystemConfiguration";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -9,80 +9,86 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
-import { generate_random_discussion_board_admin_system_configurations_create } from "../../../generate/generate_random_discussion_board_admin_system_configurations_create";
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
+import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
+import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { generate_random_discussion_board_super_admin_system_configurations_create } from "../../../generate/generate_random_discussion_board_super_admin_system_configurations_create";
 import { prepare_random_discussion_board_system_configuration } from "../../../prepare/prepare_random_discussion_board_system_configuration";
 
+/**
+ * Test the creation of a new system configuration with string data type.
+ * 1. Authenticate as super administrator using join
+ * 2. Create a system configuration with string data type
+ * 3. Validate the configuration object structure and values
+ */
 export async function test_api_system_configuration_create_string_type(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate administrator connection
-  const adminConnection: api.IConnection = { host: connection.host };
-  const admin = await authorize_admin_join(adminConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IDiscussionBoardAdmin.IJoin,
-  });
-  typia.assert(admin);
+  // 1. Authenticate as super administrator
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  const joinedSuperAdmin = await authorize_super_admin_join(
+    superAdminConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+      } as unknown as DeepPartial<IDiscussionBoardSuperAdmin.IJoin>,
+    },
+  );
+  typia.assert(joinedSuperAdmin);
   // 2. Create string-type system configuration
-  const configKey = `test.string.config.${Date.now()}`;
-  const configBody = {
-    config_key: configKey,
-    config_value: RandomGenerator.paragraph({ sentences: 2 }),
-    data_type: "string" as const,
-    description: RandomGenerator.content({ paragraphs: 1 }),
-    category: RandomGenerator.pick([
-      "authentication",
-      "content",
-      "performance",
-      "security",
-    ] as const),
-    is_sensitive: false,
+  const configurationBody = {
+    key: `articles.pagination.${RandomGenerator.alphabets(8)}`,
+    value: RandomGenerator.paragraph({ sentences: 1 }),
+    data_type: "string",
+    description: RandomGenerator.paragraph({ sentences: 2 }),
   } satisfies IDiscussionBoardSystemConfiguration.ICreate;
-  const config =
-    await api.functional.discussionBoard.admin.system_configurations.create(
-      adminConnection,
-      { body: configBody },
+  const configuration =
+    await generate_random_discussion_board_super_admin_system_configurations_create(
+      superAdminConnection,
+      {
+        body: configurationBody,
+      },
     );
-  typia.assert(config);
-  // 3. Validate configuration response
+  typia.assert(configuration);
+  // 3. Validate configuration properties
   TestValidator.equals(
-    "config_key matches input",
-    config.config_key,
-    configBody.config_key,
+    "configuration key matches",
+    configuration.key,
+    configurationBody.key,
   );
   TestValidator.equals(
-    "config_value matches input",
-    config.config_value,
-    configBody.config_value,
-  );
-  TestValidator.equals("data_type is string", config.data_type, "string");
-  TestValidator.equals(
-    "description matches input",
-    config.description,
-    configBody.description,
+    "data_type is string",
+    configuration.data_type,
+    "string",
   );
   TestValidator.equals(
-    "category matches input",
-    config.category,
-    configBody.category,
+    "value matches input",
+    configuration.value,
+    configurationBody.value,
   );
   TestValidator.equals(
-    "is_sensitive matches input",
-    config.is_sensitive,
-    configBody.is_sensitive,
+    "description matches",
+    configuration.description,
+    configurationBody.description,
   );
-  // 4. Validate system-generated fields (business logic only)
+  TestValidator.predicate(
+    "ID is UUID",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      configuration.id,
+    ),
+  );
+  TestValidator.predicate(
+    "has valid created_at",
+    !isNaN(new Date(configuration.created_at).getTime()),
+  );
+  TestValidator.predicate(
+    "has valid updated_at",
+    !isNaN(new Date(configuration.updated_at).getTime()),
+  );
   TestValidator.equals(
-    "deleted_at is null for active config",
-    config.deleted_at,
+    "deleted_at is null for active configuration",
+    configuration.deleted_at,
     null,
   );
 }

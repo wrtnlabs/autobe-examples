@@ -19,13 +19,20 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
     return {
       select: {
         id: true,
-        seller: ShoppingMallSellerAtSummaryTransformer.select(),
-        order: ShoppingMallOrderAtSummaryTransformer.select(),
         carrier_name: true,
         tracking_number: true,
         shipped_at: true,
         delivered_at: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        seller: ShoppingMallSellerAtSummaryTransformer.select(),
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        _count: {
+          select: {
+            orderItems: true,
+          },
+        },
       },
     } satisfies Prisma.shopping_mall_shipmentsFindManyArgs;
   }
@@ -34,15 +41,17 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
   ): Promise<IShoppingMallShipment.ISummary> {
     return {
       id: input.id,
+      carrierName: input.carrier_name,
+      trackingNumber: input.tracking_number,
+      shippedAt: input.shipped_at.toISOString(),
+      deliveredAt: input.delivered_at?.toISOString() ?? null,
+      deliveryStatus:
+        input.delivered_at === null ? "pending_delivery" : "delivered",
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
-      carrier_name: input.carrier_name,
-      tracking_number: input.tracking_number,
-      shipped_at: input.shipped_at.toISOString(),
-      delivered_at: input.delivered_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
+      orderItemsCount: input._count.orderItems,
     };
   }
 }

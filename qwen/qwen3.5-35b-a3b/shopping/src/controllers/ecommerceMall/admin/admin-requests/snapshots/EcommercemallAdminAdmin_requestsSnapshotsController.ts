@@ -1,63 +1,139 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IEcommerceMallAdminRequestSnapshot } from "../../../../../api/structures/IEcommerceMallAdminRequestSnapshot";
 import { IPageIEcommerceMallAdminRequestSnapshot } from "../../../../../api/structures/IPageIEcommerceMallAdminRequestSnapshot";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots } from "../../../../../providers/getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots";
+import { getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshotsSnapshotId";
+import { patchEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots";
 
 @Controller("/ecommerceMall/admin/admin-requests/:adminRequestId/snapshots")
 export class EcommercemallAdminAdmin_requestsSnapshotsController {
   /**
-   * Retrieve immutable audit snapshots of an administrative access request's status change history.
+   * Retrieve a filtered and paginated list of immutable audit snapshots for an administrative access request.
    *
-   * This operation returns all snapshots associated with a specific administrative request, capturing point-in-time state when the request was approved or rejected by a super administrator. Each snapshot preserves the original reason, request status at approval/rejection time, creation timestamp, and the identity of the approving/rejecting administrator.
+   * This operation provides access to the historical record of status changes (from pending to approved or rejected) that occurred on an admin request. Each snapshot is an immutable record that cannot be modified or deleted, preserved for compliance, dispute resolution, and audit trail purposes.
    *
-   * Snapshots are immutable audit records that cannot be modified or deleted, serving critical functions for:
-   * - Dispute resolution: Review exactly what the request looked like at decision time
-   * - Compliance: Maintain permanent record of administrative privilege escalations
-   * - Audit trails: Track who granted or denied access and when
-   * - Historical analysis: Understand the progression of administrative access requests
+   * The response includes comprehensive pagination support with configurable page sizes and sorting options. Filters allow searching by status, date range, and reason text. Each snapshot record contains the original request reason, the status at time of change, timestamp of the change, and the super administrator who processed the request.
    *
-   * Authorization: Only the original requester (admin or related user) and super administrators can view these snapshots.
+   * Access to snapshots is controlled by authorization: super administrators can view all snapshots, while regular users can only view snapshots for requests they initiated.
    *
    * @param connection
-   * @param adminRequestId UUID of the administrative access request whose snapshots should be retrieved.
+   * @param adminRequestId The unique identifier of the admin request whose snapshots to retrieve
+   * @param body Search criteria and pagination parameters for filtering admin request snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_admin_request_snapshots table filtered by ecommerce_mall_admin_request_request_id matching the path parameter adminRequestId. Apply cursor-based pagination with configurable page size. Sort by changed_at descending (most recent changes first). Include the admin actor who made the change (changed_by) joined to fetch their display name if available. Validate adminRequestId exists and the requesting actor has permission (requester themselves or super administrator). Return paginated results with total count and cursor for next page navigation. All snapshot data is read-only and must not be modified.
+   * @x-autobe-specification Query ecommerce_mall_admin_request_snapshots table where ecommerce_mall_admin_request_request_id matches the adminRequestId path parameter.
    *
-   * Query structure:
-   * 1. Filter snapshots where ecommerce_mall_admin_request_request_id = adminRequestId
-   * 2. LEFT JOIN with ecommerce_mall_admins on changed_by for admin name display
-   * 3. Apply pagination: page cursor, page size
-   * 4. Sort by changed_at DESC
-   * 5. Return { pagination: { hasMore, nextCursor, total }, data: [...] }
+   * Apply filtering based on request body criteria:
+   * - status: filter by request_status (pending|approved|rejected)
+   * - changedBy: filter by super administrator ID
+   * - dateRange: filter by changed_at timestamp range
+   * - reason: search reason text (partial match)
    *
-   * Authorization checks:
-   * - Super administrators: Can view any admin request's snapshots
-   * - Original requester (admin who created the request): Can view their own snapshots
-   * - Others: 403 Forbidden
+   * Apply sorting based on sort parameter:
+   * - changed_at: chronological order (default: descending)
+   * - created_at: order creation time
    *
-   * Error handling:
-   * - 404: Admin request not found or deleted
-   * - 403: Actor not authorized to view these snapshots
-   * - 400: Invalid adminRequestId format
+   * Pagination using cursor-based or offset-based pagination:
+   * - page: current page number (1-indexed)
+   * - pageSize: number of records per page
+   * - cursor: for cursor-based pagination
+   *
+   * Include joined data:
+   * - Super administrator who made the change (changed_by)
+   * - Admin request details (id, reason, request_status)
+   *
+   * Return paginated response with:
+   * - pagination metadata (page, pageSize, total, totalPages, hasNextPage)
+   * - array of snapshot summary objects
+   *
+   * Validation:
+   * - Verify adminRequestId exists in ecommerce_mall_admin_request_requests
+   * - Verify user has authorization to view snapshots (super admin or request requester)
+   * - Handle case where no snapshots exist for this request
+   *
+   * Authorization:
+   * - Super administrators: view all snapshots
+   * - Request requester (admin actor): view only their own request snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
-  public async listSnapshots(
+  @TypedRoute.Patch()
+  public async index(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("adminRequestId")
     adminRequestId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallAdminRequestSnapshot.IRequest,
   ): Promise<IPageIEcommerceMallAdminRequestSnapshot.ISummary> {
     try {
-      return await getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots({
+      return await patchEcommerceMallAdminAdminRequestsAdminRequestIdSnapshots({
         admin,
         adminRequestId,
+        body,
       });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific audit snapshot for an administrative access request.
+   *
+   * This endpoint returns detailed information about a snapshot record that captures the immutable state of an admin request at a specific point in time when its status changed from pending to approved or rejected. The snapshot contains comprehensive audit trail information including timestamps, the identity of the super administrator who performed the action, and any associated reason text.
+   *
+   * Access to snapshot records is strictly controlled based on ownership and administrative privileges. The customer or seller who submitted the admin request can view their own request's snapshots, while super administrators can view snapshots for any admin request on the platform. Regular administrators without super admin privileges cannot access these audit records.
+   *
+   * The snapshot is immutable and read-only. Once created, snapshot records cannot be modified or deleted to maintain audit compliance and provide reliable historical records for dispute resolution and legal requirements.
+   *
+   * @param connection
+   * @param adminRequestId The ID of the administrative access request that this snapshot belongs to
+   * @param snapshotId The ID of the snapshot record to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Query ecommerce_mall_admin_request_snapshots table for the snapshot with the given snapshotId where adminRequestId matches the parent request.
+   *
+   * Validation:
+   * 1. Verify the admin request with adminRequestId exists
+   * 2. Verify the snapshot exists and belongs to the specified admin request
+   * 3. Check authentication and authorization:
+   *    - If authenticated user is super admin: grant access
+   *    - If authenticated user is the requester of the admin request: grant access
+   *    - Otherwise: return 403 Forbidden
+   *
+   * Query the snapshot record and return complete data including:
+   * - snapshot id, admin request id, user id
+   * - old status, new status
+   * - timestamp of status change
+   * - responsible administrator id
+   * - reason text (from submission)
+   * - rejection reason if status is rejected
+   *
+   * Return 404 Not Found if snapshot or admin request not found.
+   * Return 403 Forbidden if user lacks authorization to view this snapshot.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":snapshotId")
+  public async at(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("adminRequestId")
+    adminRequestId: string & tags.Format<"uuid">,
+    @TypedParam("snapshotId")
+    snapshotId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallAdminRequestSnapshot> {
+    try {
+      return await getEcommerceMallAdminAdminRequestsAdminRequestIdSnapshotsSnapshotId(
+        {
+          admin,
+          adminRequestId,
+          snapshotId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

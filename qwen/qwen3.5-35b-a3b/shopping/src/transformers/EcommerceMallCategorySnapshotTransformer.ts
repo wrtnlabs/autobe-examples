@@ -21,11 +21,7 @@ export namespace EcommerceMallCategorySnapshotTransformer {
         created_at: true,
         updated_at: true,
         parent_category_id: true,
-        category: {
-          select: {
-            id: true,
-          },
-        },
+        category: true,
       },
     } satisfies Prisma.ecommerce_mall_category_snapshotsFindManyArgs;
   }
@@ -35,13 +31,13 @@ export namespace EcommerceMallCategorySnapshotTransformer {
     return {
       id: input.id,
       ecommerce_mall_category_id: input.category.id,
-      snapshot_created_at: input.snapshot_created_at.toISOString(),
+      snapshot_created_at: toISOStringSafe(input.snapshot_created_at),
       name: input.name,
-      description: input.description ?? null,
+      description: input.description ?? undefined,
       is_leaf: input.is_leaf,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      parent_category_id: input.parent_category_id ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      parent_category_id: input.parent_category_id ?? undefined,
     };
   }
 }

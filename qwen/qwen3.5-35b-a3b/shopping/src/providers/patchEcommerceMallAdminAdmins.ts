@@ -1,4 +1,7 @@
+import { IEAdminGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IEAdminGrade";
+import { IESortOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IESortOrder";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import { IEcommerceMallAdminRequestRequestStatus } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequestStatus";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdmin";
@@ -20,50 +23,42 @@ export async function patchEcommerceMallAdminAdmins(props: {
   body: IEcommerceMallAdmin.IRequest;
 }): Promise<IPageIEcommerceMallAdmin.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  // Build filter criteria
+  // Build WHERE clause
   const whereInput: Prisma.ecommerce_mall_adminsWhereInput = {
-    ...(props.body.email && {
-      email: { contains: props.body.email, mode: "insensitive" },
+    ...(props.body.email !== undefined && { email: props.body.email }),
+    ...(props.body.isBanned !== undefined && {
+      is_banned: props.body.isBanned,
     }),
-    ...(props.body.is_banned !== null &&
-      props.body.is_banned !== undefined && {
-        is_banned: props.body.is_banned,
-      }),
-    ...(props.body.created_at_gte && {
-      created_at: { gte: new Date(props.body.created_at_gte) },
+    ...(props.body.search !== undefined && {
+      email: {
+        contains: props.body.search,
+        mode: "insensitive",
+      },
     }),
-    ...(props.body.created_at_lte && {
-      created_at: { lte: new Date(props.body.created_at_lte) },
-    }),
-    ...(props.body.updated_at_gte && {
-      updated_at: { gte: new Date(props.body.updated_at_gte) },
-    }),
-    ...(props.body.updated_at_lte && {
-      updated_at: { lte: new Date(props.body.updated_at_lte) },
-    }),
-  } satisfies Prisma.ecommerce_mall_adminsWhereInput;
-  // Get requesting admin's record to check if banned
-  const requestingAdmin =
-    await MyGlobal.prisma.ecommerce_mall_admins.findUnique({
-      where: { id: props.admin.id },
-    });
-  if (requestingAdmin === null || requestingAdmin.is_banned === true) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Build order by clause
-  const orderByInput: Prisma.ecommerce_mall_adminsOrderByWithRelationInput[] = [
-    {
-      ...(props.body.sort_by === "email"
-        ? { email: (props.body.sort_order ?? "asc") as "asc" | "desc" }
-        : props.body.sort_by === "created_at"
-          ? { created_at: (props.body.sort_order ?? "asc") as "asc" | "desc" }
-          : props.body.sort_by === "updated_at"
-            ? { updated_at: (props.body.sort_order ?? "asc") as "asc" | "desc" }
-            : { id: (props.body.sort_order ?? "asc") as "asc" | "desc" }),
-    },
-  ] satisfies Prisma.ecommerce_mall_adminsOrderByWithRelationInput[];
+  };
+  // Regular admins can only view their own account
+  whereInput.id = props.admin.id;
+  // Build ORDER BY
+  const orderByInput: Prisma.ecommerce_mall_adminsOrderByWithRelationInput[] =
+    [];
+  const sortField = props.body.sort ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  // Map sort field to database column (only fields that exist in ecommerce_mall_admins)
+  const fieldMapping: Record<
+    string,
+    keyof Prisma.ecommerce_mall_adminsOrderByWithRelationInput
+  > = {
+    email: "email",
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    isActive: "is_banned",
+    isBanned: "is_banned",
+  };
+  const prismaField = fieldMapping[sortField] || "created_at";
+  orderByInput.push({ [prismaField]: sortOrder });
+  // Execute query
   const data = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
     where: whereInput,
     skip,
@@ -71,14 +66,17 @@ export async function patchEcommerceMallAdminAdmins(props: {
     orderBy: orderByInput,
     ...EcommerceMallAdminAtSummaryTransformer.select(),
   });
+  // Get total count
   const total = await MyGlobal.prisma.ecommerce_mall_admins.count({
     where: whereInput,
   });
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallAdminAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallAdminAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,

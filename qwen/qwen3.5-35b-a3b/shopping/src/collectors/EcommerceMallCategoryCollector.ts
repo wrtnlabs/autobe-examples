@@ -16,7 +16,7 @@ export namespace EcommerceMallCategoryCollector {
       id,
       name: props.body.name,
       description: props.body.description ?? null,
-      is_leaf: props.body.is_leaf ?? false,
+      is_leaf: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

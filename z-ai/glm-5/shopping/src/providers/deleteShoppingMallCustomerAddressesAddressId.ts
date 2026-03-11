@@ -13,64 +13,52 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallCustomerAddressesAddressId(props: {
   customer: CustomerPayload;
-  addressId: string & tags.Format<"uuid">;
+  addressId: string;
 }): Promise<void> {
-  // 1. Fetch the address
-  const address = await MyGlobal.prisma.shopping_mall_addresses.findFirst({
-    where: {
-      id: props.addressId,
-      deleted_at: null,
-    },
-  });
-  if (address === null) {
-    throw new HttpException("Address not found", 404);
-  }
-  // 2. Validate ownership
+  // 1. Find address (findUniqueOrThrow auto-generates 404 if not found)
+  const address =
+    await MyGlobal.prisma.shopping_mall_addresses.findUniqueOrThrow({
+      where: {
+        id: props.addressId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        shopping_mall_customer_id: true,
+        is_default: true,
+      },
+    });
+  // 2. Ownership validation
   if (address.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 3. Check for pending orders referencing this address
-  const pendingOrders = await MyGlobal.prisma.shopping_mall_orders.count({
-    where: {
-      shopping_mall_customer_id: props.customer.id,
-      status: { in: ["paid", "shipped"] },
-      shipping_street_address: address.street_address,
-      shipping_city: address.city,
-      shipping_state_province: address.state_province,
-      shipping_postal_code: address.postal_code,
-      shipping_country: address.country,
-    },
-  });
-  if (pendingOrders > 0) {
     throw new HttpException(
-      "Cannot delete address while pending orders reference it",
-      400,
+      "Cannot delete address belonging to another customer",
+      403,
     );
   }
-  // 4. Check default address rules
+  // 3. Default address check
   if (address.is_default) {
     const otherAddressesCount =
       await MyGlobal.prisma.shopping_mall_addresses.count({
         where: {
           shopping_mall_customer_id: props.customer.id,
-          deleted_at: null,
           id: { not: props.addressId },
+          deleted_at: null,
         },
       });
     if (otherAddressesCount > 0) {
       throw new HttpException(
-        "Cannot delete default address while other addresses exist",
+        "Cannot delete default address while other addresses exist. Please set another address as default first.",
         400,
       );
     }
   }
-  // 5. Perform soft deletion
-  const now = new Date();
+  // 4. Soft deletion
   await MyGlobal.prisma.shopping_mall_addresses.update({
     where: { id: props.addressId },
     data: {
-      deleted_at: now,
-      updated_at: now,
+      deleted_at: new Date(),
+      updated_at: new Date(),
+      is_default: false,
     },
   });
 }

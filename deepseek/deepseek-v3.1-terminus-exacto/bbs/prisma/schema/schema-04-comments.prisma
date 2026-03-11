@@ -1,0 +1,795 @@
+/// Main comment table storing comment content, author association, article
+/// reference, and creation metadata.
+///
+/// Comments are single-level only with no nested replies, representing
+/// direct responses to articles. Each comment belongs to exactly one article
+/// and one author (member). Comments support editing history through {@link
+/// discussion_board_comment_snapshots} and soft deletion through {@link
+/// discussion_board_comment_deletions}. Users can edit and delete their own
+/// comments.
+///
+/// **Business Context:** Comments provide user discussion and feedback on
+/// articles. They are displayed in chronological order (oldest first) on
+/// article pages. Author profiles show their comment history, enabling
+/// cross-article search for user contributions.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authoring member's {@link discussion_board_members.id}. Each comment has
+  /// exactly one author who created it.
+  discussion_board_member_id String
+  
+  /// Parent article's {@link discussion_board_articles.id}. Each comment
+  /// belongs to exactly one article.
+  discussion_board_article_id String
+  
+  /// Comment text content. Supports Markdown formatting and inline media.
+  /// Required for comment creation.
+  content String
+  
+  /// Timestamp when the comment was initially created. Used for chronological
+  /// ordering.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified. Updates when content is
+  /// edited.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. When non-null, comment is considered deleted and
+  /// hidden from public view.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_comment_snapshots[]
+  deletion discussion_board_comment_deletions?
+  activities discussion_board_comment_activities[]
+  commentTags discussion_board_comment_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comments_discussion_board_member_id_c_c3eff834")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_article_id, created_at], map: "discussion_board_comments_discussion_board_article_id__aa7deb51")
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of comment edits for audit trail and history
+/// tracking.
+///
+/// This table captures the complete state of a comment whenever it is
+/// edited, providing a historical record of changes. Each snapshot includes
+/// the comment content, author information, and related metadata at the time
+/// of the edit. These records support version comparison, audit compliance,
+/// and rollback capabilities.
+///
+/// Snapshots are created automatically whenever a comment is modified and
+/// form an append-only historical chain associated with the parent {@link
+/// discussion_board_comments.id}. Editors may optionally provide edit
+/// reasons for documentation purposes.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent comment being snapshotted. {@link discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Comment text content at the time of snapshot creation. Captures the
+  /// complete comment text including any formatting or markup.
+  content String
+  
+  /// Optional explanation provided by the editor for why the comment was
+  /// modified. Used for documentation and transparency in edit history.
+  edit_reason String?
+  
+  /// Timestamp when this snapshot was created, marking the point-in-time
+  /// capture of comment state.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id, created_at], map: "discussion_board_comment_snapshots_discussion_board_co_293cca12")
+}
+
+/// Soft deletion records for comments, implementing polymorphic ownership
+/// pattern for different actor types (member, admin, superAdmin).
+///
+/// This table tracks when comments are soft-deleted, recording which actor
+/// performed the deletion, the reason, and audit timestamps. The actual
+/// comment deletion timestamp (deleted_at) is stored in the parent
+/// discussion_board_comments table, while this table provides actor-specific
+/// audit trail linking to subtype tables
+/// (discussion_board_comment_deletion_of_members,
+/// discussion_board_comment_deletion_of_admins,
+/// discussion_board_comment_deletion_of_super_admins).
+///
+/// Deleted comments are filtered out of public view via parent.deleted_at,
+/// while this record provides accountability and restoration capability for
+/// administrators. The polymorphic pattern ensures each actor type has its
+/// own subtype table with appropriate session and actor references.
+///
+/// Note: This table does NOT store the comment deletion timestamp itself -
+/// that's tracked in {@link discussion_board_comments.deleted_at}. This
+/// separation maintains proper normalization and prevents field duplication.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that was deleted. {@link discussion_board_comments.id}
+  discussion_board_comment_id String
+  
+  /// Type of actor who performed the deletion (must match actual actor type:
+  /// 'member', 'admin', or 'superAdmin'). Used to determine which subtype
+  /// table contains the actor-specific details.
+  actor_type String
+  
+  /// Reason for deleting the comment. This can be provided by users when
+  /// deleting their own comments or by administrators when removing content.
+  reason String?
+  
+  /// Timestamp when this deletion record was created, representing when the
+  /// deletion audit trail was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this deletion record was last updated. Typically updated
+  /// if the deletion reason is modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this deletion record itself, allowing for
+  /// cleanup of deletion records if needed. Null indicates active deletion
+  /// record.
+  deleted_at_deletion_record DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberDeletion discussion_board_comment_deletion_of_members?
+  deletionByAdmin discussion_board_comment_deletion_of_admins?
+  superAdminDeletion discussion_board_comment_deletion_of_super_admins?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_id], map: "discussion_board_comment_deletions_discussion_board_co_988a7b5c")
+  @@index([actor_type, created_at])
+}
+
+/// Audit log of comment-related actions including editing, deletion, and
+/// admin moderation activities. Tracks all significant actions performed on
+/// comments for security, compliance, and debugging purposes. Each record
+/// represents a single action taken against a comment, capturing actor
+/// information, action type, and creation metadata. This table serves as the
+/// primary audit trail for comment lifecycle management with polymorphic
+/// actor ownership support.
+///
+/// {@link discussion_board_comments} for the comment being acted upon. Each
+/// activity can be associated with one actor through subtype tables for
+/// members, administrators, or super administrators.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_activities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment that was acted upon. {@link discussion_board_comments.id}.
+  comment_id String
+  
+  /// Type of action performed on the comment. Common values: 'edit' (comment
+  /// edited), 'delete' (comment deleted), 'undelete' (comment restored),
+  /// 'admin_moderate' (administrative action), 'flag' (content flagged).
+  action String
+  
+  /// Timestamp when the action was recorded. Audit trails are append-only with
+  /// immutable timestamps.
+  created_at DateTime
+  
+  /// Timestamp when the audit record was last modified. For audit integrity
+  /// tracking.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  metadata discussion_board_comment_activity_metadata[]
+  memberActivityLink discussion_board_comment_activity_by_members?
+  adminSubtype discussion_board_comment_activity_by_admins?
+  superAdminActor discussion_board_comment_activity_by_super_admins?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([comment_id, created_at])
+  @@index([action, created_at])
+  @@index([created_at])
+}
+
+/// Materialized view that pre-computes article comment statistics for fast
+/// querying.
+///
+/// Aggregates comment counts and latest comment timestamps for each article,
+/// optimizing queries that need to display comment statistics on article
+/// listing pages. This denormalized view is refreshed periodically to
+/// maintain performance while ensuring data consistency.
+///
+/// The view includes the article reference, comment count, and timestamp of
+/// the most recent comment, enabling fast sorting and filtering by comment
+/// activity without expensive JOIN operations on the live comments table.
+///
+/// {@link discussion_board_articles} for article details
+/// {@link discussion_board_comments} for raw comment data
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_mv_article_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced article for these comment statistics. {@link
+  /// discussion_board_articles.id}.
+  discussion_board_article_id String
+  
+  /// Total number of comments on this article, including all published
+  /// comments.
+  total_comment_count Int
+  
+  /// Timestamp of the most recent comment on this article for sorting by
+  /// recent activity.
+  latest_comment_timestamp DateTime?
+  
+  /// When this materialized view was last refreshed to track data freshness.
+  refresh_timestamp DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id], map: "discussion_board_mv_article_comments_discussion_board__8f162659")
+  @@index([total_comment_count])
+  // spellchecker: ignore-next-line
+  @@index([latest_comment_timestamp], map: "discussion_board_mv_article_comments_latest_comment_ti_0238422e")
+  @@index([refresh_timestamp])
+}
+
+/// Junction table establishing many-to-many relationships between comments
+/// and tags for categorization and filtering.
+///
+/// Allows comments to be associated with multiple tags for better
+/// organization and searchability. Tags are optional metadata that help
+/// users filter discussions by topic or theme. This junction table enables
+/// the flexible tagging system while maintaining data integrity through
+/// foreign key constraints. The composite unique index ensures no duplicate
+/// tag associations for the same comment.
+///
+/// References: {@link discussion_board_comments.id} for comment
+/// associations, {@link discussion_board_tags.id} for tag definitions.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated comment's {@link discussion_board_comments.id}.
+  discussion_board_comment_id String
+  
+  /// Timestamp when the tag was associated with the comment.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment discussion_board_comments @relation(fields: [discussion_board_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([discussion_board_comment_id])
+  @@index([created_at])
+}
+
+/// Subtype table for linking comment deletions performed by regular members
+/// (comment authors) to their member accounts and sessions.
+///
+/// This table implements the polymorphic ownership pattern for comment
+/// deletions, where deletions can be tracked by different actor types. Each
+/// comment deletion can be associated with exactly one member who performed
+/// the deletion, along with their session context for audit purposes.
+///
+/// This is a 1:1 subtype relationship with {@link
+/// discussion_board_comment_deletions}, ensuring each deletion record is
+/// linked to at most one member actor. The relationship provides full audit
+/// trail capability showing which member performed the deletion, from which
+/// session, and when.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_deletion_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment deletion record that was performed by
+  /// this member. {@link discussion_board_comment_deletions.id}
+  discussion_board_comment_deletion_id String
+  
+  /// Reference to the member actor who performed the comment deletion. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// Reference to the member session active when the deletion was performed,
+  /// providing audit context. {@link discussion_board_member_sessions.id}
+  discussion_board_member_session_id String?
+  
+  /// Timestamp when this deletion association was created, matching the
+  /// deletion time.
+  created_at DateTime
+  
+  /// Timestamp when this deletion association was last updated, typically
+  /// matches created_at for append-only audit records.
+  updated_at DateTime
+  
+  /// Timestamp when this deletion association was soft deleted. Null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentDeletion discussion_board_comment_deletions @relation(fields: [discussion_board_comment_deletion_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions? @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_deletion_id], map: "discussion_board_comment_deletion_of_members_discussio_7560a1ea")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_comment_deletion_of_members_discussio_4d2c82b6")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_comment_deletion_of_members_discussio_d8f19c6a")
+}
+
+/// Subtype table that establishes audit trail linkages between comment
+/// deletion records performed by regular administrators and their
+/// administrative accounts and sessions.
+///
+/// This table implements the polymorphic ownership pattern for the comment
+/// deletion tracking system, specifically handling cases where regular
+/// administrators (not super administrators or regular members) delete
+/// comments. It provides accountability by associating each comment deletion
+/// with the specific administrator who performed the action and the session
+/// in which it occurred, enabling audit trails for administrative oversight.
+///
+/// When an administrator deletes a comment, this record is created to
+/// preserve the connection between the deletion event in {@link
+/// discussion_board_comment_deletions} and the administrator's identity via
+/// {@link discussion_board_admins.id} and their session via {@link
+/// discussion_board_admin_sessions.id}. This ensures compliance with
+/// platform governance requirements for tracking administrative actions.
+///
+/// The unique constraint on discussion_board_comment_deletion_id enforces a
+/// 1:1 relationship with parent deletion records, meaning each comment
+/// deletion can be linked to at most one administrator actor of this type.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_deletion_of_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent comment deletion record that this administrator
+  /// performed. Each deletion can be linked to at most one administrator actor
+  /// through the unique constraint. {@link
+  /// discussion_board_comment_deletions.id}.
+  discussion_board_comment_deletion_id String
+  
+  /// Reference to the regular administrator account that performed the comment
+  /// deletion. {@link discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Reference to the session in which the comment deletion was performed,
+  /// establishing temporal and contextual linkage. {@link
+  /// discussion_board_admin_sessions.id}.
+  discussion_board_admin_session_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentDeletion discussion_board_comment_deletions @relation(fields: [discussion_board_comment_deletion_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  adminSession discussion_board_admin_sessions @relation(fields: [discussion_board_admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_session_id], map: "discussion_board_comment_deletion_of_admins_discussion_87513167")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_deletion_id], map: "discussion_board_comment_deletion_of_admins_discussion_73de3085")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, discussion_board_admin_session_id], map: "discussion_board_comment_deletion_of_admins_discussion_27f03e48")
+}
+
+/// Subtype table linking super administrator-initiated comment deletions to
+/// super admin actor accounts and sessions.
+///
+/// This table implements the polymorphic ownership pattern for comment
+/// deletions, where comment_deletions references different actor types
+/// through subtype tables rather than nullable foreign keys. Each record
+/// represents a comment deletion performed by a super administrator, linking
+/// to their account and session at the time of deletion. The {@link
+/// discussion_board_comment_deletions.id} foreign key has a unique
+/// constraint to enforce 1:1 relationship with the main deletion entity.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_deletion_of_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main comment deletion record being referenced. {@link
+  /// discussion_board_comment_deletions.id}.
+  discussion_board_comment_deletion_id String
+  
+  /// Super administrator who performed the deletion. {@link
+  /// discussion_board_super_admins.id}.
+  discussion_board_super_admin_id String
+  
+  /// Session used when performing the deletion. {@link
+  /// discussion_board_super_admin_sessions.id}.
+  discussion_board_super_admin_session_id String
+  
+  /// Timestamp when this subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this subtype record was soft-deleted. Null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentDeletion discussion_board_comment_deletions @relation(fields: [discussion_board_comment_deletion_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  superAdminSession discussion_board_super_admin_sessions @relation(fields: [discussion_board_super_admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_session_id], map: "discussion_board_comment_deletion_of_super_admins_disc_30214510")
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_deletion_id], map: "discussion_board_comment_deletion_of_super_admins_disc_6f67ee0e")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_comment_deletion_of_super_admins_disc_ff4a660f")
+}
+
+/// Key-value storage for comment activity metadata that maintains First
+/// Normal Form (1NF) compliance by extracting structured metadata from JSON
+/// data.
+///
+/// This table stores detailed metadata for audit trail actions associated
+/// with comment activities, including old comment content before edits,
+/// specific fields changed during edits, deletion reasons, moderation
+/// details, and other structured metadata needed for audit purposes. Each
+/// metadata entry is linked to a specific comment activity record and stored
+/// as a normalized key-value pair.
+///
+/// {@link discussion_board_comment_activities.id} provides the audit context
+/// for these metadata entries, while this table enables structured querying
+/// of metadata that would otherwise be stored as unstructured JSON.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_activity_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent comment activity record's {@link
+  /// discussion_board_comment_activities.id}.
+  discussion_board_comment_activity_id String
+  
+  /// Timestamp when this metadata entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this metadata entry was last updated.
+  updated_at DateTime
+  
+  /// Metadata key identifier describing the type of metadata stored (e.g.,
+  /// 'old_content', 'changed_fields', 'deletion_reason',
+  /// 'moderation_details').
+  key String
+  
+  /// Metadata value stored as string. For complex data, consider serializing
+  /// as JSON string or using multiple key-value pairs for structured
+  /// representation.
+  value String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentActivity discussion_board_comment_activities @relation(fields: [discussion_board_comment_activity_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_activity_id, key], map: "discussion_board_comment_activity_metadata_discussion__8ba16056")
+  @@index([key])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_comment_activity_id, created_at], map: "discussion_board_comment_activity_metadata_discussion__fef88c88")
+}
+
+/// Subtype table linking comment activities to member actors using
+/// polymorphic ownership pattern.
+///
+/// This table establishes a 1:1 relationship with the main comment activity
+/// table ({@link discussion_board_comment_activities}) and connects those
+/// activities to member user accounts and their sessions. It implements the
+/// polymorphic ownership pattern by storing the actor-specific metadata for
+/// member-performed comment activities such as editing, deletion, and
+/// moderation actions. This structure enables comprehensive audit trails of
+/// comment activities while maintaining proper actor separation.
+///
+/// Each record represents a specific comment activity performed by a member
+/// user, linking the activity to the member's identity and session context
+/// for accountability and audit purposes.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_activity_by_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated comment activity's {@link
+  /// discussion_board_comment_activities.id}. This establishes the 1:1
+  /// relationship with the main activity record.
+  discussion_board_comment_activity_id String
+  
+  /// Member actor who performed the activity's {@link
+  /// discussion_board_members.id}. References the member user account
+  /// responsible for the comment action.
+  discussion_board_member_id String
+  
+  /// Member session at activity time's {@link
+  /// discussion_board_member_sessions.id}. Captures the authentication session
+  /// context when the activity occurred.
+  discussion_board_member_session_id String
+  
+  /// Timestamp when this member activity link was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this member activity link was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentActivity discussion_board_comment_activities @relation(fields: [discussion_board_comment_activity_id], references: [id], onDelete: Cascade)
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  memberSession discussion_board_member_sessions @relation(fields: [discussion_board_member_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_activity_id], map: "discussion_board_comment_activity_by_members_discussio_26adfe21")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, discussion_board_member_session_id, created_at], map: "discussion_board_comment_activity_by_members_discussio_9f3b402a")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_session_id], map: "discussion_board_comment_activity_by_members_discussio_f0a2d7bc")
+}
+
+/// Subtype table for comment activities performed by administrator actors,
+/// implementing polymorphic ownership pattern.
+///
+/// Establishes audit trail relationships between comment activities and
+/// administrator accounts, recording which administrator performed specific
+/// comment-related actions such as editing, deletion, or moderation. This
+/// table provides 1:1 relationship with the main {@link
+/// discussion_board_comment_activities} table while linking to administrator
+/// identity and session for comprehensive audit logging.
+///
+/// The table follows the subtype pattern for polymorphic actor ownership,
+/// allowing different actor types (member, admin, super admin) to have
+/// separate subtype tables while maintaining a clean separation of concerns.
+/// This supports administrator-specific audit requirements and permission
+/// tracking while preserving referential integrity.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_activity_by_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main comment activity record's {@link
+  /// discussion_board_comment_activities.id}.
+  discussion_board_comment_activity_id String
+  
+  /// Administrator actor's {@link discussion_board_admins.id}.
+  discussion_board_admin_id String
+  
+  /// Administrator session's {@link discussion_board_admin_sessions.id}.
+  discussion_board_admin_session_id String
+  
+  /// Timestamp when this admin subtype relationship was created.
+  created_at DateTime
+  
+  /// Timestamp when this admin subtype relationship was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentActivity discussion_board_comment_activities @relation(fields: [discussion_board_comment_activity_id], references: [id], onDelete: Cascade)
+  admin discussion_board_admins @relation(fields: [discussion_board_admin_id], references: [id], onDelete: Cascade)
+  adminSession discussion_board_admin_sessions @relation(fields: [discussion_board_admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_activity_id], map: "discussion_board_comment_activity_by_admins_discussion_3cd19498")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_id, created_at], map: "discussion_board_comment_activity_by_admins_discussion_4017eeed")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_admin_session_id, created_at], map: "discussion_board_comment_activity_by_admins_discussion_e3df2f02")
+}
+
+/// Subtype table linking comment activities to super administrator actors.
+/// Implements the polymorphic ownership pattern, establishing a 1:1
+/// relationship with the main {@link discussion_board_comment_activities}
+/// table and connecting to super admin actor accounts and sessions for
+/// comprehensive audit trail tracking.
+///
+/// This table stores the super administrator-specific context for comment
+/// activity records, including which super admin performed the action
+/// (editing, deleting, moderation) and their active session at the time. The
+/// relationships support complete actor attribution for governance and
+/// compliance requirements.
+///
+/// Used by the comment moderation system to track super administrator
+/// actions on comments independently from member and regular administrator
+/// activities.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_comment_activity_by_super_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main comment activity record. {@link
+  /// discussion_board_comment_activities.id}.
+  discussion_board_comment_activity_id String
+  
+  /// Super administrator who performed the comment activity. {@link
+  /// discussion_board_super_admins.id}.
+  discussion_board_super_admin_id String
+  
+  /// Active session of the super administrator during the activity. {@link
+  /// discussion_board_super_admin_sessions.id}.
+  discussion_board_super_admin_session_id String
+  
+  /// Timestamp when this actor subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this actor subtype record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentActivity discussion_board_comment_activities @relation(fields: [discussion_board_comment_activity_id], references: [id], onDelete: Cascade)
+  superAdmin discussion_board_super_admins @relation(fields: [discussion_board_super_admin_id], references: [id], onDelete: Cascade)
+  superAdminSession discussion_board_super_admin_sessions @relation(fields: [discussion_board_super_admin_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_comment_activity_id], map: "discussion_board_comment_activity_by_super_admins_disc_a3a8cb40")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_id, created_at], map: "discussion_board_comment_activity_by_super_admins_disc_f884258d")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_super_admin_session_id, created_at], map: "discussion_board_comment_activity_by_super_admins_disc_23da2302")
+}

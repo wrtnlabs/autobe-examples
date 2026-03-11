@@ -43,10 +43,10 @@ export namespace RedditPlatformCommunityAtSummaryTransformer {
       description: input.description ?? undefined,
       icon_url: input.icon_url ?? undefined,
       subscriber_count: input.subscriber_count,
-      author: await RedditPlatformMemberAtSummaryTransformer.transform(
+      created_at: input.created_at.toISOString(),
+      owner: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.owner,
       ),
-      created_at: input.created_at.toISOString(),
     };
   }
 }

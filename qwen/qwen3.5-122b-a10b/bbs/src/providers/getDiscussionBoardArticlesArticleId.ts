@@ -2,7 +2,6 @@ import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
 import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,7 +20,10 @@ export async function getDiscussionBoardArticlesArticleId(props: {
 }): Promise<IDiscussionBoardArticle> {
   const article =
     await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
-      where: { id: props.articleId, deleted_at: null },
+      where: {
+        id: props.articleId,
+        deleted_at: null,
+      },
       ...DiscussionBoardArticleTransformer.select(),
     });
   return await DiscussionBoardArticleTransformer.transform(article);

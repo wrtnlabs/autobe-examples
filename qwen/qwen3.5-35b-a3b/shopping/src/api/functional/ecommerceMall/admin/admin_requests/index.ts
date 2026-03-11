@@ -7,54 +7,58 @@ import { IEcommerceMallAdminRequestRequest } from "../../../../structures/IEcomm
 import { IPageIEcommerceMallAdminRequestRequest } from "../../../../structures/IPageIEcommerceMallAdminRequestRequest";
 
 export * as snapshots from "./snapshots/index";
+export * as customer_request from "./customer_request/index";
+export * as seller_request from "./seller_request/index";
 
 /**
- * Retrieve a filtered and paginated list of administrative access requests submitted by users requesting elevation to administrator privileges.
+ * Retrieve a filtered and paginated list of administrative access requests submitted by users (customers or sellers) requesting admin privileges on the ecommerce mall platform.
  *
- * This endpoint allows administrators to search and browse admin requests with various filtering options including status (pending, approved, rejected), submission date ranges, and requester type (customer or seller). Super administrators have full visibility into all admin requests, while regular administrators may have restricted access based on their permission levels.
+ * This operation provides advanced search capabilities including filtering by request status (pending, approved, rejected), requester type (customer or seller), creation date ranges, and other criteria. Super administrators can view all admin access requests with full details including approval/rejection actions, while regular administrators have limited view access for monitoring purposes only.
  *
- * The operation supports advanced filtering capabilities to help administrators efficiently review pending requests. Each result includes the request reason, status, creation timestamp, and requester information. Pagination is provided with configurable page size and cursor-based navigation for large result sets.
+ * Supports comprehensive pagination with configurable page sizes and sorting options. Response includes request summary information optimized for admin dashboard displays and bulk review operations.
  *
- * **Security:** Access to this endpoint requires administrator privileges. The system enforces strict access control to ensure only authorized personnel can view administrative access requests.
+ * Authorization requires super administrator grade to view pending requests. The operation enforces data isolation to ensure only authorized administrators can access relevant requests based on their permission level.
+ *
+ * This operation should be pre-executed before performing approval or rejection operations on specific admin requests, as it provides the necessary context of all pending, approved, or rejected requests.
+ *
+ * Note: The database schema includes a soft_delete_column (deleted_at) for graceful data removal, and this operation respects soft delete semantics when filtering results.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for admin requests
+ * @param props.body Search criteria and pagination parameters for filtering admin access requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_admin_request_requests table with the following logic:
+ * @x-autobe-specification Query ecommerce_mall_admin_request_requests table with filtering, sorting, and pagination.
  *
- * 1. **Authorization Check**: Verify the requesting user has admin role. Reject with 403 if not an admin.
+ * Apply search filters:
+ * - Status filter: pending, approved, rejected (optional multiple values)
+ * - Requester type filter: customer or seller
+ * - Date range filters: created_at range (from_date, to_date)
+ * - Optional: partial text search on reason field
  *
- * 2. **Filtering Logic**:
- *    - Apply request_status filter if provided (pending|approved|rejected)
- *    - Apply created_at range filter if start or end date provided
- *    - Apply requester type filter (customer or seller) by joining with ecommerce_mall_admin_request_request_of_customers or ecommerce_mall_admin_request_request_of_sellers
- *    - Apply soft delete filtering (exclude deleted_at is not null records by default, include soft-deleted only if explicitly requested)
+ * Pagination:
+ * - Cursor-based or offset-based pagination with configurable page_size
+ * - Default page_size: 20, max page_size: 100
+ * - Support sorting by created_at (ascending/descending), request_status
  *
- * 3. **Sorting**:
- *    - Default sort: created_at DESC
- *    - Allow sorting by: created_at, updated_at, request_status
- *    - Support ascending/descending order
+ * Authorization:
+ * - Require admin actor authentication (regular admin or super admin)
+ * - Super admins can view all requests
+ * - Regular admins can view all requests (permitted by section 817 - Super Administrator Privileges)
  *
- * 4. **Pagination**:
- *    - Use cursor-based pagination with created_at as cursor field
- *    - Return pagination metadata: total count, page size, has next/previous
- *    - Enforce maximum page size limit (e.g., 100 items per page)
+ * Business Rules:
+ * - Never modify request status (approval/rejection handled by separate endpoints)
+ * - Return immutable snapshot data for approved/rejected requests
+ * - Include requester details (customer or seller reference) in response
+ * - Filter out self-demotion attempts (section 724) from visible results
  *
- * 5. **Join Operations**:
- *    - Left join with ecommerce_mall_admins to get admin actor details
- *    - Left join with ecommerce_mall_admin_request_request_of_customers to get customer requester info
- *    - Left join with ecommerce_mall_admin_request_request_of_sellers to get seller requester info
+ * Return IPageIEcommerceMallAdminRequestRequest.ISummary with:
+ * - pagination: { has_next, has_prev, cursor, total_count }
+ * - data: Array of IAdminRequestSummary objects
  *
- * 6. **Response Construction**:
- *    - Return admin request summaries using IAdminRequest.ISummary
- *    - Include requester type indicator (customer/seller) and requester identifier
- *    - Include pagination metadata in IPageIAdminRequest.ISummary
- *
- * 7. **Edge Cases**:
- *    - Empty result set: Return paginated response with empty data array and zero total count
- *    - Invalid filter values: Reject with 400 Bad Request
- *    - Invalid pagination parameters: Reject with 400 Bad Request
+ * Edge Cases:
+ * - No matching results: return empty data array with pagination metadata
+ * - Invalid filter values: return 400 Bad Request with validation error
+ * - Unauthorized access: return 403 Forbidden
  * @path /ecommerceMall/admin/admin-requests
  * @accessor api.functional.ecommerceMall.admin.admin_requests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -84,7 +88,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for admin requests
+     * Search criteria and pagination parameters for filtering admin access requests
      */
     body: IEcommerceMallAdminRequestRequest.IRequest;
   };
@@ -133,41 +137,32 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific administrative access request.
+ * Retrieve a single administrator access request by its unique identifier.
  *
- * This operation returns the complete admin request record including the requesting user's reason for seeking administrative privileges, the current status of the request (pending, approved, or rejected), and the timestamp when the request was created. The response includes the associated administrator account information via the relationship to the admins table.
+ * This operation allows users to view the status and details of administrator access requests. When viewing their own request, any authenticated user (customer or seller) can access their request information. Super administrators can view any request in the system for review and management purposes.
  *
- * ### Security and Access Control
+ * The returned request information includes the submission reason, current status (pending, approved, or rejected), and timestamps for when the request was created and last updated. If the request has been approved or rejected, the outcome reflects the super administrator's decision.
  *
- * This endpoint is accessible by:
- * - Super administrators: Can view all admin requests including pending, approved, and rejected status
- * - The requesting administrator: Can view their own admin request status
+ * Security considerations: Users can only view their own administrator requests unless they have super administrator privileges. The system validates that the requesting user has appropriate access before returning request details. Attempting to access another user's request without proper authorization will result in a forbidden error.
  *
- * ### Request Status Workflow
- *
- * - **pending**: The request has been submitted but is awaiting review by a super administrator
- * - **approved**: The super administrator has approved the request, and the user has been granted admin privileges
- * - **rejected**: The super administrator has rejected the request, and the user may submit a new request
- *
- * ### Related Operations
- *
- * - POST /admin-requests - Create a new administrative access request
- * - PATCH /admin-requests - Search and list admin requests with filtering and pagination
- * - GET /admin-requests/{adminRequestId}/snapshots - Retrieve audit snapshots of the request status changes
+ * Related operations: Users can create new admin requests via POST /admin-requests when they have no pending requests. Super administrators can view all pending requests via PATCH /admin-requests with status filter to review requests awaiting approval.
  *
  * @param props.connection
- * @param props.adminRequestId The unique identifier of the administrative access request to retrieve
+ * @param props.adminRequestId Unique identifier of the administrator access request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Validate adminRequestId is a valid UUID format
- * 2. Query ecommerce_mall_admin_request_requests table for the record matching the given ID
- * 3. JOIN with ecommerce_mall_admins table to retrieve the requesting admin's email and account details
- * 4. Check access control:
- *    - If requesting user is super admin: Allow access to any admin request
- *    - If requesting user is the admin associated with the request: Allow access to their own request
- *    - Otherwise: Return 403 Forbidden
- * 5. Return the admin request object with admin account information nested, excluding deleted_at field if present
- * 6. Handle 404 Not Found if the admin request does not exist or has been soft deleted
+ * @x-autobe-specification Query the ecommerce_mall_admin_request_requests table for a record matching the adminRequestId UUID.
+ *
+ * 1. Validate that adminRequestId is a valid UUID format
+ * 2. Check if the record exists and is not soft-deleted (deleted_at is null)
+ * 3. Verify authorization:
+ *    - If requesting user ID matches ecommerce_mall_admin_id in the record, allow access
+ *    - If requesting user has super administrator grade, allow access
+ *    - Otherwise, reject with 403 Forbidden
+ * 4. Join with ecommerce_mall_admins table to include admin actor information if needed
+ * 5. Return the complete request record with id, reason, request_status, created_at, updated_at fields
+ * 6. If record not found or soft-deleted, return 404 Not Found
+ * 7. Handle concurrent access using optimistic locking if applicable
  * @path /ecommerceMall/admin/admin-requests/:adminRequestId
  * @accessor api.functional.ecommerceMall.admin.admin_requests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -196,7 +191,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique identifier of the administrative access request to retrieve
+     * Unique identifier of the administrator access request
      */
     adminRequestId: string & tags.Format<"uuid">;
   };
@@ -228,6 +223,242 @@ export namespace at {
     });
     try {
       assert.param("adminRequestId")(() => typia.assert(props.adminRequestId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update the status of an administrator access request to either 'approved' or 'rejected'.
+ *
+ * This operation allows super administrators to review and decide on pending administrator access requests submitted by regular users (customers or sellers). When a request is approved, the requester is immediately granted regular administrator privileges and becomes visible in the administrator roster. When rejected, the request is marked as finalized and the requester cannot submit another request for 30 days.
+ *
+ * Super administrators must provide a rejection reason when rejecting a request. This reason is recorded in the system and communicated to the requester. When approving a request, no reason is required, but the system creates an immutable snapshot documenting the approval action with timestamp and performing administrator.
+ *
+ * The operation is restricted to super administrators only. Regular administrators cannot approve or reject admin requests. The system validates that the request exists and is in 'pending' status before processing the update.
+ *
+ * The administrator access request table includes soft delete capability through the deleted_at field, allowing administrative oversight of deleted requests while preserving data for compliance and audit purposes. This soft delete mechanism ensures that request history remains available for dispute resolution and historical analysis.
+ *
+ * After status update, the requester's role is changed if approved, or the request is marked as rejected. The system notifies relevant parties of the status change and creates audit snapshots for compliance.
+ *
+ * @param props.connection
+ * @param props.adminRequestId UUID of the administrator access request to update
+ * @param props.body Update data for the administrator access request status
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification 1. Authenticate the requesting user and verify they have super administrator grade.
+ * 2. Fetch the AdminRequest by adminRequestId from database.
+ * 3. Validate the request exists and is in 'pending' status.
+ * 4. Validate the provided status is either 'approved' or 'rejected'.
+ * 5. If status is 'rejected', validate that rejection_reason is provided (non-empty string).
+ * 6. If status is 'rejected', create an AdminRequestSnapshot recording the rejection.
+ * 7. If status is 'approved', update the associated user's (ecommerce_mall_admin_id) role to 'regular administrator' grade and create a grade change snapshot.
+ * 8. Update the AdminRequest record with new status and timestamp.
+ * 9. Return the updated AdminRequest with new status.
+ *
+ * Error handling:
+ * - 404: AdminRequest not found or already resolved (approved/rejected)
+ * - 403: Requesting user is not a super administrator
+ * - 400: Invalid status value or missing rejection reason when required
+ * - 409: Request is already pending from another user (should not occur)
+ *
+ * Transaction requirements:
+ * - All updates must be atomic within a single transaction
+ * - Snapshot creation must occur before or after status update atomically
+ * - User grade update must be committed with status update
+ * @path /ecommerceMall/admin/admin-requests/:adminRequestId
+ * @accessor api.functional.ecommerceMall.admin.admin_requests.updateStatus
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function updateStatus(
+  connection: IConnection,
+  props: updateStatus.Props,
+): Promise<updateStatus.Response> {
+  return true === connection.simulate
+    ? updateStatus.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...updateStatus.METADATA,
+          path: updateStatus.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace updateStatus {
+  export type Props = {
+    /**
+     * UUID of the administrator access request to update
+     */
+    adminRequestId: string & tags.Format<"uuid">;
+
+    /**
+     * Update data for the administrator access request status
+     */
+    body: IEcommerceMallAdminRequestRequest.IUpdateStatus;
+  };
+  export type Body = IEcommerceMallAdminRequestRequest.IUpdateStatus;
+  export type Response = IEcommerceMallAdminRequestRequest;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/ecommerceMall/admin/admin-requests/:adminRequestId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/admin/admin-requests/${encodeURIComponent(props.adminRequestId ?? "null")}`;
+  export const random = (): IEcommerceMallAdminRequestRequest =>
+    typia.random<IEcommerceMallAdminRequestRequest>();
+  export const simulate = (
+    connection: IConnection,
+    props: updateStatus.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: updateStatus.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("adminRequestId")(() => typia.assert(props.adminRequestId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Review a pending administrator access request by approving or rejecting it.
+ *
+ * This operation allows a super administrator to review a specific admin request and make a decision to either approve or reject the request. When approved, the requesting user (customer or seller) is granted regular administrator privileges. When rejected, the request is marked as rejected and the user may submit a new request.
+ *
+ * The requesting user's identity and current role (customer or seller) must be verified before granting admin privileges. The operation requires a valid admin request ID and the reviewer's super administrator credentials to ensure only authorized personnel can modify request statuses.
+ *
+ * The operation creates an immutable snapshot of the status change for audit purposes, recording the previous status, new status, performing super administrator, and timestamp of the change.
+ *
+ * @param props.connection
+ * @param props.requestId The unique identifier of the admin request to review
+ * @param props.body The review decision and optional rejection reason
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification 1. Validate the admin request exists and is in 'pending' status
+ * 2. Verify the requesting user has a pending request with the given ID
+ * 3. Load the admin request record with associated requester information
+ * 4. Validate the current user is a super administrator
+ * 5. Process the approval or rejection decision:
+ *    - If approved: Update request status to 'approved', grant admin role to requester, create admin record if needed
+ *    - If rejected: Update request status to 'rejected'
+ * 6. Create an immutable snapshot recording the status change with oldValues, newValues, changedBy, changedAt
+ * 7. Notify the requesting user of the status change
+ * 8. Return the updated admin request record with new status
+ *
+ * Database operations:
+ * - SELECT FROM ecommerce_mall_admin_request_requests WHERE id = {requestId} AND request_status = 'pending'
+ * - UPDATE ecommerce_mall_admin_request_requests SET request_status = '{status}', updated_at = NOW()
+ * - INSERT INTO ecommerce_mall_admin_request_snapshots (recordType, recordId, changes, oldValues, newValues, changedBy, changedAt)
+ * - INSERT INTO ecommerce_mall_admins (if approved and no existing admin record)
+ * @path /ecommerceMall/admin/admin-requests/review/:requestId
+ * @accessor api.functional.ecommerceMall.admin.admin_requests.review
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function review(
+  connection: IConnection,
+  props: review.Props,
+): Promise<review.Response> {
+  return true === connection.simulate
+    ? review.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...review.METADATA,
+          path: review.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace review {
+  export type Props = {
+    /**
+     * The unique identifier of the admin request to review
+     */
+    requestId: string & tags.Format<"uuid">;
+
+    /**
+     * The review decision and optional rejection reason
+     */
+    body: IEcommerceMallAdminRequestRequest.IReview;
+  };
+  export type Body = IEcommerceMallAdminRequestRequest.IReview;
+  export type Response = IEcommerceMallAdminRequestRequest;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/ecommerceMall/admin/admin-requests/review/:requestId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/admin/admin-requests/review/${encodeURIComponent(props.requestId ?? "null")}`;
+  export const random = (): IEcommerceMallAdminRequestRequest =>
+    typia.random<IEcommerceMallAdminRequestRequest>();
+  export const simulate = (
+    connection: IConnection,
+    props: review.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: review.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("requestId")(() => typia.assert(props.requestId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

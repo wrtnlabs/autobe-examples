@@ -15,6 +15,9 @@ export namespace RedditPlatformReportCollector {
     const id: string = v4();
     return {
       id,
+      reporter: { connect: { id: props.redditPlatformMembers.id } },
+      community: { connect: { id: props.body.community_id } },
+      resolvedBy: undefined,
       reported_content_type: props.body.reported_content_type,
       reported_content_id: props.body.reported_content_id,
       reason: props.body.reason,
@@ -22,9 +25,8 @@ export namespace RedditPlatformReportCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      reporter: { connect: { id: props.redditPlatformMembers.id } },
-      community: { connect: { id: props.body.community_id } },
-      resolvedBy: undefined,
+      snapshots: undefined,
+      viewHistories: undefined,
     } satisfies Prisma.reddit_platform_reportsCreateInput;
   }
 }

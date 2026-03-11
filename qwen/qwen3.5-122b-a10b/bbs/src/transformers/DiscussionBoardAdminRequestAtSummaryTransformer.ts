@@ -35,20 +35,17 @@ export namespace DiscussionBoardAdminRequestAtSummaryTransformer {
   ): Promise<IDiscussionBoardAdminRequest.ISummary> {
     return {
       id: input.id,
+      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
       reason: input.reason,
-      status: input.status,
-      submitted_at: input.submitted_at.toISOString(),
-      reviewed_at: input.reviewed_at?.toISOString() ?? null,
-      discussion_board_member:
-        await DiscussionBoardMemberAtSummaryTransformer.transform(input.member),
-      discussion_board_admin: input.reviewer
+      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
+      submitted_at: toISOStringSafe(input.submitted_at),
+      reviewer: input.reviewer
         ? await DiscussionBoardAdminAtSummaryTransformer.transform(
             input.reviewer,
           )
         : null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

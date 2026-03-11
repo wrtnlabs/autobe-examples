@@ -7,35 +7,33 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteDiscussionBoardSuperAdminUserBansBanId(props: {
-  superAdmin: SuperAdminPayload;
+  superAdmin: SuperadminPayload;
   banId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // First verify the ban record exists and get details for audit logging
-  const banRecord =
-    await MyGlobal.prisma.discussion_board_user_bans.findUniqueOrThrow({
-      where: { id: props.banId },
-    });
-  // Perform hard delete operation
-  await MyGlobal.prisma.discussion_board_user_bans.delete({
+  const ban = await MyGlobal.prisma.discussion_board_user_bans.findUnique({
     where: { id: props.banId },
+    select: { id: true, status: true, unbanned_at: true },
   });
-  // Log the administrative action for audit trail
-  await MyGlobal.prisma.discussion_board_audit_logs.create({
+  if (!ban) {
+    throw new HttpException("Ban not found", 404);
+  }
+  if (ban.status === "removed" || ban.unbanned_at !== null) {
+    throw new HttpException("Ban already removed", 400);
+  }
+  if (ban.status !== "active") {
+    throw new HttpException("Ban is not active", 400);
+  }
+  await MyGlobal.prisma.discussion_board_user_bans.update({
+    where: { id: props.banId },
     data: {
-      id: v4(),
-      actor_id: props.superAdmin.id,
-      actor_type: "super_admin",
-      action_type: "BAN_DELETED",
-      description: `Super admin ${props.superAdmin.id} deleted ban record ${props.banId} for user ${banRecord.banned_user_id}`,
-      target_user_id: banRecord.banned_user_id,
-      created_at: new Date(),
-      updated_at: new Date(),
-      success: true,
+      status: "removed",
+      unbanned_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
   });
 }

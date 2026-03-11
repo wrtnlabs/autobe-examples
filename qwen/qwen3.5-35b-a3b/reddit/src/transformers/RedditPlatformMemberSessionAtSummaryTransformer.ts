@@ -1,10 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
 import { IRedditPlatformMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMemberSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditPlatformMemberAtSummaryTransformer } from "./RedditPlatformMemberAtSummaryTransformer";
 
 export namespace RedditPlatformMemberSessionAtSummaryTransformer {
   export type Payload = Prisma.reddit_platform_member_sessionsGetPayload<
@@ -14,12 +16,12 @@ export namespace RedditPlatformMemberSessionAtSummaryTransformer {
     return {
       select: {
         id: true,
+        member: RedditPlatformMemberAtSummaryTransformer.select(),
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         expired_at: true,
-        member: true,
       },
     } satisfies Prisma.reddit_platform_member_sessionsFindManyArgs;
   }
@@ -28,12 +30,14 @@ export namespace RedditPlatformMemberSessionAtSummaryTransformer {
   ): Promise<IRedditPlatformMemberSession.ISummary> {
     return {
       id: input.id,
-      member_id: input.member.id,
+      member: await RedditPlatformMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
       ip: input.ip,
       href: input.href ?? null,
       referrer: input.referrer ?? null,
-      created_at: toISOStringSafe(input.created_at),
-      expired_at: toISOStringSafe(input.expired_at),
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
     };
   }
 }

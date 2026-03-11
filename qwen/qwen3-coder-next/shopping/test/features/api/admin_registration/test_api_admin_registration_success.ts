@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,100 +15,39 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 export async function test_api_admin_registration_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Login as super administrator to create new admin
-  const superAdminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_login(superAdminConnection, {
+  // Create admin-specific connection
+  const adminConnection: api.IConnection = { host: connection.host };
+  // Register new admin
+  const admin = await authorize_admin_join(adminConnection, {
     body: {
-      email: "superadmin@test.com",
-      password: "SuperAdmin123!",
-    } satisfies IShoppingMallAdmin.ILogin,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+    } satisfies IEcommerceMallAdmin.IJoin,
   });
-  // 2. Generate unique test email and valid password using RandomGenerator
-  const testEmail = RandomGenerator.name(1) + "@test.com";
-  const testPassword = "AdminTest123!" satisfies string &
-    tags.Format<"password">;
-  // 3. Register new admin account
-  const adminResponse = await api.functional.shoppingMall.auth.admin.join(
-    superAdminConnection,
-    {
-      body: {
-        email: testEmail,
-        password: testPassword,
-      } satisfies IShoppingMallAdmin.IJoin,
-    },
-  );
-  typia.assert(adminResponse);
-  // 4. Validate response structure and content
-  TestValidator.predicate(
-    "has valid UUID",
-    /^[0-9a-f-]{36}$/i.test(adminResponse.id),
-  );
-  TestValidator.equals("email matches input", adminResponse.email, testEmail);
+  typia.assert(admin);
+  // Validate response structure
+  TestValidator.equals("has admin id", typeof admin.id, "string");
+  TestValidator.equals("has access token", typeof admin.token.access, "string");
   TestValidator.equals(
-    "role grade is admin",
-    adminResponse.role_grade,
-    "admin",
+    "has refresh token",
+    typeof admin.token.refresh,
+    "string",
   );
   TestValidator.predicate(
-    "has created_at timestamp",
-    adminResponse.created_at !== undefined,
+    "access token is JWT format",
+    /^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(
+      admin.token.access,
+    ),
   );
-  TestValidator.predicate(
-    "has updated_at timestamp",
-    adminResponse.updated_at !== undefined,
-  );
-  TestValidator.equals("deleted_at is null", adminResponse.deleted_at, null);
-  // 5. Validate authentication tokens
-  TestValidator.predicate(
-    "has valid access token",
-    adminResponse.access_token !== undefined &&
-      adminResponse.access_token.length > 0,
-  );
-  TestValidator.predicate(
-    "has valid refresh token",
-    adminResponse.refresh_token !== undefined &&
-      adminResponse.refresh_token.length > 0,
-  );
-  TestValidator.predicate(
-    "has access_expired_at",
-    adminResponse.access_expired_at !== undefined,
-  );
-  TestValidator.predicate(
-    "has refresh_expired_at",
-    adminResponse.refresh_expired_at !== undefined,
-  );
-  // 6. Validate token structure
-  TestValidator.predicate(
-    "token has access property",
-    adminResponse.token.access !== undefined,
-  );
-  TestValidator.predicate(
-    "token has refresh property",
-    adminResponse.token.refresh !== undefined,
-  );
-  TestValidator.predicate(
-    "token has expired_at",
-    adminResponse.token.expired_at !== undefined,
-  );
-  TestValidator.predicate(
-    "token has refreshable_until",
-    adminResponse.token.refreshable_until !== undefined,
-  );
-  // 7. Verify we can login with newly created admin credentials
-  const newAdminConnection: api.IConnection = { host: connection.host };
-  const loginResponse = await api.functional.shoppingMall.auth.admin.login(
-    newAdminConnection,
-    {
-      body: {
-        email: testEmail,
-        password: testPassword,
-      } satisfies IShoppingMallAdmin.ILogin,
-    },
-  );
-  typia.assert(loginResponse);
+  // Validate token expiration properties exist
   TestValidator.equals(
-    "login response email matches",
-    loginResponse.email,
-    testEmail,
+    "has expired_at",
+    typeof admin.token.expired_at,
+    "string",
+  );
+  TestValidator.equals(
+    "has refreshable_until",
+    typeof admin.token.refreshable_until,
+    "string",
   );
 }

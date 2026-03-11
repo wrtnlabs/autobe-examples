@@ -17,20 +17,48 @@ export async function putDiscussionBoardMemberProfile(props: {
   member: MemberPayload;
   body: IDiscussionBoardMember.IUpdate;
 }): Promise<IDiscussionBoardMember> {
-  // Build update data
-  const updateData: Prisma.discussion_board_membersUpdateInput = {
-    ...(props.body.displayName !== undefined && {
-      display_name: props.body.displayName,
-    }),
-    ...(props.body.bio !== undefined && {
-      bio: props.body.bio,
-    }),
-    updated_at: new Date(),
-  };
+  // Validate member exists and is not soft-deleted
+  await MyGlobal.prisma.discussion_board_members.findUniqueOrThrow({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  // Validate display_name if provided
+  if (props.body.displayName !== undefined) {
+    const trimmedDisplayName = props.body.displayName.trim();
+    if (trimmedDisplayName.length === 0) {
+      throw new HttpException("Display name cannot be empty", 400);
+    }
+    if (trimmedDisplayName.length > 100) {
+      throw new HttpException(
+        "Display name exceeds maximum length of 100 characters",
+        400,
+      );
+    }
+  }
+  // Validate bio if provided
+  if (props.body.bio !== undefined && props.body.bio !== null) {
+    if (props.body.bio.length > 500) {
+      throw new HttpException(
+        "Bio exceeds maximum length of 500 characters",
+        400,
+      );
+    }
+  }
   // Update member profile
+  const now = new Date();
   await MyGlobal.prisma.discussion_board_members.update({
     where: { id: props.member.id },
-    data: updateData,
+    data: {
+      ...(props.body.displayName !== undefined && {
+        display_name: props.body.displayName.trim(),
+      }),
+      ...(props.body.bio !== undefined && {
+        bio: props.body.bio,
+      }),
+      updated_at: now,
+    },
   });
   // Fetch updated member with transformer select
   const updated =

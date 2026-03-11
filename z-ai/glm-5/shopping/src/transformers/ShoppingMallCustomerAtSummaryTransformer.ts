@@ -19,6 +19,13 @@ export namespace ShoppingMallCustomerAtSummaryTransformer {
         phone_number: true,
         banned: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        _count: {
+          select: {
+            orders: true,
+          },
+        },
       },
     } satisfies Prisma.shopping_mall_customersFindManyArgs;
   }
@@ -31,7 +38,10 @@ export namespace ShoppingMallCustomerAtSummaryTransformer {
       displayName: input.display_name ?? null,
       phoneNumber: input.phone_number ?? null,
       banned: input.banned,
+      orderCount: input._count.orders,
       createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

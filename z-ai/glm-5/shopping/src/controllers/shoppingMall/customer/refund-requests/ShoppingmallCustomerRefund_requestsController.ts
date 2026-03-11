@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallRefundRequest } from "../../../../api/structures/IPageIShoppingMallRefundRequest";
 import { IShoppingMallRefundRequest } from "../../../../api/structures/IShoppingMallRefundRequest";
@@ -13,37 +13,51 @@ import { postShoppingMallCustomerRefundRequests } from "../../../../providers/po
 @Controller("/shoppingMall/customer/refund-requests")
 export class ShoppingmallCustomerRefund_requestsController {
   /**
-   * Submit a refund request for a delivered order item.
+   * Create a new refund request for a delivered order item within the 7-day eligibility window.
    *
-   * This endpoint allows customers to request refunds for individual order items that have been delivered, within the 7-day eligibility window from the delivery date. Each order item can have at most one active refund request at a time.
+   * This operation allows customers to request a refund for a delivered order item by providing a reason for the refund. The system validates that the order item belongs to the authenticated customer, has a 'delivered' status, and is within the 7-day eligibility window from the delivery date. Each order item can have at most one active (pending) refund request.
    *
-   * The request must include the order item ID and a reason explaining why the refund is being requested. The reason text must be between 10 and 1000 characters. Upon successful creation, the refund request enters 'pending' status and awaits seller response.
+   * The request reason must be between 10 and 1000 characters and should clearly explain why the refund is being requested. The initial status is always set to 'pending', awaiting seller response. When the seller responds, a snapshot is automatically created to preserve the request state for audit trail and dispute resolution.
    *
-   * The seller who owns the product will review the request and can approve or reject it. If approved, the customer will receive a refund for that specific order item and stock will be restored. If rejected, the customer can see the rejection but cannot resubmit for the same item.
-   *
-   * This operation requires customer authentication. The customer must own the order containing the specified order item.
+   * Related operations:
+   * - GET /seller/refund-requests - Sellers view pending refund requests for their products
+   * - PATCH /seller/refund-requests/:id/approve - Seller approves refund request
+   * - PATCH /seller/refund-requests/:id/reject - Seller rejects refund request
    *
    * @param connection
-   * @param body Refund request creation data including the order item ID and reason for refund
+   * @param body Refund request creation data including the order item ID and reason
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Create a refund request for a delivered order item.
+   * @x-autobe-specification Implement the following validation and creation logic:
    *
-   * Validation:
-   * 1. Verify the authenticated customer owns the order item (via order → customer relationship)
-   * 2. Verify the order item status is 'delivered'
-   * 3. Verify the request is within 7 days of delivery (check order item's shipment.delivered_at or shipment.shipped_at + 14 days auto-delivery)
-   * 4. Verify no existing refund request exists for this order item (unique constraint on shopping_mall_order_item_id)
-   * 5. Validate reason text length (10-1000 characters)
+   * 1. **Authentication Check**: Verify customer is authenticated. Return 401 Unauthorized if not.
    *
-   * Implementation:
-   * 1. Query shopping_mall_order_items with joins to shopping_mall_orders and shopping_mall_shipments
-   * 2. Perform all validations in a transaction
-   * 3. Create shopping_mall_refund_requests record with status 'pending'
-   * 4. Set created_at to current timestamp
-   * 5. Leave responded_at as null
+   * 2. **Input Validation**: Validate request body:
+   *    - orderItemId: Required, must be valid UUID format
+   *    - reason: Required, string length between 10 and 1000 characters
    *
-   * Response: Return the created refund request with all fields including generated id and timestamps.
+   * 3. **Order Item Lookup**: Query shopping_mall_order_items by orderItemId:
+   *    - Return 404 Not Found if order item does not exist
+   *    - Return 403 Forbidden if order item does not belong to the authenticated customer (check via shopping_mall_orders.shopping_mall_customer_id)
+   *
+   * 4. **Status Validation**: Verify order item status is 'delivered':
+   *    - Return 400 Bad Request with message 'Refund can only be requested for delivered items' if status is not 'delivered'
+   *
+   * 5. **Eligibility Window Check**: Verify the request is within 7 days of delivery:
+   *    - Get delivery date from the related shipment's delivered_at or check the order item's updated_at when status changed to 'delivered'
+   *    - Return 400 Bad Request with message 'Refund request must be made within 7 days of delivery' if outside window
+   *
+   * 6. **Duplicate Request Check**: Query shopping_mall_refund_requests for existing request with same orderItemId:
+   *    - Return 409 Conflict with message 'A refund request already exists for this order item' if a request exists
+   *
+   * 7. **Create Refund Request**: Insert new record into shopping_mall_refund_requests:
+   *    - Set shopping_mall_order_item_id from request
+   *    - Set reason from request
+   *    - Set status to 'pending'
+   *    - Set created_at to current timestamp
+   *    - Leave responded_at as null
+   *
+   * 8. **Return Response**: Return the created refund request with all fields
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -65,56 +79,33 @@ export class ShoppingmallCustomerRefund_requestsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of refund requests with comprehensive search capabilities.
+   * Retrieve a filtered and paginated list of refund requests submitted by customers for the authenticated seller's products.
    *
-   * This endpoint enables different actors to view refund requests according to their access level. Customers can view their own refund requests to track the status of their refund claims. Sellers can view refund requests for their products to manage customer refund claims and respond appropriately. Administrators can view all platform refund requests for oversight and dispute resolution.
+   * This operation enables sellers to manage refund requests efficiently by providing advanced filtering capabilities. Sellers can filter requests by status (pending, approved, rejected), search by customer information or product details, and sort results by creation date or response date.
    *
-   * The shopping_mall_refund_requests table stores customer requests to refund delivered order items. Each request is associated with exactly one order item from the shopping_mall_order_items table and includes a reason text explaining why the refund is requested. The request status transitions from 'pending' to either 'approved' or 'rejected' when the seller responds.
+   * The refund request data includes the customer's reason for requesting a refund, the current status of the request, and timestamps for submission and seller response. Each request is associated with a specific order item that references the seller's product variant.
    *
-   * Refund requests can only be created for order items with 'delivered' status and must be submitted within 7 days of delivery. When approved, the item status changes to 'refunded', stock is restored via inventory record, and the order status is recalculated. All state changes are preserved in shopping_mall_refund_request_snapshots for audit trail and dispute resolution.
+   * Sellers must respond to pending requests within a reasonable timeframe. Approved requests trigger automatic refund processing and stock restoration for the affected product variant. Rejected requests notify customers of the decision.
    *
-   * Search filters support querying by status, associated order, customer, seller, order item, and date ranges. Results can be sorted by creation date or response date. Pagination ensures efficient handling of large result sets.
+   * This endpoint returns summary information suitable for list displays. Use GET /refund-requests/{refundRequestId} to retrieve detailed information including the associated order item and customer information.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering refund requests
+   * @param body Search criteria and pagination parameters for refund requests
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_refund_requests table with joins to shopping_mall_order_items, shopping_mall_orders, shopping_mall_products, shopping_mall_product_variants, shopping_mall_customers, and shopping_mall_sellers for complete context.
+   * @x-autobe-specification Query shopping_mall_refund_requests table with joins to shopping_mall_order_items, shopping_mall_products, and shopping_mall_customers for seller-scoped filtering.
    *
-   * Authorization-based filtering:
-   * - Customers: Filter where order_item.order.customer.id = current_user
-   * - Sellers: Filter where order_item.seller.id = current_user
-   * - Administrators: No ownership filter (can see all)
+   * Implementation steps:
+   * 1. Extract authenticated seller ID from JWT token
+   * 2. Filter refund requests where the associated order item's product belongs to the seller (shopping_mall_order_items.shopping_mall_seller_id = authenticated seller)
+   * 3. Apply optional status filter (pending/approved/rejected)
+   * 4. Apply optional date range filters on created_at and responded_at
+   * 5. Apply optional search on reason text and customer display name
+   * 6. Apply sorting (default: created_at descending)
+   * 7. Apply pagination with cursor-based approach
+   * 8. Return summary data with customer name, product name, variant info, reason excerpt, status, and timestamps
    *
-   * Search filters:
-   * - status: Exact match ('pending', 'approved', 'rejected')
-   * - shopping_mall_order_item_id: Filter by specific order item
-   * - shopping_mall_order_id: Filter by order (via order_item relation)
-   * - shopping_mall_seller_id: Filter by seller (via order_item relation)
-   * - shopping_mall_customer_id: Filter by customer (via order_item.order relation)
-   * - created_at range: From/to date filtering
-   * - responded_at range: For filtering by response time
-   * - Include pending only: Filter where responded_at is null
-   *
-   * Sorting options:
-   * - created_at descending (newest first, default)
-   * - created_at ascending
-   * - responded_at descending
-   * - responded_at ascending
-   *
-   * Pagination:
-   * - Cursor-based pagination for large result sets
-   * - Default page size: 20 items
-   * - Maximum page size: 100 items
-   *
-   * Response includes:
-   * - Basic refund request fields (id, reason, status, created_at, responded_at)
-   * - Associated order item summary (product name, variant info, quantity, price)
-   * - Order information (order number)
-   * - Customer info (display name or 'deleted user')
-   * - Seller info (shop name)
-   *
-   * Each result should indicate if snapshots exist for audit trail purposes.
+   * The query must efficiently filter by seller through the order_items relationship to ensure data isolation between sellers.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -136,43 +127,28 @@ export class ShoppingmallCustomerRefund_requestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific refund request submitted by the authenticated customer.
+   * Retrieve detailed information about a specific refund request.
    *
-   * This endpoint allows customers to view the complete details of a refund request they have submitted, including the reason for requesting the refund, the current status (pending, approved, or rejected), timestamps for creation and seller response, and the associated order item information.
+   * This operation returns complete details of a refund request including the customer's reason for requesting the refund, current status, timestamps, and associated order item information. The refund request represents a customer's request to refund a delivered order item within the 7-day eligibility window.
    *
-   * **Authorization and Access Control:**
+   * Access is granted to: (1) the customer who created the refund request, (2) the seller who owns the product associated with the order item for responding to the request, and (3) administrators for platform oversight.
    *
-   * This endpoint is exclusively for customer access. The system verifies that the order containing the refunded item belongs to the authenticated customer. Customers can only view refund requests they have personally submitted.
+   * The status field indicates the current state: 'pending' (awaiting seller response), 'approved' (seller approved, refund processed), or 'rejected' (seller declined). Status transitions are one-way: pending → approved or pending → rejected. When a seller responds, a snapshot is automatically created to preserve the state for audit trail and dispute resolution.
    *
-   * **Response Contents:**
-   *
-   * The response includes the refund request details (reason, status, creation and response timestamps), the associated order item information (product name, variant configuration, quantity, purchase price, current item status), and an array of snapshots documenting the request's state history for audit trail purposes.
-   *
-   * **Related Operations:**
-   *
-   * To view all refund requests submitted by the customer, use the customer's order history endpoint with refund request filtering. Sellers view refund requests for their products through separate seller-specific endpoints.
+   * The responded_at field is null until the seller approves or rejects the request. The reason field contains the customer's explanation (10-1000 characters) for requesting the refund, preserved exactly as submitted.
    *
    * @param connection
-   * @param refundRequestId Unique identifier of the refund request to retrieve
+   * @param refundRequestId Unique identifier of the refund request to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve a single refund request by ID with authorization validation.
+   * @x-autobe-specification Query the shopping_mall_refund_requests table by primary key id to retrieve the refund request details. Join with shopping_mall_order_items to include the associated order item information (quantity, price, status). Further join with shopping_mall_orders to get order context (order_number, created_at), and join with shopping_mall_products and shopping_mall_product_variants to include product and variant details for the seller's reference.
    *
-   * 1. Fetch the refund request by ID from shopping_mall_refund_requests table
-   * 2. Join with shopping_mall_order_items to get the associated order item
-   * 3. Join with shopping_mall_products and shopping_mall_sellers to determine product ownership
-   * 4. Join with shopping_mall_orders to determine customer ownership
+   * Authorization checks:
+   * 1. If the requester is a customer, verify that the refund request's order item belongs to an order owned by this customer (shopping_mall_orders.shopping_mall_customer_id matches the authenticated customer's id).
+   * 2. If the requester is a seller, verify that the refund request's order item references a product owned by this seller (shopping_mall_order_items.shopping_mall_seller_id matches the authenticated seller's id).
+   * 3. If the requester is an administrator, grant access immediately.
    *
-   * Authorization rules:
-   * - If authenticated user is a seller: verify the seller owns the product associated with the order item
-   * - If authenticated user is a customer: verify the customer owns the order containing this item
-   * - If authenticated user is an administrator: allow full access
-   *
-   * If refund request not found, return 404.
-   * If user lacks authorization, return 403.
-   *
-   * Include order item details in response: product name, variant options, quantity, price, item status.
-   * Include snapshots array showing the history of state changes for audit trail.
+   * Return 404 Not Found if the refund request does not exist. Return 403 Forbidden if the requester lacks authorization to view this refund request.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":refundRequestId")
@@ -180,7 +156,7 @@ export class ShoppingmallCustomerRefund_requestsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("refundRequestId")
-    refundRequestId: string & tags.Format<"uuid">,
+    refundRequestId: string,
   ): Promise<IShoppingMallRefundRequest> {
     try {
       return await getShoppingMallCustomerRefundRequestsRefundRequestId({

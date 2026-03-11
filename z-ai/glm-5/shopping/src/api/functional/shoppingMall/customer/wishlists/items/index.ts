@@ -1,65 +1,64 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIShoppingMallWishlistItem } from "../../../../../structures/IPageIShoppingMallWishlistItem";
 import { IShoppingMallWishlistItem } from "../../../../../structures/IShoppingMallWishlistItem";
 
 /**
  * Add a product to the authenticated customer's wishlist for future consideration.
  *
- * This operation creates an individual product entry in the customer's wishlist, which serves as a monitoring list for products of interest. The wishlist system provides a one-to-one relationship with customers, where each customer has exactly one wishlist that can contain multiple products for future consideration. This is distinct from the active shopping cart workflow and represents items for later review rather than immediate purchase intent.
+ * This operation allows customers to save products they are interested in for later reference. Each customer has exactly one wishlist, and products are stored at the product level (not variant-specific). The wishlist serves as a monitoring list rather than a purchase reservation, separate from the active shopping cart workflow.
  *
- * **Database Entity Relationships:**
- * The wishlist item references a product at the product level only, not variant-specific, with a creation timestamp for sorting by most recently added. The shopping_mall_wishlist_items table enforces a uniqueness constraint to prevent duplicate products per wishlist, and entries are automatically removed when the referenced product is deleted by the seller via cascade delete.
+ * **Key Business Rules:**
+ * - The product must exist and not be deleted
+ * - Each product can only appear once in a customer's wishlist (enforced by unique constraint)
+ * - Products are automatically removed when deleted by their seller
+ * - Products from suspended or banned sellers will not be displayed when viewing the wishlist
+ * - The wishlist does not reserve inventory - customers must verify availability at purchase time
+ * - Customers can add their own products if they are also a seller
  *
- * **Request Requirements:**
- * The request body requires only the product ID to be added. The wishlist is automatically determined from the authenticated customer's account through the one-to-one customer-wishlist relationship, eliminating the need to specify a wishlist ID explicitly.
- *
- * **Validation Rules:**
- * - The product must exist in shopping_mall_products with deleted_at being null
- * - The product's seller must have active standing (not suspended or banned)
- * - The same product cannot be added twice to the same wishlist (enforced by @@unique([shopping_mall_wishlist_id, shopping_mall_product_id])
- *
- * **Response Details:**
- * Returns the created wishlist item with the generated UUID, product reference, creation timestamp, and embedded product details including main image, name, base price, and seller shop name for immediate display.
+ * **Security:**
+ * - Requires customer authentication
+ * - Customers can only add products to their own wishlist
+ * - Ownership validation ensures no cross-user wishlist access
  *
  * **Related Operations:**
- * - PATCH /wishlists/items to view paginated wishlist items
- * - DELETE /wishlists/items/{wishlistItemId} to remove a product from the wishlist
+ * - GET /wishlists/items - View wishlist with pagination
+ * - DELETE /wishlists/items/{productId} - Remove product from wishlist
  *
  * @param props.connection
- * @param props.body Product ID to add to the wishlist
+ * @param props.body Product to add to wishlist
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Create a new wishlist item for the authenticated customer.
+ * @x-autobe-specification Implementation steps for adding a product to the customer's wishlist:
  *
- * **Implementation Steps:**
- * 1. Extract authenticated customer ID from JWT token
- * 2. Find or create the customer's wishlist (one-to-one relationship)
- * 3. Validate the provided product ID:
- *    - Product must exist and not be soft-deleted (deleted_at is null)
- *    - Product's seller must not be suspended or banned
- * 4. Check for duplicate: query wishlist_items for existing entry with same wishlist_id and product_id
- * 5. If duplicate exists, return conflict error
- * 6. Create new wishlist_item record with:
- *    - shopping_mall_wishlist_id: customer's wishlist ID
- *    - shopping_mall_product_id: provided product ID
- *    - created_at: current timestamp
- * 7. Update wishlist's updated_at timestamp
- * 8. Fetch and return the created item with embedded product details
+ * 1. **Authentication & Authorization:**
+ *    - Extract customer ID from JWT token in Authorization header
+ *    - Verify customer account is not banned (check shopping_mall_customers.banned = false)
  *
- * **Database Queries:**
- * - SELECT wishlist by customer_id
- * - SELECT product with seller info (join shopping_mall_sellers)
- * - INSERT into shopping_mall_wishlist_items
- * - UPDATE shopping_mall_wishlists set updated_at
+ * 2. **Product Validation:**
+ *    - Query shopping_mall_products table to verify the product exists
+ *    - Check product is not soft-deleted (deleted_at IS NULL)
+ *    - Optionally verify product's seller is not suspended/banned for display purposes
  *
- * **Error Handling:**
- * - 404 if product not found or deleted
- * - 409 if product already in wishlist
- * - 403 if product's seller is suspended or banned
+ * 3. **Wishlist Resolution:**
+ *    - Query shopping_mall_wishlists to find customer's wishlist by shopping_mall_customer_id
+ *    - If no wishlist exists, create one (one-to-one relationship, each customer has exactly one wishlist)
+ *
+ * 4. **Duplicate Prevention:**
+ *    - Check shopping_mall_wishlist_items for existing entry with (wishlist_id, product_id)
+ *    - If exists, throw 409 Conflict error - product already in wishlist
+ *
+ * 5. **Create Wishlist Item:**
+ *    - Insert new record into shopping_mall_wishlist_items with:
+ *      - shopping_mall_wishlist_id: customer's wishlist ID
+ *      - shopping_mall_product_id: request body productId
+ *      - created_at: current timestamp
+ *    - Update shopping_mall_wishlists.updated_at to current timestamp
+ *
+ * 6. **Response:**
+ *    - Return created wishlist item with populated product relationship data
  * @path /shoppingMall/customer/wishlists/items
  * @accessor api.functional.shoppingMall.customer.wishlists.items.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -89,7 +88,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Product ID to add to the wishlist
+     * Product to add to wishlist
      */
     body: IShoppingMallWishlistItem.ICreate;
   };
@@ -138,240 +137,48 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of products saved in the authenticated customer's wishlist.
+ * Remove a specific product from the authenticated customer's wishlist.
  *
- * This operation allows customers to view their saved product collection for future consideration. Each wishlist item displays the product's main image, name, price range (or base price if all variants share the same price), seller shop name, and current stock availability. Products are sorted by most recently added first.
+ * This operation allows customers to remove products they previously saved to their wishlist. Each customer has exactly one wishlist, and this endpoint targets items within that wishlist identified by the product ID.
  *
- * The wishlist serves as a monitoring tool for products the customer is interested in. It does not reserve inventory or indicate any purchase commitment. Customers can view real-time stock status and pricing at the time of viewing, as these may change after a product is added to the wishlist.
+ * The wishlist_items table enforces a unique constraint on [wishlist_id, product_id], ensuring each product can only appear once per wishlist. When a product is removed, it is permanently deleted from the wishlist entry - no soft delete or archive is maintained.
  *
- * **Product Visibility:** Products from suspended or banned sellers are automatically excluded from the wishlist display. If a product has been deleted by the seller, it is automatically removed from the wishlist without notification.
+ * The removal operation does not affect:
+ * - The product itself or its availability in the catalog
+ * - Other customers' wishlists that may contain the same product
+ * - Any other data in the system
  *
- * **Access Control:** This operation is restricted to authenticated customers and only returns items from the customer's own wishlist. Attempting to access another customer's wishlist will result in an authorization error.
+ * If the specified product is not in the customer's wishlist, the request will be rejected with an appropriate error. No confirmation is required before removal - the item is immediately deleted.
  *
- * **Pagination:** Results are paginated to handle large wishlist collections efficiently. Each page includes product summary information optimized for list display.
- *
- * @param props.connection
- * @param props.body Pagination and optional filter parameters for wishlist item listing
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_wishlist_items table for items belonging to the authenticated customer's wishlist.
- *
- * Steps:
- * 1. Identify the authenticated customer from the session token
- * 2. Retrieve the customer's wishlist (shopping_mall_wishlists where shopping_mall_customer_id matches)
- * 3. Join with shopping_mall_wishlist_items to get all items in that wishlist
- * 4. Join with shopping_mall_products to include product details
- * 5. Filter out products from suspended/banned sellers (not displayed in wishlist)
- * 6. Filter out soft-deleted products (automatically cleaned up via cascade, but verify product existence)
- * 7. Apply pagination using the standard limit/offset or cursor-based approach
- * 8. Sort by created_at descending (most recently added first)
- * 9. Calculate current stock status for each product variant
- * 10. Determine price range (min/max) across all variants
- * 11. Return paginated results with product summary information
- *
- * Database queries:
- * - Main query: shopping_mall_wishlists → shopping_mall_wishlist_items → shopping_mall_products → shopping_mall_sellers
- * - Include product images (first image as main thumbnail)
- * - Include seller profile (shop name, logo)
- * - Include product variants (for price range and stock calculation)
- *
- * Filtering considerations:
- * - Exclude products where seller.suspended = true or seller.banned = true
- * - Exclude products where product.deleted_at IS NOT NULL
- *
- * The response should reflect real-time availability and pricing.
- * @path /shoppingMall/customer/wishlists/items
- * @accessor api.functional.shoppingMall.customer.wishlists.items.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Pagination and optional filter parameters for wishlist item listing
-     */
-    body: IShoppingMallWishlistItem.IRequest;
-  };
-  export type Body = IShoppingMallWishlistItem.IRequest;
-  export type Response = IPageIShoppingMallWishlistItem.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/shoppingMall/customer/wishlists/items",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/shoppingMall/customer/wishlists/items";
-  export const random = (): IPageIShoppingMallWishlistItem.ISummary =>
-    typia.random<IPageIShoppingMallWishlistItem.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a specific product saved in the authenticated customer's wishlist.
- *
- * This endpoint allows customers to view detailed information about a single wishlist item, including the product's name, description, base price or price range, main image, and seller shop information. The operation enforces strict ownership validation to ensure customers can only access items from their own wishlist.
- *
- * The response includes real-time availability status calculated from the product's variant inventory records. If any variant has stock available, the product is considered available for purchase. The price range reflects the minimum and maximum prices across all variants, using the product's base price as a fallback when variants do not override pricing.
- *
- * **Ownership Validation**: The operation verifies that the wishlist item belongs to the authenticated customer's wishlist before returning any data. Cross-customer access attempts result in authorization errors.
+ * Note: Products are also automatically removed from wishlists when sellers delete them, but that is handled through database cascade delete, not through this API.
  *
  * @param props.connection
- * @param props.wishlistItemId Unique identifier of the wishlist item to retrieve
+ * @param props.productId Unique identifier of the product to remove from the wishlist. The product must exist in the authenticated customer's wishlist for removal to succeed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve a single wishlist item by ID with ownership validation.
+ * @x-autobe-specification Implementation steps:
  *
- * 1. Authenticate the customer from the request context
- * 2. Query shopping_mall_wishlist_items table with the provided wishlistItemId
- * 3. Verify ownership: join with shopping_mall_wishlists to ensure the wishlist belongs to the authenticated customer
- * 4. If not found or ownership mismatch, return 404 Not Found or 403 Forbidden
- * 5. Join with shopping_mall_products to get product details
- * 6. Join with shopping_mall_sellers to get shop name
- * 7. Subquery shopping_mall_product_images to get main image (lowest display_order)
- * 8. Subquery shopping_mall_product_variants to calculate price range (min/max of price field, fallback to base_price if no variants)
- * 9. Subquery shopping_mall_inventory_records to calculate total stock for availability status
- * 10. Return the assembled wishlist item with product information
- * @path /shoppingMall/customer/wishlists/items/:wishlistItemId
- * @accessor api.functional.shoppingMall.customer.wishlists.items.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the wishlist item to retrieve
-     */
-    wishlistItemId: string & tags.Format<"uuid">;
-  };
-  export type Response = IShoppingMallWishlistItem;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/shoppingMall/customer/wishlists/items/:wishlistItemId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/shoppingMall/customer/wishlists/items/${encodeURIComponent(props.wishlistItemId ?? "null")}`;
-  export const random = (): IShoppingMallWishlistItem =>
-    typia.random<IShoppingMallWishlistItem>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("wishlistItemId")(() => typia.assert(props.wishlistItemId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Remove a product from the customer's wishlist.
+ * 1. Authenticate the customer from the JWT token in the request header
+ * 2. Query shopping_mall_wishlists table to find the customer's wishlist by shopping_mall_customer_id
+ * 3. Query shopping_mall_wishlist_items table for the entry matching:
+ *    - shopping_mall_wishlist_id = customer's wishlist id
+ *    - shopping_mall_product_id = productId from path parameter
+ * 4. If no matching entry found, throw error: 'Product not found in wishlist'
+ * 5. Delete the wishlist_item entry from the database
+ * 6. Update the wishlist's updated_at timestamp to current time
+ * 7. Return the deleted wishlist item in the response
  *
- * This operation allows customers to remove products they have previously saved to their wishlist. Each wishlist item represents a product the customer has added for future consideration, and this deletion permanently removes that entry.
+ * Database operations:
+ * - SELECT shopping_mall_wishlists WHERE shopping_mall_customer_id = :customerId
+ * - SELECT shopping_mall_wishlist_items WHERE shopping_mall_wishlist_id = :wishlistId AND shopping_mall_product_id = :productId
+ * - DELETE shopping_mall_wishlist_items WHERE id = :itemId
+ * - UPDATE shopping_mall_wishlists SET updated_at = NOW() WHERE id = :wishlistId
  *
- * **Authorization**: Only the customer who owns the wishlist can remove items from it. If the wishlist item does not belong to the authenticated customer, the request is rejected with a 404 error.
- *
- * **Validation**: The wishlist item must exist in the customer's wishlist. If the specified wishlistItemId is not found or does not belong to the authenticated customer, the operation returns an error.
- *
- * **Behavior**: The wishlist item is permanently deleted. No confirmation is required. This operation does not affect other customers' wishlists or the product itself.
- *
- * @param props.connection
- * @param props.wishlistItemId The unique identifier of the wishlist item to remove
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Delete the wishlist item by ID with ownership verification. Query shopping_mall_wishlist_items joined with shopping_mall_wishlists to verify the authenticated customer owns this wishlist item. If not found or not owned, return 404 error. Delete the wishlist_item record. No response body returned on success.
- * @path /shoppingMall/customer/wishlists/items/:wishlistItemId
+ * Error handling:
+ * - 401 Unauthorized if not authenticated as customer
+ * - 404 Not Found if product not in wishlist
+ * - Validate productId is a valid UUID format
+ * @path /shoppingMall/customer/wishlists/items/:productId
  * @accessor api.functional.shoppingMall.customer.wishlists.items.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -399,14 +206,14 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The unique identifier of the wishlist item to remove
+     * Unique identifier of the product to remove from the wishlist. The product must exist in the authenticated customer's wishlist for removal to succeed.
      */
-    wishlistItemId: string & tags.Format<"uuid">;
+    productId: string;
   };
 
   export const METADATA = {
     method: "DELETE",
-    path: "/shoppingMall/customer/wishlists/items/:wishlistItemId",
+    path: "/shoppingMall/customer/wishlists/items/:productId",
     request: null,
     response: {
       type: "application/json",
@@ -415,7 +222,7 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/shoppingMall/customer/wishlists/items/${encodeURIComponent(props.wishlistItemId ?? "null")}`;
+    `/shoppingMall/customer/wishlists/items/${encodeURIComponent(props.productId ?? "null")}`;
   export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
@@ -428,7 +235,7 @@ export namespace erase {
       contentType: "application/json",
     });
     try {
-      assert.param("wishlistItemId")(() => typia.assert(props.wishlistItemId));
+      assert.param("productId")(() => typia.assert(props.productId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

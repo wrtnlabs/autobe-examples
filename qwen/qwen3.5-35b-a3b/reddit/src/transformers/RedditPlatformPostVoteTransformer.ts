@@ -33,11 +33,11 @@ export namespace RedditPlatformPostVoteTransformer {
   ): Promise<IRedditPlatformPostVote> {
     return {
       id: input.id,
-      vote_type: typia.assert<"UPVOTE" | "DOWNVOTE">(input.vote_type),
+      vote_type: typia.assert<"UPVOTE" | "DOWNVOTE" | null>(input.vote_type),
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      author: await RedditPlatformMemberAtSummaryTransformer.transform(
+      user: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.user,
       ),
       post: await RedditPlatformPostAtSummaryTransformer.transform(input.post),

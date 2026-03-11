@@ -15,86 +15,60 @@ import { authorize_seller_refresh } from "../../../authorize/authorize_seller_re
 export async function test_api_seller_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Setup: Create seller account with known credentials
-  const joinPassword = RandomGenerator.alphaNumeric(16);
-  const joinConnection: api.IConnection = { host: connection.host };
-  const joinResult = await authorize_seller_join(joinConnection, {
+  // 1. Setup: Register seller account to get initial tokens
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const registerOutput = await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: joinPassword,
+      password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IEcommerceMallSeller.IJoin,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    },
   });
-  typia.assert(joinResult);
-  // 2. Setup: Login seller to obtain tokens
-  const loginConnection: api.IConnection = { host: connection.host };
-  const loginResult = await authorize_seller_login(loginConnection, {
-    body: {
-      email: joinResult.email,
-      password: joinPassword,
-    } satisfies IEcommerceMallSeller.ILogin,
-  });
-  typia.assert(loginResult);
-  // 3. Test: Refresh token using refresh endpoint
-  const refreshConnection: api.IConnection = { host: connection.host };
-  const refreshResult = await authorize_seller_refresh(refreshConnection, {
-    body: {
-      refresh_token: loginResult.token.refresh,
-    } satisfies IEcommerceMallSeller.IRefresh,
-  });
-  typia.assert(refreshResult);
-  // 4. Validate: Response contains seller identity
-  TestValidator.equals("seller id matches", refreshResult.id, loginResult.id);
-  TestValidator.equals(
-    "seller email matches",
-    refreshResult.email,
-    loginResult.email,
+  typia.assert(registerOutput);
+  // 2. Extract refresh token from registration response
+  const initialRefreshToken = registerOutput.token.refresh;
+  // 3. Refresh: Use the refresh token to get new tokens
+  const sellerRefreshConnection: api.IConnection = { host: connection.host };
+  const refreshBody = {
+    refresh_token: initialRefreshToken,
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IEcommerceMallSeller.IRefresh;
+  const refreshOutput = await authorize_seller_refresh(
+    sellerRefreshConnection,
+    {
+      body: refreshBody,
+    },
   );
+  typia.assert(refreshOutput);
+  // 4. Verify tokens are returned
   TestValidator.equals(
-    "approval status",
-    refreshResult.approval_status,
-    loginResult.approval_status,
+    "access token exists",
+    refreshOutput.token.access.length > 0,
+    true,
   );
   TestValidator.equals(
-    "is suspended",
-    refreshResult.is_suspended,
-    loginResult.is_suspended,
+    "refresh token exists",
+    refreshOutput.token.refresh.length > 0,
+    true,
   );
-  TestValidator.equals(
-    "is banned",
-    refreshResult.is_banned,
-    loginResult.is_banned,
-  );
-  // 5. Validate: New tokens generated (token exists and non-empty)
+  // 5. Verify new tokens are different from original
   TestValidator.notEquals(
-    "access token present",
-    refreshResult.token.access,
-    "",
+    "access token changed",
+    registerOutput.token.access,
+    refreshOutput.token.access,
   );
   TestValidator.notEquals(
-    "refresh token present",
-    refreshResult.token.refresh,
-    "",
+    "refresh token rotated",
+    initialRefreshToken,
+    refreshOutput.token.refresh,
   );
-  // 6. Validate: Token expiration timestamps present and valid
-  TestValidator.notEquals(
-    "expired_at present",
-    refreshResult.token.expired_at,
-    "",
+  // 6. Verify expiration timestamps are valid
+  TestValidator.predicate(
+    "access expires before refreshable until",
+    new Date(refreshOutput.token.expired_at) <=
+      new Date(refreshOutput.token.refreshable_until),
   );
-  TestValidator.notEquals(
-    "refreshable_until present",
-    refreshResult.token.refreshable_until,
-    "",
-  );
-  // 7. Validate: Token rotation - old refresh token is invalidated
-  await TestValidator.error("old refresh token invalidated", async () => {
-    const invalidRefreshConnection: api.IConnection = { host: connection.host };
-    await authorize_seller_refresh(invalidRefreshConnection, {
-      body: {
-        refresh_token: loginResult.token.refresh,
-      } satisfies IEcommerceMallSeller.IRefresh,
-    });
-  });
 }

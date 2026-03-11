@@ -8,104 +8,83 @@ export namespace ITodoAppAdminSession {
    */
   export type IJoin = {
     /**
-     * Admin email address for authentication
+     * Admin email address for authentication.
      *
      * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to todo_app_admins.email. Must be unique and valid email format.
+     * @x-autobe-specification Direct mapping from todo_app_admins.email. Unique constraint enforced.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * Admin password (plain text, will be hashed by server)
+     * Admin password (will be securely hashed before storage).
      *
      * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to todo_app_admins.password_hash. Password is hashed by backend using bcrypt before storage.
+     * @x-autobe-specification Plain text password input that is hashed with bcrypt before storing in password_hash column.
      */
-    password: string & tags.Format<"password">;
+    password: string & tags.MinLength<8> & tags.Format<"password">;
 
     /**
-     * The URL of the web page where the user initiated the registration
+     * URL path accessed by the admin before registration.
      *
-     * @x-autobe-specification Session context field. Captures the URL where the registration request originated. Used for security auditing.
+     * @x-autobe-specification Session context field stored in admin_sessions table. Represents the URL path accessed before authentication.
      */
     href?: (string & tags.Format<"uri">) | undefined;
 
     /**
-     * The URL of the previous web page that linked to the registration page
+     * Referrer URL of the admin's session.
      *
-     * @x-autobe-specification Session context field. Captures the referrer URL that led to the registration page. Used for security auditing.
+     * @x-autobe-specification Session context field stored in admin_sessions table. Represents the referrer URL of the admin's session.
      */
     referrer?: (string & tags.Format<"uri">) | undefined;
 
     /**
-     * The IP address of the client registering the admin account
+     * IP address of the admin's session.
      *
-     * @x-autobe-specification Session context field. Captures the client's IP address during registration. Used for security auditing and abuse prevention.
+     * @x-autobe-specification Session context field stored in admin_sessions table. Represents the IP address of the admin's session.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
 
   /**
-   * Administrator login request containing authentication credentials and session context metadata.
+   * Request body for refreshing admin authentication tokens. Contains the refresh token used to validate and renew the admin's authenticated session.
    */
-  export type ILogin = {
+  export type IRefresh = {
     /**
-     * Administrator's email address for authentication.
+     * JWT refresh token for renewing admin authentication session.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_admins.email. Must match exactly with database value.
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Refresh token from todo_app_admin_sessions.refresh_token used to authenticate session renewal for admin users. Required field for token rotation and session continuity.
      */
-    email: string & tags.Format<"email">;
-
-    /**
-     * Plain text password for verification against bcrypt hash.
-     *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to todo_app_admins.password_hash via bcrypt verification. Plain text password verified against stored hash.
-     */
-    password: string & tags.Format<"password">;
-
-    /**
-     * Client IP address at login time for session tracking.
-     *
-     * @x-autobe-specification Computed from HTTP request context. Captures client IP address at login time, stored in todo_app_admin_sessions.ip.
-     */
-    ip: string & tags.Format<"ipv4">;
-
-    /**
-     * HTTP referrer header at login time for session context.
-     *
-     * @x-autobe-specification Computed from HTTP request headers. Captures referrer URL at login time, stored in todo_app_admin_sessions.referrer.
-     */
-    referrer?: (string & tags.Format<"uri">) | null | undefined;
-
-    /**
-     * Target URL path at login time for session tracking.
-     *
-     * @x-autobe-specification Computed from HTTP request context. Captures target URL path at login time, stored in todo_app_admin_sessions.href.
-     */
-    href?: (string & tags.Format<"uri">) | null | undefined;
+    refresh_token: string;
   };
 
   /**
-   * Authentication response containing JWT tokens and admin user information. Provides access and refresh tokens for subsequent authenticated requests along with basic admin profile information.
+   * Authorization token information containing JWT tokens for authenticated admin session and expiration timestamp.
    */
   export type IAuthorized = {
     /**
-     * Admin user ID
+     * JWT access token for API authentication.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_admins.id. Admin user's unique identifier.
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from todo_app_admin_sessions.access_token. JWT access token for API authentication.
      */
-    id: string & tags.Format<"uuid">;
+    access: string;
 
     /**
-     * Admin email address
+     * JWT refresh token for session renewal.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_admins.email. Admin's authenticated email address.
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Direct mapping from todo_app_admin_sessions.refresh_token. JWT refresh token for session renewal.
      */
-    email: string & tags.Format<"email">;
+    refresh: string;
+
+    /**
+     * Token expiration timestamp in ISO 8601 format.
+     *
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from todo_app_admin_sessions.expires_at. Token expiration timestamp.
+     */
+    expired_at: string & tags.Format<"date-time">;
 
     /**
      * Authorization token.
@@ -116,35 +95,13 @@ export namespace ITodoAppAdminSession {
   };
 
   /**
-   * Request body for refreshing authentication tokens. Contains the refresh token that will be validated and exchanged for a new access token.
+   * Request body for admin login authentication.
    */
-  export type IRefresh = {
-    /**
-     * JWT refresh token to validate and exchange for a new access token.
-     *
-     * @x-autobe-specification JWT refresh token string from the session table. Used to obtain new access tokens without re-authentication.
-     */
-    refresh_token: string;
-
-    /**
-     * Client IP address at refresh time.
-     *
-     * @x-autobe-specification Client IP address at refresh time. Optional: server uses body.ip ?? serverIp.
-     */
+  export type ILogin = {
+    email: string;
+    password: string & tags.Format<"password">;
+    href?: (string & tags.Format<"uri">) | undefined;
+    referrer?: (string & tags.Format<"uri">) | undefined;
     ip?: (string & tags.Format<"ipv4">) | undefined;
-
-    /**
-     * Page URL at refresh time.
-     *
-     * @x-autobe-specification Current page URL at refresh time.
-     */
-    href: string & tags.Format<"uri">;
-
-    /**
-     * Referrer URL at refresh time.
-     *
-     * @x-autobe-specification Referrer URL at refresh time.
-     */
-    referrer: string & tags.Format<"uri">;
   };
 }

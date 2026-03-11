@@ -5,56 +5,62 @@ import typia, { tags } from "typia";
 
 import { IRedditPlatformComment } from "../../../../structures/IRedditPlatformComment";
 
-export * as votes from "./votes/index";
+export * as vote from "./vote/index";
 
 /**
- * Create a new comment on a post or reply to an existing comment in the Reddit platform.
+ * Create a new comment on a post or reply to an existing comment.
  *
- * This operation allows authenticated members to participate in discussions by creating top-level comments on posts or nested replies to other comments. The system validates that the comment content is non-empty and associates the comment with the appropriate parent (post or comment).
+ * This operation allows authenticated members to contribute to discussions by creating comments on posts or nesting replies within comment threads. Comments are stored with their author attribution, content, and relationship to the parent post or parent comment.
  *
- * The operation requires authentication - only logged-in members can create comments. Guest users are redirected to the login flow. The comment is immediately visible to all users with access to the parent content.
+ * The comment creation process validates several business rules: the requesting user must be an authenticated member, the comment content must contain at least one character, the target post must exist and be accessible (not deleted), and the user must not be banned from the community containing the target post. If the user attempts to reply to a comment, the target comment must also exist and be accessible.
  *
- * Security Considerations:
- * - Authentication is required - guest users cannot create comments
- * - The system verifies the member has access to the target post or parent comment
- * - If the member is banned from the community containing the post, the request is rejected
- * - Deleted posts or comments cannot receive new comments or replies
+ * Upon successful creation, the comment is assigned a unique identifier, initialized with a vote score of zero, and timestamped with the creation time. The comment author's karma score is tracked separately and will be updated when the comment receives votes. The system maintains the ability to search comments by content and display them in nested thread hierarchies.
+ *
+ * Related API operations:
+ * - `GET /posts/{postId}` must be called to verify a post exists before commenting
+ * - `POST /comments/{commentId}/vote` can be used to vote on the newly created comment
+ * - `GET /comments/{commentId}` retrieves the full comment details including nested replies
  *
  * @param props.connection
- * @param props.body Comment creation data including parent association and content.
+ * @param props.body Comment creation data including content and target post or parent comment reference
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new comment record in the reddit_platform_comments table with the following steps:
+ * @x-autobe-specification 1. Validate authentication - require authenticated member token in request headers
+ * 2. Validate request body - ensure content field is present and non-empty (min 1 character)
+ * 3. Validate that exactly one of post_id or parent_comment_id is provided:
+ *    - If post_id is provided: create top-level comment on post
+ *    - If parent_comment_id is provided: create nested reply to that comment
+ *    - If neither or both are provided: return validation error
+ * 4. Verify post exists and is not deleted:
+ *    - Query reddit_platform_posts by post_id
+ *    - Check deleted_at is null
+ *    - If post not found or deleted, return 404 error
+ * 5. Verify parent comment exists and is not deleted (if parent_comment_id provided):
+ *    - Query reddit_platform_comments by parent_comment_id
+ *    - Check deleted_at is null
+ *    - If comment not found or deleted, return 404 error
+ * 6. Verify user is not banned from the community:
+ *    - Get the post's community_id from the post record
+ *    - Query reddit_platform_community_bans for ban record where user_id = auth.user_id and community_id = post.community_id
+ *    - If ban exists and ban_end_date is in future, return 403 forbidden error
+ * 7. Create comment record in reddit_platform_comments with:
+ *    - id: generate UUID
+ *    - author_id: from authenticated user
+ *    - post_id: from request body (for top-level comments)
+ *    - parent_id: from request body (for replies)
+ *    - content: from request body
+ *    - vote_score: 0 (initialized)
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ *    - deleted_at: null
+ * 8. Return the newly created comment object with all fields
  *
- * 1. Verify the authenticated member exists and is not deleted/suspended
- * 2. Validate request body for required fields:
- *    - post_id OR parent_id must be provided (cannot be both null)
- *    - content must be non-empty (at least 1 character, no whitespace-only)
- * 3. Verify the target post exists and is not deleted (if post_id provided)
- * 4. Verify the target parent comment exists and is not deleted (if parent_id provided)
- * 5. Check if member is banned from the community containing the post
- * 6. Create the comment record with:
- *    - id: Generate new UUID
- *    - author_id: Set to authenticated member's ID
- *    - post_id: Set from request (for top-level comments)
- *    - parent_id: Set from request (for replies)
- *    - content: Set from request
- *    - vote_score: Initialize to 0
- *    - created_at: Set to current timestamp (UTC)
- *    - updated_at: Set to current timestamp
- *    - deleted_at: Set to null
- * 7. Update post's comment_count if this is a top-level comment (increment by 1)
- * 8. Schedule background job to update engagement metrics
- * 9. Return the newly created comment with full details
- *
- * Edge cases:
- * - Reject if both post_id and parent_id are null
- * - Reject if both post_id and parent_id are provided
- * - Reject if post has been deleted
- * - Reject if parent comment has been deleted
- * - Reject if member is banned from the community
- * - Reject if content is empty or whitespace-only
- * - Reject if member's account is suspended or deleted
+ * Error cases:
+ * - 401 Unauthorized: if user is not authenticated
+ * - 400 Bad Request: if validation fails (empty content, invalid post_id or parent_comment_id, both or neither specified)
+ * - 404 Not Found: if post or parent comment does not exist
+ * - 403 Forbidden: if user is banned from the community
+ * - 422 Unprocessable Entity: if content exceeds maximum length
  * @path /redditPlatform/member/comments
  * @accessor api.functional.redditPlatform.member.comments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -84,7 +90,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Comment creation data including parent association and content.
+     * Comment creation data including content and target post or parent comment reference
      */
     body: IRedditPlatformComment.ICreate;
   };
@@ -133,70 +139,50 @@ export namespace create {
 }
 
 /**
- * Update an existing comment by modifying its content.
+ * Update the content of an existing comment.
  *
- * This operation allows the author of a comment to edit their own comment content. The system updates the stored comment text while preserving the original creation timestamp, the comment's association with the parent post and author, and any nested reply relationships.
+ * This operation allows authenticated members to modify the content of comments they authored. The comment must exist, not be deleted, and the requesting member must be the comment's author.
  *
- * Authorization: Only the comment author can edit their comment. All other users including moderators (unless explicitly granted admin privileges) are prohibited from editing another user's comment.
+ * Updateable Fields:
+ * - content: The comment text content. Must be non-empty and is required in the update request.
  *
- * The system records the edit timestamp in the updated_at field but preserves the created_at timestamp to maintain conversation chronology. An "edited" indicator is displayed to all users viewing the post to indicate the comment has been modified after initial publication.
+ * The operation does not allow modification of:
+ * - vote_score: Automatically calculated from reddit_platform_comment_votes records
+ * - created_at/updated_at: System-managed timestamps
+ * - author_id: Cannot change comment ownership
+ * - post_id/parent_id: Cannot change comment hierarchy
  *
- * Related operations:
- * - GET /posts/:postId/comments - Retrieve all comments on a post to view the comment before editing
- * - GET /comments/{commentId} - Retrieve a specific comment's details (if a dedicated endpoint exists)
+ * If the comment has been deleted by the author or a moderator, the update request will be rejected.
  *
- * Validation Rules:
- * - The comment content must be non-empty (cannot be blank)
- * - The commenting member must have an active account
- * - The parent post must not have been deleted
- * - The comment must not have been previously deleted by the author
- * - The member must not be banned from the community containing the post
+ * Related Operations:
+ * - GET /comments/{commentId}: Retrieve comment details before editing
+ * - DELETE /comments/{commentId}: Delete the comment if editing is no longer needed
+ * - POST /comments: Create a new comment if the update fails
  *
- * Error Scenarios:
- * - 403 Forbidden: User attempting to edit a comment they did not author
- * - 404 Not Found: Comment does not exist or has been deleted
- * - 400 Bad Request: Empty or whitespace-only content, or parent post has been deleted
- * - 409 Conflict: Comment has been previously deleted
+ * Error Conditions:
+ * - Comment not found: The comment ID does not exist in the database
+ * - Unauthorized: The requesting user is not the comment author
+ * - Comment deleted: The comment has been soft-deleted (deleted_at is set)
+ * - Empty content: The provided content field is empty or contains only whitespace
  *
  * @param props.connection
- * @param props.commentId UUID identifier of the comment to update.
- * @param props.body Comment update data containing the fields to modify.
+ * @param props.commentId ID of the comment to update
+ * @param props.body Update fields for the comment. Only the content field can be modified.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Verify the requesting user is authenticated (member actor).
- *
- * 2. Retrieve the comment record from reddit_platform_comments table by commentId.
- *
- * 3. Authorization check: Verify the comment's author_id matches the authenticated user's ID.
- *    - If mismatch, return 403 Forbidden with message "Only the comment author can edit this comment"
- *
- * 4. Business logic validation:
- *    - Check if deleted_at is set. If yes, return 404 Not Found (comment already deleted)
- *    - Check if parent post (post_id) exists and deleted_at is null. If post is deleted, return 400 Bad Request
- *    - Verify the user's account status is active (member not deleted/suspended)
- *    - Check if user is banned from the community containing the post (if applicable)
- *
- * 5. Request body validation:
- *    - Validate content field is present and non-empty (trim whitespace check)
- *    - Validate content length within acceptable limits (e.g., 1-10000 characters)
- *    - If validation fails, return 400 Bad Request with specific error message
- *
- * 6. Database transaction:
- *    - Update the comment record: set content to new value, set updated_at to current timestamp
- *    - Maintain referential integrity (author_id, post_id, parent_id remain unchanged)
- *    - Perform update as part of a transaction to ensure atomicity
- *
- * 7. Return the updated comment object with all fields including:
- *    - id, author_id, post_id, parent_id, content, vote_score, created_at, updated_at, deleted_at
- *    - Include nested post information if needed (via join query)
- *
- * 8. Edge cases:
- *    - If comment has nested replies, they remain intact and visible
- *    - Vote score is not modified during edit operation
- *    - The "edited" flag can be derived from comparing created_at and updated_at
- *
- * 9. Logging:
- *    - Log the edit attempt for security auditing including: user ID, comment ID, timestamp, old content (optional), new content hash
+ * @x-autobe-specification 1. Validate that the requesting user is authenticated as a member (JWT token validation)
+ * 2. Fetch comment record from reddit_platform_comments table where id = commentId
+ * 3. Validate comment exists - return 404 Not Found if not found
+ * 4. Validate comment is not deleted - check deleted_at is NULL, return 404 if soft-deleted
+ * 5. Validate comment author - check author_id matches requesting user's ID, return 403 Forbidden if not the author
+ * 6. Validate update request body contains required content field
+ * 7. Validate content is non-empty - trim whitespace and check length > 0, return 400 Bad Request if empty
+ * 8. Update the comment record:
+ *    - Set content to the provided value
+ *    - Set updated_at to current timestamp
+ *    - Do NOT modify vote_score, post_id, parent_id, author_id, created_at, or deleted_at
+ * 9. Commit the database transaction
+ * 10. Return the updated comment object with all fields including new updated_at timestamp
  * @path /redditPlatform/member/comments/:commentId
  * @accessor api.functional.redditPlatform.member.comments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -226,12 +212,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * UUID identifier of the comment to update.
+     * ID of the comment to update
      */
     commentId: string & tags.Format<"uuid">;
 
     /**
-     * Comment update data containing the fields to modify.
+     * Update fields for the comment. Only the content field can be modified.
      */
     body: IRedditPlatformComment.IUpdate;
   };
@@ -282,34 +268,93 @@ export namespace update {
 }
 
 /**
- * Permanently delete a comment from the platform, with authorization verification and cascading deletion of all nested replies.
+ * Permanently delete a comment and all its nested replies from the platform.
  *
- * This operation removes a comment and all its nested replies from the platform. The comment author can delete their own comments, and community moderators can delete any comment within their moderated community.
+ * This operation removes a comment from all views, feeds, and comment lists. When executed, it cascades deletion to all nested replies beneath the target comment, recursively removing the entire reply thread.
  *
- * When authorized, the operation permanently deletes the target comment and recursively removes all nested replies beneath it. The comment is completely removed from all feeds, lists, and views where it was previously displayed, and cannot be recovered after deletion.
+ * Authorization Requirements:
+ * - The comment author can delete their own comment
+ * - Community moderators can delete any comment within their authorized community
+ * - Non-authenticated users cannot delete comments
+ * - Users banned from a community cannot delete comments in that community
  *
- * After successful deletion, the system updates the parent post's comment_count and the parent comment's reply_count to reflect the removal. The operation is atomic - if any part of the deletion fails, the entire operation rolls back.
+ * Cascade Deletion:
+ * - All direct and indirect replies to the deleted comment are recursively removed
+ * - The operation maintains referential integrity by ensuring no orphaned comments exist
+ * - If cascade deletion exceeds 10 nested replies, processing occurs in batches to prevent timeout
  *
- * This operation requires member authentication and authorization as the comment owner or as a moderator of the community containing the comment.
+ * Count Updates:
+ * - The post's comment count is decremented
+ * - Parent comments' reply counts are updated to reflect removal of the deleted thread
+ * - The comment author's karma score is decremented by the number of upvotes the comment received
+ *
+ * Confirmation:
+ * - For deletions under 10 affected items (comment + replies), no confirmation is required
+ * - For moderator operations affecting more than 10 comments, explicit confirmation is required
+ *
+ * Audit Logging:
+ * - All deletions are logged with the actor's ID, timestamp, affected comment ID, and number of nested replies deleted
+ * - Moderators deletions include moderator ID for compliance tracking
+ *
+ * Error Handling:
+ * - Returns 404 if comment does not exist or has already been deleted
+ * - Returns 403 if the actor is not the author and lacks moderator authority
+ * - Returns 403 if the user is banned from the relevant community
+ * - Returns 409 if the post containing the comment has been deleted and the user cannot access it
+ *
+ * Related Operations:
+ * - GET /comments/{commentId} - Retrieve comment details before deletion
+ * - POST /comments/{commentId}/vote - View comment's vote score
+ * - GET /posts/{postId}/comments - View comments on a post
  *
  * @param props.connection
- * @param props.commentId The unique identifier of the comment to delete
+ * @param props.commentId Unique identifier of the comment to be deleted
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Verify authentication: User must be logged in as a member (actor: member)
- * 2. Verify authorization:
- *    - Check if authenticated user's ID matches comment's author_id, OR
- *    - Check if authenticated user is a moderator of the community where the comment was posted by joining with reddit_platform_posts to get the community_id, then checking reddit_platform_community_moderators table
- * 3. Validate comment exists and is not already deleted (deleted_at is null)
- * 4. Perform cascading delete:
- *    - Delete all nested replies (comments where parent_id = comment.id recursively)
- *    - Use recursive query or batch deletion to handle deeply nested reply chains
- *    - If cascade affects more than 10 replies, process in batches to prevent timeout
- * 5. Set deleted_at timestamp on the target comment (soft delete)
- * 6. Update related counts:
- *    - Decrement post.comment_count if post_id exists
- *    - Decrement parent_comment.reply_count if parent_id exists (update parent comment's aggregate reply count)
- * 7. Return the deleted comment summary data for confirmation
+ * @x-autobe-specification DELETE /comments/{commentId} implementation:
+ *
+ * 1. Authorization:
+ *    - Verify user is authenticated (member actor)
+ *    - If user is the comment author (author_id matches user.id), proceed
+ *    - If user is a moderator, verify moderator role in the community where the post belongs
+ *    - Check if user is banned from the community
+ *
+ * 2. Comment Validation:
+ *    - Verify comment exists in reddit_platform_comments
+ *    - Check if comment is already soft-deleted (deleted_at is not null)
+ *    - Verify the associated post exists and is accessible
+ *
+ * 3. Cascade Deletion:
+ *    - Identify all nested replies using recursive query on parent_id
+ *    - Count total replies to determine batching (if > 10, batch by 10)
+ *    - No confirmation needed for < 50 items; require explicit confirmation for 50+ items
+ *
+ * 4. Transaction (atomic operation):
+ *    BEGIN TRANSACTION
+ *
+ *    - Delete comment and all nested replies from reddit_platform_comments
+ *    - Delete associated vote records from reddit_platform_comment_votes
+ *    - Update parent comment's reply count (if has parent)
+ *    - Update post's comment count (if has post_id)
+ *    - Update comment author's karma score (decrement by upvote count)
+ *
+ *    COMMIT TRANSACTION
+ *
+ * 5. Audit Logging:
+ *    - Log deletion in reddit_platform_moderation_audit_logs (for moderator actions)
+ *    - Record actor_id, timestamp, comment_id, cascade_count
+ *    - For moderator: log moderator_id, community_id, action_type
+ *
+ * 6. Error Handling:
+ *    - 404 Not Found: comment_id does not exist
+ *    - 403 Forbidden: unauthorized actor or banned user
+ *    - 409 Conflict: post has been deleted or inaccessible
+ *    - 422 Unprocessable Entity: validation errors
+ *
+ * 7. Performance:
+ *    - Use batched deletion for large cascade operations (> 10 replies)
+ *    - Indexes on parent_id, post_id, author_id enable efficient queries
+ *    - Cascade constraints ensure orphaned records are cleaned up
  * @path /redditPlatform/member/comments/:commentId
  * @accessor api.functional.redditPlatform.member.comments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -338,7 +383,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The unique identifier of the comment to delete
+     * Unique identifier of the comment to be deleted
      */
     commentId: string & tags.Format<"uuid">;
   };

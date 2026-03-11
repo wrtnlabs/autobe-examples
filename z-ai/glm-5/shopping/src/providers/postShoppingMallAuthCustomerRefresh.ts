@@ -22,21 +22,17 @@ export async function postShoppingMallAuthCustomerRefresh(props: {
     type: string;
   };
   try {
-    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: string;
-    };
+    }) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type
+  // 2. Validate type
   if (decoded.type !== "customer") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists
+  // 3. Validate session
   const session =
     await MyGlobal.prisma.shopping_mall_customer_sessions.findFirst({
       where: {
@@ -47,7 +43,11 @@ export async function postShoppingMallAuthCustomerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate customer account
+  // Check session not expired
+  if (new Date() > session.expired_at) {
+    throw new HttpException("Session has expired", 401);
+  }
+  // 4. Validate customer
   const customer =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
       where: { id: decoded.id },
@@ -56,19 +56,21 @@ export async function postShoppingMallAuthCustomerRefresh(props: {
     throw new HttpException("Account has been deleted", 403);
   }
   if (customer.banned) {
+    // Invalidate all sessions for banned customer
+    await MyGlobal.prisma.shopping_mall_customer_sessions.deleteMany({
+      where: { customer_id: customer.id },
+    });
     throw new HttpException("Account has been banned", 403);
   }
-  // 5. Calculate expiration times
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  // 6. Generate new tokens (SAME session_id)
+  // 5. Generate new tokens (SAME session_id)
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
   const accessToken = jwt.sign(
     {
       type: "customer",
-      id: decoded.id,
+      id: customer.id,
       session_id: decoded.session_id,
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -76,33 +78,37 @@ export async function postShoppingMallAuthCustomerRefresh(props: {
   const refreshToken = jwt.sign(
     {
       type: "customer",
-      id: decoded.id,
+      id: customer.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration
+  // 6. Update session expiration
   await MyGlobal.prisma.shopping_mall_customer_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // 8. Return response
+  // 7. Return response
   return {
     id: customer.id,
     email: customer.email,
     displayName: customer.display_name,
     phoneNumber: customer.phone_number,
     banned: customer.banned,
-    createdAt: customer.created_at.toISOString(),
-    updatedAt: customer.updated_at.toISOString(),
+    createdAt: toISOStringSafe(customer.created_at),
+    updatedAt: toISOStringSafe(customer.updated_at),
+    deletedAt:
+      customer.deleted_at !== null
+        ? toISOStringSafe(customer.deleted_at)
+        : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

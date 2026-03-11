@@ -48,8 +48,7 @@ export namespace EcommerceMallSellerTransformer {
       is_banned: input.is_banned,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-      deleted_at:
-        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

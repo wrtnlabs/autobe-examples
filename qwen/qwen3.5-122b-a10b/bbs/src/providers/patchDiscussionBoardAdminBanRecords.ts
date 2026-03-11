@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { DiscussionBoardBanRecordAtSummaryTransformer } from "../transformers/DiscussionBoardBanRecordAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,148 +21,91 @@ export async function patchDiscussionBoardAdminBanRecords(props: {
   admin: AdminPayload;
   body: IDiscussionBoardBanRecord.IRequest;
 }): Promise<IPageIDiscussionBoardBanRecord.ISummary> {
-  // Parse pagination parameters with defaults
+  // Pagination parameters
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build where clause with filters
-  const whereInput: Prisma.discussion_board_ban_recordsWhereInput = {
+  // Build WHERE conditions
+  const whereInput = {
     deleted_at: null,
-    ...(props.body.member_id && {
-      discussion_board_member_id: props.body.member_id,
+    ...(props.body.memberId && {
+      discussion_board_member_id: props.body.memberId,
     }),
-    ...(props.body.discussion_board_admin_id && {
-      discussion_board_admin_id: props.body.discussion_board_admin_id,
+    ...(props.body.adminId && {
+      discussion_board_admin_id: props.body.adminId,
     }),
-    ...(props.body.banned_at_from && {
+    ...(props.body.dateRange && {
       banned_at: {
-        gte: new Date(props.body.banned_at_from),
+        ...(props.body.dateRange.from && {
+          gte: new Date(props.body.dateRange.from),
+        }),
+        ...(props.body.dateRange.to && {
+          lte: new Date(props.body.dateRange.to),
+        }),
       },
     }),
-    ...(props.body.banned_at_to && {
-      banned_at: {
-        lte: new Date(props.body.banned_at_to),
-      },
+    ...(props.body.isActive !== undefined && {
+      unbanned_at: props.body.isActive ? null : { not: null },
     }),
-    ...(props.body.unbanned_at_filter === "active" && {
-      unbanned_at: null,
-    }),
-    ...(props.body.unbanned_at_filter === "historical" && {
-      unbanned_at: {
-        not: null,
-      },
-    }),
-    // Member search requires separate handling with OR condition
-    ...(props.body.member_search && {
-      discussionBoardMember: {
-        OR: [
-          {
-            email: {
-              contains: props.body.member_search,
-              mode: "insensitive",
-            },
+    ...(props.body.search && {
+      OR: [
+        {
+          reason: {
+            contains: props.body.search,
           },
-          {
+        },
+        {
+          discussionBoardMember: {
             display_name: {
-              contains: props.body.member_search,
-              mode: "insensitive",
+              contains: props.body.search,
             },
           },
-        ],
-      },
+        },
+        {
+          discussionBoardAdmin: {
+            display_name: {
+              contains: props.body.search,
+            },
+          },
+        },
+      ],
     }),
-    // Reason search
-    ...(props.body.reason_search && {
-      reason: {
-        contains: props.body.reason_search,
-        mode: "insensitive",
-      },
-    }),
-  };
-  // Build orderBy clause
-  const sort_by = props.body.sort_by ?? "banned_at";
-  const sort_order = props.body.sort_order ?? "desc";
-  const orderByInput: Prisma.discussion_board_ban_recordsOrderByWithRelationInput =
-    {
-      [sort_by]: sort_order,
-    };
-  // Fetch paginated data
-  const data = await MyGlobal.prisma.discussion_board_ban_records.findMany({
+  } satisfies Prisma.discussion_board_ban_recordsWhereInput;
+  // Build ORDER BY conditions
+  const orderByInput = (
+    props.body.sort?.field
+      ? {
+          [props.body.sort.field]: props.body.sort.direction ?? "desc",
+        }
+      : {
+          banned_at: "desc",
+        }
+  ) satisfies Prisma.discussion_board_ban_recordsOrderByWithRelationInput;
+  // Execute paginated query
+  const records = await MyGlobal.prisma.discussion_board_ban_records.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    select: {
-      id: true,
-      reason: true,
-      banned_at: true,
-      unbanned_at: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      discussionBoardMember: {
-        select: {
-          id: true,
-          display_name: true,
-          bio: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
-      discussionBoardAdmin: {
-        select: {
-          id: true,
-          email: true,
-          display_name: true,
-          grade: true,
-          created_at: true,
-        },
-      },
-    },
+    ...DiscussionBoardBanRecordAtSummaryTransformer.select(),
   });
-  // Fetch total count
+  // Execute count query
   const total = await MyGlobal.prisma.discussion_board_ban_records.count({
     where: whereInput,
   });
-  // Transform to response DTO
-  const records: IDiscussionBoardBanRecord.ISummary[] = data.map((record) => ({
-    id: record.id,
-    reason: record.reason,
-    banned_at: toISOStringSafe(record.banned_at),
-    unbanned_at: record.unbanned_at
-      ? toISOStringSafe(record.unbanned_at)
-      : null,
-    discussionBoardMember: {
-      id: record.discussionBoardMember.id,
-      displayName: record.discussionBoardMember.display_name,
-      bio: record.discussionBoardMember.bio,
-      articleCount: 0,
-      commentCount: 0,
-      createdAt: toISOStringSafe(record.discussionBoardMember.created_at),
-      updatedAt: toISOStringSafe(record.discussionBoardMember.updated_at),
-      deletedAt: record.discussionBoardMember.deleted_at
-        ? toISOStringSafe(record.discussionBoardMember.deleted_at)
-        : null,
-    },
-    discussionBoardAdmin: {
-      id: record.discussionBoardAdmin.id,
-      email: record.discussionBoardAdmin.email,
-      display_name: record.discussionBoardAdmin.display_name,
-      grade: record.discussionBoardAdmin.grade,
-      created_at: toISOStringSafe(record.discussionBoardAdmin.created_at),
-    },
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-  }));
+  // Transform records
+  const data = await ArrayUtil.asyncMap(
+    records,
+    DiscussionBoardBanRecordAtSummaryTransformer.transform,
+  );
+  // Return paginated response
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-    data: records,
+    } satisfies IPage.IPagination,
+    data,
   };
 }

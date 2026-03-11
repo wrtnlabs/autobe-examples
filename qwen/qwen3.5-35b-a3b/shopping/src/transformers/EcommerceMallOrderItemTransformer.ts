@@ -1,4 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
@@ -35,10 +36,6 @@ export namespace EcommerceMallOrderItemTransformer {
         product: EcommerceMallProductAtSummaryTransformer.select(),
         productVariant:
           EcommerceMallProductVariantAtSummaryTransformer.select(),
-        statusSnapshots: true,
-        shipmentItem: true,
-        cancellationRequests: true,
-        refundRequests: true,
       },
     } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
   }
@@ -47,27 +44,24 @@ export namespace EcommerceMallOrderItemTransformer {
   ): Promise<IEcommerceMallOrderItem> {
     return {
       id: input.id,
-      item_status: typia.assert<
-        "shipped" | "delivered" | "cancelled" | "paid" | "refunded"
-      >(input.item_status),
+      item_status: input.item_status,
       quantity: input.quantity,
       unit_price: input.unit_price,
       product_snapshot: input.product_snapshot,
       variant_snapshot: input.variant_snapshot,
       seller_profile_snapshot: input.seller_profile_snapshot,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      productVariant:
-        await EcommerceMallProductVariantAtSummaryTransformer.transform(
-          input.productVariant,
-        ),
-    } satisfies IEcommerceMallOrderItem;
+      variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(
+        input.productVariant,
+      ),
+    };
   }
 }

@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
@@ -42,22 +41,19 @@ export namespace EcommerceMallOrderTransformer {
   ): Promise<IEcommerceMallOrder> {
     return {
       id: input.id,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      order_number: input.order_number,
-      total_price: input.total_price,
-      overall_status: typia.assert<
+      orderNumber: input.order_number,
+      totalPrice: input.total_price,
+      overallStatus: typia.assert<
+        | "paid"
         | "shipped"
         | "delivered"
         | "cancelled"
-        | "paid"
         | "refunded"
         | "partiallyCompleted"
       >(input.overall_status),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
       orderItems: await ArrayUtil.asyncMap(
         input.orderItems,
         EcommerceMallOrderItemTransformer.transform,
@@ -66,6 +62,9 @@ export namespace EcommerceMallOrderTransformer {
         input.shipments,
         EcommerceMallShipmentTransformer.transform,
       ),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

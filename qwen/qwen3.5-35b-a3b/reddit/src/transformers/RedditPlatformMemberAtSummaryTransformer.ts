@@ -14,17 +14,36 @@ export namespace RedditPlatformMemberAtSummaryTransformer {
     return {
       select: {
         id: true,
+        email: true,
+        password_hash: true,
         username: true,
         display_name: true,
         bio: true,
         avatar_url: true,
         karma_score: true,
+        is_active: true,
         created_at: true,
-        _count: {
-          select: {
-            subscriptions: true,
-          },
-        },
+        updated_at: true,
+        deleted_at: true,
+        sessions: true,
+        passwordResetTokens: true,
+        emailVerifications: true,
+        ownedCommunities: true,
+        posts: true,
+        memberPostVotes: true,
+        postSnapshots: true,
+        comments: true,
+        commentVotes: true,
+        reports: true,
+        resolvedReports: true,
+        subscriptions: true,
+        moderatorOfCommunities: true,
+        moderationAuditLogs: true,
+        userModerationAuditLogs: true,
+        moderatorHistoryRecords: true,
+        moderatorHistoryActions: true,
+        bannedUsers: true,
+        issuedBans: true,
       },
     } satisfies Prisma.reddit_platform_membersFindManyArgs;
   }
@@ -34,12 +53,10 @@ export namespace RedditPlatformMemberAtSummaryTransformer {
     return {
       id: input.id,
       username: input.username,
-      displayName: input.display_name,
-      bio: input.bio,
-      avatarUrl: input.avatar_url,
-      karmaScore: input.karma_score,
-      createdAt: input.created_at.toISOString(),
-      subscriptionCount: input._count.subscriptions,
+      display_name: input.display_name,
+      karma_score: Number(input.karma_score),
+      is_active: input.is_active,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

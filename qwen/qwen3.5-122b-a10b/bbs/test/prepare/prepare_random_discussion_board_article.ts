@@ -6,29 +6,28 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_discussion_board_article(
-  input?: DeepPartial<IDiscussionBoardArticle.ICreate> | undefined,
+  input?: DeepPartial<IDiscussionBoardArticle.ICreate>,
 ): IDiscussionBoardArticle.ICreate {
   return {
-    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
-    body: input?.body ?? RandomGenerator.content({ paragraphs: 3 }),
+    title: input?.title ?? RandomGenerator.paragraph({ sentences: 2 }),
+    body: input?.body ?? RandomGenerator.content({ paragraphs: 2 }),
     discussion_board_section_id:
       input?.discussion_board_section_id ??
       typia.random<string & tags.Format<"uuid">>(),
-    tags: input?.tags
-      ? input.tags.length > 0
-        ? input.tags.map(
-            (tag) => tag ?? typia.random<string & tags.Format<"uuid">>(),
-          )
-        : []
-      : typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<0> & tags.Maximum<5>
-          >() > 0
-        ? ArrayUtil.repeat(
+    tagIds: input?.tagIds
+      ? input.tagIds.length > 0
+        ? input.tagIds
+        : ArrayUtil.repeat(
             typia.random<
               number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
             >(),
             () => typia.random<string & tags.Format<"uuid">>(),
           )
-        : undefined,
+      : ArrayUtil.repeat(
+          typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+          >(),
+          () => typia.random<string & tags.Format<"uuid">>(),
+        ),
   };
 }

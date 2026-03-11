@@ -10,22 +10,7 @@ export function prepare_random_shopping_mall_inventory_record(
 ): IShoppingMallInventoryRecord.ICreate {
   return {
     quantity_change:
-      input?.quantity_change ??
-      (RandomGenerator.pick([true, false] as const)
-        ? typia.random<
-            number &
-              tags.Type<"int32"> &
-              tags.Minimum<1> &
-              tags.Maximum<1000000>
-          >()
-        : typia.random<
-            number &
-              tags.Type<"int32"> &
-              tags.Minimum<-1000000> &
-              tags.Maximum<-1>
-          >()),
-    reason:
-      input?.reason ??
-      RandomGenerator.paragraph({ sentences: 5, wordMin: 5, wordMax: 10 }),
+      input?.quantity_change ?? typia.random<number & tags.Type<"int32">>(),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

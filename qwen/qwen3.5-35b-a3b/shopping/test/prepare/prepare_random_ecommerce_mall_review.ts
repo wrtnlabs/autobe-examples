@@ -9,13 +9,17 @@ export function prepare_random_ecommerce_mall_review(
   input?: DeepPartial<IEcommerceMallReview.ICreate>,
 ): IEcommerceMallReview.ICreate {
   return {
-    product_id: typia.random<string & tags.Format<"uuid">>(),
     rating:
       input?.rating ??
       typia.random<
         number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>
       >(),
     text_content:
-      input?.text_content ?? RandomGenerator.content({ paragraphs: 1 }),
+      input?.text_content ??
+      (Math.random() > 0.3
+        ? RandomGenerator.paragraph({ sentences: 3 })
+        : null),
+    product_id:
+      input?.product_id ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

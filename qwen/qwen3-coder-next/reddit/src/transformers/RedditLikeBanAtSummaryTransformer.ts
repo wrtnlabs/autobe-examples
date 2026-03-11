@@ -36,10 +36,10 @@ export namespace RedditLikeBanAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-      banned_user: await RedditLikeMemberAtSummaryTransformer.transform(
+      bannedUser: await RedditLikeMemberAtSummaryTransformer.transform(
         input.bannedUser,
       ),
-      banned_community: await RedditLikeCommunityAtSummaryTransformer.transform(
+      bannedCommunity: await RedditLikeCommunityAtSummaryTransformer.transform(
         input.bannedCommunity,
       ),
     };

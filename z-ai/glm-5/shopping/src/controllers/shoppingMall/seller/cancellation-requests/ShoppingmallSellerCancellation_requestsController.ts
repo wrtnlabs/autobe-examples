@@ -1,87 +1,69 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallCancellationRequest } from "../../../../api/structures/IShoppingMallCancellationRequest";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { putShoppingMallSellerCancellationRequestsCancellationRequestId } from "../../../../providers/putShoppingMallSellerCancellationRequestsCancellationRequestId";
-import { putShoppingMallSellerCancellationRequestsCancellationRequestIdRespond } from "../../../../providers/putShoppingMallSellerCancellationRequestsCancellationRequestIdRespond";
+import { getShoppingMallSellerCancellationRequestsCancellationRequestId } from "../../../../providers/getShoppingMallSellerCancellationRequestsCancellationRequestId";
+import { postShoppingMallSellerCancellationRequestsCancellationRequestIdApprove } from "../../../../providers/postShoppingMallSellerCancellationRequestsCancellationRequestIdApprove";
+import { postShoppingMallSellerCancellationRequestsCancellationRequestIdReject } from "../../../../providers/postShoppingMallSellerCancellationRequestsCancellationRequestIdReject";
 
 @Controller("/shoppingMall/seller/cancellation-requests/:cancellationRequestId")
 export class ShoppingmallSellerCancellation_requestsController {
   /**
-   * Allows sellers to respond to customer cancellation requests by approving or rejecting them.
+   * Retrieve a specific cancellation request by its unique identifier.
    *
-   * This operation is used by sellers to process pending cancellation requests from customers who wish to cancel order items before shipment. When a customer creates a cancellation request for a paid (not yet shipped) order item, the request enters 'pending' status and awaits seller response.
+   * This operation allows authorized parties to view the complete details of a cancellation request, including the customer's reason for cancellation, the current status (pending, approved, or rejected), and the timestamps for request creation and seller response.
    *
-   * The seller who owns the product associated with the order item can review the customer's cancellation reason and decide whether to approve or reject the request. Upon approval, the order item status changes to 'cancelled', stock is restored for the variant, and the customer receives a refund. Upon rejection, the order item continues its normal fulfillment process.
+   * **Authorization Rules:**
+   * - Customers can only view cancellation requests they created for their own order items
+   * - Sellers can only view cancellation requests for order items belonging to products they own
+   * - Administrators can view any cancellation request on the platform
    *
-   * A snapshot of the cancellation request state is automatically created when the seller responds, preserving the reason text and decision for dispute resolution and audit purposes. This snapshot is immutable and serves as permanent evidence of how the cancellation was handled.
+   * **Status Values:**
+   * - 'pending': Awaiting seller response
+   * - 'approved': Seller authorized the cancellation
+   * - 'rejected': Seller declined the cancellation
    *
-   * Once a cancellation request is approved or rejected, its status becomes final and cannot be changed. Customers can view the seller's response through their cancellation request history. If a seller rejects a cancellation request, the customer cannot create another cancellation request for the same order item.
+   * The status transitions are one-way: pending can only move to approved or rejected. Once approved or rejected, the status cannot be changed (terminal states). When a request is approved, the order item status changes to 'cancelled' and stock is restored.
    *
-   * **Database Schema Reference**:
-   * - shopping_mall_cancellation_requests: Contains the cancellation request with reason (customer's explanation), status (pending/approved/rejected), and timestamps
-   * - shopping_mall_cancellation_request_snapshots: Immutable snapshot created upon seller response
-   * - shopping_mall_order_items: The order item being cancelled, referenced by the request
-   * - shopping_mall_sellers: The seller responding to the request
-   *
-   * **Authorization**: Only the seller who owns the product associated with the order item can respond to the cancellation request.
-   *
-   * **Related Operations**:
-   * - POST /cancellation-requests: Creates a new cancellation request (customer action)
-   * - GET /cancellation-requests/{cancellationRequestId}: Retrieves cancellation request details
+   * Related entities include the order item being cancelled (shopping_mall_order_items) and the seller who responds to the request (shopping_mall_sellers). Each response creates an immutable snapshot (shopping_mall_cancellation_request_snapshots) for audit trail and dispute resolution.
    *
    * @param connection
-   * @param cancellationRequestId Unique identifier of the cancellation request to respond to. Must be a valid UUID referencing an existing cancellation request with 'pending' status.
-   * @param body The seller's response to the cancellation request, containing the approval or rejection decision.
+   * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Service layer updates the cancellation request status when a seller responds.
+   * @x-autobe-specification Retrieve a single cancellation request by ID from shopping_mall_cancellation_requests table.
    *
-   * Algorithm:
-   * 1. Fetch the cancellation request by ID
-   * 2. Validate the cancellation request exists
-   * 3. Validate the cancellation request status is 'pending' (cannot respond to already-approved or rejected requests)
-   * 4. Fetch the order item to get the product and seller information
-   * 5. Validate the authenticated seller owns the product associated with the order item
-   * 6. Update the cancellation request: set status to 'approved' or 'rejected', set shopping_mall_seller_id to authenticated seller's ID, set responded_at to current timestamp, update updated_at
-   * 7. Create a cancellation_request_snapshot with the reason, status, and created_at (timestamp of response)
-   * 8. If status is 'approved': restore stock for the order item quantity via inventory record, update order item status to 'cancelled'
-   * 9. Return the updated cancellation request with all fields
-   *
-   * Database queries:
-   * - SELECT cancellation request by ID
-   * - SELECT order item with product/variant details
-   * - UPDATE cancellation request (status, seller_id, responded_at, updated_at)
-   * - INSERT cancellation request snapshot
-   * - If approved: INSERT inventory record (positive quantity change), UPDATE order item status
-   *
-   * Authorization: Seller only (must own the product)
-   *
-   * Error cases:
-   * - Cancellation request not found (404)
-   * - Seller does not own the product (403)
-   * - Status not 'pending' (409 - conflict, already resolved)
-   * - Invalid status value (400)
+   * 1. Parse the cancellationRequestId UUID path parameter
+   * 2. Query shopping_mall_cancellation_requests where id = cancellationRequestId
+   * 3. Include related entities:
+   *    - Join with shopping_mall_order_items to get order item details
+   *    - Join with shopping_mall_orders to verify customer ownership (for customer access)
+   *    - Join with shopping_mall_products and shopping_mall_sellers to verify seller ownership (for seller access)
+   *    - Optionally include shopping_mall_cancellation_request_snapshots for history
+   * 4. Authorization checks:
+   *    - For customer: verify shopping_mall_orders.shopping_mall_customer_id matches authenticated customer
+   *    - For seller: verify shopping_mall_order_items.shopping_mall_seller_id matches authenticated seller
+   *    - For administrator: allow access without ownership check
+   * 5. If not found, return 404 error
+   * 6. If unauthorized, return 403 error
+   * 7. Return the complete cancellation request entity with related references
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
-  public async update(
+  @TypedRoute.Get()
+  public async at(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("cancellationRequestId")
-    cancellationRequestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallCancellationRequest.IUpdate,
+    cancellationRequestId: string,
   ): Promise<IShoppingMallCancellationRequest> {
     try {
-      return await putShoppingMallSellerCancellationRequestsCancellationRequestId(
+      return await getShoppingMallSellerCancellationRequestsCancellationRequestId(
         {
           seller,
           cancellationRequestId,
-          body,
         },
       );
     } catch (error) {
@@ -91,66 +73,134 @@ export class ShoppingmallSellerCancellation_requestsController {
   }
 
   /**
-   * Allows a seller to respond to a pending cancellation request by approving or rejecting it.
+   * Approve a pending cancellation request for an order item owned by the authenticated seller.
    *
-   * This operation enables sellers to manage customer cancellation requests for their products. Only the seller who owns the product in the order item can respond. When approved, the order item is cancelled, stock is restored via an inventory record, and the refund process is initiated.
+   * This operation allows a seller to approve a customer's cancellation request for an order item that contains their product. Upon approval, the cancellation request status transitions from 'pending' to 'approved', which is a terminal state that cannot be changed afterward.
    *
-   * The cancellation request status transitions from 'pending' to either 'approved' or 'rejected', and this transition is final - no further status changes are allowed. A snapshot is automatically created to preserve the request state for audit trail and dispute resolution purposes.
+   * The system automatically creates an immutable snapshot of the cancellation request state when approval occurs, preserving the customer's original reason text, the seller's decision, and the exact timestamp for audit trail and dispute resolution purposes. The customer is notified of the approval with information about refund processing.
    *
-   * Suspended sellers retain the ability to respond to cancellation requests, allowing them to process existing orders during suspension. However, banned sellers cannot respond to any requests.
+   * **Authorization Requirements:**
+   * - Only the seller who owns the product associated with the order item can approve the cancellation request
+   * - The seller account must not be banned (suspended sellers can still approve)
+   * - The cancellation request must have 'pending' status
    *
-   * The response includes the original reason text and is permanently recorded with a timestamp for transaction integrity and customer-seller dispute resolution support.
+   * **Business Rules:**
+   * - Once approved, the cancellation request status cannot be changed (terminal state)
+   * - A snapshot is created automatically for audit trail
+   * - The order item status changes to 'cancelled'
+   * - Stock is restored for the cancelled item
+   * - Customer receives notification of the approval
    *
    * @param connection
-   * @param cancellationRequestId Unique identifier of the cancellation request to respond to
-   * @param body Seller's response to the cancellation request containing the approval decision
+   * @param cancellationRequestId UUID of the cancellation request to approve. Must exist and have 'pending' status. The authenticated seller must own the product associated with this cancellation request's order item.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Seller responds to a pending cancellation request by approving or rejecting it.
+   * @x-autobe-specification Implementation steps:
    *
-   * **Implementation Steps:**
-   * 1. Validate the cancellation request exists and status is 'pending'
-   * 2. Verify the authenticated seller owns the product in the order item (join through cancellation_request → order_item → product → seller)
-   * 3. Check seller is not banned (suspended sellers CAN respond)
-   * 4. Update the cancellation request:
-   *    - Set status to 'approved' or 'rejected' from request body
-   *    - Set shopping_mall_seller_id to current seller
-   *    - Set responded_at to current timestamp
-   *    - Update updated_at timestamp
-   * 5. Create a cancellation_request_snapshot with:
-   *    - reason from the original request
-   *    - status from the response
-   *    - created_at as current timestamp
-   * 6. If approved:
-   *    - Update order item status to 'cancelled'
-   *    - Create positive inventory record to restore stock
-   *    - Trigger refund processing
-   * 7. Return the updated cancellation request with seller and order item relations
+   * 1. **Authentication & Authorization**: Verify the authenticated user is a seller. Query the cancellation request by ID, join with order_items to get the product, then verify the product's seller_id matches the authenticated seller's ID.
    *
-   * **Transaction Boundary:** All updates must be atomic within a single transaction.
+   * 2. **Status Validation**: Check that the cancellation request has status='pending'. Reject if already 'approved' or 'rejected' (terminal states).
    *
-   * **Error Cases:**
+   * 3. **Account Standing Check**: Verify the seller is not banned. Suspended sellers are allowed to respond to cancellation requests.
+   *
+   * 4. **Transaction**:
+   *    a. Update cancellation_requests set status='approved', responded_at=NOW(), updated_at=NOW(), shopping_mall_seller_id=authenticated_seller_id
+   *    b. Create a new cancellation_request_snapshots record with reason from the original request, status='approved', created_at=NOW()
+   *    c. Update order_items set status='cancelled', updated_at=NOW()
+   *    d. Create inventory_record for stock restoration (positive quantity_change)
+   *
+   * 5. **Notification**: Trigger customer notification about the approved cancellation and refund processing.
+   *
+   * 6. **Response**: Return the updated cancellation request with all fields.
+   *
+   * **Error Handling**:
    * - 404 if cancellation request not found
-   * - 403 if seller does not own the product
-   * - 400 if status is not 'pending'
+   * - 403 if seller doesn't own the product
    * - 403 if seller is banned
+   * - 409 if cancellation request status is not 'pending'
+   * - Use appropriate error codes for each failure case
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put("respond")
-  public async respond(
+  @TypedRoute.Post("approve")
+  public async approve(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("cancellationRequestId")
-    cancellationRequestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallCancellationRequest.IRespond,
+    cancellationRequestId: string,
   ): Promise<IShoppingMallCancellationRequest> {
     try {
-      return await putShoppingMallSellerCancellationRequestsCancellationRequestIdRespond(
+      return await postShoppingMallSellerCancellationRequestsCancellationRequestIdApprove(
         {
           seller,
           cancellationRequestId,
-          body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject a customer's cancellation request for an order item.
+   *
+   * This operation allows a seller to deny a customer's request to cancel an order item before shipment. The rejection permanently closes the cancellation request with status transition from 'pending' to 'rejected', which is a terminal state that cannot be modified afterward.
+   *
+   * The seller must be authenticated and must own the product associated with the order item referenced in the cancellation request. Only cancellation requests with 'pending' status can be rejected. Banned sellers cannot perform this operation; however, suspended sellers retain rejection authority for existing orders.
+   *
+   * Upon successful rejection, the system automatically creates an immutable snapshot capturing the rejection decision, the customer's original reason text, and the timestamp for audit trail and dispute resolution purposes. The seller's response is recorded with their identity and the response timestamp.
+   *
+   * Related operations: GET /seller/cancellation-requests lists pending cancellation requests for the authenticated seller, POST /cancellation-requests/{id}/approve approves a cancellation request.
+   *
+   * @param connection
+   * @param cancellationRequestId Unique identifier of the cancellation request to reject (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Implementation steps for rejecting a cancellation request:
+   *
+   * 1. Authentication: Verify the requester is an authenticated seller (not customer or administrator).
+   *
+   * 2. Fetch the cancellation request by ID from shopping_mall_cancellation_requests table.
+   *
+   * 3. Authorization checks:
+   *    - Verify cancellation request exists (404 if not found)
+   *    - Fetch the associated order_item via shopping_mall_order_item_id
+   *    - Fetch the product via shopping_mall_product_id from the order_item
+   *    - Verify the authenticated seller's ID matches shopping_mall_seller_id on the product (403 if mismatch)
+   *    - Verify the seller's 'banned' flag is false (403 if banned)
+   *    - Verify cancellation request status is 'pending' (409 conflict if already resolved)
+   *
+   * 4. Transaction:
+   *    - Update cancellation request:
+   *      - Set status = 'rejected'
+   *      - Set shopping_mall_seller_id = authenticated seller's ID
+   *      - Set responded_at = current timestamp
+   *      - Set updated_at = current timestamp
+   *    - Create immutable snapshot in shopping_mall_cancellation_request_snapshots:
+   *      - shopping_mall_cancellation_request_id = the request ID
+   *      - reason = copy from cancellation request's reason field
+   *      - status = 'rejected'
+   *      - created_at = current timestamp
+   *
+   * 5. Return the updated cancellation request with seller and order item relations populated.
+   *
+   * 6. Error handling:
+   *    - If snapshot creation fails, rollback the entire transaction and return 500 error
+   *    - If concurrent modification detected (optimistic locking), return 409 conflict
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post("reject")
+  public async reject(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("cancellationRequestId")
+    cancellationRequestId: string,
+  ): Promise<IShoppingMallCancellationRequest> {
+    try {
+      return await postShoppingMallSellerCancellationRequestsCancellationRequestIdReject(
+        {
+          seller,
+          cancellationRequestId,
         },
       );
     } catch (error) {

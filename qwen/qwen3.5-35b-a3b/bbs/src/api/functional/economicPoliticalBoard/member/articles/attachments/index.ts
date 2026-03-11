@@ -3,40 +3,37 @@ import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
-import { IEconomicPoliticalBoardArticle } from "../../../../../structures/IEconomicPoliticalBoardArticle";
 import { IEconomicPoliticalBoardAttachment } from "../../../../../structures/IEconomicPoliticalBoardAttachment";
+import { IPageIEconomicPoliticalBoardAttachment } from "../../../../../structures/IPageIEconomicPoliticalBoardAttachment";
 
 /**
- * Upload a file attachment to an existing article in the economic/political discussion board.
+ * Add a new file attachment to an existing article in the economic/political discussion board.
  *
- * This endpoint allows authenticated members and administrators to attach files (images or documents) to an article they own. The file must first be uploaded to object storage or CDN, and the endpoint receives the file URL along with metadata to create the attachment record.
+ * This operation allows authenticated members to upload and associate file attachments with their articles. Attachments can be images (charts, screenshots, illustrations) or documents (PDF reports, spreadsheets) that support and enhance the article content.
  *
- * The caller must be the article's author or an administrator. The system validates ownership before creating the attachment. Multiple attachments can be added to a single article, and all attachments are automatically deleted when the article is deleted.
+ * The requesting user must own the target article to add attachments. THE system validates that the article exists and that the authenticated user is the article's author before creating the attachment record. Each attachment is permanently associated with the article until removed.
  *
- * Supported file types include images (PNG, JPG, GIF, etc.) and documents (PDF, DOCX, XLSX, etc.). Each attachment is assigned a file type classification ('image' or 'file') and stores the original filename for display purposes.
- *
- * Related operation: GET /articles/{articleId} retrieves the article with its complete attachment list.
+ * Attachments are stored in object storage or CDN with metadata preserved including original filename, file type classification, and upload timestamp. The attachment count on the article is automatically updated.
  *
  * @param props.connection
- * @param props.articleId The unique identifier of the article to which the attachment is being added.
- * @param props.body Attachment metadata and file URL. The file must already be uploaded to storage; this endpoint records the metadata and creates the attachment database record.
+ * @param props.articleId UUID identifier of the article to attach the file to. The user must own this article.
+ * @param props.body File attachment information including storage URL, original filename, and type classification
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Handle file attachment creation with the following steps:
+ * @x-autobe-specification Create a new attachment record for the specified article.
  *
- * 1. Authenticate the request and identify the current user.
- * 2. Query the economic_political_board_articles table to retrieve the article by articleId (path parameter).
- * 3. Validate article ownership: check that author_id matches the current user's id, or that the user has administrator privileges.
- * 4. Reject with 403 Forbidden if the user does not own the article.
- * 5. Verify the article is not soft-deleted (deleted_at is null).
- * 6. Extract file_url, file_name, and file_type from the request body.
- * 7. Validate file_url is a valid URI format.
- * 8. Validate file_name is non-empty and does not exceed maximum length.
- * 9. Validate file_type is either 'image' or 'file'.
- * 10. Check for any existing file upload limits (if configured).
- * 11. Create a new record in economic_political_board_attachments with: article_id, file_url, file_name, file_type, and created_at timestamp.
- * 12. Set updated_at and deleted_at (null for active attachment).
- * 13. Return the newly created attachment object with all fields including the generated id.
+ * 1. Validate articleId exists in economic_political_board_articles table
+ * 2. Verify authenticated user is the article's author (article.authorId == currentUserId)
+ * 3. Validate fileUrl is a valid URI, fileName is provided, fileType is 'image' or 'file'
+ * 4. Insert new record into economic_political_board_attachments with articleId, fileUrl, fileName, fileType
+ * 5. Set createdAt and updatedAt to current timestamp, deletedAt to NULL
+ * 6. Increment commentCount on article (if needed, though this is attachment count not comment count)
+ * 7. Return the created attachment entity
+ *
+ * Error cases:
+ * - 404 if article does not exist
+ * - 403 if user does not own the article
+ * - 400 if fileUrl is invalid, fileName empty, or fileType not 'image' or 'file'
  * @path /economicPoliticalBoard/member/articles/:articleId/attachments
  * @accessor api.functional.economicPoliticalBoard.member.articles.attachments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,12 +63,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * The unique identifier of the article to which the attachment is being added.
+     * UUID identifier of the article to attach the file to. The user must own this article.
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * Attachment metadata and file URL. The file must already be uploaded to storage; this endpoint records the metadata and creates the attachment database record.
+     * File attachment information including storage URL, original filename, and type classification
      */
     body: IEconomicPoliticalBoardAttachment.ICreate;
   };
@@ -122,47 +119,61 @@ export namespace create {
 }
 
 /**
- * Manage file attachments (add and/or remove) for a specific article in the Economic/Political Discussion Board.
+ * Manage file attachments associated with a specific article in the economic/political discussion board.
  *
- * This operation allows article owners to attach multiple files to their article or remove existing attachments. Each attachment can be an image or document file stored with its file URL, file type, and original file name.
+ * This operation enables article authors and administrators to add new file attachments or remove existing attachments from their articles. Each attachment stored in economic_political_board_attachments contains metadata about uploaded files including file URL, original filename, and file type classification (image or document). The attachment system supports soft deletion via the deleted_at field for audit trail purposes.
  *
- * The operation requires the authenticated user to own the target article. Ownership is validated by comparing the authenticated user's ID against the article's authorId field.
+ * Security and Authorization:
+ * - Only the article's author can add or remove attachments from their own articles
+ * - Administrators can manage attachments on any article regardless of ownership
+ * - Cross-user attachment operations are rejected with access denied errors
+ * - Unauthorized attempts to modify attachments are logged for security monitoring
  *
- * The request body supports simultaneous add and remove operations, allowing users to replace attachments in a single API call. When attachments are removed, the corresponding database records and stored files are deleted.
+ * Request Body:
+ * Specify attachments to add or remove using operations array. Each operation indicates action type (add/remove) and target attachment ID for removal or file metadata for addition.
  *
- * Successful operation returns the updated list of all attachments associated with the article after applying the requested changes.
+ * Response Body:
+ * Returns updated list of all active (non-deleted) attachments for the article after applying specified operations, sorted by creation date in descending order.
+ *
+ * Related Operations:
+ * - GET /economicPoliticalBoard/articles/{articleId} - View article with attachment references
+ * - GET /economicPoliticalBoard/articles/{articleId}/attachments - List all attachments for an article
  *
  * @param props.connection
- * @param props.articleId The unique identifier of the target article
- * @param props.body Attachment management operations containing arrays for adding and removing attachments
+ * @param props.articleId The unique identifier of the article to manage attachments for
+ * @param props.body Operations to perform on article attachments (add or remove)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate authentication - user must be logged in
- * 2. Retrieve article by articleId from economic_political_board_articles table
- * 3. Validate article exists - return 404 if not found
- * 4. Validate article ownership - compare authenticated user's ID with article.authorId
- * 5. If attachmentId array provided in remove list:
- *    - For each attachmentId, delete corresponding record from economic_political_board_attachments
- *    - Delete associated file from storage
- * 6. If attachments array provided in add list:
- *    - For each attachment, validate file format (mimeType from fileType field)
- *    - Validate file size does not exceed limits from business rules
- *    - Validate file name does not contain prohibited characters
- *    - Create new economic_political_board_attachments record
- *    - Upload file to storage and persist fileUrl
- *    - Set articleId, fileName, fileType, and uploadedAt
- * 7. Return updated list of all attachments for the article from database
- * 8. Handle validation errors: 400 for business rule violations, 401 for unauthenticated, 403 for ownership violation, 404 for not found
+ * @x-autobe-specification 1. Authenticate user and extract userId from JWT token
+ * 2. Verify article exists and retrieve article record
+ * 3. Check authorization:
+ *    - If user is admin, allow operation
+ *    - If user is article author, allow operation
+ *    - Otherwise reject with 403 Forbidden
+ * 4. Parse operations array from request body
+ * 5. For each 'add' operation:
+ *    - Validate required fields (fileUrl, fileName, fileType)
+ *    - Validate fileType is 'image' or 'file'
+ *    - Insert new record into economic_political_board_attachments with articleId, fileUrl, fileName, fileType, createdAt, updatedAt
+ * 6. For each 'remove' operation:
+ *    - Verify attachment belongs to article (articleId match)
+ *    - Soft delete attachment by setting deleted_at to current timestamp
+ * 7. Query all non-deleted attachments for the article
+ * 8. Return paginated list of attachments with sorting by createdAt desc
+ * 9. Handle errors:
+ *    - 404 if article not found
+ *    - 403 if user not authorized
+ *    - 400 if invalid operation type or missing required fields
  * @path /economicPoliticalBoard/member/articles/:articleId/attachments
- * @accessor api.functional.economicPoliticalBoard.member.articles.attachments.manageAttachments
+ * @accessor api.functional.economicPoliticalBoard.member.articles.attachments.updateAttachments
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function manageAttachments(
+export async function updateAttachments(
   connection: IConnection,
-  props: manageAttachments.Props,
-): Promise<manageAttachments.Response> {
+  props: updateAttachments.Props,
+): Promise<updateAttachments.Response> {
   return true === connection.simulate
-    ? manageAttachments.simulate(connection, props)
+    ? updateAttachments.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -172,27 +183,27 @@ export async function manageAttachments(
           },
         },
         {
-          ...manageAttachments.METADATA,
-          path: manageAttachments.path(props),
+          ...updateAttachments.METADATA,
+          path: updateAttachments.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace manageAttachments {
+export namespace updateAttachments {
   export type Props = {
     /**
-     * The unique identifier of the target article
+     * The unique identifier of the article to manage attachments for
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * Attachment management operations containing arrays for adding and removing attachments
+     * Operations to perform on article attachments (add or remove)
      */
-    body: IEconomicPoliticalBoardArticle.IManageAttachmentsRequest;
+    body: IEconomicPoliticalBoardAttachment.IManage;
   };
-  export type Body = IEconomicPoliticalBoardArticle.IManageAttachmentsRequest;
-  export type Response = IEconomicPoliticalBoardAttachment.IList;
+  export type Body = IEconomicPoliticalBoardAttachment.IManage;
+  export type Response = IPageIEconomicPoliticalBoardAttachment.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -209,16 +220,16 @@ export namespace manageAttachments {
 
   export const path = (props: Omit<Props, "body">) =>
     `/economicPoliticalBoard/member/articles/${encodeURIComponent(props.articleId ?? "null")}/attachments`;
-  export const random = (): IEconomicPoliticalBoardAttachment.IList =>
-    typia.random<IEconomicPoliticalBoardAttachment.IList>();
+  export const random = (): IPageIEconomicPoliticalBoardAttachment.ISummary =>
+    typia.random<IPageIEconomicPoliticalBoardAttachment.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: manageAttachments.Props,
+    props: updateAttachments.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: manageAttachments.path(props),
+      path: updateAttachments.path(props),
       contentType: "application/json",
     });
     try {
@@ -238,69 +249,39 @@ export namespace manageAttachments {
 }
 
 /**
- * Delete a specific file attachment from an article in the economic/political discussion board.
+ * Delete a file attachment from an article in the economic/political discussion board.
  *
- * This operation permanently removes a single attachment file and its metadata from the system. The requester must be the owner of the parent article or have administrator privileges to delete attachments.
+ * This endpoint removes a specific attachment from an article by marking it as soft-deleted. The requester must either be the article's author or have administrator privileges with content deletion permissions.
  *
- * The deletion is immediate and irreversible. When an attachment is deleted, the file is removed from storage and the database record is marked as deleted via soft delete (deleted_at timestamp).
+ * The operation performs ownership verification for member accounts - a member can only delete attachments from articles they created. Administrators can delete attachments from any article regardless of authorship.
  *
- * **Authorization Requirements**:
+ * Upon successful deletion, the attachment record is marked with a deleted_at timestamp. The soft-delete approach preserves the attachment record in the database for audit trail purposes while marking it as deleted. Soft-deleted attachments are excluded from normal listing operations but can be restored if needed.
  *
- * - Article owner: Users can only delete attachments from articles they created
- * - Administrator: Admins can delete attachments from any article regardless of ownership
- * - Guest and non-owner members: Request will be rejected with 403 Forbidden
- *
- * **Deletion Behavior**:
- *
- * - The attachment file is permanently removed from object storage
- * - Database record is soft-deleted (deleted_at timestamp set)
- * - Associated file metadata (filename, URL, type) is preserved in audit trail
- *
- * **Related Operations**:
- *
- * - `GET /articles/{articleId}` - View article details including all attachments
- * - `GET /articles/{articleId}/attachments` - List all attachments on an article
- * - `POST /articles/{articleId}/attachments` - Add new attachments to an article
+ * Related operations:
+ * - `GET /economicPoliticalBoard/member/articles/{articleId}` retrieves article details including its attachment list
+ * - `POST /economicPoliticalBoard/member/articles/{articleId}/attachments` adds new attachments to an article
+ * - `DELETE /economicPoliticalBoard/member/articles/{articleId}` removes an article and automatically soft-deletes all its attachments
  *
  * @param props.connection
- * @param props.articleId ID of the parent article that owns this attachment
- * @param props.attachmentId ID of the attachment to delete
+ * @param props.articleId The unique identifier of the article containing the attachment
+ * @param props.attachmentId The unique identifier of the attachment to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification DELETE operation to remove a specific attachment from an article.
+ * @x-autobe-specification 1. Verify user authentication - require active session for member or admin role
+ * 2. Verify user has sufficient authorization:
+ *    - For member: verify article.authorId matches authenticated user's ID
+ *    - For admin: verify user has delete content permission (all admins have this)
+ * 3. Verify article exists and retrieve its record
+ * 4. Verify attachment exists and belongs to the specified article (attachment.articleId == article.id)
+ * 5. Delete the attachment record from economic_political_board_attachments table
+ * 6. Delete the physical file from storage using fileUrl
+ * 7. Return empty 204 No Content response
  *
- * **Service Layer Implementation**:
- *
- * 1. Retrieve the article by articleId and verify attachment belongs to it
- * 2. Check authentication and authorization:
- *    - If authenticated as article.author_id → allow deletion
- *    - If authenticated as admin → allow deletion
- *    - Otherwise return 403 Forbidden
- * 3. Verify attachmentId matches the requested attachment
- * 4. Verify attachment exists and is not already soft-deleted
- * 5. Delete the file from object storage (physical deletion)
- * 6. Update attachment record: set deleted_at to current timestamp
- * 7. Update article.updated_at to reflect modification
- * 8. Return 200 OK with deleted attachment summary data
- *
- * **Database Transaction**:
- * - Begin transaction
- * - Lock article row for update (optimistic locking)
- * - Update attachment set deleted_at = NOW() where id = attachmentId
- * - Update articles set updated_at = NOW() where id = articleId
- * - Commit transaction
- *
- * **Error Handling**:
- * - 404 Not Found: Article or attachment does not exist
- * - 403 Forbidden: User lacks ownership or admin privileges
- * - 409 Conflict: Attachment already deleted
- * - 500 Internal Server Error: File deletion from storage failed
- *
- * **Security Considerations**:
- * - Verify user authentication token is valid
- * - Cross-check article author_id with authenticated user ID
- * - Admin role verification against economic_political_board_administrator_roles table
- * - Prevent path traversal or ID manipulation attacks
+ * Error handling:
+ * - 401 Unauthorized if user is not authenticated
+ * - 403 Forbidden if user is member but not article author
+ * - 404 Not Found if article or attachment does not exist
+ * - 404 Not Found if attachment does not belong to specified article
  * @path /economicPoliticalBoard/member/articles/:articleId/attachments/:attachmentId
  * @accessor api.functional.economicPoliticalBoard.member.articles.attachments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -329,12 +310,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * ID of the parent article that owns this attachment
+     * The unique identifier of the article containing the attachment
      */
     articleId: string & tags.Format<"uuid">;
 
     /**
-     * ID of the attachment to delete
+     * The unique identifier of the attachment to delete
      */
     attachmentId: string & tags.Format<"uuid">;
   };

@@ -1,58 +1,73 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallProductVariant } from "../../../../../api/structures/IShoppingMallProductVariant";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteShoppingMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/deleteShoppingMallSellerProductsProductIdVariantsVariantId";
 import { postShoppingMallSellerProductsProductIdVariants } from "../../../../../providers/postShoppingMallSellerProductsProductIdVariants";
-import { putShoppingMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/putShoppingMallSellerProductsProductIdVariantsVariantId";
 
 @Controller("/shoppingMall/seller/products/:productId/variants")
 export class ShoppingmallSellerProductsVariantsController {
   /**
-   * Create a new product variant (SKU) for a seller's product.
+   * Create a new product variant (SKU) for an existing product.
    *
-   * This operation allows sellers to add a new variant to their product, representing a specific combination of options like color and size. Each variant has a unique SKU code used for inventory tracking and order processing.
+   * This operation allows authenticated sellers to add variant configurations to their products. Each variant represents a specific purchasable combination of product options, such as 'Red / Large' or 'Blue / Small'. The variant's optional price can override the product's base price, giving sellers flexibility in pricing different configurations.
    *
-   * The seller must be the owner of the product and have an approved seller account. Products from suspended or banned sellers cannot receive new variants. The SKU code must be unique across the entire platform, and the combination of option values must be unique within the product.
+   * The operation enforces several business constraints:
+   * - The seller must own the product (verified through product's shopping_mall_seller_id)
+   * - The SKU code must be unique across the entire platform
+   * - The option_values combination must be unique within the parent product
+   * - The product must exist and not be deleted
+   * - The seller account must be approved and not suspended or banned
    *
-   * The variant's stock quantity starts at 0 and must be managed through inventory restocking operations. If no price override is provided, the variant inherits the product's base price.
+   * After successful creation, the variant becomes immediately available for customers to select and add to their cart. The variant's stock quantity is managed separately through inventory records, which must be added after variant creation.
    *
-   * **Related Operations:**
+   * Related operations:
    * - GET /products/{productId}/variants - List all variants for a product
-   * - PUT /products/{productId}/variants/{variantId} - Update a variant
-   * - DELETE /products/{productId}/variants/{variantId} - Delete a variant
-   * - POST /products/{productId}/variants/{variantId}/inventory - Add inventory to a variant
+   * - PATCH /products/{productId}/variants/{variantId} - Update variant details
+   * - DELETE /products/{productId}/variants/{variantId} - Delete variant
+   * - POST /variants/{variantId}/inventory/restock - Add inventory for the variant
    *
    * @param connection
-   * @param productId Unique identifier of the product to which the variant will be added. The authenticated seller must be the owner of this product.
+   * @param productId Unique identifier of the product to which the variant will be added. The authenticated seller must own this product.
    * @param body Variant creation data including SKU code, option values, and optional price override.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Seller creates a new variant for their product.
+   * @x-autobe-specification Implementation steps:
    *
-   * 1. Validate seller authentication and retrieve seller ID from JWT token.
-   * 2. Verify seller is approved (approvalStatus = 'approved') and not suspended or banned.
-   * 3. Query shopping_mall_products table to find the product by productId.
-   * 4. Verify product exists and is not deleted (deleted_at IS NULL).
-   * 5. Verify product.seller_id matches the authenticated seller's ID (ownership check).
-   * 6. Validate request body:
-   *    - skuCode: required, 3-50 characters, alphanumeric and hyphens only, cannot start/end with hyphen, no consecutive hyphens, must be unique in shopping_mall_product_variants table
-   *    - optionValues: required object with 1-5 attributes, each key 1-30 chars, each value 1-50 chars, combination must be unique within the product
-   *    - price: optional, if provided must be between 0.01 and 999,999.99
-   * 7. Create new variant record in shopping_mall_product_variants:
-   *    - shopping_mall_product_id = productId
-   *    - sku_code = provided skuCode
-   *    - option_values = JSON.stringify(optionValues)
-   *    - price = provided price or null (uses product's base_price)
-   *    - created_at = now()
-   *    - updated_at = now()
-   *    - deleted_at = null
-   * 8. Return the created variant with id, productId, skuCode, optionValues, price, createdAt, updatedAt.
+   * 1. **Authentication & Authorization**: Verify seller authentication from JWT token. Extract seller ID from token claims.
    *
-   * Note: Stock quantity is NOT set during creation - it starts at 0 and is managed through inventory records.
+   * 2. **Product Ownership Verification**: Query shopping_mall_products table to verify:
+   *    - Product exists (id = productId)
+   *    - Product is not soft-deleted (deleted_at IS NULL)
+   *    - Product belongs to authenticated seller (shopping_mall_seller_id matches token seller ID)
+   *    - Seller account is approved (approval_status = 'approved')
+   *    - Seller is not suspended or banned
+   *
+   * 3. **Request Validation**:
+   *    - sku_code: Must be 3-50 characters, alphanumeric and hyphens only, cannot start/end with hyphen, no consecutive hyphens. Check uniqueness in shopping_mall_product_variants table globally.
+   *    - option_values: Parse JSON, validate at least 1 and max 5 attributes, attribute names 1-30 chars, values 1-50 chars. Check uniqueness combination within product.
+   *    - price: If provided, must be between 0.01 and 999,999.99 with up to 2 decimal places.
+   *
+   * 4. **Database Insert**: Create new record in shopping_mall_product_variants with:
+   *    - id: Generate UUID
+   *    - shopping_mall_product_id: From path parameter
+   *    - sku_code: From request
+   *    - option_values: From request (as JSON string)
+   *    - price: From request or null
+   *    - created_at, updated_at: Current timestamp
+   *    - deleted_at: null
+   *
+   * 5. **Response**: Return created variant with all fields including generated id and timestamps.
+   *
+   * Error handling:
+   * - 401 Unauthorized: Invalid or missing authentication token
+   * - 403 Forbidden: Seller does not own product, or account suspended/banned
+   * - 404 Not Found: Product does not exist or is deleted
+   * - 409 Conflict: SKU code already exists globally, or option_values combination exists for this product
+   * - 400 Bad Request: Validation failures for field formats or constraints
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -60,7 +75,7 @@ export class ShoppingmallSellerProductsVariantsController {
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedBody()
     body: IShoppingMallProductVariant.ICreate,
   ): Promise<IShoppingMallProductVariant> {
@@ -77,150 +92,43 @@ export class ShoppingmallSellerProductsVariantsController {
   }
 
   /**
-   * Update a product variant's configuration including SKU code, option values, and price override.
+   * Delete a product variant (SKU) from a seller's product listing.
    *
-   * This operation allows sellers to modify their product variant details. Each modification creates an immutable snapshot of the product state for audit trail and dispute resolution purposes.
+   * This operation allows sellers to remove specific product variants from their products. The deletion is blocked if the variant has any pending order items with 'paid' or 'shipped' status, pending cancellation requests, or pending refund requests. When a variant is deleted, it is soft-deleted (marked as deleted but preserved in the database for audit purposes) and automatically removed from all shopping carts that contain it.
    *
-   * **Editable Fields**:
-   * - **SKU Code**: Unique identifier for the variant across the entire platform (3-50 characters, alphanumeric and hyphens only)
-   * - **Option Values**: JSON object containing variant attributes like color and size (e.g., {"color": "Red", "size": "Large"})
-   * - **Price Override**: Optional price that overrides the product's base price for this specific variant
+   * If the deleted variant was the last remaining variant of the product, the product becomes unavailable for purchase but remains visible in search results and category listings with an unavailable status indicator.
    *
-   * **Business Constraints**:
-   * - Only the seller who owns the product can edit its variants
-   * - Seller must be approved and not suspended or banned
-   * - Variant cannot be edited if there are pending order items (paid or shipped status)
-   * - Variant cannot be edited if there are pending cancellation or refund requests
-   * - Soft-deleted variants cannot be edited
+   * The variant's inventory records and historical snapshots are preserved even after deletion for dispute resolution and audit trail purposes. Sellers can only delete variants from their own products - attempting to delete another seller's variant will result in an authorization error.
    *
-   * **Snapshot System**:
-   * Every edit creates a product snapshot that captures the complete product state including all variants at that moment. This preserves historical accuracy for transaction records and dispute resolution. Snapshots are immutable and permanently retained.
-   *
-   * **Related Operations**:
-   * - GET /products/{productId} - View product details
-   * - POST /products/{productId}/variants - Create a new variant
-   * - DELETE /products/{productId}/variants/{variantId} - Remove a variant
+   * This operation requires seller authentication and the seller must be the owner of the product containing the variant.
    *
    * @param connection
-   * @param productId Unique identifier of the product that owns the variant
-   * @param variantId Unique identifier of the variant to update
-   * @param body Updated variant configuration including SKU code, option values, and optional price override
+   * @param productId The unique identifier of the product containing the variant to delete (UUID format)
+   * @param variantId The unique identifier of the product variant to delete (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update a product variant owned by the authenticated seller.
+   * @x-autobe-specification Implement seller-initiated product variant deletion with constraint validation:
    *
-   * **Authorization**: Seller must own the product (shopping_mall_products.shopping_mall_seller_id matches authenticated seller).
+   * 1. **Authorization**: Verify authenticated user is a seller and owns the product containing the variant.
    *
-   * **Validation Rules**:
-   * 1. Variant must exist and belong to the specified product
-   * 2. Variant must not be soft-deleted (deleted_at is null)
-   * 3. Seller must be approved (approval_status = 'approved')
-   * 4. Seller must not be suspended or banned
-   * 5. No pending order items for this variant (status in ['paid', 'shipped'])
-   * 6. No pending cancellation or refund requests for this variant
-   * 7. SKU code must be unique globally if changed
-   * 8. SKU code format: 3-50 characters, alphanumeric and hyphens only, cannot start/end with hyphen, no consecutive hyphens
-   * 9. Option values: JSON object, at least 1 and max 5 attributes, names 1-30 chars, values 1-50 chars
-   * 10. Price: if provided, must be 0.01 to 999,999.99 with up to 2 decimal places
+   * 2. **Constraint Validation**:
+   *    - Query shopping_mall_order_items where shopping_mall_product_variant_id = variantId AND status IN ('paid', 'shipped')
+   *    - If any pending order items exist, reject with error: 'Cannot delete variant while orders are pending'
+   *    - Query shopping_mall_cancellation_requests joined with shopping_mall_order_items where variant matches AND status = 'pending'
+   *    - If any pending cancellation requests exist, reject with error: 'Cannot delete variant while cancellation requests are pending'
+   *    - Query shopping_mall_refund_requests joined with shopping_mall_order_items where variant matches AND status = 'pending'
+   *    - If any pending refund requests exist, reject with error: 'Cannot delete variant while refund requests are pending'
    *
-   * **Snapshot Creation**:
-   * - Before applying changes, create a product snapshot capturing the current product state
-   * - The snapshot includes all variant states including the current variant before modification
-   * - This preserves the complete product configuration for audit trail
+   * 3. **Deletion Process** (transaction):
+   *    - Set deleted_at = current_timestamp on shopping_mall_product_variants record
+   *    - Delete all shopping_mall_cart_items referencing this variant
+   *    - Preserve all shopping_mall_inventory_records and snapshots
    *
-   * **Database Operations**:
-   * 1. Query product and variant with ownership validation
-   * 2. Check for pending orders/requests constraints
-   * 3. Create product snapshot with all variant SKU snapshots
-   * 4. Update variant fields (sku_code, option_values, price, updated_at)
-   * 5. Return updated variant
+   * 4. **Last Variant Check**:
+   *    - Count remaining non-deleted variants for the product
+   *    - If count is 0, the product will be displayed as unavailable (handled by read operations)
    *
-   * **Edge Cases**:
-   * - If variant is soft-deleted, return 404
-   * - If SKU code already exists (global uniqueness), return 409 conflict
-   * - If seller is suspended, return 403
-   * - If pending orders exist, return 400 with constraint violation
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":variantId")
-  public async update(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-    @TypedParam("variantId")
-    variantId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallProductVariant.IUpdate,
-  ): Promise<IShoppingMallProductVariant> {
-    try {
-      return await putShoppingMallSellerProductsProductIdVariantsVariantId({
-        seller,
-        productId,
-        variantId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Deletes a specific product variant (SKU) from a seller's product.
-   *
-   * This operation allows sellers to remove a variant from their product catalog. The variant is soft-deleted, meaning it remains in the database for historical records but is no longer visible in product listings or available for purchase.
-   *
-   * **Deletion Constraints:**
-   * The system enforces the following constraints before allowing deletion:
-   * - No pending order items: The variant cannot have any order items with 'paid' or 'shipped' status. This ensures that in-progress orders are not disrupted.
-   * - No pending cancellation requests: The variant cannot have any pending cancellation requests associated with its order items.
-   * - No pending refund requests: The variant cannot have any pending refund requests associated with its order items.
-   *
-   * **Effects of Deletion:**
-   * When a variant is successfully deleted:
-   * - The variant is marked as deleted (deleted_at timestamp is set) and no longer appears in product listings
-   * - The variant is automatically removed from all customer shopping carts that contained it
-   * - Historical data (order items, snapshots, inventory records) referencing the variant are preserved
-   * - If this was the last active variant of the product, the product will have no available variants for purchase
-   *
-   * **Authorization:**
-   * Only the seller who owns the product can delete its variants. Attempting to delete another seller's variant will result in an authorization error.
-   *
-   * **Related Operations:**
-   * - GET /products/{productId}/variants - View all variants of a product
-   * - POST /products/{productId}/variants - Create a new variant
-   * - PUT /products/{productId}/variants/{variantId} - Update variant information
-   *
-   * @param connection
-   * @param productId The unique identifier of the product containing the variant to delete. Must be a valid UUID.
-   * @param variantId The unique identifier of the product variant (SKU) to delete. Must be a valid UUID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
-   *
-   * 1. Validate path parameters (productId, variantId as UUIDs)
-   * 2. Fetch variant with product, verify product exists and variant belongs to product
-   * 3. Authorization check: verify authenticated seller owns the product via shopping_mall_products.shopping_mall_seller_id
-   * 4. Constraint checks:
-   *    - Query shopping_mall_order_items for this variant_id with status IN ('paid', 'shipped')
-   *    - If count > 0, reject with error 'Cannot delete variant with pending orders'
-   *    - Query shopping_mall_cancellation_requests joined with order_items for this variant_id where status = 'pending'
-   *    - If count > 0, reject with error 'Cannot delete variant with pending cancellation requests'
-   *    - Query shopping_mall_refund_requests joined with order_items for this variant_id where status = 'pending'
-   *    - If count > 0, reject with error 'Cannot delete variant with pending refund requests'
-   * 5. Check if this is the last variant of the product:
-   *    - Count variants for this product where deleted_at IS NULL
-   *    - If count === 1, log warning or handle product availability (product will have no active variants)
-   * 6. Soft delete the variant:
-   *    - Set deleted_at = now()
-   *    - Update updated_at = now()
-   * 7. Remove variant from all shopping carts:
-   *    - Delete from shopping_mall_cart_items where product_variant_id = variantId
-   *    - Or mark as unavailable if soft approach preferred
-   * 8. Return the updated variant entity with deleted_at timestamp
-   *
-   * Transaction boundary: All operations should be atomic within a transaction to ensure consistency.
+   * 5. **Response**: Return the soft-deleted variant with updated deleted_at timestamp
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":variantId")
@@ -228,9 +136,9 @@ export class ShoppingmallSellerProductsVariantsController {
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
+    productId: string,
     @TypedParam("variantId")
-    variantId: string & tags.Format<"uuid">,
+    variantId: string,
   ): Promise<void> {
     try {
       return await deleteShoppingMallSellerProductsProductIdVariantsVariantId({

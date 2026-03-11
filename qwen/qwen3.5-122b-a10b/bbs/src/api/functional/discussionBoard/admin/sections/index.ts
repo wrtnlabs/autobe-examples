@@ -4,27 +4,22 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IDiscussionBoardSection } from "../../../../structures/IDiscussionBoardSection";
+import { IPageIDiscussionBoardSection } from "../../../../structures/IPageIDiscussionBoardSection";
+
+export * as snapshots from "./snapshots/index";
 
 /**
- * Create a new discussion board section for organizing articles into topic categories.
+ * Create a new discussion board section for organizing articles by topic category.
  *
- * This operation allows administrators to establish new topic areas such as Politics, Economy, Technology, or Current Affairs. Each section serves as a container for articles and provides the primary organizational structure for content browsing and filtering on the platform.
+ * This operation allows administrators to establish new topic categories on the platform, such as Politics, Economy, Technology, or Current Affairs. Each section serves as a container for articles related to a specific subject area, providing structured navigation and content organization for all platform users.
  *
- * **Authorization Requirements**
+ * Only authenticated administrators have permission to create sections. Regular members and guest users cannot create sections and will receive an authorization error if they attempt this operation. The system enforces exclusive administrator control over section management to maintain proper governance and topic organization.
  *
- * Only authenticated administrators (both regular and super administrators) can create sections. Guest and member actors are explicitly prohibited from section creation operations. The system validates the requesting administrator's grade and authentication status before allowing the operation.
+ * The section name must be unique across the platform. If a section with the same name already exists, the operation will fail with a validation error indicating the duplicate name. The name is used for URL slugs and display purposes, so it should be concise and descriptive. The description field is optional but recommended to provide context about the section's topic focus and content guidelines.
  *
- * **Business Rules**
+ * Upon successful creation, the system automatically records the authenticated administrator as the section creator, sets creation and update timestamps, and assigns a unique UUID identifier. The section is immediately available for all users to browse and contribute articles to.
  *
- * The section name must be unique across the platform. If a section with the same name already exists, the system rejects the creation request with a validation error. The description field is optional but recommended for providing content guidelines and topic focus information.
- *
- * **Data Relationships**
- *
- * The created section is associated with the requesting administrator as its creator through the discussion_board_admin_id foreign key. This relationship is tracked for administrative accountability and audit purposes. Articles created later can be assigned to this section, establishing a many-to-one relationship where multiple articles belong to a single section.
- *
- * **Related Operations**
- *
- * After creating a section, administrators can use PUT /sections/{id} to modify the section name or description, or DELETE /sections/{id} to remove the section (which cascades to delete all contained articles and their attachments). Members can browse available sections using GET /sections and create articles within existing sections using POST /articles with the section_id parameter.
+ * Related operations include PATCH /sections for retrieving the section list, GET /sections/{sectionId} for viewing individual section details, PUT /sections/{sectionId} for modifying existing sections, and DELETE /sections/{sectionId} for removing sections (which cascades to delete all contained articles, comments, and attachments).
  *
  * @param props.connection
  * @param props.body Section creation information including name and optional description
@@ -32,39 +27,32 @@ import { IDiscussionBoardSection } from "../../../../structures/IDiscussionBoard
  * @x-autobe-authorization-actor admin
  * @x-autobe-specification Implement section creation with the following logic:
  *
- * 1. **Authentication & Authorization**
- *    - Validate JWT token from Authorization header
- *    - Verify user is an administrator (grade = 'regular' or 'super')
- *    - Check that the administrator account is not soft-deleted (deleted_at IS NULL)
- *    - Reject with 403 Forbidden if unauthorized
+ * 1. Authentication: Verify the request includes a valid admin session token. Reject with 401 Unauthorized if not authenticated or if the authenticated user is not an admin.
  *
- * 2. **Request Validation**
- *    - Validate name is provided and not empty (minLength: 1, maxLength: 100)
+ * 2. Authorization: Confirm the authenticated user has administrator privileges. Only admin actors can create sections.
+ *
+ * 3. Request Validation:
+ *    - Validate name is provided and not empty (min length 1, max length 100 characters)
  *    - Validate name contains only alphanumeric characters, spaces, hyphens, and underscores
- *    - Validate description if provided (maxLength: 500)
- *    - Check for duplicate section name using @@unique([name]) constraint
- *    - Return 400 Bad Request with validation errors if invalid
+ *    - Validate description if provided (max length 1000 characters)
+ *    - Check for duplicate name using @@unique constraint on name field
  *
- * 3. **Database Operation**
- *    - Generate UUID for section id
- *    - Set discussion_board_admin_id from authenticated administrator's id
- *    - Set name and description from request body
+ * 4. Database Operation:
+ *    - Generate a new UUID for the section id
+ *    - Extract discussion_board_admin_id from the authenticated admin session
  *    - Set created_at and updated_at to current timestamp (Asia/Seoul timezone)
- *    - Set deleted_at to NULL
- *    - Insert into discussion_board_sections table
- *    - Handle unique constraint violation with 409 Conflict response
+ *    - Set deleted_at to NULL (active section)
+ *    - Insert the new section record into discussion_board_sections table
  *
- * 4. **Response Construction**
- *    - Return 201 Created status
- *    - Include full section object in response body with all fields
- *    - Set Location header to /sections/{id}
+ * 5. Error Handling:
+ *    - 401 Unauthorized: Missing or invalid authentication token
+ *    - 403 Forbidden: Authenticated user is not an administrator
+ *    - 400 Bad Request: Validation errors (missing name, invalid name format, duplicate name, description too long)
+ *    - 500 Internal Server Error: Database insertion failure
  *
- * 5. **Error Handling**
- *    - 401 Unauthorized: Invalid or missing JWT token
- *    - 403 Forbidden: User is not an administrator
- *    - 400 Bad Request: Validation errors (name missing, duplicate name, invalid format)
- *    - 409 Conflict: Section with same name already exists
- *    - 500 Internal Server Error: Database operation failure
+ * 6. Response: Return the created section object with all fields including id, discussion_board_admin_id, name, description, created_at, updated_at, and deleted_at (NULL).
+ *
+ * 7. Concurrency: Implement optimistic locking to prevent race conditions when multiple administrators attempt to create sections with the same name simultaneously. Use database-level unique constraint enforcement.
  * @path /discussionBoard/admin/sections
  * @accessor api.functional.discussionBoard.admin.sections.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -143,82 +131,273 @@ export namespace create {
 }
 
 /**
+ * Retrieve a filtered and paginated list of discussion board sections.
+ *
+ * This operation provides advanced search capabilities for browsing available topic categories on the platform. Users can filter sections by name or description using partial text matching, and sort results by creation date, name, or last update time.
+ *
+ * All actors including guests, members, and administrators have read access to view the section list. The operation respects soft-delete semantics, only returning active sections where deleted_at is null.
+ *
+ * The response includes section summaries optimized for list displays, containing essential information like section name, description, and creation metadata. Full section details can be retrieved using the GET /sections/{sectionId} endpoint.
+ *
+ * Pagination is supported with configurable page sizes and cursor-based navigation for efficient traversal of large result sets.
+ *
+ * @param props.connection
+ * @param props.body Search criteria and pagination parameters for section listing
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification Query discussion_board_sections table with pagination and filtering. Apply search filters on name (partial match using trigram), description (partial match), and creation date range. Filter out soft-deleted sections (deleted_at IS NULL). Support sorting by created_at, name, or updated_at with ascending/descending order. Return cursor-based or offset-based pagination with configurable page size. Join with discussion_board_admins to include creator information if requested. Validate page number and page size within acceptable bounds (e.g., max 100 items per page).
+ * @path /discussionBoard/admin/sections
+ * @accessor api.functional.discussionBoard.admin.sections.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria and pagination parameters for section listing
+     */
+    body: IDiscussionBoardSection.IRequest;
+  };
+  export type Body = IDiscussionBoardSection.IRequest;
+  export type Response = IPageIDiscussionBoardSection.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/discussionBoard/admin/sections",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/discussionBoard/admin/sections";
+  export const random = (): IPageIDiscussionBoardSection.ISummary =>
+    typia.random<IPageIDiscussionBoardSection.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve detailed information about a specific discussion board section by its unique identifier.
+ *
+ * This operation returns the complete section entity including its name, description, creation timestamp, and update history. Sections organize articles into topic categories and serve as the primary navigation structure for the discussion board.
+ *
+ * All actors (guest, member, and admin) can access this endpoint to view section details. The operation respects soft-delete semantics: sections with a non-null deleted_at timestamp are treated as deleted and return a 404 Not Found response.
+ *
+ * The section includes metadata about the administrator who created it, enabling attribution and accountability for section management. Related articles can be retrieved through the articles list endpoint filtered by section.
+ *
+ * This endpoint is commonly used after browsing the section list to obtain full details before viewing articles within the section.
+ *
+ * @param props.connection
+ * @param props.sectionId Unique identifier of the section to retrieve (UUID format)
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification Query discussion_board_sections table by UUID primary key (id). Include soft-delete check: return 404 if deleted_at is not null. Join with discussion_board_admins to include creator information if requested. Validate sectionId is valid UUID format. Apply pagination not needed for single resource. Return 404 Not Found if section does not exist or is deleted.
+ * @path /discussionBoard/admin/sections/:sectionId
+ * @accessor api.functional.discussionBoard.admin.sections.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the section to retrieve (UUID format)
+     */
+    sectionId: string & tags.Format<"uuid">;
+  };
+  export type Response = IDiscussionBoardSection;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/discussionBoard/admin/sections/:sectionId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/discussionBoard/admin/sections/${encodeURIComponent(props.sectionId ?? "null")}`;
+  export const random = (): IDiscussionBoardSection =>
+    typia.random<IDiscussionBoardSection>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("sectionId")(() => typia.assert(props.sectionId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
  * Update an existing discussion board section's name and description.
  *
- * This operation allows administrators to modify the name and description of an existing section. Sections represent topic categories (e.g., Politics, Economy, Technology) that organize articles on the discussion board.
+ * This operation allows administrators to modify the name and description of an existing section. Sections serve as topic categories for organizing articles on the discussion board, and their management is restricted exclusively to administrators for proper governance.
  *
- * **Authorization Requirements**:
+ * The operation requires the section ID as a path parameter and accepts update data containing the new name and/or description in the request body. Both fields are optional, allowing partial updates to either the section name, description, or both simultaneously.
  *
- * Only administrators (regular or super) can perform section updates. Regular members and guests are strictly prohibited from modifying section information. The system validates the requesting user's administrator status before allowing the operation.
+ * Security considerations:
+ * - Only authenticated administrators can perform this operation
+ * - The target section must exist and not be deleted
+ * - Section name must remain unique across all active sections
+ * - Concurrent section updates are handled with appropriate locking to prevent conflicts
  *
- * **Update Scope**:
+ * Relationship to database entities:
+ * - Updates the discussion_board_sections table
+ * - The discussion_board_admin_id (creator) remains unchanged
+ * - The updated_at timestamp is automatically refreshed
+ * - The deleted_at field remains null (section stays active)
  *
- * - **name**: The unique section name identifying the topic category. This field must be unique across all sections, and the system will reject updates that would create duplicate names.
- * - **description**: The detailed description explaining the section's topic focus and content guidelines. This field is optional and can be set to null.
+ * Validation rules:
+ * - Section name: required for creation, optional for update but must be unique if provided
+ * - Section name length: typically 1-100 characters
+ * - Description length: optional, up to 1000 characters if provided
+ * - Section ID must be a valid UUID format
  *
- * **Validation Rules**:
+ * Related operations:
+ * - GET /sections/{sectionId} - Retrieve section details before updating
+ * - PATCH /sections - List all sections to find the target section ID
+ * - DELETE /sections/{sectionId} - Remove a section (also admin-only)
+ * - POST /sections - Create a new section (admin-only)
  *
- * - The target section must exist and not be soft-deleted (deleted_at must be null)
- * - The new name must not conflict with existing section names (excluding the current section)
- * - Name and description must meet length and format validation requirements
- * - The section must not be in use by active operations (concurrency protection)
- *
- * **Concurrency Handling**:
- *
- * When multiple administrators attempt to modify the same section simultaneously, the system queues requests and applies changes in order of receipt. If a conflict occurs (e.g., duplicate name creation), the second request is rejected with an appropriate error message.
- *
- * **Related Operations**:
- *
- * - `GET /sections` - Retrieve list of all sections (pre-execution recommended to check name availability)
- * - `GET /sections/{sectionId}` - Retrieve specific section details
- * - `POST /sections` - Create a new section
- * - `DELETE /sections/{sectionId}` - Delete a section (soft-delete)
+ * Error handling:
+ * - Returns 404 if the section does not exist or is deleted
+ * - Returns 409 if the new name conflicts with an existing section name
+ * - Returns 403 if the requester is not an administrator
+ * - Returns 400 if validation fails on name or description fields
  *
  * @param props.connection
  * @param props.sectionId Target section's unique identifier (UUID format)
- * @param props.body Section update payload containing name and/or description fields
+ * @param props.body Section update information containing optional name and description fields
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Service layer implementation for section update operation:
+ * @x-autobe-specification Implement section update operation with the following logic:
  *
- * 1. **Authentication & Authorization**:
- *    - Verify JWT token validity and extract user identity
- *    - Confirm user has administrator role (regular or super admin)
- *    - Reject with 403 Forbidden if user is not an administrator
+ * 1. Authentication and Authorization:
+ *    - Verify the request includes a valid admin authentication token
+ *    - Extract the administrator ID from the session/token
+ *    - Return 403 Forbidden if user is not an admin
  *
- * 2. **Section Retrieval**:
- *    - Query discussion_board_sections table by sectionId (UUID)
- *    - Check if section exists; return 404 Not Found if not
- *    - Verify deleted_at is null (section not soft-deleted); return 410 Gone if deleted
+ * 2. Path Parameter Validation:
+ *    - Parse sectionId from the URL path
+ *    - Validate UUID format using standard UUID parser
+ *    - Return 400 Bad Request if invalid UUID format
  *
- * 3. **Request Validation**:
- *    - Validate name uniqueness: query for existing sections with same name (excluding current sectionId)
- *    - If duplicate name found, return 409 Conflict
- *    - Validate name length (1-100 characters) and format
- *    - Validate description length (0-500 characters) if provided
+ * 3. Database Query:
+ *    - Query discussion_board_sections table by id = sectionId
+ *    - Check if deleted_at IS NULL (section must be active)
+ *    - Return 404 Not Found if section not found or deleted
  *
- * 4. **Concurrency Control**:
- *    - Implement optimistic locking using updated_at timestamp
- *    - If section was modified since last read, return 409 Conflict
- *    - Queue concurrent requests if lock acquisition fails
+ * 4. Request Body Processing:
+ *    - Parse ISection.IUpdate request body
+ *    - Extract name and description fields (both optional)
+ *    - If name is provided:
+ *      - Validate length constraints (1-100 characters)
+ *      - Query to check uniqueness: SELECT COUNT(*) WHERE name = ? AND id != ? AND deleted_at IS NULL
+ *      - Return 409 Conflict if name already exists
+ *    - If description is provided:
+ *      - Validate length constraints (max 1000 characters)
  *
- * 5. **Update Execution**:
- *    - Begin database transaction
- *    - Update name and description fields
- *    - Set updated_at to current timestamp
- *    - Commit transaction
+ * 5. Update Operation:
+ *    - Build UPDATE query with only provided fields
+ *    - Set updated_at = CURRENT_TIMESTAMP
+ *    - Execute transaction to update discussion_board_sections
+ *    - Return updated section entity
  *
- * 6. **Response Construction**:
- *    - Retrieve updated section with all fields
- *    - Return 200 OK with full IDiscussionBoardSection entity
+ * 6. Concurrency Control:
+ *    - Implement optimistic locking or row-level locking during update
+ *    - Handle concurrent modification conflicts with appropriate error response
  *
- * 7. **Error Handling**:
- *    - 401 Unauthorized: Invalid or missing JWT token
- *    - 403 Forbidden: User is not an administrator
- *    - 404 Not Found: Section does not exist
- *    - 409 Conflict: Name duplicate or concurrency conflict
- *    - 410 Gone: Section has been soft-deleted
- *    - 422 Unprocessable Entity: Validation errors
+ * 7. Audit Logging:
+ *    - Log the update operation in discussion_board_admin_audit_logs
+ *    - Record administrator ID, section ID, and changed fields
+ *
+ * 8. Response Construction:
+ *    - Return 200 OK with updated ISection entity
+ *    - Include all section fields: id, discussion_board_admin_id, name, description, created_at, updated_at
  * @path /discussionBoard/admin/sections/:sectionId
  * @accessor api.functional.discussionBoard.admin.sections.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -253,7 +432,7 @@ export namespace update {
     sectionId: string & tags.Format<"uuid">;
 
     /**
-     * Section update payload containing name and/or description fields
+     * Section update information containing optional name and description fields
      */
     body: IDiscussionBoardSection.IUpdate;
   };
@@ -304,46 +483,67 @@ export namespace update {
 }
 
 /**
- * Soft delete a discussion board section and hide all contained articles from public views.
+ * Permanently remove a discussion board section from the system.
  *
- * This operation allows administrators to remove sections that organize articles into topic categories. Before deletion, the system verifies that the section contains no articles, as sections with articles cannot be deleted. All articles within the section are soft-deleted (hidden from lists) when section deletion is performed.
+ * This operation deletes a section identified by its UUID, but only after verifying that the section contains zero articles. If articles exist within the section, the deletion request is rejected to prevent data loss. The section metadata is soft-deleted by setting the deleted_at timestamp, while associated articles, comments, and attachments are cascade-deleted according to business rules.
  *
- * **Authorization**: Only administrators (regular and super) can delete sections. Guests and members are denied access to this operation.
+ * **Authorization Requirements**:
  *
- * **Preconditions**: The section must exist and contain zero articles. If articles exist in the section, the deletion is rejected with an error indicating all articles must be removed or moved first.
+ * Only administrators (both regular and super administrators) can execute this operation. Guest and member actors are explicitly denied access to section management functionality.
  *
- * **Soft Delete Effects**: When a section is successfully soft-deleted:
- * - The section record is marked as deleted by setting its `deleted_at` timestamp
- * - All associated articles have their `deleted_at` timestamps set, hiding them from public views
- * - Articles and their comments remain in the database for administrative review and audit purposes
- * - File and image attachments are preserved but become inaccessible through normal article browsing
+ * **Deletion Constraints**:
  *
- * **Related Operations**: Before deleting a section, administrators should use `PATCH /articles` to verify the section contains no articles. Use `GET /sections/{sectionId}` to retrieve section details before deletion.
+ * Before deletion proceeds, the system verifies that the target section contains no articles. This constraint exists because sections serve as containers for articles, and orphaned articles would violate data integrity requirements. The administrator must first remove or reassign all articles within the section before deletion is permitted.
+ *
+ * **Cascade Behavior**:
+ *
+ * When a section is successfully deleted, the system automatically removes all associated resources in the following order:
+ * 1. All articles belonging to the section
+ * 2. All comments on those articles
+ * 3. All file and image attachments on those articles
+ *
+ * This cascade deletion ensures no orphaned data remains in the system.
+ *
+ * **Related Operations**:
+ *
+ * - `PATCH /sections` - Retrieve list of all sections (including deleted ones for admin view)
+ * - `GET /sections/{sectionId}` - Retrieve detailed information about a specific section
+ * - `PUT /sections/{sectionId}` - Update section name and description
+ * - `POST /sections` - Create a new section (admin-only)
  *
  * @param props.connection
- * @param props.sectionId Target section's unique identifier (UUID format)
+ * @param props.sectionId UUID identifier of the section to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement section deletion with the following logic:
+ * @x-autobe-specification Service layer implementation for section deletion:
  *
- * 1. **Authorization Check**: Verify the authenticated user has admin role (regular or super). Reject with 403 Forbidden if not authorized.
+ * 1. **Authorization Check**: Verify authenticated user has 'admin' actor role. Reject with 403 Forbidden if not authorized.
  *
- * 2. **Section Existence Verification**: Query discussion_board_sections table by id. Return 404 Not Found if section does not exist.
+ * 2. **Section Existence Validation**: Query discussion_board_sections table WHERE id = {sectionId} AND deleted_at IS NULL. If no record found, return 404 Not Found.
  *
- * 3. **Article Count Check**: Query discussion_board_articles table where discussion_board_section_id equals the section id. Count must be zero. If count > 0, return 400 Bad Request with message indicating articles must be removed first.
+ * 3. **Article Count Validation**: Query discussion_board_articles table WHERE discussion_board_section_id = {sectionId} AND deleted_at IS NULL. Count must be 0. If count > 0, return 409 Conflict with message indicating articles must be removed first.
  *
- * 4. **Cascade Deletion**: Execute database transaction:
- *    - Delete all articles in discussion_board_articles where discussion_board_section_id matches
- *    - Delete all comments in discussion_board_comments referencing those article ids
- *    - Delete all file attachments in discussion_board_article_files referencing those article ids
- *    - Delete all image attachments in discussion_board_article_images referencing those article ids
- *    - Delete the section record in discussion_board_sections
+ * 4. **Concurrency Control**: Acquire row-level lock on section record to prevent concurrent modifications during deletion check.
  *
- * 5. **Transaction Safety**: Wrap all deletions in a database transaction to ensure atomicity. If any deletion fails, rollback all changes.
+ * 5. **Soft Delete Execution**: Update discussion_board_sections SET deleted_at = NOW() WHERE id = {sectionId}.
  *
- * 6. **Audit Logging**: Record the deletion action in discussion_board_audit_logs with administrator id, section id, timestamp, and action type.
+ * 6. **Cascade Deletion**: Execute cascading deletes in order:
+ *    - DELETE FROM discussion_board_article_tags WHERE article_id IN (SELECT id FROM discussion_board_articles WHERE discussion_board_section_id = {sectionId})
+ *    - DELETE FROM discussion_board_comments WHERE article_id IN (SELECT id FROM discussion_board_articles WHERE discussion_board_section_id = {sectionId})
+ *    - DELETE FROM discussion_board_image_attachments WHERE article_id IN (SELECT id FROM discussion_board_articles WHERE discussion_board_section_id = {sectionId})
+ *    - DELETE FROM discussion_board_file_attachments WHERE article_id IN (SELECT id FROM discussion_board_articles WHERE discussion_board_section_id = {sectionId})
+ *    - DELETE FROM discussion_board_articles WHERE discussion_board_section_id = {sectionId}
  *
- * 7. **Response**: Return 204 No Content on successful deletion. No response body needed.
+ * 7. **Audit Logging**: Record deletion action in discussion_board_audit_logs with actor ID, section ID, timestamp, and operation type.
+ *
+ * 8. **Transaction Management**: Wrap all operations in database transaction with ACID guarantees. Rollback on any failure.
+ *
+ * 9. **Error Handling**:
+ *    - 401 Unauthorized: Missing or invalid authentication token
+ *    - 403 Forbidden: User lacks admin privileges
+ *    - 404 Not Found: Section does not exist or already deleted
+ *    - 409 Conflict: Section contains articles that must be removed first
+ *    - 500 Internal Server Error: Database or system error
  * @path /discussionBoard/admin/sections/:sectionId
  * @accessor api.functional.discussionBoard.admin.sections.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -372,7 +572,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Target section's unique identifier (UUID format)
+     * UUID identifier of the section to delete (global scope)
      */
     sectionId: string & tags.Format<"uuid">;
   };

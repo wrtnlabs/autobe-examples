@@ -1,163 +1,167 @@
 import { tags } from "typia";
 
-import { IDiscussionBoardMember } from "./IDiscussionBoardMember";
+import { IDiscussionBoardGuest } from "./IDiscussionBoardGuest";
 
 export namespace IDiscussionBoardGuestSession {
   /**
-   * Unified session summary representing login sessions from all user types (members, administrators, and guests). Each record contains connection metadata including IP address, page URL, referrer URL, creation timestamp, and expiration time for security auditing and session management purposes. This summary type is used in paginated list responses for administrator session monitoring across the platform. It includes a type discriminator to distinguish between the three session categories, along with associated user information.
+   * Request parameters for searching and paginating guest session records.
+   *
+   * This DTO defines query criteria for retrieving guest sessions across the discussion board system. Supports filtering by session ID, guest user ID, IP address, and creation/expiration date ranges. Pagination parameters control result set size and page number, while sorting options allow ordering by creation time, expiration time, or IP address.
+   *
+   * Members can only view their own sessions due to authorization constraints.
+   */
+  export type IRequest = {
+    /**
+     * Filter by specific session ID.
+     *
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.id. Exact match filter for specific session ID.
+     */
+    sessionId?: (string & tags.Format<"uuid">) | undefined;
+
+    /**
+     * Filter by guest user ID (discussion_board_guest_id).
+     *
+     * @x-autobe-database-schema-property discussion_board_guest_id
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.discussion_board_guest_id. Exact match filter for guest account ID. Members can only query their own sessions.
+     */
+    userId?: (string & tags.Format<"uuid">) | undefined;
+
+    /**
+     * Filter by client IP address.
+     *
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.ip. Exact match filter for client IP address.
+     */
+    ipAddress?: (string & tags.Format<"ipv4">) | undefined;
+
+    /**
+     * Filter sessions created after this timestamp.
+     *
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.created_at. Lower bound for creation timestamp range filter.
+     */
+    createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Filter sessions created before this timestamp.
+     *
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.created_at. Upper bound for creation timestamp range filter.
+     */
+    createdAtTo?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Filter sessions expiring after this timestamp.
+     *
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.expired_at. Lower bound for expiration timestamp range filter.
+     */
+    expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Filter sessions expiring before this timestamp.
+     *
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Maps to discussion_board_guest_sessions.expired_at. Upper bound for expiration timestamp range filter.
+     */
+    expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
+
+    /**
+     * Page number for pagination (1-based).
+     *
+     * @x-autobe-specification Query parameter for pagination. 1-based page number, default 1. Used with LIMIT/OFFSET in SQL query.
+     */
+    page?:
+      | (number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>)
+      | undefined;
+
+    /**
+     * Number of records per page.
+     *
+     * @x-autobe-specification Query parameter for pagination. Records per page, range 1-100, default 30. Used with LIMIT in SQL query.
+     */
+    limit?:
+      | (number &
+          tags.Type<"int32"> &
+          tags.Default<30> &
+          tags.Minimum<1> &
+          tags.Maximum<100>)
+      | undefined;
+
+    /**
+     * Field to sort results by.
+     *
+     * @x-autobe-specification Query parameter for sorting. Values: created_at, expired_at, or ip. Maps to ORDER BY clause in SQL query.
+     */
+    orderBy?: "created_at" | "expired_at" | "ip" | undefined;
+
+    /**
+     * Sort in descending order (true) or ascending order (false).
+     *
+     * @x-autobe-specification Query parameter for sort direction. Boolean, default true (descending). Maps to ORDER BY ... DESC or ASC in SQL query.
+     */
+    orderByDesc?: boolean | undefined;
+  };
+
+  /**
+   * Summary representation of a guest session for listing and display purposes. Contains connection metadata including IP address, page context, and referrer information for security monitoring. Sessions are temporary tokens for anonymous browsing access, identified by device fingerprint for session continuity across requests.
    */
   export type ISummary = {
     /**
-     * Unique session identifier.
+     * Unique identifier for the guest session.
      *
-     * @x-autobe-specification Direct mapping from session table id column via UNION: discussion_board_member_sessions.id, discussion_board_admin_sessions.id, or discussion_board_guest_sessions.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
-     * Session type discriminator indicating the user category (member, admin, or guest).
+     * Client IP address for the session connection.
      *
-     * @x-autobe-specification Computed discriminator based on UNION query source table: 'member' from discussion_board_member_sessions, 'admin' from discussion_board_admin_sessions, 'guest' from discussion_board_guest_sessions.
-     */
-    type: "member" | "admin" | "guest";
-
-    /**
-     * Client IP address for connection tracking and security auditing.
-     *
-     * @x-autobe-specification Direct mapping from session table ip column via UNION: discussion_board_member_sessions.ip, discussion_board_admin_sessions.ip, or discussion_board_guest_sessions.ip. IPv4 format.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.ip. Client IP address for security auditing.
      */
     ip: string & tags.Format<"ipv4">;
 
     /**
-     * Current page URL where authentication occurred.
+     * Current page URL (href) when session was created.
      *
-     * @x-autobe-specification Direct mapping from session table href column via UNION: discussion_board_member_sessions.href, discussion_board_admin_sessions.href, or discussion_board_guest_sessions.href. URI format.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.href. Current page URL when session was created.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * Referrer URL indicating the page that led to authentication.
+     * Referrer URL that led to session creation.
      *
-     * @x-autobe-specification Direct mapping from session table referrer column via UNION: discussion_board_member_sessions.referrer, discussion_board_admin_sessions.referrer, or discussion_board_guest_sessions.referrer. Nullable URI format.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.referrer. Referrer URL that led to session creation.
      */
-    referrer?: (string & tags.Format<"uri">) | null | undefined;
+    referrer: string & tags.Format<"uri">;
 
     /**
-     * Associated user information for this session.
+     * Session creation timestamp.
      *
-     * @x-autobe-specification JOIN with corresponding user table based on session type: discussion_board_members for member sessions, discussion_board_admins for admin sessions, discussion_board_guests for guest sessions. Returns IDiscussionBoardMember.ISummary with display_name and email.
-     */
-    user: IDiscussionBoardMember.ISummary;
-
-    /**
-     * Session creation timestamp marking when the user logged in.
-     *
-     * @x-autobe-specification Direct mapping from session table created_at column via UNION: discussion_board_member_sessions.created_at, discussion_board_admin_sessions.created_at, or discussion_board_guest_sessions.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.created_at. Session creation timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
-     * Session expiration timestamp for automatic logout enforcement.
+     * Session expiration timestamp for security invalidation.
      *
-     * @x-autobe-specification Direct mapping from session table expired_at column via UNION: discussion_board_member_sessions.expired_at, discussion_board_admin_sessions.expired_at, or discussion_board_guest_sessions.expired_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from discussion_board_guest_sessions.expired_at. Session expiration timestamp for invalidation.
      */
     expired_at: string & tags.Format<"date-time">;
-  };
-
-  /**
-   * Request parameters for filtering and paginating the unified session list across all user types (members, administrators, and guests).
-   *
-   * This DTO provides comprehensive session monitoring capabilities for administrators, allowing flexible filtering by session type, specific user identifier, IP address, creation date range, and expiration status. All filtering parameters are optional to support diverse query patterns.
-   *
-   * Pagination parameters (page, limit) control result set size and offset. Sorting parameters (sort_by, order) customize result order with creation time descending as the default.
-   *
-   * Used by the PATCH /discussionBoard/member/sessions endpoint to retrieve paginated session summaries with associated user information for security auditing, activity monitoring, and anomaly detection.
-   */
-  export type IRequest = {
-    /**
-     * Filter by session type: member, admin, or guest
-     *
-     * @x-autobe-specification Filter value for session_type UNION discriminator. Accepts 'member', 'admin', or 'guest'. Applied as WHERE session_type IN (...) clause in merged session query.
-     */
-    session_type?: "member" | "admin" | "guest" | undefined;
 
     /**
-     * Filter by member ID
+     * Guest account this session belongs to.
      *
-     * @x-autobe-specification Filter value for discussion_board_member_sessions.member_id equality check. When provided, restricts results to sessions for the specified member.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification BELONGS-TO relation via discussion_board_guest_id FK. JOIN to discussion_board_guests table returns IDiscussionBoardGuest.ISummary.
      */
-    member_id?: (string & tags.Format<"uuid">) | undefined;
-
-    /**
-     * Filter by admin ID
-     *
-     * @x-autobe-specification Filter value for discussion_board_admin_sessions.admin_id equality check. When provided, restricts results to sessions for the specified administrator.
-     */
-    admin_id?: (string & tags.Format<"uuid">) | undefined;
-
-    /**
-     * Filter by guest ID
-     *
-     * @x-autobe-specification Filter value for discussion_board_guest_sessions.guest_id equality check. When provided, restricts results to sessions for the specified guest.
-     */
-    guest_id?: (string & tags.Format<"uuid">) | undefined;
-
-    /**
-     * Filter by IP address (exact match or prefix)
-     *
-     * @x-autobe-specification Filter value for session ip column using LIKE match for exact or prefix matching. Applied to all three session tables in UNION query.
-     */
-    ip?: (string & tags.Format<"ipv4">) | undefined;
-
-    /**
-     * Filter sessions created on or after this timestamp
-     *
-     * @x-autobe-specification Lower bound for created_at BETWEEN filter. When provided, includes only sessions created on or after this timestamp. Nullable to allow optional filtering.
-     */
-    created_at_from?: (string & tags.Format<"date-time">) | null | undefined;
-
-    /**
-     * Filter sessions created on or before this timestamp
-     *
-     * @x-autobe-specification Upper bound for created_at BETWEEN filter. When provided, includes only sessions created on or before this timestamp. Nullable to allow optional filtering.
-     */
-    created_at_to?: (string & tags.Format<"date-time">) | null | undefined;
-
-    /**
-     * Filter by expiration status: true for expired, false for active, null for all
-     *
-     * @x-autobe-specification Filter value for expired status comparison. true returns expired sessions (expired_at < NOW()), false returns active sessions (expired_at >= NOW()), null returns all sessions. Nullable to allow optional filtering.
-     */
-    expired?: boolean | null | undefined;
-
-    /**
-     * Field to sort by: created_at, expired_at, ip
-     *
-     * @x-autobe-specification Field name for ORDER BY clause. Accepts 'created_at', 'expired_at', or 'ip'. Controls which session property determines result ordering.
-     */
-    sort_by?: "created_at" | "expired_at" | "ip" | undefined;
-
-    /**
-     * Sort order: asc or desc
-     *
-     * @x-autobe-specification Sort direction for ORDER BY clause. 'asc' for ascending, 'desc' for descending. Default is 'desc' for created_at.
-     */
-    order?: "asc" | "desc" | undefined;
-
-    /**
-     * Page number for pagination (1-indexed)
-     *
-     * @x-autobe-specification Page number for offset pagination (1-indexed). Used to calculate OFFSET = (page - 1) * limit. Minimum value is 1.
-     */
-    page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
-
-    /**
-     * Number of items per page
-     *
-     * @x-autobe-specification Maximum number of records per page. Used as LIMIT in SQL query. Range: 1-100. Controls payload size for pagination.
-     */
-    limit?:
-      | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
-      | undefined;
+    guest: IDiscussionBoardGuest.ISummary;
   };
 }

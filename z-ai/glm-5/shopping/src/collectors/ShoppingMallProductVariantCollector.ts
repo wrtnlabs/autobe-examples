@@ -12,11 +12,10 @@ export namespace ShoppingMallProductVariantCollector {
     body: IShoppingMallProductVariant.ICreate;
     shoppingMallProducts: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      sku_code: props.body.skuCode,
-      option_values: JSON.stringify(props.body.optionValues),
+      id: v4(),
+      sku_code: props.body.sku_code,
+      option_values: JSON.stringify(props.body.option_values),
       price: props.body.price ?? null,
       created_at: new Date(),
       updated_at: new Date(),

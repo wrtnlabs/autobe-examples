@@ -15,28 +15,15 @@ export async function deleteDiscussionBoardMemberArticlesArticleId(props: {
   member: MemberPayload;
   articleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Check if article exists
-  const article = await MyGlobal.prisma.discussion_board_articles.findUnique({
-    where: { id: props.articleId },
-    select: { id: true, discussion_board_member_id: true, deleted_at: true },
-  });
-  if (article === null) {
-    throw new HttpException("Article not found", 404);
-  }
-  // 2. Check if already deleted
-  if (article.deleted_at !== null) {
-    throw new HttpException("Article already deleted", 400);
-  }
-  // 3. Check ownership
+  const article =
+    await MyGlobal.prisma.discussion_board_articles.findUniqueOrThrow({
+      where: { id: props.articleId },
+      select: { discussion_board_member_id: true },
+    });
   if (article.discussion_board_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 4. Perform soft delete
-  await MyGlobal.prisma.discussion_board_articles.update({
+  await MyGlobal.prisma.discussion_board_articles.delete({
     where: { id: props.articleId },
-    data: {
-      deleted_at: new Date(),
-      updated_at: new Date(),
-    },
   });
 }

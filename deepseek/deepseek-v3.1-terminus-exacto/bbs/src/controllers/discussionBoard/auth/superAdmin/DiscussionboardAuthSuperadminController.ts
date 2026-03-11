@@ -10,15 +10,11 @@ import { postDiscussionBoardAuthSuperAdminRefresh } from "../../../../providers/
 @Controller("/discussionBoard/auth/superAdmin")
 export class DiscussionboardAuthSuperadminController {
   /**
-   * This endpoint allows new super administrators to register accounts on the discussion board platform. Super administrators represent the highest privilege level with system-wide control capabilities including promoting other administrators and managing administrator requests.
+   * The join endpoint allows registration of new super administrator accounts with elevated platform privileges. Super administrators require unique email addresses that are validated against existing accounts in the discussion_board_super_admins table. Password complexity is enforced during registration to ensure security. Upon successful registration, the system creates an initial authentication session with both access and refresh tokens, enabling immediate platform access. The admin_grade field is automatically set to 'super' to distinguish these accounts from regular administrators. This operation establishes the foundational identity record for super administrator actors, linking to session management and future authentication flows.
    *
-   * The registration process requires a valid email address and secure password. The system validates email uniqueness against existing super administrator accounts to prevent duplicate registrations. Password strength requirements ensure account security, typically requiring minimum length and complexity standards.
+   * Successful registration creates a corresponding record in the discussion_board_super_admins table with hashed password storage and generates session tokens stored in discussion_board_super_admin_sessions. The email field must be unique across all super administrator accounts to prevent duplicate registrations. Password validation ensures minimum security requirements are met before hashing and storage. The operation integrates with the platform's authentication infrastructure to provide immediate access while maintaining security standards.
    *
-   * Upon successful registration, the system creates a new super administrator account with appropriate privilege levels and generates JWT tokens for immediate access. The email verification process is handled separately through verification tokens sent to the provided email address.
-   *
-   * Security considerations include secure password hashing using industry-standard algorithms, prevention of email enumeration attacks through consistent error messaging, and proper session management with token expiration tracking. The operation integrates with the broader authentication system including session management and email verification workflows.
-   *
-   * Related operations include the login endpoint for existing super administrators and the refresh endpoint for token renewal. This operation establishes the foundation for super administrator authentication and access control throughout the platform.
+   * Super administrator registration follows the same security patterns as regular administrator accounts but with elevated privilege designation. The join operation is the entry point for establishing super administrator authority within the platform governance structure. After registration, super administrators can immediately perform elevated administrative actions including administrator promotion/demotion and platform oversight functions.
    *
    * @setHeader token.access Authorization
    *
@@ -26,21 +22,7 @@ export class DiscussionboardAuthSuperadminController {
    * @param body Registration information for new super administrator account
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification The join operation creates a new superAdmin account with email and password. It validates email uniqueness and password strength, hashes the password securely, creates the superAdmin record, and generates an initial session with access and refresh tokens. Email verification is handled separately through the email verification workflow.
-   *
-   * The implementation should:
-   * 1. Validate email format and ensure it doesn't already exist
-   * 2. Validate password meets security requirements
-   * 3. Hash the password using bcrypt or similar secure algorithm
-   * 4. Create the superAdmin record with privilege_level set appropriately
-   * 5. Generate JWT tokens for the new session
-   * 6. Create session record with connection metadata
-   * 7. Return the authorized response with tokens
-   *
-   * Error handling should include:
-   * - Email already exists validation
-   * - Password strength validation failure
-   * - Database constraint violations
+   * @x-autobe-specification The join operation creates a new super administrator account with email and password. It validates email uniqueness and password complexity, then hashes the password before storage. The operation creates an initial session with JWT tokens. Implementation involves checking the discussion_board_super_admins table for duplicate emails, hashing the password using bcrypt, creating the super admin record, and generating session tokens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -62,36 +44,19 @@ export class DiscussionboardAuthSuperadminController {
   }
 
   /**
-   * This endpoint enables existing super administrators to authenticate and access the discussion board platform. Super administrators possess elevated privileges including system-wide control, administrator promotion/demotion capabilities, and comprehensive moderation authority.
+   * The login endpoint authenticates super administrators who already have registered accounts. It validates the provided email and password combination against the stored credentials in the discussion_board_super_admins table. Successful authentication results in the creation of a new session with fresh JWT tokens for secure API access. The operation records connection metadata including IP address, user agent, and referrer information for security auditing purposes. Failed login attempts are logged for security monitoring without revealing specific failure reasons to prevent account enumeration attacks.
    *
-   * The login process validates provided credentials against stored email and password hash combinations. For security, the system uses consistent error messaging to prevent email enumeration attacks. Successful authentication generates new JWT tokens with appropriate expiration times and creates a session record tracking connection metadata including IP address, request URL, and referrer information.
+   * Authentication follows industry-standard security practices with secure password hashing comparison and token generation. The system creates a new session record in discussion_board_super_admin_sessions with both access and refresh tokens, supporting the token refresh mechanism for continuous authentication. The access token has a shorter expiration time for security, while the refresh token allows session continuation without requiring re-authentication. Connection context is captured for audit trails and security monitoring of super administrator access patterns.
    *
-   * Security measures include rate limiting for failed login attempts, secure token generation using industry-standard algorithms, and session expiration management. The operation ensures that only active, non-deleted super administrator accounts can authenticate successfully.
-   *
-   * This operation works in conjunction with the join endpoint for account creation and the refresh endpoint for token renewal. Proper authentication is essential for accessing super administrator functionalities throughout the platform including administrator management, content moderation, and system configuration capabilities.
-   *
-   * Connection metadata stored during login provides audit trail information for security monitoring and compliance requirements, helping track super administrator access patterns and detect potential security incidents.
+   * Super administrator login provides access to elevated platform governance capabilities including administrator management, content moderation oversight, and system configuration. The authentication process ensures only authorized super administrators can perform these critical administrative functions. After successful login, super administrators can immediately access all platform features with their elevated privileges, supporting the platform's security and governance requirements.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Login credentials for super administrator authentication
+   * @param body Super administrator login credentials
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification The login operation validates superAdmin credentials and creates a new session. It checks the provided email and password against stored hashes, verifies account status, generates new JWT tokens, and creates a session record with connection metadata.
-   *
-   * Implementation steps:
-   * 1. Find superAdmin by email
-   * 2. Verify password hash matches
-   * 3. Check account is not deleted
-   * 4. Generate new access and refresh tokens
-   * 5. Create session record with IP, href, referrer metadata
-   * 6. Return authorized response with tokens
-   *
-   * Error handling:
-   * - Invalid email or password (generic error for security)
-   * - Account deleted or inactive
-   * - Rate limiting for failed attempts
+   * @x-autobe-specification The login operation authenticates existing super administrators using email and password credentials. It validates the credentials against the discussion_board_super_admins table, verifies password hashes match, and creates a new session with fresh JWT tokens. Implementation involves finding the super admin by email, comparing the provided password with the stored hash using bcrypt, generating new access and refresh tokens, and creating a session record in discussion_board_super_admin_sessions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -113,39 +78,19 @@ export class DiscussionboardAuthSuperadminController {
   }
 
   /**
-   * This endpoint allows super administrators to renew their authentication tokens without requiring re-authentication. Token refresh maintains continuous access to platform functionalities while enhancing security through regular token rotation.
+   * The refresh endpoint enables continuous authentication for super administrators by renewing expired or soon-to-expire JWT tokens. It uses a valid refresh token from an active session to generate new access and refresh tokens without requiring the super administrator to re-enter their credentials. This operation maintains session continuity while adhering to security best practices that mandate regular token rotation. The system validates the refresh token against the discussion_board_super_admin_sessions table to ensure it belongs to an active, non-expired session before issuing new tokens.
    *
-   * The refresh operation validates the provided refresh token against stored session records, ensuring the token is valid, not expired, and associated with an active super administrator account. Upon successful validation, the system generates new access and refresh tokens with updated expiration times, implementing refresh token rotation for enhanced security.
+   * Token refresh follows security protocols that invalidate the previous refresh token after use to prevent token reuse. The operation generates a new access token with a fresh expiration time and a new refresh token for future renewals. Session metadata including IP address and timestamps are updated to reflect the refresh activity for audit purposes. This mechanism allows super administrators to maintain extended sessions for administrative tasks without compromising security through long-lived access tokens.
    *
-   * Security considerations include proper token expiration management, prevention of token reuse through rotation, and validation of account status before token renewal. The operation ensures that only active sessions with valid super administrator accounts can refresh tokens, maintaining platform security while providing convenient access continuity.
-   *
-   * This operation complements the login endpoint by extending session duration without requiring credential re-entry. It integrates with the broader authentication system including session management and account status validation. Proper token refresh functionality is essential for maintaining super administrator access during extended usage sessions while upholding security standards.
-   *
-   * The refresh mechanism supports secure long-term access for super administrators performing extended administrative tasks, reducing authentication friction while maintaining robust security controls through regular token rotation and validation.
+   * The refresh operation is essential for super administrator workflow efficiency, particularly during extended administrative sessions involving multiple elevated actions. It supports the platform's security model by ensuring tokens are regularly refreshed while minimizing authentication friction for authorized super administrators. The operation integrates with the overall authentication infrastructure to provide seamless token management for platform governance activities.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh token for authentication token renewal
+   * @param body Refresh token for authentication renewal
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification The refresh operation renews authentication tokens using a valid refresh token. It validates the refresh token, checks session expiration, generates new access and refresh tokens, and updates the session record.
-   *
-   * Implementation:
-   * 1. Validate refresh token exists and is not expired
-   * 2. Verify associated session and superAdmin account are active
-   * 3. Generate new access and refresh tokens
-   * 4. Update session record with new tokens and extended expiration
-   * 5. Return new authorized response
-   *
-   * Security considerations:
-   * - Refresh token rotation (issue new refresh token, invalidate old)
-   * - Session validation against account status
-   * - Proper token expiration handling
-   *
-   * Error handling:
-   * - Invalid or expired refresh token
-   * - Associated session or account not found/inactive
+   * @x-autobe-specification The refresh operation renews authentication tokens for active super administrator sessions using a valid refresh token. It validates the refresh token against the discussion_board_super_admin_sessions table, ensures the session is still active and not expired, then generates new access and refresh tokens. Implementation involves finding the session by refresh token, verifying it hasn't expired, generating new token pairs, updating the session record with the new tokens and expiration times, and returning the fresh tokens to the client.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

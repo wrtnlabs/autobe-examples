@@ -21,65 +21,94 @@ export async function patchDiscussionBoardAdminAdminRequestsPending(props: {
   admin: AdminPayload;
   body: IDiscussionBoardAdminRequest.IRequest;
 }): Promise<IPageIDiscussionBoardAdminRequest.ISummary> {
-  // Verify super administrator authorization
-  const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
-    {
-      where: { id: props.admin.id },
-      select: { grade: true },
-    },
-  );
+  // Validate super administrator
+  const admin = await MyGlobal.prisma.discussion_board_admins.findUnique({
+    where: { id: props.admin.id },
+    select: { grade: true, deleted_at: true },
+  });
+  if (!admin || admin.deleted_at !== null) {
+    throw new HttpException("Forbidden", 403);
+  }
   if (admin.grade !== "super") {
     throw new HttpException("Forbidden", 403);
   }
+  // Build where clause - status is fixed to 'pending' for this endpoint
+  const whereInput: Prisma.discussion_board_admin_requestsWhereInput = {
+    status: "pending",
+    deleted_at: null,
+    ...(props.body.submitted_at_gte && {
+      submitted_at: {
+        gte: new Date(props.body.submitted_at_gte),
+      },
+    }),
+    ...(props.body.submitted_at_lte && {
+      submitted_at: {
+        lte: new Date(props.body.submitted_at_lte),
+      },
+    }),
+    ...(props.body.reviewed_at_gte && {
+      reviewed_at: {
+        gte: new Date(props.body.reviewed_at_gte),
+      },
+    }),
+    ...(props.body.reviewed_at_lte && {
+      reviewed_at: {
+        lte: new Date(props.body.reviewed_at_lte),
+      },
+    }),
+    ...(props.body.discussion_board_admin_id && {
+      discussion_board_admin_id: props.body.discussion_board_admin_id,
+    }),
+  };
+  // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause
-  const whereInput: Prisma.discussion_board_admin_requestsWhereInput = {
-    deleted_at: null,
-    status: "pending",
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.submitted_at_from && {
-      submitted_at: {
-        gte: new Date(props.body.submitted_at_from),
-      },
-    }),
-    ...(props.body.submitted_at_to && {
-      submitted_at: {
-        lte: new Date(props.body.submitted_at_to),
-      },
-    }),
-    ...(props.body.reviewed_at_from && {
-      reviewed_at: {
-        gte: new Date(props.body.reviewed_at_from),
-      },
-    }),
-    ...(props.body.reviewed_at_to && {
-      reviewed_at: {
-        lte: new Date(props.body.reviewed_at_to),
-      },
-    }),
-    ...(props.body.search && {
-      OR: [
-        { member: { email: { contains: props.body.search } } },
-        { member: { display_name: { contains: props.body.search } } },
-        { reason: { contains: props.body.search } },
-      ],
-    }),
-  } satisfies Prisma.discussion_board_admin_requestsWhereInput;
-  // Fetch paginated data
+  // Cursor-based pagination
+  let cursorInput: Prisma.discussion_board_admin_requestsWhereInput | undefined;
+  if (props.body.cursor) {
+    try {
+      const cursorData = JSON.parse(
+        Buffer.from(props.body.cursor, "base64").toString(),
+      );
+      cursorInput = {
+        AND: [
+          {
+            submitted_at: {
+              lt: new Date(cursorData.submitted_at),
+            },
+          },
+          {
+            id: {
+              lt: cursorData.id,
+            },
+          },
+        ],
+      };
+    } catch {
+      cursorInput = undefined;
+    }
+  }
+  const finalWhere = cursorInput
+    ? { AND: [whereInput, cursorInput] }
+    : whereInput;
+  // Fetch data
   const data = await MyGlobal.prisma.discussion_board_admin_requests.findMany({
-    where: whereInput,
-    skip,
+    where: finalWhere,
+    skip: cursorInput ? undefined : skip,
     take: limit,
     orderBy: { submitted_at: "desc" },
     ...DiscussionBoardAdminRequestAtSummaryTransformer.select(),
   });
-  // Count total records
+  // Count total
   const total = await MyGlobal.prisma.discussion_board_admin_requests.count({
     where: whereInput,
   });
-  // Transform and return
+  // Transform data
+  const records = await ArrayUtil.asyncMap(
+    data,
+    DiscussionBoardAdminRequestAtSummaryTransformer.transform,
+  );
   return {
     pagination: {
       current: page,
@@ -87,9 +116,6 @@ export async function patchDiscussionBoardAdminAdminRequestsPending(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      DiscussionBoardAdminRequestAtSummaryTransformer.transform,
-    ),
+    data: records,
   } satisfies IPageIDiscussionBoardAdminRequest.ISummary;
 }

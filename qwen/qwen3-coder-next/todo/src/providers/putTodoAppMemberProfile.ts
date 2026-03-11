@@ -17,29 +17,19 @@ export async function putTodoAppMemberProfile(props: {
   member: MemberPayload;
   body: ITodoAppProfile.IUpdate;
 }): Promise<ITodoAppProfile> {
-  // Validate display_name if provided
-  if (props.body.display_name !== undefined) {
-    const name = props.body.display_name;
-    if (name.trim().length === 0) {
-      throw new HttpException("Display name cannot be whitespace-only", 400);
-    }
-    if (name.length < 1 || name.length > 100) {
-      throw new HttpException(
-        "Display name must be between 1 and 100 characters",
-        400,
-      );
-    }
-  }
-  // Update profile record
-  const profile = await MyGlobal.prisma.todo_app_profiles.update({
-    where: { todo_app_user_id: props.member.id },
-    data: {
-      ...(props.body.display_name !== undefined && {
-        display_name: props.body.display_name,
-      }),
-      updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
+  const profile = await MyGlobal.prisma.todo_app_profiles.findFirstOrThrow({
+    where: {
+      todo_app_user_id: props.member.id,
     },
     ...TodoAppProfileTransformer.select(),
   });
-  return await TodoAppProfileTransformer.transform(profile);
+  const updated = await MyGlobal.prisma.todo_app_profiles.update({
+    where: { id: profile.id },
+    data: {
+      display_name: props.body.display_name,
+      updated_at: new Date(),
+    },
+    ...TodoAppProfileTransformer.select(),
+  });
+  return await TodoAppProfileTransformer.transform(updated);
 }

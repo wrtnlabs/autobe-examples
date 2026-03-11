@@ -10,7 +10,6 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditLikeModeratorRoleCollector {
   export async function collect(props: {
     body: IRedditLikeModeratorRole.ICreate;
-    redditLikeCommunities: IEntity;
     redditLikeMembers: IEntity;
   }) {
     const id: string = v4();
@@ -19,7 +18,7 @@ export namespace RedditLikeModeratorRoleCollector {
       role: props.body.role,
       created_at: new Date(),
       user: { connect: { id: props.redditLikeMembers.id } },
-      community: { connect: { id: props.redditLikeCommunities.id } },
+      community: { connect: { id: props.body.community_id } },
     } satisfies Prisma.reddit_like_moderator_rolesCreateInput;
   }
 }

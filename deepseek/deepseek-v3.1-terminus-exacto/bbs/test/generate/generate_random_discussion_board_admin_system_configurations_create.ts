@@ -12,7 +12,7 @@ import { prepare_random_discussion_board_system_configuration } from "../prepare
 export async function generate_random_discussion_board_admin_system_configurations_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardSystemConfiguration.ICreate>;
+    body?: DeepPartial<IDiscussionBoardSystemConfiguration.ICreate> | undefined;
   },
 ): Promise<IDiscussionBoardSystemConfiguration> {
   const prepared: IDiscussionBoardSystemConfiguration.ICreate =

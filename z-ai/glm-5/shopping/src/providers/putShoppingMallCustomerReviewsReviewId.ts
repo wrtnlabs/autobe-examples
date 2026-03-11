@@ -20,11 +20,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putShoppingMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
-  reviewId: string & tags.Format<"uuid">;
+  reviewId: string;
   body: IShoppingMallReview.IUpdate;
 }): Promise<IShoppingMallReview> {
-  // Step 1: Find the review and verify ownership
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUnique({
+  // Fetch review with ownership verification data
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: {
       id: true,
@@ -34,26 +34,25 @@ export async function putShoppingMallCustomerReviewsReviewId(props: {
       deleted_at: true,
     },
   });
-  if (review === null) {
-    throw new HttpException("Review not found", 404);
-  }
+  // Authorization: verify ownership
   if (review.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Check not soft-deleted
   if (review.deleted_at !== null) {
-    throw new HttpException("Review is deleted", 409);
+    throw new HttpException("Review not found", 404);
   }
-  // Step 2: Create a snapshot of current review state before update
+  // Create snapshot before update
   await MyGlobal.prisma.shopping_mall_review_snapshots.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       shopping_mall_review_id: review.id,
       rating: review.rating,
       content: review.content,
       created_at: new Date(),
     },
   });
-  // Step 3: Update the review with new values
+  // Update review with partial update
   const updated = await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
     data: {

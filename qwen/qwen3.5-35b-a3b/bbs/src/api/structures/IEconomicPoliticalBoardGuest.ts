@@ -4,13 +4,13 @@ import { IAuthorizationToken } from "./IAuthorizationToken";
 
 export namespace IEconomicPoliticalBoardGuest {
   /**
-   * Authorization response returned after guest user registration or token refresh. Contains the authenticated user's unique identifier and a complete set of authentication tokens (access token and refresh token) required for making authenticated API requests.
+   * Authentication response containing user identifier and JWT authorization tokens for the Economic/Political Discussion Board system. Returned upon successful registration or token refresh, enabling clients to authenticate subsequent API requests. The access token enables immediate API access with short-lived validity, while the refresh token allows session renewal without re-authentication.
    */
   export type IAuthorized = {
     /**
-     * Unique identifier of the authenticated user extracted from JWT payload.
+     * Unique identifier of the authenticated user.
      *
-     * @x-autobe-specification Extracted from the authenticated user's JWT payload (user_id claim) during registration or login. This is the UUID of the user record in economic_political_board_administrator_roles table. Computed value, not directly stored in this DTO.
+     * @x-autobe-specification User identifier extracted from JWT claims. JWT token contains User.id as claim which is decoded and included in this response field. Always a valid UUID format matching User table primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -22,69 +22,69 @@ export namespace IEconomicPoliticalBoardGuest {
     token: IAuthorizationToken;
 
     /**
-     * UTC datetime timestamp when the access token expires. After this time, the access token will be rejected by authenticated endpoints.
+     * Indicates whether authentication was successful.
      *
-     * @x-autobe-specification Computed timestamp: current UTC time + access token TTL (typically 15 minutes). This timestamp is also embedded within the JWT itself as the 'exp' claim. Clients should proactively refresh before this time to maintain seamless user experience.
+     * @x-autobe-specification Boolean flag indicating authentication success. Always true when authentication flow completes successfully (registration or token refresh). False only in error scenarios which would return error response instead of this DTO.
      */
-    expired_at: string & tags.Format<"date-time">;
+    authorized: boolean;
   };
 
   /**
-   * Request payload for renewing an authentication access token using a refresh token. Submit your valid refresh token to receive a new access token without re-authenticating. The refresh token should have been issued during your initial login and must be stored securely on the client side and transmitted only over HTTPS. If the refresh token is invalid, expired, or the user account has been banned, the refresh request will fail.
+   * Request body for refreshing an access token. Contains the refresh token issued during initial registration that has a longer validity period (typically 7 days). The service validates this token and, if valid, issues a new access token with a shorter expiration (typically 15-30 minutes).
    */
   export type IRefresh = {
     /**
-     * JWT refresh token for obtaining new access tokens. This long-lived token (typically 7 days) allows maintaining authenticated sessions without re-entering credentials. Store securely and transmit only over HTTPS.
+     * The refresh token for obtaining new access tokens.
      *
-     * @x-autobe-specification JWT refresh token string issued during authentication (POST /auth/guest/join). Server validates token signature, expiration, and user account status. Token rotation pattern: on successful refresh, may issue new refresh token with extended refreshable_until deadline. Must be stored securely client-side, transmitted only over HTTPS.
+     * @x-autobe-specification Refresh token JWT string. Validate signature and expiration claim against authentication service token store. Token issued during registration with ~7 day validity per section 35 Token Expiration Policy.
      */
-    refresh_token: string;
+    refresh: string;
   };
 
   /**
-   * Request body for guest user registration in the Economic/Political Discussion Board. Captures credentials and contextual information needed to create a new user account. The email serves as unique identifier for authentication. Password will be hashed with bcrypt. An optional display name can be provided; if not specified, system generates default from email prefix. Session context (href, referrer) is REQUIRED to track registration origin for security and analytics.
+   * Request body for new user registration in the Economic/Political Discussion Board system. Users provide email and password credentials for authentication, a display name that will appear publicly in their profile and in article/comment authorship attribution, and optionally session context information (origin URL, referring page, client IP) for security auditing. Upon successful registration, a new User record and associated Profile record are created, and authentication tokens are returned enabling immediate API access.
    */
   export type IJoin = {
     /**
-     * User's unique email address for authentication and account identification. Must be a valid email format and not already registered.
+     * User's email address for authentication and system communication.
      *
-     * @x-autobe-specification User email address for authentication. Unique constraint enforced at database level. Email format validation required. Backend stores in User.email field after registration.
+     * @x-autobe-specification Direct mapping from User.email. Unique constraint enforced. Email format validated via RFC 5322 regex pattern. Lowercase normalized before storage.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * User's account password. Minimum 8 characters required. Will be hashed using bcrypt before storage. Do not send plain text passwords.
+     * User's password for authentication. Will be securely hashed before storage.
      *
-     * @x-autobe-specification User's account password. Minimum 8 characters required. Backend hashes using bcrypt before storing in User.password_hashed field. Password is never stored in plain text.
+     * @x-autobe-specification Password field (user-provided) is hashed using bcrypt or argon2 algorithm with cost factor before storing in User.passwordHash. Password strength validation should be applied before hashing (minimum 8 characters, mix of upper/lower/numbers/special).
      */
-    password: string & tags.MinLength<8>;
+    password: string & tags.Format<"password">;
 
     /**
-     * Public display name shown on profile. Optional - if not provided, system generates default from email prefix.
+     * Display name for the user's profile. Will be visible to other users.
      *
-     * @x-autobe-specification Public display name shown on profile. Optional - backend creates Profile record with this value or generates default from email prefix if not provided. Maximum 50 characters.
+     * @x-autobe-specification User-provided name is mapped to Profile.displayName. Required field with 1-50 character limit. This value is publicly visible on the user's profile and used in article/comment authorship attribution.
      */
-    displayName?: (string & tags.MaxLength<50>) | null | undefined;
+    name: string & tags.MinLength<1> & tags.MaxLength<50>;
 
     /**
-     * The URL of the page where registration was initiated. Required for guest registration to track origin for security and analytics purposes.
+     * The URL from which the registration request originated. Used for audit and security purposes.
      *
-     * @x-autobe-specification Session context from request. Captures the URL of the page where registration was initiated. Used for tracking registration origin and security audit. Computed from request headers, stored in session table. Not a database column in User or Profile tables.
+     * @x-autobe-specification Session context field captured from HTTP request URL. Used for audit logging and security analysis. Not stored in User or Profile tables. Captured from the registration request origin.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * The URL that referred the user to the registration page. Required for guest registration to track origin and analytics.
+     * The referring page URL that led to registration. Used for audit and security purposes.
      *
-     * @x-autobe-specification Session context from request headers. Captures the referring URL (where user came from before registration page). Used for tracking acquisition sources and security audit. Computed from request headers, stored in session table. Not a database column in User or Profile tables.
+     * @x-autobe-specification Session context field captured from HTTP Referrer header. Used for audit logging and security analysis. Not stored in User or Profile tables. May be empty if privacy settings block referrer.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
-     * User's IP address. Optional for guest registration because in SSR the server captures it directly. Format: IPv4 address.
+     * Client IP address for security auditing. Captured by the server from the HTTP request context.
      *
-     * @x-autobe-specification Session context from request. Optional for guest registration because in SSR (Server Side Rendering) the client cannot know its own IP — server captures it as fallback. Format: IPv4 address. Stored in session table, not in User or Profile tables.
+     * @x-autobe-specification IP address captured from server-side HTTP request context (X-Forwarded-For header or direct connection IP). Used for audit logging and security analysis. Not stored in User or Profile tables. Optional field because in SSR scenarios the client may not know its own IP.
      */
-    ip: string & tags.Format<"ipv4">;
+    ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
 }

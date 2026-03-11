@@ -17,10 +17,12 @@ export async function generate_random_discussion_board_super_admin_system_config
 ): Promise<IDiscussionBoardSystemConfiguration> {
   const prepared: IDiscussionBoardSystemConfiguration.ICreate =
     prepare_random_discussion_board_system_configuration(props.body);
-  return await api.functional.discussionBoard.superAdmin.system_configurations.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
+  const result: IDiscussionBoardSystemConfiguration =
+    await api.functional.discussionBoard.superAdmin.system_configurations.create(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
 }

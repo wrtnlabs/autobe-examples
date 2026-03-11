@@ -40,7 +40,6 @@ export namespace RedditPlatformPostEngagementStatAtSummaryTransformer {
       last_viewed_at: input.last_viewed_at.toISOString(),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
       post: await RedditPlatformPostAtSummaryTransformer.transform(input.post),
     };
   }

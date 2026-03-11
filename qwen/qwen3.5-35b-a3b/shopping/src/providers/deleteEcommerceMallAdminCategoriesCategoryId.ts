@@ -19,35 +19,47 @@ export async function deleteEcommerceMallAdminCategoriesCategoryId(props: {
     await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
       where: { id: props.categoryId },
     });
+  if (category.deleted_at !== null) {
+    throw new HttpException("Category is already deleted", 400);
+  }
   const subcategories =
     await MyGlobal.prisma.ecommerce_mall_categories.findMany({
       where: { parent_category_id: props.categoryId },
+      select: { id: true, name: true },
     });
   if (subcategories.length > 0) {
+    const subcategoryNames = subcategories.map((sc) => sc.name).join(", ");
     throw new HttpException(
-      `Category has ${subcategories.length} subcategories that must be deleted first`,
-      409,
+      `Cannot delete category with subcategories: ${subcategoryNames}`,
+      400,
     );
   }
-  await MyGlobal.prisma.ecommerce_mall_products.updateMany({
+  const productCount = await MyGlobal.prisma.ecommerce_mall_products.count({
     where: { category_id: props.categoryId },
-    data: { category_id: undefined },
   });
+  if (productCount > 0) {
+    throw new HttpException(
+      `Cannot delete category with ${productCount} products assigned. Please reassign products first.`,
+      400,
+    );
+  }
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
   const snapshotId: string & tags.Format<"uuid"> = v4();
   await MyGlobal.prisma.ecommerce_mall_category_snapshots.create({
     data: {
       id: snapshotId,
+      ecommerce_mall_category_id: props.categoryId,
+      snapshot_created_at: now,
       name: category.name,
       description: category.description,
-      parent_category_id: category.parent_category_id,
       is_leaf: category.is_leaf,
-      snapshot_created_at: toISOStringSafe(new Date()),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-      ecommerce_mall_category_id: props.categoryId,
+      created_at: category.created_at,
+      updated_at: category.updated_at,
+      parent_category_id: category.parent_category_id,
     },
   });
-  await MyGlobal.prisma.ecommerce_mall_categories.delete({
+  await MyGlobal.prisma.ecommerce_mall_categories.update({
     where: { id: props.categoryId },
+    data: { deleted_at: now },
   });
 }

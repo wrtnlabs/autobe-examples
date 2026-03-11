@@ -6,11 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_admin_request_request(
-  input?: DeepPartial<IEcommerceMallAdminRequestRequest.ICreate>,
+  input?: DeepPartial<IEcommerceMallAdminRequestRequest.ICreate> | undefined,
 ): IEcommerceMallAdminRequestRequest.ICreate {
   return {
-    reason:
-      input?.reason ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 5, wordMax: 10 }),
+    reason: input?.reason ?? typia.random<string & tags.MinLength<1>>(),
   };
 }

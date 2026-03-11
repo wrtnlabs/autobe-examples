@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallProductCollector {
   export async function collect(props: {
     body: IShoppingMallProduct.ICreate;
-    shoppingMallSellers: IEntity;
+    seller: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -21,7 +21,7 @@ export namespace ShoppingMallProductCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      seller: { connect: { id: props.shoppingMallSellers.id } },
+      seller: { connect: { id: props.seller.id } },
       category: { connect: { id: props.body.categoryId } },
       images: undefined,
       variants: undefined,

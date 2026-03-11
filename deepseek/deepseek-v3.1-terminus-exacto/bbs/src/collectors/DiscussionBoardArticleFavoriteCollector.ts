@@ -10,14 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardArticleFavoriteCollector {
   export async function collect(props: {
     body: IDiscussionBoardArticleFavorite.ICreate;
-    discussionBoardUsers: IEntity;
-    discussionBoardArticles: IEntity;
+    discussionBoardMembers: IEntity;
+    discussionBoardMemberSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
+      category: props.body.category ?? null,
+      notes: props.body.notes ?? null,
       created_at: new Date(),
-      user: { connect: { id: props.discussionBoardUsers.id } },
-      article: { connect: { id: props.discussionBoardArticles.id } },
+      updated_at: new Date(),
+      deleted_at: null,
+      member: { connect: { id: props.discussionBoardMembers.id } },
+      article: { connect: { id: props.body.discussion_board_article_id } },
     } satisfies Prisma.discussion_board_article_favoritesCreateInput;
   }
 }

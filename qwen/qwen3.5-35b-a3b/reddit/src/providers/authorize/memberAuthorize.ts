@@ -12,22 +12,11 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await MyGlobal.prisma.reddit_platform_member_sessions.findFirst({
-    where: {
-      id: payload.session_id,
-      member_id: payload.id,
-      expired_at: { gt: new Date() },
-    },
-  });
-
-  if (session === null) {
-    throw new UnauthorizedException("Session expired or invalid");
-  }
-
   const member = await MyGlobal.prisma.reddit_platform_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
+      is_active: true,
     },
   });
 

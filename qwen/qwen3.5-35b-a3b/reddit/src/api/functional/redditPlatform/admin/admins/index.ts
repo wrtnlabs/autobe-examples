@@ -7,40 +7,50 @@ import { IPageIRedditPlatformAdmin } from "../../../../structures/IPageIRedditPl
 import { IRedditPlatformAdmin } from "../../../../structures/IRedditPlatformAdmin";
 
 /**
- * Retrieve a paginated and filtered list of system administrator accounts for platform management and audit purposes.
+ * Retrieve a filtered and paginated list of administrator accounts within the Reddit platform.
  *
- * This operation provides administrators and system operators with the ability to search, filter, and browse all admin accounts on the Reddit platform. It supports filtering by account status (active/suspended), username/email search, pagination for large result sets, and sorting by creation date.
+ * This operation provides comprehensive search and filtering capabilities for administrator account management. Administrators can search by username or email using partial string matching, filter by account active status, and limit results to specific date ranges.
  *
- * The operation returns administrator summary information including id, username, display name, email, active status, and timestamps optimized for list displays in admin dashboards.
+ * The endpoint supports flexible pagination with configurable page size and page number. Results can be sorted by various fields including creation date, username, or account status. The response includes both the admin account summaries and complete pagination metadata for navigation.
  *
- * **Security**: Only authenticated system administrators with appropriate privileges can access this endpoint. Regular members and guests are denied access.
+ * All administrator accounts are returned with their profile information including display name, username, email, and active status, but the password hash field is never exposed in responses for security purposes.
+ *
+ * This operation is exclusively available to authenticated admin actors. The result set is optimized for display in administrative dashboards and user management interfaces.
+ *
+ * Related operations:
+ * - GET /admins/{id}: Retrieve detailed information for a single administrator account
+ * - PUT /admins/{id}/profile: Update administrator profile information
+ * - DELETE /admins/{id}: Deactivate or remove administrator account
+ * - GET /admins/{id}/sessions: View active sessions for an administrator
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for administrator list
+ * @param props.body Search criteria and pagination parameters for filtering administrator accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_platform_admins table with optional filters and pagination.
+ * @x-autobe-specification Query the reddit_platform_admins table to retrieve a filtered and paginated list of administrator accounts.
  *
- * Apply filters:
- * - isActive: Filter by admin account active status (true/false)
- * - username: Partial case-insensitive search on username
- * - email: Partial case-insensitive search on email
- * - createdAfter: Filter admins created after date
- * - createdBefore: Filter admins created before date
+ * Implementation steps:
+ * 1. Validate that the requesting user is authenticated as an admin actor
+ * 2. Parse request body for search criteria: isActive (boolean), usernameSearch (string, optional partial match), emailSearch (string, optional partial match), createdAfter (DateTime, optional), createdBefore (DateTime, optional)
+ * 3. Apply filters to the admin accounts query:
+ *    - Filter by isActive if provided
+ *    - Apply ILIKE search on username column for usernameSearch parameter
+ *    - Apply ILIKE search on email column for emailSearch parameter
+ *    - Apply date range filters on created_at if provided
+ * 4. Apply pagination parameters: page (number, defaults to 1), limit (number, 10-100, defaults to 20)
+ * 5. Apply sorting: sortBy (string, options: createdAt, username, isActive), sortOrder (string, options: asc, desc)
+ * 6. Execute database query to fetch total count and filtered records
+ * 7. Calculate pagination metadata: totalPages, hasNextPage, hasPreviousPage, currentPage
+ * 8. Return paginated response with admin account summaries and pagination metadata
  *
- * Sorting:
- * - sortBy: 'createdAt' or 'karmaScore' (default: createdAt)
- * - sortOrder: 'asc' or 'desc' (default: desc)
+ * Error handling:
+ * - Return 401 Unauthorized if user is not authenticated as admin
+ * - Return 400 Bad Request if pagination parameters are invalid
+ * - Return 422 Unprocessable Entity if search filters contain invalid data
  *
- * Pagination:
- * - page: 1-indexed page number (default: 1)
- * - limit: Items per page (default: 20, max: 100)
- *
- * Return cursor-based or offset-based pagination with total count.
- *
- * Join logic: None required as all data is in reddit_platform_admins.
- *
- * Authorization: Require admin authentication and verify elevated privileges.
+ * Concurrency considerations:
+ * - Use database transaction isolation level READ COMMITTED
+ * - No locking required for read-only operation
  * @path /redditPlatform/admin/admins
  * @accessor api.functional.redditPlatform.admin.admins.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -70,7 +80,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for administrator list
+     * Search criteria and pagination parameters for filtering administrator accounts
      */
     body: IRedditPlatformAdmin.IRequest;
   };
@@ -119,30 +129,28 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific administrator account from the system.
+ * Retrieve an administrator's profile information by their unique identifier.
  *
- * This operation returns the complete profile of an admin user identified by their unique UUID identifier. The response includes the administrator's authentication identity (username and email), profile information (display name and bio), account status, and timestamps for record creation and last update.
+ * This operation provides detailed information about a specific admin account, including their username, display name, biography, avatar image, account status, and creation timestamps. The returned data is used for administrative oversight, profile verification, and admin account management within the platform.
  *
- * This endpoint is typically used in administrative dashboards where platform administrators can view, audit, or manage other admin accounts. Due to the sensitive nature of admin account information, this operation requires appropriate authorization—only other administrators with management permissions should have access to view admin profiles.
+ * The operation returns non-sensitive profile information only. Password hashes and other security-sensitive data are never included in the response. All admin accounts, including suspended ones, can be viewed by other administrators for audit and management purposes.
  *
- * The operation performs a direct database lookup by the admin's primary key UUID, ensuring fast retrieval of the requested administrator record. All returned fields correspond directly to columns in the reddit_platform_admins table, including the immutable username, unique email, hashed password reference, and account state flags.
- *
- * When retrieving an admin's profile, the system does not expose the password_hash field to maintain security. The response includes only safe, non-sensitive information appropriate for administrative review.
+ * Authorization requires admin-level privileges. All admin users can view other admin profiles, including those with suspended status, to support platform-wide administrative oversight and compliance monitoring.
  *
  * @param props.connection
- * @param props.adminId The unique identifier of the administrator account to retrieve
+ * @param props.adminId Unique identifier of the admin profile to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Execute a database query on the reddit_platform_admins table using the adminId path parameter as a UUID primary key filter.
+ * @x-autobe-specification Query the reddit_platform_admins table for the admin record matching the specified adminId UUID.
  *
- * 1. Validate that adminId is a valid UUID format (string matching UUID v4 pattern)
- * 2. Query reddit_platform_admins WHERE id = adminId
- * 3. If no record found, return 404 Not Found error
- * 4. Map database record to response DTO, excluding the password_hash field
- * 5. Return the admin profile object with fields: id, email, username, display_name, bio, avatar_url, is_active, created_at, updated_at
- * 6. Apply authorization check: only authenticated admins with management privileges may access this endpoint
- * 7. Include audit logging for this access if configured
- * 8. Return 200 OK with the admin profile in the response body
+ * 1. Validate that adminId is a valid UUID format
+ * 2. Execute SELECT query on reddit_platform_admins WHERE id = adminId
+ * 3. If no matching record found, return 404 Not Found
+ * 4. Exclude password_hash from response for security
+ * 5. Return complete profile information including: id, email, username, display_name, bio, avatar_url, is_active, created_at, updated_at
+ *
+ * Concurrent access: No special locking required as this is a read-only operation.
+ * Error handling: Return 404 when admin not found. The adminId must exist in the database.
  * @path /redditPlatform/admin/admins/:adminId
  * @accessor api.functional.redditPlatform.admin.admins.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -171,7 +179,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique identifier of the administrator account to retrieve
+     * Unique identifier of the admin profile to retrieve
      */
     adminId: string & tags.Format<"uuid">;
   };

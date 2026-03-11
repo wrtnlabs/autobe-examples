@@ -1,7 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
-import { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,16 +15,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthAdministratorRefresh(props: {
   body: IShoppingMallAdministrator.IRefresh;
 }): Promise<IShoppingMallAdministrator.IAuthorized> {
-  // 1. Verify and decode refresh token
+  // 1. Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: string;
   };
   try {
-    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as {
       id: string;
       session_id: string;
       type: string;
@@ -37,7 +38,7 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
   if (decoded.type !== "administrator") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and is active
+  // 3. Validate session
   const session =
     await MyGlobal.prisma.shopping_mall_administrator_sessions.findFirst({
       where: {
@@ -48,27 +49,21 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate administrator exists and not deleted
+  if (new Date() > session.expired_at) {
+    throw new HttpException("Session expired", 401);
+  }
+  // 4. Validate administrator
   const administrator =
     await MyGlobal.prisma.shopping_mall_administrators.findUniqueOrThrow({
       where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        grade: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
     });
   if (administrator.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Calculate expiration times
+  // 5. Generate new tokens (SAME session_id)
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  // 6. Generate new tokens (SAME session_id - critical for session continuity)
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
     {
       type: "administrator",
@@ -90,23 +85,19 @@ export async function postShoppingMallAuthAdministratorRefresh(props: {
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration (rolling expiration)
+  // 6. Update session expiration
   await MyGlobal.prisma.shopping_mall_administrator_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // 8. Return response with administrator profile and new tokens
-  // Grade is typed from database as string, matching IShoppingMallAdministratorGrade values
+  // 7. Return response
   return {
     id: administrator.id,
     email: administrator.email,
-    grade: administrator.grade as IShoppingMallAdministratorGrade,
+    grade: administrator.grade,
     created_at: toISOStringSafe(administrator.created_at),
     updated_at: toISOStringSafe(administrator.updated_at),
-    deleted_at:
-      administrator.deleted_at !== null
-        ? toISOStringSafe(administrator.deleted_at)
-        : null,
+    deleted_at: null,
     token: {
       access: accessToken,
       refresh: refreshToken,

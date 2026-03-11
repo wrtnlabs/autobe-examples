@@ -1,53 +1,62 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallCategory } from "../../../../api/structures/IShoppingMallCategory";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
 import { deleteShoppingMallAdministratorCategoriesCategoryId } from "../../../../providers/deleteShoppingMallAdministratorCategoriesCategoryId";
 import { postShoppingMallAdministratorCategories } from "../../../../providers/postShoppingMallAdministratorCategories";
-import { putShoppingMallAdministratorCategoriesCategoryId } from "../../../../providers/putShoppingMallAdministratorCategoriesCategoryId";
 
 @Controller("/shoppingMall/administrator/categories")
 export class ShoppingmallAdministratorCategoriesController {
   /**
-   * Create a new product category for organizing the product catalog.
+   * Create a new product category for organizing products in the e-commerce platform.
    *
-   * This operation allows administrators to create top-level categories or subcategories under existing top-level categories. Categories provide the primary organizational structure for products on the platform.
+   * This operation allows administrators to create top-level categories or subcategories for organizing the product catalog. Categories provide the primary navigation structure for customers to discover products.
    *
-   * The category name must be globally unique across all categories. When creating a subcategory, the parent_id must reference a top-level category (a category without its own parent). This enforces the platform's single-level nesting constraint - subcategories cannot have their own subcategories.
+   * **Required Fields**:
+   * - name: Unique category name displayed to customers. Must be globally unique across all categories.
    *
-   * After creation, the category becomes immediately available for product categorization and customer browsing. Categories created without a parent_id appear as top-level categories in the hierarchy.
+   * **Optional Fields**:
+   * - description: Detailed description of the category's purpose and the types of products it contains.
+   * - parentId: Reference to a parent category when creating a subcategory. Only one level of nesting is permitted (parent must be a top-level category).
    *
-   * Authorization: This operation requires administrator privileges. Non-administrator users cannot create categories.
+   * **Business Rules**:
+   * - Category names must be globally unique (enforced by @@unique([name]) constraint)
+   * - When parentId is specified, it must reference an existing top-level category (a category without its own parent)
+   * - Attempting to create a subcategory under another subcategory is rejected
+   * - Soft delete is supported; deleted categories are hidden from customer view
+   *
+   * **Authorization**: This operation is restricted to administrators only. Non-administrator users cannot create categories.
    *
    * @param connection
-   * @param body Category creation data including name, optional description, and optional parent category reference for subcategories
+   * @param body Category creation data including name, optional description, and optional parent category reference for subcategories.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation Steps:
+   * @x-autobe-specification Implementation steps for category creation:
    *
-   * 1. Validate requester is an administrator (authorization check)
-   * 2. Validate request body:
-   *    - name: required, non-empty string, check global uniqueness
-   *    - description: optional string
-   *    - parent_id: optional UUID, if provided must reference existing top-level category (parent_id is null)
-   * 3. Business rule validation:
-   *    - If parent_id specified, verify the parent category exists and is top-level (parent.parent_id === null)
-   *    - This enforces the one-level nesting constraint
-   * 4. Create category record:
-   *    - Generate UUID for id
+   * 1. **Authorization Check**: Verify the authenticated user is an administrator. Return 403 Forbidden if not.
+   *
+   * 2. **Input Validation**:
+   *    - Validate name is non-empty and not whitespace-only
+   *    - Check for existing category with same name (case-sensitive exact match)
+   *    - If parentId is provided, verify parent exists and is not itself a subcategory (parent.parent_id must be null)
+   *
+   * 3. **Duplicate Name Check**: Query shopping_mall_categories table for existing category with same name where deleted_at is null. Return 409 Conflict if duplicate found.
+   *
+   * 4. **Parent Validation** (if parentId provided):
+   *    - Query parent category by ID
+   *    - Return 404 Not Found if parent doesn't exist or is soft-deleted
+   *    - Return 400 Bad Request if parent.parent_id is not null (would create nested subcategory)
+   *
+   * 5. **Create Category**:
+   *    - Generate UUID for new category
    *    - Set created_at and updated_at to current timestamp
    *    - Set deleted_at to null
    *    - Insert into shopping_mall_categories table
-   * 5. Return the created category entity
    *
-   * Error Handling:
-   * - 401 Unauthorized if not logged in as administrator
-   * - 409 Conflict if category name already exists
-   * - 422 Unprocessable Entity if parent_id references a non-existent category
-   * - 422 Unprocessable Entity if parent_id references a subcategory (violates nesting rule)
+   * 6. **Return Response**: Return the created category object with all fields populated.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -69,113 +78,64 @@ export class ShoppingmallAdministratorCategoriesController {
   }
 
   /**
-   * Updates an existing category's information including name, description, and parent category assignment.
+   * Soft deletes a category from the shopping mall platform by marking it as deleted.
    *
-   * This operation is restricted to administrator users only. Non-administrator access will be rejected with an authorization error.
+   * This operation is restricted to administrators only and performs a soft deletion of the specified category by setting the deleted_at timestamp. Before deletion, the system validates that no products are currently assigned to the category. If products exist under the category, the operation is rejected and products must be reassigned to another category first.
    *
-   * The category name must be unique across all categories in the system. If the provided name already exists on another category, the update will be rejected.
+   * When a category has subcategories, those subcategories are automatically promoted to top-level categories rather than being deleted. Their parent_id reference is cleared, and they become independent top-level categories. The unique name constraint applies to top-level categories, so if name conflicts occur, additional handling may be required.
    *
-   * Categories support a two-level hierarchy: parent categories (top-level) and subcategories (one level below). The parentId field controls this relationship:
-   * - Setting parentId to null makes the category a top-level category
-   * - Setting parentId to a valid top-level category ID makes this category a subcategory
-   * - A category cannot be assigned as a subcategory if it already has its own subcategories
-   * - The parent category must be a top-level category (cannot nest more than one level)
-   *
-   * Deleted categories (those with deleted_at set) cannot be modified. Attempting to update a deleted category will return a not found error.
+   * The deleted category is immediately removed from all category listings and customer browsing but remains in the database for audit and referential integrity purposes. Products that were previously assigned to this category are NOT automatically deleted - they must be reassigned before category deletion can proceed.
    *
    * Related operations:
-   * - GET /categories/{categoryId} - retrieve category details
-   * - POST /categories - create a new category
-   * - DELETE /categories/{categoryId} - delete a category
-   * - GET /categories - list all categories
+   * - PATCH /categories/{categoryId} - Edit category name or description
+   * - GET /categories - List all categories for browsing
+   * - POST /admin/categories - Create new category
+   *
+   * This operation requires administrator authentication and authorization.
    *
    * @param connection
-   * @param categoryId Unique identifier of the category to update
-   * @param body Category update data containing fields to modify
+   * @param categoryId Unique identifier of the category to be deleted (UUID format, global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Validate administrator authorization - reject non-administrator access
-   * 2. Query category by categoryId - return 404 if not found
-   * 3. Check deleted_at is null - reject updates to deleted categories
-   * 4. If name provided, validate uniqueness - query for existing category with same name (excluding current category)
-   * 5. If parentId provided:
-   *    - Validate parent category exists and is not deleted
-   *    - Validate parent has null parent_id (is top-level) - reject if parent is already a subcategory
-   *    - If current category has children, reject reassignment - cannot make a parent into a child
-   * 6. Update category record with provided fields
-   * 7. Database automatically updates updated_at timestamp
-   * 8. Return updated category with all fields
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":categoryId")
-  public async update(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("categoryId")
-    categoryId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallCategory.IUpdate,
-  ): Promise<IShoppingMallCategory> {
-    try {
-      return await putShoppingMallAdministratorCategoriesCategoryId({
-        administrator,
-        categoryId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Permanently removes a product category from the shopping mall platform.
+   * @x-autobe-specification Implementation steps for category deletion:
    *
-   * This operation is restricted to administrators only. The category must not contain any products at the time of deletion; administrators must reassign all products to other categories or set them to uncategorized status before the category can be deleted.
+   * 1. Authentication & Authorization Check:
+   *    - Verify administrator session is active
+   *    - Confirm administrator has category management privileges
    *
-   * When a parent category with subcategories is deleted, all of its subcategories are automatically promoted to top-level categories. The parent-child relationship is removed, but the subcategories themselves are preserved with their product associations intact.
+   * 2. Input Validation:
+   *    - Validate categoryId is a valid UUID format
+   *    - Query shopping_mall_categories table for the category
+   *    - Return 404 Not Found if category doesn't exist or is already soft-deleted (deleted_at IS NOT NULL)
    *
-   * The deletion is implemented as a soft delete operation using the deleted_at timestamp field in the shopping_mall_categories table. This preserves referential integrity and allows for potential data recovery if needed. Soft-deleted categories are excluded from all customer-facing category listings and product assignment operations.
+   * 3. Product Assignment Check:
+   *    - Query shopping_mall_products table for any products with shopping_mall_category_id matching the target
+   *    - If count > 0, reject with 400 Bad Request and message indicating products must be reassigned first
+   *    - Product reassignment must be done via PATCH /seller/products/{id} before retrying deletion
    *
-   * Related operations:
-   * - PATCH /categories - List all categories (administrators can see hierarchy)
-   * - POST /categories - Create a new category
-   * - PUT /categories/{categoryId} - Update category name or description
+   * 4. Subcategory Promotion:
+   *    - Query shopping_mall_categories for children where parent_id = categoryId
+   *    - For each subcategory:
+   *      a. Set parent_id to NULL (making it a top-level category)
+   *      b. Update updated_at timestamp
+   *    - Note: If subcategory name conflicts with existing top-level category name, this will violate unique constraint
+   *    - Log warning if name conflicts detected
    *
-   * @param connection
-   * @param categoryId Unique identifier of the category to delete (UUID format). The category must exist and not be previously deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+   * 5. Soft Delete Execution:
+   *    - Set deleted_at = current_timestamp on the target category
+   *    - Update updated_at timestamp
+   *    - Commit transaction
    *
-   * 1. Validate administrator authentication (only administrators can delete categories)
+   * 6. Response:
+   *    - Return the deleted category entity with deleted_at populated
+   *    - Include list of promoted subcategories in response metadata if any existed
    *
-   * 2. Query shopping_mall_categories to find the category by id (categoryId parameter)
-   *    - Return 404 if not found or already soft-deleted (deleted_at is not null)
+   * Edge Cases:
+   * - Attempting to delete already deleted category: Return 404
+   * - Deleting category with orphaned products (referential integrity): Should not occur due to pre-deletion check
+   * - Name conflict when promoting subcategories: Log error, but allow promotion (unique constraint will fail if truly conflicting)
    *
-   * 3. Product existence validation (CRITICAL):
-   *    - Query shopping_mall_products where category_id equals the target categoryId
-   *    - If any products exist in this category, REJECT deletion with 400 Bad Request
-   *    - Error message: 'Cannot delete category with existing products. Reassign products first.'
-   *
-   * 4. Subcategory handling (if category is a parent):
-   *    - Query shopping_mall_categories where parent_id equals the target categoryId
-   *    - For each subcategory found: set parent_id to null (promote to top-level category)
-   *    - Update updated_at timestamp on each promoted subcategory
-   *
-   * 5. Soft delete the category:
-   *    - Set deleted_at to current timestamp
-   *    - Do NOT physically delete the record (preserves referential integrity)
-   *
-   * 6. Return 204 No Content on success
-   *
-   * Transaction: All operations (subcategory promotion, soft delete) should be atomic within a single transaction.
-   *
-   * Edge cases:
-   * - Category not found: 404 Not Found
-   * - Category already deleted: 404 Not Found
-   * - Products exist in category: 400 Bad Request
-   * - Subcategories exist: automatically promoted (not an error)
+   * Transaction: Wrap steps 3-5 in a database transaction to ensure atomicity
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":categoryId")
@@ -183,7 +143,7 @@ export class ShoppingmallAdministratorCategoriesController {
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("categoryId")
-    categoryId: string & tags.Format<"uuid">,
+    categoryId: string,
   ): Promise<void> {
     try {
       return await deleteShoppingMallAdministratorCategoriesCategoryId({

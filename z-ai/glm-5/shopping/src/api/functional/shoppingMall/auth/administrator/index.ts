@@ -6,42 +6,21 @@ import typia from "typia";
 import { IShoppingMallAdministrator } from "../../../../structures/IShoppingMallAdministrator";
 
 /**
- * Creates a new administrator account with email and password authentication credentials.
+ * Creates a new administrator account with email and password credentials for platform management access.
  *
- * This operation allows the registration of platform administrators who will manage seller approvals, category management, product oversight, order intervention, and user moderation. The administrator's email must be unique across all administrator accounts in the shopping_mall_administrators table. The password is securely hashed before storage in the password_hash column.
+ * This endpoint handles administrator registration by accepting email and password credentials, validating uniqueness of the email address against existing administrator accounts in shopping_mall_administrators, and securely hashing the password before storage in password_hash. New administrators are assigned 'regular' grade by default; super administrators can promote them later through dedicated admin management endpoints.
  *
- * New administrators are assigned the 'regular' grade by default. Regular administrators have standard administrative privileges including seller approval/rejection, category management, user banning, and product oversight. Only super administrators can promote regular administrators to super administrator grade, which adds the authority to review administrator requests and promote/demote other administrators.
+ * The operation creates a session record in shopping_mall_administrator_sessions upon successful registration, capturing connection metadata (IP address, request path, referrer) and setting an expiration timestamp for JWT token validation. The response includes a JWT access token for authenticated requests and a refresh token for session renewal.
  *
- * The operation creates a session record in shopping_mall_administrator_sessions to track the authentication event, capturing the client IP address, requested URL path, and referrer information for audit purposes. The session includes an expiration timestamp (expired_at) for JWT token validation and security enforcement.
- *
- * Upon successful registration, the operation returns an IAuthorized response containing the administrator's profile information and authentication tokens for immediate platform access.
+ * Administrators are typically created through approval of AdministratorRequest submissions by super administrators, but this endpoint provides direct account creation capability. Email must be unique across all administrator accounts, and passwords must meet platform complexity requirements (minimum length, uppercase, lowercase, numeric digit).
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Administrator registration credentials including email and password.
+ * @param props.body Administrator account registration credentials including unique email and secure password.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Register a new administrator account in the system.
- *
- * **Implementation Logic:**
- * 1. Validate email format and check uniqueness against shopping_mall_administrators.email
- * 2. Validate password meets complexity requirements (minimum length, uppercase, lowercase, numeric)
- * 3. Hash the password using secure hashing algorithm (bcrypt/argon2)
- * 4. Set default grade to 'regular' (super administrators can only be created through promotion)
- * 5. Create administrator record in shopping_mall_administrators table with email, password_hash, grade, created_at, updated_at
- * 6. Create JWT session record in shopping_mall_administrator_sessions with IP, href, referrer, and expiration
- * 7. Generate access token and refresh token
- * 8. Return IAuthorized response with tokens and administrator profile
- *
- * **Database Operations:**
- * - INSERT into shopping_mall_administrators
- * - INSERT into shopping_mall_administrator_sessions
- *
- * **Error Handling:**
- * - Duplicate email: Return 409 Conflict
- * - Invalid password format: Return 400 Bad Request
- * - Invalid email format: Return 400 Bad Request
+ * @x-autobe-specification Implementation: Create a new administrator account in shopping_mall_administrators table. Validate email uniqueness using the unique constraint on email column. Hash the password using bcrypt or argon2 before storing in password_hash. Set grade to 'regular' by default (super admins can promote later). Set created_at and updated_at to current timestamp. Return JWT access token and refresh token in IAuthorized response. Create a session record in shopping_mall_administrator_sessions with IP, href, referrer from request context, and expiration time.
  * @path /shoppingMall/auth/administrator/join
  * @accessor api.functional.shoppingMall.auth.administrator.join
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -75,7 +54,7 @@ export async function join(
 export namespace join {
   export type Props = {
     /**
-     * Administrator registration credentials including email and password.
+     * Administrator account registration credentials including unique email and secure password.
      */
     body: IShoppingMallAdministrator.IJoin;
   };
@@ -124,50 +103,21 @@ export namespace join {
 }
 
 /**
- * Authenticates an administrator using email and password credentials and issues authentication tokens.
+ * Authenticates an administrator account by validating email and password credentials for platform management access.
  *
- * This operation validates administrator credentials against the shopping_mall_administrators table, comparing the provided password with the securely stored password_hash. Administrators with soft-deleted accounts (deleted_at is not null) cannot authenticate and receive an authentication error.
+ * This endpoint handles administrator login by querying shopping_mall_administrators by email address and verifying the provided password against the stored password_hash using secure comparison. Authentication fails if the account has been soft-deleted (deleted_at is not null) or if credentials do not match.
  *
- * Upon successful authentication, the operation creates a session record in shopping_mall_administrator_sessions to track the login event. The session captures the client's IP address, the requested URL path (href), and the HTTP referrer header for security auditing and session management purposes. The session expiration timestamp (expired_at) enforces the platform's session duration policy for JWT token validation.
+ * Upon successful authentication, a session record is created in shopping_mall_administrator_sessions to track the login event. The session captures connection metadata including the client IP address, the URL path accessed (href), and the HTTP referrer header if provided. The session expiration timestamp (expired_at) is set to enforce security limits on token validity.
  *
- * The administrator's grade (regular or super) is included in the JWT claims, enabling role-based access control throughout the platform. Regular administrators can approve sellers, manage categories, oversee products, and ban users. Super administrators have additional privileges including reviewing administrator requests and promoting or demoting other administrators.
- *
- * The response includes the administrator's profile and authentication tokens (access token and refresh token) for subsequent API calls.
+ * The response includes a JWT access token for making authenticated API requests and a refresh token for renewing the session without requiring re-authentication. The access token encodes the administrator's id, email, and grade for authorization checks in subsequent requests. The administrator's grade ('regular' or 'super') determines their privilege level for platform management operations.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Administrator login credentials with email and password.
+ * @param props.body Administrator login credentials with email and password for authentication.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authenticate an administrator with email and password credentials.
- *
- * **Implementation Logic:**
- * 1. Validate request body contains email and password
- * 2. Query shopping_mall_administrators by email
- * 3. If administrator not found, return 401 Unauthorized
- * 4. If administrator.deleted_at is not null, return 401 Unauthorized (account deleted)
- * 5. Compare provided password with stored password_hash using secure comparison
- * 6. If password invalid, return 401 Unauthorized
- * 7. Create session record in shopping_mall_administrator_sessions:
- *    - administrator_id: administrator's UUID
- *    - ip: client IP address
- *    - href: requested URL path
- *    - referrer: HTTP referrer header (nullable)
- *    - created_at: current timestamp
- *    - expired_at: current timestamp + session duration
- * 8. Generate JWT access token with administrator claims (id, email, grade)
- * 9. Generate refresh token for session renewal
- * 10. Return IAuthorized response with administrator profile and tokens
- *
- * **Database Operations:**
- * - SELECT from shopping_mall_administrators WHERE email = ?
- * - INSERT into shopping_mall_administrator_sessions
- *
- * **Error Handling:**
- * - Invalid credentials: Return 401 Unauthorized
- * - Deleted account: Return 401 Unauthorized
- * - Missing fields: Return 400 Bad Request
+ * @x-autobe-specification Implementation: Validate administrator credentials against shopping_mall_administrators table. Query administrator by email, verify password_hash matches using bcrypt/argon2 comparison. Check that deleted_at is null (account not soft-deleted). Create session record in shopping_mall_administrator_sessions with administrator_id, IP address, href, referrer, created_at, and expired_at (current time + session duration). Generate JWT access token and refresh token. Return tokens in IAuthorized response.
  * @path /shoppingMall/auth/administrator/login
  * @accessor api.functional.shoppingMall.auth.administrator.login
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -201,7 +151,7 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Administrator login credentials with email and password.
+     * Administrator login credentials with email and password for authentication.
      */
     body: IShoppingMallAdministrator.ILogin;
   };
@@ -250,46 +200,21 @@ export namespace login {
 }
 
 /**
- * Renews authentication tokens for an authenticated administrator session.
+ * Renews an administrator's authentication tokens using a valid refresh token to extend the active session.
  *
- * This operation validates the provided refresh token against active sessions in shopping_mall_administrator_sessions and issues new access and refresh tokens. The session's expiration timestamp is extended using a rolling expiration policy, keeping the administrator logged in as long as they remain active.
+ * This endpoint handles JWT token renewal for administrators with active sessions. The client provides a previously issued refresh token, which is validated against the session records in shopping_mall_administrator_sessions to ensure the session is still active (expired_at is in the future) and the token has not been revoked.
  *
- * The operation verifies that the administrator account is still valid (not soft-deleted) by checking the deleted_at column in shopping_mall_administrators. This ensures that deleted administrator accounts cannot maintain active sessions.
+ * Upon successful validation, new JWT access and refresh tokens are generated for the administrator. The access token encodes the administrator's identity (id, email) and authorization level (grade) for use in subsequent authenticated requests. The refresh token allows continued session renewal without requiring the administrator to re-enter credentials.
  *
- * The administrator's current grade is re-fetched from shopping_mall_administrators and included in the new JWT claims, ensuring that any grade changes (promotions or demotions) by super administrators are reflected in the renewed tokens. This provides immediate effect for privilege changes without requiring the administrator to log out and log back in.
- *
- * The response includes the administrator's current profile and fresh authentication tokens for continued platform access.
+ * The session expiration may be extended by updating the expired_at timestamp in shopping_mall_administrator_sessions, maintaining an active session record for audit trail purposes. This operation enables seamless continued access for administrators managing platform operations without interruption, while maintaining security through token expiration and validation.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Refresh token for renewing administrator authentication session.
+ * @param props.body Refresh token from previous authentication for session renewal.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Renew authentication tokens using a valid refresh token.
- *
- * **Implementation Logic:**
- * 1. Validate refresh token from request body
- * 2. Decode and verify refresh token integrity and signature
- * 3. If token invalid or expired, return 401 Unauthorized
- * 4. Query shopping_mall_administrator_sessions by session ID embedded in token
- * 5. If session not found or session.expired_at has passed, return 401 Unauthorized
- * 6. Query shopping_mall_administrators by session.administrator_id
- * 7. If administrator not found or administrator.deleted_at is not null, return 401 Unauthorized
- * 8. Update session.expired_at to extend session (rolling expiration)
- * 9. Generate new JWT access token with current administrator claims (id, email, grade)
- * 10. Generate new refresh token
- * 11. Return IAuthorized response with new tokens and administrator profile
- *
- * **Database Operations:**
- * - SELECT from shopping_mall_administrator_sessions WHERE id = ?
- * - SELECT from shopping_mall_administrators WHERE id = ?
- * - UPDATE shopping_mall_administrator_sessions SET expired_at = ?
- *
- * **Error Handling:**
- * - Invalid/expired token: Return 401 Unauthorized
- * - Session not found: Return 401 Unauthorized
- * - Deleted administrator: Return 401 Unauthorized
+ * @x-autobe-specification Implementation: Validate the provided refresh token against stored sessions or token blacklist. Verify token has not expired by checking against current timestamp and session expired_at. If valid, query shopping_mall_administrators by the administrator ID encoded in the token. Generate new JWT access token and refresh token. Optionally update the session record's expired_at timestamp to extend session. Return new tokens in IAuthorized response. If refresh token is invalid or expired, return 401 Unauthorized.
  * @path /shoppingMall/auth/administrator/refresh
  * @accessor api.functional.shoppingMall.auth.administrator.refresh
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -323,7 +248,7 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token for renewing administrator authentication session.
+     * Refresh token from previous authentication for session renewal.
      */
     body: IShoppingMallAdministrator.IRefresh;
   };

@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditPlatformGuestSessionAtSummaryTransformer } from "./RedditPlatformGuestSessionAtSummaryTransformer";
 
 export namespace RedditPlatformGuestTransformer {
   export type Payload = Prisma.reddit_platform_guestsGetPayload<
@@ -25,17 +26,7 @@ export namespace RedditPlatformGuestTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: {
-          select: {
-            id: true,
-            reddit_platform_guest_id: true,
-            ip: true,
-            referrer: true,
-            href: true,
-            created_at: true,
-            expired_at: true,
-          },
-        } satisfies Prisma.reddit_platform_guest_sessionsFindManyArgs,
+        sessions: RedditPlatformGuestSessionAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_platform_guestsFindManyArgs;
   }
@@ -47,23 +38,16 @@ export namespace RedditPlatformGuestTransformer {
       email: input.email,
       username: input.username,
       display_name: input.display_name,
-      bio: input.bio,
-      avatar_url: input.avatar_url,
+      bio: input.bio ?? undefined,
+      avatar_url: input.avatar_url ?? undefined,
       karma: input.karma,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      sessions: await ArrayUtil.asyncMap(input.sessions, (session) =>
-        Promise.resolve({
-          id: session.id,
-          reddit_platform_guest_id: session.reddit_platform_guest_id,
-          ip: session.ip,
-          referrer: session.referrer,
-          href: session.href,
-          created_at: toISOStringSafe(session.created_at),
-          expired_at: toISOStringSafe(session.expired_at),
-        }),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      sessions: await ArrayUtil.asyncMap(
+        input.sessions,
+        RedditPlatformGuestSessionAtSummaryTransformer.transform,
       ),
-    };
+    } satisfies IRedditPlatformGuest;
   }
 }

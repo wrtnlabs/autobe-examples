@@ -6,7 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_community_moderator(
-  input?: DeepPartial<IRedditPlatformCommunityModerator.ICreate>,
+  input?: DeepPartial<IRedditPlatformCommunityModerator.ICreate> | undefined,
 ): IRedditPlatformCommunityModerator.ICreate {
   return {
     user_id: input?.user_id ?? typia.random<string & tags.Format<"uuid">>(),

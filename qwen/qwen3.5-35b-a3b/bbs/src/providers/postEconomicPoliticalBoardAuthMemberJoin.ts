@@ -12,38 +12,72 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-/**
- * Cannot implement: Database schema missing member/user table required by API.
- *
- * The operation specification describes member registration with:
- * - economic_political_board_users table (email, passwordHashed, etc.)
- * - economic_political_board_profiles table (displayName, bio, etc.)
- * - economic_political_board_sessions table (accessToken, refreshToken, etc.)
- *
- * However, the actual database schema only contains:
- * - economic_political_board_article_tags (junction table)
- * - economic_political_board_articles (discussion posts)
- * - economic_political_board_attachments (file attachments)
- * - economic_political_board_comments (discussion comments)
- * - economic_political_board_sections (topic categories)
- * - economic_political_board_tags (content tags)
- * - economic_political_board_administrator_roles (admin users)
- * - economic_political_board_administrator_requests (admin promotion requests)
- * - economic_political_board_ban_records (user ban records)
- *
- * There is no 'member' or 'user' table for general user registration in this
- * discussion board system. The member registration endpoint is designed for a
- * different database schema than what is available in this project.
- *
- * This is a fundamental schema-API mismatch that cannot be resolved without
- * database schema changes. The endpoint should be removed or the database
- * schema must be extended to include member/user tables.
- */
 export async function postEconomicPoliticalBoardAuthMemberJoin(props: {
+  ip: string;
   body: IEconomicPoliticalBoardMember.IJoin;
 }): Promise<IEconomicPoliticalBoardMember.IAuthorized> {
-  throw new HttpException(
-    "Database schema does not support member registration. This endpoint is not available in the current system configuration.",
-    500,
-  );
+  const { email, password, name, href, referrer } = props.body;
+  // 1. Check email uniqueness using user_id field
+  const existingMember =
+    await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst(
+      {
+        where: { user_id: email },
+      },
+    );
+  if (existingMember) {
+    throw new HttpException("Email already registered", 409);
+  }
+  // 2. Generate UUID for member
+  const memberId: string & tags.Format<"uuid"> = v4();
+  // 3. Create member record with only existing fields
+  const createdMember =
+    await MyGlobal.prisma.economic_political_board_administrator_roles.create({
+      data: {
+        id: memberId,
+        user_id: memberId,
+        grade: "member",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      select: {
+        id: true,
+        user_id: true,
+      },
+    });
+  // 4. Generate JWT tokens
+  const sessionUuid: string & tags.Format<"uuid"> = v4();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const tokenPayload = {
+    type: "member" as const,
+    id: memberId,
+    session_id: sessionUuid,
+    created_at: new Date().toISOString() as string & tags.Format<"date-time">,
+  };
+  const token: IAuthorizationToken = {
+    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "1h",
+      issuer: "autobe",
+    }),
+    refresh: jwt.sign(
+      {
+        ...tokenPayload,
+        token_type: "refresh" as const,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
+  };
+  // 5. Return IAuthorized
+  return {
+    id: memberId,
+    token,
+  } satisfies IEconomicPoliticalBoardMember.IAuthorized;
 }

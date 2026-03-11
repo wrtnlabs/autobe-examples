@@ -23,7 +23,6 @@ export namespace ShoppingMallAddressAtSummaryTransformer {
         country: true,
         is_default: true,
         created_at: true,
-        updated_at: true,
       },
     } satisfies Prisma.shopping_mall_addressesFindManyArgs;
   }
@@ -41,7 +40,6 @@ export namespace ShoppingMallAddressAtSummaryTransformer {
       country: input.country,
       is_default: input.is_default,
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
     };
   }
 }

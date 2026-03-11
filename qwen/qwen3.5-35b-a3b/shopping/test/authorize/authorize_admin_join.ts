@@ -20,7 +20,7 @@ export async function authorize_admin_join(
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip,
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IEcommerceMallAdmin.IJoin;
   return await api.functional.ecommerceMall.auth.admin.join(connection, {
     body: joinInput,

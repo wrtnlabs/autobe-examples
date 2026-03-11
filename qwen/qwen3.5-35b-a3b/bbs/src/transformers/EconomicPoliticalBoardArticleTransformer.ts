@@ -10,8 +10,8 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer } from "./EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer";
-import { EconomicPoliticalBoardAttachmentTransformer } from "./EconomicPoliticalBoardAttachmentTransformer";
+import { EconomicPoliticalBoardAttachmentAtSummaryTransformer } from "./EconomicPoliticalBoardAttachmentAtSummaryTransformer";
+import { EconomicPoliticalBoardMemberAtSummaryTransformer } from "./EconomicPoliticalBoardMemberAtSummaryTransformer";
 import { EconomicPoliticalBoardSectionAtSummaryTransformer } from "./EconomicPoliticalBoardSectionAtSummaryTransformer";
 import { EconomicPoliticalBoardTagAtSummaryTransformer } from "./EconomicPoliticalBoardTagAtSummaryTransformer";
 
@@ -28,15 +28,18 @@ export namespace EconomicPoliticalBoardArticleTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        author:
-          EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
+        author: EconomicPoliticalBoardMemberAtSummaryTransformer.select(),
         section: EconomicPoliticalBoardSectionAtSummaryTransformer.select(),
-        attachments: EconomicPoliticalBoardAttachmentTransformer.select(),
+        attachments:
+          EconomicPoliticalBoardAttachmentAtSummaryTransformer.select(),
+        comments: {
+          select: { deleted_at: true },
+        } satisfies Prisma.economic_political_board_commentsFindManyArgs,
         articleTags: {
           select: {
             tag: EconomicPoliticalBoardTagAtSummaryTransformer.select(),
           },
-        },
+        } satisfies Prisma.economic_political_board_article_tagsFindManyArgs,
       },
     } satisfies Prisma.economic_political_board_articlesFindManyArgs;
   }
@@ -47,17 +50,16 @@ export namespace EconomicPoliticalBoardArticleTransformer {
       id: input.id,
       title: input.title,
       content: input.content,
-      author:
-        await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
-          input.author,
-        ),
+      author: await EconomicPoliticalBoardMemberAtSummaryTransformer.transform(
+        input.author,
+      ),
       section:
         await EconomicPoliticalBoardSectionAtSummaryTransformer.transform(
           input.section,
         ),
       attachments: await ArrayUtil.asyncMap(
         input.attachments,
-        EconomicPoliticalBoardAttachmentTransformer.transform,
+        EconomicPoliticalBoardAttachmentAtSummaryTransformer.transform,
       ),
       tags: await ArrayUtil.asyncMap(input.articleTags, (at) =>
         EconomicPoliticalBoardTagAtSummaryTransformer.transform(at.tag),
@@ -65,6 +67,7 @@ export namespace EconomicPoliticalBoardArticleTransformer {
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      comment_count: input.comments.filter((c) => c.deleted_at === null).length,
     };
   }
 }

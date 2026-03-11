@@ -17,32 +17,36 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchDiscussionBoardMembers(props: {
   body: IDiscussionBoardMember.IRequest;
 }): Promise<IPageIDiscussionBoardMember.ISummary> {
-  const page = Math.max(props.body.page ?? 1, 1);
-  const limit = Math.max(1, Math.min(props.body.limit ?? 20, 100));
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput = {
     deleted_at: null,
-    ...(props.body.search && {
+    ...(props.body.search !== undefined && {
       OR: [
-        { display_name: { contains: props.body.search, mode: "insensitive" } },
-        { email: { contains: props.body.search, mode: "insensitive" } },
+        { display_name: { contains: props.body.search } },
+        { email: { contains: props.body.search } },
       ],
     }),
-    ...(props.body.display_name && {
-      display_name: { contains: props.body.display_name, mode: "insensitive" },
+    ...(props.body.ban_status !== undefined && {
+      ban_status: props.body.ban_status,
     }),
-    ...(props.body.email && {
-      email: { contains: props.body.email, mode: "insensitive" },
-    }),
-    ...(props.body.ban_status && { ban_status: props.body.ban_status }),
+    ...(props.body.created_at_from !== undefined ||
+    props.body.created_at_to !== undefined
+      ? {
+          created_at: {
+            ...(props.body.created_at_from !== undefined && {
+              gte: new Date(props.body.created_at_from),
+            }),
+            ...(props.body.created_at_to !== undefined && {
+              lte: new Date(props.body.created_at_to),
+            }),
+          },
+        }
+      : {}),
   } satisfies Prisma.discussion_board_membersWhereInput;
-  const sortField = props.body.sort_by ?? "created_at";
-  const sortOrder = (props.body.sort_order ??
-    (sortField === "display_name" ? "asc" : "desc")) as Prisma.SortOrder;
   const orderByInput = {
-    ...(sortField === "display_name"
-      ? { display_name: sortOrder }
-      : { created_at: sortOrder }),
+    created_at: (props.body.sort_order ?? "desc") as "asc" | "desc",
   } satisfies Prisma.discussion_board_membersOrderByWithRelationInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.discussion_board_members.findMany({
@@ -52,18 +56,21 @@ export async function patchDiscussionBoardMembers(props: {
       take: limit,
       ...DiscussionBoardMemberAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.discussion_board_members.count({ where: whereInput }),
+    MyGlobal.prisma.discussion_board_members.count({
+      where: whereInput,
+    }),
   ]);
+  const pages = Math.ceil(total / limit);
   return {
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: pages,
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       data,
       DiscussionBoardMemberAtSummaryTransformer.transform,
     ),
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIDiscussionBoardMember.ISummary;
 }

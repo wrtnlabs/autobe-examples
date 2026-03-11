@@ -21,7 +21,7 @@ subgraph "Functional Agents"
   coder --"ERD"--> database("✅ Database")
   coder --"API Design"--> interface("✅ Interface")
   coder --"Test Codes" --> test("✅ Test")
-  coder --"Main Program" --> realize("❌ Realize")
+  coder --"Main Program" --> realize("✅ Realize")
 end
 subgraph "Compiler Feedback"
   database --"validates" --> prismaCompiler("Prisma Compiler")
@@ -44,7 +44,7 @@ Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
 Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
 Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
-Development     | ❌ Realize      | [API Provider Functions](src/providers)
+Development     | ✅ Realize      | [API Provider Functions](src/providers)
 Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
 Maintenance     | -            | Use Claude Code like AI coding tool please
 
@@ -115,9 +115,9 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ------|-----------|------|-------------------|--------------
 ✅ analyze | actors: 3, documents: 6 | 89.12 % | 1,674,402 | 1785 sec
 ✅ database | namespaces: 6, models: 22 | 95.77 % | 2,853,119 | 364 sec
-✅ interface | operations: 74, schemas: 105 | 74.00 % | 77,391,601 | 5844 sec
-✅ test | functions: 214 | 94.76 % | 25,456,382 | 2089 sec
-❌ realize | functions: 107, errors: 1 | 87.78 % | 12,476,509 | 2061 sec
+✅ interface | operations: 72, schemas: 88 | 82.65 % | 48,361,827 | 3655 sec
+✅ test | functions: 204 | 97.57 % | 21,096,970 | 1679 sec
+✅ realize | functions: 108 | 84.89 % | 9,866,239 | 1868 sec
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
@@ -133,7 +133,7 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 2,169 | 357 | 1 | 1,806 | 83.26 %
+total | 1,862 | 216 | 0 | 1,645 | 88.35 %
 analyzeScenario | 2 | 1 | 0 | 1 | 50.00 %
 analyzeScenarioReview | 1 | 0 | 0 | 1 | 100.00 %
 analyzeWriteUnit | 8 | 0 | 0 | 8 | 100.00 %
@@ -150,26 +150,26 @@ databaseSchema | 25 | 2 | 0 | 23 | 92.00 %
 databaseSchemaReview | 25 | 0 | 0 | 25 | 100.00 %
 databaseCorrect | 1 | 0 | 0 | 1 | 100.00 %
 interfaceGroup | 1 | 0 | 0 | 1 | 100.00 %
-interfaceAuthorization | 11 | 3 | 0 | 7 | 63.64 %
-interfaceEndpoint | 12 | 0 | 0 | 12 | 100.00 %
-interfaceEndpointReview | 24 | 0 | 0 | 24 | 100.00 %
-interfaceOperation | 147 | 6 | 0 | 141 | 95.92 %
-interfaceOperationReview | 158 | 5 | 1 | 152 | 96.20 %
-interfaceSchemaRename | 13 | 0 | 0 | 13 | 100.00 %
-interfaceSchema | 86 | 4 | 0 | 82 | 95.35 %
-interfaceSchemaRefine | 260 | 178 | 0 | 82 | 31.54 %
-interfaceSchemaReview | 249 | 73 | 0 | 176 | 70.68 %
-interfaceSchemaComplement | 15 | 0 | 0 | 15 | 100.00 %
-interfacePrerequisite | 70 | 1 | 0 | 69 | 98.57 %
-testScenario | 82 | 8 | 0 | 72 | 87.80 %
-testScenarioReview | 223 | 9 | 0 | 212 | 95.07 %
-testWrite | 214 | 5 | 0 | 209 | 97.66 %
-testCorrect | 34 | 3 | 0 | 31 | 91.18 %
+interfaceAuthorization | 8 | 3 | 0 | 5 | 62.50 %
+interfaceEndpoint | 10 | 0 | 0 | 10 | 100.00 %
+interfaceEndpointReview | 20 | 0 | 0 | 20 | 100.00 %
+interfaceOperation | 120 | 2 | 0 | 118 | 98.33 %
+interfaceOperationReview | 131 | 1 | 0 | 130 | 99.24 %
+interfaceSchemaRename | 9 | 0 | 0 | 9 | 100.00 %
+interfaceSchema | 76 | 2 | 0 | 74 | 97.37 %
+interfaceSchemaRefine | 147 | 84 | 0 | 63 | 42.86 %
+interfaceSchemaReview | 182 | 38 | 0 | 143 | 78.57 %
+interfaceSchemaComplement | 1 | 0 | 0 | 1 | 100.00 %
+interfacePrerequisite | 73 | 4 | 0 | 69 | 94.52 %
+testScenario | 78 | 5 | 0 | 73 | 93.59 %
+testScenarioReview | 213 | 2 | 0 | 211 | 99.06 %
+testWrite | 204 | 5 | 0 | 199 | 97.55 %
+testCorrect | 40 | 1 | 0 | 39 | 97.50 %
 realizeAuthorizationWrite | 6 | 0 | 0 | 6 | 100.00 %
-realizeAuthorizationCorrect | 17 | 0 | 0 | 17 | 100.00 %
-realizePlan | 52 | 0 | 0 | 52 | 100.00 %
-realizeWrite | 239 | 43 | 0 | 196 | 82.01 %
-realizeCorrect | 38 | 0 | 0 | 38 | 100.00 %
+realizeAuthorizationCorrect | 19 | 4 | 0 | 15 | 78.95 %
+realizePlan | 39 | 0 | 0 | 39 | 100.00 %
+realizeWrite | 210 | 45 | 0 | 165 | 78.57 %
+realizeCorrect | 57 | 1 | 0 | 56 | 98.25 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

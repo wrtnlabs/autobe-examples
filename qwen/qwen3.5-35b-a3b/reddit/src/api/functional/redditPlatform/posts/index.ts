@@ -4,46 +4,180 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IPageIRedditPlatformPost } from "../../../structures/IPageIRedditPlatformPost";
+import { IPageIRedditPlatformPostSnapshot } from "../../../structures/IPageIRedditPlatformPostSnapshot";
 import { IRedditPlatformPost } from "../../../structures/IRedditPlatformPost";
+import { IRedditPlatformPostEngagementStat } from "../../../structures/IRedditPlatformPostEngagementStat";
+import { IRedditPlatformPostSnapshot } from "../../../structures/IRedditPlatformPostSnapshot";
 
-export * as images from "./images/index";
+export * as _snapshots from "./_snapshots/index";
 export * as comments from "./comments/index";
 
 /**
- * Retrieves detailed information about a specific post in the Reddit platform.
+ * Retrieve a paginated list of posts with advanced search, filtering, and sorting capabilities.
  *
- * This operation fetches a single post by its unique identifier, returning comprehensive data including the post title, content body (for TEXT posts), external URL (for LINK posts), image URL (for IMAGE posts), vote score, comment count, and the community where the post was published.
+ * This operation supports multiple feed types including community-specific feeds, user-specific feeds, and general discovery feeds. Users can filter posts by post type (text, link, image), community membership, date ranges, and author identity.
  *
- * The post belongs to a community (reddit_platform_communities) and is authored by a member (reddit_platform_members). The operation returns the complete post record with all fields from the database, including timestamps for creation and last update.
+ * The operation supports multiple sorting algorithms:
+ * - "new": Posts sorted by creation date (most recent first)
+ * - "hot": Posts ranked by engagement velocity (votes, comments within time window)
+ * - "top": Posts ranked by total vote score, with optional time range filtering (today, this_week, this_month, this_year, all_time)
+ * - "controversial": Posts with mixed upvotes and downvotes, indicating polarizing content
  *
- * For TEXT posts, the content field contains the text body. For LINK posts, the url field contains the external link. For IMAGE posts, the image_url field contains the URL to the uploaded image. The post_type field indicates which type of post this is.
+ * Pagination is implemented using cursor-based or offset-based pagination with configurable page size. The response includes total count, page metadata, and an array of post summaries optimized for list displays.
  *
- * The vote_score field represents the net score (upvotes minus downvotes). The comment_count field shows the total number of comments on this post.
+ * When a community ID is specified, the operation filters posts to only include those from that community. When an author ID is specified, the operation returns only posts authored by that user. Authentication is not required for basic post discovery but may be needed for personalized feeds or to access author-specific information.
  *
- * Soft-deleted posts (where deleted_at is set) are accessible only to users with appropriate permissions, such as the original author, community moderators, or system administrators. This allows for audit trail preservation while maintaining content visibility controls.
+ * @param props.connection
+ * @param props.body Search criteria and pagination parameters for post discovery
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification Query reddit_platform_posts table with JOINs to reddit_platform_members (author), reddit_platform_communities (community), and aggregate functions for vote counts.
+ *
+ * Apply filters from requestBody:
+ * - communityId: Filter posts by community (JOIN on reddit_platform_posts.community_id)
+ * - authorId: Filter posts by author (JOIN on reddit_platform_posts.author_id)
+ * - type: Filter by post_type ENUM (text, link, image)
+ * - dateRange: Filter by created_at timestamp range
+ * - excludeTypes: Filter out specific post types
+ *
+ * Apply sorting:
+ * - sortBy=new: ORDER BY created_at DESC
+ * - sortBy=hot: Use engagement velocity algorithm combining recent vote count, comment count, and time decay
+ * - sortBy=top: SUM from reddit_platform_post_votes by vote_type, with time range filtering if timeRange is specified
+ * - sortBy=controversial: Calculate vote variance (difference between upvotes and downvotes relative to total votes)
+ *
+ * Apply pagination:
+ * - page: Skip (page - 1) * limit rows
+ * - limit: Fetch 'limit' rows (default: 20, max: 100)
+ *
+ * For each post, fetch:
+ * - Post summary from reddit_platform_posts
+ * - Author summary from reddit_platform_members (username, displayName, karmaScore)
+ * - Community summary from reddit_platform_communities (name, iconUrl, subscriberCount)
+ * - Vote summary: SUM(vote_type) from reddit_platform_post_votes where post_id matches
+ * - Comment count: COUNT(id) from reddit_platform_comments where post_id matches
+ *
+ * Return IPageIRedditPlatformPost.ISummary with pagination metadata and post summaries.
+ * @path /redditPlatform/posts
+ * @accessor api.functional.redditPlatform.posts.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria and pagination parameters for post discovery
+     */
+    body: IRedditPlatformPost.IRequest;
+  };
+  export type Body = IRedditPlatformPost.IRequest;
+  export type Response = IPageIRedditPlatformPost.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/redditPlatform/posts",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/redditPlatform/posts";
+  export const random = (): IPageIRedditPlatformPost.ISummary =>
+    typia.random<IPageIRedditPlatformPost.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve detailed information about a specific post in the Reddit platform.
+ *
+ * This operation returns complete post details including the post title, content (for text posts), URL (for link posts), image URL (for image posts), vote score, comment count, posting time, and metadata about the author and community where the post was created.
+ *
+ * The endpoint is accessible to both authenticated members and guest users without authentication, as reading post content is a read-only operation open to all users. The post must not be soft-deleted (deleted_at must be null) to be viewable.
+ *
+ * The response includes nested author information (username, display name, karma score, avatar URL) and community information (name, icon URL) to provide full context for the post display in feeds and detail views.
+ *
+ * Related operations:
+ * - GET /redditPlatform/posts - List posts with pagination and filtering
+ * - GET /redditPlatform/posts/{postId}/comments - Get comments on this post
+ * - GET /redditPlatform/users/{userId}/posts - Get posts by this author
+ * - GET /redditPlatform/communities/{communityId}/posts - Get posts in this community
  *
  * @param props.connection
  * @param props.postId Unique identifier of the post to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_platform_posts table for a single record by id.
+ * @x-autobe-specification Query the reddit_platform_posts table for the post with matching id.
  *
- * 1. Accept postId UUID in the path parameter
- * 2. Query: SELECT * FROM reddit_platform_posts WHERE id = $1
- * 3. Join with reddit_platform_members to get author username and display_name
- * 4. Join with reddit_platform_communities to get community name
- * 5. Return full post object with all fields
- * 6. Handle not-found case (post id does not exist)
- * 7. Handle soft-deleted case - check deleted_at field
- * 8. Calculate actual vote_score by summing votes from reddit_platform_post_votes if not cached
- * 9. Return 404 if post not found or if user lacks permission to view deleted post
+ * Filter conditions:
+ * - Where id equals the path parameter postId (UUID format)
+ * - Where deleted_at is null (soft-deleted posts are not visible)
  *
- * Edge cases:
- * - Post belongs to deleted community - still return post with community info
- * - Author account is deleted - still return post with author info
- * - Post is soft-deleted - check user permissions before returning
+ * Join operations:
+ * - LEFT JOIN reddit_platform_members on reddit_platform_posts.reddit_platform_member_id = reddit_platform_members.id to get author information
+ * - LEFT JOIN reddit_platform_communities on reddit_platform_posts.reddit_platform_community_id = reddit_platform_communities.id to get community information
  *
- * Transaction: Single SELECT query within database transaction for consistency.
+ * Response construction:
+ * - Extract all post fields from reddit_platform_posts
+ * - Include author's username, display_name, karma_score, avatar_url from reddit_platform_members
+ * - Include community's name and icon_url from reddit_platform_communities
+ * - Validate that post_id parameter is a valid UUID format
+ *
+ * Validation:
+ * - If post not found (no matching id), return 404 Not Found
+ * - If post is soft-deleted (deleted_at is not null), return 404 Not Found
+ * - No authentication required for read operations
+ *
+ * Performance considerations:
+ * - Use indexed lookup on reddit_platform_posts.id (primary key)
+ * - Response should include cached author and community data
  * @path /redditPlatform/posts/:postId
  * @accessor api.functional.redditPlatform.posts.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -118,58 +252,64 @@ export namespace at {
 }
 
 /**
- * Retrieve a filtered and paginated list of posts with support for multiple feed types (HOME, POPULAR, COMMUNITY) and sorting options.
+ * Retrieve a filtered and paginated list of historical snapshots for a specific post.
  *
- * This endpoint provides advanced search capabilities for posts including feed type filtering, sorting by HOT/NEW/TOP/CONTROVERSIAL, optional community filtering, and pagination. The HOME feed displays posts from communities the user is subscribed to, POPULAR feed shows all posts, and COMMUNITY feed filters to a specific community.
+ * This operation returns all snapshots associated with the given post ID, including CREATE (initial creation), EDIT (modifications), and DELETE (removal marker) snapshot types. Each snapshot represents the state of the post at a specific point in time, capturing all content fields and metadata.
  *
- * Sorting options include:
- * - HOT: Time-weighted ranking based on recent activity and engagement
- * - NEW: Chronological order by post creation timestamp
- * - TOP: Highest vote scores with optional time range filtering (TODAY, WEEK, MONTH, YEAR, ALL)
- * - CONTROVERSIAL: Posts with balanced upvote/downvote ratios
+ * The endpoint supports advanced filtering by snapshot type (CREATE, EDIT, DELETE), date range queries (created_at), and sorting options (most recent first, oldest first, by snapshot type). Pagination is implemented with configurable page size and cursor-based navigation for efficient retrieval of large datasets.
  *
- * Supports comprehensive pagination with configurable page sizes and cursor-based navigation for efficient large result set handling. Response includes post summary information with vote scores, comment counts, and author details.
+ * Security: Requires valid authentication token. Only the post author, community moderators, or administrators can access post snapshots. Regular users can view snapshots only for posts they own or that are publicly accessible.
  *
- * Requires authentication for HOME and COMMUNITY feeds. Users can browse POPULAR feed as authenticated members. Guest users have limited access to content based on platform policies.
+ * Related Operations: This endpoint should be called after GET /posts/{postId} to retrieve the current post state. Use GET /posts/{postId} to obtain the postId parameter for this snapshots query.
  *
  * @param props.connection
- * @param props.body Post listing and filtering parameters
+ * @param props.postId The unique identifier of the post whose snapshots to retrieve
+ * @param props.body Search criteria and pagination parameters for snapshot retrieval
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_platform_posts table with LEFT JOIN to reddit_platform_post_engagement_stats for engagement metrics.
+ * @x-autobe-specification Query the reddit_platform_post_snapshots table where reddit_platform_post_id matches the provided postId parameter.
  *
- * Apply filtering based on feed_type:
- * - HOME: Filter posts where community_id IN (communities user is subscribed to via reddit_platform_community_subscriptions)
- * - POPULAR: No community filter, all posts visible
- * - COMMUNITY: Filter by community_id if communityName parameter provided
+ * Apply filters from requestBody:
+ * - snapshot_type: Filter by CREATE, EDIT, or DELETE type
+ * - startDate/endDate: Filter by created_at range
+ * - authorId: Filter by author snapshot
  *
  * Apply sorting:
- * - HOT: Calculate weighted score using vote_score, last_viewed_at from engagement stats, and created_at
- * - NEW: Order by created_at DESC
- * - TOP: Order by vote_score DESC with optional time range filter on created_at
- * - CONTROVERSIAL: Order by absolute difference between upvote_count and downvote_count DESC
+ * - sortBy: 'created_at' (default DESC for most recent first)
+ * - sortOrder: 'asc' or 'desc'
  *
- * Apply pagination using LIMIT and OFFSET or cursor-based pagination.
+ * Pagination:
+ * - Use cursor-based pagination for large result sets
+ * - Calculate nextCursor and previousCursor based on current page and results
  *
- * Apply search filters on title (partial match), post_type, and date range if provided.
+ * Join operations:
+ * - Join with reddit_platform_members to include author usernames
+ * - Join with reddit_platform_posts to validate post exists and check permissions
  *
- * Join with reddit_platform_members for author display_name.
+ * Permission checks:
+ * - Verify requester is authenticated
+ * - Check if requester is post author, community moderator, or admin
+ * - If not authorized, return 403 Forbidden
  *
- * Check subscription requirements for authenticated users before returning HOME feed results.
+ * Return paginated results with:
+ * - snapshots array with snapshot details
+ * - pagination object with total count, current page, page size, nextCursor, previousCursor
  *
- * Return post summaries with aggregated vote counts from engagement stats.
- *
- * Handle edge cases: empty communities list for HOME feed, no matching posts, pagination boundaries.
- * @path /redditPlatform/posts
- * @accessor api.functional.redditPlatform.posts.index
+ * Edge cases:
+ * - If no snapshots found for postId, return empty array with pagination metadata
+ * - If post does not exist, return 404 Not Found
+ * - If postId parameter is invalid UUID format, return 400 Bad Request
+ * - If pagination parameters are invalid (negative page, limit > max), return 400 Bad Request
+ * @path /redditPlatform/posts/:postId/snapshots
+ * @accessor api.functional.redditPlatform.posts.snapshots
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function snapshots(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: snapshots.Props,
+): Promise<snapshots.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? snapshots.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -179,26 +319,31 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(),
+          ...snapshots.METADATA,
+          path: snapshots.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace snapshots {
   export type Props = {
     /**
-     * Post listing and filtering parameters
+     * The unique identifier of the post whose snapshots to retrieve
      */
-    body: IRedditPlatformPost.IRequest;
+    postId: string & tags.Format<"uuid">;
+
+    /**
+     * Search criteria and pagination parameters for snapshot retrieval
+     */
+    body: IRedditPlatformPostSnapshot.IRequest;
   };
-  export type Body = IRedditPlatformPost.IRequest;
-  export type Response = IPageIRedditPlatformPost.ISummary;
+  export type Body = IRedditPlatformPostSnapshot.IRequest;
+  export type Response = IPageIRedditPlatformPostSnapshot.ISummary;
 
   export const METADATA = {
     method: "PATCH",
-    path: "/redditPlatform/posts",
+    path: "/redditPlatform/posts/:postId/snapshots",
     request: {
       type: "application/json",
       encrypted: false,
@@ -209,21 +354,130 @@ export namespace index {
     },
   } as const;
 
-  export const path = () => "/redditPlatform/posts";
-  export const random = (): IPageIRedditPlatformPost.ISummary =>
-    typia.random<IPageIRedditPlatformPost.ISummary>();
+  export const path = (props: Omit<Props, "body">) =>
+    `/redditPlatform/posts/${encodeURIComponent(props.postId ?? "null")}/snapshots`;
+  export const random = (): IPageIRedditPlatformPostSnapshot.ISummary =>
+    typia.random<IPageIRedditPlatformPostSnapshot.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: snapshots.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(),
+      path: snapshots.path(props),
       contentType: "application/json",
     });
     try {
+      assert.param("postId")(() => typia.assert(props.postId));
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve engagement statistics for a specific post including view counts, vote metrics, and timestamps used for feed ranking algorithms.
+ *
+ * This endpoint provides read-optimized engagement metrics that are denormalized in the reddit_platform_post_engagement_stats table. The statistics include total views, upvote counts, downvote counts, and the timestamp of the most recent view which is used for time-weighted feed algorithms.
+ *
+ * The response contains metrics used by the platform's feed ranking system to calculate post scores for different feed types:
+ * - **Hot feed**: Weighted by time (last_viewed_at) and vote activity
+ * - **New feed**: Derived from post creation timestamp
+ * - **Top feed**: Sorted by vote count difference (upvotes minus downvotes)
+ * - **Controversial feed**: High ratio of opposing votes where upvote_count approximately equals downvote_count
+ *
+ * @param props.connection
+ * @param props.postId The unique identifier of the post to retrieve engagement statistics for
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification Query the reddit_platform_post_engagement_stats table for the post_id matching the postId path parameter.
+ *
+ * 1. Extract postId from path parameter and validate it is a valid UUID format
+ * 2. Query engagement_stats table where post_id = postId AND deleted_at IS NULL
+ * 3. If no record found, return 404 error (post does not exist or is deleted)
+ * 4. Return the engagement statistics record with all fields:
+ *    - id: engagement record UUID
+ *    - view_count: total views (integer)
+ *    - upvote_count: total upvotes (integer)
+ *    - downvote_count: total downvotes (integer)
+ *    - last_viewed_at: most recent view timestamp
+ *    - created_at: engagement record creation timestamp
+ *    - updated_at: last update timestamp
+ *
+ * 5. Handle edge cases:
+ *    - If post exists but has no votes yet, engagement_stats record should exist with zero counts
+ *    - If post was soft-deleted, engagement_stats is cascade-deleted so record won't exist
+ *
+ * 6. Response is cacheable by CDNs for high-performance feed rendering since engagement data changes relatively infrequently compared to views
+ * @path /redditPlatform/posts/:postId/stats
+ * @accessor api.functional.redditPlatform.posts.stats
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function stats(
+  connection: IConnection,
+  props: stats.Props,
+): Promise<stats.Response> {
+  return true === connection.simulate
+    ? stats.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...stats.METADATA,
+          path: stats.path(props),
+          status: null,
+        },
+      );
+}
+export namespace stats {
+  export type Props = {
+    /**
+     * The unique identifier of the post to retrieve engagement statistics for
+     */
+    postId: string & tags.Format<"uuid">;
+  };
+  export type Response = IRedditPlatformPostEngagementStat.ISummary;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/redditPlatform/posts/:postId/stats",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditPlatform/posts/${encodeURIComponent(props.postId ?? "null")}/stats`;
+  export const random = (): IRedditPlatformPostEngagementStat.ISummary =>
+    typia.random<IRedditPlatformPostEngagementStat.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: stats.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: stats.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("postId")(() => typia.assert(props.postId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

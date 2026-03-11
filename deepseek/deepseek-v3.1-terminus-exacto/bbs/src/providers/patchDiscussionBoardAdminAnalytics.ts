@@ -1,13 +1,11 @@
-import { IDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorDistributionStatistic";
-import { IDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdministratorPromotionRequest";
-import { IDiscussionBoardPerformanceMetric } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardPerformanceMetric";
+import { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticle";
+import { IDiscussionBoardArticleTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleTag";
+import { IDiscussionBoardArticleViewStat } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardArticleViewStat";
+import { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIDiscussionBoardAdministratorDistributionStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorDistributionStatistic";
-import { IPageIDiscussionBoardAdministratorPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardAdministratorPromotionRequest";
-import { IPageIDiscussionBoardPerformanceMetric } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardPerformanceMetric";
-import { IPageIDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardSection";
+import { IPageIDiscussionBoardArticleViewStat } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIDiscussionBoardArticleViewStat";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -17,77 +15,120 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { DiscussionBoardArticleViewStatAtSummaryTransformer } from "../transformers/DiscussionBoardArticleViewStatAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchDiscussionBoardAdminAnalytics(props: {
   admin: AdminPayload;
-  body: IDiscussionBoardPerformanceMetric.IRequest;
-}): Promise<IPageIDiscussionBoardPerformanceMetric.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Build WHERE conditions using ISO string comparison for dates
-  const whereInput = {
-    ...(props.body.metric_type && { metric_type: props.body.metric_type }),
-    ...(props.body.source_component && {
-      source_component: props.body.source_component,
-    }),
-    ...(props.body.collection_timestamp_start && {
-      collection_timestamp: {
-        gte: props.body.collection_timestamp_start,
-      },
-    }),
-    ...(props.body.collection_timestamp_end && {
-      collection_timestamp: {
-        lte: props.body.collection_timestamp_end,
-      },
-    }),
-  } satisfies Prisma.discussion_board_performance_metricsWhereInput;
-  // Execute query with proper sorting
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.discussion_board_performance_metrics.findMany({
+  body: IDiscussionBoardArticleViewStat.IRequest;
+}): Promise<IPageIDiscussionBoardArticleViewStat.ISummary> {
+  // Extract query parameters
+  const {
+    viewed_at_from,
+    viewed_at_to,
+    discussion_board_article_id,
+    viewer_type,
+    page = 1,
+    limit = 100,
+  } = props.body;
+  // Build WHERE clause incrementally
+  const whereInput: Prisma.discussion_board_article_view_statsWhereInput = {
+    deleted_at: null,
+  };
+  // Apply date range filtering - convert ISO strings to Date for Prisma
+  if (viewed_at_from !== undefined && viewed_at_to !== undefined) {
+    // Ensure date range is logical
+    const fromDate = new Date(viewed_at_from);
+    const toDate = new Date(viewed_at_to);
+    if (fromDate > toDate) {
+      throw new HttpException(
+        "viewed_at_from must be before viewed_at_to",
+        400,
+      );
+    }
+    whereInput.viewed_at = {
+      gte: fromDate,
+      lte: toDate,
+    };
+  } else {
+    // Handle single date filters
+    if (viewed_at_from !== undefined) {
+      whereInput.viewed_at = {
+        gte: new Date(viewed_at_from),
+      };
+    }
+    if (viewed_at_to !== undefined) {
+      // Fix: Properly handle the case where whereInput.viewed_at might be undefined
+      // Instead of accessing properties, reconstruct based on current state
+      if (
+        whereInput.viewed_at &&
+        typeof whereInput.viewed_at === "object" &&
+        "gte" in whereInput.viewed_at
+      ) {
+        whereInput.viewed_at = {
+          gte: whereInput.viewed_at.gte,
+          lte: new Date(viewed_at_to),
+        };
+      } else {
+        whereInput.viewed_at = {
+          lte: new Date(viewed_at_to),
+        };
+      }
+    }
+  }
+  // Apply article filter if specified
+  if (discussion_board_article_id !== undefined) {
+    whereInput.discussion_board_article_id = discussion_board_article_id;
+  }
+  // Apply viewer type filter based on presence of corresponding actor ID
+  if (viewer_type !== undefined) {
+    switch (viewer_type) {
+      case "member":
+        whereInput.discussion_board_member_id = { not: null };
+        break;
+      case "admin":
+        whereInput.discussion_board_admin_id = { not: null };
+        break;
+      case "super_admin":
+        whereInput.discussion_board_super_admin_id = { not: null };
+        break;
+      case "guest":
+        whereInput.discussion_board_guest_id = { not: null };
+        break;
+    }
+  }
+  // Calculate pagination
+  const currentPage = page;
+  const perPage = limit;
+  const skip = (currentPage - 1) * perPage;
+  // Execute sequential queries as per specification
+  const data =
+    await MyGlobal.prisma.discussion_board_article_view_stats.findMany({
       where: whereInput,
+      ...DiscussionBoardArticleViewStatAtSummaryTransformer.select(),
+      orderBy: { viewed_at: "desc" as const },
       skip,
-      take: limit,
-      orderBy: {
-        collection_timestamp: props.body.sort === "asc" ? "asc" : "desc",
-      },
-    }),
-    MyGlobal.prisma.discussion_board_performance_metrics.count({
+      take: perPage,
+    });
+  const total = await MyGlobal.prisma.discussion_board_article_view_stats.count(
+    {
       where: whereInput,
-    }),
-  ]);
-  // Transform data without type assertions
-  const transformedData = data.map((metric) => ({
-    id: metric.id as string,
-    metric_type: metric.metric_type,
-    metric_value: metric.metric_value,
-    metric_unit: metric.metric_unit,
-    source_component: metric.source_component,
-    collection_timestamp: metric.collection_timestamp.toISOString(),
-  }));
-  // Build correct pagination hierarchy
-  const basePagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  } satisfies IPage.IPagination;
-  const adminDistStatPagination = {
-    pagination: basePagination,
-    data: [],
-  } satisfies IPageIDiscussionBoardAdministratorDistributionStatistic.IPagination;
-  const adminPromotionRequestPagination = {
-    pagination: adminDistStatPagination,
-    data: [],
-  } satisfies IPageIDiscussionBoardAdministratorPromotionRequest.IPagination;
-  const sectionPagination = {
-    pagination: adminPromotionRequestPagination,
-    data: [],
-  } satisfies IPageIDiscussionBoardSection.IPagination;
+    },
+  );
+  // Transform data
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    DiscussionBoardArticleViewStatAtSummaryTransformer.transform,
+  );
+  // Return paginated response
   return {
-    pagination: sectionPagination,
     data: transformedData,
-  } satisfies IPageIDiscussionBoardPerformanceMetric.ISummary;
+    pagination: {
+      current: currentPage,
+      limit: perPage,
+      records: total,
+      pages: total > 0 ? Math.ceil(total / perPage) : 0,
+    } satisfies IPage.IPagination,
+  };
 }

@@ -15,6 +15,10 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { EconomicPoliticalBoardArticleTransformer } from "../transformers/EconomicPoliticalBoardArticleTransformer";
+import { EconomicPoliticalBoardAttachmentAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardAttachmentAtSummaryTransformer";
+import { EconomicPoliticalBoardMemberAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardMemberAtSummaryTransformer";
+import { EconomicPoliticalBoardSectionAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardSectionAtSummaryTransformer";
+import { EconomicPoliticalBoardTagAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardTagAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,80 +27,105 @@ export async function putEconomicPoliticalBoardMemberArticlesArticleId(props: {
   articleId: string & tags.Format<"uuid">;
   body: IEconomicPoliticalBoardArticle.IUpdate;
 }): Promise<IEconomicPoliticalBoardArticle> {
-  // Find the article with author info
   const article =
     await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
-      include: {
-        author: true,
-        section: true,
+      select: {
+        id: true,
+        author_id: true,
+        section_id: true,
+        title: true,
+        content: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        author: EconomicPoliticalBoardMemberAtSummaryTransformer.select(),
+        section: EconomicPoliticalBoardSectionAtSummaryTransformer.select(),
+        attachments:
+          EconomicPoliticalBoardAttachmentAtSummaryTransformer.select(),
+        articleTags: {
+          select: {
+            tag: EconomicPoliticalBoardTagAtSummaryTransformer.select(),
+          },
+        } satisfies Prisma.economic_political_board_article_tagsFindManyArgs,
+        comments: { select: { deleted_at: true } },
       },
     });
-  // Check soft delete
-  if (article.deleted_at !== null) {
-    throw new HttpException("Article not found", 404);
-  }
-  // Verify ownership
   if (article.author_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate section if provided
-  if (props.body.section_id !== undefined) {
-    const section =
-      await MyGlobal.prisma.economic_political_board_sections.findFirst({
-        where: { id: props.body.section_id },
-      });
-    if (section === null) {
-      throw new HttpException("Section not found", 404);
-    }
-  }
-  // Build update data
-  const updateData: {
-    title?: string | undefined;
-    content?: string | undefined;
-    section_id?: (string & tags.Format<"uuid">) | undefined;
-    updated_at: Date;
-  } = {
-    updated_at: new Date(),
-  };
-  if (props.body.title !== undefined) {
-    updateData.title = props.body.title;
-  }
-  if (props.body.content !== undefined) {
-    updateData.content = props.body.content;
-  }
-  if (props.body.section_id !== undefined) {
-    updateData.section_id = props.body.section_id;
-  }
-  // Update the article
-  await MyGlobal.prisma.economic_political_board_articles.update({
-    where: { id: props.articleId },
-    data: updateData,
-  });
-  // Process tags if provided
+  const updateData: Prisma.economic_political_board_articlesUpdateInput = {};
+  if (props.body.title !== undefined) updateData.title = props.body.title;
+  if (props.body.content !== undefined) updateData.content = props.body.content;
   if (props.body.tags !== undefined) {
-    // Delete old tag associations
+    const tagResults =
+      await MyGlobal.prisma.economic_political_board_tags.findMany({
+        where: {
+          name: { in: props.body.tags },
+        },
+        select: { id: true, name: true },
+      });
+    const tagMap = new Map(tagResults.map((t) => [t.name, t.id]));
+    const missingTags = props.body.tags.filter((name) => !tagMap.has(name));
+    if (missingTags.length > 0) {
+      throw new HttpException(`Tag not found: ${missingTags[0]}`, 400);
+    }
     await MyGlobal.prisma.economic_political_board_article_tags.deleteMany({
       where: { article_id: props.articleId },
     });
-    // Create new tag associations
     if (props.body.tags.length > 0) {
       await MyGlobal.prisma.economic_political_board_article_tags.createMany({
-        data: props.body.tags.map((tag) => ({
-          id: v4(),
+        data: props.body.tags.map((tagName) => ({
+          id: v4() as string & tags.Format<"uuid">,
           article_id: props.articleId,
-          tag_id: tag.id,
-          created_at: new Date(),
-          updated_at: new Date(),
+          tag_id: tagMap.get(tagName)!,
+          created_at: toISOStringSafe(new Date()),
+          updated_at: toISOStringSafe(new Date()),
         })),
       });
     }
   }
-  // Fetch updated article with tags
-  const finalArticle =
-    await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
+  if (props.body.attachments !== undefined) {
+    const attachmentsToDelete = new Set<string>();
+    const attachmentsToCreate: Prisma.economic_political_board_attachmentsCreateManyInput[] =
+      [];
+    const operations = props.body.attachments.operations;
+    for (const op of operations) {
+      const action = op.action as string;
+      if (action === "remove" && op.attachmentId) {
+        attachmentsToDelete.add(op.attachmentId);
+      } else if (action === "add" && op.fileUrl && op.fileName && op.fileType) {
+        attachmentsToCreate.push({
+          id: v4() as string & tags.Format<"uuid">,
+          article_id: props.articleId,
+          file_url: op.fileUrl,
+          file_name: op.fileName,
+          file_type: op.fileType,
+          created_at: toISOStringSafe(new Date()),
+          updated_at: toISOStringSafe(new Date()),
+        });
+      }
+    }
+    if (attachmentsToDelete.size > 0) {
+      await MyGlobal.prisma.economic_political_board_attachments.deleteMany({
+        where: {
+          article_id: props.articleId,
+          id: { in: Array.from(attachmentsToDelete) },
+        },
+      });
+    }
+    if (attachmentsToCreate.length > 0) {
+      await MyGlobal.prisma.economic_political_board_attachments.createMany({
+        data: attachmentsToCreate,
+      });
+    }
+  }
+  updateData.updated_at = toISOStringSafe(new Date());
+  const updated =
+    await MyGlobal.prisma.economic_political_board_articles.update({
       where: { id: props.articleId },
+      data: updateData,
       ...EconomicPoliticalBoardArticleTransformer.select(),
     });
-  return await EconomicPoliticalBoardArticleTransformer.transform(finalArticle);
+  return await EconomicPoliticalBoardArticleTransformer.transform(updated);
 }

@@ -1,0 +1,142 @@
+/// Seller's shop profile including shop name, description, logo URL, and
+/// approval status.
+///
+/// Seller shop profiles contain the business identity information that
+/// sellers manage on the platform. Each seller account has exactly one shop
+/// profile that displays their storefront information to customers including
+/// shop name, description, and logo. The profile tracks approval status
+/// during seller registration and suspension status for platform moderation.
+///
+/// Key business operations:
+/// - Sellers can edit shop name, description, and logo
+/// - Every edit creates a snapshot in ecommerce_mall_shop_profile_snapshots
+/// - Admins approve/reject new seller registrations
+/// - Admins can suspend seller accounts
+/// - Deleted sellers retain their profile data for audit purposes
+///
+/// Relationships:
+/// - ecommerce_mall_sellers: 1:1 relationship with seller account
+/// - ecommerce_mall_shop_profile_snapshots: 1:N snapshots of profile history
+///
+/// Data Integrity:
+/// - shop_name: required, unique within platform
+/// - logo_url: optional, stored as URI reference
+/// - approval_status: enum (pending|approved|rejected)
+/// - is_suspended: boolean flag for administrative suspension
+///
+/// @namespace Seller
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shop_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account that owns this shop profile. {@link
+  /// ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Seller's shop/store name displayed to customers. Unique identifier for
+  /// the seller's storefront on the platform.
+  shop_name String
+  
+  /// Detailed description of the seller's shop, products, and business.
+  /// Displayed on shop profile page.
+  shop_description String?
+  
+  /// URL reference to the seller's shop logo image. Optional visual branding
+  /// for the storefront.
+  logo_url String?
+  
+  /// Seller account approval status during registration workflow. Values:
+  /// pending (awaiting admin approval), approved (active seller), rejected
+  /// (registration declined).
+  approval_status String
+  
+  /// Reason provided by administrator when seller registration is rejected.
+  /// Visible to seller for resubmission guidance.
+  rejection_reason String?
+  
+  /// Administrative suspension flag. When true, seller's products are hidden
+  /// from search/listings and sellers cannot create/edit products, but can
+  /// still process existing orders.
+  is_suspended Boolean
+  
+  /// Timestamp when this shop profile was created. Automatically set on
+  /// profile creation.
+  created_at DateTime
+  
+  /// Timestamp when this shop profile was last updated. Automatically updated
+  /// on any profile modification.
+  updated_at DateTime
+  
+  /// Timestamp when this shop profile was soft-deleted. Null if active, set
+  /// when seller account is deleted to preserve history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_shop_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id])
+  @@unique([shop_name])
+  @@index([seller_id])
+  @@index([approval_status])
+  @@index([is_suspended])
+}
+
+/// Seller profile snapshots created every time a seller edits their shop
+/// profile. Each snapshot preserves the complete shop profile state (shop
+/// name, description, logo URL, approval status) at the moment of edit for
+/// audit trail and dispute resolution. Used for historical tracking of shop
+/// profile changes and reviewing profile state at time of order or dispute.
+///
+/// @namespace Seller
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shop_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link ecommerce_mall_sellers.id}.
+  ecommerce_mall_seller_id String
+  
+  /// Seller profile state at time of edit snapshot {@link
+  /// ecommerce_mall_shop_profiles.id}.
+  ecommerce_mall_shop_profile_id String
+  
+  /// Timestamp when this snapshot was created (snapshot point-in-time).
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  profile ecommerce_mall_shop_profiles @relation(fields: [ecommerce_mall_shop_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_shop_profile_id, created_at], map: "ecommerce_mall_shop_profile_snapshots_ecommerce_mall_s_71a26b95")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_shop_profile_snapshots_ecommerce_mall_s_d57d9548")
+}

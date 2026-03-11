@@ -15,72 +15,66 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEconomicPoliticalBoardAuthMemberRefresh(props: {
   body: IEconomicPoliticalBoardMember.IRefresh;
 }): Promise<IEconomicPoliticalBoardMember.IAuthorized> {
-  // 1. Verify refresh token signature and structure
+  // 1. Verify refresh token
   let decoded: {
-    type: string;
-    id: string;
-    session_id: string;
+    type: "member";
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    created_at: string & tags.Format<"date-time">;
   };
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as {
-      type: string;
-      id: string;
-      session_id: string;
-    };
+    }) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type is member
+  // 2. Validate type
   if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 401);
   }
-  // 3. Validate user exists in administrator_roles table
-  const user =
+  // 3. Validate member (using administrator_roles table for member accounts)
+  const member =
     await MyGlobal.prisma.economic_political_board_administrator_roles.findUniqueOrThrow(
       {
         where: { id: decoded.id },
       },
     );
-  // 4. Calculate expiration timestamps
-  const accessExpiresAt: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 15 * 60 * 1000,
+  // Note: No deleted_at field in economic_political_board_administrator_roles
+  // 4. Generate new tokens (SAME session_id)
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
   ).toISOString();
-  const refreshExpiresAt: string & tags.Format<"date-time"> = new Date(
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
     Date.now() + 7 * 24 * 60 * 60 * 1000,
   ).toISOString();
-  // 5. Generate new access token (same session_id)
-  const accessToken: string = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "15m", issuer: "autobe" },
-  );
-  // 6. Generate new refresh token (same session_id)
-  const refreshToken: string = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 7. Return authorization response
+  const newToken: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
   return {
     id: decoded.id,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresAt,
-      refreshable_until: refreshExpiresAt,
-    },
+    token: newToken,
   };
 }

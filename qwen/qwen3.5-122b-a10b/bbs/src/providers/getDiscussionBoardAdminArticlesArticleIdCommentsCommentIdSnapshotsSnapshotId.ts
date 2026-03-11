@@ -27,13 +27,13 @@ export async function getDiscussionBoardAdminArticlesArticleIdCommentsCommentIdS
   if (snapshot.comment.id !== props.commentId) {
     throw new HttpException(
       "Snapshot does not belong to the specified comment",
-      403,
+      404,
     );
   }
   if (snapshot.discussion_board_article_id !== props.articleId) {
     throw new HttpException(
-      "Comment does not belong to the specified article",
-      403,
+      "Snapshot does not belong to the specified article",
+      404,
     );
   }
   return await DiscussionBoardCommentSnapshotTransformer.transform(snapshot);

@@ -10,19 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallReviewCollector {
   export async function collect(props: {
     body: IEcommerceMallReview.ICreate;
-    ecommerceMallCustomers: IEntity; // from authorized actor
+    ecommerceMallCustomers: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      customer: { connect: { id: props.ecommerceMallCustomers.id } },
-      product: { connect: { id: props.body.product_id } },
       rating: props.body.rating,
       text_content: props.body.text_content ?? null,
       is_active: true,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      customer: { connect: { id: props.ecommerceMallCustomers.id } },
+      product: { connect: { id: props.body.product_id } },
     } satisfies Prisma.ecommerce_mall_reviewsCreateInput;
   }
 }

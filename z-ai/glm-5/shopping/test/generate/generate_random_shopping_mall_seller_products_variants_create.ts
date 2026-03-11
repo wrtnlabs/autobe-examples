@@ -27,8 +27,8 @@ export async function generate_random_shopping_mall_seller_products_variants_cre
     await api.functional.shoppingMall.seller.products.variants.create(
       connection,
       {
-        productId: props.params.productId,
         body: prepared,
+        productId: props.params.productId,
       },
     );
   return result;

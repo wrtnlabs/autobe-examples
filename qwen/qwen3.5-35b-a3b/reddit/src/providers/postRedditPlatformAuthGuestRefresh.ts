@@ -16,118 +16,112 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditPlatformAuthGuestRefresh(props: {
   body: IRedditPlatformGuest.IRefresh;
 }): Promise<IRedditPlatformGuest.IAuthorized> {
-  // Step 1: Verify refresh token signature and expiration
+  // 1. Verify refresh token
   let decoded: {
     id: string;
     session_id: string;
-    created_at: string;
+    type: string;
   };
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
+      { issuer: "autobe" },
     ) as {
       id: string;
       session_id: string;
-      created_at: string;
+      type: string;
     };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // Step 2: Validate session exists and is active
+  // 2. Validate type
+  if (decoded.type !== "guest") {
+    throw new HttpException("Invalid token type", 401);
+  }
+  // 3. Validate session
+  const now = new Date();
   const session =
     await MyGlobal.prisma.reddit_platform_guest_sessions.findFirst({
       where: {
         id: decoded.session_id,
         reddit_platform_guest_id: decoded.id,
-        expired_at: { gt: new Date() },
+        expired_at: { gt: now },
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // Step 3: Validate guest account exists and is not deleted
+  // 4. Validate guest not deleted
   const guest = await MyGlobal.prisma.reddit_platform_guests.findUniqueOrThrow({
     where: { id: decoded.id },
+    include: { sessions: true },
   });
   if (guest.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // Step 4: Generate new tokens with same session_id
-  const accessExpires = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  // 5. Generate new tokens (SAME session_id)
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const newAccess: string = jwt.sign(
-    {
-      type: "guest" as const,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "2h", issuer: "autobe" },
-  );
-  const newRefresh: string = jwt.sign(
-    {
-      type: "guest" as const,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh" as const,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // Step 5: Update session expiration
+  const token = {
+    access: jwt.sign(
+      {
+        type: "guest" as const,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest" as const,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh" as const,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
+  // 6. Update session expiration
   await MyGlobal.prisma.reddit_platform_guest_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // Step 6: Query guest with sessions
-  const guestWithSessions =
-    await MyGlobal.prisma.reddit_platform_guests.findUniqueOrThrow({
-      where: { id: decoded.id },
-      include: {
-        sessions: {
-          where: {
-            expired_at: { gt: new Date() },
-          },
-          orderBy: { created_at: "desc" },
-        },
-      },
-    });
-  // Step 7: Transform and return response
-  const response: IRedditPlatformGuest.IAuthorized = {
-    id: guestWithSessions.id,
-    email: guestWithSessions.email,
-    username: guestWithSessions.username,
-    display_name: guestWithSessions.display_name,
-    bio: guestWithSessions.bio,
-    avatar_url: guestWithSessions.avatar_url,
-    karma: guestWithSessions.karma,
-    created_at: toISOStringSafe(guestWithSessions.created_at),
-    updated_at: toISOStringSafe(guestWithSessions.updated_at),
-    deleted_at:
-      guestWithSessions.deleted_at !== null
-        ? toISOStringSafe(guestWithSessions.deleted_at)
-        : null,
-    sessions: guestWithSessions.sessions.map((s) => ({
-      id: s.id,
-      reddit_platform_guest_id: s.reddit_platform_guest_id,
+  // 7. Return response
+  const sessions: IRedditPlatformGuestSession.ISummary[] =
+    await ArrayUtil.asyncMap(guest.sessions, async (s) => ({
+      id: s.id as string & tags.Format<"uuid">,
+      reddit_platform_guest_id: s.reddit_platform_guest_id as string &
+        tags.Format<"uuid">,
+      href: s.href as string & tags.Format<"uri">,
+      referrer: s.referrer as (string & tags.Format<"uri">) | null,
       ip: s.ip,
-      referrer: s.referrer,
-      href: s.href,
-      created_at: toISOStringSafe(s.created_at),
-      expired_at: toISOStringSafe(s.expired_at),
-    })),
-    token: {
-      access: newAccess,
-      refresh: newRefresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
+      created_at: toISOStringSafe(s.created_at) as string &
+        tags.Format<"date-time">,
+      expired_at: toISOStringSafe(s.expired_at) as string &
+        tags.Format<"date-time">,
+    }));
+  return {
+    id: guest.id as string & tags.Format<"uuid">,
+    email: guest.email as string & tags.Format<"email">,
+    username: guest.username,
+    display_name: guest.display_name,
+    bio: guest.bio,
+    avatar_url: guest.avatar_url,
+    karma: guest.karma,
+    created_at: toISOStringSafe(guest.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(guest.updated_at) as string &
+      tags.Format<"date-time">,
+    deleted_at:
+      guest.deleted_at !== null ? toISOStringSafe(guest.deleted_at) : null,
+    sessions,
+    token: token as IAuthorizationToken,
   };
-  return response;
 }

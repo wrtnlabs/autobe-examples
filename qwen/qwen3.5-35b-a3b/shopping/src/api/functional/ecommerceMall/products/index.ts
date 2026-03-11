@@ -8,52 +8,81 @@ import { IPageIEcommerceMallProduct } from "../../../structures/IPageIEcommerceM
 
 export * as variants from "./variants/index";
 export * as images from "./images/index";
-export * as snapshots from "./snapshots/index";
-export * as variant_snapshots from "./variant_snapshots/index";
-export * as reviews from "./reviews/index";
 
 /**
- * Retrieve a filtered, sorted, and paginated list of product catalog entries for browsing and discovery.
+ * Retrieve a filtered and paginated list of products from the ecommerce catalog.
  *
- * This operation provides advanced search and filtering capabilities for the product catalog, enabling customers to browse products by category, price range, availability status, and text search. The results are paginated with cursor-based or offset-based pagination for efficient large result set handling.
+ * This operation provides comprehensive product browsing capabilities for customers, sellers, and administrators. Products can be searched by name, filtered by category, sorted by various criteria (created date, price, name), and paginated for efficient data retrieval.
  *
- * Product search respects the active status filter to show only products visible in the catalog. Products can be sorted by name, base price, creation date, or last update date in ascending or descending order.
+ * For customers, only active products are returned by default. Sellers can view all their products (active and inactive) using seller-specific filtering. Administrators have full access to view all products regardless of status.
  *
- * All registered actors (customers, sellers, admins) can use this endpoint to browse the product catalog. Product ownership information is included in the response for reference, but filtering by specific sellers is also supported.
+ * Each product in the response includes essential information: ID, name, base price, category name, seller shop name, active status, creation date, and image count. This summary format optimizes the response size for product listing displays in product grids and catalog browsers.
+ *
+ * Products are ordered by creation date (newest first) by default, but custom sorting is supported through request parameters.
  *
  * @param props.connection
- * @param props.body Search criteria, filters, sorting, and pagination parameters
+ * @param props.body Search criteria, filters, sorting options, and pagination parameters for product listing.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_products table with optional filtering, sorting, and pagination.
+ * @x-autobe-specification Implement paginated product list query with the following behavior:
  *
- * 1. Filter Application:
- *    - Apply active status filter (default: only active products)
- *    - Apply category filter (category_ids array, single or multiple categories)
- *    - Apply seller filter (seller_ids array, for seller-specific product lists)
- *    - Apply price range filter (min_price, max_price on base_price field)
- *    - Apply text search filter on name and description using GIN trigram index (search parameter)
- *    - Apply has_variants filter (boolean, true: products with at least one variant, false: no variants)
+ * Query ecommerce_mall_products table with conditional filtering:
+ * - category_id: Filter products by specific category
+ * - seller_id: Filter products by seller (seller's own products only, or admin override)
+ * - is_active: Filter by active/inactive status (defaults to true for customers)
+ * - name_search: Partial match search on product name using LIKE or full-text search
+ * - created_after: Products created after this date
+ * - created_before: Products created before this date
+ * - min_price: Filter products with base_price >= this value
+ * - max_price: Filter products with base_price <= this value
  *
- * 2. Sorting:
- *    - Support sorting by: name, base_price, created_at, updated_at
- *    - Allow ascending (asc) or descending (desc) order
- *    - Default sort: created_at DESC (newest first)
+ * Join operations:
+ * - LEFT JOIN with ecommerce_mall_categories to include category name
+ * - LEFT JOIN with ecommerce_mall_sellers to include seller shop_name
+ * - LEFT JOIN with ecommerce_mall_product_images to count total images per product
  *
- * 3. Pagination:
- *    - Implement offset-based pagination with page (1-indexed) and page_size parameters
- *    - Validate page >= 1, page_size between 1 and 100 (default 20)
- *    - Calculate total_items and total_pages for pagination metadata
+ * Sorting options:
+ * - created_at: Newest first (default), or oldest first
+ * - base_price: Price ascending or descending
+ * - name: Name alphabetically ascending or descending
+ * - image_count: Products by image count
  *
- * 4. Database Query:
- *    - Use LEFT JOIN with ecommerce_mall_categories for category_name in response
- *    - Include seller_id, category_id, base_price, name, description, is_active, created_at, updated_at
- *    - Apply soft delete filtering (deleted_at IS NULL) by default
+ * Authorization:
+ * - Customers: Only view is_active=true products, can filter by category
+ * - Sellers: Can view all their own products (active and inactive), cannot view other sellers' products
+ * - Admins: Can view all products including deactivated ones
  *
- * 5. Response Construction:
- *    - Build IEcommerceMallProduct.ISummary for each row
- *    - Construct IPageIEcommerceMallProduct.ISummary with pagination metadata
- *    - Calculate total_pages = ceil(total_items / page_size)
+ * Pagination:
+ * - Cursor-based pagination for large result sets
+ * - Default page size: 20 products per page
+ * - Maximum page size: 100 products per page
+ * - Returns nextCursor for navigation to next page
+ * - Returns hasNextPage boolean
+ *
+ * Response structure includes:
+ * - pagination: { page, limit, totalCount, hasNextPage, nextCursor }
+ * - data: Array of product summaries (IEcommerceMallProduct.ISummary)
+ *
+ * Error handling:
+ * - 400 Bad Request: Invalid filter values, invalid sort field, invalid pagination parameters
+ * - 401 Unauthorized: Missing authentication
+ * - 403 Forbidden: Seller attempting to view other sellers' products without admin override
+ * - 429 Too Many Requests: Rate limit exceeded
+ *
+ * Performance considerations:
+ * - Use database indexes on category_id, seller_id, is_active, created_at, and name (GIN trigram for search)
+ * - Implement query timeout for expensive searches
+ * - Cache frequently accessed product lists at application level with appropriate TTL
+ *
+ * Business rules:
+ * - If seller_id filter provided without admin auth, verify request_user_id == seller_id
+ * - If customer, automatically filter to is_active=true unless explicitly overridden
+ * - Products with zero variants may be excluded from search results (enforced if configured)
+ * - Reseller's product visibility is hidden if their account is suspended
+ *
+ * Retry semantics:
+ * - If database query fails due to transient error, retry up to 3 times with exponential backoff (1s, 2s, 4s delays)
+ * - If all retries fail, return 503 Service Unavailable with appropriate error message
  * @path /ecommerceMall/products
  * @accessor api.functional.ecommerceMall.products.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -83,7 +112,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, filters, sorting, and pagination parameters
+     * Search criteria, filters, sorting options, and pagination parameters for product listing.
      */
     body: IEcommerceMallProduct.IRequest;
   };
@@ -132,31 +161,38 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific product from the product catalog.
+ * Retrieve detailed information about a specific product in the catalog.
  *
- * This operation returns complete product data from the ecommerce_mall_products table, including the product's unique identifier, seller reference, category reference, name, description, base price, and active status. The response enables customers to browse product details before purchasing and allows sellers to manage their product listings.
+ * This operation returns comprehensive product information including the product name, description, base price, active status, and related data such as seller shop profile, category information, product images in display order, and variant summary. The product must be active (is_active=true) in the ecommerce_mall_products table, not soft-deleted (deleted_at is null), and owned by a seller who is not suspended (seller.is_suspended=false in the ecommerce_mall_sellers table) to be returned.
  *
- * The product entity stores core catalog information with the following key fields: id (UUID primary key), seller_id (references the ecommerce_mall_sellers table for ownership), category_id (references the ecommerce_mall_categories table for product organization), name (max 500 characters for display), description (optional product details), base_price (positive decimal value for default pricing), and is_active (boolean controlling search visibility). Products maintain created_at and updated_at timestamps for audit trails and chronological ordering.
+ * The response includes denormalized seller profile data (shop_name, shop_description, logo_image) from the ecommerce_mall_seller_profiles table for efficient display on product detail pages without additional API calls. Category information includes the full category name and parent category chain for breadcrumbs. Images are returned in displayOrder sequence with the first image serving as the main product thumbnail.
  *
- * When a product is inactive (is_active=false), it is hidden from customer search results and product browsing but remains accessible for administrative review and historical order references. The soft delete field (deleted_at) preserves deleted products for dispute resolution and order fulfillment, though this operation returns all products regardless of deletion status.
- *
- * This endpoint is essential for product detail pages, shopping cart preparation (before selecting variants), wishlist operations, and seller product management. Related operations include PATCH /ecommerceMall/products for product search/listing and POST /ecommerceMall/products for product creation by sellers.
- *
- * Security: Publicly accessible for customer browsing. Sellers can view all products but must verify ownership before modifying. Administrators have unrestricted access to all product records.
+ * Customers can view this operation on product detail pages after clicking a product from search results or category listings. Product ownership validation is performed server-side to ensure only active, visible products are returned. Products with is_active=false or associated with suspended sellers are filtered out from results.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product to retrieve
+ * @param props.productId The UUID identifier of the product to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_products table for the product with the specified UUID.
+ * @x-autobe-specification Query ecommerce_mall_products table by id.
+ * Validate product exists and is_active = true.
+ * If product exists, join with:
+ * - ecommerce_mall_sellers (for seller_id)
+ * - ecommerce_mall_seller_profiles (for shop_name, shop_description, logo_image)
+ * - ecommerce_mall_categories (for category name)
+ * - ecommerce_mall_product_images (all images for this product, ordered by display_order)
+ * - ecommerce_mall_product_variants (count and basic info for variants list)
  *
- * 1. Validate that productId is a valid UUID format
- * 2. Execute SELECT query with JOINs to include category and seller relationship data
- * 3. Check if the requesting seller owns the product (if seller is accessing)
- * 4. Return the complete product record including all fields: id, seller_id, category_id, name, description, base_price, is_active, created_at, updated_at, deleted_at
- * 5. If product not found, return 404 Not Found
- * 6. If requesting seller does not own the product and is not an admin, return 403 Forbidden
- * 7. Include category and seller relationship data in response for context
+ * Check seller is_suspended = false (skip products from suspended sellers per section 792).
+ * Return 404 if product not found, not active, or owned by suspended seller.
+ *
+ * Return product details with:
+ * - id, name, description, base_price, is_active, created_at, updated_at
+ * - seller shop_name, shop_description, logo_image_url
+ * - category name (and parent category if applicable)
+ * - images array sorted by display_order
+ * - variants_count and sample variants for quick overview
+ *
+ * All image URLs and file paths use absolute URIs per schema image_url field requirements.
  * @path /ecommerceMall/products/:productId
  * @accessor api.functional.ecommerceMall.products.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -185,7 +221,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the product to retrieve
+     * The UUID identifier of the product to retrieve.
      */
     productId: string & tags.Format<"uuid">;
   };

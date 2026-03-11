@@ -15,78 +15,62 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postDiscussionBoardAuthAdminRefresh(props: {
   body: IDiscussionBoardAdmin.IRefresh;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
-  // Get current timestamp and ISO string
-  const now = Date.now();
-  const nowISO = toISOStringSafe(new Date(now));
-  // Verify refresh token
-  let payload: unknown;
+  // 1. Verify refresh token
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: string;
+    created_at: string;
+  };
   try {
-    payload = jwt.verify(
+    const verified = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
     );
-  } catch {
+    if (typeof verified !== "object" || verified === null) {
+      throw new HttpException("Invalid token payload", 401);
+    }
+    decoded = verified as typeof decoded;
+  } catch (error) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // Validate token payload structure
-  if (typeof payload !== "object" || payload === null) {
-    throw new HttpException("Invalid token payload", 401);
+  // 2. Validate token type
+  if (decoded.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
   }
-  const decoded = payload as {
-    id?: string;
-    session_id?: string;
-    type?: string;
-    created_at?: string;
-  };
-  if (
-    decoded.type !== "admin" ||
-    !decoded.id ||
-    !decoded.session_id ||
-    !decoded.created_at
-  ) {
-    throw new HttpException(
-      "Invalid token type or missing required fields",
-      403,
-    );
-  }
-  // Validate session exists, refresh token matches, and not expired
+  // 3. Validate session exists and is active
   const session =
     await MyGlobal.prisma.discussion_board_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
-        refresh_token: props.body.refresh_token,
-        expired_at: { gte: nowISO },
+        discussion_board_admin_id: decoded.id,
+        expired_at: { gt: new Date() },
       },
     });
   if (!session) {
-    throw new HttpException(
-      "Session expired, revoked, or invalid refresh token",
-      401,
-    );
+    throw new HttpException("Session expired or revoked", 401);
   }
-  // Validate administrator account is active
-  const admin = await MyGlobal.prisma.discussion_board_admins.findFirst({
-    where: {
-      id: decoded.id,
-      deleted_at: null,
-    },
+  // 4. Validate administrator account
+  const admin = await MyGlobal.prisma.discussion_board_admins.findUnique({
+    where: { id: decoded.id },
   });
   if (!admin) {
-    throw new HttpException("Administrator account not found or deleted", 403);
+    throw new HttpException("Administrator account not found", 404);
   }
-  // Calculate expiration times
-  const accessExpiresISO = toISOStringSafe(new Date(now + 60 * 60 * 1000)); // 1 hour
-  const refreshExpiresISO = toISOStringSafe(
-    new Date(now + 7 * 24 * 60 * 60 * 1000),
-  ); // 7 days
-  // Generate new tokens
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Administrator account has been deleted", 403);
+  }
+  // 5. Generate new tokens
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
   const newAccessToken = jwt.sign(
     {
       type: "admin",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: nowISO,
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -97,34 +81,36 @@ export async function postDiscussionBoardAuthAdminRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: nowISO,
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // Update session with new tokens and expiration
+  // 6. Update session expiration
   await MyGlobal.prisma.discussion_board_admin_sessions.update({
     where: { id: decoded.session_id },
     data: {
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
-      expired_at: refreshExpiresISO,
-      last_accessed_at: nowISO,
+      expired_at: refreshExpires,
+      updated_at: now,
     },
   });
-  // Return authorized response
+  // 7. Return authorized response
   return {
-    id: admin.id,
-    email: admin.email,
-    display_name: admin.display_name,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    id: admin.id as string & tags.Format<"uuid">,
+    email: admin.email as string & tags.Format<"email">,
+    admin_grade: admin.admin_grade as "regular" | "super",
+    created_at: toISOStringSafe(admin.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(admin.updated_at) as string &
+      tags.Format<"date-time">,
+    deleted_at: null as (string & tags.Format<"date-time">) | null,
     token: {
       access: newAccessToken,
       refresh: newRefreshToken,
-      expired_at: accessExpiresISO,
-      refreshable_until: refreshExpiresISO,
+      expired_at: toISOStringSafe(accessExpires) as string &
+        tags.Format<"date-time">,
+      refreshable_until: toISOStringSafe(refreshExpires) as string &
+        tags.Format<"date-time">,
     },
   };
 }

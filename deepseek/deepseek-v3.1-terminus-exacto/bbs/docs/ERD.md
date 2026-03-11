@@ -8,48 +8,70 @@
 - [Articles](#articles)
 - [Comments](#comments)
 - [Administration](#administration)
-- [Moderation](#moderation)
+- [Attachments](#attachments)
+- [default](#default)
 
 ## Actors
 
 ```mermaid
 erDiagram
-"discussion_board_users" {
+"discussion_board_guests" {
+  String id PK
+  String device_fingerprint UK
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_guest_sessions" {
+  String id PK
+  String discussion_board_guest_id FK
+  String ip
+  String href
+  String referrer
+  DateTime created_at
+  DateTime expired_at
+}
+"discussion_board_members" {
   String id PK
   String email UK
   String password_hash
-  String display_name
+  String display_name UK
   String bio "nullable"
+  Boolean is_banned
+  String ban_reason "nullable"
+  String admin_grade "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_user_sessions" {
+"discussion_board_member_sessions" {
   String id PK
-  String discussion_board_user_id FK
-  String access_token UK
-  String refresh_token UK
+  String discussion_board_member_id FK
+  String access_token
+  String refresh_token
+  DateTime token_expiry
   String ip
-  String user_agent
+  String href
   String referrer "nullable"
   DateTime created_at
   DateTime expired_at
-  DateTime last_accessed_at
 }
-"discussion_board_user_password_resets" {
+"discussion_board_member_password_resets" {
   String id PK
-  String discussion_board_user_id FK
+  String discussion_board_member_id FK
   String token UK
   DateTime expired_at
+  Boolean used
   DateTime used_at "nullable"
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  String ip_address "nullable"
+  String user_agent "nullable"
 }
-"discussion_board_user_email_verifications" {
+"discussion_board_member_email_verifications" {
   String id PK
-  String discussion_board_user_id FK
+  String discussion_board_member_id FK
   String token UK
+  String email
   DateTime expires_at
   DateTime verified_at "nullable"
   DateTime created_at
@@ -59,7 +81,7 @@ erDiagram
   String id PK
   String email UK
   String password_hash
-  String display_name
+  String admin_grade
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -67,31 +89,22 @@ erDiagram
 "discussion_board_admin_sessions" {
   String id PK
   String discussion_board_admin_id FK
-  String access_token UK
-  String refresh_token UK
+  String access_token
+  String refresh_token
   String ip
-  String user_agent
+  String(80000) href
   String referrer "nullable"
+  String user_agent "nullable"
   DateTime created_at
+  DateTime updated_at
   DateTime expired_at
-  DateTime last_accessed_at
 }
 "discussion_board_admin_password_resets" {
   String id PK
-  String discussion_board_admin_id FK
+  String admin_id FK
   String token UK
   DateTime expires_at
   DateTime used_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_admin_email_verifications" {
-  String id PK
-  String discussion_board_admin_id FK
-  String token UK
-  String email
-  DateTime expired_at
-  DateTime verified_at "nullable"
   DateTime created_at
   DateTime updated_at
 }
@@ -99,7 +112,7 @@ erDiagram
   String id PK
   String email UK
   String password_hash
-  String privilege_level
+  String admin_grade
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -107,14 +120,11 @@ erDiagram
 "discussion_board_super_admin_sessions" {
   String id PK
   String discussion_board_super_admin_id FK
-  String access_token UK
-  String refresh_token UK
   String ip
   String href
   String referrer
-  DateTime expired_at
   DateTime created_at
-  DateTime updated_at
+  DateTime expired_at
 }
 "discussion_board_super_admin_password_resets" {
   String id PK
@@ -125,1258 +135,1659 @@ erDiagram
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_super_admin_email_verifications" {
-  String id PK
-  String discussion_board_super_admin_id FK,UK
-  String token_hash
-  DateTime expired_at
-  DateTime verified_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_user_sessions" }o--|| "discussion_board_users" : user
-"discussion_board_user_password_resets" }o--|| "discussion_board_users" : user
-"discussion_board_user_email_verifications" }o--|| "discussion_board_users" : user
+"discussion_board_guest_sessions" }o--|| "discussion_board_guests" : guest
+"discussion_board_member_sessions" }o--|| "discussion_board_members" : member
+"discussion_board_member_password_resets" }o--|| "discussion_board_members" : member
+"discussion_board_member_email_verifications" }o--|| "discussion_board_members" : member
 "discussion_board_admin_sessions" }o--|| "discussion_board_admins" : admin
 "discussion_board_admin_password_resets" }o--|| "discussion_board_admins" : admin
-"discussion_board_admin_email_verifications" }o--|| "discussion_board_admins" : admin
 "discussion_board_super_admin_sessions" }o--|| "discussion_board_super_admins" : superAdmin
 "discussion_board_super_admin_password_resets" }o--|| "discussion_board_super_admins" : superAdmin
-"discussion_board_super_admin_email_verifications" |o--|| "discussion_board_super_admins" : superAdmin
 ```
 
-### `discussion_board_users`
+### `discussion_board_guests`
 
-Registered user accounts with email/password credentials and profile
+Temporary guest accounts identified by device fingerprint for anonymous
+read-only access.
+
+Guest accounts are created automatically for unauthenticated visitors who
+browse the discussion board. They enable temporary session tracking and
+anonymous content viewing without requiring user registration. Each guest
+account is identified by a device fingerprint hash that allows anonymous
+continuity across browsing sessions while maintaining privacy.
+
+Guest accounts have limited permissions: they can browse sections, view
+articles and comments, but cannot create content, comment, or access
+member-only features. Guest sessions are short-lived and automatically
+expire after a configured duration.
+
+Related entities: [discussion_board_guest_sessions](#discussion_board_guest_sessions) stores
+temporary session tokens for guest access.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `device_fingerprint`
+  > Hash-based device fingerprint computed from browser/user-agent
+  > characteristics for anonymous identification. Used to provide continuity
+  > for unregistered visitors across browsing sessions while maintaining
+  > privacy. This value is computed and hashed on the client side.
+- `created_at`
+  > Timestamp when this guest account was first created. Automatically set on
+  > record creation.
+- `updated_at`
+  > Timestamp when this guest account was last updated. Automatically updated
+  > on any modification.
+- `deleted_at`
+  > Timestamp when this guest account was soft-deleted, marking it as
+  > inactive while preserving data for audit purposes. Null indicates the
+  > guest account is currently active.
+
+### `discussion_board_guest_sessions`
+
+Temporary session tokens for guest access with short expiration times.
+
+Stores connection metadata and session context for anonymous users
+browsing the platform. Guest sessions are automatically created for
+unauthenticated visitors and have limited duration for security. Each
+session records the IP address, page URL, and referrer for audit
+purposes. Sessions automatically expire after a short period to prevent
+accumulation of stale anonymous sessions.
+
+References the guest actor table [discussion_board_guests.id](#discussion_board_guests) to
+establish the session owner relationship. Sessions are append-only and
+managed through system events rather than direct user CRUD operations.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_guest_id`: Belonged guest actor's [discussion_board_guests.id](#discussion_board_guests).
+- `ip`: IP address of the session's connection for security auditing.
+- `href`: URL where the session was created for tracking entry points.
+- `referrer`: HTTP referrer header from the initial request for traffic analysis.
+- `created_at`: Timestamp when the session was initially created.
+- `expired_at`
+  > Timestamp when the session should expire and become invalid. Required for
+  > guest session security.
+
+### `discussion_board_members`
+
+Registered user accounts with email/password authentication and profile
 information.
 
-This table stores the core identity information for regular users of the
-discussion board platform. Each record represents an individual user
-account with authentication credentials and profile data. Users can
-create articles, write comments, and participate in discussions across
-various sections.
+Stores member identity information including authentication credentials,
+profile data, and account status. Members are authenticated users who can
+create articles and comments, edit their profiles, and participate in
+discussions. This table serves as the canonical identity record for all
+member activities and references.
 
-The table serves as the root identity record for the user actor type and
-is referenced by session management, password reset workflows, and
-content creation entities. User profiles display the user's display name,
-biography, and activity history including articles and comments they have
-authored.
+Account lifecycle includes active, suspended, and deleted states through
+the deleted_at field for soft deletion. Admin privileges can be granted
+through the admin_grade field when promoted by super administrators.
+Email addresses must be unique across the system for authentication
+purposes.
 
-[discussion_board_user_sessions](#discussion_board_user_sessions) tracks user login sessions.
-[discussion_board_user_password_resets](#discussion_board_user_password_resets) handles password recovery.
-[discussion_board_user_email_verifications](#discussion_board_user_email_verifications) manages email
-confirmation.
-[discussion_board_articles](#discussion_board_articles) stores articles authored by users.
-[discussion_board_comments](#discussion_board_comments) stores comments written by users.
+Related tables include [discussion_board_member_sessions](#discussion_board_member_sessions) for JWT
+sessions, [discussion_board_member_password_resets](#discussion_board_member_password_resets) for password
+recovery, and [discussion_board_member_email_verifications](#discussion_board_member_email_verifications) for
+email confirmation. Foreign key relationships work from child tables to
+this parent table.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > User's email address used for authentication and communication. Must be
-  > unique across all user accounts.
+  > Unique email address used for authentication and account identification.
+  > Required for registration and login. Must follow standard email format
+  > and be unique across all registered accounts.
 - `password_hash`
-  > Securely hashed password for user authentication. Stored using
-  > industry-standard hashing algorithms.
+  > Securely hashed password using bcrypt or similar algorithm. Never stored
+  > in plain text and never transmitted unencrypted. Minimum password
+  > complexity is enforced during registration.
 - `display_name`
-  > Public display name shown on user profiles and alongside user-generated
-  > content.
+  > Public display name shown on articles, comments, and user profiles. Users
+  > can edit this name after registration. Used for identification in the
+  > community.
 - `bio`
-  > Optional biography text describing the user's background, interests, or
-  > expertise.
-- `created_at`: Timestamp when the user account was created.
-- `updated_at`: Timestamp when the user account was last updated.
+  > Optional biographical text describing the user. Supports markdown
+  > formatting for rich text. Displayed on user profiles for community
+  > engagement.
+- `is_banned`
+  > Indicates whether the user account is currently banned from the platform.
+  > Banned users cannot log in but their existing content remains visible.
+- `ban_reason`
+  > Administrative reason for banning the user account. Provides context for
+  > moderation decisions and may be shown to banned users upon login
+  > attempts.
+- `admin_grade`
+  > Administrative privilege level when promoted. Null for regular members,
+  > 'regular' for administrators, 'super' for super administrators.
+  > Controlled by super administrators only.
+- `created_at`
+  > Timestamp when the user account was created during registration. Used for
+  > account age tracking and audit purposes.
+- `updated_at`
+  > Timestamp when the user account was last modified. Automatically updated
+  > on profile edits, password changes, or status updates.
 - `deleted_at`
-  > Timestamp when the user account was soft-deleted, allowing for account
+  > Timestamp when the user account was soft deleted. Null indicates active
+  > account, non-null indicates deleted account with preserved data
+  > relationships for audit.
+
+### `discussion_board_member_sessions`
+
+JWT session tokens for member authentication with access and refresh
+token support.
+
+Stores authentication session information for registered members. Each
+session represents a member's login activity with JWT token pair (access
++ refresh) for secure API access. Sessions support token refresh
+mechanism and track connection metadata for security auditing.
+
+Sessions are created when members successfully authenticate via login
+endpoint. Access tokens are short-lived for security, while refresh
+tokens allow session continuation without re-authentication. Expired
+sessions are automatically cleaned up by system maintenance processes.
+
+Related to [discussion_board_members](#discussion_board_members) for member identity
+verification. Used by authentication middleware to validate API requests
+and maintain user session state.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_member_id`: Associated member's [discussion_board_members.id](#discussion_board_members).
+- `access_token`
+  > JWT access token string for API authentication. Short-lived token used
+  > for authorization in API requests. Typically valid for 15-60 minutes
+  > depending on security configuration.
+- `refresh_token`
+  > JWT refresh token string for obtaining new access tokens without
+  > re-authentication. Long-lived token used to refresh expired access tokens
+  > while maintaining session continuity. Stored securely for session
   > recovery.
-
-### `discussion_board_user_sessions`
-
-JWT session tokens for user authentication with access and refresh token
-support.
-
-This table stores active user sessions with JWT tokens for secure
-authentication. Each session tracks connection context including IP
-address, user agent, and referrer information for security auditing.
-Sessions maintain both access tokens for API calls and refresh tokens for
-token renewal.
-
-The session lifecycle is managed through creation and expiration
-timestamps, allowing for secure session invalidation and automatic
-cleanup of expired sessions. This table supports the authentication
-system's requirement to maintain secure session state while users are
-logged in.
-
-Sessions are child entities of [discussion_board_users](#discussion_board_users) and support
-the platform's authentication security requirements.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_id`: Belonged user's [discussion_board_users.id](#discussion_board_users).
-- `access_token`: JWT access token for API authentication.
-- `refresh_token`: JWT refresh token for token renewal.
-- `ip`: IP address of the connection for security auditing.
-- `user_agent`: Browser or client user agent string.
-- `referrer`: HTTP referrer header for connection context.
-- `created_at`: Timestamp when the session was created.
-- `expired_at`: Timestamp when the session expires.
-- `last_accessed_at`: Timestamp of last session activity.
-
-### `discussion_board_user_password_resets`
-
-Password reset tokens for user account recovery with expiration tracking.
-
-This table stores temporary tokens that allow users to reset their
-passwords when they forget their credentials. Each token is associated
-with a specific user account and has a limited validity period for
-security purposes.
-
-The system generates a unique token when a user requests a password reset
-and sends it via email. When the user clicks the reset link, the system
-validates the token against this table before allowing password changes.
-
-Security considerations include automatic token expiration and one-time
-usage to prevent unauthorized access. [discussion_board_users.id](#discussion_board_users)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_id`
-  > Reference to the user account requesting password reset. {@link
-  > discussion_board_users.id}
-- `token`
-  > Unique reset token generated for password recovery. This token is sent to
-  > the user's email and must be used within the expiration period.
+- `token_expiry`
+  > Expiration datetime for the access token. Determines when the current
+  > access token becomes invalid and requires refresh. Used by authentication
+  > middleware to reject expired tokens and trigger refresh flows.
+- `ip`
+  > IP address of the device that initiated the session. Captured from HTTP
+  > request headers for security auditing and geographic logging. Helps
+  > detect suspicious login patterns from unfamiliar locations.
+- `href`
+  > Full URL of the page where login occurred. Captures the exact location
+  > within the application where authentication was initiated for user
+  > journey tracking and analytics.
+- `referrer`
+  > HTTP Referrer header value indicating the previous page before login. Can
+  > be empty or contain external site URL for tracking user flow into
+  > authentication process.
+- `created_at`
+  > Timestamp when the session was created. Set automatically upon successful
+  > authentication and JWT token generation. Used for session lifecycle
+  > management and audit trails.
 - `expired_at`
-  > Timestamp when the reset token expires and becomes invalid. After this
-  > time, the token cannot be used for password recovery.
-- `used_at`
-  > Timestamp when the reset token was successfully used to change the
-  > password. Null indicates the token is still available for use.
-- `created_at`: Timestamp when the password reset request was created.
-- `updated_at`: Timestamp when the password reset record was last updated.
-- `deleted_at`
-  > Timestamp when the password reset record was soft deleted for security
-  > purposes.
+  > Timestamp when the session expires and becomes invalid. Determined by
+  > session duration policy, after which all tokens become unusable. Used to
+  > clean up expired sessions and enforce security policies.
 
-### `discussion_board_user_email_verifications`
+### `discussion_board_member_password_resets`
 
-Email verification tokens for user registration confirmation.
+Password reset tokens for member account recovery with expiration tracking.
 
-This table stores verification tokens that are sent to users during the
-registration process to confirm their email addresses. Each token is
-unique and has a limited validity period to ensure security. Once a user
-successfully verifies their email using the token, the verification
-record is marked as completed and the user account becomes fully
-activated.
+Each record represents a single password reset request initiated by a
+member. The token is generated and sent to the member's email, allowing
+them to reset their password within the expiration window. Once used, the
+token is marked as consumed to prevent reuse.
 
-Tokens are generated when users register and are sent via email. Users
-must click the verification link containing the token within the
-expiration period to complete their registration. This process prevents
-fake registrations and ensures email address validity.
+Password reset tokens are temporary security artifacts that expire after
+a configured time period (typically 1-24 hours) to minimize security
+risks. Multiple active tokens may exist per member if they initiate
+multiple reset requests before using any.
 
-[discussion_board_users.id](#discussion_board_users)
+This table supports the password reset flow where members who forget
+their passwords can regain access to their accounts through email
+verification. The token acts as a temporary authorization grant for
+password changes without requiring the original password.
+
+Related entities: [discussion_board_members](#discussion_board_members) for the member
+requesting password reset.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_user_id`
-  > Reference to the user account requiring email verification. {@link
-  > discussion_board_users.id}
+- `discussion_board_member_id`: Member requesting password reset. [discussion_board_members.id](#discussion_board_members)
 - `token`
-  > Unique verification token sent to the user's email address for
-  > confirmation.
-- `expires_at`: Timestamp when the verification token expires and becomes invalid.
+  > Unique password reset token sent to member's email for verification. The
+  > token should be cryptographically secure and sufficiently random to
+  > prevent guessing attacks.
+- `expired_at`
+  > Timestamp when this password reset token expires and becomes invalid.
+  > Tokens should have a limited validity period (e.g., 1-24 hours) for
+  > security.
+- `used`
+  > Whether this password reset token has been consumed to successfully reset
+  > a password. Once true, the token cannot be reused for additional password
+  > changes.
+- `used_at`
+  > Timestamp when this token was used to reset a password. Null until the
+  > token is consumed.
+- `created_at`
+  > Timestamp when this password reset request was created and token was
+  > generated.
+- `ip_address`
+  > IP address of the client device that initiated the password reset
+  > request, recorded for security audit purposes.
+- `user_agent`
+  > HTTP User-Agent header from the client that initiated the password reset
+  > request, recorded for security audit purposes.
+
+### `discussion_board_member_email_verifications`
+
+Email verification tokens for member registration confirmation.
+
+This table stores unique tokens sent to member email addresses during the
+registration process. Each token has a short expiration time window for
+security. When a member clicks the verification link with the token, the
+system marks it as verified and records the verification timestamp.
+
+The table supports the member authentication flow as defined in
+registration requirements sections 24-32, ensuring email ownership
+validation before full account activation. Each verification token is
+single-use and can be used only once for a specific member's email
+address. The email field is duplicated from the parent member record to
+capture the email address at verification time, which is essential for
+tracking verification attempts and handling email change scenarios.
+
+Related entities: [discussion_board_members](#discussion_board_members) for the member being
+verified, [discussion_board_member_sessions](#discussion_board_member_sessions) for session creation
+after successful verification.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_member_id`
+  > Target member who requested email verification. {@link
+  > discussion_board_members.id}.
+- `token`
+  > Unique verification token sent to the member's email address. This token
+  > is used in verification URLs and should be cryptographically secure.
+- `email`
+  > Email address being verified. Stored separately from member record to
+  > handle email change scenarios and capture the email at verification time.
+- `expires_at`
+  > Expiration timestamp for this verification token. Tokens become invalid
+  > after this time for security.
 - `verified_at`
-  > Timestamp when the user successfully verified their email address using
-  > this token.
-- `created_at`: Timestamp when the verification token was created.
-- `updated_at`: Timestamp when the verification record was last updated.
+  > Timestamp when the member successfully verified their email using this
+  > token. Null indicates pending verification.
+- `created_at`: Timestamp when the verification token was generated and sent.
+- `updated_at`
+  > Timestamp when the verification record was last updated, typically when
+  > verified.
 
 ### `discussion_board_admins`
 
-Administrator accounts with email/password credentials and administrative
-privileges. This table serves as the canonical identity record for
-administrators in the system, providing authentication capabilities and
-basic profile information. Administrators have elevated privileges for
-content moderation, section management, and user banning. {@link
-discussion_board_admin_sessions} tracks login sessions, {@link
-discussion_board_admin_password_resets} handles password recovery, and
-[discussion_board_admin_email_verifications](#discussion_board_admin_email_verifications) manages email
-verification workflows.
+Administrator accounts with email/password authentication and role grade
+distinction.
+
+Stores administrator identity information including authentication
+credentials and role classification. Administrators have elevated
+privileges for content moderation, user management, and platform
+governance. This table serves as the canonical identity record for all
+administrator actors in the system.
+
+Administrators authenticate via email and password, with sessions tracked
+in [discussion_board_admin_sessions](#discussion_board_admin_sessions) and password resets managed
+through [discussion_board_admin_password_resets](#discussion_board_admin_password_resets). Role
+classification (regular vs super) determines administrative capabilities
+and hierarchy as defined in platform governance requirements.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Administrator's email address used for authentication and communication.
+  > Email address used for administrator authentication and communication.
   > Must be unique across all administrator accounts.
-- `password_hash`
-  > Hashed password for administrator authentication using secure hashing
-  > algorithms.
-- `display_name`
-  > Public display name shown to other users when this administrator performs
-  > actions or creates content.
+- `password_hash`: Salted hash of administrator's password for authentication security.
+- `admin_grade`
+  > Role classification indicating administrator privilege level. Values:
+  > "regular" for standard administrators, "super" for super administrators
+  > with elevated privileges.
 - `created_at`: Timestamp when the administrator account was created.
-- `updated_at`: Timestamp when the administrator account was last updated.
+- `updated_at`: Timestamp when the administrator account was last modified.
 - `deleted_at`
-  > Timestamp when the administrator account was soft-deleted, allowing for
-  > account recovery if needed.
+  > Timestamp when the administrator account was soft-deleted, or null if
+  > still active.
 
 ### `discussion_board_admin_sessions`
 
-Tracks administrator login sessions with JWT token management and
-connection metadata. Each session represents an authenticated
-administrator session with access and refresh token support. Sessions are
-managed through authentication flows and provide audit trail for
-administrator access.
+JWT session tokens for administrator authentication with access and
+refresh tokens.
 
-This table stores JWT session tokens for administrator authentication,
-including access tokens for API authorization and refresh tokens for
-session renewal. Each session records connection context such as IP
-address, user agent, and referrer information for security auditing.
-Sessions have expiration tracking to enforce security policies and
-prevent indefinite access.
+This table manages administrator login sessions with JSON Web Tokens for
+secure authentication. Sessions track connection context including IP
+address, browser referrer, and timestamp information for audit purposes.
+Access tokens are used for API authentication while refresh tokens enable
+secure token renewal without requiring re-login.
 
-The relationship with [discussion_board_admins](#discussion_board_admins) establishes the
-administrator ownership of sessions, allowing multiple concurrent
-sessions per administrator while maintaining individual session
-management. This supports features like session revocation, multi-device
-access, and security monitoring for administrator accounts.
+Each session belongs to exactly one [discussion_board_admins](#discussion_board_admins)
+administrator and includes expiration tracking for security compliance.
+Sessions are append-only audit trails of administrator authentication
+events and are managed through authentication flows rather than direct
+user CRUD operations.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_admin_id`: Associated administrator's [discussion_board_admins.id](#discussion_board_admins).
-- `access_token`: JWT access token used for API authorization and authentication.
-- `refresh_token`: JWT refresh token used for session renewal when access token expires.
+- `discussion_board_admin_id`: Belonged administrator's [discussion_board_admins.id](#discussion_board_admins).
+- `access_token`: JWT access token used for API authentication and authorization.
+- `refresh_token`
+  > JWT refresh token used to obtain new access tokens without requiring
+  > re-login.
 - `ip`
-  > IP address of the client connection for security auditing and geographic
-  > tracking.
-- `user_agent`
-  > User agent string identifying the client browser or application making
-  > the request.
+  > Client IP address from which the session was initiated for security
+  > auditing.
+- `href`: Full URL or path where the session was created for context tracking.
 - `referrer`
-  > HTTP referrer header indicating the source page that initiated the
-  > session creation.
-- `created_at`: Timestamp when the session was created and authentication occurred.
-- `expired_at`: Timestamp when the session expires and requires re-authentication.
-- `last_accessed_at`
-  > Timestamp of the most recent API request using this session for activity
-  > tracking.
+  > HTTP referrer header value indicating the page that linked to the login
+  > page.
+- `user_agent`: Client browser or device user agent string for device fingerprinting.
+- `created_at`: Timestamp when the session was created.
+- `updated_at`: Timestamp when the session was last updated or accessed.
+- `expired_at`
+  > Timestamp when the session expires and becomes invalid for security
+  > compliance.
 
 ### `discussion_board_admin_password_resets`
 
-Password reset tokens for administrator account recovery with expiration
-tracking.
+Password reset tokens for administrator account recovery.
 
-This table stores temporary tokens generated when administrators request
-password resets. Each token has a limited validity period and can only be
-used once. The system generates a unique token per reset request and
-associates it with the specific administrator account requiring password
-recovery.
+Stores secure tokens generated when administrators request password
+resets. Each token has an expiration time and usage status to ensure
+one-time use and prevent replay attacks. Administrators receive these
+tokens via email or secure channels to verify their identity before
+resetting passwords.
 
-When an administrator initiates a password reset, the system creates a
-record here with an expiration timestamp. Once the administrator uses the
-token to reset their password or the token expires, the record becomes
-invalid for security purposes.
+Tokens are invalidated after use or expiration to maintain security. This
+table provides audit trail of password reset requests for accountability
+and security monitoring.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_admin_id`
-  > Reference to the administrator account requiring password reset. {@link
+- `admin_id`
+  > Administrator requesting password reset. {@link
   > discussion_board_admins.id}
-- `token`: Unique password reset token generated for the administrator.
-- `expires_at`: Timestamp when the password reset token expires and becomes invalid.
-- `used_at`
-  > Timestamp when the password reset token was successfully used to change
-  > the password.
-- `created_at`: Timestamp when the password reset request was created.
-- `updated_at`: Timestamp when the password reset record was last updated.
-
-### `discussion_board_admin_email_verifications`
-
-Email verification tokens for administrator registration confirmation.
-
-Stores verification tokens sent to administrator email addresses during
-registration or email change processes. Each token has an expiration
-period and is associated with a specific administrator account. Once
-verified, the token is marked as used to prevent reuse.
-
-This table supports the administrator authentication workflow by ensuring
-email addresses are valid and belong to the registering administrator.
-Tokens are generated during registration and verified when administrators
-click the verification link in their email.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_admin_id`
-  > Administrator account requiring email verification. {@link
-  > discussion_board_admins.id}
-- `token`: Unique verification token sent to the administrator's email address.
-- `email`
-  > Email address being verified. This ensures the token is used for the
-  > correct email.
-- `expired_at`: Timestamp when the verification token expires and becomes invalid.
-- `verified_at`: Timestamp when the email verification was successfully completed.
-- `created_at`: Timestamp when the verification token was created.
-- `updated_at`: Timestamp when the verification record was last updated.
+- `token`: Secure reset token hash for authentication.
+- `expires_at`: Token expiration timestamp for security enforcement.
+- `used_at`: Timestamp when token was successfully used for password reset.
+- `created_at`: Timestamp when password reset request was created.
+- `updated_at`: Timestamp when record was last updated.
 
 ### `discussion_board_super_admins`
 
-Super administrator accounts with elevated privileges and system-wide
-control.
+Super administrator accounts with email/password authentication and
+elevated privileges compared to regular administrators.
 
-Represents the highest privilege level in the system with capabilities to
-promote/demote other administrators, manage system-wide settings, and
-perform all administrative functions. Super administrators have complete
-control over the platform and can manage regular administrators.
+Super administrators represent the highest level of administrative
+authority within the platform with additional capabilities including
+administrator promotion/demotion and platform governance oversight. They
+have the same authentication requirements as regular administrators
+(email/password) but with enhanced privileges documented in the
+requirement specifications.
 
-This table stores authentication credentials and privilege information
-for super administrators. Each super administrator has a unique email
-address and password hash for secure login. The table maintains audit
-trails through standard temporal fields.
-
-Super administrators can perform all actions available to regular
-administrators plus additional system-wide management capabilities. They
-are responsible for maintaining the administrator hierarchy and ensuring
-platform security.
-
-[discussion_board_super_admin_sessions.id](#discussion_board_super_admin_sessions) tracks login sessions,
-[discussion_board_super_admin_password_resets.id](#discussion_board_super_admin_password_resets) handles password
-recovery, and [discussion_board_super_admin_email_verifications.id](#discussion_board_super_admin_email_verifications)
-manages email verification workflows.
+This table serves as the canonical identity record for super
+administrator actors, referenced when enforcing administrative
+permissions and auditing elevated administrative actions. {\@link
+discussion_board_admins} represents regular administrator accounts with
+similar authentication but limited privileges.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `email`
-  > Unique email address for super administrator authentication and
-  > communication.
+  > Unique email address used for super administrator authentication and
+  > identification. Must follow standard email format and be unique across
+  > all administrator accounts.
 - `password_hash`
-  > Securely hashed password for authentication. Uses industry-standard
-  > hashing algorithms.
-- `privilege_level`
-  > Privilege level indicator for super administrator capabilities. Used for
-  > fine-grained permission control.
-- `created_at`: Timestamp when the super administrator account was created.
-- `updated_at`: Timestamp when the super administrator account was last updated.
+  > Securely hashed password for super administrator authentication. Stored
+  > using industry-standard cryptographic hashing algorithms.
+- `admin_grade`
+  > Administrator grade designation indicating privilege level. Typically
+  > "regular" for standard administrators or "super" for elevated
+  > administrators.
+- `created_at`: Timestamp when the super administrator account was created in the system.
+- `updated_at`
+  > Timestamp of the most recent update to the super administrator account
+  > record.
 - `deleted_at`
-  > Timestamp when the super administrator account was soft-deleted. Null if
-  > active.
+  > Soft deletion timestamp when the super administrator account was marked
+  > as deleted, preserving data for audit purposes while removing access.
 
 ### `discussion_board_super_admin_sessions`
 
-JWT session tokens for super administrator authentication with access and
-refresh token support.
+Stores JWT session tokens for super administrator authentication with
+access and refresh token support.
 
-This table stores authentication sessions for super administrators,
-tracking their login activity, connection context, and token management.
-Each session belongs to exactly one super administrator and contains the
-necessary authentication tokens along with audit information for security
-monitoring.
+This table follows the standard session table pattern for authenticated
+actors, recording each login event with connection metadata. Each record
+represents an active session for a super administrator, allowing token
+refresh mechanics and security audit capabilities. The table includes IP
+address, user agent context, and temporal fields for proper session
+lifecycle management.
 
-The session records enable secure authentication flow management, token
-expiration tracking, and connection auditing for compliance purposes.
-Sessions are managed through the authentication system rather than direct
-user CRUD operations.
+Super administrator sessions inherit the same JWT-based authentication
+patterns as regular administrator sessions but are maintained separately
+for audit and security isolation. Sessions are used to validate super
+administrator privileges when performing elevated administrative actions
+like promoting/demoting administrators, reviewing admin requests, and
+overseeing platform governance.
 
-[discussion_board_super_admins.id](#discussion_board_super_admins)
+Related to [discussion_board_super_admins](#discussion_board_super_admins) for actor identity and
+[discussion_board_super_admin_password_resets](#discussion_board_super_admin_password_resets) for authentication
+continuity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_super_admin_id`: Belonged super administrator's [discussion_board_super_admins.id](#discussion_board_super_admins).
-- `access_token`: JWT access token for API authentication.
-- `refresh_token`: JWT refresh token for token renewal.
-- `ip`: IP address of the connection where the session was created.
-- `href`: Full URL of the page where the session was created.
-- `referrer`: Referrer URL that directed to the session creation page.
-- `expired_at`: Timestamp when the session tokens expire and require renewal.
-- `created_at`: Timestamp when the session was created.
-- `updated_at`: Timestamp when the session was last updated.
+- `discussion_board_super_admin_id`: Super administrator's [discussion_board_super_admins.id](#discussion_board_super_admins).
+- `ip`
+  > IP address from which the super administrator logged in. Used for
+  > security audit and geographic tracking of login events.
+- `href`
+  > Full URL from which the super administrator initiated the login session.
+  > Captures the entry point for session creation and is used in security
+  > forensics.
+- `referrer`
+  > HTTP referrer header from which the super administrator navigated to the
+  > login page. Used for user journey analysis and security context.
+- `created_at`
+  > Timestamp when this super administrator session was created. Used for
+  > session age calculation and audit trail completeness.
+- `expired_at`
+  > Timestamp when this super administrator session is scheduled to expire.
+  > JWT tokens will become invalid after this timestamp, requiring refresh or
+  > re-authentication.
 
 ### `discussion_board_super_admin_password_resets`
 
-Password reset tokens for super administrator account recovery with
-expiration tracking.
+Password reset tokens with expiration for super administrator account
+recovery.
 
-This table stores temporary tokens that allow super administrators to
-reset their passwords securely. Each token is associated with a specific
-super administrator account and has a limited validity period to prevent
-unauthorized access. The system generates these tokens when a super
-administrator requests a password reset and invalidates them after use or
-expiration.
+This table stores temporary password reset tokens sent to super
+administrators via email or other secure channels. Each token is
+single-use and expires after a configurable time period. The table tracks
+token usage to prevent replay attacks and ensure security compliance.
 
-Tokens are single-use only and automatically expire after a configured
-time period. The table tracks when tokens are used to prevent replay
-attacks and ensures that each reset request can only be completed once.
-This security mechanism protects super administrator accounts while
-maintaining accessibility for legitimate password recovery scenarios.
+Tokens are generated when a super administrator requests a password reset
+and are invalidated after use or expiration. This mechanism follows the
+same security pattern as [discussion_board_member_password_resets](#discussion_board_member_password_resets)
+and [discussion_board_admin_password_resets](#discussion_board_admin_password_resets) tables.
 
-[discussion_board_super_admins.id](#discussion_board_super_admins)
+The table maintains referential integrity with the parent {@link
+discussion_board_super_admins} table, ensuring only valid super
+administrators can request password resets.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_super_admin_id`
-  > Super administrator account requesting password reset. {@link
-  > discussion_board_super_admins.id}
+  > The super administrator who requested this password reset. References
+  > [discussion_board_super_admins.id](#discussion_board_super_admins).
 - `token`
-  > Unique reset token used for password recovery verification. This token is
-  > sent to the super administrator's email and must match exactly for the
-  > reset process to proceed.
+  > Cryptographically secure token for password reset verification. This
+  > token is sent to the super administrator via email and must be provided
+  > to complete the password reset process.
 - `expired_at`
-  > Timestamp when this reset token expires and becomes invalid. After this
-  > time, the token cannot be used for password recovery and a new request
-  > must be made.
+  > Timestamp when this password reset token expires and becomes invalid.
+  > After this time, the token cannot be used even if it hasn't been used
+  > yet.
 - `used_at`
-  > Timestamp when this reset token was successfully used to reset the
-  > password. Null indicates the token has not been used yet.
-- `created_at`: Timestamp when this password reset token was created.
+  > Timestamp when this password reset token was successfully used to change
+  > the password. Null indicates the token has not been used yet. Once set,
+  > the token cannot be reused.
+- `created_at`: Timestamp when this password reset token record was created.
 - `updated_at`: Timestamp when this password reset token record was last updated.
-
-### `discussion_board_super_admin_email_verifications`
-
-Email verification tokens for super administrator registration confirmation.
-
-Stores secure verification tokens used during super administrator
-registration process to validate email ownership. Each token is tied to a
-specific super administrator account and includes expiration tracking for
-security. Verification status is tracked to prevent multiple verification
-attempts.
-
-Relationships:
-- Belongs to one [admin account](#discussion_board_super_admins)
-- Verification token is used once and then expired
-
-Security Considerations:
-- Tokens are hashed before storage
-- Expiration prevents indefinite verification windows
-- One token per pending verification to prevent token reuse
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_super_admin_id`
-  > Target super administrator's [discussion_board_super_admins.id](#discussion_board_super_admins)
-  > awaiting email verification.
-- `token_hash`
-  > Hashed verification token sent to super administrator's email address.
-  > Generated using secure cryptographic hash function to prevent token
-  > exposure in database logs or backups.
-- `expired_at`
-  > Timestamp when this validation token expires and can no longer be used
-  > for verification. Typically set to 24 hours after creation for security.
-- `verified_at`
-  > Timestamp when email verification was successfully completed using this
-  > token. Null indicates pending verification.
-- `created_at`
-  > Timestamp when this verification token was created as part of
-  > registration process.
-- `updated_at`
-  > Timestamp when this verification record was last updated, typically when
-  > verification is completed.
 
 ## Systematic
 
 ```mermaid
 erDiagram
-"discussion_board_system_configurations" {
+"discussion_board_status_enums" {
   String id PK
-  String config_key UK
-  String config_value
-  String data_type
+  String entity_type
+  String value
   String description
-  String category
-  Boolean is_sensitive
+  Int sort_order
+  Boolean is_active
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_audit_logs" {
+"discussion_board_system_health_metrics" {
   String id PK
-  String actor_id FK "nullable"
-  String target_user_id FK "nullable"
-  String target_admin_id FK "nullable"
-  String target_super_admin_id FK "nullable"
-  String target_article_id FK "nullable"
-  String target_comment_id FK "nullable"
-  String target_section_id FK "nullable"
-  String actor_type
-  String action_type
-  String action_subtype "nullable"
-  String description
-  String ip_address "nullable"
-  String user_agent "nullable"
-  String metadata "nullable"
-  Boolean success
-  String error_message "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_administrator_promotion_approvals" {
-  String id PK
-  String promotion_request_id FK,UK
-  String reviewer_admin_id FK
-  String discussion_board_administrator_id FK
-  Boolean approved
-  String decision_reason
-  DateTime reviewed_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_content_moderation_logs" {
-  String id PK
-  String admin_id FK
-  String action_type
-  String target_content_type
-  String target_content_id
-  String reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_system_activities" {
-  String id PK
-  String user_id FK "nullable"
-  String admin_id FK "nullable"
-  String super_admin_id FK "nullable"
-  String activity_type
-  String target_entity_type "nullable"
-  String target_entity_id "nullable"
-  String ip_address "nullable"
-  String user_agent "nullable"
-  String referrer "nullable"
-  String activity_details "nullable"
-  Boolean success_status
-  String error_message "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_performance_metrics" {
-  String id PK
-  String discussion_board_system_configuration_id FK "nullable"
   String metric_type
   Float metric_value
-  String metric_unit
-  String source_component
+  String unit
+  String source_service
   DateTime collection_timestamp
-  String time_range
-  String metadata "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_error_logs" {
-  String id PK
-  String error_type
-  String error_message
-  String stack_trace "nullable"
-  String severity
-  String request_path "nullable"
-  String request_method "nullable"
-  String user_agent "nullable"
-  String ip_address "nullable"
-  String environment
-  String component "nullable"
-  DateTime occurred_at
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_backup_records" {
-  String id PK
-  String initiated_by_admin_id FK "nullable"
-  String backup_type
   String status
-  String file_path "nullable"
-  Int size_bytes "nullable"
-  DateTime started_at
-  DateTime completed_at "nullable"
-  String error_message "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
+}
+"discussion_board_system_configurations" {
+  String id PK
+  String key UK
+  String value "nullable"
+  String data_type
+  String description
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_system_notifications" {
+  String id PK
+  String title
+  String content
+  String notification_type
+  String status
+  String priority
+  String target_entity_type "nullable"
+  String target_entity_id "nullable"
+  DateTime expires_at "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime delivered_at "nullable"
+  DateTime read_at "nullable"
 }
 "discussion_board_maintenance_schedules" {
   String id PK
-  String scheduled_by_admin_id FK
-  String performed_by_admin_id FK "nullable"
+  String status_type_id FK
   String maintenance_type
-  String description
-  DateTime scheduled_start_time
-  DateTime scheduled_end_time
-  DateTime actual_start_time "nullable"
-  DateTime actual_end_time "nullable"
-  String status
-  Int estimated_duration_minutes
-  Int actual_duration_minutes "nullable"
-  String impact_level
-  String notes "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_api_rate_limits" {
-  String id PK
-  String discussion_board_user_id FK "nullable"
-  String discussion_board_admin_id FK "nullable"
-  String discussion_board_super_admin_id FK "nullable"
-  String endpoint_path
-  String http_method
-  String rate_limit_type
-  Int requests_per_interval
-  Int interval_seconds
-  Int burst_limit "nullable"
-  String enforcement_action
-  DateTime enforced_at "nullable"
-  Int enforcement_count
-  Boolean is_active
+  String title
   String description "nullable"
+  DateTime planned_start_at
+  DateTime planned_end_at
+  DateTime actual_start_at "nullable"
+  DateTime actual_end_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_security_events" {
+"discussion_board_status_types" {
   String id PK
-  String user_id FK "nullable"
-  String admin_id FK "nullable"
-  String super_admin_id FK "nullable"
-  String event_type
-  String severity
-  String description
-  String source_ip
-  String user_agent
-  String event_data "nullable"
-  Boolean resolved
-  DateTime resolved_at "nullable"
-  String resolved_by "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_data_retention_policies" {
-  String id PK
-  String policy_name UK
-  String description
-  Int retention_period_days
-  String retention_action
-  String compliance_standard "nullable"
+  String category
+  String code
+  String display_name
+  String description "nullable"
+  Int display_order
   Boolean is_active
-  DateTime last_enforced_at "nullable"
-  DateTime next_enforcement_due "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_data_retention_policy_data_types" {
+"discussion_board_system_audit_logs" {
   String id PK
-  String discussion_board_data_retention_policy_id FK
-  String data_type
+  String actor_type
+  String action_type
+  String action_category
+  String action_description
+  String target_type "nullable"
+  String target_id "nullable"
+  String ip_address "nullable"
+  String user_agent "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_performance_metrics" }o--o| "discussion_board_system_configurations" : systemConfiguration
-"discussion_board_data_retention_policy_data_types" }o--|| "discussion_board_data_retention_policies" : retentionPolicy
+"discussion_board_system_metadata" {
+  String id PK
+  String status_type_id FK
+  String name
+  String value
+  String data_type
+  String scope
+  String description "nullable"
+  Int version
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_status_enum_snapshots" {
+  String id PK
+  String discussion_board_status_enum_id FK
+  String snapshot_name
+  String description "nullable"
+  String snapshot_reason "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_status_enum_references" {
+  String id PK
+  String discussion_board_status_enums_id FK
+  String referenced_table
+  String referenced_column
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_system_notification_of_members" {
+  String id PK
+  String discussion_board_system_notification_id FK,UK
+  String discussion_board_member_id FK
+  Boolean is_read
+  DateTime read_at "nullable"
+  DateTime acknowledged_at "nullable"
+  String notification_preferences "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_system_notification_of_admins" {
+  String id PK
+  String discussion_board_system_notification_id FK,UK
+  String discussion_board_admin_id FK
+  DateTime created_at
+  DateTime updated_at
+  String notification_context "nullable"
+}
+"discussion_board_system_notification_of_super_admins" {
+  String id PK
+  String discussion_board_system_notification_id FK,UK
+  String discussion_board_super_admin_id FK
+  String discussion_board_super_admin_session_id FK "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_system_health_metric_metadata" {
+  String id PK
+  String system_health_metric_id FK
+  String key
+  String value
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_system_audit_log_of_members" {
+  String id PK
+  String system_audit_log_id FK,UK
+  String member_id FK
+  String member_session_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_system_audit_log_of_admins" {
+  String id PK
+  String discussion_board_system_audit_log_id FK,UK
+  String discussion_board_admin_id FK
+  String discussion_board_admin_session_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_system_audit_log_of_super_admins" {
+  String id PK
+  String system_audit_log_id FK,UK
+  String actor_type
+}
+"discussion_board_system_audit_log_parameters" {
+  String id PK
+  String system_audit_log_id FK
+  String parameter_key
+  String parameter_value
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_status_enum_snapshot_metadata" {
+  String id PK
+  String discussion_board_status_enum_snapshot_id FK
+  String key
+  String value
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_maintenance_schedules" }o--|| "discussion_board_status_types" : statusType
+"discussion_board_system_metadata" }o--|| "discussion_board_status_types" : statusType
+"discussion_board_status_enum_snapshots" }o--|| "discussion_board_status_enums" : statusEnum
+"discussion_board_status_enum_references" }o--|| "discussion_board_status_enums" : statusEnum
+"discussion_board_system_notification_of_members" |o--|| "discussion_board_system_notifications" : systemNotification
+"discussion_board_system_notification_of_admins" |o--|| "discussion_board_system_notifications" : systemNotification
+"discussion_board_system_notification_of_super_admins" |o--|| "discussion_board_system_notifications" : systemNotification
+"discussion_board_system_health_metric_metadata" }o--|| "discussion_board_system_health_metrics" : metric
+"discussion_board_system_audit_log_of_members" |o--|| "discussion_board_system_audit_logs" : auditLog
+"discussion_board_system_audit_log_of_admins" |o--|| "discussion_board_system_audit_logs" : systemAuditLog
+"discussion_board_system_audit_log_of_super_admins" |o--|| "discussion_board_system_audit_logs" : systemAuditLog
+"discussion_board_system_audit_log_parameters" }o--|| "discussion_board_system_audit_logs" : systemAuditLog
+"discussion_board_status_enum_snapshot_metadata" }o--|| "discussion_board_status_enum_snapshots" : snapshot
 ```
+
+### `discussion_board_status_enums`
+
+Centralized enumeration of all status values for content, requests,
+users, and administrative actions used across domains.
+
+This table serves as the single source of truth for all status
+definitions in the system, providing consistent status values across
+multiple business domains. Each row represents a valid status value that
+can be used for a specific entity type (articles, comments, admin
+requests, users, bans). Status values include both system-defined
+standard values (like 'pending', 'approved', 'rejected', 'active',
+'suspended', 'deleted') and custom domain-specific statuses.
+
+Administrators can manage status values through dedicated CRUD
+interfaces, allowing for system configuration and localization of status
+labels. The table supports soft deletion of deprecated status values
+while maintaining referential integrity with existing data.
+
+**Example usage:**
+- Article statuses: 'draft', 'published', 'archived', 'deleted'
+- Comment statuses: 'visible', 'hidden', 'flagged', 'deleted'
+- Admin request statuses: 'pending', 'approved', 'rejected', 'cancelled'
+- User account statuses: 'active', 'suspended', 'deleted', 'banned'
+- Ban statuses: 'active', 'expired', 'revoked'
+
+All status values are referenced by their string value in domain tables,
+ensuring data consistency and simplifying queries. The sort_order field
+allows for custom ordering in UI dropdowns and reports.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `entity_type`
+  > The type of entity this status value applies to. Defines which domain or
+  > table uses this status value. Examples: 'article', 'comment',
+  > 'admin_request', 'user', 'ban', 'attachment'. This field groups status
+  > values by their usage domain for efficient querying and management.
+- `value`
+  > The actual status value string used in business logic and UI display.
+  > Should be lowercase, snake_case format for consistency. Examples:
+  > 'pending', 'approved', 'draft', 'published', 'active', 'suspended',
+  > 'deleted'. This value is referenced by domain tables when setting status
+  > fields.
+- `description`
+  > Human-readable description explaining the meaning and usage of this
+  > status value. Provides context for administrators managing status values
+  > and for developers understanding business logic. Example: 'Article is
+  > visible to all users and appears in search results' for 'published'
+  > status.
+- `sort_order`
+  > Numerical ordering for displaying status values in UI dropdowns and
+  > lists. Lower numbers appear first. Allows administrators to control the
+  > display order of status options in forms and reports. Default ordering
+  > for new entries can be based on creation timestamp.
+- `is_active`
+  > Indicates whether this status value is currently active and available for
+  > use. Inactive status values remain in the database for historical
+  > reference but are not shown in UI dropdowns for new selections. Allows
+  > deprecation of old status values while preserving data integrity.
+- `created_at`
+  > Timestamp when this status value was first created in the system. Used
+  > for auditing and tracking the lifecycle of enumeration values.
+- `updated_at`
+  > Timestamp when this status value was last modified. Tracks changes to
+  > status definitions for version control and audit purposes.
+- `deleted_at`
+  > Timestamp when this status value was soft-deleted. Allows removal of
+  > deprecated status values while maintaining referential integrity with
+  > historical data. Null indicates the status value is currently active and
+  > not deleted.
+
+### `discussion_board_system_health_metrics`
+
+Performance and health metrics tracking for system monitoring.
+
+This table stores quantitative measurements of system performance, health
+indicators, and operational metrics used for monitoring, alerting, and
+capacity planning. Metrics include response times, success rates, error
+rates, connection health scores, and resource utilization measurements
+collected from various services and components.
+
+Each record represents a single metric measurement at a specific point in
+time, with categorization by metric type and source service. Metrics are
+used by administrators and SRE teams to monitor system health, identify
+performance degradation, and trigger alerts for operational issues.
+
+Related entities: [discussion_board_system_configurations](#discussion_board_system_configurations) for
+monitoring configuration, [discussion_board_system_notifications](#discussion_board_system_notifications)
+for alert generation based on metric thresholds.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `metric_type`
+  > Category of the health metric being measured. Examples: 'response_time',
+  > 'success_rate', 'error_rate', 'connection_health', 'cpu_utilization',
+  > 'memory_usage', 'disk_io', 'network_latency', 'queue_depth',
+  > 'throughput'. This field categorizes metrics for aggregation and
+  > analysis.
+- `metric_value`
+  > Numerical value of the metric measurement. The interpretation depends on
+  > metric_type and unit fields. For response times in milliseconds, for
+  > success rates as percentages (0.0-100.0), for connection health as score
+  > (0.0-1.0).
+- `unit`
+  > Measurement unit of the metric value. Examples: 'milliseconds',
+  > 'percent', 'score', 'bytes', 'requests_per_second', 'connections',
+  > 'percentage'. Provides context for interpreting metric_value.
+- `source_service`
+  > Service or component that generated this metric. Identifies the monitored
+  > system component such as 'api_gateway', 'database', 'cache',
+  > 'search_service', 'file_storage', 'authentication_service'. Used for
+  > filtering metrics by source.
+- `collection_timestamp`
+  > Timestamp when this metric was collected from the source system.
+  > Represents the measurement time rather than storage time. Used for
+  > time-series analysis and correlation with system events.
+- `status`
+  > Health status classification based on metric value and thresholds.
+  > Values: 'healthy', 'warning', 'critical'. Derived by comparing
+  > metric_value against configured thresholds for the metric_type and
+  > source_service.
+- `created_at`
+  > Timestamp when this metric record was stored in the database. Represents
+  > when the monitoring system processed and persisted the measurement.
+- `updated_at`
+  > Timestamp when this metric record was last updated. For audit trail and
+  > change tracking of metric records.
+- `deleted_at`
+  > Timestamp when this metric record was soft-deleted. Allows retention of
+  > historical metrics while removing them from active queries.
 
 ### `discussion_board_system_configurations`
 
-System-wide configuration settings and parameters for platform operation.
+Centralized system configuration metadata and settings that are
+referenced across all application domains.
 
-This table stores all configurable parameters that control the behavior
-and features of the discussion board platform. Administrators can modify
-these settings to customize platform functionality, enable/disable
-features, and adjust operational parameters without requiring code
-changes.
+Stores key-value pairs for platform-wide configuration settings including
+feature flags, operational parameters, and global settings. Each
+configuration entry includes a unique key, typed value, and descriptive
+documentation for system administrators. Configurations support multiple
+data types (string, integer, boolean, JSON) through explicit type
+specification to ensure proper interpretation across domains.
 
-Each configuration entry represents a specific system parameter that
-influences platform behavior, such as rate limits, content policies,
-display settings, or feature toggles. The configuration system provides a
-centralized way to manage platform settings across all system components.
-
-Configurations are organized by functional areas and can be modified by
-authorized administrators through the system administration interface.
+All configuration changes are audit-trailed through temporal fields, and
+soft delete support allows configuration deprecation without breaking
+historical references. This table serves as the single source of truth
+for system-wide operational settings accessible to all application
+components.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `config_key`
-  > Unique identifier for the configuration parameter. Used to reference the
-  > configuration in code and administration interfaces.
-- `config_value`
-  > The actual value of the configuration parameter stored as a string for
-  > flexibility.
+- `key`
+  > Unique configuration key identifier used to reference this setting across
+  > domains. Must follow dot notation convention: "component.feature.setting"
+  > (e.g., "articles.pagination.page_size",
+  > "users.registration.require_email_verify").
+- `value`
+  > Configuration value stored as string. Interpretation depends on the
+  > data_type field (e.g., "true" for boolean, "100" for integer,
+  > "{\"enabled\": true}" for JSON). Nullable for optional configurations.
 - `data_type`
-  > The data type of the configuration value (e.g., 'string', 'integer',
-  > 'boolean', 'json').
+  > Data type of the configuration value for proper interpretation. Valid
+  > values: "string", "integer", "double", "boolean", "json", "datetime",
+  > "uri". Determines how the value field should be parsed and validated.
 - `description`
-  > Human-readable description explaining the purpose and usage of this
-  > configuration parameter.
-- `category`
-  > Functional category grouping related configurations (e.g.,
-  > 'authentication', 'content', 'performance', 'security').
-- `is_sensitive`
-  > Indicates whether this configuration contains sensitive information that
-  > should be masked in logs and UI displays.
-- `created_at`: Timestamp when this configuration was initially created.
-- `updated_at`: Timestamp when this configuration was last modified.
-- `deleted_at`
-  > Timestamp when this configuration was soft-deleted, allowing for
-  > configuration lifecycle management.
-
-### `discussion_board_audit_logs`
-
-Comprehensive audit trail for all administrative actions and system
-events across the discussion board platform.
-
-This table captures detailed information about every significant action
-performed by users, administrators, and the system itself. Each record
-includes the actor who performed the action, the type of action, the
-target entity affected, timestamp information, and additional metadata
-specific to the action type.
-
-The audit trail serves multiple purposes including compliance monitoring,
-security investigation, system debugging, and user accountability. All
-records are append-only and cannot be modified once created to ensure the
-integrity of the audit trail.
-
-Key relationships:
-- References actor tables ([discussion_board_users](#discussion_board_users), {@link
-discussion_board_admins}, [discussion_board_super_admins](#discussion_board_super_admins)) for
-actor identification
-- Captures actions across all system components including articles,
-comments, sections, and user management
-- Supports detailed investigation through comprehensive metadata storage
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `actor_id`
-  > ID of the user, administrator, or super administrator who performed the
-  > action. References the appropriate actor table based on actor_type.
-- `target_user_id`
-  > ID of the user affected by the action, if applicable. References {@link
-  > discussion_board_users.id}.
-- `target_admin_id`
-  > ID of the administrator affected by the action, if applicable. References
-  > [discussion_board_admins.id](#discussion_board_admins).
-- `target_super_admin_id`
-  > ID of the super administrator affected by the action, if applicable.
-  > References [discussion_board_super_admins.id](#discussion_board_super_admins).
-- `target_article_id`
-  > ID of the article affected by the action, if applicable. References
-  > [discussion_board_articles.id](#discussion_board_articles).
-- `target_comment_id`
-  > ID of the comment affected by the action, if applicable. References
-  > [discussion_board_comments.id](#discussion_board_comments).
-- `target_section_id`
-  > ID of the section affected by the action, if applicable. References
-  > [discussion_board_sections.id](#discussion_board_sections).
-- `actor_type`
-  > Type of actor who performed the action. Valid values: 'user', 'admin',
-  > 'super_admin', 'system'.
-- `action_type`
-  > Category of the action performed. Examples: 'user_login',
-  > 'article_create', 'comment_delete', 'user_ban', 'admin_promotion'.
-- `action_subtype`: More specific classification of the action within the main category.
-- `description`
-  > Human-readable description of the action performed, including context and
-  > details.
-- `ip_address`: IP address from which the action was performed, for security tracking.
-- `user_agent`: User agent string of the client that performed the action.
-- `metadata`
-  > JSON-formatted additional metadata specific to the action type, stored as
-  > string for flexibility.
-- `success`: Whether the action was successful or resulted in an error.
-- `error_message`: Error message if the action failed, providing details about the failure.
-- `created_at`: Timestamp when the audit record was created.
+  > Human-readable explanation of the configuration's purpose, usage, and
+  > impact. Should include acceptable value ranges, default values, and
+  > component dependencies.
+- `created_at`
+  > Timestamp when this configuration entry was initially created in the
+  > system.
 - `updated_at`
-  > Timestamp when the audit record was last updated (typically matches
-  > created_at for audit integrity).
+  > Timestamp when this configuration entry was last modified. Updated
+  > automatically on any change.
+- `deleted_at`
+  > Timestamp when this configuration was soft-deleted (marked as
+  > deprecated). Null indicates active configuration.
 
-### `discussion_board_administrator_promotion_approvals`
+### `discussion_board_system_notifications`
 
-Stores approval records for administrator promotion requests with
-reviewer information and decision details.
+System notifications and alerts for users including administrative
+announcements, platform status updates, and targeted communications.
 
-Each record represents a single approval or rejection decision made by an
-administrator on a promotion request. This table maintains a complete
-audit trail of all promotion decisions, including who made the decision,
-when it was made, and the rationale behind it.
+This table stores all system-generated notifications that need to be
+delivered to users. Notifications can include administrative
+announcements, status updates about platform changes, alerts about
+content moderation actions, and personalized communications from
+administrators. Each notification tracks its delivery lifecycle including
+creation, sending, and user reading status.
 
-The table supports the administrator promotion workflow by tracking the
-entire lifecycle of promotion requests from submission to final decision.
-It ensures accountability and transparency in the promotion process by
-recording all decision-making activities.
-
-This table works in conjunction with {@link
-discussion_board_administrator_promotion_requests} which stores the
-original promotion requests, and references {@link
-discussion_board_admins} for the reviewing administrator information. It
-also maintains a relationship to the parent {@link
-discussion_board_administrators} table to track which administrator
-record is affected by the promotion decision.
+Notifications reference system entities like {@link
+discussion_board_system_audit_logs} for administrative actions, but
+maintain a clean separation from business transaction tables.
+User-specific metadata is handled through subtype tables that establish
+1:1 relationships with actor types.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `promotion_request_id`
-  > Reference to the promotion request being reviewed. {@link
-  > discussion_board_administrator_promotion_requests.id}
-- `reviewer_admin_id`
-  > Administrator who reviewed and made the decision. {@link
-  > discussion_board_admins.id}
-- `discussion_board_administrator_id`
-  > Reference to the parent administrator record affected by this promotion
-  > decision. [discussion_board_administrators.id](#discussion_board_administrators)
-- `approved`: Whether the promotion request was approved (true) or rejected (false).
-- `decision_reason`: Explanation or rationale provided by the reviewer for their decision.
-- `reviewed_at`: Timestamp when the promotion request was reviewed and decision was made.
-- `created_at`: Timestamp when the approval record was created.
-- `updated_at`: Timestamp when the approval record was last updated.
-- `deleted_at`: Timestamp when the approval record was soft deleted, or null if active.
-
-### `discussion_board_content_moderation_logs`
-
-Comprehensive audit trail of content moderation actions performed by
-administrators.
-
-This table logs all moderation activities including article deletions,
-comment deletions, and other content management actions. Each record
-captures the moderator, action type, target content, timestamp, and
-reason for the moderation action.
-
-The logs serve as an audit trail for compliance and accountability
-purposes, allowing administrators to review moderation history and track
-patterns of content management activities. Records are immutable once
-created to maintain the integrity of the audit trail.
-
-Relationships include links to [discussion_board_admins](#discussion_board_admins) for
-moderator identification and references to moderated content through
-content-specific foreign keys.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `admin_id`
-  > Administrator who performed the moderation action. {@link
-  > discussion_board_admins.id}
-- `action_type`
-  > Type of moderation action performed (e.g., 'article_delete',
-  > 'comment_delete', 'content_hide').
-- `target_content_type`
-  > Type of content being moderated (e.g., 'article', 'comment',
-  > 'user_profile').
-- `target_content_id`: Unique identifier of the moderated content item.
-- `reason`: Explanation or justification for the moderation action.
-- `created_at`: Timestamp when the moderation action was logged.
-- `updated_at`: Timestamp when the moderation log record was last updated.
-
-### `discussion_board_system_activities`
-
-Comprehensive system activity tracking table that records all platform
-interactions including user logins, content creation, article browsing,
-and administrative actions. This table serves as the central audit trail
-for platform usage patterns and security monitoring.
-
-Each record represents a discrete system activity performed by an actor
-(user, admin, or super admin) and includes detailed metadata about the
-action type, target entity, and contextual information. The table
-supports usage analytics, security auditing, and platform performance
-monitoring.
-
-Activities are categorized by type (login, logout, article_create,
-comment_create, etc.) and reference the specific actor who performed the
-action. The table maintains a complete chronological record of all
-platform interactions for compliance and analytical purposes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`
-  > Reference to the user who performed the activity, if applicable. {@link
-  > discussion_board_users.id}
-- `admin_id`
-  > Reference to the administrator who performed the activity, if applicable.
-  > [discussion_board_admins.id](#discussion_board_admins)
-- `super_admin_id`
-  > Reference to the super administrator who performed the activity, if
-  > applicable. [discussion_board_super_admins.id](#discussion_board_super_admins)
-- `activity_type`
-  > Type of system activity performed (e.g., login, logout, article_create,
-  > comment_create, section_browse, search_performed).
-- `target_entity_type`
-  > Type of entity targeted by the activity (e.g., user, article, comment,
-  > section, system).
-- `target_entity_id`: ID of the specific entity targeted by the activity, if applicable.
-- `ip_address`: IP address from which the activity was performed for security tracking.
-- `user_agent`: User agent string of the client that performed the activity.
-- `referrer`: HTTP referrer header indicating the source of the activity request.
-- `activity_details`: Additional details or metadata about the activity in JSON format.
-- `success_status`: Whether the activity was completed successfully or resulted in an error.
-- `error_message`: Error message if the activity failed, providing diagnostic information.
-- `created_at`: Timestamp when the activity was recorded.
-- `updated_at`: Timestamp when the activity record was last updated.
-
-### `discussion_board_performance_metrics`
-
-System performance metrics and monitoring data for tracking platform
-health and optimization.
-
-This table stores various performance indicators collected from the
-discussion board platform, including response times, resource
-utilization, error rates, and system load metrics. The data supports
-capacity planning, performance optimization, and proactive monitoring of
-platform health.
-
-Metrics are typically collected automatically by monitoring systems and
-provide insights into system behavior under different load conditions.
-Administrators can use this data to identify performance bottlenecks,
-plan infrastructure upgrades, and ensure service level agreement
-compliance.
-
-Each metric record represents a point-in-time measurement of a specific
-performance indicator, allowing for trend analysis and historical
-comparison of system performance over time.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_system_configuration_id`
-  > Optional reference to the system configuration that was active when this
-  > metric was collected. [discussion_board_system_configurations.id](#discussion_board_system_configurations)
-- `metric_type`
-  > Type of performance metric being recorded (e.g., response_time,
-  > cpu_usage, memory_usage, error_rate, request_count).
-- `metric_value`: Numerical value of the performance metric measurement.
-- `metric_unit`
-  > Unit of measurement for the metric value (e.g., milliseconds, percentage,
-  > count, bytes).
-- `source_component`
-  > Component or service that generated this metric (e.g., api_gateway,
-  > database, cache, frontend).
-- `collection_timestamp`: Exact timestamp when this metric was collected from the system.
-- `time_range`
-  > Time period this metric represents (e.g., instantaneous, 1_minute,
-  > 5_minutes, 1_hour).
-- `metadata`: Additional context or metadata about the metric collection in JSON format.
-- `created_at`: Timestamp when this metric record was created in the database.
-- `updated_at`: Timestamp when this metric record was last updated.
-
-### `discussion_board_error_logs`
-
-Comprehensive system error logging and debugging information storage.
-
-This table captures all system errors that occur within the discussion
-board platform, providing detailed information for debugging, monitoring,
-and performance analysis. Each error record includes the error type,
-stack trace, request context, and severity level to help developers
-identify and resolve issues quickly.
-
-The error logs support the system's performance monitoring requirements
-by tracking error frequency and patterns, and they provide security
-auditing capabilities by recording unexpected system behavior. Errors are
-categorized by severity to prioritize debugging efforts and maintain
-system stability.
-
-This table integrates with the broader Systematic component
-infrastructure, providing essential debugging information that
-complements the performance metrics and audit logs maintained in other
-Systematic tables.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `error_type`
-  > Classification of the error type (e.g., database_error,
-  > authentication_error, validation_error, system_error).
-- `error_message`: Detailed error message describing what went wrong.
-- `stack_trace`: Full stack trace for debugging purposes, if available.
-- `severity`: Error severity level (critical, error, warning, info).
-- `request_path`: HTTP request path that triggered the error, if applicable.
-- `request_method`: HTTP request method (GET, POST, PUT, DELETE) that triggered the error.
-- `user_agent`: User agent string from the request that caused the error.
-- `ip_address`: IP address of the client that triggered the error.
-- `environment`
-  > Deployment environment where the error occurred (development, staging,
-  > production).
-- `component`: System component or module where the error originated.
-- `occurred_at`: Timestamp when the error occurred.
-- `created_at`: Timestamp when this error record was created.
-- `updated_at`: Timestamp when this error record was last updated.
-- `deleted_at`: Timestamp when this error record was soft deleted for cleanup.
-
-### `discussion_board_backup_records`
-
-Records of system backup operations and data protection activities.
-
-This table tracks all backup operations performed on the discussion board
-platform, including automated and manual backups. Each record captures
-the backup type, status, file location, size, and administrator who
-initiated the operation. The table serves as an audit trail for data
-protection compliance and disaster recovery planning.
-
-Backup records are created by system administrators or automated backup
-processes and provide visibility into data protection activities. Records
-include both successful and failed backup attempts for comprehensive
-monitoring.
-
-Related entities: [discussion_board_admins.id](#discussion_board_admins) for
-administrator-initiated backups, {@link
-discussion_board_system_configurations.id} for backup configuration
-references.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `initiated_by_admin_id`
-  > Administrator who initiated the backup operation. {@link
-  > discussion_board_admins.id}.
-- `backup_type`
-  > Type of backup operation performed (e.g., 'full', 'incremental',
-  > 'database_only', 'files_only').
+- `title`
+  > Brief, attention-grabbing title of the notification that summarizes the
+  > content for quick scanning.
+- `content`
+  > Full content of the notification including details, instructions, and any
+  > necessary context for the recipient.
+- `notification_type`
+  > Type classification of the notification such as 'announcement', 'alert',
+  > 'status_update', 'moderation_action', or 'personal_message'.
 - `status`
-  > Current status of the backup operation (e.g., 'in_progress', 'completed',
-  > 'failed', 'cancelled').
-- `file_path`: File system path or storage location where the backup is stored.
-- `size_bytes`: Size of the backup file in bytes, populated after successful completion.
-- `started_at`: Timestamp when the backup operation began.
-- `completed_at`: Timestamp when the backup operation completed successfully or failed.
-- `error_message`: Error description if the backup operation failed.
-- `created_at`: Timestamp when the backup record was created.
-- `updated_at`: Timestamp when the backup record was last updated.
-- `deleted_at`: Timestamp when the backup record was soft deleted for audit purposes.
+  > Current delivery status of the notification: 'pending' (awaiting
+  > delivery), 'sent' (delivered but unread), 'read' (acknowledged by
+  > recipient), or 'archived' (no longer active).
+- `priority`
+  > Priority level that determines notification display and alert behavior:
+  > 'low', 'normal', 'high', or 'critical'.
+- `target_entity_type`
+  > Type of system entity this notification references such as 'article',
+  > 'comment', 'section', 'admin_request', or 'user' for context-aware
+  > navigation.
+- `target_entity_id`
+  > UUID of the specific system entity this notification references, used in
+  > conjunction with target_entity_type for deeplinking.
+- `expires_at`
+  > Timestamp when this notification should be automatically considered
+  > expired and no longer shown to users.
+- `created_at`
+  > Timestamp when the notification was created in the system. This is the
+  > authoritative creation time.
+- `updated_at`
+  > Timestamp when the notification was last modified. Automatically updated
+  > on any change to notification fields.
+- `delivered_at`
+  > Timestamp when the notification was successfully delivered to the user's
+  > notification center. Indicates when it became available for viewing.
+- `read_at`
+  > Timestamp when the notification was marked as read by the recipient user.
+  > Null indicates the notification remains unread.
 
 ### `discussion_board_maintenance_schedules`
 
-System maintenance schedules and history tracking.
+Maintenance schedule records for system operations, backups, and updates
+with status tracking.
 
-Stores planned maintenance windows, execution history, and status
-tracking for system maintenance activities. Includes maintenance type
-categorization, scheduled timing, responsible administrators, and
-completion status.
+Tracks planned and executed maintenance activities across the platform
+including scheduled backups, server updates, database maintenance, and
+system patch deployments. Each record captures the maintenance window,
+type of operation, status progression, and execution details for audit
+and operational oversight.
 
-Maintenance schedules are created by administrators to plan system
-downtime, updates, and infrastructure improvements. Each schedule
-includes detailed timing information, expected duration, and status
-tracking for monitoring maintenance progress.
-
-Related entities: [discussion_board_admins](#discussion_board_admins) for maintenance
-responsibility assignment, [discussion_board_audit_logs](#discussion_board_audit_logs) for
-maintenance activity auditing.
+This table enables administrators to schedule, monitor, and review system
+maintenance activities while preventing scheduling conflicts. Status
+tracking follows the centralized status enumeration system {@link
+discussion_board_status_types} for consistency across all maintenance
+operations.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `scheduled_by_admin_id`
-  > Administrator who scheduled this maintenance. {@link
-  > discussion_board_admins.id}
-- `performed_by_admin_id`
-  > Administrator who performed the maintenance. {@link
-  > discussion_board_admins.id}
+- `status_type_id`
+  > Current status of the maintenance schedule following system-wide status
+  > types. [discussion_board_status_types.id](#discussion_board_status_types).
 - `maintenance_type`
-  > Type of maintenance being performed (e.g., system update, database
-  > backup, security patch).
-- `description`: Detailed description of the maintenance activity and its purpose.
-- `scheduled_start_time`: Planned start time for the maintenance window.
-- `scheduled_end_time`: Planned end time for the maintenance window.
-- `actual_start_time`: Actual start time when maintenance began.
-- `actual_end_time`: Actual end time when maintenance completed.
-- `status`
-  > Current status of maintenance (scheduled, in-progress, completed,
-  > cancelled).
-- `estimated_duration_minutes`: Estimated duration of maintenance in minutes.
-- `actual_duration_minutes`: Actual duration of maintenance in minutes.
-- `impact_level`: Level of impact on users (low, medium, high, critical).
-- `notes`: Additional notes or observations about the maintenance.
-- `created_at`: Timestamp when the maintenance schedule was created.
-- `updated_at`: Timestamp when the maintenance schedule was last updated.
-- `deleted_at`: Timestamp when the maintenance schedule was soft deleted.
-
-### `discussion_board_api_rate_limits`
-
-API rate limiting configurations and enforcement records for platform
-security.
-
-This table stores rate limiting configurations that control API usage
-across the discussion board platform. It tracks enforcement actions when
-rate limits are exceeded and maintains audit trails for security
-monitoring and compliance.
-
-Each record represents a specific rate limiting policy that can be
-applied to different API endpoints, user types, or system functions. The
-table captures both the configuration parameters and actual enforcement
-events when limits are triggered.
-
-Rate limiting is essential for preventing API abuse, ensuring fair
-resource allocation, and maintaining system stability under high load
-conditions. [discussion_board_system_configurations](#discussion_board_system_configurations) may reference
-these rate limits for system-wide configuration management.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_id`
-  > User who triggered the rate limit enforcement. {@link
-  > discussion_board_users.id}.
-- `discussion_board_admin_id`
-  > Administrator who triggered the rate limit enforcement. {@link
-  > discussion_board_admins.id}.
-- `discussion_board_super_admin_id`
-  > Super administrator who triggered the rate limit enforcement. {@link
-  > discussion_board_super_admins.id}.
-- `endpoint_path`
-  > API endpoint path that the rate limit applies to (e.g., '/api/articles',
-  > '/api/comments').
-- `http_method`: HTTP method that the rate limit applies to (GET, POST, PUT, DELETE, etc.).
-- `rate_limit_type`: Type of rate limiting (e.g., 'ip_based', 'user_based', 'global', 'burst').
-- `requests_per_interval`: Maximum number of requests allowed per time interval.
-- `interval_seconds`: Time interval in seconds for the rate limit window.
-- `burst_limit`: Maximum burst requests allowed above the normal rate limit.
-- `enforcement_action`
-  > Action taken when rate limit is exceeded (e.g., 'block', 'throttle',
-  > 'warning').
-- `enforced_at`: Timestamp when the rate limit was last enforced.
-- `enforcement_count`: Number of times this rate limit has been enforced.
-- `is_active`: Whether this rate limit configuration is currently active.
-- `description`: Human-readable description of the rate limit policy.
-- `created_at`: Timestamp when the rate limit configuration was created.
-- `updated_at`: Timestamp when the rate limit configuration was last updated.
-- `deleted_at`: Timestamp when the rate limit configuration was soft-deleted.
-
-### `discussion_board_security_events`
-
-Security-related events and threat detection logs for comprehensive
-security monitoring and incident response.
-
-This table serves as the central repository for all security-related
-activities within the discussion board platform. It captures security
-events such as failed login attempts, suspicious activities, threat
-detections, and security policy violations. Each event includes detailed
-metadata for forensic analysis and compliance reporting.
-
-The table supports security monitoring by providing a complete audit
-trail of security incidents, enabling administrators to detect patterns,
-investigate breaches, and maintain compliance with security standards.
-Events are categorized by type and severity to facilitate efficient
-filtering and alerting.
-
-Security events are linked to specific actors when applicable, allowing
-correlation between user actions and security incidents. The system uses
-this data for threat detection, anomaly detection, and security incident
-response workflows.
-
-[discussion_board_users.id](#discussion_board_users), [discussion_board_admins.id](#discussion_board_admins),
-[discussion_board_super_admins.id](#discussion_board_super_admins)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`
-  > User who triggered the security event, if applicable. {@link
-  > discussion_board_users.id}
-- `admin_id`
-  > Administrator who triggered the security event, if applicable. {@link
-  > discussion_board_admins.id}
-- `super_admin_id`
-  > Super administrator who triggered the security event, if applicable.
-  > [discussion_board_super_admins.id](#discussion_board_super_admins)
-- `event_type`
-  > Type of security event (e.g., failed_login, suspicious_activity,
-  > threat_detected, policy_violation).
-- `severity`: Severity level of the security event (low, medium, high, critical).
+  > Type of maintenance operation being performed (e.g., 'backup',
+  > 'system_update', 'database_maintenance', 'security_patch',
+  > 'performance_optimization').
+- `title`
+  > Descriptive title summarizing the maintenance activity for quick
+  > identification.
 - `description`
-  > Detailed description of the security event including context and impact
-  > assessment.
-- `source_ip`: IP address from which the security event originated.
-- `user_agent`: User agent string of the client that triggered the security event.
-- `event_data`
-  > Additional event-specific data in JSON format for detailed forensic
-  > analysis.
-- `resolved`: Whether the security event has been resolved by administrators.
-- `resolved_at`: Timestamp when the security event was marked as resolved.
-- `resolved_by`: Name of the administrator who resolved the security event.
-- `created_at`: Timestamp when the security event was recorded.
-- `updated_at`: Timestamp when the security event was last updated.
+  > Detailed explanation of maintenance scope, tasks, and potential impact on
+  > platform services.
+- `planned_start_at`
+  > Scheduled start time for the maintenance window allowing service
+  > interruption planning.
+- `planned_end_at`
+  > Scheduled end time establishing the maximum expected duration of service
+  > impact.
+- `actual_start_at`
+  > Actual timestamp when maintenance operations began execution for
+  > performance tracking.
+- `actual_end_at`
+  > Actual timestamp when maintenance operations completed execution for SLA
+  > compliance.
+- `created_at`
+  > Timestamp when this maintenance schedule was initially created by
+  > administrators.
+- `updated_at`
+  > Timestamp when this maintenance schedule was last modified for change
+  > tracking.
+- `deleted_at`
+  > Timestamp when this maintenance schedule was soft-deleted for archival
+  > while preserving records.
 
-### `discussion_board_data_retention_policies`
+### `discussion_board_status_types`
 
-Data retention policies and compliance tracking for the discussion board
+Centralized enumeration of all status values used across the discussion
+board system.
+
+This table serves as the authoritative source for status definitions
+including article states, comment states, admin request statuses, user
+account states, and ban statuses. Each record defines a specific status
+within a category, with display ordering, descriptions, and active status
+flags.
+
+**Key References:**
+- Article statuses: [discussion_board_articles](#discussion_board_articles)
+- Comment statuses: [discussion_board_comments](#discussion_board_comments)
+- Admin request statuses: [discussion_board_admin_requests](#discussion_board_admin_requests)
+- User account states: [discussion_board_members](#discussion_board_members), {@link
+discussion_board_admins}, [discussion_board_super_admins](#discussion_board_super_admins)
+- Ban statuses: [discussion_board_user_bans](#discussion_board_user_bans)
+
+**Usage:** Instead of hardcoding status values in application logic, all
+status references should use foreign keys to this table for
+maintainability and consistency.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `category`
+  > Domain category of this status (e.g., "article", "comment",
+  > "admin_request", "user_account", "ban"). Determines which domain this
+  > status belongs to and groups related statuses together.
+- `code`
+  > Unique status code within its category (e.g., "pending", "approved",
+  > "draft", "published"). This is the programmatic identifier used in
+  > business logic and API responses.
+- `display_name`
+  > Human-readable display name for UI presentation (e.g., "Pending
+  > Approval", "Approved", "Draft Article", "Published").
+- `description`
+  > Detailed description explaining the status meaning and when it should be
+  > used. Provides context for administrators and developers.
+- `display_order`
+  > Numerical ordering for display purposes. Lower numbers appear first in
+  > dropdowns and UI controls. Used to establish logical ordering of statuses
+  > within a category.
+- `is_active`
+  > Whether this status is currently active and available for use. Inactive
+  > statuses are hidden from UI but preserved for historical records.
+- `created_at`
+  > Timestamp when this status type was created. System-generated field for
+  > audit purposes.
+- `updated_at`
+  > Timestamp when this status type was last updated. System-maintained field
+  > for tracking changes.
+- `deleted_at`
+  > Timestamp when this status type was soft deleted. Allows for removal from
+  > UI while preserving referential integrity for historical records.
+
+### `discussion_board_system_audit_logs`
+
+Comprehensive audit trail of all system actions including user actions,
+administrative decisions, content modifications, and configuration
+changes.
+
+This table serves as the central repository for all auditable events
+across the discussion board platform. Each record represents a single
+action performed by an actor (user, administrator, or system process)
+that had meaningful impact on the system state or user data. Audit logs
+are immutable once created and provide forensic capability for security
+analysis, compliance reporting, and troubleshooting.
+
+When an administrator investigates suspicious activity, they can query
+this table to reconstruct the sequence of events leading to a particular
+system state. Similarly, when users report issues with their content,
+support staff can review the audit trail to identify what changes were
+made and by whom.
+
+The table follows a polymorphic ownership pattern where different actor
+types can be associated with audit entries through subtype tables. All
+audit entries are timestamped and include categorization for efficient
+filtering. [discussion_board_members](#discussion_board_members), {@link
+discussion_board_admins}, and [discussion_board_super_admins](#discussion_board_super_admins) can
+be actors via the subtype tables. The parameters field has been
+normalized into a child table to maintain 1NF compliance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `actor_type`
+  > Type of actor who performed this action for polymorphic ownership
+  > pattern. Used for routing to appropriate subtype table. Valid values:
+  > 'member', 'admin', 'super_admin', 'system'.
+- `action_type`
+  > Specific action performed (e.g., 'user_login', 'article_create',
+  > 'comment_edit', 'user_ban', 'section_create', 'admin_request_approve').
+  > Used for detailed categorization and filtering of similar actions.
+- `action_category`
+  > Broad category classifying the type of action for high-level reporting
+  > and analysis. Valid values: 'authentication', 'user_management',
+  > 'content_modification', 'administrative', 'system_configuration'.
+- `action_description`
+  > Human-readable description of the action performed, suitable for display
+  > in audit reports and administrative interfaces. Should include context
+  > about what was changed.
+- `target_type`
+  > Type of entity that was the target of this action. Valid values: 'user',
+  > 'article', 'comment', 'section', 'attachment', 'admin_request', 'system'.
+  > Used in conjunction with target_id to identify the affected entity.
+- `target_id`
+  > UUID identifier of the specific entity that was the target of this
+  > action, corresponding to target_type field. Used to trace all actions
+  > affecting a particular entity.
+- `ip_address`
+  > IP address from which the action was performed, captured for security and
+  > auditing purposes. Essential for tracking suspicious activity patterns.
+- `user_agent`
+  > HTTP User-Agent header from the client that performed the action,
+  > captured for forensic analysis and device fingerprinting.
+- `created_at`
+  > Timestamp when the audit entry was created, representing when the action
+  > occurred. Audit entries are immutable once created.
+- `updated_at`
+  > Timestamp when the audit entry was last updated, used if audit entries
+  > can be annotated or have status changes.
+- `deleted_at`
+  > Timestamp when the audit entry was soft-deleted for compliance with data
+  > retention policies.
+
+### `discussion_board_system_metadata`
+
+Centralized system metadata storage for feature flags, configuration
+values, and shared settings referenced by all components across the
 platform.
 
-This table stores system-wide data retention policies that define how
-long different types of data should be retained before automatic deletion
-or archival. Each policy specifies retention periods, data types covered,
-and compliance requirements for regulatory adherence.
+This table serves as the single source of truth for system configuration,
+allowing components to reference consistent values for operational
+parameters, feature toggles, and environment settings. Configuration
+values are typed and scoped to support different operational contexts
+(global, per-domain, per-environment).
 
-Policies are managed by system administrators and enforced automatically
-by the platform. The table tracks policy status, enforcement history, and
-compliance verification timestamps to ensure regulatory requirements are
-met.
+Key use cases include: dynamic feature flag toggling for A/B testing,
+environment-specific configuration values, operational parameter
+adjustments without deployment, and centralized settings management for
+administrative control.
 
-This table supports the data privacy considerations mentioned in the
-system performance and security requirements.
+Configuration lifecycle: Values can be created, updated, activated,
+deactivated, or archived, with full audit trail through snapshots. Status
+transitions ensure proper governance of configuration changes.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `policy_name`
-  > Unique name identifier for the retention policy, used for system
-  > reference and reporting.
-- `description`
-  > Detailed description of the policy purpose, scope, and compliance
-  > requirements.
-- `retention_period_days`
-  > Number of days data should be retained before automatic deletion or
-  > archival.
-- `retention_action`: Action to take when retention period expires (delete, archive, anonymize).
-- `compliance_standard`
-  > Regulatory standard or compliance framework this policy supports (e.g.,
-  > GDPR, CCPA).
-- `is_active`: Indicates whether this policy is currently active and being enforced.
-- `last_enforced_at`: Timestamp when this policy was last enforced by the system.
-- `next_enforcement_due`: Scheduled timestamp for the next policy enforcement cycle.
-- `created_at`: Timestamp when the policy was created.
-- `updated_at`: Timestamp when the policy was last updated.
-- `deleted_at`
-  > Timestamp when the policy was soft-deleted, allowing for policy lifecycle
-  > management.
-
-### `discussion_board_data_retention_policy_data_types`
-
-Junction table linking data retention policies to specific data types
-they govern.
-
-This table resolves the 1NF violation by properly separating the
-many-to-many relationship between retention policies and data types. Each
-record represents a specific data type that is subject to a particular
-retention policy, allowing for flexible policy application across
-different data categories.
-
-The table maintains referential integrity between {@link
-discussion_board_data_retention_policies} and the various data types
-defined in the system, ensuring that retention rules are properly
-enforced for each category of stored information.
+Relationships: References [discussion_board_status_types](#discussion_board_status_types) for
+status management, and may be associated with snapshots for version
+history.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_data_retention_policy_id`
-  > References the specific retention policy being applied. {@link
-  > discussion_board_data_retention_policies.id}
+- `status_type_id`
+  > Current status of this configuration value for lifecycle management.
+  > [discussion_board_status_types.id](#discussion_board_status_types)
+- `name`
+  > Unique identifier for the configuration value, used by components to
+  > reference this setting.
+- `value`
+  > Configuration value stored as string, with semantic interpretation based
+  > on data_type field.
 - `data_type`
-  > The specific data type category that this retention policy applies to.
-  > Examples include 'user_profiles', 'article_content', 'comment_data',
-  > 'audit_logs', etc.
-- `created_at`: Timestamp when this policy-data type mapping was created.
-- `updated_at`: Timestamp when this policy-data type mapping was last updated.
+  > Data type of the value for proper parsing and validation (e.g.,
+  > 'boolean', 'integer', 'string', 'json', 'float').
+- `scope`
+  > Operational scope defining where this configuration applies (e.g.,
+  > 'global', 'production', 'staging', 'development', 'tenant:*').
+- `description`
+  > Human-readable explanation of this configuration's purpose and usage
+  > guidelines.
+- `version`
+  > Incremental version number for optimistic concurrency control and change
+  > tracking.
+- `created_at`: Timestamp when this configuration was first created in the system.
+- `updated_at`: Timestamp when this configuration was last modified.
 - `deleted_at`
-  > Timestamp when this policy-data type mapping was soft deleted, if
-  > applicable.
+  > Timestamp when this configuration was soft-deleted, allowing retention
+  > for audit purposes.
+
+### `discussion_board_status_enum_snapshots`
+
+Audit trail snapshots of status enumeration changes, capturing historical
+states for compliance and version tracking.
+
+Each snapshot records a point-in-time state of a status enumeration entry
+when it was created or modified. This enables tracking changes to status
+values over time for audit compliance, version history, and regulatory
+requirements. Snapshots preserve the exact state of status enumerations
+at specific moments, allowing reconstruction of historical status
+configurations.
+
+Snapshots are created automatically when status enumeration entries are
+modified, capturing both the new values and the context of the change.
+They are read-only records that provide immutable evidence of status
+configuration states. [discussion_board_status_enums](#discussion_board_status_enums) is the source
+table for these snapshots.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_status_enum_id`
+  > Status enumeration entry being snapshotted. References the source status
+  > enumeration record in [discussion_board_status_enums.id](#discussion_board_status_enums).
+- `snapshot_name`
+  > Descriptive name identifying this snapshot, such as
+  > "v1.2.3-status-update" or "compliance-baseline-2025".
+- `description`
+  > Detailed description of the status enumeration at snapshot time. May be
+  > null if no description existed.
+- `snapshot_reason`
+  > Reason for creating this snapshot, such as "system-update",
+  > "compliance-audit", or "manual-version". Helps document why the snapshot
+  > was taken.
+- `created_at`
+  > Timestamp when this snapshot was created. Represents the exact moment the
+  > status enumeration state was captured.
+- `updated_at`
+  > Timestamp when this snapshot was last updated. For audit purposes,
+  > typically matches created_at since snapshots are immutable.
+- `deleted_at`
+  > Timestamp when this snapshot was soft deleted. Allows historical
+  > preservation while marking records as removed.
+
+### `discussion_board_status_enum_references`
+
+Tracks dependency relationships between status enumeration values and
+domain tables that reference them.
+
+This table enables safe validation before deleting or modifying status
+values by identifying which business tables depend on specific status
+options. Each record documents a foreign key relationship from a domain
+table column to a status enumeration value, supporting dependency
+analysis, migration planning, and referential integrity maintenance.
+
+Used by system administrators and database migration tools to ensure
+status value changes don't break existing data relationships. Provides
+visibility into how status values are utilized across the platform for
+governance and documentation purposes.
+
+Key purpose: Prevent orphaned data references when status values are
+modified or removed.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_status_enums_id`
+  > Referenced status enumeration value's {@link
+  > discussion_board_status_enums.id}.
+- `referenced_table`
+  > Name of the domain table that contains a foreign key referencing this
+  > status value. Examples: 'discussion_board_articles',
+  > 'discussion_board_comments', 'discussion_board_admin_requests'.
+- `referenced_column`
+  > Column name within the referenced table that contains the foreign key to
+  > the status value. Examples: 'status', 'article_status', 'request_status'.
+- `created_at`: Timestamp when this dependency relationship was documented or discovered.
+- `updated_at`: Timestamp when this dependency record was last updated.
+- `deleted_at`
+  > Timestamp when this dependency relationship was marked as deleted (soft
+  > delete).
+
+### `discussion_board_system_notification_of_members`
+
+Subtype table implementing polymorphic ownership pattern for system
+notifications targeted to member actors. Establishes 1:1 relationship
+between system notifications and member recipients while storing
+member-specific notification metadata such as read status, acknowledgment
+timestamps, and delivery preferences.
+
+This table enables personalized notification delivery where each system
+notification can be customized for individual members while maintaining a
+single authoritative source for notification content in the parent {@link
+discussion_board_system_notifications} table. Member-specific attributes
+like read status and acknowledgment timing are stored separately to avoid
+duplication and ensure proper audit trails.
+
+The 1:1 unique constraint ensures each system notification can have at
+most one member-specific subtype record, enforcing correct polymorphic
+ownership semantics where notifications can belong to multiple actor
+types but only one specific actor instance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_system_notification_id`
+  > Associated system notification's {@link
+  > discussion_board_system_notifications.id} that this member subtype
+  > references. Represents the parent notification containing shared content
+  > and metadata.
+- `discussion_board_member_id`
+  > Target member actor's [discussion_board_members.id](#discussion_board_members) who is the
+  > recipient of this personalized notification. Establishes the member-actor
+  > ownership relationship.
+- `is_read`
+  > Whether the member has marked this notification as read, representing
+  > their engagement status with the notification content. Defaults to false
+  > for new notifications.
+- `read_at`
+  > Timestamp when the member marked this notification as read, if
+  > applicable. Null indicates the notification remains unread. Used for
+  > engagement analytics.
+- `acknowledged_at`
+  > Timestamp when the member acknowledged (dismissed or acted upon) this
+  > notification, representing their response action beyond mere reading.
+  > Null indicates no acknowledgment.
+- `notification_preferences`
+  > Member-specific notification delivery preferences for this notification
+  > type, such as email frequency, urgency level, or delivery channel
+  > preferences. Stored as structured JSON when needed.
+- `created_at`
+  > Timestamp when this member-specific notification subtype record was
+  > created.
+- `updated_at`
+  > Timestamp when this member-specific notification subtype record was last
+  > updated.
+- `deleted_at`
+  > Timestamp when this member-specific notification subtype record was soft
+  > deleted. Null indicates active record.
+
+### `discussion_board_system_notification_of_admins`
+
+Subtype table linking system notifications to admin actors with 1:1
+constraint, storing admin-specific metadata.
+
+This table implements the polymorphic ownership pattern for system
+notifications, allowing notifications to be targeted specifically at
+admin actors. Each record creates a 1:1 relationship between a system
+notification and an admin actor, ensuring that the notification can be
+properly associated with admin-specific contexts such as administrative
+alerts, role-based announcements, or permission notifications.
+
+The unique constraint on `discussion_board_system_notification_id`
+enforces that each system notification can be linked to at most one admin
+actor through this subtype, while the foreign key to
+`discussion_board_admins` identifies which administrator is associated
+with the notification. [discussion_board_system_notifications](#discussion_board_system_notifications)
+serve as the parent notification entity, while this subtype provides
+admin-actor-specific context.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_system_notification_id`
+  > Reference to the parent system notification entity. This establishes the
+  > 1:1 relationship between the notification and admin actor subtype. {@link
+  > discussion_board_system_notifications.id}
+- `discussion_board_admin_id`
+  > Reference to the admin actor associated with this notification subtype.
+  > Identifies which administrator receives or is associated with the system
+  > notification. [discussion_board_admins.id](#discussion_board_admins)
+- `created_at`: Timestamp when this admin notification subtype record was created.
+- `updated_at`: Timestamp when this admin notification subtype record was last updated.
+- `notification_context`
+  > Admin-specific context or metadata for the notification, such as
+  > administrative action references, role-based permissions, or
+  > administrative workflow identifiers.
+
+### `discussion_board_system_notification_of_super_admins`
+
+Subtype table establishing 1:1 relationship between system notifications
+and super administrator actors within the polymorphic ownership pattern.
+
+This table links individual system notifications to specific super
+administrator accounts, storing actor-specific metadata and session
+context for targeted notifications. Each system notification can be
+associated with at most one super administrator through this subtype
+relationship, enforcing the polymorphic ownership design where different
+actor types have separate subtype tables. The unique constraint on {@link
+discussion_board_system_notifications.id} ensures strict 1:1 cardinality
+between notifications and super administrator associations.
+
+Used for delivering administrative announcements, platform status
+updates, and system alerts specifically to super administrator accounts
+with elevated privileges.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_system_notification_id`
+  > Parent system notification's {@link
+  > discussion_board_system_notifications.id}.
+- `discussion_board_super_admin_id`
+  > Target super administrator actor's {@link
+  > discussion_board_super_admins.id}.
+- `discussion_board_super_admin_session_id`
+  > Super administrator session context at notification delivery time.
+  > References [discussion_board_super_admin_sessions.id](#discussion_board_super_admin_sessions).
+- `created_at`
+  > Timestamp when this notification-super administrator association was
+  > created. Always set at insertion and never updated.
+- `updated_at`
+  > Timestamp when this notification association was last modified, typically
+  > for metadata updates or acknowledgment status changes.
+
+### `discussion_board_system_health_metric_metadata`
+
+Key-value metadata storage for system health metrics, enabling flexible
+tagging and custom attributes without violating 1NF normalization. Each
+record stores a single metadata key-value pair associated with a specific
+system health metric measurement.
+
+This subsidiary table supports the polymorphic metadata needs of system
+health metrics by providing structured key-value storage for additional
+context, tags, labels, or custom attributes. Examples include:
+environment tags ("environment": "production"), monitoring source labels
+("source": "prometheus"), measurement units ("unit": "milliseconds"), or
+custom categorization ("category": "database_health").
+
+All records belong to a parent {@link
+discussion_board_system_health_metrics} entity through the foreign key
+relationship, and the combination of (system_health_metric_id, key) must
+be unique to prevent duplicate metadata keys for the same health metric.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `system_health_metric_id`
+  > Parent system health metric's {@link
+  > discussion_board_system_health_metrics.id}.
+- `key`
+  > Metadata key identifier representing the type or category of metadata
+  > being stored. Examples: "environment", "source", "unit", "category",
+  > "severity", "region", "instance_id". Should use snake_case naming for
+  > consistency.
+- `value`
+  > Metadata value associated with the key. Stores the actual data, tag,
+  > label, or attribute value. Examples: "production", "prometheus",
+  > "milliseconds", "database_health", "warning", "us-east-1",
+  > "instance-12345". May contain any string data up to reasonable length
+  > limits.
+- `created_at`
+  > Timestamp when this metadata record was created. Automatically set when
+  > the key-value pair is first associated with the parent health metric.
+- `updated_at`
+  > Timestamp when this metadata record was last updated. Useful for tracking
+  > changes to metadata values over time when tags or labels are modified.
+
+### `discussion_board_system_audit_log_of_members`
+
+Subtype table establishing polymorphic ownership relationship between
+system audit logs and member actors.
+
+Links individual system audit log entries to member actors who performed
+the logged actions, storing member-specific context including session
+information. Each system audit log can be associated with exactly one
+actor subtype (member, admin, or super admin) through a 1:1 relationship
+enforced by a unique constraint on the audit log foreign key.
+
+Provides tracking of which member performed audit-logged system actions
+along with their session context for full accountability and compliance.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `system_audit_log_id`
+  > Reference to the system audit log entry this subtype belongs to. {@link
+  > discussion_board_system_audit_logs.id}
+- `member_id`
+  > Member actor who performed the audit-logged action. {@link
+  > discussion_board_members.id}
+- `member_session_id`
+  > Member session context when the action was performed. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when this member subtype association was created.
+- `updated_at`: Timestamp when this member subtype association was last updated.
+
+### `discussion_board_system_audit_log_of_admins`
+
+Subtype table for admin actors in the system audit log, establishing
+polymorphic ownership relationship with administrator accounts and
+sessions.
+
+Each record in this table provides the specific administrator actor
+context for a system audit log entry, linking the audit action to the
+exact administrator account and session that performed it. This enables
+fine-grained tracking of administrative actions across the platform while
+maintaining referential integrity to the corresponding admin identity
+records.
+
+This table implements the subtype pattern within the systematic audit
+logging system, ensuring each audit log entry can have at most one actor
+owner while supporting multiple actor types (member, admin, super admin)
+through separate subtype tables. The 1:1 constraint prevents duplicate
+actor assignments and ensures unambiguous attribution of system actions.
+[discussion_board_system_audit_logs.id](#discussion_board_system_audit_logs) represents the parent audit
+log entry, while [discussion_board_admins.id](#discussion_board_admins) and {@link
+discussion_board_admin_sessions.id} reference the specific administrator
+and their active session context.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_system_audit_log_id`
+  > Parent system audit log entry. {@link
+  > discussion_board_system_audit_logs.id}
+- `discussion_board_admin_id`
+  > Administrator account that performed the audited action. {@link
+  > discussion_board_admins.id}
+- `discussion_board_admin_session_id`
+  > Administrator session active during the audited action. {@link
+  > discussion_board_admin_sessions.id}
+- `created_at`
+  > Timestamp when this subtype record was created, matching the parent audit
+  > log creation time.
+- `updated_at`
+  > Timestamp when this subtype record was last updated for administrative
+  > maintenance purposes.
+
+### `discussion_board_system_audit_log_of_super_admins`
+
+Subtype table for super admin actors in the system audit log,
+establishing polymorphic ownership relationship with super administrator
+accounts and sessions.
+
+This implements the polymorphic ownership pattern for system audit logs
+where super administrators can perform administrative actions. The table
+connects super admin identities to audit log entries using actor_type
+pattern without creating circular foreign key references. Each record
+establishes a 1:1 relationship with a main audit log entry in {@link
+discussion_board_system_audit_logs}.
+
+Super admin audit log entries track elevated administrative actions such
+as user banning, administrator promotions, system configuration changes,
+and other privileged operations requiring super administrator authority.
+This table identifies super admin ownership without violating FK
+direction rules by using actor_type field instead of direct FK to actor
+tables.
+
+**IMPORTANT**: This table uses actor_type = 'superAdmin' to identify
+ownership, avoiding circular FK references that would violate
+DATABASE_SCHEMA.md normalization rules.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `system_audit_log_id`
+  > Reference to the main system audit log entry owned by this super admin
+  > actor. [discussion_board_system_audit_logs.id](#discussion_board_system_audit_logs)
+- `actor_type`
+  > Identifies the actor type as 'superAdmin' for polymorphic ownership
+  > pattern. This field replaces direct foreign keys to avoid circular
+  > references while maintaining audit trail integrity.
+
+### `discussion_board_system_audit_log_parameters`
+
+Normalized key-value parameter storage for system audit logs, maintaining
+1NF compliance for action metadata.
+
+Each audit log action may have associated parameters (e.g., changed field
+names, old/new values, target IDs, operation metadata). Instead of
+storing parameters as JSON within the audit log, this table normalizes
+them into separate rows for proper database normalization. This enables
+efficient filtering and querying of audit logs by parameter values,
+maintains referential integrity, and prevents schema fragmentation.
+
+Parameters are referenced by {@link
+discussion_board_system_audit_logs.id} and stored as typed key-value
+pairs. The table supports indexing and search on both key and value
+fields for audit analysis and compliance reporting.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `system_audit_log_id`
+  > Parent audit log record's [discussion_board_system_audit_logs.id](#discussion_board_system_audit_logs).
+  > Each parameter belongs to a specific audit log entry capturing a system
+  > action.
+- `parameter_key`
+  > Parameter name identifying the metadata attribute being stored. Examples:
+  > 'field_name', 'old_value', 'new_value', 'target_id', 'operation_type',
+  > 'ip_address', 'user_agent'.
+- `parameter_value`
+  > String representation of the parameter value. All parameter values are
+  > stored as strings for consistency, with type interpretation handled at
+  > application level based on parameter_key context.
+- `created_at`
+  > Timestamp when this parameter was recorded. Typically matches the parent
+  > audit log creation time but tracked separately for normalization
+  > integrity.
+- `updated_at`
+  > Timestamp when this parameter was last updated. Parameters are generally
+  > immutable after creation, but updated_at supports potential corrections
+  > or metadata enhancements.
+
+### `discussion_board_status_enum_snapshot_metadata`
+
+Normalized key-value storage for status enumeration snapshot metadata,
+addressing 1NF compliance for JSON data.
+
+This table stores flexible metadata for {@link
+discussion_board_status_enum_snapshots} while maintaining database
+normalization. Instead of storing JSON objects or arrays directly in the
+snapshot table, metadata such as tags, labels, annotations, and custom
+attributes are extracted into key-value pairs here. Each metadata entry
+belongs to exactly one status enumeration snapshot and can include
+structured information about the snapshot's context, classification, or
+categorization.
+
+Use cases include:
+- Tagging snapshots for organizational purposes
+- Adding labels to indicate snapshot significance or priority
+- Storing custom attributes that vary between snapshot types
+- Maintaining audit trail metadata that evolves over time
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_status_enum_snapshot_id`
+  > Parent status enumeration snapshot that owns this metadata entry. {@link
+  > discussion_board_status_enum_snapshots.id}.
+- `key`
+  > Metadata key name identifying the type of information stored. Examples
+  > include "tag", "priority", "category", "review_status", "audit_scope".
+  > Keys should be descriptive and consistent across metadata entries.
+- `value`
+  > Metadata value associated with the key. Stores the actual content such as
+  > tag names, priority levels, category identifiers, or other metadata
+  > strings. Values can be any string appropriate for the key's purpose.
+- `created_at`
+  > Timestamp when this metadata entry was created. Records when the
+  > key-value pair was added to the snapshot.
+- `updated_at`
+  > Timestamp when this metadata entry was last modified. Updated when
+  > metadata values change over time.
+- `deleted_at`
+  > Timestamp when this metadata entry was soft-deleted. Allows for metadata
+  > removal while preserving history for audit purposes.
 
 ## Sections
 
@@ -1384,12 +1795,8 @@ Properties as follows:
 erDiagram
 "discussion_board_sections" {
   String id PK
-  String created_by_admin_id FK
-  String last_modified_by_admin_id FK "nullable"
   String name UK
-  String description
-  String status
-  Int display_order
+  String description "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
@@ -1398,356 +1805,130 @@ erDiagram
   String id PK
   String discussion_board_section_id FK
   String name
-  String description
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_section_statistics" {
-  String id PK
-  String discussion_board_section_id FK,UK
-  Int view_count
-  Int article_count
-  Int comment_count
-  DateTime last_activity_at
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_section_administrators" {
-  String id PK
-  String discussion_board_admin_id FK "nullable"
-  String discussion_board_super_admin_id FK "nullable"
-  String discussion_board_section_id FK
-  String permission_level
-  DateTime assignment_date
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_section_preferences" {
-  String id PK
-  String discussion_board_section_id FK
-  String discussion_board_user_id FK
-  Int display_order
-  Boolean notify_new_articles
-  Boolean notify_new_comments
-  Boolean is_hidden
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_section_archives" {
-  String id PK
-  String discussion_board_section_id FK,UK
-  DateTime archived_at
-  String archived_by
-  String reason
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_section_files" {
-  String id PK
-  String discussion_board_section_id FK
-  String filename
-  String file_type
-  Int file_size
-  String file_path
   String description "nullable"
   DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
+  String snapshot_reason "nullable"
 }
-"discussion_board_section_images" {
+"discussion_board_section_deletions" {
   String id PK
-  String discussion_board_section_id FK
-  String filename
-  String mime_type
-  Int file_size
-  Int width
-  Int height
-  String image_type
-  String storage_path
-  String alt_text "nullable"
+  String discussion_board_section_id FK,UK
+  String deleted_by_member_id FK
+  String reason "nullable"
+  DateTime created_at
+  DateTime updated_at
 }
 "discussion_board_section_snapshots" }o--|| "discussion_board_sections" : section
-"discussion_board_section_statistics" |o--|| "discussion_board_sections" : section
-"discussion_board_section_administrators" }o--|| "discussion_board_sections" : section
-"discussion_board_section_preferences" }o--|| "discussion_board_sections" : section
-"discussion_board_section_archives" |o--|| "discussion_board_sections" : section
-"discussion_board_section_files" }o--|| "discussion_board_sections" : section
-"discussion_board_section_images" }o--|| "discussion_board_sections" : section
+"discussion_board_section_deletions" |o--|| "discussion_board_sections" : section
 ```
 
 ### `discussion_board_sections`
 
-Main sections table storing core section information for organizing
-discussion board content.
+Main section table containing all thematic content categories for article
+organization managed by administrators.
 
-Sections serve as the primary organizational structure for the discussion
-board, categorizing articles by topics such as Politics, Economy, and
-Current Affairs. Each section contains a name, description, and metadata
-about its creation and management.
+Sections represent high-level content groupings such as Politics,
+Economy, or Current Affairs that administrators {@link
+discussion_board_admins} and [discussion_board_super_admins](#discussion_board_super_admins)
+create, edit, and manage. Each section has a unique name and description
+that users can browse to find relevant articles via {@link
+discussion_board_articles}. Sections serve as the primary categorization
+backbone for content discovery and navigation.
 
-Sections are created and managed exclusively by administrators. Regular
-users can browse sections and post articles within them, but cannot
-create or modify section definitions. The table maintains audit trails
-through snapshot relationships and tracks section statistics separately.
-
-[discussion_board_section_snapshots](#discussion_board_section_snapshots) provides version history for
-section changes.
-[discussion_board_section_statistics](#discussion_board_section_statistics) tracks usage metrics and
-engagement data.
-[discussion_board_section_administrators](#discussion_board_section_administrators) manages administrator
-permissions for each section.
-[discussion_board_admins](#discussion_board_admins) and [discussion_board_super_admins](#discussion_board_super_admins)
-are the administrator entities that create and manage sections.
+Administrators can create new sections, edit existing ones, or delete
+sections through [discussion_board_section_deletions](#discussion_board_section_deletions) soft deletion
+while preserving access patterns. Users can view all available sections
+to browse articles by thematic category. Section uniqueness is enforced
+at the database level to prevent duplicate categorization.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `created_by_admin_id`
-  > Administrator who created this section. References either regular admin
-  > or super admin. [discussion_board_admins.id](#discussion_board_admins) or {@link
-  > discussion_board_super_admins.id}.
-- `last_modified_by_admin_id`
-  > Administrator who last modified this section. References either regular
-  > admin or super admin. [discussion_board_admins.id](#discussion_board_admins) or {@link
-  > discussion_board_super_admins.id}.
-- `name`: Unique name of the section used for display and URL generation.
-- `description`: Detailed description explaining the section's purpose and content scope.
-- `status`: Current status of the section: 'active', 'inactive', or 'archived'.
-- `display_order`: Numerical order for displaying sections in the user interface.
-- `created_at`: Timestamp when the section was created.
-- `updated_at`: Timestamp when the section was last modified.
-- `deleted_at`: Timestamp when the section was soft-deleted (archived).
+- `name`
+  > Unique name of the section used for identification and browsing. Must be
+  > unique across all active sections. Examples: "Politics", "Economy",
+  > "Current Affairs". Maximum length should be enforced at application
+  > level.
+- `description`
+  > Descriptive text explaining the section's purpose and content focus.
+  > Helps users understand what type of articles belong in this category. Can
+  > be null for newly created sections.
+- `created_at`
+  > Timestamp when this section was created by an administrator. Used for
+  > auditing and chronological ordering of sections.
+- `updated_at`
+  > Timestamp when this section was last modified. Updated whenever name or
+  > description changes. Used for tracking recent activity.
+- `deleted_at`
+  > Timestamp when this section was soft-deleted by an administrator. Allows
+  > preservation of existing article associations while removing the section
+  > from active listings. Null indicates the section is currently active.
 
 ### `discussion_board_section_snapshots`
 
-Point-in-time snapshots of section data for audit trail and version history.
+Audit trail of section changes over time, capturing point-in-time
+metadata for compliance.
 
-This table captures the complete state of a section at specific moments
-in time, typically when modifications are made by administrators. Each
-snapshot preserves the section's name, description, and configuration
-settings as they existed at the time of capture, enabling historical
-tracking of changes and supporting audit requirements.
+This table stores historical snapshots of section configurations whenever
+they are modified by administrators. Each record represents the complete
+state of a section at a specific moment in time, enabling compliance
+auditing and change tracking. The snapshots capture the name,
+description, and metadata fields exactly as they existed when the
+snapshot was created.
 
-The snapshots are created automatically when section data is modified and
-serve as an immutable record of section evolution. This supports
-compliance requirements, facilitates rollback capabilities, and provides
-administrators with visibility into section modification history.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_section_id`
-  > Reference to the original section being snapshotted. {@link
-  > discussion_board_sections.id}
-- `name`: Section name as it existed at the time of snapshot.
-- `description`: Section description as it existed at the time of snapshot.
-- `created_at`: Timestamp when this snapshot was created.
-- `updated_at`
-  > Timestamp when this snapshot was last updated (typically matches
-  > created_at for snapshots).
-- `deleted_at`: Timestamp when this snapshot was soft-deleted, if applicable.
-
-### `discussion_board_section_statistics`
-
-Usage statistics and analytics for discussion board sections tracking
-view counts, content activity, and engagement metrics.
-
-This table provides comprehensive analytics for each section including
-view counts, article creation rates, comment activity, and engagement
-metrics. The statistics are updated automatically as users interact with
-content in each section.
-
-Key relationships include linkage to [discussion_board_sections.id](#discussion_board_sections)
-for section reference and integration with article and comment counting
-systems.
+Snapshots are created automatically whenever sections are created or
+updated, providing a comprehensive audit trail for administrative
+decisions and section evolution over time. {@link
+discussion_board_sections.id}
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_section_id`
-  > Reference to the section these statistics belong to. {@link
+  > Reference to the original section that this snapshot captures. {@link
   > discussion_board_sections.id}
-- `view_count`: Total number of views for all articles within this section.
-- `article_count`: Total number of articles published in this section.
-- `comment_count`: Total number of comments made on articles in this section.
-- `last_activity_at`
-  > Timestamp of the most recent activity (article creation, comment, or
-  > view) in this section.
-- `created_at`: Timestamp when these statistics were first recorded.
-- `updated_at`: Timestamp when these statistics were last updated.
+- `name`
+  > Section name at the time this snapshot was created. Captured exactly as
+  > it appeared when the section was saved.
+- `description`
+  > Section description text at the time this snapshot was created. Preserves
+  > the full description content for historical reference.
+- `created_at`
+  > Timestamp when this snapshot was created. Marks the exact moment when the
+  > section state was captured for audit purposes.
+- `snapshot_reason`
+  > Optional reason or note explaining why this snapshot was created, such as
+  > 'initial creation', 'administrative update', or 'compliance audit'.
 
-### `discussion_board_section_administrators`
+### `discussion_board_section_deletions`
 
-Mapping table linking administrators to sections they manage with
-permission levels and assignment tracking.
+Soft deletion tracking for sections with preservation of existing article
+associations and access patterns.
 
-This table establishes the many-to-many relationship between
-administrators and sections, enabling flexible permission management
-across the discussion board. Each record represents a specific
-administrator's assignment to manage a particular section with defined
-permission levels.
-
-The table supports both regular administrators and super administrators,
-with permission levels determining the scope of management capabilities
-within each section. This design allows for granular control over section
-management while maintaining audit trails for assignment changes.
-
-References: [discussion_board_admins.id](#discussion_board_admins), {@link
-discussion_board_super_admins.id}, [discussion_board_sections.id](#discussion_board_sections)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_admin_id`
-  > Reference to the regular administrator assigned to this section. {@link
-  > discussion_board_admins.id}
-- `discussion_board_super_admin_id`
-  > Reference to the super administrator assigned to this section. {@link
-  > discussion_board_super_admins.id}
-- `discussion_board_section_id`
-  > Reference to the section being managed. {@link
-  > discussion_board_sections.id}
-- `permission_level`
-  > Permission level assigned to the administrator for this section.
-  > Determines what actions they can perform within the section.
-- `assignment_date`: Date when the administrator was assigned to manage this section.
-- `created_at`: Timestamp when this assignment record was created.
-- `updated_at`: Timestamp when this assignment record was last updated.
-- `deleted_at`: Timestamp when this assignment was soft deleted, if applicable.
-
-### `discussion_board_section_preferences`
-
-Stores user-specific preferences for section display order,
-notifications, and customization settings.
-
-Each record represents a user's personalized configuration for how they
-want sections to be displayed and what notifications they wish to
-receive. This includes display order preferences, notification toggles
-for new articles, and custom section visibility settings.
-
-Users can customize their section browsing experience through these
-preferences, allowing for personalized content organization. The
-preferences are stored per user per section, enabling granular control
-over the user interface.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_section_id`
-  > Reference to the section being configured. {@link
-  > discussion_board_sections.id}
-- `discussion_board_user_id`
-  > Reference to the user who owns these preferences. {@link
-  > discussion_board_users.id}
-- `display_order`: User-defined display order for this section relative to other sections.
-- `notify_new_articles`
-  > Whether the user wants to receive notifications for new articles in this
-  > section.
-- `notify_new_comments`
-  > Whether the user wants to receive notifications for new comments in this
-  > section.
-- `is_hidden`: Whether the user has hidden this section from their view.
-- `created_at`: Timestamp when the preference record was created.
-- `updated_at`: Timestamp when the preference record was last updated.
-
-### `discussion_board_section_archives`
-
-Archived sections preserving historical data while preventing new content
-creation.
-
-This table stores sections that have been archived by administrators.
-Archived sections retain all their historical data including articles and
-comments, but prevent new content creation. The archival process
-preserves the section's state at the time of archival while maintaining
-referential integrity with existing content.
-
-When a section is archived, administrators can specify a reason for
-archival. Archived sections remain accessible for viewing historical
-content but cannot be modified or receive new contributions. This allows
-for preserving valuable discussion history while managing active sections
-effectively.
-
-Archived sections maintain their relationship to {@link
-discussion_board_sections.id} and can be referenced by existing articles
-and comments that belong to the section.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_section_id`
-  > Reference to the original section being archived. {@link
-  > discussion_board_sections.id}
-- `archived_at`: Timestamp when the section was archived by an administrator.
-- `archived_by`
-  > Reference to the administrator who performed the archival action. {@link
-  > discussion_board_admins.id}
-- `reason`
-  > Explanation for why the section was archived, providing context for the
-  > administrative decision.
-- `created_at`: Timestamp when the archive record was created.
-- `updated_at`: Timestamp when the archive record was last updated.
-
-### `discussion_board_section_files`
-
-Supporting files and documents attached to sections for reference or
-guidelines.
-
-This table stores files that administrators can attach to sections to
-provide additional resources, guidelines, or reference materials. Each
-file is associated with exactly one section and includes metadata such as
-filename, file type, and file size for proper management and display.
-
-Files in this table are managed through section operations and are not
-independently created or managed by users. They serve as supplementary
-materials that enhance the section's content and utility for users
-browsing the discussion board.
+When a section is deleted by an administrator, a reference record is
+created here to maintain foreign key integrity with existing articles
+while marking the section as removed from public browsing. This table
+tracks who performed the deletion, when it occurred, and optionally why,
+without actually removing the section data from the database.
 
 [discussion_board_sections.id](#discussion_board_sections)
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_section_id`: Associated section's [discussion_board_sections.id](#discussion_board_sections).
-- `filename`: Original name of the uploaded file as provided by the user.
-- `file_type`: MIME type or file extension indicating the file format.
-- `file_size`: Size of the file in bytes for storage and display purposes.
-- `file_path`: Server-side storage path where the actual file is stored.
-- `description`: Optional description of the file's purpose or content.
-- `created_at`: Timestamp when the file was uploaded to the system.
-- `updated_at`: Timestamp when the file metadata was last modified.
-- `deleted_at`: Timestamp when the file was soft-deleted, allowing for recovery.
-
-### `discussion_board_section_images`
-
-Stores visual content associated with sections including banners, icons,
-and promotional images. Each image is linked to a specific section and
-contains metadata about the image file such as filename, mime type,
-dimensions, and storage information. This table supports the visual
-presentation requirements for section browsing and management.
-
-The images stored here are used for section branding and visual
-identification. Administrators can upload different types of images for
-different purposes (banners for section headers, icons for navigation,
-promotional images for featured sections). The table maintains
-referential integrity with the parent section and provides image-specific
-metadata while avoiding duplication of parent section attributes.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_section_id`
-  > The section that this image belongs to. {@link
-  > discussion_board_sections.id}
-- `filename`: Original filename of the uploaded image file.
-- `mime_type`: MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
-- `file_size`: Size of the image file in bytes.
-- `width`: Width of the image in pixels.
-- `height`: Height of the image in pixels.
-- `image_type`: Type of section image (banner, icon, promotional, thumbnail).
-- `storage_path`: File system path or storage location identifier for the image.
-- `alt_text`: Alternative text description for accessibility.
+- `discussion_board_section_id`: Reference to the deleted section's [discussion_board_sections.id](#discussion_board_sections).
+- `deleted_by_member_id`
+  > Reference to the member who performed the deletion via {@link
+  > discussion_board_members.id}. Administrators deleting sections are also
+  > members in the system.
+- `reason`
+  > Optional explanation for why the section was deleted, providing context
+  > for administrative actions.
+- `created_at`
+  > Timestamp when the deletion record was created, representing when the
+  > section was marked as deleted.
+- `updated_at`
+  > Timestamp when the deletion record was last updated, though typically
+  > deletion records are not modified after creation.
 
 ## Articles
 
@@ -1755,447 +1936,394 @@ Properties as follows:
 erDiagram
 "discussion_board_articles" {
   String id PK
+  String discussion_board_member_id FK
   String discussion_board_section_id FK
-  String discussion_board_user_id FK
   String title
-  String content
+  String body
   String status
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
-}
-"discussion_board_article_snapshots" {
-  String id PK
-  String discussion_board_article_id FK
-  String title
-  String content
-  String discussion_board_section_id
-  String discussion_board_user_id
-  DateTime created_at
-}
-"discussion_board_article_files" {
-  String id PK
-  String discussion_board_article_id FK
-  String file_name
-  String file_type
-  Int file_size
-  String storage_path
-  String uploaded_by "nullable"
-  String description "nullable"
-  Int download_count
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_article_images" {
-  String id PK
-  String discussion_board_article_id FK
-  String attachment_file_id
-  String status
-  Int display_order
-  String alt_text "nullable"
-  String caption "nullable"
 }
 "discussion_board_article_tags" {
   String id PK
   String discussion_board_article_id FK
-  String tag_name
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_article_snapshots" {
+  String id PK
+  String discussion_board_article_id FK
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+  String title
+  String body
+  String section_id
+  String author_id
+  String snapshot_reason "nullable"
+}
+"discussion_board_article_view_stats" {
+  String id PK
+  String discussion_board_article_id FK
+  String discussion_board_member_id FK "nullable"
+  String discussion_board_admin_id FK "nullable"
+  String discussion_board_super_admin_id FK "nullable"
+  String discussion_board_guest_id FK "nullable"
+  String discussion_board_member_session_id FK "nullable"
+  String discussion_board_admin_session_id FK "nullable"
+  String discussion_board_super_admin_session_id FK "nullable"
+  String discussion_board_guest_session_id FK "nullable"
+  DateTime viewed_at
+  String ip_address_hash "nullable"
+  String user_agent_hash "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_article_view_stats" {
-  String id PK
-  String discussion_board_article_id FK,UK
-  Int total_view_count
-  Int unique_viewer_count
-  DateTime last_viewed_at "nullable"
-  Float average_time_spent_seconds "nullable"
-  Float total_time_spent_seconds
-  DateTime created_at
-  DateTime updated_at
-}
 "discussion_board_article_favorites" {
   String id PK
-  String discussion_board_user_id FK
+  String discussion_board_member_id FK
   String discussion_board_article_id FK
+  String category "nullable"
+  String notes "nullable"
   DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_article_drafts" {
+"discussion_board_article_reactions" {
   String id PK
-  String discussion_board_article_id FK "nullable"
-  String draft_title
-  String draft_content
-  String draft_status
-  DateTime last_saved_at
-  String recovery_data "nullable"
-  DateTime draft_created_at
-  DateTime draft_updated_at
-  DateTime draft_deleted_at "nullable"
-}
-"discussion_board_article_image_files" {
-  String id PK
-  String discussion_board_article_image_id FK,UK
-  String filename
-  Int file_size
-  String mime_type
-  String storage_path
-  String original_filename "nullable"
+  String discussion_board_article_id FK
+  String discussion_board_member_id FK
+  String reaction_type
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_article_view_stat_events" {
+"discussion_board_article_metadata" {
   String id PK
-  String discussion_board_article_id FK
-  String discussion_board_user_session_id FK "nullable"
+  String discussion_board_article_id FK,UK
+  String meta_title "nullable"
+  String meta_description "nullable"
+  String meta_keywords "nullable"
+  Int reading_time_minutes "nullable"
+  Boolean is_featured
   DateTime created_at
-  Int view_duration_seconds "nullable"
+  DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_article_snapshots" }o--|| "discussion_board_articles" : article
-"discussion_board_article_files" }o--|| "discussion_board_articles" : article
-"discussion_board_article_images" }o--|| "discussion_board_articles" : article
 "discussion_board_article_tags" }o--|| "discussion_board_articles" : article
-"discussion_board_article_view_stats" |o--|| "discussion_board_articles" : article
+"discussion_board_article_snapshots" }o--|| "discussion_board_articles" : article
+"discussion_board_article_view_stats" }o--|| "discussion_board_articles" : article
 "discussion_board_article_favorites" }o--|| "discussion_board_articles" : article
-"discussion_board_article_drafts" }o--o| "discussion_board_articles" : article
-"discussion_board_article_image_files" |o--|| "discussion_board_article_images" : articleImage
-"discussion_board_article_view_stat_events" }o--|| "discussion_board_articles" : article
+"discussion_board_article_reactions" }o--|| "discussion_board_articles" : article
+"discussion_board_article_metadata" |o--|| "discussion_board_articles" : article
 ```
 
 ### `discussion_board_articles`
 
-Core article entity storing title, content, section assignment, and
-author information.
+Core article content representing user-generated posts in the discussion
+board.
 
-This table represents the main content unit of the discussion board where
-users create and share articles on economic and political topics. Each
-article belongs to a specific section and is authored by a registered
-user. The table supports article lifecycle management including creation,
-editing, deletion, and publication status tracking.
+Stores all article metadata including title, body content, author
+reference, and section categorization. Articles serve as the primary
+discussion starters in the forum and are the central entity around which
+comments, attachments, and tags are organized.
 
-Articles can have multiple attachments, tags, and engagement metrics
-through related child tables. The content field stores the main article
-text while the title provides a concise summary. The status field manages
-article workflow from draft to published to archived states.
-
-Related entities include: [discussion_board_sections.id](#discussion_board_sections) for
-section assignment, [discussion_board_users.id](#discussion_board_users) for author
-identification, and various child tables for attachments, tags, and
-engagement metrics.
+Articles follow a lifecycle from published, edited, to potentially
+deleted states while maintaining historical records through snapshots.
+Each article is authored by a registered member and categorized within
+exactly one thematic section.
 
 Properties as follows:
 
 - `id`: Primary Key.
+- `discussion_board_member_id`
+  > Author of this article. References the member who created and owns this
+  > content. [discussion_board_members.id](#discussion_board_members)
 - `discussion_board_section_id`
-  > Section where this article is published. {@link
-  > discussion_board_sections.id}
-- `discussion_board_user_id`: Author who created this article. [discussion_board_users.id](#discussion_board_users)
+  > Thematic section this article belongs to for categorization. References
+  > the section that provides topic context and organizational structure.
+  > [discussion_board_sections.id](#discussion_board_sections)
 - `title`
-  > Article title that summarizes the content. Must be between 5 and 200
-  > characters.
-- `content`
-  > Main article content containing the full text of the discussion. Must be
-  > at least 50 characters.
-- `status`: Publication status of the article. Values: draft, published, archived.
-- `created_at`: Timestamp when the article was first created.
-- `updated_at`: Timestamp when the article was last modified.
-- `deleted_at`: Timestamp when the article was soft-deleted, or null if active.
+  > Article title describing the post's topic and content focus. Displayed in
+  > lists and article pages for user recognition.
+- `body`
+  > Full article content containing the user's detailed analysis, discussion,
+  > or information. Supports markdown or rich text formatting for enhanced
+  > presentation.
+- `status`
+  > Current lifecycle state of the article. Values: 'published' (visible to
+  > users), 'edited' (modified since original), 'deleted' (soft deleted).
+- `created_at`: Timestamp when the article was originally created and published.
+- `updated_at`
+  > Timestamp when the article was last modified. Automatically updated on
+  > edits to track content evolution.
+- `deleted_at`
+  > Timestamp when the article was soft deleted, if applicable. Allows for
+  > content restoration and audit trails while removing from public view.
+
+### `discussion_board_article_tags`
+
+Junction table for many-to-many relationships between articles and tags.
+Associates articles with tag categories for content discovery and
+categorization.
+
+Each record links a single article to a single tag, establishing
+bidirectional relationships: an article can have multiple tags, and a tag
+can be associated with multiple articles. This structure supports article
+filtering by tags, content organization, and search capabilities.
+
+Primary use cases include tag-based browsing, article filtering, and
+content discovery through thematic categorization. The composite unique
+constraint ensures no duplicate article-tag associations exist.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`: Referenced article's [discussion_board_articles.id](#discussion_board_articles).
+- `created_at`: Timestamp when this article-tag association was created.
+- `updated_at`: Timestamp when this article-tag association was last modified.
 
 ### `discussion_board_article_snapshots`
 
-Audit trail for article changes with version history and edit tracking.
+Point-in-time snapshots of article content for audit trail and version
+history.
 
-This table captures point-in-time states of articles whenever they are
-modified, providing a complete version history for audit purposes. Each
-snapshot contains a denormalized copy of the article's state at the time
-of modification, including title, content, section assignment, and author
-information.
+This table captures complete article states at specific moments in time,
+preserving historical content for compliance, audit purposes, and version
+tracking. Each snapshot includes the full article content as it existed
+when the snapshot was taken, allowing reconstruction of article history
+and tracking of modifications over time.
 
-The snapshots are append-only records that support rollback capabilities,
-content moderation tracking, and compliance requirements. They reference
-the parent [discussion_board_articles](#discussion_board_articles) table and maintain the
-complete edit history of each article.
+Snapshots are automatically created when articles are edited, providing a
+version history that can be used to view previous states, track content
+changes, and maintain editorial accountability. The denormalized
+structure ensures each snapshot contains all necessary information
+without requiring joins to reconstruct historical states.
 
-Key business uses include:
-- Tracking content changes for moderation and compliance
-- Enabling article version comparison and rollback
-- Providing audit trail for content modifications
-- Supporting historical analysis of article evolution
+[discussion_board_articles.id](#discussion_board_articles) provides the reference to the parent
+article being snapshotted.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_article_id`
   > Reference to the parent article being snapshotted. {@link
-  > discussion_board_articles.id}
-- `title`: Title of the article at the time of snapshot creation.
-- `content`: Full content of the article at the time of snapshot creation.
-- `discussion_board_section_id`
-  > Section assignment of the article at the time of snapshot creation.
-  > [discussion_board_sections.id](#discussion_board_sections)
-- `discussion_board_user_id`
-  > Author of the article at the time of snapshot creation. {@link
-  > discussion_board_users.id}
-- `created_at`: Timestamp when this snapshot was created.
-
-### `discussion_board_article_files`
-
-Stores file attachments associated with articles, supporting multiple
-file types and formats.
-
-This table manages all file attachments that users can add to their
-articles, including documents, PDFs, and other supported file formats.
-Each file attachment is linked to a specific article and includes
-metadata such as file name, type, size, and storage path.
-
-Files are managed through the parent article entity and cannot exist
-independently. When an article is deleted, all associated file
-attachments are also removed. The system supports various file types with
-appropriate validation and storage handling.
-
-Related entities: [discussion_board_articles](#discussion_board_articles) (parent article),
-[discussion_board_users](#discussion_board_users) (uploading user if tracked).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_article_id`
-  > The article to which this file attachment belongs. {@link
-  > discussion_board_articles.id}
-- `file_name`: Original name of the uploaded file as provided by the user.
-- `file_type`
-  > MIME type or file extension indicating the file format (e.g.,
-  > 'application/pdf', 'image/jpeg').
-- `file_size`: Size of the file in bytes for storage management and download tracking.
-- `storage_path`
-  > Path to the file in the storage system for retrieval and download
-  > operations.
-- `uploaded_by`: User who uploaded this file attachment. [discussion_board_users.id](#discussion_board_users)
-- `description`: Optional description of the file attachment provided by the user.
-- `download_count`: Number of times this file has been downloaded for usage analytics.
-- `created_at`: Timestamp when the file attachment was created.
-- `updated_at`: Timestamp when the file attachment was last updated.
-- `deleted_at`: Timestamp when the file attachment was soft-deleted, or null if active.
-
-### `discussion_board_article_images`
-
-Central repository for article image attachments with comprehensive
-lifecycle management. Each image record maintains metadata for efficient
-retrieval and display while supporting versioning, status tracking, and
-independent management operations.
-
-This table enables system-wide image operations including search across
-articles, bulk management, and status tracking. Images can be
-independently managed while maintaining referential integrity with parent
-articles. The design supports complete image lifecycle from upload
-through archival or deletion.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_article_id`
-  > Reference to the parent article that this image is attached to. {@link
-  > discussion_board_articles.id}
-- `attachment_file_id`
-  > Reference to the centralized file storage containing the actual image
-  > binary data and metadata. [discussion_board_attachment_files.id](#discussion_board_attachment_files)
-- `status`
-  > Current status of the image in the workflow: 'uploaded', 'processing',
-  > 'active', 'archived', 'deleted'.
-- `display_order`: Order in which images should be displayed within the article content.
-- `alt_text`
-  > Alternative text for accessibility and SEO purposes describing the image
-  > content.
-- `caption`: Optional caption text displayed below the image for additional context.
-
-### `discussion_board_article_tags`
-
-Junction table implementing the tagging system for articles. This table
-enables multiple free-text tags to be associated with each article
-through a many-to-many relationship. Tags are stored as free text and
-support flexible categorization of article content.
-
-The tagging system allows users to add descriptive labels to their
-articles, making content more discoverable through tag-based filtering
-and search. Each tag association is unique per article, preventing
-duplicate tags on the same article while allowing the same tag to be used
-across multiple articles.
-
-This table serves as the bridge between [discussion_board_articles](#discussion_board_articles)
-and the tag values, maintaining referential integrity while enabling
-efficient tag-based queries and filtering operations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_article_id`: Reference to the associated article. [discussion_board_articles.id](#discussion_board_articles)
-- `tag_name`
-  > Free-text tag name assigned to the article. Users can create custom tags
-  > to categorize content.
-- `created_at`: Timestamp when the tag was associated with the article.
-- `updated_at`: Timestamp when the tag association was last modified.
+  > discussion_board_articles.id}.
+- `created_at`
+  > Timestamp when this snapshot was taken, recording the exact moment when
+  > the article state was captured.
+- `updated_at`
+  > Timestamp when this snapshot record was last updated. Used for internal
+  > tracking of snapshot metadata changes.
 - `deleted_at`
-  > Timestamp when the tag association was soft-deleted, allowing for tag
-  > removal tracking.
+  > Timestamp for soft deletion of snapshot records. Null indicates active
+  > snapshot; non-null indicates when the snapshot was marked as deleted
+  > while preserving historical data.
+- `title`
+  > Article title at the time of snapshot. Captures the exact title value
+  > when the snapshot was created, denormalized for historical accuracy.
+- `body`
+  > Full article body content at the time of snapshot. Preserves the complete
+  > text body including formatting and structure as it existed when captured,
+  > denormalized for historical reconstruction.
+- `section_id`
+  > Section ID reference at time of snapshot. Records which section the
+  > article belonged to when the snapshot was taken, denormalized for
+  > historical context.
+- `author_id`
+  > Author ID reference at time of snapshot. Records which user authored the
+  > article when the snapshot was created, denormalized for historical
+  > attribution.
+- `snapshot_reason`
+  > Optional human-readable reason for creating this snapshot, such as
+  > 'content edit', 'admin review', 'version milestone', or 'compliance
+  > audit'.
 
 ### `discussion_board_article_view_stats`
 
-Tracks view statistics and engagement metrics for articles. This table
-records view counts, unique viewers, and temporal patterns for article
-analytics. Provides data for article popularity, user engagement
-tracking, and content performance analysis.
+View count statistics and analytics for article popularity tracking.
 
-Each record represents view statistics aggregates for a specific article,
-including total view count, unique viewer count, and calculation fields
-for derived metrics. The data supports analytics dashboards, content
-recommendations, and article performance insights.
+This table tracks detailed view metrics for articles including total view
+counts, unique viewer identification, and timestamp data for popularity
+analysis. Each record represents a single view event of an article by a
+viewer (member, admin, or guest). The data enables analytics such as
+trending articles identification, user engagement patterns, and content
+popularity ranking.
 
-This table integrates with [discussion_board_articles](#discussion_board_articles) to provide
-comprehensive article analytics and requires {@link
-discussion_board_article_view_stat_events} for granular view tracking and
-3NF compliance.
+The table supports both granular view event tracking and aggregated
+counters for performance optimization. View events are recorded with
+context including timestamp, viewer identification, and anonymized
+tracking data for duplicate detection. {@link
+discussion_board_articles.id} provides the article context, while
+references to member, admin, or guest tables identify the viewer based on
+authentication status.
+
+Analytics use cases include: identifying popular content, calculating
+article engagement rates, detecting trending topics, and personalizing
+content recommendations based on viewing patterns.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_article_id`
-  > Reference to the article being tracked. {@link
-  > discussion_board_articles.id}
-- `total_view_count`
-  > Total number of views for the article, including repeat views from the
-  > same user.
-- `unique_viewer_count`: Number of distinct users who have viewed the article.
-- `last_viewed_at`: Timestamp of the most recent view of the article.
-- `average_time_spent_seconds`
-  > Average time users spend viewing the article in seconds, calculated from
-  > view events.
-- `total_time_spent_seconds`: Total accumulated time spent by all viewers on the article.
-- `created_at`: Timestamp when the view statistics record was created.
-- `updated_at`: Timestamp when the view statistics record was last updated.
+- `discussion_board_article_id`: Viewed article's [discussion_board_articles.id](#discussion_board_articles).
+- `discussion_board_member_id`
+  > Viewing member's [discussion_board_members.id](#discussion_board_members), if authenticated as
+  > a member.
+- `discussion_board_admin_id`
+  > Viewing administrator's [discussion_board_admins.id](#discussion_board_admins), if
+  > authenticated as an admin.
+- `discussion_board_super_admin_id`
+  > Viewing super administrator's [discussion_board_super_admins.id](#discussion_board_super_admins),
+  > if authenticated as a super admin.
+- `discussion_board_guest_id`
+  > Viewing guest's [discussion_board_guests.id](#discussion_board_guests), if browsing as a
+  > guest.
+- `discussion_board_member_session_id`
+  > Member session's [discussion_board_member_sessions.id](#discussion_board_member_sessions) for
+  > authenticated view tracking.
+- `discussion_board_admin_session_id`
+  > Admin session's [discussion_board_admin_sessions.id](#discussion_board_admin_sessions) for
+  > authenticated view tracking.
+- `discussion_board_super_admin_session_id`
+  > Super admin session's [discussion_board_super_admin_sessions.id](#discussion_board_super_admin_sessions)
+  > for authenticated view tracking.
+- `discussion_board_guest_session_id`
+  > Guest session's [discussion_board_guest_sessions.id](#discussion_board_guest_sessions) for anonymous
+  > view tracking.
+- `viewed_at`: Timestamp when the article view occurred.
+- `ip_address_hash`
+  > SHA-256 hash of the viewer's IP address for unique view detection while
+  > preserving privacy.
+- `user_agent_hash`
+  > SHA-256 hash of the viewer's user agent string for device/browser
+  > fingerprinting.
+- `created_at`: Timestamp when this view record was created in the database.
+- `updated_at`: Timestamp when this view record was last updated.
+- `deleted_at`: Timestamp when this view record was soft-deleted (if applicable).
 
 ### `discussion_board_article_favorites`
 
-Junction table representing user bookmarking of articles. Each record
-indicates that a specific user has favorited a specific article, creating
-a many-to-many relationship between users and articles.
+Tracks user favorites and bookmarks for articles within the discussion
+platform.
 
-This table enables users to save articles of interest for quick access
-later. It also supports analytics on article popularity based on favorite
-counts. The relationship is unique per user-article pair to prevent
-duplicate favorites.
+Each record represents a specific article that a member has favorited or
+bookmarked for future reference. The system prevents duplicate favorites
+through a unique constraint combining member and article references.
+Favorites support optional categorization for user organization and
+include timestamps for creation, updates, and soft deletion tracking.
 
-Related entities: [discussion_board_users.id](#discussion_board_users) for the user who
-favorited the article, [discussion_board_articles.id](#discussion_board_articles) for the
-article being favorited.
+When a user removes a favorite, the record is soft-deleted (deleted_at
+set) rather than hard-deleted to maintain historical preferences and
+potential analytics. Favorites are user-specific and private to each
+member.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_user_id`
-  > Reference to the user who favorited the article. {@link
-  > discussion_board_users.id}.
-- `discussion_board_article_id`
-  > Reference to the article that was favorited. {@link
-  > discussion_board_articles.id}.
+- `discussion_board_member_id`: Member who created this favorite. [discussion_board_members.id](#discussion_board_members)
+- `discussion_board_article_id`: Article that was favorited. [discussion_board_articles.id](#discussion_board_articles)
+- `category`
+  > Optional user-defined category for organizing favorites (e.g., "to-read",
+  > "research", "personal").
+- `notes`
+  > Optional user notes about why this article was favorited or what to
+  > remember about it.
 - `created_at`: Timestamp when the user favorited the article.
+- `updated_at`: Timestamp when the favorite record was last updated.
+- `deleted_at`: Timestamp when the user removed the favorite, enabling soft deletion.
 
-### `discussion_board_article_drafts`
+### `discussion_board_article_reactions`
 
-Stores draft versions of articles before publication with auto-recovery
-features.
+Tracks user reactions (like, helpful, etc.) on articles for engagement
+analytics.
 
-This table manages article drafts that users create before publishing
-their content to the main discussion board. Drafts are independent
-entities that users can create, edit, and delete separately from
-published articles. When a draft is published, it becomes associated with
-a main article record.
+Each record represents a single reaction instance where a member
+expresses their sentiment toward an article. Reactions are simple
+positive feedback mechanisms that differ from comments or favorites. This
+table enables counting popular articles, identifying trending content,
+and understanding user engagement patterns.
 
-Key features include:
-- Draft-specific metadata for auto-recovery functionality
-- Independent lifecycle management from published articles
-- Support for draft-specific workflows and status tracking
-- Association with published articles when finalized
+The reaction system uses a defined set of reaction types to maintain
+consistency across the platform. Each member can only apply one of each
+reaction type per article to prevent spam and ensure authentic engagement
+metrics. [discussion_board_articles.id](#discussion_board_articles) is the target article being
+reacted to, and [discussion_board_members.id](#discussion_board_members) identifies the member
+who created the reaction.
 
-Drafts are managed through the article creation workflow and provide
-users with the ability to save work in progress without committing to
-publication. [discussion_board_articles.id](#discussion_board_articles)
+Reactions are independently managed entities that users can create and
+remove directly, separate from the article content itself. This enables
+features like reaction counters, user reaction history, and article
+popularity scoring.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `discussion_board_article_id`
-  > Reference to the published article when this draft becomes finalized.
-  > [discussion_board_articles.id](#discussion_board_articles)
-- `draft_title`
-  > Working title of the draft, which may differ from the final published
-  > article title.
-- `draft_content`
-  > Working content of the draft, which may differ from the final published
-  > article content.
-- `draft_status`: Current status of the draft. Values: 'draft', 'published', 'archived'.
-- `last_saved_at`: Timestamp of the last auto-save operation for recovery purposes.
-- `recovery_data`
-  > JSON data for auto-recovery functionality, storing incremental changes
-  > and edit history.
-- `draft_created_at`: Timestamp when the draft was first created.
-- `draft_updated_at`: Timestamp when the draft was last modified.
-- `draft_deleted_at`: Timestamp when the draft was soft-deleted, allowing for recovery.
+  > Target article receiving the reaction. {@link
+  > discussion_board_articles.id}.
+- `discussion_board_member_id`: Member who created the reaction. [discussion_board_members.id](#discussion_board_members).
+- `reaction_type`
+  > Type of reaction expressed (like, helpful, insightful, etc.). Uses
+  > predefined reaction types from system configuration.
+- `created_at`: Timestamp when the reaction was created by the member.
+- `updated_at`
+  > Timestamp when the reaction was last updated (if reaction type changed,
+  > though typically not).
 
-### `discussion_board_article_image_files`
+### `discussion_board_article_metadata`
 
-Stores comprehensive file metadata for images attached to articles,
-providing detailed file information and lifecycle management for image
-attachments. This table serves as a subsidiary entity to {@link
-discussion_board_article_images}, containing technical file details
-separate from the image content itself.
+Additional metadata and extended attributes for articles beyond core
+content.
 
-The table captures essential file metadata including filename, size, MIME
-type, and storage information, enabling proper file management and
-retrieval. It supports the image attachment system by providing the
-technical foundation for file operations while maintaining referential
-integrity with the parent image entity.
+This table stores supplementary information that enhances article
+presentation and discovery, including SEO metadata for search engine
+optimization, reading time estimates for user convenience, and featured
+status flags for editorial curation. Unlike core article content which
+focuses on title, body, and section categorization, metadata provides
+auxiliary data that improves user experience and content management.
 
-Properties as follows:
+Each article can have exactly one metadata record, establishing a 1:1
+relationship with the parent [discussion_board_articles](#discussion_board_articles) table.
+Metadata fields include SEO elements (meta title, description, keywords)
+for controlling how articles appear in search results, reading time
+calculations based on content length, and editorial flags for
+highlighting important content.
 
-- `id`: Primary Key.
-- `discussion_board_article_image_id`
-  > Reference to the parent article image entity. {@link
-  > discussion_board_article_images.id}
-- `filename`: Original filename of the uploaded image file as provided by the user.
-- `file_size`
-  > Size of the image file in bytes, used for storage management and download
-  > size estimation.
-- `mime_type`: MIME type of the image file (e.g., image/jpeg, image/png, image/gif).
-- `storage_path`: Server-side storage path where the image file is physically stored.
-- `original_filename`: Original filename provided during upload, preserved for user reference.
-- `created_at`: Timestamp when the file metadata was first created.
-- `updated_at`: Timestamp when the file metadata was last updated.
-
-### `discussion_board_article_view_stat_events`
-
-Records individual article view events for granular analytics and
-engagement tracking. Each event captures detailed information about when
-an article was viewed, by which user session, and for how long. This
-table supports the aggregated view statistics in {@link
-discussion_board_article_view_stats} while maintaining 3NF compliance
-through proper event-level tracking.
-
-The table enables detailed analytics such as user engagement patterns,
-popular content analysis, and reader behavior tracking. View events are
-append-only records that provide the foundation for comprehensive article
-performance metrics and user activity analysis.
+When articles are deleted, their associated metadata records are also
+removed through cascading deletion to maintain referential integrity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_article_id`: Reference to the viewed article. [discussion_board_articles.id](#discussion_board_articles)
-- `discussion_board_user_session_id`
-  > Reference to the user session that viewed the article. {@link
-  > discussion_board_user_sessions.id}
-- `created_at`: Timestamp when the view event was recorded.
-- `view_duration_seconds`
-  > Duration of the view event in seconds, measuring how long the user
-  > engaged with the article content.
+- `discussion_board_article_id`
+  > Parent article's [discussion_board_articles.id](#discussion_board_articles). This establishes
+  > the 1:1 relationship between articles and their metadata records,
+  > ensuring each article has exactly one set of extended attributes.
+- `meta_title`
+  > Custom title for SEO purposes, often shorter or more keyword-focused than
+  > the regular article title.
+- `meta_description`
+  > SEO-optimized description that appears in search engine results and
+  > social media previews.
+- `meta_keywords`
+  > Comma-separated keywords for search engine optimization and content
+  > categorization.
+- `reading_time_minutes`
+  > Estimated reading time in minutes calculated based on article content
+  > length.
+- `is_featured`
+  > Whether the article is marked as featured content for editorial
+  > highlighting and promotion.
+- `created_at`
+  > Timestamp when the metadata record was originally created, typically
+  > matching the article creation time.
+- `updated_at`
+  > Timestamp when the metadata record was last modified, tracking updates to
+  > SEO fields or featured status.
+- `deleted_at`
+  > Timestamp when the metadata record was soft deleted, following the
+  > deletion of the parent article.
 
 ## Comments
 
@@ -2203,7 +2331,7 @@ Properties as follows:
 erDiagram
 "discussion_board_comments" {
   String id PK
-  String discussion_board_user_id FK
+  String discussion_board_member_id FK
   String discussion_board_article_id FK
   String content
   DateTime created_at
@@ -2213,1596 +2341,1827 @@ erDiagram
 "discussion_board_comment_snapshots" {
   String id PK
   String discussion_board_comment_id FK
-  String discussion_board_user_id FK
-  Int version_number
-  String snapshot_reason "nullable"
-  DateTime created_at
-  String comment_content
-  DateTime comment_created_at
-  DateTime comment_updated_at
-  DateTime comment_deleted_at "nullable"
-}
-"discussion_board_comment_moderations" {
-  String id PK
-  String discussion_board_comment_id FK
-  String discussion_board_admin_id FK
-  String action_type
-  String reason
-  String status
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_comment_reports" {
-  String id PK
-  String reporter_user_id FK
-  String reported_comment_id FK
-  String reason
-  String status
-  String resolution_details "nullable"
-  DateTime resolved_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_comment_votes" {
-  String id PK
-  String discussion_board_user_id FK
-  String discussion_board_comment_id FK
-  String vote_type
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_comment_attachments" {
-  String id PK
-  String discussion_board_comment_id FK
-  String discussion_board_article_file_id FK
-  DateTime created_at
-}
-"discussion_board_comment_mentions" {
-  String id PK
-  String discussion_board_comment_id FK
-  String discussion_board_user_id FK
-  Int position_start
-  Int position_end
-  DateTime created_at
-}
-"discussion_board_comment_flags" {
-  String id PK
-  String user_id FK
-  String comment_id FK
-  String reviewer_id FK "nullable"
-  String flag_reason
-  String flag_type
-  String status
-  String resolution_notes "nullable"
-  DateTime created_at
-  DateTime reviewed_at "nullable"
-  DateTime resolved_at "nullable"
-}
-"discussion_board_comment_edit_histories" {
-  String id PK
-  String discussion_board_comment_id FK
-  Int edit_sequence
-  String original_content
-  String edited_content
+  String content
   String edit_reason "nullable"
   DateTime created_at
 }
-"discussion_board_comment_pagination_settings" {
+"discussion_board_comment_deletions" {
   String id PK
-  String discussion_board_article_id FK,UK
-  Int comments_per_page
-  Int total_comment_count
-  DateTime last_comment_count_update
+  String discussion_board_comment_id FK,UK
+  String actor_type
+  String reason "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at_deletion_record "nullable"
+}
+"discussion_board_comment_activities" {
+  String id PK
+  String comment_id FK
+  String action
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_comment_rate_limits" {
+"discussion_board_comment_tags" {
   String id PK
-  String discussion_board_user_id FK
-  DateTime submitted_at
+  String discussion_board_comment_id FK
   DateTime created_at
 }
-"discussion_board_comment_edit_history_of_users" {
+"discussion_board_comment_deletion_of_members" {
   String id PK
-  String discussion_board_comment_edit_history_id FK,UK
-  String discussion_board_user_id FK
+  String discussion_board_comment_deletion_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_comment_edit_history_of_admins" {
+"discussion_board_comment_deletion_of_admins" {
   String id PK
-  String discussion_board_comment_edit_history_id FK,UK
+  String discussion_board_comment_deletion_id FK,UK
   String discussion_board_admin_id FK
+  String discussion_board_admin_session_id FK
+}
+"discussion_board_comment_deletion_of_super_admins" {
+  String id PK
+  String discussion_board_comment_deletion_id FK,UK
+  String discussion_board_super_admin_id FK
+  String discussion_board_super_admin_session_id FK
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_comment_activity_metadata" {
+  String id PK
+  String discussion_board_comment_activity_id FK
+  DateTime created_at
+  DateTime updated_at
+  String key
+  String value
+}
+"discussion_board_comment_activity_by_members" {
+  String id PK
+  String discussion_board_comment_activity_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_comment_edit_history_of_super_admins" {
+"discussion_board_comment_activity_by_admins" {
   String id PK
-  String discussion_board_comment_edit_history_id FK,UK
+  String discussion_board_comment_activity_id FK,UK
+  String discussion_board_admin_id FK
+  String discussion_board_admin_session_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_comment_activity_by_super_admins" {
+  String id PK
+  String discussion_board_comment_activity_id FK,UK
   String discussion_board_super_admin_id FK
+  String discussion_board_super_admin_session_id FK
   DateTime created_at
   DateTime updated_at
 }
 "discussion_board_comment_snapshots" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_moderations" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_reports" }o--|| "discussion_board_comments" : reportedComment
-"discussion_board_comment_votes" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_attachments" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_mentions" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_flags" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_edit_histories" }o--|| "discussion_board_comments" : comment
-"discussion_board_comment_edit_history_of_users" |o--|| "discussion_board_comment_edit_histories" : editHistory
-"discussion_board_comment_edit_history_of_admins" |o--|| "discussion_board_comment_edit_histories" : commentEditHistory
-"discussion_board_comment_edit_history_of_super_admins" |o--|| "discussion_board_comment_edit_histories" : commentEditHistory
+"discussion_board_comment_deletions" |o--|| "discussion_board_comments" : comment
+"discussion_board_comment_activities" }o--|| "discussion_board_comments" : comment
+"discussion_board_comment_tags" }o--|| "discussion_board_comments" : comment
+"discussion_board_comment_deletion_of_members" |o--|| "discussion_board_comment_deletions" : commentDeletion
+"discussion_board_comment_deletion_of_admins" |o--|| "discussion_board_comment_deletions" : commentDeletion
+"discussion_board_comment_deletion_of_super_admins" |o--|| "discussion_board_comment_deletions" : commentDeletion
+"discussion_board_comment_activity_metadata" }o--|| "discussion_board_comment_activities" : commentActivity
+"discussion_board_comment_activity_by_members" |o--|| "discussion_board_comment_activities" : commentActivity
+"discussion_board_comment_activity_by_admins" |o--|| "discussion_board_comment_activities" : commentActivity
+"discussion_board_comment_activity_by_super_admins" |o--|| "discussion_board_comment_activities" : commentActivity
 ```
 
 ### `discussion_board_comments`
 
-Core comment entity storing user comments on articles. Contains comment
-content, author information, article association, and management
-metadata. Users can create, edit, and delete their comments
-independently.
+Main comment table storing comment content, author association, article
+reference, and creation metadata.
 
-Comments are single-level only (no nested replies) as specified in
-requirements. Each comment belongs to exactly one article and one author.
-The system tracks creation and modification timestamps for audit
-purposes.
+Comments are single-level only with no nested replies, representing
+direct responses to articles. Each comment belongs to exactly one article
+and one author (member). Comments support editing history through {@link
+discussion_board_comment_snapshots} and soft deletion through {@link
+discussion_board_comment_deletions}. Users can edit and delete their own
+comments.
 
-This table serves as the foundation for comment functionality including
-display, editing, deletion, and moderation. {@link
-discussion_board_users.id} for author association and {@link
-discussion_board_articles.id} for article linkage.
+**Business Context:** Comments provide user discussion and feedback on
+articles. They are displayed in chronological order (oldest first) on
+article pages. Author profiles show their comment history, enabling
+cross-article search for user contributions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_user_id`: Author of the comment. [discussion_board_users.id](#discussion_board_users).
+- `discussion_board_member_id`
+  > Authoring member's [discussion_board_members.id](#discussion_board_members). Each comment has
+  > exactly one author who created it.
 - `discussion_board_article_id`
-  > Article that this comment belongs to. {@link
-  > discussion_board_articles.id}.
-- `content`: The comment text content written by the user.
-- `created_at`: Timestamp when the comment was originally created.
-- `updated_at`: Timestamp when the comment was last modified.
-- `deleted_at`: Timestamp when the comment was soft-deleted, null if active.
+  > Parent article's [discussion_board_articles.id](#discussion_board_articles). Each comment
+  > belongs to exactly one article.
+- `content`
+  > Comment text content. Supports Markdown formatting and inline media.
+  > Required for comment creation.
+- `created_at`
+  > Timestamp when the comment was initially created. Used for chronological
+  > ordering.
+- `updated_at`
+  > Timestamp when the comment was last modified. Updates when content is
+  > edited.
+- `deleted_at`
+  > Soft deletion timestamp. When non-null, comment is considered deleted and
+  > hidden from public view.
 
 ### `discussion_board_comment_snapshots`
 
-Audit trail for comment edits and version history.
-
-This table captures point-in-time snapshots of comment content whenever
-edits are made. Each snapshot preserves the complete comment content and
-metadata as it existed at a specific moment, enabling version control and
-audit trail functionality. The table supports the 24-hour editing window
-requirement by maintaining historical versions that can be compared or
-restored.
-
-Snapshots are automatically created when users edit their comments,
-capturing the full text content along with metadata about who made the
-edit and when. This provides administrators with a complete history of
-comment modifications for moderation purposes and allows users to see how
-comments have evolved over time.
-
-Each snapshot references the original {@link
-discussion_board_comments.id} and the user who performed the edit through
-[discussion_board_users.id](#discussion_board_users). This denormalized snapshot includes
-all comment fields to capture the complete state at each version.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_comment_id`: Reference to the parent comment. [discussion_board_comments.id](#discussion_board_comments)
-- `discussion_board_user_id`: User who created this snapshot. [discussion_board_users.id](#discussion_board_users)
-- `version_number`: Sequential version number for this comment snapshot.
-- `snapshot_reason`: Reason for creating this snapshot, such as 'edit' or 'moderation'.
-- `created_at`: Timestamp when this snapshot was created.
-- `comment_content`: The complete comment content as it existed at the time of the snapshot.
-- `comment_created_at`: Original comment creation timestamp captured at snapshot time.
-- `comment_updated_at`: Comment updated timestamp captured at snapshot time.
-- `comment_deleted_at`: Comment deletion timestamp if applicable at snapshot time.
-
-### `discussion_board_comment_moderations`
-
-Tracks administrator moderation actions performed on comments for audit
-and compliance purposes.
-
-This table records all moderation activities that administrators perform
-on comments, including editing comment content, deleting comments, and
-other moderation actions. Each record represents a single moderation
-event with details about the action taken, the administrator who
-performed it, and the reason for the moderation.
-
-The table serves as an audit trail for compliance requirements and
-provides transparency into moderation activities. Administrators can
-review moderation history to ensure consistent application of community
-guidelines.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_comment_id`
-  > Reference to the comment being moderated. {@link
-  > discussion_board_comments.id}
-- `discussion_board_admin_id`
-  > Reference to the administrator who performed the moderation action.
-  > [discussion_board_admins.id](#discussion_board_admins)
-- `action_type`: Type of moderation action performed (edit, delete, approve, reject, etc.).
-- `reason`: Reason for the moderation action, explaining why the action was taken.
-- `status`
-  > Current status of the moderation action (pending, completed, reversed,
-  > etc.).
-- `created_at`: Timestamp when the moderation action was recorded.
-- `updated_at`: Timestamp when the moderation action was last updated.
-
-### `discussion_board_comment_reports`
-
-Tracks user reports of inappropriate comments for community moderation.
-
-When users encounter comments that violate community guidelines, they can
-submit reports that are reviewed by administrators. Each report captures
-the reporter's identity, the specific comment being reported, the reason
-for reporting, and the current moderation status.
-
-Reports follow a workflow from pending review to resolution, with
-timestamps tracking when reports were submitted and when they were acted
-upon by moderators. This system enables community-driven content
-moderation while maintaining accountability through proper audit trails.
-
-Related entities: [discussion_board_users](#discussion_board_users) (reporter), {@link
-discussion_board_comments} (reported content)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `reporter_user_id`: User who submitted the report. [discussion_board_users.id](#discussion_board_users)
-- `reported_comment_id`
-  > Comment that was reported for moderation. {@link
-  > discussion_board_comments.id}
-- `reason`: User-provided reason explaining why the comment was reported.
-- `status`
-  > Current status of the report in the moderation workflow (pending,
-  > under_review, resolved).
-- `resolution_details`: Administrator's notes about how the report was resolved.
-- `resolved_at`: Timestamp when the report was resolved by an administrator.
-- `created_at`: Timestamp when the report was submitted.
-- `updated_at`: Timestamp when the report was last updated.
-
-### `discussion_board_comment_votes`
-
-Tracks user votes on comments for quality assessment and community feedback.
-
-Each vote represents a user's assessment of comment quality, supporting
-features like upvoting/downvoting and comment ranking. The system ensures
-users can only vote once per comment through unique constraints.
-
-This table supports community-driven content quality assessment by
-allowing users to express approval or disapproval of comments. Votes
-contribute to comment ranking algorithms and help surface high-quality
-content. [discussion_board_comments.id](#discussion_board_comments) represents the comment
-being voted on, while [discussion_board_users.id](#discussion_board_users) identifies the
-voting user.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_id`: User who cast the vote. [discussion_board_users.id](#discussion_board_users).
-- `discussion_board_comment_id`: Comment being voted on. [discussion_board_comments.id](#discussion_board_comments).
-- `vote_type`
-  > Type of vote cast by the user. Valid values are 'upvote' for positive
-  > assessment and 'downvote' for negative assessment.
-- `created_at`: Timestamp when the vote was cast.
-- `updated_at`: Timestamp when the vote was last updated.
-
-### `discussion_board_comment_attachments`
-
-Junction table linking comments to their file attachments. This table
-establishes a many-to-many relationship between comments and files,
-allowing multiple files to be attached to multiple comments while
-maintaining referential integrity.
-
-Each record represents a specific file attachment associated with a
-particular comment. The relationship ensures that files can be properly
-tracked and managed within the comment system, supporting features like
-file downloads and attachment management.
-
-This table works in conjunction with [discussion_board_comments](#discussion_board_comments)
-for comment references and [discussion_board_article_files](#discussion_board_article_files) for
-file references, providing the necessary linkage for comment attachment
-functionality.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_comment_id`
-  > Reference to the comment that this file is attached to. {@link
-  > discussion_board_comments.id}
-- `discussion_board_article_file_id`
-  > Reference to the file attachment. {@link
-  > discussion_board_article_files.id}
-- `created_at`: Timestamp when this attachment was linked to the comment.
-
-### `discussion_board_comment_mentions`
-
-Tracks user mentions within comment content for notification and
-reference purposes.
-
-When users mention other users in comments using @mentions, this table
-records those references. Each mention includes the comment where it
-appears, the mentioned user, and the position within the comment text
-where the mention occurs. This enables features like notification systems
-that alert mentioned users and provides reference data for user activity
+Point-in-time snapshots of comment edits for audit trail and history
 tracking.
 
-The table maintains a many-to-many relationship between comments and
-users, allowing multiple mentions per comment and multiple comments
-mentioning the same user. Position tracking supports features like
-highlighting mentions within comment text or determining context around
-the mention.
+This table captures the complete state of a comment whenever it is
+edited, providing a historical record of changes. Each snapshot includes
+the comment content, author information, and related metadata at the time
+of the edit. These records support version comparison, audit compliance,
+and rollback capabilities.
+
+Snapshots are created automatically whenever a comment is modified and
+form an append-only historical chain associated with the parent {@link
+discussion_board_comments.id}. Editors may optionally provide edit
+reasons for documentation purposes.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_comment_id`: Comment containing the user mention. [discussion_board_comments.id](#discussion_board_comments)
-- `discussion_board_user_id`: User who is mentioned in the comment. [discussion_board_users.id](#discussion_board_users)
-- `position_start`: Starting character position of the mention within the comment text.
-- `position_end`: Ending character position of the mention within the comment text.
-- `created_at`: Timestamp when the mention was created.
+- `discussion_board_comment_id`: Parent comment being snapshotted. [discussion_board_comments.id](#discussion_board_comments).
+- `content`
+  > Comment text content at the time of snapshot creation. Captures the
+  > complete comment text including any formatting or markup.
+- `edit_reason`
+  > Optional explanation provided by the editor for why the comment was
+  > modified. Used for documentation and transparency in edit history.
+- `created_at`
+  > Timestamp when this snapshot was created, marking the point-in-time
+  > capture of comment state.
 
-### `discussion_board_comment_flags`
+### `discussion_board_comment_deletions`
 
-User-reported content flags for inappropriate or problematic comments
-requiring moderator review.
+Soft deletion records for comments, implementing polymorphic ownership
+pattern for different actor types (member, admin, superAdmin).
 
-This table tracks user-submitted flags on comments that violate community
-guidelines or require administrator attention. Each flag represents a
-user's concern about specific comment content and includes the reason for
-flagging. Flags can be in various states (pending, reviewed, resolved)
-and help administrators identify problematic content efficiently.
+This table tracks when comments are soft-deleted, recording which actor
+performed the deletion, the reason, and audit timestamps. The actual
+comment deletion timestamp (deleted_at) is stored in the parent
+discussion_board_comments table, while this table provides actor-specific
+audit trail linking to subtype tables
+(discussion_board_comment_deletion_of_members,
+discussion_board_comment_deletion_of_admins,
+discussion_board_comment_deletion_of_super_admins).
 
-Flags are created by users who identify inappropriate content and are
-reviewed by administrators for appropriate action. The system maintains a
-complete audit trail of flag creation, review, and resolution to ensure
-transparency and accountability in content moderation.
+Deleted comments are filtered out of public view via parent.deleted_at,
+while this record provides accountability and restoration capability for
+administrators. The polymorphic pattern ensures each actor type has its
+own subtype table with appropriate session and actor references.
 
-Related entities: [discussion_board_users](#discussion_board_users) (flag creator), {@link
-discussion_board_comments} (flagged content), {@link
-discussion_board_admins} (reviewer).
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`: User who created the flag. [discussion_board_users.id](#discussion_board_users)
-- `comment_id`: Comment being flagged for review. [discussion_board_comments.id](#discussion_board_comments)
-- `reviewer_id`: Administrator who reviewed the flag. [discussion_board_admins.id](#discussion_board_admins)
-- `flag_reason`: Detailed explanation of why the comment was flagged by the user.
-- `flag_type`: Category of flag violation (spam, harassment, inappropriate, etc.).
-- `status`: Current status of the flag (pending, under_review, resolved, dismissed).
-- `resolution_notes`: Administrator's notes on how the flag was resolved.
-- `created_at`: Timestamp when the flag was created by the user.
-- `reviewed_at`: Timestamp when the flag was reviewed by an administrator.
-- `resolved_at`: Timestamp when the flag was resolved.
-
-### `discussion_board_comment_edit_histories`
-
-Tracks the complete edit history of comments with timestamps and content
-versions.
-
-This table maintains an audit trail of all changes made to comments,
-capturing both the original content and edited versions. Each edit record
-includes the timestamp, editor information, and the specific changes
-made. This supports compliance requirements and provides transparency for
-comment modification tracking.
-
-The edit history is managed through the parent {@link
-discussion_board_comments} entity and serves as a comprehensive record of
-content evolution. Administrators can review edit history for moderation
-purposes, and users can see the progression of their own comment edits.
-
-Key relationships:
-- References [discussion_board_comments](#discussion_board_comments) as the parent comment
-- Editor attribution through specialized subtype tables
+Note: This table does NOT store the comment deletion timestamp itself -
+that's tracked in [discussion_board_comments.deleted_at](#discussion_board_comments). This
+separation maintains proper normalization and prevents field duplication.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_comment_id`
-  > Reference to the parent comment being edited. {@link
-  > discussion_board_comments.id}
-- `edit_sequence`
-  > Sequential number indicating the order of edits for this comment. First
-  > edit is 1, second is 2, etc.
-- `original_content`: The content of the comment before this edit was applied.
-- `edited_content`: The content of the comment after this edit was applied.
-- `edit_reason`: Optional reason provided by the editor for making this change.
-- `created_at`: Timestamp when this edit was recorded.
+- `discussion_board_comment_id`: The comment that was deleted. [discussion_board_comments.id](#discussion_board_comments)
+- `actor_type`
+  > Type of actor who performed the deletion (must match actual actor type:
+  > 'member', 'admin', or 'superAdmin'). Used to determine which subtype
+  > table contains the actor-specific details.
+- `reason`
+  > Reason for deleting the comment. This can be provided by users when
+  > deleting their own comments or by administrators when removing content.
+- `created_at`
+  > Timestamp when this deletion record was created, representing when the
+  > deletion audit trail was recorded.
+- `updated_at`
+  > Timestamp when this deletion record was last updated. Typically updated
+  > if the deletion reason is modified.
+- `deleted_at_deletion_record`
+  > Soft deletion timestamp for this deletion record itself, allowing for
+  > cleanup of deletion records if needed. Null indicates active deletion
+  > record.
 
-### `discussion_board_comment_pagination_settings`
+### `discussion_board_comment_activities`
 
-Stores pagination settings and comment count tracking for efficient
-loading of comments on articles.
+Audit log of comment-related actions including editing, deletion, and
+admin moderation activities. Tracks all significant actions performed on
+comments for security, compliance, and debugging purposes. Each record
+represents a single action taken against a comment, capturing actor
+information, action type, and creation metadata. This table serves as the
+primary audit trail for comment lifecycle management with polymorphic
+actor ownership support.
 
-This table maintains pagination configurations and comment counts for
-each article to optimize comment loading performance. It tracks the total
-comment count, pagination settings, and last update timestamp to ensure
-efficient comment retrieval without recalculating counts on every
-request.
-
-The table supports the requirement for paginated comment display on
-articles, particularly when articles have more than 50 comments. By
-maintaining pre-calculated counts and pagination metadata, the system can
-quickly determine page boundaries and comment ranges for display.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_article_id`: Associated article's [discussion_board_articles.id](#discussion_board_articles).
-- `comments_per_page`: Number of comments to display per page for pagination.
-- `total_comment_count`: Current total number of comments on the article.
-- `last_comment_count_update`: Timestamp when the comment count was last updated.
-- `created_at`: Timestamp when the pagination settings were created.
-- `updated_at`: Timestamp when the pagination settings were last updated.
-
-### `discussion_board_comment_rate_limits`
-
-Tracks comment submission rates for spam prevention and rate limiting.
-
-This table stores submission timestamps for each user to enforce rate
-limiting rules. The system uses this data to prevent spam and abusive
-behavior by limiting users to 10 comments per minute as specified in the
-requirements.
-
-Each record represents a single comment submission attempt. The system
-queries this table to determine if a user has exceeded the rate limit
-within the specified time window.
+[discussion_board_comments](#discussion_board_comments) for the comment being acted upon. Each
+activity can be associated with one actor through subtype tables for
+members, administrators, or super administrators.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_user_id`
-  > Reference to the user who submitted the comment. {@link
-  > discussion_board_users.id}
-- `submitted_at`: Timestamp when the comment submission was attempted.
-- `created_at`: Timestamp when this rate limit record was created.
+- `comment_id`: The comment that was acted upon. [discussion_board_comments.id](#discussion_board_comments).
+- `action`
+  > Type of action performed on the comment. Common values: 'edit' (comment
+  > edited), 'delete' (comment deleted), 'undelete' (comment restored),
+  > 'admin_moderate' (administrative action), 'flag' (content flagged).
+- `created_at`
+  > Timestamp when the action was recorded. Audit trails are append-only with
+  > immutable timestamps.
+- `updated_at`
+  > Timestamp when the audit record was last modified. For audit integrity
+  > tracking.
 
-### `discussion_board_comment_edit_history_of_users`
+### `discussion_board_comment_tags`
 
-Maps comment edit history records to regular user editors, maintaining
-referential integrity for user-attributed edits.
+Junction table establishing many-to-many relationships between comments
+and tags for categorization and filtering.
 
-This table establishes the relationship between comment edit history
-records and the regular users who performed the edits. It ensures proper
-ownership tracking and maintains referential integrity for
-user-attributed comment modifications. Each record represents a specific
-edit action performed by a regular user on a comment.
+Allows comments to be associated with multiple tags for better
+organization and searchability. Tags are optional metadata that help
+users filter discussions by topic or theme. This junction table enables
+the flexible tagging system while maintaining data integrity through
+foreign key constraints. The composite unique index ensures no duplicate
+tag associations for the same comment.
 
-The table supports the polymorphic ownership pattern for comment edit
-history, allowing different actor types (users, admins, super admins) to
-have their own subtype tables while maintaining a unified edit history
-system. This design ensures that edit attribution is properly tracked and
-cannot be accidentally assigned to multiple actor types.
-
-[discussion_board_comment_edit_histories.id](#discussion_board_comment_edit_histories) provides the edit
-history context, while [discussion_board_users.id](#discussion_board_users) identifies the
-regular user who performed the edit. The unique constraint ensures that
-each edit history record can only be attributed to one user editor.
-
-This table is essential for tracking user contributions to comment
-content and supporting the 24-hour editing window requirement specified
-in the system requirements.
+References: [discussion_board_comments.id](#discussion_board_comments) for comment
+associations, [discussion_board_tags.id](#discussion_board_tags) for tag definitions.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_comment_edit_history_id`
-  > Reference to the comment edit history record being attributed to a user
-  > editor. [discussion_board_comment_edit_histories.id](#discussion_board_comment_edit_histories).
-- `discussion_board_user_id`
-  > Reference to the regular user who performed the comment edit. {@link
-  > discussion_board_users.id}.
-- `created_at`: Timestamp when the edit attribution record was created.
-- `updated_at`: Timestamp when the edit attribution record was last updated.
+- `discussion_board_comment_id`: Associated comment's [discussion_board_comments.id](#discussion_board_comments).
+- `created_at`: Timestamp when the tag was associated with the comment.
 
-### `discussion_board_comment_edit_history_of_admins`
+### `discussion_board_comment_deletion_of_members`
 
-Maps comment edit history records to admin editors, maintaining
-referential integrity for admin-attributed edits.
+Subtype table for linking comment deletions performed by regular members
+(comment authors) to their member accounts and sessions.
 
-This table establishes the relationship between comment edit history
-records and the administrators who performed those edits. It ensures
-proper polymorphic ownership pattern where edit history can be attributed
-to different types of editors (users, admins, super admins) while
-maintaining database integrity.
+This table implements the polymorphic ownership pattern for comment
+deletions, where deletions can be tracked by different actor types. Each
+comment deletion can be associated with exactly one member who performed
+the deletion, along with their session context for audit purposes.
 
-The table serves as a junction between the comment edit history system
-and the administrator authorization system, allowing administrators to
-have their edit actions properly recorded and tracked. This supports
-audit trails and accountability for content modifications performed by
-administrators.
+This is a 1:1 subtype relationship with {@link
+discussion_board_comment_deletions}, ensuring each deletion record is
+linked to at most one member actor. The relationship provides full audit
+trail capability showing which member performed the deletion, from which
+session, and when.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_comment_edit_history_id`
-  > Reference to the comment edit history record being attributed to an admin
-  > editor. [discussion_board_comment_edit_histories.id](#discussion_board_comment_edit_histories)
+- `discussion_board_comment_deletion_id`
+  > Reference to the parent comment deletion record that was performed by
+  > this member. [discussion_board_comment_deletions.id](#discussion_board_comment_deletions)
+- `discussion_board_member_id`
+  > Reference to the member actor who performed the comment deletion. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Reference to the member session active when the deletion was performed,
+  > providing audit context. [discussion_board_member_sessions.id](#discussion_board_member_sessions)
+- `created_at`
+  > Timestamp when this deletion association was created, matching the
+  > deletion time.
+- `updated_at`
+  > Timestamp when this deletion association was last updated, typically
+  > matches created_at for append-only audit records.
+- `deleted_at`
+  > Timestamp when this deletion association was soft deleted. Null indicates
+  > active record.
+
+### `discussion_board_comment_deletion_of_admins`
+
+Subtype table that establishes audit trail linkages between comment
+deletion records performed by regular administrators and their
+administrative accounts and sessions.
+
+This table implements the polymorphic ownership pattern for the comment
+deletion tracking system, specifically handling cases where regular
+administrators (not super administrators or regular members) delete
+comments. It provides accountability by associating each comment deletion
+with the specific administrator who performed the action and the session
+in which it occurred, enabling audit trails for administrative oversight.
+
+When an administrator deletes a comment, this record is created to
+preserve the connection between the deletion event in {@link
+discussion_board_comment_deletions} and the administrator's identity via
+[discussion_board_admins.id](#discussion_board_admins) and their session via {@link
+discussion_board_admin_sessions.id}. This ensures compliance with
+platform governance requirements for tracking administrative actions.
+
+The unique constraint on discussion_board_comment_deletion_id enforces a
+1:1 relationship with parent deletion records, meaning each comment
+deletion can be linked to at most one administrator actor of this type.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_deletion_id`
+  > Reference to the parent comment deletion record that this administrator
+  > performed. Each deletion can be linked to at most one administrator actor
+  > through the unique constraint. {@link
+  > discussion_board_comment_deletions.id}.
 - `discussion_board_admin_id`
-  > Reference to the administrator who performed the edit. {@link
-  > discussion_board_admins.id}
-- `created_at`: Timestamp when this edit attribution record was created.
-- `updated_at`: Timestamp when this edit attribution record was last updated.
+  > Reference to the regular administrator account that performed the comment
+  > deletion. [discussion_board_admins.id](#discussion_board_admins).
+- `discussion_board_admin_session_id`
+  > Reference to the session in which the comment deletion was performed,
+  > establishing temporal and contextual linkage. {@link
+  > discussion_board_admin_sessions.id}.
 
-### `discussion_board_comment_edit_history_of_super_admins`
+### `discussion_board_comment_deletion_of_super_admins`
 
-Maps comment edit history records to super admin editors, maintaining
-referential integrity for super admin-attributed edits.
+Subtype table linking super administrator-initiated comment deletions to
+super admin actor accounts and sessions.
 
-This subtype table implements the polymorphic ownership pattern for
-comment editing by super administrators. Each record establishes a 1:1
-relationship between a comment edit history entry and the super
-administrator who performed the edit, ensuring proper attribution and
-audit trail integrity.
-
-When a super administrator edits a comment, this table links the
-resulting edit history record to the specific super admin, allowing the
-system to track which administrator made each modification. This supports
-accountability and compliance requirements for content moderation
-workflows.
-
-This table works alongside similar subtype tables for regular users and
-regular administrators, providing a complete polymorphic ownership
-solution for comment editing attribution across all actor types.
+This table implements the polymorphic ownership pattern for comment
+deletions, where comment_deletions references different actor types
+through subtype tables rather than nullable foreign keys. Each record
+represents a comment deletion performed by a super administrator, linking
+to their account and session at the time of deletion. The {@link
+discussion_board_comment_deletions.id} foreign key has a unique
+constraint to enforce 1:1 relationship with the main deletion entity.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_comment_edit_history_id`
-  > Reference to the comment edit history record being attributed to a super
-  > admin editor. [discussion_board_comment_edit_histories.id](#discussion_board_comment_edit_histories)
+- `discussion_board_comment_deletion_id`
+  > Main comment deletion record being referenced. {@link
+  > discussion_board_comment_deletions.id}.
 - `discussion_board_super_admin_id`
-  > Reference to the super administrator who performed the comment edit.
-  > [discussion_board_super_admins.id](#discussion_board_super_admins)
-- `created_at`: Timestamp when this attribution mapping was created.
-- `updated_at`: Timestamp when this attribution mapping was last updated.
+  > Super administrator who performed the deletion. {@link
+  > discussion_board_super_admins.id}.
+- `discussion_board_super_admin_session_id`
+  > Session used when performing the deletion. {@link
+  > discussion_board_super_admin_sessions.id}.
+- `created_at`: Timestamp when this subtype record was created.
+- `updated_at`: Timestamp when this subtype record was last updated.
+- `deleted_at`
+  > Timestamp when this subtype record was soft-deleted. Null indicates
+  > active record.
+
+### `discussion_board_comment_activity_metadata`
+
+Key-value storage for comment activity metadata that maintains First
+Normal Form (1NF) compliance by extracting structured metadata from JSON
+data.
+
+This table stores detailed metadata for audit trail actions associated
+with comment activities, including old comment content before edits,
+specific fields changed during edits, deletion reasons, moderation
+details, and other structured metadata needed for audit purposes. Each
+metadata entry is linked to a specific comment activity record and stored
+as a normalized key-value pair.
+
+[discussion_board_comment_activities.id](#discussion_board_comment_activities) provides the audit context
+for these metadata entries, while this table enables structured querying
+of metadata that would otherwise be stored as unstructured JSON.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_activity_id`
+  > Parent comment activity record's {@link
+  > discussion_board_comment_activities.id}.
+- `created_at`: Timestamp when this metadata entry was created.
+- `updated_at`: Timestamp when this metadata entry was last updated.
+- `key`
+  > Metadata key identifier describing the type of metadata stored (e.g.,
+  > 'old_content', 'changed_fields', 'deletion_reason',
+  > 'moderation_details').
+- `value`
+  > Metadata value stored as string. For complex data, consider serializing
+  > as JSON string or using multiple key-value pairs for structured
+  > representation.
+
+### `discussion_board_comment_activity_by_members`
+
+Subtype table linking comment activities to member actors using
+polymorphic ownership pattern.
+
+This table establishes a 1:1 relationship with the main comment activity
+table ([discussion_board_comment_activities](#discussion_board_comment_activities)) and connects those
+activities to member user accounts and their sessions. It implements the
+polymorphic ownership pattern by storing the actor-specific metadata for
+member-performed comment activities such as editing, deletion, and
+moderation actions. This structure enables comprehensive audit trails of
+comment activities while maintaining proper actor separation.
+
+Each record represents a specific comment activity performed by a member
+user, linking the activity to the member's identity and session context
+for accountability and audit purposes.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_activity_id`
+  > Associated comment activity's {@link
+  > discussion_board_comment_activities.id}. This establishes the 1:1
+  > relationship with the main activity record.
+- `discussion_board_member_id`
+  > Member actor who performed the activity's {@link
+  > discussion_board_members.id}. References the member user account
+  > responsible for the comment action.
+- `discussion_board_member_session_id`
+  > Member session at activity time's {@link
+  > discussion_board_member_sessions.id}. Captures the authentication session
+  > context when the activity occurred.
+- `created_at`: Timestamp when this member activity link was created in the system.
+- `updated_at`: Timestamp when this member activity link was last updated.
+
+### `discussion_board_comment_activity_by_admins`
+
+Subtype table for comment activities performed by administrator actors,
+implementing polymorphic ownership pattern.
+
+Establishes audit trail relationships between comment activities and
+administrator accounts, recording which administrator performed specific
+comment-related actions such as editing, deletion, or moderation. This
+table provides 1:1 relationship with the main {@link
+discussion_board_comment_activities} table while linking to administrator
+identity and session for comprehensive audit logging.
+
+The table follows the subtype pattern for polymorphic actor ownership,
+allowing different actor types (member, admin, super admin) to have
+separate subtype tables while maintaining a clean separation of concerns.
+This supports administrator-specific audit requirements and permission
+tracking while preserving referential integrity.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_activity_id`
+  > Main comment activity record's {@link
+  > discussion_board_comment_activities.id}.
+- `discussion_board_admin_id`: Administrator actor's [discussion_board_admins.id](#discussion_board_admins).
+- `discussion_board_admin_session_id`: Administrator session's [discussion_board_admin_sessions.id](#discussion_board_admin_sessions).
+- `created_at`: Timestamp when this admin subtype relationship was created.
+- `updated_at`: Timestamp when this admin subtype relationship was last updated.
+
+### `discussion_board_comment_activity_by_super_admins`
+
+Subtype table linking comment activities to super administrator actors.
+Implements the polymorphic ownership pattern, establishing a 1:1
+relationship with the main [discussion_board_comment_activities](#discussion_board_comment_activities)
+table and connecting to super admin actor accounts and sessions for
+comprehensive audit trail tracking.
+
+This table stores the super administrator-specific context for comment
+activity records, including which super admin performed the action
+(editing, deleting, moderation) and their active session at the time. The
+relationships support complete actor attribution for governance and
+compliance requirements.
+
+Used by the comment moderation system to track super administrator
+actions on comments independently from member and regular administrator
+activities.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_comment_activity_id`
+  > Reference to the main comment activity record. {@link
+  > discussion_board_comment_activities.id}.
+- `discussion_board_super_admin_id`
+  > Super administrator who performed the comment activity. {@link
+  > discussion_board_super_admins.id}.
+- `discussion_board_super_admin_session_id`
+  > Active session of the super administrator during the activity. {@link
+  > discussion_board_super_admin_sessions.id}.
+- `created_at`: Timestamp when this actor subtype record was created.
+- `updated_at`: Timestamp when this actor subtype record was last updated.
 
 ## Administration
 
 ```mermaid
 erDiagram
-"discussion_board_administrator_promotion_requests" {
+"discussion_board_admin_requests" {
   String id PK
-  String discussion_board_user_id FK
-  String discussion_board_administrator_id FK,UK "nullable"
+  String discussion_board_member_id FK
   String reason
   String status
-  DateTime approved_at "nullable"
-  DateTime rejected_at "nullable"
-  String reviewer_discussion_board_super_admin_id "nullable"
-  String reviewer_notes "nullable"
   DateTime created_at
   DateTime updated_at
+  DateTime deleted_at "nullable"
 }
-"discussion_board_administrators" {
+"discussion_board_admin_request_decisions" {
   String id PK
-  String user_id FK,UK
-  String admin_id FK "nullable"
-  String super_admin_id FK "nullable"
-  String grade
-  DateTime promoted_at
-  DateTime grade_changed_at "nullable"
-  Boolean is_active
+  String admin_request_id FK,UK
+  String super_admin_id FK
+  String decision
+  String rejection_reason "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
 "discussion_board_user_bans" {
   String id PK
-  String banned_user_id FK
-  String banning_administrator_id FK
-  String ban_reason
-  String ban_duration_type
-  Int ban_duration_days "nullable"
-  DateTime ban_started_at
-  DateTime ban_ends_at "nullable"
-  String ban_status
-  String appeal_status
-  String appeal_reason "nullable"
-  DateTime appeal_reviewed_at "nullable"
-  String appeal_reviewer_id "nullable"
-  String appeal_decision_reason "nullable"
-  DateTime revoked_at "nullable"
-  String revoked_by_id "nullable"
-  String revocation_reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_promotion_request_workflows" {
-  String id PK
-  String discussion_board_administrator_promotion_request_id FK
+  String member_id FK
+  String admin_id FK
+  String reason
   String status
-  String notes "nullable"
-  DateTime created_at
-}
-"discussion_board_administrator_capabilities" {
-  String id PK
-  String discussion_board_administrator_id FK
-  String capability_type
-  String permission_level
-  String assigned_by
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_administrator_promotion_requests" |o--o| "discussion_board_administrators" : administrator
-"discussion_board_promotion_request_workflows" }o--|| "discussion_board_administrator_promotion_requests" : promotionRequest
-"discussion_board_administrator_capabilities" }o--|| "discussion_board_administrators" : administrator
-```
-
-### `discussion_board_administrator_promotion_requests`
-
-Tracks administrator promotion requests with workflow status and approval
-tracking.
-
-This table stores the complete lifecycle of administrator promotion
-requests, from initial submission through super administrator review to
-final decision. Each request includes the user's justification for
-seeking administrator status, current workflow state, and timestamps for
-audit purposes. The table supports the hierarchical administrator system
-by enabling super administrators to review and process promotion requests
-according to platform governance policies.
-
-Promotion requests transition through pending, approved, or rejected
-states, with detailed tracking of decision timestamps and reviewer
-information. This ensures compliance with the administrator promotion
-process requirements and maintains a complete audit trail of all
-promotion activities.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_user_id`
-  > User who submitted the promotion request. {@link
-  > discussion_board_users.id}
-- `discussion_board_administrator_id`
-  > Administrator record created when request is approved, or null if
-  > pending/rejected. [discussion_board_administrators.id](#discussion_board_administrators)
-- `reason`
-  > User-provided justification for seeking administrator status, between
-  > 50-500 characters as required.
-- `status`: Current workflow status: 'pending', 'approved', or 'rejected'.
-- `approved_at`
-  > Timestamp when the promotion request was approved by a super
-  > administrator.
-- `rejected_at`
-  > Timestamp when the promotion request was rejected by a super
-  > administrator.
-- `reviewer_discussion_board_super_admin_id`
-  > Super administrator who reviewed and decided on the promotion request.
-  > [discussion_board_super_admins.id](#discussion_board_super_admins)
-- `reviewer_notes`
-  > Optional notes from the super administrator explaining the approval or
-  > rejection decision.
-- `created_at`: Timestamp when the promotion request was initially submitted.
-- `updated_at`: Timestamp when the promotion request was last modified.
-
-### `discussion_board_administrators`
-
-Central record for administrator assignments and grade management. Tracks
-which users have administrator privileges, their current grade level
-(regular or super administrator), and maintains promotion/demotion
-history. This table serves as the authoritative source for administrator
-status across the platform.
-
-Each record represents an administrator assignment for a specific user,
-linking to the appropriate authentication tables based on the current
-grade level. The table supports the hierarchical administrator system
-where super administrators can promote regular administrators and manage
-grade changes.
-
-[discussion_board_users.id](#discussion_board_users) provides the base user identity, while
-[discussion_board_admins.id](#discussion_board_admins) and {@link
-discussion_board_super_admins.id} link to the appropriate authentication
-tables based on the current administrator grade.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `user_id`: Reference to the user's base identity. [discussion_board_users.id](#discussion_board_users)
-- `admin_id`
-  > Reference to regular administrator authentication when applicable. {@link
-  > discussion_board_admins.id}
-- `super_admin_id`
-  > Reference to super administrator authentication when applicable. {@link
-  > discussion_board_super_admins.id}
-- `grade`
-  > Current administrator grade level. Valid values: 'regular' for regular
-  > administrators, 'super' for super administrators.
-- `promoted_at`: Timestamp when the user was first promoted to administrator status.
-- `grade_changed_at`
-  > Timestamp of the most recent grade change (promotion to super admin or
-  > demotion to regular admin).
-- `is_active`
-  > Indicates whether the administrator assignment is currently active.
-  > Inactive assignments represent historical records.
-- `created_at`: Record creation timestamp.
-- `updated_at`: Record last update timestamp.
-- `deleted_at`: Soft deletion timestamp for archiving administrator assignments.
-
-### `discussion_board_user_bans`
-
-Tracks user banning actions with comprehensive audit trail support.
-
-This table records all user bans issued by administrators, including the
-ban reason, duration, status, and the administrator who performed the
-ban. It supports both temporary and permanent bans, tracks ban appeals,
-and provides administrators with complete visibility into ban history and
-current ban statuses.
-
-Each ban record links to the banned user and the administrator who issued
-the ban, creating a complete audit trail for moderation actions. The
-table supports the requirement that banned users' content remains visible
-while preventing them from logging in.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `banned_user_id`: Reference to the user who is banned. [discussion_board_users.id](#discussion_board_users)
-- `banning_administrator_id`
-  > Reference to the administrator who issued the ban. {@link
-  > discussion_board_admins.id}
-- `ban_reason`
-  > Detailed explanation of why the user was banned, as entered by the
-  > administrator.
-- `ban_duration_type`
-  > Type of ban duration: 'temporary' for time-limited bans or 'permanent'
-  > for indefinite bans.
-- `ban_duration_days`: Number of days for temporary bans. Null for permanent bans.
-- `ban_started_at`: Timestamp when the ban was issued and became effective.
-- `ban_ends_at`
-  > Timestamp when the ban expires for temporary bans. Null for permanent
-  > bans.
-- `ban_status`: Current status of the ban: 'active', 'expired', 'revoked', or 'appealed'.
-- `appeal_status`
-  > Status of any ban appeal: 'none', 'pending', 'under_review', 'approved',
-  > or 'rejected'.
-- `appeal_reason`: Reason provided by the user for appealing the ban, if applicable.
-- `appeal_reviewed_at`: Timestamp when the appeal was reviewed by an administrator.
-- `appeal_reviewer_id`
-  > Reference to the administrator who reviewed the appeal. {@link
-  > discussion_board_admins.id}
-- `appeal_decision_reason`: Explanation provided by the administrator for the appeal decision.
-- `revoked_at`: Timestamp when the ban was revoked by an administrator.
-- `revoked_by_id`
-  > Reference to the administrator who revoked the ban. {@link
-  > discussion_board_admins.id}
-- `revocation_reason`: Reason provided for revoking the ban.
-- `created_at`: Timestamp when the ban record was created.
-- `updated_at`: Timestamp when the ban record was last updated.
-
-### `discussion_board_promotion_request_workflows`
-
-Tracks the workflow status and transitions for administrator promotion
-requests.
-
-This table maintains the complete lifecycle of promotion requests from
-initial submission through review and final decision. Each workflow
-record represents a specific status change in the promotion request
-process, allowing for audit trail and status tracking.
-
-Workflow records are created whenever a promotion request changes status,
-providing a comprehensive history of the review process. This enables
-administrators to track how long requests spend in each status and
-identify bottlenecks in the approval workflow.
-
-[discussion_board_administrator_promotion_requests.id](#discussion_board_administrator_promotion_requests)
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_administrator_promotion_request_id`
-  > The promotion request being tracked in this workflow. {@link
-  > discussion_board_administrator_promotion_requests.id}
-- `status`
-  > Current workflow status of the promotion request. Valid values:
-  > 'pending', 'under_review', 'approved', 'rejected'
-- `notes`: Optional notes or comments about the status change for audit purposes.
-- `created_at`: Timestamp when this workflow status was recorded.
-
-### `discussion_board_administrator_capabilities`
-
-Records specific capabilities assigned to administrators and their
-permission levels.
-
-This table enables granular permission management by tracking which
-capabilities each administrator possesses and at what permission level.
-Assigns different administrative capabilities (e.g., content moderation,
-user management, section administration) to individual administrators
-with specific permission levels.
-
-Each capability assignment is timestamped for audit purposes and supports
-soft deletion for capability revocation. Administrators can have multiple
-capabilities assigned, and capabilities can be assigned to multiple
-administrators.
-
-Relationships:
-- References [discussion_board_administrators.id](#discussion_board_administrators) for the parent
-administrator record
-- Maintains unique constraints to prevent duplicate capability
-assignments per administrator
-- Supports capability tracking and permission level management for audit
-purposes
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_administrator_id`
-  > Reference to the parent administrator record. {@link
-  > discussion_board_administrators.id}.
-- `capability_type`
-  > Type of capability being assigned (e.g., 'content_moderation',
-  > 'user_management', 'section_admin', 'system_config').
-- `permission_level`
-  > Permission level for the capability (e.g., 'read_only', 'full_access',
-  > 'limited_scope').
-- `assigned_by`: Identifier of the administrator who assigned this capability.
-- `created_at`: Timestamp when the capability was assigned.
-- `updated_at`: Timestamp when the capability assignment was last modified.
-- `deleted_at`: Timestamp when the capability was revoked (soft delete).
-
-## Moderation
-
-```mermaid
-erDiagram
-"discussion_board_ban_records" {
-  String id PK
-  String ban_reason
-  Int ban_duration_days "nullable"
-  String ban_status
+  DateTime banned_at
   DateTime expires_at "nullable"
-  DateTime revoked_at "nullable"
-  String revoked_reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-}
-"discussion_board_moderation_logs" {
-  String id PK
-  String admin_id FK "nullable"
-  String super_admin_id FK "nullable"
-  String target_article_id FK "nullable"
-  String target_comment_id FK "nullable"
-  String target_user_id FK "nullable"
-  String target_section_id FK "nullable"
-  String action_type
-  String action_description
-  String ip_address
-  String user_agent "nullable"
-  DateTime performed_at
-  DateTime scheduled_at "nullable"
-  DateTime completed_at "nullable"
-  String status
-  String error_message "nullable"
+  DateTime unbanned_at "nullable"
   DateTime created_at
   DateTime updated_at
   DateTime deleted_at "nullable"
 }
-"discussion_board_content_moderation_queues" {
+"discussion_board_administrator_assignments" {
   String id PK
-  String content_flag_id FK,UK
-  String assigned_admin_id FK "nullable"
-  String escalated_by_admin_id FK "nullable"
-  String moderation_status
-  String priority_level
-  String escalation_reason "nullable"
-  Int assignment_history_count
-  Boolean auto_flagged
+  String old_role
+  String new_role
+  String assignment_type
+  String reason "nullable"
   DateTime created_at
   DateTime updated_at
-  DateTime assigned_at "nullable"
-  DateTime resolved_at "nullable"
+  DateTime deleted_at "nullable"
 }
-"discussion_board_moderated_content_histories" {
+"discussion_board_audit_logs" {
   String id PK
-  String moderated_article_id FK "nullable"
-  String moderated_comment_id FK "nullable"
-  String moderator_admin_id FK "nullable"
-  String moderator_super_admin_id FK "nullable"
-  String content_type
-  String moderation_action
-  String moderation_reason
-  String original_content "nullable"
-  String moderated_content "nullable"
+  String actor_type
+  String actor_id
+  String target_type
+  String target_id
+  String action_type
+  String action_details "nullable"
+  String ip_address "nullable"
+  String user_agent "nullable"
+  String(80000) href "nullable"
   DateTime created_at
+  DateTime updated_at
 }
-"discussion_board_administrator_grade_changes" {
+"discussion_board_administrative_histories" {
   String id PK
   String administrator_id FK
-  String changed_by_administrator_id FK
-  String old_grade
-  String new_grade
-  String reason
-  DateTime created_at
-}
-"discussion_board_ban_reason_categories" {
-  String id PK
-  String name UK
+  String admin_request_id FK "nullable"
+  String user_ban_id FK "nullable"
+  String administrator_assignment_id FK "nullable"
+  String audit_log_id FK,UK "nullable"
+  String action_type
+  String target_type
+  String target_id
   String description
-  Boolean is_active
-  Int sort_order
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_ban_appeals" {
-  String id PK
-  String discussion_board_ban_record_id FK
-  String discussion_board_user_id FK
-  String discussion_board_admin_id FK "nullable"
-  String appeal_reason
-  String status
-  String decision_reason "nullable"
-  DateTime appealed_at
-  DateTime reviewed_at "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_ban_durations" {
-  String id PK
-  String name UK
-  String description
-  Int duration_hours
-  Boolean is_permanent
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-}
-"discussion_board_content_flags" {
-  String id PK
-  String reporter_user_id FK
-  String flagged_article_id FK "nullable"
-  String flagged_comment_id FK "nullable"
-  String reviewing_admin_id FK "nullable"
-  String flag_reason
-  String status
-  String resolution_reason "nullable"
-  DateTime created_at
-  DateTime updated_at
-  DateTime deleted_at "nullable"
-  DateTime resolved_at "nullable"
-}
-"discussion_board_moderation_action_types" {
-  String id PK
-  String code UK
-  String name
-  String description
-  String category "nullable"
-  String severity_level "nullable"
-  Boolean requires_reason
-  Boolean is_active
+  String previous_status "nullable"
+  String new_status "nullable"
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_ban_record_of_admins" {
+"discussion_board_administrator_assignment_to_members" {
   String id PK
-  String discussion_board_ban_record_id FK,UK
-  String discussion_board_admin_id FK
+  String discussion_board_administrator_assignment_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
   DateTime created_at
   DateTime updated_at
-  DateTime deleted_at "nullable"
 }
-"discussion_board_ban_record_of_super_admins" {
+"discussion_board_administrator_assignment_to_admins" {
   String id PK
-  String discussion_board_ban_record_id FK,UK
+  String administrator_assignment_id FK,UK
+  String admin_id FK
+  String admin_session_id FK "nullable"
+  DateTime assigned_at
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_administrator_assignment_to_super_admins" {
+  String id PK
+  String discussion_board_administrator_assignment_id FK,UK
   String discussion_board_super_admin_id FK
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_content_moderation_queue_assignments" {
+"discussion_board_administrator_assignment_by_members" {
   String id PK
-  String discussion_board_content_moderation_queue_id FK
-  String assigned_admin_id FK
-  DateTime assigned_at
-  DateTime completed_at "nullable"
+  String discussion_board_administrator_assignment_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_content_moderation_queue_escalations" {
+"discussion_board_administrator_assignment_by_admins" {
   String id PK
-  String discussion_board_content_moderation_queue_id FK
-  String escalated_by_admin_id FK "nullable"
-  String escalated_by_super_admin_id FK "nullable"
-  String assigned_to_admin_id FK "nullable"
-  String assigned_to_super_admin_id FK "nullable"
-  String escalation_type
-  String previous_priority
-  String new_priority
-  String escalation_reason
-  String workflow_state_before
-  String workflow_state_after
-  DateTime escalation_timestamp
+  String discussion_board_administrator_assignment_id FK,UK
+  String discussion_board_admin_id FK
   DateTime created_at
   DateTime updated_at
 }
-"discussion_board_content_moderation_queues" |o--|| "discussion_board_content_flags" : contentFlag
-"discussion_board_ban_appeals" }o--|| "discussion_board_ban_records" : banRecord
-"discussion_board_ban_record_of_admins" |o--|| "discussion_board_ban_records" : banRecord
-"discussion_board_ban_record_of_super_admins" |o--|| "discussion_board_ban_records" : banRecord
-"discussion_board_content_moderation_queue_assignments" }o--|| "discussion_board_content_moderation_queues" : contentModerationQueue
-"discussion_board_content_moderation_queue_escalations" }o--|| "discussion_board_content_moderation_queues" : moderationQueue
+"discussion_board_administrator_assignment_by_super_admins" {
+  String id PK
+  String discussion_board_administrator_assignment_id FK,UK
+  String discussion_board_super_admin_id FK
+  String discussion_board_super_admin_session_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_admin_request_decisions" |o--|| "discussion_board_admin_requests" : adminRequest
+"discussion_board_administrative_histories" }o--o| "discussion_board_admin_requests" : adminRequest
+"discussion_board_administrative_histories" }o--o| "discussion_board_user_bans" : userBan
+"discussion_board_administrative_histories" }o--o| "discussion_board_administrator_assignments" : administratorAssignment
+"discussion_board_administrative_histories" |o--o| "discussion_board_audit_logs" : auditLog
+"discussion_board_administrator_assignment_to_members" |o--|| "discussion_board_administrator_assignments" : assignment
+"discussion_board_administrator_assignment_to_admins" |o--|| "discussion_board_administrator_assignments" : administratorAssignment
+"discussion_board_administrator_assignment_to_super_admins" |o--|| "discussion_board_administrator_assignments" : administratorAssignment
+"discussion_board_administrator_assignment_by_members" |o--|| "discussion_board_administrator_assignments" : administratorAssignment
+"discussion_board_administrator_assignment_by_admins" |o--|| "discussion_board_administrator_assignments" : administratorAssignment
+"discussion_board_administrator_assignment_by_super_admins" |o--|| "discussion_board_administrator_assignments" : assignment
 ```
 
-### `discussion_board_ban_records`
+### `discussion_board_admin_requests`
 
-Main table for ban records storing core ban information and audit trail.
-This table contains the essential ban details while deferring
-actor-specific information to subtype tables for proper normalization.
+Main table storing user applications to become administrators.
 
-Ban records represent the primary entity for user banning actions,
-tracking basic information like ban reason, duration, status, and
-timestamps. The polymorphic ownership of ban records (can be issued by
-either regular admins or super admins) is handled through separate
-subtype tables that reference this main record.
+Each record represents a single request submitted by a member user
+seeking administrator privileges. The request includes a reason text
+explaining why the user wants to become an administrator and tracks the
+current status of the request (pending, approved, or rejected).
 
-This design ensures 3NF compliance by separating the core ban information
-from the actor-specific context, allowing clean relational integrity and
-proper audit trail maintenance. Ban records are permanent and immutable
-to maintain accountability.
+When a user submits an admin request, it remains in pending status until
+a super administrator reviews and makes a decision. Approved requests
+lead to administrator role assignment, while rejected requests are closed
+with the reason recorded in the decision table. Users can only have one
+active pending request at a time, enforced at application level.
 
-Properties as follows:
-
-- `id`: Primary Key.
-- `ban_reason`
-  > Detailed explanation of why the user was banned. This text is visible to
-  > administrators when reviewing ban records.
-- `ban_duration_days`
-  > Duration of the ban in days. If null or 0, indicates a permanent ban.
-  > Temporary bans have a specific duration while permanent bans have no
-  > expiration.
-- `ban_status`
-  > Current status of the ban. Values: 'active' - ban is currently enforced,
-  > 'expired' - ban duration has ended, 'revoked' - ban was manually revoked
-  > by administrator.
-- `expires_at`
-  > Timestamp when the ban expires. For permanent bans, this field is null.
-  > For temporary bans, this indicates when the ban automatically ends.
-- `revoked_at`
-  > Timestamp when the ban was manually revoked by an administrator. Null if
-  > the ban has not been revoked.
-- `revoked_reason`
-  > Reason provided by the administrator when revoking the ban. Null if the
-  > ban has not been revoked.
-- `created_at`: Timestamp when the ban record was created.
-- `updated_at`: Timestamp when the ban record was last updated.
-
-### `discussion_board_moderation_logs`
-
-Comprehensive audit trail of all moderation activities performed by
-administrators and super administrators. This table records every
-moderation action including content deletions, user bans, section
-management, and other administrative actions for compliance and
-accountability purposes.
-
-Each record captures the complete context of a moderation action
-including who performed it, what action was taken, when it occurred, and
-any relevant details about the target entity. The logs support detailed
-audit reporting, compliance verification, and administrator
-accountability tracking.
-
-This table integrates with the broader moderation system through foreign
-key relationships to administrator tables and specific target entities.
-It supports filtering by action type, administrator, timeframe, and
-target entity for efficient querying and reporting.
-
-**Modification Notes**: The schema has been corrected to properly mark
-this as a primary stance table with specific foreign key relationships
-for common moderation targets, ensuring proper normalization and API
-generation.
+All requests maintain audit trail with creation timestamps and support
+soft deletion for user withdrawal or administrative cleanup.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `admin_id`
-  > Administrator who performed the moderation action. {@link
-  > discussion_board_admins.id}
-- `super_admin_id`
-  > Super administrator who performed the moderation action. {@link
-  > discussion_board_super_admins.id}
-- `target_article_id`
-  > Target article for moderation actions involving articles. {@link
-  > discussion_board_articles.id}
-- `target_comment_id`
-  > Target comment for moderation actions involving comments. {@link
-  > discussion_board_comments.id}
-- `target_user_id`
-  > Target user for moderation actions involving users. {@link
-  > discussion_board_users.id}
-- `target_section_id`
-  > Target section for moderation actions involving sections. {@link
-  > discussion_board_sections.id}
-- `action_type`
-  > Type of moderation action performed (e.g., 'delete_article', 'ban_user',
-  > 'create_section', 'edit_section', 'delete_section').
-- `action_description`
-  > Detailed description of the moderation action performed, including any
-  > specific reasons or context.
-- `ip_address`
-  > IP address from which the moderation action was performed for security
-  > auditing.
-- `user_agent`
-  > User agent string of the browser/client used to perform the moderation
-  > action.
-- `performed_at`: Timestamp when the moderation action was performed.
-- `scheduled_at`: Timestamp when a scheduled moderation action is intended to be performed.
-- `completed_at`: Timestamp when a scheduled moderation action was actually completed.
+- `discussion_board_member_id`
+  > Member user who submitted the admin request. {@link
+  > discussion_board_members.id}
+- `reason`
+  > Reason text provided by the member explaining why they want to become an
+  > administrator. Required for submission and used by super administrators
+  > during review.
 - `status`
-  > Current status of the moderation action ('pending', 'completed',
-  > 'failed', 'cancelled').
-- `error_message`: Error message if the moderation action failed to complete successfully.
-- `created_at`: Timestamp when the moderation log record was created.
-- `updated_at`: Timestamp when the moderation log record was last updated.
-- `deleted_at`: Timestamp when the moderation log record was soft deleted.
+  > Current status of the admin request. Valid values: 'pending' (awaiting
+  > review), 'approved' (request granted), 'rejected' (request denied).
+- `created_at`: Timestamp when the admin request was submitted by the member user.
+- `updated_at`
+  > Timestamp when the admin request was last modified, including status
+  > changes or updates.
+- `deleted_at`
+  > Timestamp when the admin request was soft deleted, either by user
+  > withdrawal or administrative cleanup. Null indicates active request.
 
-### `discussion_board_content_moderation_queues`
+### `discussion_board_admin_request_decisions`
 
-Central queue for content moderation workflow tracking. This table
-manages the moderation lifecycle for flagged content items, providing a
-structured workflow from flag submission through administrator review to
-final resolution. Each queue entry represents a discrete moderation task
-that requires administrator attention.
+Captures super administrator decisions on admin requests submitted by
+users seeking administrator privileges. Each record represents a final
+decision (approval or rejection) on an admin request, with timestamp and
+optional rejection justification. This table serves as the official
+governance record for administrator promotion decisions and provides
+audit trail for platform leadership transitions.
 
-The queue integrates with the broader moderation ecosystem through
-relationships to content flags, administrator assignments, and moderation
-logs. It supports both user-reported content and system-detected
-violations, with priority-based queuing and assignment tracking.
-
-This subsidiary entity works in conjunction with {@link
-discussion_board_content_flags} for flag reporting, {@link
-discussion_board_moderation_logs} for audit trails, and {@link
-discussion_board_moderated_content_histories} for historical tracking of
-moderation actions.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `content_flag_id`
-  > Reference to the original content flag that triggered this moderation
-  > queue entry. [discussion_board_content_flags.id](#discussion_board_content_flags)
-- `assigned_admin_id`
-  > Administrator currently assigned to review this queue entry. {@link
-  > discussion_board_admins.id}
-- `escalated_by_admin_id`
-  > Administrator who escalated this queue entry to higher priority or
-  > different assignment. [discussion_board_admins.id](#discussion_board_admins)
-- `moderation_status`
-  > Current status of the moderation workflow. Valid values: 'pending',
-  > 'under_review', 'escalated', 'resolved', 'dismissed'.
-- `priority_level`
-  > Priority level for moderation review. Valid values: 'low', 'medium',
-  > 'high', 'critical'. Used for queue ordering and assignment
-  > prioritization.
-- `escalation_reason`
-  > Reason provided when escalating this queue entry to higher priority or
-  > different administrator. Used for workflow tracking and audit purposes.
-- `assignment_history_count`
-  > Number of times this queue entry has been assigned to different
-  > administrators. Used to track workflow complexity and potential
-  > assignment rotations.
-- `auto_flagged`
-  > Indicates whether this queue entry was generated automatically by the
-  > system rather than through user reporting.
-- `created_at`: Timestamp when the moderation queue entry was created.
-- `updated_at`: Timestamp when the moderation status or assignment was last updated.
-- `assigned_at`: Timestamp when the queue entry was last assigned to an administrator.
-- `resolved_at`: Timestamp when the moderation workflow was completed with a resolution.
-
-### `discussion_board_moderated_content_histories`
-
-Historical record of content moderation actions performed by administrators.
-
-This table tracks all moderation activities on articles and comments,
-providing a comprehensive audit trail for compliance and accountability
-purposes. Each record represents a single moderation event, capturing
-what content was moderated, who performed the action, what action was
-taken, and the reason for moderation.
-
-The history supports transparency in moderation practices and allows for
-review of moderator decisions. Records are append-only and cannot be
-modified once created, ensuring the integrity of the moderation audit
-trail.
+The decision records are maintained separately from the requests
+themselves to preserve immutable audit history. Super administrators
+exercise ultimate authority over administrator promotions as described in
+the governance transition mechanism. Each decision must reference exactly
+one admin request and the super administrator who made the decision,
+ensuring accountability and transparency in platform leadership changes.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `moderated_article_id`: Reference to the moderated article. [discussion_board_articles.id](#discussion_board_articles)
-- `moderated_comment_id`: Reference to the moderated comment. [discussion_board_comments.id](#discussion_board_comments)
-- `moderator_admin_id`
-  > Reference to the administrator who performed the moderation. {@link
-  > discussion_board_admins.id}
-- `moderator_super_admin_id`
-  > Reference to the super administrator who performed the moderation. {@link
+- `admin_request_id`
+  > The admin request being decided upon. {@link
+  > discussion_board_admin_requests.id}
+- `super_admin_id`
+  > Super administrator who made the decision. {@link
   > discussion_board_super_admins.id}
-- `content_type`: Type of content being moderated (article or comment).
-- `moderation_action`: The specific moderation action performed (delete, edit, hide, etc.).
-- `moderation_reason`: Reason provided by the moderator for the action.
-- `original_content`: Snapshot of the original content before moderation.
-- `moderated_content`: Content after moderation (if edited rather than deleted).
-- `created_at`: Timestamp when the moderation action was performed.
+- `decision`
+  > The decision made on the admin request. Must be either 'approved' or
+  > 'rejected' as specified in the administrator request approval workflow
+  > requirements. Approval grants regular administrator privileges, rejection
+  > keeps the user as regular member.
+- `rejection_reason`
+  > Optional reason text for rejection decisions. Only populated when
+  > decision is 'rejected', providing explanation for the denial of
+  > administrator promotion request. Required when rejecting to maintain
+  > transparency and guidance for future requests.
+- `created_at`
+  > Timestamp when the decision was recorded. Captures the exact date and
+  > time the super administrator made the final decision on the admin
+  > request, serving as official decision timestamp for audit purposes.
+- `updated_at`
+  > Timestamp when the decision record was last updated. Tracks any
+  > modifications to the decision metadata, though decisions should be
+  > immutable after creation to preserve audit integrity.
+- `deleted_at`
+  > Timestamp when the decision record was soft-deleted. Enables soft
+  > deletion capability while preserving audit trail integrity for historical
+  > compliance.
 
-### `discussion_board_administrator_grade_changes`
+### `discussion_board_user_bans`
 
-Records administrator grade changes including promotions from regular to
-super administrator and demotions from super to regular administrator.
+Records of user bans including reason, duration, banning administrator,
+and ban status.
 
-This table tracks the complete history of administrator grade
-transitions, providing an audit trail for all promotion and demotion
-actions. Each record captures the administrator whose grade is being
-changed, the administrator performing the change, the previous grade, the
-new grade, and the reason for the change. This supports the administrator
-hierarchy system where super administrators can manage administrator
-grades while preventing self-demotion.
+This table tracks all user bans within the platform, supporting both
+temporary bans with expiration dates and permanent bans. Each ban
+includes the banned user reference, banning administrator, detailed
+reason text, and timing information. The table maintains the current
+status of each ban (active, expired, manually removed) and provides
+comprehensive audit trail for administrative oversight.
 
-Grade changes are permanent transitions that affect administrator
-privileges and capabilities within the system. The table ensures
-accountability and transparency in administrator management operations.
+User bans prevent login access while preserving existing content
+visibility. Administrators can view the ban reason, duration, and banning
+details for each banned user. [discussion_board_members.id](#discussion_board_members)
+references the banned user, while [discussion_board_admins.id](#discussion_board_admins) or
+[discussion_board_super_admins.id](#discussion_board_super_admins) references the administrator who
+performed the ban.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `member_id`: Banned member's identity. [discussion_board_members.id](#discussion_board_members).
+- `admin_id`
+  > Administrator who performed the ban action. {@link
+  > discussion_board_admins.id} for regular administrators or {@link
+  > discussion_board_super_admins.id} for super administrators.
+- `reason`
+  > Detailed explanation for why the user was banned, visible to
+  > administrators for review and audit purposes.
+- `status`
+  > Current status of the ban: 'active' (currently preventing login),
+  > 'expired' (duration-based ban that has ended), 'removed' (manually
+  > un-banned by administrator).
+- `banned_at`: Timestamp when the ban was initially imposed and became effective.
+- `expires_at`
+  > Expiration timestamp for temporary bans; null indicates a permanent ban
+  > with no automatic expiration.
+- `unbanned_at`
+  > Timestamp when an active ban was manually removed by an administrator;
+  > null for bans that have not been manually lifted.
+- `created_at`: Timestamp when this ban record was created in the system.
+- `updated_at`: Timestamp when this ban record was last modified.
+- `deleted_at`
+  > Soft deletion timestamp for audit trail preservation; null indicates
+  > active record.
+
+### `discussion_board_administrator_assignments`
+
+Tracks administrator role assignments and role transitions between
+member, administrator, and super administrator statuses.
+
+Each assignment records the role change with previous and new roles,
+assignment type, reason, and temporal audit information. This table
+serves as an audit trail for platform governance decisions and supports
+tracking of administrator promotions, demotions, and initial assignments.
+It works in conjunction with [discussion_board_admin_requests](#discussion_board_admin_requests) for
+request-based promotions and [discussion_board_audit_logs](#discussion_board_audit_logs) for
+comprehensive administrative auditing.
+
+Uses polymorphic ownership pattern with subtype tables for different
+actor relationships.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `old_role`
+  > The user's role before this assignment. Possible values: 'member',
+  > 'admin', 'super_admin'. For initial administrator assignments from
+  > member, this would be 'member'.
+- `new_role`
+  > The user's role after this assignment. Possible values: 'member',
+  > 'admin', 'super_admin'. This reflects the actual role change that
+  > occurred.
+- `assignment_type`
+  > The type of assignment performed. Values: 'promotion' (moving to higher
+  > role), 'demotion' (moving to lower role), 'initial' (first-time
+  > assignment to admin), 'system' (system-initiated change).
+- `reason`
+  > The rationale for the role change, similar to ban reasons. Should
+  > document why this assignment was made.
+- `created_at`: Timestamp when this assignment record was created.
+- `updated_at`: Timestamp when this assignment record was last updated.
+- `deleted_at`
+  > Timestamp when this assignment record was soft-deleted. Allows
+  > maintaining audit trail while removing from active queries.
+
+### `discussion_board_audit_logs`
+
+Comprehensive audit trail of all administrative actions performed by
+administrators and super administrators.
+
+Records every administrative action including section management, content
+moderation, user banning, admin request decisions, and administrator role
+changes. Each entry tracks the actor who performed the action, the
+targeted entity, action specifics, and contextual details like IP address
+and user agent. Supports full audit capability for platform governance
+oversight, compliance tracking, and administrator performance evaluation.
+
+Audit logs are immutable records that provide complete visibility into
+administrative decision-making processes. They enable super
+administrators to review regular administrator activities, ensure
+consistent application of platform policies, and maintain accountability
+for all governance actions. Each log entry preserves the context in which
+decisions were made, including timestamps, actor identification, and
+action rationale.
+
+**Key Relationships:**
+- References [discussion_board_admins](#discussion_board_admins) and {@link
+discussion_board_super_admins} as actors via polymorphic
+actor_type+actor_id
+- References administrative targets via polymorphic target_type+target_id
+to entities like [discussion_board_sections](#discussion_board_sections), {@link
+discussion_board_articles}, [discussion_board_comments](#discussion_board_comments), {@link
+discussion_board_members}, etc.
+- Linked to [discussion_board_administrative_histories](#discussion_board_administrative_histories) for
+comprehensive governance timeline
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `actor_type`
+  > Type of administrator who performed the action. Values: "admin" for
+  > regular administrators, "super_admin" for super administrators.
+  > Determines which actor table to reference via actor_id.
+- `actor_id`
+  > Identifier of the administrator who performed the action. References
+  > either [discussion_board_admins.id](#discussion_board_admins) or {@link
+  > discussion_board_super_admins.id} based on actor_type.
+- `target_type`
+  > Type of entity that was affected by the administrative action. Values:
+  > "section", "article", "comment", "user", "admin_request",
+  > "administrator_assignment", "user_ban". Determines which target table to
+  > reference via target_id.
+- `target_id`
+  > Identifier of the entity that was affected by the administrative action.
+  > References the appropriate target entity based on target_type.
+- `action_type`
+  > Type of administrative action performed. Values: "create_section",
+  > "edit_section", "delete_section", "delete_article", "delete_comment",
+  > "ban_user", "unban_user", "approve_admin_request",
+  > "reject_admin_request", "promote_administrator", "demote_administrator".
+  > Categorizes the nature of the administrative action for querying and
+  > reporting.
+- `action_details`
+  > Detailed description or rationale for the administrative action. Includes
+  > reason for banning, justification for content deletion, or explanation
+  > for admin request decision. Provides context for audit review and policy
+  > compliance assessment.
+- `ip_address`
+  > IP address from which the administrative action was performed. Used for
+  > security auditing and identifying suspicious patterns across multiple
+  > administrators or locations.
+- `user_agent`
+  > User agent string of the client used to perform the administrative
+  > action. Helps identify the device, browser, and operating system used for
+  > governance activities.
+- `href`
+  > URL or endpoint where the administrative action was triggered from.
+  > Provides technical context about the administrative interface used for
+  > the action.
+- `created_at`
+  > Timestamp when the administrative action was recorded. Represents when
+  > the governance decision was implemented in the system.
+- `updated_at`
+  > Timestamp when the audit log entry was last updated. Typically matches
+  > created_at as audit logs are immutable, but preserved for consistency
+  > with temporal field patterns.
+
+### `discussion_board_administrative_histories`
+
+Comprehensive historical record of all administrative decisions, status
+changes, and role transitions for platform governance oversight.
+
+This table serves as the audit trail for administrative actions across
+the platform, capturing changes to admin requests, user bans,
+administrator assignments, and other administrative states. Each record
+represents a point-in-time change in administrative status, allowing
+super administrators to review decision history, track role transitions,
+and monitor platform governance activities.
+
+Key relationships include [discussion_board_admin_requests](#discussion_board_admin_requests) for
+request status changes, [discussion_board_user_bans](#discussion_board_user_bans) for ban
+modifications, [discussion_board_administrator_assignments](#discussion_board_administrator_assignments) for
+role transitions, and [discussion_board_audit_logs](#discussion_board_audit_logs) for action
+correlation.
 
 Properties as follows:
 
 - `id`: Primary Key.
 - `administrator_id`
-  > Administrator whose grade is being changed. {@link
-  > discussion_board_admins.id}
-- `changed_by_administrator_id`
-  > Administrator who performed the grade change. {@link
-  > discussion_board_admins.id}
-- `old_grade`: Previous administrator grade before the change.
-- `new_grade`: New administrator grade after the change.
-- `reason`
-  > Reason for the grade change as provided by the administrator performing
-  > the change.
-- `created_at`: Timestamp when the grade change was recorded.
-
-### `discussion_board_ban_reason_categories`
-
-Standardized categories of ban reasons that administrators can select
-when banning users.
-
-This table provides a consistent classification system for ban reasons,
-ensuring that administrators use standardized categories when banning
-users. Each category includes a name, description, and configuration
-options for proper moderation workflow management.
-
-Categories are used by [discussion_board_ban_records](#discussion_board_ban_records) to classify
-ban reasons consistently across the platform. Administrators can select
-from predefined categories when issuing bans, which helps maintain
-consistency in moderation practices and enables better reporting and
-analytics.
-
-The table supports soft deletion for archiving deprecated categories
-while preserving historical ban record associations.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`: Display name of the ban reason category used for administrator selection.
-- `description`: Detailed explanation of when this ban reason category should be used.
-- `is_active`
-  > Whether this category is currently available for selection by
-  > administrators.
-- `sort_order`: Display order for category listing in administrator interfaces.
-- `created_at`: Timestamp when this ban reason category was created.
-- `updated_at`: Timestamp when this ban reason category was last modified.
-- `deleted_at`: Timestamp when this ban reason category was soft deleted.
-
-### `discussion_board_ban_appeals`
-
-Records user appeals against ban decisions with appeal reasons, review
-status, and decision tracking.
-
-This table tracks the complete workflow of ban appeals from submission to
-final decision. Each appeal is linked to a specific ban record and
-includes the user's appeal reason, current review status, and the
-administrator's decision when reviewed. The appeal process allows users
-to contest ban decisions and provides administrators with a structured
-workflow for reviewing appeals.
-
-Appeals progress through statuses: 'pending' (awaiting review),
-'under_review' (currently being evaluated), 'approved' (ban overturned),
-or 'rejected' (ban upheld). The decision_reason field captures the
-administrator's justification for their decision.
-
-This table supports transparency in moderation actions and ensures users
-have recourse for contested ban decisions.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_ban_record_id`: The ban record being appealed. [discussion_board_ban_records.id](#discussion_board_ban_records)
-- `discussion_board_user_id`: The user who is appealing the ban. [discussion_board_users.id](#discussion_board_users)
-- `discussion_board_admin_id`
-  > The administrator who reviewed the appeal. {@link
-  > discussion_board_admins.id}
-- `appeal_reason`: The user's reason for appealing the ban decision.
-- `status`
-  > Current status of the appeal workflow: pending, under_review, approved,
-  > or rejected.
-- `decision_reason`: The administrator's reason for the appeal decision.
-- `appealed_at`: Timestamp when the user submitted the appeal.
-- `reviewed_at`: Timestamp when the administrator reviewed the appeal.
-- `created_at`: Timestamp when the appeal record was created.
-- `updated_at`: Timestamp when the appeal record was last updated.
-- `deleted_at`: Timestamp when the appeal record was soft deleted.
-
-### `discussion_board_ban_durations`
-
-Configuration table storing predefined ban duration options that
-administrators can select when banning users.
-
-This table provides standardized ban duration choices including temporary
-bans (e.g., 1 day, 7 days, 30 days) and permanent bans. Each duration
-option includes a descriptive name, duration value in hours, and whether
-it represents a permanent ban. Administrators reference these predefined
-options when issuing bans to ensure consistency across the moderation
-system.
-
-The ban durations support the [discussion_board_ban_records](#discussion_board_ban_records) table
-by providing standardized duration choices that administrators can
-select. This ensures consistent ban enforcement and simplifies the
-banning process for moderators.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `name`
-  > Descriptive name of the ban duration option (e.g., '1 Day Ban',
-  > 'Permanent Ban').
+  > Administrator who performed the action referenced in this historical
+  > record. [discussion_board_admins.id](#discussion_board_admins).
+- `admin_request_id`
+  > Admin request that was subject to the status change, if applicable. Can
+  > be null for non-request-related actions. {@link
+  > discussion_board_admin_requests.id}.
+- `user_ban_id`
+  > User ban record that was subject to modification, if applicable. Can be
+  > null for non-ban-related actions. [discussion_board_user_bans.id](#discussion_board_user_bans).
+- `administrator_assignment_id`
+  > Administrator assignment record that was created or modified, if
+  > applicable. Can be null for non-assignment-related actions. {@link
+  > discussion_board_administrator_assignments.id}.
+- `audit_log_id`
+  > Corresponding audit log entry for this historical action, providing
+  > additional context. [discussion_board_audit_logs.id](#discussion_board_audit_logs).
+- `action_type`
+  > Type of administrative action performed (e.g., 'request_approval',
+  > 'request_rejection', 'user_ban', 'user_unban', 'role_promotion',
+  > 'role_demotion', 'status_change').
+- `target_type`
+  > Type of entity that was the target of this action (e.g., 'admin_request',
+  > 'user_ban', 'administrator', 'system_config').
+- `target_id`
+  > UUID identifier of the target entity, used in conjunction with
+  > target_type to reference specific records.
 - `description`
-  > Detailed explanation of what this ban duration means and when it should
-  > be used.
-- `duration_hours`
-  > Duration of the ban in hours. For permanent bans, this should be set to 0
-  > or a very large value.
-- `is_permanent`
-  > Indicates whether this ban duration represents a permanent ban (true) or
-  > temporary ban (false).
-- `created_at`: Timestamp when this ban duration option was created.
-- `updated_at`: Timestamp when this ban duration option was last updated.
-- `deleted_at`: Timestamp when this ban duration option was soft-deleted (if applicable).
+  > Detailed description of the administrative action and its context for
+  > historical reference.
+- `previous_status`
+  > Previous status/value before the administrative action was taken.
+  > Provides historical context for the change.
+- `new_status`
+  > New status/value after the administrative action was taken. Captures the
+  > outcome of the administrative decision.
+- `created_at`
+  > Timestamp when this historical record was created. Represents when the
+  > administrative action was logged.
+- `updated_at`
+  > Timestamp when this historical record was last updated. Maintains data
+  > freshness for oversight activities.
 
-### `discussion_board_content_flags`
+### `discussion_board_administrator_assignment_to_members`
 
-User-reported content flags for inappropriate articles or comments
-requiring moderator review.
+Subtype table implementing polymorphic ownership pattern for
+administrator assignments where the assignment recipient is a member
+actor. Links administrator assignments to member accounts and their
+authentication sessions.
 
-This table tracks user-submitted content flags that require moderator
-attention. Each flag represents a user's report of inappropriate content,
-including the reason for reporting, the specific content being flagged
-(either an article or a comment), and the current status of the
-moderation workflow.
+This table serves as a concrete subtype in the polymorphic ownership
+design, establishing the specific relationship between an administrator
+assignment and the member actor who receives the role assignment. Each
+record corresponds to exactly one administrator assignment instance and
+exactly one member actor, with the foreign key to member sessions
+providing audit trail context for when the assignment was created or
+modified.
 
-Flags can reference either articles ({@link
-discussion_board_articles.id}) or comments ({@link
-discussion_board_comments.id}) depending on the type of content being
-reported. The flagging user is tracked through {@link
-discussion_board_users.id} reference, and administrators can review and
-resolve flags through the moderation system.
-
-The status field tracks the flag's progression through the moderation
-workflow: pending review, under investigation, resolved, or dismissed.
-This system enables community-driven content moderation while maintaining
-administrator oversight.
+Used by the system to track role transitions for community members who
+have been promoted to administrator status through the admin request
+approval process. Maintains 1:1 relationship with the parent {@link
+discussion_board_administrator_assignments} table while linking to the
+specific actor type in the authentication system.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `reporter_user_id`: User who reported the content flag. [discussion_board_users.id](#discussion_board_users).
-- `flagged_article_id`
-  > Article being flagged for moderation. {@link
-  > discussion_board_articles.id}.
-- `flagged_comment_id`
-  > Comment being flagged for moderation. {@link
-  > discussion_board_comments.id}.
-- `reviewing_admin_id`
-  > Administrator reviewing the content flag. {@link
+- `discussion_board_administrator_assignment_id`
+  > Reference to the parent administrator assignment record. {@link
+  > discussion_board_administrator_assignments.id}
+- `discussion_board_member_id`
+  > Reference to the member actor who receives the administrator assignment.
+  > [discussion_board_members.id](#discussion_board_members)
+- `discussion_board_member_session_id`
+  > Reference to the member session active when this assignment record was
+  > created or modified. Provides audit trail context. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when this assignment subtype record was created.
+- `updated_at`: Timestamp when this assignment subtype record was last modified.
+
+### `discussion_board_administrator_assignment_to_admins`
+
+Subtype table linking administrator assignments to admin actors who
+receive role assignments.
+
+This table implements the polymorphic ownership pattern for administrator
+assignments where the recipient is an admin actor. Each record
+establishes a 1:1 relationship between an administrator assignment and a
+specific admin account receiving administrative privileges. The table
+contains admin-specific metadata and session context for role assignment
+auditing and tracking.
+
+Admin actors in this context are regular administrators who have already
+been promoted to administrative roles and are now receiving additional
+privilege assignments or role transitions. The 1:1 constraint ensures
+each administrator assignment references exactly one admin recipient
+while allowing the main assignment table to support multiple
+administrator assignment types through the polymorphic pattern.
+
+[discussion_board_administrator_assignments.id](#discussion_board_administrator_assignments) provides the core
+assignment metadata, while [discussion_board_admins.id](#discussion_board_admins) identifies
+the specific admin actor receiving the assignment.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `administrator_assignment_id`
+  > Referenced administrator assignment's {@link
+  > discussion_board_administrator_assignments.id}.
+- `admin_id`
+  > Admin actor receiving the role assignment's {@link
   > discussion_board_admins.id}.
-- `flag_reason`: Detailed reason provided by the user for flagging the content.
-- `status`: Current status of the content flag in the moderation workflow.
-- `resolution_reason`: Explanation provided by administrator for flag resolution.
-- `created_at`: Timestamp when the content flag was initially reported.
-- `updated_at`: Timestamp when the content flag was last updated.
-- `deleted_at`: Timestamp when the content flag was soft deleted.
-- `resolved_at`: Timestamp when the content flag was resolved by an administrator.
-
-### `discussion_board_moderation_action_types`
-
-Standardized types of moderation actions that administrators can perform
-on the platform.
-
-This reference table provides consistent categorization for all
-moderation activities, ensuring uniform tracking and reporting across the
-system. Each action type includes a unique code, descriptive name, and
-optional category classification for organizing similar actions.
-
-Used by [discussion_board_moderation_logs](#discussion_board_moderation_logs) to categorize moderation
-activities and by [discussion_board_content_moderation_queues](#discussion_board_content_moderation_queues) to
-specify required action types for flagged content.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `code`
-  > Unique identifier code for the moderation action type. Used for
-  > programmatic reference and API integration.
-- `name`: Human-readable name of the moderation action type for display purposes.
-- `description`
-  > Detailed description explaining when and how this moderation action
-  > should be used.
-- `category`
-  > Optional category classification for grouping similar moderation actions
-  > (e.g., 'content', 'user', 'system').
-- `severity_level`
-  > Indicates the severity level of this action type for reporting and
-  > analytics purposes.
-- `requires_reason`
-  > Whether this action type requires administrators to provide a reason when
-  > performing the action.
-- `is_active`
-  > Indicates whether this action type is currently available for use by
-  > administrators.
-- `created_at`: Timestamp when this moderation action type was created in the system.
-- `updated_at`: Timestamp when this moderation action type was last updated.
-
-### `discussion_board_ban_record_of_admins`
-
-Subtype table linking ban records to regular administrators who issued
-the bans. This table implements the polymorphic ownership pattern for ban
-attribution, ensuring each ban record can be traced back to the specific
-administrator who performed the banning action.
-
-Each record represents the attribution of a ban action to a regular
-administrator. The table maintains referential integrity between ban
-records and administrator entities while supporting the audit trail
-requirements for moderation actions. This design allows for proper
-tracking of which administrator performed each banning action, supporting
-accountability and compliance requirements.
-
-This table works in conjunction with {@link
-discussion_board_ban_record_of_super_admins} to provide complete coverage
-of all administrator types that can issue bans, following the polymorphic
-ownership pattern established in the moderation system.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_ban_record_id`
-  > Reference to the ban record being attributed. {@link
-  > discussion_board_ban_records.id}.
-- `discussion_board_admin_id`
-  > Reference to the regular administrator who issued the ban. {@link
-  > discussion_board_admins.id}.
-- `created_at`: Timestamp when this ban attribution record was created.
-- `updated_at`: Timestamp when this ban attribution record was last updated.
-- `deleted_at`
-  > Timestamp when this ban attribution record was soft deleted, if
-  > applicable.
-
-### `discussion_board_ban_record_of_super_admins`
-
-Subtype table linking ban records to super administrators who issued the
-bans.
-
-This table implements the polymorphic ownership pattern for ban records
-issued by super administrators. Each ban record can be associated with
-exactly one super administrator who performed the banning action,
-establishing clear accountability and audit trails for moderation
-actions.
-
-Super administrators have the authority to ban users from the platform,
-and this table maintains the relationship between the ban record and the
-specific super administrator who executed the action. This supports the
-requirement that when a user is banned, the system records the ban reason
-and the administrator who issued the ban.
-
-The table ensures referential integrity between ban records and super
-administrator accounts, supporting the moderation workflow where super
-administrators can view their own banning actions and the system can
-track moderation activity by administrator grade.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_ban_record_id`: Associated ban record. [discussion_board_ban_records.id](#discussion_board_ban_records)
-- `discussion_board_super_admin_id`
-  > Super administrator who issued the ban. {@link
-  > discussion_board_super_admins.id}
-- `created_at`: Timestamp when this ban record association was created.
-- `updated_at`: Timestamp when this ban record association was last updated.
-
-### `discussion_board_content_moderation_queue_assignments`
-
-Historical tracking of administrator assignments to moderation queue
-entries for workflow audit and performance analysis.
-
-This table records which administrators were assigned to specific content
-moderation queue entries, capturing the assignment lifecycle from initial
-assignment to completion. It supports audit trails for moderation
-workflow compliance and enables performance analysis of administrator
-moderation efficiency.
-
-Each assignment record links a specific content moderation queue entry
-with the administrator responsible for reviewing it, along with essential
-temporal tracking. The table focuses on the core assignment relationship
-while avoiding duplication of workflow state information that should be
-maintained in the parent moderation queue table.
-
-[discussion_board_content_moderation_queues](#discussion_board_content_moderation_queues) represents the content
-items awaiting moderation review, while this table tracks the human
-resource assignment aspect of the moderation workflow.
-
-Properties as follows:
-
-- `id`: Primary Key.
-- `discussion_board_content_moderation_queue_id`
-  > Reference to the content moderation queue entry being assigned. {@link
-  > discussion_board_content_moderation_queues.id}
-- `assigned_admin_id`
-  > Reference to the administrator assigned to this moderation task. {@link
-  > discussion_board_admins.id}
+- `admin_session_id`
+  > Admin session context during assignment's {@link
+  > discussion_board_admin_sessions.id}.
 - `assigned_at`
-  > Timestamp when the administrator was assigned to this moderation queue
-  > entry.
-- `completed_at`
-  > Timestamp when the administrator completed the moderation task. Null if
-  > still pending.
-- `created_at`: Timestamp when this assignment record was created.
-- `updated_at`: Timestamp when this assignment record was last updated.
+  > Timestamp when the administrator assignment was applied to the admin
+  > actor.
+- `created_at`: Timestamp when this subtype record was created.
+- `updated_at`: Timestamp when this subtype record was last updated.
 
-### `discussion_board_content_moderation_queue_escalations`
+### `discussion_board_administrator_assignment_to_super_admins`
 
-Records priority escalations and assignment changes within the moderation
-workflow for comprehensive audit trails.
+Subtype table implementing polymorphic ownership for administrator
+assignments targeting super admin actors (those receiving role
+assignments).
 
-This table tracks workflow escalations that occur during content
-moderation processes. It captures priority level changes, assignment
-transfers between administrators, and workflow state transitions. Each
-escalation event includes details about the reason for escalation, the
-administrator who initiated it, and the administrator who receives the
-escalated assignment.
+This table establishes a 1:1 relationship between administrator
+assignments and super admin actors who are being assigned administrative
+roles or receiving promotions. It follows the polymorphic ownership
+pattern by separating actor-specific references into subtype tables,
+avoiding nullable actor foreign keys in the main assignment table.
 
-The escalation system supports various escalation types including
-priority increases for urgent content, reassignments to different
-administrator expertise levels, and workflow state transitions for
-complex moderation cases. This audit trail ensures transparency in
-moderation workflows and provides accountability for escalation
-decisions.
+Each record links a specific administrator assignment to exactly one
+super admin actor, maintaining referential integrity while supporting the
+complex role assignment system. The 1:1 constraint ensures each
+assignment has exactly one recipient super admin, and each super admin
+can receive multiple assignments over time.
 
-Related entities: [discussion_board_content_moderation_queues](#discussion_board_content_moderation_queues),
-[discussion_board_admins](#discussion_board_admins), [discussion_board_super_admins](#discussion_board_super_admins),
-[discussion_board_users](#discussion_board_users)
+[discussion_board_administrator_assignments](#discussion_board_administrator_assignments) for the main
+assignment record.
+[discussion_board_super_admins](#discussion_board_super_admins) for the super admin actor receiving
+the assignment.
 
 Properties as follows:
 
 - `id`: Primary Key.
-- `discussion_board_content_moderation_queue_id`
-  > The moderation queue entry being escalated. {@link
-  > discussion_board_content_moderation_queues.id}
-- `escalated_by_admin_id`
-  > Administrator who initiated the escalation. {@link
-  > discussion_board_admins.id}
-- `escalated_by_super_admin_id`
-  > Super administrator who initiated the escalation. {@link
+- `discussion_board_administrator_assignment_id`
+  > Reference to the main administrator assignment record. {@link
+  > discussion_board_administrator_assignments.id}
+- `discussion_board_super_admin_id`
+  > Reference to the super admin actor receiving the assignment. {@link
   > discussion_board_super_admins.id}
-- `assigned_to_admin_id`
-  > Administrator assigned to handle the escalated queue entry. {@link
+- `created_at`: Timestamp when this subtype assignment relationship was created.
+- `updated_at`: Timestamp when this subtype assignment relationship was last updated.
+
+### `discussion_board_administrator_assignment_by_members`
+
+Subtype table implementing polymorphic ownership for administrator
+assignments performed by member actors.
+
+This table establishes a 1:1 relationship with {@link
+discussion_board_administrator_assignments} to track which member actor
+performed a specific administrator assignment action. It follows the
+polymorphic ownership pattern by providing subtype-specific references to
+member accounts and sessions for audit trail and accountability purposes.
+
+Each record links a single administrator assignment to the member actor
+who executed it, along with their session context at the time of
+assignment. This enables audit trails, permission verification, and
+accountability tracking for administrative role assignment actions
+performed by regular members.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_administrator_assignment_id`
+  > Reference to the main administrator assignment record. {@link
+  > discussion_board_administrator_assignments.id}
+- `discussion_board_member_id`
+  > Reference to the member actor who performed the assignment. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Reference to the member session active during the assignment. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when this subtype assignment record was created.
+- `updated_at`: Timestamp when this subtype assignment record was last updated.
+
+### `discussion_board_administrator_assignment_by_admins`
+
+Subtype table implementing polymorphic ownership pattern for
+administrator assignments performed by admin actors.
+
+Establishes a 1:1 relationship between {@link
+discussion_board_administrator_assignments} and {@link
+discussion_board_admins}, tracking which admin actors performed
+administrator role assignments. This table enables the system to maintain
+audit trails and ownership information for administrative actions within
+the platform governance framework.
+
+The table follows the subtype pattern to avoid multiple nullable foreign
+keys in the main assignment table, ensuring data integrity and supporting
+query optimization through explicit actor-type relationships.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_administrator_assignment_id`
+  > Reference to the main administrator assignment record. This table
+  > implements a 1:1 relationship constraint ensuring each assignment
+  > performed by an admin actor has exactly one corresponding subtype record.
+  > [discussion_board_administrator_assignments.id](#discussion_board_administrator_assignments)
+- `discussion_board_admin_id`
+  > Reference to the admin actor who performed the administrator assignment.
+  > Establishes the ownership relationship between the administrative action
+  > and the actor responsible. [discussion_board_admins.id](#discussion_board_admins)
+- `created_at`
+  > Timestamp when this subtype relationship was created. Records when the
+  > admin actor was linked to the administrator assignment action.
+- `updated_at`
+  > Timestamp when this subtype relationship was last updated. Tracks
+  > modifications to the actor-assignment linkage.
+
+### `discussion_board_administrator_assignment_by_super_admins`
+
+Subtype table linking administrator assignments to super admin actors who
+performed the assignment.
+
+This table implements the polymorphic ownership pattern for the
+"assigner" side of administrator assignments, specifically for super
+administrator actors. Each record establishes a 1:1 relationship between
+a main [discussion_board_administrator_assignments](#discussion_board_administrator_assignments) record and the
+super administrator actor (from [discussion_board_super_admins](#discussion_board_super_admins))
+who performed the assignment, along with their session context (from
+[discussion_board_super_admin_sessions](#discussion_board_super_admin_sessions)) for comprehensive audit
+trail.
+
+This table completes the administrator assignment tracking system,
+allowing all three actor types (members, admins, and super admins) to be
+properly tracked as assigners with appropriate session context and audit
+capabilities.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_administrator_assignment_id`
+  > Reference to the main administrator assignment record. This establishes
+  > the 1:1 relationship with {@link
+  > discussion_board_administrator_assignments.id}.
+- `discussion_board_super_admin_id`
+  > Reference to the super administrator actor who performed the assignment.
+  > Links to [discussion_board_super_admins.id](#discussion_board_super_admins) for identity
+  > verification.
+- `discussion_board_super_admin_session_id`
+  > Session context of the super administrator when performing the
+  > assignment. References [discussion_board_super_admin_sessions.id](#discussion_board_super_admin_sessions)
+  > for audit trail completeness.
+- `created_at`: Timestamp when this super admin assigner record was created.
+- `updated_at`: Timestamp when this super admin assigner record was last updated.
+
+## Attachments
+
+```mermaid
+erDiagram
+"discussion_board_attachments" {
+  String id PK
+  String article_id FK
+  String filename
+  String filetype
+  String mime_type
+  Int size_bytes
+  String storage_path
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachment_snapshots" {
+  String id PK
+  String discussion_board_attachment_id FK
+  DateTime captured_at
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_image_attachments" {
+  String id PK
+  String discussion_board_attachment_id FK,UK
+  Int width
+  Int height
+  String alt_text "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachment_downloads" {
+  String id PK
+  String discussion_board_attachment_id FK
+  DateTime created_at
+  String actor_type
+  String ip
+  String user_agent
+  String referrer "nullable"
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachment_categories" {
+  String id PK
+  String parent_id FK "nullable"
+  String name UK
+  String description "nullable"
+  Int order_index
+  Boolean is_active
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachment_category_mappings" {
+  String id PK
+  String discussion_board_attachment_id FK
+  String discussion_board_attachment_category_id FK
+  DateTime created_at
+}
+"discussion_board_attachment_thumbnails" {
+  String id PK
+  String discussion_board_attachment_id FK
+  Int width
+  Int height
+  String size_category "nullable"
+  Int file_size
+  String file_path
+  String content_type
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_image_attachment_exif_data" {
+  String id PK
+  String discussion_board_image_attachment_id FK,UK
+  String camera_make "nullable"
+  String camera_model "nullable"
+  String lens_model "nullable"
+  String exposure_time "nullable"
+  Float f_number "nullable"
+  Int iso_speed "nullable"
+  Float focal_length "nullable"
+  Boolean flash_fired "nullable"
+  String metering_mode "nullable"
+  String white_balance "nullable"
+  String orientation "nullable"
+  Float gps_latitude "nullable"
+  Float gps_longitude "nullable"
+  Float gps_altitude "nullable"
+  DateTime capture_date "nullable"
+  String software "nullable"
+  DateTime created_at
+  DateTime updated_at
+  DateTime deleted_at "nullable"
+}
+"discussion_board_attachment_download_guests" {
+  String id PK
+  String discussion_board_attachment_download_id FK,UK
+  String discussion_board_guest_id FK
+  String discussion_board_guest_session_id FK "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_attachment_download_members" {
+  String id PK
+  String discussion_board_attachment_download_id FK,UK
+  String discussion_board_member_id FK
+  String discussion_board_member_session_id FK "nullable"
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_attachment_download_admins" {
+  String id PK
+  String discussion_board_attachment_download_id FK,UK
+  String discussion_board_admin_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_attachment_download_super_admins" {
+  String id PK
+  String discussion_board_attachment_download_id FK,UK
+  String discussion_board_super_admin_id FK
+  String discussion_board_super_admin_session_id FK
+  DateTime created_at
+  DateTime updated_at
+}
+"discussion_board_attachment_snapshots" }o--|| "discussion_board_attachments" : attachment
+"discussion_board_image_attachments" |o--|| "discussion_board_attachments" : attachment
+"discussion_board_attachment_downloads" }o--|| "discussion_board_attachments" : attachment
+"discussion_board_attachment_categories" }o--o| "discussion_board_attachment_categories" : parent
+"discussion_board_attachment_category_mappings" }o--|| "discussion_board_attachments" : attachment
+"discussion_board_attachment_category_mappings" }o--|| "discussion_board_attachment_categories" : category
+"discussion_board_attachment_thumbnails" }o--|| "discussion_board_attachments" : attachment
+"discussion_board_image_attachment_exif_data" |o--|| "discussion_board_image_attachments" : imageAttachment
+"discussion_board_attachment_download_guests" |o--|| "discussion_board_attachment_downloads" : download
+"discussion_board_attachment_download_members" |o--|| "discussion_board_attachment_downloads" : download
+"discussion_board_attachment_download_admins" |o--|| "discussion_board_attachment_downloads" : download
+"discussion_board_attachment_download_super_admins" |o--|| "discussion_board_attachment_downloads" : download
+```
+
+### `discussion_board_attachments`
+
+Main attachment metadata table storing file information for articles.
+
+Each attachment belongs to exactly one article and contains metadata
+about the uploaded file including filename, file type, size, and storage
+location. Attachments can be files or images, with image-specific
+metadata stored in [discussion_board_image_attachments](#discussion_board_image_attachments).
+
+Attachments are managed through article operations - users upload files
+when creating or editing articles, and download files when viewing
+articles. The table tracks the lifecycle of file attachments including
+upload time and soft deletion status.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `article_id`
+  > Parent article that this attachment belongs to. {@link
+  > discussion_board_articles.id}
+- `filename`
+  > Original filename as uploaded by the user. Preserves the original name
+  > for user recognition and download.
+- `filetype`
+  > File extension or type identifier derived from the uploaded file (e.g.,
+  > "pdf", "jpg", "docx").
+- `mime_type`
+  > MIME type of the file for proper content-type headers during download
+  > (e.g., "application/pdf", "image/jpeg").
+- `size_bytes`: File size in bytes for storage tracking and download preparation.
+- `storage_path`
+  > File system or cloud storage path where the actual file content is
+  > stored. Used by the storage service to retrieve file bytes.
+- `created_at`: Timestamp when the attachment was uploaded and linked to the article.
+- `updated_at`: Timestamp when the attachment metadata was last updated.
+- `deleted_at`
+  > Timestamp when the attachment was soft-deleted (nullable for active
+  > attachments).
+
+### `discussion_board_attachment_snapshots`
+
+Point-in-time snapshots of attachment metadata for audit trail and
+version history.
+
+Captures the complete state of an attachment at a specific moment in
+time, preserving the exact metadata values (filename, filetype, size,
+storage path, description) that existed at the snapshot timestamp. Used
+for compliance, rollback capabilities, and tracking changes to attachment
+metadata over time.
+
+Each snapshot is immutable after creation and linked to its parent {@link
+discussion_board_attachments} entity. Snapshot content is denormalized
+from the parent to preserve historical accuracy.
+
+**Design Rationale**: As a snapshot table, this denormalizes the parent
+attachment's state at capture time for audit purposes, rather than
+storing references to mutable parent fields.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_id`
+  > Parent attachment being snapshotted. References {@link
+  > discussion_board_attachments.id}.
+- `captured_at`
+  > Point-in-time when the attachment metadata was captured for this
+  > snapshot, representing the exact moment the parent's state was frozen.
+- `created_at`: When this snapshot record was created in the database.
+- `updated_at`: When this snapshot record was last updated in the database.
+- `deleted_at`
+  > When this snapshot record was soft deleted. Allows preserving audit
+  > history while hiding from active queries.
+
+### `discussion_board_image_attachments`
+
+Image-specific metadata for attachment files including dimensions, alt
+text, and EXIF data reference.
+
+This table stores specialized metadata for image-type attachments,
+providing dimensions, accessibility information via alt text, and
+references to EXIF data for camera and image properties. The table
+maintains a 1:1 relationship with [discussion_board_attachments.id](#discussion_board_attachments)
+where each image attachment has exactly one set of image metadata.
+
+Image dimensions are stored as integer values for width and height in
+pixels, supporting responsive display calculations. Alt text provides
+accessibility descriptions for screen readers and search engines. EXIF
+camera data is normalized into a separate child table to maintain
+database normalization while preserving detailed image metadata.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_id`
+  > Reference to the parent image attachment record. {@link
+  > discussion_board_attachments.id}
+- `width`
+  > Image width in pixels. This is the horizontal dimension of the image file
+  > used for display calculations and responsive layouts.
+- `height`
+  > Image height in pixels. This is the vertical dimension of the image file
+  > used for display calculations and responsive layouts.
+- `alt_text`
+  > Accessibility alternative text describing the image content. Used by
+  > screen readers and displayed when images cannot be loaded.
+- `created_at`
+  > Timestamp when this image metadata record was created. Used for audit
+  > trail and version tracking.
+- `updated_at`
+  > Timestamp when this image metadata record was last updated. Used for
+  > tracking modifications to image properties.
+- `deleted_at`
+  > Timestamp when this image metadata record was soft deleted, allowing for
+  > data recovery while hiding from normal queries.
+
+### `discussion_board_attachment_downloads`
+
+Tracks file attachment download activity for analytics and audit purposes.
+
+Each record represents a single download event of a file attachment,
+capturing who performed the download, when it occurred, and contextual
+information about the request. Downloads can be initiated by any actor
+type including guests, members, administrators, or super administrators.
+This data is used for usage analytics, security monitoring, and
+understanding popular content trends.
+
+Downloads are recorded whenever a user accesses an attached file through
+the platform's file serving endpoints. The records are immutable and
+provide an audit trail of file access across the system. {@link
+discussion_board_attachments.id}
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_id`: Downloaded attachment's [discussion_board_attachments.id](#discussion_board_attachments).
+- `created_at`: Timestamp when the download was initiated by the user.
+- `actor_type`
+  > Type of actor who performed the download. Values: 'guest', 'member',
+  > 'admin', 'super_admin'. Determines which actor subtype table to reference
+  > for the downloader identity.
+- `ip`: IP address of the download request for security and geographic analytics.
+- `user_agent`
+  > HTTP User-Agent header from the download request, identifying client
+  > browser/application.
+- `referrer`
+  > HTTP Referrer header indicating the page from which the download was
+  > initiated.
+- `deleted_at`
+  > Timestamp when this download record was soft deleted for compliance and
+  > audit trail purposes.
+
+### `discussion_board_attachment_categories`
+
+Predefined file type categories for organizing attachments into
+hierarchical groups such as documents, images, archives, and multimedia.
+
+This table provides a taxonomy system for attachment classification,
+allowing administrators to create, manage, and organize attachment
+categories independently. Categories can be arranged hierarchically
+through parent-child relationships, with display ordering for consistent
+UI presentation. Activation status controls whether categories are
+available for use in the system.
+
+Each category represents a logical grouping of attachment types that
+users can filter and browse by. The hierarchy supports nested categories
+like "Documents → PDFs" or "Images → Photos". Changes to categories are
+tracked through temporal fields, and soft delete preserves historical
+associations.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `parent_id`
+  > Parent category's [discussion_board_attachment_categories.id](#discussion_board_attachment_categories) for
+  > hierarchical organization. Null for top-level categories.
+- `name`: Display name of the category (e.g., "Documents", "Images", "Archives").
+- `description`: Detailed description explaining the category's purpose and intended usage.
+- `order_index`
+  > Display ordering position for consistent UI presentation, lower values
+  > appear first.
+- `is_active`
+  > Whether this category is currently available for use in the system.
+  > Inactive categories are preserved but not selectable.
+- `created_at`: Timestamp when this category was created.
+- `updated_at`: Timestamp when this category was last modified.
+- `deleted_at`
+  > Timestamp when this category was soft-deleted, preserving historical
+  > associations.
+
+### `discussion_board_attachment_category_mappings`
+
+Many-to-many relationship table connecting attachments to file type
+categories for organization.
+
+Each row represents an assignment of a specific attachment to a specific
+file type category (e.g., document, image, archive). This enables
+flexible categorization where attachments can belong to multiple
+categories and categories can contain multiple attachments.
+
+Used for organizing attachments by type for filtering, searching, and UI
+presentation. [discussion_board_attachments](#discussion_board_attachments) can have multiple
+category assignments through this table, while {@link
+discussion_board_attachment_categories} can reference multiple
+attachments.
+
+The junction table ensures proper normalization by separating
+categorization relationships from attachment and category metadata.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_id`: Associated attachment's [discussion_board_attachments.id](#discussion_board_attachments).
+- `discussion_board_attachment_category_id`
+  > Assigned file type category's {@link
+  > discussion_board_attachment_categories.id}.
+- `created_at`: Timestamp when this category assignment was created.
+
+### `discussion_board_attachment_thumbnails`
+
+Generated thumbnail images with different sizes for fast preview loading.
+
+This table stores resized versions of attachments (primarily images)
+optimized for quick display in user interfaces. Each attachment can have
+multiple thumbnail versions at different sizes (e.g., small, medium,
+large). Thumbnails are generated on upload and cached to improve page
+load performance.
+
+Key relationships:
+- Each thumbnail belongs to exactly one parent attachment ({@link
+discussion_board_attachments})
+- The main attachment table tracks the original file while this table
+stores derivative versions
+- Thumbnails are managed automatically and not directly by users
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_id`
+  > Parent attachment that this thumbnail is derived from. {@link
+  > discussion_board_attachments.id}
+- `width`: Width of the thumbnail image in pixels.
+- `height`: Height of the thumbnail image in pixels.
+- `size_category`
+  > Standard size category for the thumbnail (e.g., 'small', 'medium',
+  > 'large', 'extra_large'). Used for consistent thumbnail generation across
+  > the platform.
+- `file_size`: Size of the thumbnail file in bytes.
+- `file_path`
+  > Storage path where the thumbnail file is saved in the file system or
+  > cloud storage.
+- `content_type`
+  > MIME type of the thumbnail image (e.g., 'image/jpeg', 'image/png',
+  > 'image/webp').
+- `created_at`: Timestamp when this thumbnail was generated.
+- `updated_at`: Timestamp when this thumbnail record was last updated.
+- `deleted_at`
+  > Timestamp when this thumbnail was soft-deleted. Null indicates active
+  > thumbnail.
+
+### `discussion_board_image_attachment_exif_data`
+
+Stores camera and image EXIF metadata extracted from image attachments.
+Contains detailed photographic information including camera manufacturer,
+model, lens specifications, exposure settings, flash configuration, and
+GPS coordinates when available.
+
+This table provides technical metadata that enriches image attachments
+with professional camera data, enabling advanced image analysis and
+organization. EXIF data is typically extracted during image upload and
+provides valuable context about image creation conditions.
+
+Each record corresponds to exactly one image attachment in {@link
+discussion_board_image_attachments}. The relationship is 1:1 since each
+image attachment has a single set of EXIF metadata. The metadata is
+primarily read-only once extracted, though technical corrections may be
+applied if needed.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_image_attachment_id`
+  > Reference to the parent image attachment's {@link
+  > discussion_board_image_attachments.id}. This establishes a 1:1
+  > relationship where each image attachment has exactly one EXIF metadata
+  > record.
+- `camera_make`
+  > Manufacturer of the camera that captured the image (e.g., Canon, Nikon,
+  > Sony).
+- `camera_model`
+  > Specific model of the camera used to capture the image (e.g., EOS R5,
+  > D850, α7 III).
+- `lens_model`
+  > Lens model information including focal length and aperture range when
+  > available.
+- `exposure_time`
+  > Shutter speed or exposure time expressed as a fraction (e.g., '1/125',
+  > '1/60').
+- `f_number`: Aperture f-number setting (e.g., 2.8, 4.0, 5.6).
+- `iso_speed`: ISO sensitivity setting used for the exposure.
+- `focal_length`: Focal length in millimeters used for the shot.
+- `flash_fired`: Whether flash was fired during the exposure.
+- `metering_mode`
+  > Metering mode used for exposure calculation (e.g., Center-weighted, Spot,
+  > Evaluative).
+- `white_balance`: White balance setting (e.g., Auto, Daylight, Cloudy, Tungsten).
+- `orientation`
+  > Image orientation information (e.g., Horizontal, Rotate 90 CW, Rotate 270
+  > CW).
+- `gps_latitude`
+  > GPS latitude coordinate in decimal degrees (negative values for southern
+  > hemisphere).
+- `gps_longitude`
+  > GPS longitude coordinate in decimal degrees (negative values for western
+  > hemisphere).
+- `gps_altitude`: Altitude above sea level in meters.
+- `capture_date`: Date and time when the image was captured according to camera clock.
+- `software`
+  > Software used to process or edit the image (e.g., Adobe Photoshop,
+  > Lightroom).
+- `created_at`: Timestamp when this EXIF metadata record was created in the system.
+- `updated_at`: Timestamp when this EXIF metadata record was last updated.
+- `deleted_at`
+  > Timestamp when this EXIF metadata record was soft deleted. Null if not
+  > deleted.
+
+### `discussion_board_attachment_download_guests`
+
+Subtype table linking attachment download records to guest actors for
+polymorphic ownership.
+
+This table implements the polymorphic ownership pattern for download
+references, allowing guest actors (temporary anonymous users) to be
+associated with download activities. Each record establishes a 1:1
+relationship between an attachment download record and a guest actor,
+along with the guest session that initiated the download. This enables
+guest-specific analytics and access control while maintaining the
+separation between actor types through subtype tables.
+
+The table references the parent {@link
+discussion_board_attachment_downloads}, the associated {@link
+discussion_board_guests} actor, and the {@link
+discussion_board_guest_sessions} for session context. Downloads by guests
+are tracked for analytics and security monitoring of anonymous access to
+attachment files.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_download_id`
+  > The parent download record being referenced. This establishes the link to
+  > the download activity metadata. {@link
+  > discussion_board_attachment_downloads.id}.
+- `discussion_board_guest_id`
+  > The guest actor who performed the download. References the temporary
+  > anonymous user account. [discussion_board_guests.id](#discussion_board_guests).
+- `discussion_board_guest_session_id`
+  > The guest session context when the download was initiated. Provides
+  > session metadata for audit purposes. {@link
+  > discussion_board_guest_sessions.id}.
+- `created_at`
+  > Timestamp when this guest download reference was created. Records when
+  > the polymorphic association was established.
+- `updated_at`
+  > Timestamp when this guest download reference was last updated. Tracks any
+  > modifications to the association metadata.
+
+### `discussion_board_attachment_download_members`
+
+Subtype table implementing polymorphic ownership for member actor
+attachment downloads.
+
+Links individual download records from {@link
+discussion_board_attachment_downloads} to specific member actors from
+[discussion_board_members](#discussion_board_members). This table enables type-safe
+polymorphic relationships where attachment downloads can be owned by
+different actor types (guests, members, admins, super admins) through
+separate subtype tables, avoiding the anti-pattern of multiple nullable
+foreign keys.
+
+Each record establishes a 1:1 relationship: one download belongs to
+exactly one member actor through this subtype. The main download record
+tracks generic download metadata while this subtype adds actor-specific
+context. When querying downloads by member actors, join through this
+table to retrieve download activity with proper actor typing.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_download_id`
+  > Reference to the main download record. {@link
+  > discussion_board_attachment_downloads.id}
+- `discussion_board_member_id`
+  > Reference to the member actor who performed the download. {@link
+  > discussion_board_members.id}
+- `discussion_board_member_session_id`
+  > Session context when the download occurred. {@link
+  > discussion_board_member_sessions.id}
+- `created_at`: Timestamp when this subtype record was created.
+- `updated_at`: Timestamp when this subtype record was last updated.
+
+### `discussion_board_attachment_download_admins`
+
+Subtype table linking download records to admin actors for polymorphic
+ownership.
+
+This table establishes the specific relationship between file download
+activities and admin actor accounts. It is part of a polymorphic
+ownership pattern where the main {@link
+discussion_board_attachment_downloads} table tracks download activities
+generically, while subtype tables like this one link downloads to
+specific actor types.
+
+The 1:1 relationship is enforced through a unique constraint on the
+download foreign key, ensuring each download record can be associated
+with exactly one actor type reference. This design supports clean
+separation of concerns while maintaining referential integrity across the
+polymorphic ownership system.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_download_id`
+  > Reference to the download activity record that is being associated with
+  > an admin actor. This establishes the polymorphic link back to the main
+  > download tracking table. [discussion_board_attachment_downloads.id](#discussion_board_attachment_downloads)
+- `discussion_board_admin_id`
+  > Reference to the admin actor account that performed the download. This
+  > establishes ownership by the specific administrator. {@link
   > discussion_board_admins.id}
-- `assigned_to_super_admin_id`
-  > Super administrator assigned to handle the escalated queue entry. {@link
+- `created_at`
+  > Timestamp when this subtype relationship was created to link a download
+  > to an admin actor.
+- `updated_at`
+  > Timestamp when this subtype relationship was last updated to reflect any
+  > changes in the association.
+
+### `discussion_board_attachment_download_super_admins`
+
+Subtype table linking download records to super admin actors for
+polymorphic ownership.
+
+This table implements the polymorphic ownership pattern where attachment
+download records can reference different actor types. Each record
+establishes a 1:1 relationship between a download event and a super admin
+actor who performed the download. The table ensures referential integrity
+while maintaining separation of actor types.
+
+Records in this table are created when a super admin downloads an
+attachment, linking the download activity to their administrative account
+for audit trails and access tracking. This approach avoids nullable
+foreign keys in the main download table and provides clean actor type
+separation.
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_attachment_download_id`
+  > Reference to the download record being owned by a super admin. {@link
+  > discussion_board_attachment_downloads.id}
+- `discussion_board_super_admin_id`
+  > Reference to the super admin actor who performed the download. {@link
   > discussion_board_super_admins.id}
-- `escalation_type`
-  > Type of escalation performed (priority_increase, reassignment,
-  > workflow_transition, etc.).
-- `previous_priority`: Priority level before escalation occurred.
-- `new_priority`: Priority level after escalation.
-- `escalation_reason`: Detailed reason explaining why the escalation was necessary.
-- `workflow_state_before`: Workflow state of the moderation queue entry before escalation.
-- `workflow_state_after`: Workflow state of the moderation queue entry after escalation.
-- `escalation_timestamp`: Exact timestamp when the escalation occurred.
-- `created_at`: Timestamp when this escalation record was created.
-- `updated_at`: Timestamp when this escalation record was last updated.
+- `discussion_board_super_admin_session_id`
+  > Reference to the session used by the super admin during the download.
+  > [discussion_board_super_admin_sessions.id](#discussion_board_super_admin_sessions)
+- `created_at`: Timestamp when the super admin download reference was created.
+- `updated_at`: Timestamp when the super admin download reference was last updated.
+
+## default
+
+```mermaid
+erDiagram
+"discussion_board_mv_article_comments" {
+  String id PK
+  String discussion_board_article_id FK,UK
+  Int total_comment_count
+  DateTime latest_comment_timestamp "nullable"
+  DateTime refresh_timestamp
+}
+```
+
+### `discussion_board_mv_article_comments`
+
+Materialized view that pre-computes article comment statistics for fast
+querying.
+
+Aggregates comment counts and latest comment timestamps for each article,
+optimizing queries that need to display comment statistics on article
+listing pages. This denormalized view is refreshed periodically to
+maintain performance while ensuring data consistency.
+
+The view includes the article reference, comment count, and timestamp of
+the most recent comment, enabling fast sorting and filtering by comment
+activity without expensive JOIN operations on the live comments table.
+
+[discussion_board_articles](#discussion_board_articles) for article details
+[discussion_board_comments](#discussion_board_comments) for raw comment data
+
+Properties as follows:
+
+- `id`: Primary Key.
+- `discussion_board_article_id`
+  > Referenced article for these comment statistics. {@link
+  > discussion_board_articles.id}.
+- `total_comment_count`
+  > Total number of comments on this article, including all published
+  > comments.
+- `latest_comment_timestamp`
+  > Timestamp of the most recent comment on this article for sorting by
+  > recent activity.
+- `refresh_timestamp`: When this materialized view was last refreshed to track data freshness.

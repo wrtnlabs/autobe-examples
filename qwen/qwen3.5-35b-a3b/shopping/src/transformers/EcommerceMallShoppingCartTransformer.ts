@@ -1,10 +1,4 @@
-import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShoppingCart";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -12,7 +6,6 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCartItemTransformer } from "./EcommerceMallCartItemTransformer";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 
 export namespace EcommerceMallShoppingCartTransformer {
@@ -23,10 +16,10 @@ export namespace EcommerceMallShoppingCartTransformer {
     return {
       select: {
         id: true,
+        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
         created_at: true,
         updated_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        cartItems: EcommerceMallCartItemTransformer.select(),
+        cartItems: true,
       },
     } satisfies Prisma.ecommerce_mall_shopping_cartsFindManyArgs;
   }
@@ -35,13 +28,11 @@ export namespace EcommerceMallShoppingCartTransformer {
   ): Promise<IEcommerceMallShoppingCart> {
     return {
       id: input.id,
-      customer_id: input.customer.id,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      cart_items: await ArrayUtil.asyncMap(
-        input.cartItems,
-        EcommerceMallCartItemTransformer.transform,
+      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
+        input.customer,
       ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

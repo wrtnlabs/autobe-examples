@@ -10,8 +10,8 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditLikePostCollector {
   export async function collect(props: {
     body: IRedditLikePost.ICreate;
-    redditLikeMembers: IEntity;
-    redditLikeCommunities: IEntity;
+    author: IEntity;
+    community: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -26,8 +26,8 @@ export namespace RedditLikePostCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      author: { connect: { id: props.redditLikeMembers.id } },
-      community: { connect: { id: props.redditLikeCommunities.id } },
+      author: { connect: { id: props.author.id } },
+      community: { connect: { id: props.community.id } },
     } satisfies Prisma.reddit_like_postsCreateInput;
   }
 }

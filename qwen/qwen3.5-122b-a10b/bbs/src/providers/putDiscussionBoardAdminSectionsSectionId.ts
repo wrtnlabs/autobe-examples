@@ -19,16 +19,11 @@ export async function putDiscussionBoardAdminSectionsSectionId(props: {
   sectionId: string & tags.Format<"uuid">;
   body: IDiscussionBoardSection.IUpdate;
 }): Promise<IDiscussionBoardSection> {
-  // Verify section exists and is not deleted
-  const section =
-    await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
-      where: { id: props.sectionId },
-      select: { id: true, deleted_at: true },
-    });
-  if (section.deleted_at !== null) {
-    throw new HttpException("Section has been deleted", 410);
-  }
-  // Check name uniqueness if name is being updated
+  // Find the section - will throw 404 if not found or deleted
+  await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
+    where: { id: props.sectionId },
+  });
+  // Validate name uniqueness if provided
   if (props.body.name !== undefined) {
     const existing = await MyGlobal.prisma.discussion_board_sections.findFirst({
       where: {
@@ -41,7 +36,7 @@ export async function putDiscussionBoardAdminSectionsSectionId(props: {
       throw new HttpException("Section name already exists", 409);
     }
   }
-  // Perform update
+  // Update the section with only provided fields
   await MyGlobal.prisma.discussion_board_sections.update({
     where: { id: props.sectionId },
     data: {
@@ -52,11 +47,12 @@ export async function putDiscussionBoardAdminSectionsSectionId(props: {
       updated_at: new Date(),
     },
   });
-  // Retrieve and transform updated section
+  // Fetch updated section with creator relation
   const updated =
     await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
       where: { id: props.sectionId },
       ...DiscussionBoardSectionTransformer.select(),
     });
+  // Transform and return
   return await DiscussionBoardSectionTransformer.transform(updated);
 }

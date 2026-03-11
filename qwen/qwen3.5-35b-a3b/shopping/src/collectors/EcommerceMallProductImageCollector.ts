@@ -11,14 +11,12 @@ export namespace EcommerceMallProductImageCollector {
   export async function collect(props: {
     body: IEcommerceMallProductImage.ICreate;
     ecommerceMallProducts: IEntity;
-    sequence?: number;
   }) {
     const id: string = v4();
-    const display_order: number = props.sequence ?? 0;
     return {
       id,
       image_url: props.body.image_url,
-      display_order,
+      display_order: props.body.display_order,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

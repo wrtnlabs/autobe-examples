@@ -10,7 +10,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallCategoryAtSummaryTransformer } from "../transformers/ShoppingMallCategoryAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,48 +19,85 @@ export async function patchShoppingMallCategories(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const sort = props.body.sort ?? "name";
+  const direction = props.body.direction ?? "asc";
+  const orderByInput = (
+    sort === "createdAt" ? { created_at: direction } : { name: direction }
+  ) satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput;
   const whereInput = {
     deleted_at: null,
+    ...(props.body.search !== undefined && {
+      OR: [
+        { name: { contains: props.body.search, mode: "insensitive" as const } },
+        {
+          description: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
     ...(props.body.name !== undefined && {
       name: { contains: props.body.name, mode: "insensitive" as const },
     }),
-    ...(props.body.topLevelOnly === true
-      ? { parent_id: null }
-      : props.body.parentId !== undefined
-        ? { parent_id: props.body.parentId }
-        : {}),
+    ...(props.body.parentId !== undefined && {
+      parent_id: props.body.parentId,
+    }),
+    ...(props.body.hierarchyLevel !== undefined &&
+      props.body.parentId === undefined && {
+        parent_id:
+          props.body.hierarchyLevel === "top-level" ? null : { not: null },
+      }),
   } satisfies Prisma.shopping_mall_categoriesWhereInput;
-  const orderByInput =
-    props.body.sort === "name"
-      ? ({
-          name: "asc" as const,
-        } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
-      : props.body.sort === "-name"
-        ? ({
-            name: "desc" as const,
-          } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
-        : props.body.sort === "createdAt"
-          ? ({
-              created_at: "asc" as const,
-            } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput)
-          : ({
-              created_at: "desc" as const,
-            } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput);
-  const selectArgs = ShoppingMallCategoryAtSummaryTransformer.select();
   const data = await MyGlobal.prisma.shopping_mall_categories.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    select: selectArgs.select,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      parent: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      } satisfies Prisma.shopping_mall_categoriesFindManyArgs,
+    },
   });
   const total = await MyGlobal.prisma.shopping_mall_categories.count({
     where: whereInput,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCategoryAtSummaryTransformer.transform,
+    data: data.map(
+      (category) =>
+        ({
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          parent: category.parent
+            ? {
+                id: category.parent.id,
+                name: category.parent.name,
+                description: category.parent.description,
+                parent: null,
+                created_at: category.parent.created_at.toISOString(),
+                updated_at: category.parent.updated_at.toISOString(),
+                deleted_at: category.parent.deleted_at?.toISOString() ?? null,
+              }
+            : null,
+          created_at: category.created_at.toISOString(),
+          updated_at: category.updated_at.toISOString(),
+          deleted_at: category.deleted_at?.toISOString() ?? null,
+        }) satisfies IShoppingMallCategory.ISummary,
     ),
     pagination: {
       current: page,

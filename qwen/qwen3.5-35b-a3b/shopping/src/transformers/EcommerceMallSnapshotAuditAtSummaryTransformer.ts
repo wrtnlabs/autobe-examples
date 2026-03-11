@@ -1,3 +1,6 @@
+import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSnapshotAudit } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSnapshotAudit";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -31,10 +34,21 @@ export namespace EcommerceMallSnapshotAuditAtSummaryTransformer {
   ): Promise<IEcommerceMallSnapshotAudit.ISummary> {
     return {
       id: input.id,
-      record_type: input.record_type,
+      record_type: typia.assert<
+        | "product"
+        | "product_variant"
+        | "seller_profile"
+        | "order_item"
+        | "review"
+        | "cancellation_request"
+        | "refund_request"
+      >(input.record_type),
       record_id: input.record_id,
       changed_at: input.changed_at.toISOString(),
-      changed_by: input.changed_by,
+      changed_by: {
+        id: input.changed_by,
+        email: "",
+      } as IEcommerceMallCustomer.ISummary,
     };
   }
 }

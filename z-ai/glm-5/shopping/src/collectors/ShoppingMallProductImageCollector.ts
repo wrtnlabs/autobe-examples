@@ -12,11 +12,10 @@ export namespace ShoppingMallProductImageCollector {
     body: IShoppingMallProductImage.ICreate;
     shoppingMallProducts: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      image_url: props.body.image_url,
-      display_order: props.body.display_order,
+      id: v4(),
+      image_url: props.body.imageUrl,
+      display_order: props.body.displayOrder ?? 0,
       created_at: new Date(),
       product: { connect: { id: props.shoppingMallProducts.id } },
     } satisfies Prisma.shopping_mall_product_imagesCreateInput;

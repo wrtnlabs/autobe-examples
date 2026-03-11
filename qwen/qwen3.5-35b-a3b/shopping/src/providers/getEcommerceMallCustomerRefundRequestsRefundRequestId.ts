@@ -1,4 +1,3 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -20,15 +19,21 @@ export async function getEcommerceMallCustomerRefundRequestsRefundRequestId(prop
   refundRequestId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallRefundRequest> {
   const refundRequest =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
-      where: {
-        id: props.refundRequestId,
-        deleted_at: null,
-      },
-      ...EcommerceMallRefundRequestTransformer.select(),
+    await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
+      where: { id: props.refundRequestId, deleted_at: null },
+      select: EcommerceMallRefundRequestTransformer.select().select,
     });
-  if (refundRequest === null) {
-    throw new HttpException("Refund request not found", 404);
+  const orderItem =
+    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
+      where: { id: refundRequest.orderItem.id },
+      select: {
+        order: {
+          select: { customer_id: true },
+        },
+      },
+    });
+  if (orderItem.order.customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallRefundRequestTransformer.transform(refundRequest);
 }

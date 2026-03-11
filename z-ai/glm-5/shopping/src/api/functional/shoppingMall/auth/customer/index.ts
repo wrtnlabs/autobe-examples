@@ -6,15 +6,32 @@ import typia from "typia";
 import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCustomer";
 
 /**
- * Registers a new customer account on the e-commerce platform.
+ * Creates a new customer account with email and password authentication.
  *
- * This endpoint allows new users to create a customer account by providing their email address and password. The email serves as the unique identifier for authentication and must not be already registered in the system. Passwords are securely hashed before storage using industry-standard one-way hashing algorithms.
+ * This endpoint handles the initial registration flow for customers who want to access the shopping mall platform. Upon successful registration, the customer account is immediately activated without requiring administrator approval, as specified in the business requirements.
  *
- * The registration process creates a new record in the shopping_mall_customers table with the provided credentials and optional profile information (display_name, phone_number). By default, new accounts are not banned (banned = false) and are immediately active upon successful registration.
+ * **Request Body:**
+ * - email: Customer's email address for authentication (must be unique across all customers, case-insensitive)
+ * - password: Customer's password (must meet minimum security requirements)
  *
- * Upon successful registration, the system generates JWT tokens for authentication: an access token for API requests and a refresh token for session renewal. A session record is also created in shopping_mall_customer_sessions to track the login event with IP address and request metadata for security auditing.
+ * **Database Operations:**
+ * - Creates a new record in the 'shopping_mall_customers' table with the email, hashed password, and 'banned' flag set to false
+ * - Creates a new session record in 'shopping_mall_customer_sessions' with connection metadata (IP, href, referrer)
+ * - Sets session expiration to 24 hours from creation time
  *
- * Customers can optionally provide display_name and phone_number during registration, which can be updated later through profile management endpoints. The display_name is shown in reviews and public interactions on the platform.
+ * **Authentication Flow:**
+ * After account creation, a JWT access token (valid for 1 hour) and refresh token (valid for 7 days) are generated and returned. The JWT token includes claims for user identifier (sub), user type "customer" (type), session identifier (sid), issued-at timestamp (iat), and expiration timestamp (exp).
+ *
+ * **Business Rules Applied:**
+ * - Email uniqueness is enforced across all customer accounts
+ * - Password is stored as a secure hash, never in plaintext
+ * - Account status is set to 'active' (banned = false) upon creation
+ * - Multiple sessions are allowed per customer across different devices
+ *
+ * **Security Considerations:**
+ * - Passwords are hashed before storage
+ * - Session creation captures client metadata for security auditing
+ * - Tokens are transmitted only over HTTPS connections
  *
  * @setHeader token.access Authorization
  *
@@ -22,25 +39,42 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @param props.body Customer registration credentials and optional profile information
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation of customer registration endpoint. The service should:
+ * @x-autobe-specification Implementation specification for customer registration (join):
  *
- * 1. Validate that email is not already registered (check shopping_mall_customers table for uniqueness)
- * 2. Hash the password using a secure one-way hashing algorithm (bcrypt or argon2)
- * 3. Create a new customer record in shopping_mall_customers with:
- *    - email (case-insensitive, stored lowercase)
- *    - password_hash (hashed password)
- *    - display_name (optional, from request)
- *    - phone_number (optional, from request)
- *    - banned = false (default)
- *    - created_at and updated_at timestamps
- * 4. Generate JWT tokens (access_token and refresh_token)
- * 5. Create a session record in shopping_mall_customer_sessions with expiration
- * 6. Return IAuthorized response with tokens and customer info
+ * 1. **Request Validation**:
+ *    - Validate email format (must be valid email address)
+ *    - Check password meets minimum security requirements (length, complexity)
+ *    - Validate email is unique across all customer accounts (case-insensitive comparison)
  *
- * Error handling:
- * - 400 Bad Request: Invalid email format, weak password
- * - 409 Conflict: Email already registered
- * - 500 Internal Server Error: Database or hashing failure
+ * 2. **Account Creation**:
+ *    - Hash password using secure one-way hashing algorithm
+ *    - Create new customer record with:
+ *      - email (normalized to lowercase)
+ *      - password_hash (hashed password)
+ *      - banned = false (default active state)
+ *      - created_at = current timestamp
+ *      - updated_at = current timestamp
+ *    - No administrator approval required for customer accounts
+ *
+ * 3. **Session Creation**:
+ *    - Create new session record in shopping_mall_customer_sessions
+ *    - Capture IP address, request URL (href), and referrer from request
+ *    - Set expired_at to current_timestamp + 24 hours (session duration)
+ *    - created_at = current timestamp
+ *
+ * 4. **Token Generation**:
+ *    - Generate JWT access token with claims: sub (customer_id), type ("customer"), sid (session_id), iat, exp (1 hour)
+ *    - Generate refresh token (valid for 7 days)
+ *    - Store refresh token hash in session or separate token store
+ *
+ * 5. **Response**:
+ *    - Return IShoppingMallCustomer.IAuthorized with access_token and refresh_token
+ *    - Include customer profile information
+ *
+ * 6. **Error Handling**:
+ *    - 400: Invalid email format
+ *    - 400: Password does not meet requirements
+ *    - 409: Email already registered
  * @path /shoppingMall/auth/customer/join
  * @accessor api.functional.shoppingMall.auth.customer.join
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -123,47 +157,91 @@ export namespace join {
 }
 
 /**
- * Authenticates a customer and issues JWT tokens for platform access.
+ * Authenticates a customer account with email and password credentials.
  *
- * This endpoint validates customer credentials (email and password) against the shopping_mall_customers table. The email lookup is case-insensitive to handle user input variations. Password verification uses secure comparison against the stored password_hash to prevent timing attacks.
+ * This endpoint validates customer credentials and creates an authenticated session for accessing protected platform features. The authentication flow enforces all security policies including banned account checks and session management.
  *
- * The login process enforces account status checks:
- * - Accounts with deleted_at set are rejected (account was deleted)
- * - Accounts with banned = true are rejected with appropriate error message
+ * **Request Body:**
+ * - email: Registered customer's email address
+ * - password: Customer's password for authentication
  *
- * Upon successful authentication, the system generates a new JWT access token for API authorization and a refresh token for session renewal. The access token contains customer identity claims (customer_id, email) and has a short expiration time (typically 15-30 minutes). The refresh token has a longer lifespan (typically 7-14 days).
+ * **Authentication Process:**
+ * 1. The email is looked up in the 'shopping_mall_customers' table (case-insensitive comparison)
+ * 2. The password is verified against the stored password_hash using the secure hashing algorithm
+ * 3. The account's 'banned' flag is checked - if true, login is denied
+ * 4. The account's 'deleted_at' is checked - if set, login is denied
  *
- * A session record is created in shopping_mall_customer_sessions to maintain an audit trail of login events. This record captures the IP address, request URL (href), and HTTP referrer for security monitoring and anomaly detection purposes. Sessions are append-only and cannot be modified after creation.
+ * **Session Management:**
+ * Upon successful authentication:
+ * - A new session record is created in 'shopping_mall_customer_sessions'
+ * - Session captures client metadata: IP address, request URL (href), and referrer
+ * - Session expires after 24 hours from creation
+ * - Multiple concurrent sessions are allowed per customer
  *
- * The response includes both tokens along with basic customer profile information (id, email, display_name, phone_number) for client-side state initialization.
+ * **Token Generation:**
+ * - JWT access token is generated with 1-hour expiration
+ * - JWT claims include: sub (customer_id), type ("customer"), sid (session_id), iat, exp
+ * - Refresh token is generated with 7-day validity
+ * - Tokens must be transmitted over HTTPS only
+ *
+ * **Security Measures:**
+ * - Rate limiting applied to prevent brute force attacks
+ * - Invalid credentials return generic error (do not reveal if email exists)
+ * - Banned accounts receive specific error message
+ * - Password validation uses secure comparison to prevent timing attacks
+ *
+ * **Error Responses:**
+ * - 401 Unauthorized: Invalid email or password combination
+ * - 403 Forbidden: Account is banned by administrator
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Customer login credentials
+ * @param props.body Customer login credentials for authentication
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation of customer login endpoint. The service should:
+ * @x-autobe-specification Implementation specification for customer login:
  *
- * 1. Retrieve customer record from shopping_mall_customers by email (case-insensitive lookup)
- * 2. Verify customer exists and deleted_at is null (account not deleted)
- * 3. Verify banned is false (account not banned)
- * 4. Verify password_hash matches the provided password using secure comparison
- * 5. Generate new JWT tokens (access_token with short expiry, refresh_token with longer expiry)
- * 6. Create session record in shopping_mall_customer_sessions with:
- *    - customer_id
- *    - ip address from request
- *    - href and referrer from request headers
- *    - created_at (now)
- *    - expired_at (based on refresh token expiry)
- * 7. Return IAuthorized response with tokens and customer info
+ * 1. **Request Validation**:
+ *    - Validate email format
+ *    - Check password is provided
+ *    - Normalize email to lowercase for lookup
  *
- * Error handling:
- * - 400 Bad Request: Missing email or password
- * - 401 Unauthorized: Invalid credentials (wrong email or password)
- * - 403 Forbidden: Account banned or deleted
- * - 429 Too Many Requests: Rate limit exceeded (after multiple failed attempts)
- * - 500 Internal Server Error: Database or token generation failure
+ * 2. **Customer Lookup**:
+ *    - Query shopping_mall_customers by email (case-insensitive)
+ *    - If customer not found, return authentication error (do not reveal existence)
+ *
+ * 3. **Authentication Checks**:
+ *    - Verify password hash matches stored password_hash
+ *    - Check customer is not deleted (deleted_at is null)
+ *    - Check customer is not banned (banned = false)
+ *    - If banned, reject login with appropriate message
+ *
+ * 4. **Session Creation**:
+ *    - Create new session record in shopping_mall_customer_sessions
+ *    - customer_id = authenticated customer's id
+ *    - Capture IP, href, referrer from request context
+ *    - created_at = current timestamp
+ *    - expired_at = current_timestamp + 24 hours
+ *
+ * 5. **Token Generation**:
+ *    - Generate JWT access token:
+ *      - sub: customer_id
+ *      - type: "customer"
+ *      - sid: session_id
+ *      - iat: current timestamp
+ *      - exp: current_timestamp + 1 hour
+ *    - Generate refresh token (valid for 7 days)
+ *    - Store refresh token hash for validation
+ *
+ * 6. **Response**:
+ *    - Return IShoppingMallCustomer.IAuthorized with tokens and customer info
+ *
+ * 7. **Error Handling**:
+ *    - 400: Invalid email format or missing password
+ *    - 401: Invalid credentials (wrong email/password)
+ *    - 403: Account is banned
+ *    - Rate limiting on login attempts to prevent brute force
  * @path /shoppingMall/auth/customer/login
  * @accessor api.functional.shoppingMall.auth.customer.login
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -197,7 +275,7 @@ export async function login(
 export namespace login {
   export type Props = {
     /**
-     * Customer login credentials
+     * Customer login credentials for authentication
      */
     body: IShoppingMallCustomer.ILogin;
   };
@@ -246,45 +324,97 @@ export namespace login {
 }
 
 /**
- * Renews JWT tokens for an authenticated customer session.
+ * Renews authentication tokens using a valid refresh token.
  *
- * This endpoint allows customers to obtain fresh access tokens without re-entering credentials. The refresh token, issued during login or registration, is submitted to receive a new access token and optionally a new refresh token.
+ * This endpoint allows customers to obtain a new access token without re-authenticating, as long as they possess a valid refresh token and their session is still active. This implements the token refresh policy defined in the authentication requirements.
  *
- * The refresh process validates:
- * - Token signature integrity using the platform's secret key
- * - Token expiration status (refresh tokens have longer lifespans than access tokens)
- * - Customer account status from shopping_mall_customers (account must not be deleted or banned)
- * - Session validity from shopping_mall_customer_sessions (session must not be expired)
+ * **Request Body:**
+ * - refreshToken: A valid, non-expired refresh token issued during login or previous refresh
  *
- * Token refresh enables seamless user experience by maintaining authentication across extended periods without requiring frequent login. The access token is renewed for continued API access, while the refresh token may also be rotated for enhanced security (refresh token rotation pattern).
+ * **Refresh Token Validation:**
+ * - Refresh token must not be expired (valid for 7 days from creation)
+ * - Refresh token must not have been used before (one-time use - used tokens are invalidated)
+ * - Refresh token must be associated with an active session
  *
- * If the customer account has been banned or deleted since the original token issuance, the refresh is denied with an appropriate error. This ensures that administrative actions (banning, account deletion) take immediate effect even on active sessions.
+ * **Session Validation:**
+ * - Associated session must not be expired (within 24-hour session duration)
+ * - Session must exist in shopping_mall_customer_sessions
+ * - Customer account must still be active (not deleted, not banned)
  *
- * The response returns new tokens along with current customer profile information, allowing clients to update their local state if profile changes occurred.
+ * **Token Generation Process:**
+ * Upon successful validation:
+ * 1. The used refresh token is invalidated (cannot be reused)
+ * 2. A new JWT access token is generated with 1-hour expiration
+ * 3. A new refresh token is generated with 7-day validity
+ * 4. Both tokens are returned in the response
+ *
+ * **Security Policies:**
+ * - Rate limiting: Maximum 10 refresh requests per minute per user to prevent abuse
+ * - Refresh token rotation: Each refresh invalidates the previous token and issues a new one
+ * - Session continuity: The session identifier (sid) remains the same in the new tokens
+ * - Banned account handling: If customer is banned, all sessions and tokens are invalidated
+ *
+ * **Token Claims Preserved:**
+ * - sub (subject): Customer identifier
+ * - type: "customer" (actor type)
+ * - sid (session identifier): Same as original login session
+ *
+ * **Error Responses:**
+ * - 401 Unauthorized: Invalid, expired, or already-used refresh token
+ * - 401 Unauthorized: Session has expired (exceeded 24-hour limit)
+ * - 403 Forbidden: Account has been banned (requires re-authentication)
+ *
+ * **Related Operations:**
+ * After token expiration, customers must use this refresh endpoint to obtain new tokens. If both access and refresh tokens expire, the customer must re-authenticate via POST /auth/customer/login.
  *
  * @setHeader token.access Authorization
  *
  * @param props.connection
- * @param props.body Refresh token for session renewal
+ * @param props.body Refresh token for obtaining new access token
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation of customer token refresh endpoint. The service should:
+ * @x-autobe-specification Implementation specification for token refresh:
  *
- * 1. Validate the provided refresh_token format and signature
- * 2. Extract customer_id from the refresh token claims
- * 3. Verify the refresh token has not expired
- * 4. Retrieve customer record from shopping_mall_customers by customer_id
- * 5. Verify customer account status (deleted_at is null, banned is false)
- * 6. Verify the session is still valid (check shopping_mall_customer_sessions for non-expired session)
- * 7. Generate new JWT tokens (new access_token, optionally new refresh_token)
- * 8. Optionally invalidate old refresh token and create new session record
- * 9. Return IAuthorized response with new tokens and customer info
+ * 1. **Request Validation**:
+ *    - Validate refresh token is provided in request body
+ *    - Check refresh token format
  *
- * Error handling:
- * - 400 Bad Request: Missing or malformed refresh token
- * - 401 Unauthorized: Invalid, expired, or revoked refresh token
- * - 403 Forbidden: Account banned or deleted
- * - 500 Internal Server Error: Token generation failure
+ * 2. **Refresh Token Validation**:
+ *    - Verify refresh token signature
+ *    - Check refresh token is not expired (7-day validity from creation)
+ *    - Check refresh token has not been used (prevent reuse)
+ *    - Verify refresh token is associated with a valid session
+ *
+ * 3. **Session Validation**:
+ *    - Query shopping_mall_customer_sessions by session_id from refresh token
+ *    - Verify session is not expired (expired_at > current_timestamp)
+ *    - Verify session has not exceeded 24-hour maximum duration
+ *
+ * 4. **Customer Validation**:
+ *    - Query shopping_mall_customers by customer_id from session
+ *    - Verify customer is not deleted (deleted_at is null)
+ *    - Verify customer is not banned (banned = false)
+ *    - If banned, invalidate session and reject refresh
+ *
+ * 5. **Token Generation**:
+ *    - Invalidate the used refresh token (one-time use)
+ *    - Generate new JWT access token:
+ *      - sub: customer_id
+ *      - type: "customer"
+ *      - sid: same session_id (maintain session)
+ *      - iat: current timestamp
+ *      - exp: current_timestamp + 1 hour
+ *    - Generate new refresh token (valid for 7 days)
+ *    - Store new refresh token hash
+ *
+ * 6. **Response**:
+ *    - Return IShoppingMallCustomer.IAuthorized with new tokens
+ *
+ * 7. **Error Handling**:
+ *    - 401: Invalid or expired refresh token
+ *    - 401: Session expired or invalidated
+ *    - 403: Account is banned (session invalidated)
+ *    - Rate limiting: max 10 refresh requests per minute per user
  * @path /shoppingMall/auth/customer/refresh
  * @accessor api.functional.shoppingMall.auth.customer.refresh
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -318,7 +448,7 @@ export async function refresh(
 export namespace refresh {
   export type Props = {
     /**
-     * Refresh token for session renewal
+     * Refresh token for obtaining new access token
      */
     body: IShoppingMallCustomer.IRefresh;
   };

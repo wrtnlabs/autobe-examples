@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -33,14 +32,14 @@ export namespace EconomicPoliticalBoardSectionTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      description: input.description ?? "",
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at?.toISOString() ?? null,
       articles: await ArrayUtil.asyncMap(
         input.articles,
         EconomicPoliticalBoardArticleAtSummaryTransformer.transform,
       ),
-    } satisfies IEconomicPoliticalBoardSection;
+    };
   }
 }

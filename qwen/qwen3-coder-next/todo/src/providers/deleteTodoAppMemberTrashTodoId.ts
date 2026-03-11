@@ -15,43 +15,26 @@ export async function deleteTodoAppMemberTrashTodoId(props: {
   member: MemberPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
-    where: { id: props.todoId },
-    select: {
-      id: true,
-      todo_app_user_id: true,
+  // Verify todo exists, belongs to member, and is in trash
+  const todo = await MyGlobal.prisma.todo_app_todos.findFirst({
+    where: {
+      id: props.todoId,
+      todo_app_user_id: props.member.id,
       is_trashed: true,
-      trashEntry: {
-        select: { id: true, permanently_deleted_at: true },
-      },
+      deleted_at: null,
     },
   });
-  if (todo.todo_app_user_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+  if (todo === null) {
+    throw new HttpException("Not Found", 404);
   }
-  if (!todo.is_trashed) {
-    throw new HttpException("Todo is not in trash", 400);
-  }
-  if (
-    todo.trashEntry === null ||
-    todo.trashEntry.permanently_deleted_at !== null
-  ) {
-    throw new HttpException("Todo already permanently deleted", 400);
-  }
-  const editHistory = await MyGlobal.prisma.todo_app_todo_edits.findMany({
-    where: { todo_id: props.todoId },
-    select: { id: true },
+  // Delete all associated edit history entries
+  await MyGlobal.prisma.todo_app_edit_history_entries.deleteMany({
+    where: {
+      todo_app_todo_edit_id: props.todoId,
+    },
   });
-  for (const edit of editHistory) {
-    await MyGlobal.prisma.todo_app_edit_history_entries.deleteMany({
-      where: { todo_app_todo_edit_id: edit.id },
-    });
-  }
+  // Permanently delete the todo
   await MyGlobal.prisma.todo_app_todos.delete({
     where: { id: props.todoId },
-  });
-  await MyGlobal.prisma.todo_app_todo_trashes.update({
-    where: { todo_id: props.todoId },
-    data: { permanently_deleted_at: toISOStringSafe(new Date()) },
   });
 }

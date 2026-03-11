@@ -1,0 +1,59 @@
+/// Community-level bans restricting user participation in specific
+/// communities. Tracks banned users, issuing moderators, ban reasons, ban
+/// types (temporary or permanent), and enforcement status. Supports
+/// soft-delete for unban operations to maintain audit trail.
+///
+/// @namespace Bans
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned user's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Issuing moderator's {@link reddit_community_members.id}.
+  reddit_community_moderator_id String
+  
+  /// Community's {@link reddit_community_communities.id} where ban is enforced.
+  reddit_community_community_id String
+  
+  /// Optional reason for the ban explaining the violation or justification.
+  reason String?
+  
+  /// Type of ban: temporary (has expiration) or permanent (indefinite).
+  ban_type String
+  
+  /// Expiration datetime for temporary bans. Null for permanent bans or after
+  /// unban.
+  expires_at DateTime?
+  
+  /// Timestamp when the ban was issued.
+  created_at DateTime
+  
+  /// Timestamp when the ban was removed (unbanned). Null if ban is still
+  /// active.
+  removed_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  bannedMember reddit_community_members @relation("reddit_community_bans_of_reddit_community_member_id", fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  moderator reddit_community_members @relation("reddit_community_bans_of_reddit_community_moderator_id", fields: [reddit_community_moderator_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_community_id, reddit_community_member_id, removed_at], map: "reddit_community_bans_reddit_community_community_id_re_8e55c708")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_bans_reddit_community_community_id_cr_a69f4dee")
+  @@index([reddit_community_member_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_moderator_id, created_at], map: "reddit_community_bans_reddit_community_moderator_id_cr_e87825ab")
+}

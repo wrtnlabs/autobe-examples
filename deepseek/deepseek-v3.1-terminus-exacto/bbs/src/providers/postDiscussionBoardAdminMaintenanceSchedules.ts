@@ -1,5 +1,5 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardMaintenanceSchedule } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMaintenanceSchedule";
+import { IDiscussionBoardStatusType } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardStatusType";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,36 +19,33 @@ export async function postDiscussionBoardAdminMaintenanceSchedules(props: {
   admin: AdminPayload;
   body: IDiscussionBoardMaintenanceSchedule.ICreate;
 }): Promise<IDiscussionBoardMaintenanceSchedule> {
-  // Validate time sequence without Date instantiation
-  if (props.body.scheduled_end_time <= props.body.scheduled_start_time) {
+  // Validate planned_end_at is after planned_start_at
+  if (props.body.planned_end_at <= props.body.planned_start_at) {
     throw new HttpException(
-      "Scheduled end time must be after scheduled start time",
+      "Planned end time must be after planned start time",
       400,
     );
   }
-  // Verify the admin exists and is active
-  const admin = await MyGlobal.prisma.discussion_board_admins.findUnique({
-    where: {
-      id: props.admin.id,
-      deleted_at: null,
-    },
-  });
-  if (!admin) {
-    throw new HttpException("Admin not found or inactive", 404);
+  // Find appropriate pending status type
+  const statusType =
+    await MyGlobal.prisma.discussion_board_status_types.findFirst({
+      where: {
+        category: "maintenance_schedule",
+        code: "pending",
+        is_active: true,
+      },
+    });
+  if (!statusType) {
+    throw new HttpException("No valid pending status type found", 500);
   }
-  // Use collector to transform input data with proper entity parameter
-  const createData = await DiscussionBoardMaintenanceScheduleCollector.collect({
-    body: props.body,
-    discussionBoardAdmins: { id: props.admin.id } as IEntity,
-  });
-  // Create the maintenance schedule record
+  // Create maintenance schedule using collector
   const created =
     await MyGlobal.prisma.discussion_board_maintenance_schedules.create({
-      data: createData,
+      data: await DiscussionBoardMaintenanceScheduleCollector.collect({
+        body: props.body,
+        statusType: statusType,
+      }),
       ...DiscussionBoardMaintenanceScheduleTransformer.select(),
     });
-  // Transform timestamp strings appropriately
-  const result =
-    await DiscussionBoardMaintenanceScheduleTransformer.transform(created);
-  return result;
+  return await DiscussionBoardMaintenanceScheduleTransformer.transform(created);
 }

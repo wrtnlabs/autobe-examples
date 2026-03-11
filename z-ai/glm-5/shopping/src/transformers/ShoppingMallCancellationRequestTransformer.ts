@@ -7,6 +7,7 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
@@ -40,17 +41,15 @@ export namespace ShoppingMallCancellationRequestTransformer {
       id: input.id,
       reason: input.reason,
       status: input.status as "pending" | "approved" | "rejected",
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      responded_at: input.responded_at?.toISOString() ?? null,
       orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
-      seller:
-        input.seller !== null
-          ? await ShoppingMallSellerAtSummaryTransformer.transform(input.seller)
-          : null,
-      respondedAt:
-        input.responded_at !== null ? input.responded_at.toISOString() : null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+      seller: input.seller
+        ? await ShoppingMallSellerAtSummaryTransformer.transform(input.seller)
+        : null,
     };
   }
 }

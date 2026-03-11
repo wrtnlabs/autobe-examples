@@ -18,65 +18,47 @@ export async function patchEcommerceMallSellerVariantsVariantIdInventoryHistory(
   seller: SellerPayload;
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallInventoryRecord.IRequest;
-}): Promise<IPageIEcommerceMallInventoryRecord.ISummary> {
-  // Verify variant exists and belongs to seller
+}): Promise<IPageIEcommerceMallInventoryRecord.IHistoryList> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  const sortBy = props.body.sortBy ?? "newest";
+  // Verify variant ownership
   const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
-      where: {
-        id: props.variantId,
-        product: { seller_id: props.seller.id, deleted_at: null },
-        deleted_at: null,
-      },
-      select: { id: true },
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+      where: { id: props.variantId },
+      select: { id: true, product_id: true },
     });
-  if (variant === null) {
-    throw new HttpException("Variant not found or access denied", 404);
-  }
-  // Build filter conditions
-  const filterConditions: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
-    variant: {
-      id: props.variantId,
-      product: { seller_id: props.seller.id },
-      deleted_at: null,
+  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+    where: {
+      id: variant.product_id,
+      seller_id: props.seller.id,
     },
+  });
+  // Build WHERE clause with string timestamps (no Date type)
+  const whereInput: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
+    variant_id: props.variantId,
+    ...(props.body.dateRange && {
+      timestamp: {
+        ...(props.body.dateRange.start && {
+          gte: props.body.dateRange.start as string,
+        }),
+        ...(props.body.dateRange.end && {
+          lte: props.body.dateRange.end as string,
+        }),
+      },
+    }),
+    ...(props.body.reason && { reason: props.body.reason }),
   };
-  if (props.body.startDate !== undefined) {
-    if (filterConditions.timestamp === undefined) {
-      filterConditions.timestamp = {};
-    }
-    (filterConditions.timestamp as any).gte = props.body.startDate;
-  }
-  if (props.body.endDate !== undefined) {
-    if (filterConditions.timestamp === undefined) {
-      filterConditions.timestamp = {};
-    }
-    (filterConditions.timestamp as any).lte = props.body.endDate;
-  }
-  if (props.body.reasonType !== undefined) {
-    filterConditions.reason = props.body.reasonType;
-  }
-  // Determine pagination
-  const cursor = props.body.page;
-  const limit = props.body.limit;
-  const effectiveLimit =
-    limit === undefined || limit === null
-      ? 20
-      : Math.min(Math.max(limit, 0), 100) === 0
-        ? 20
-        : Math.min(Math.max(limit, 0), 100);
-  // Build where condition for cursor pagination
-  const cursorWhere: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
-    ...filterConditions,
-  };
-  if (cursor !== undefined && cursor !== null) {
-    cursorWhere.timestamp = { lt: cursor };
-  }
-  // Fetch records with cursor pagination
-  const records =
+  // Get total count
+  const total = await MyGlobal.prisma.ecommerce_mall_inventory_records.count({
+    where: whereInput,
+  });
+  // Get ALL records for running total calculation (fetch without pagination)
+  const allRecords =
     await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
-      where: cursorWhere,
-      orderBy: { timestamp: "desc" as const },
-      take: effectiveLimit,
+      where: whereInput,
+      orderBy: [{ timestamp: "asc" as const }], // chronological for running total calculation
       select: {
         id: true,
         variant_id: true,
@@ -85,40 +67,42 @@ export async function patchEcommerceMallSellerVariantsVariantIdInventoryHistory(
         timestamp: true,
       },
     });
-  // Calculate current stock
-  const stockResult =
-    await MyGlobal.prisma.ecommerce_mall_inventory_records.aggregate({
-      where: {
-        variant_id: props.variantId,
-        variant: {
-          product: { seller_id: props.seller.id, deleted_at: null },
-        },
-      },
-      _sum: { quantity_change: true },
-    });
-  const currentStockQuantity = stockResult._sum?.quantity_change ?? 0;
-  // Get total count for current page
-  const totalRecords =
-    await MyGlobal.prisma.ecommerce_mall_inventory_records.count({
-      where: filterConditions,
-    });
-  // Calculate page number from cursor or default to 1
-  const page =
-    cursor !== undefined && cursor !== null ? parseInt(cursor, 10) + 1 : 1;
+  // Calculate running totals in memory
+  let cumulativeSum = 0;
+  const recordsWithRunningTotal = allRecords.map((record) => {
+    cumulativeSum += record.quantity_change;
+    return {
+      id: record.id,
+      variant_id: record.variant_id,
+      quantity_change: record.quantity_change,
+      reason: record.reason as
+        | "restock"
+        | "order"
+        | "cancellation"
+        | "refund"
+        | "adjustment"
+        | "loss",
+      timestamp: toISOStringSafe(record.timestamp),
+      running_total: cumulativeSum,
+    } satisfies IEcommerceMallInventoryRecord.IHistoryItem;
+  });
+  // Apply pagination and sorting to final result
+  const sortedRecords =
+    sortBy === "newest"
+      ? recordsWithRunningTotal.reverse()
+      : recordsWithRunningTotal;
+  const paginatedRecords = sortedRecords.slice(skip, skip + limit);
   return {
     pagination: {
       current: page,
-      limit: effectiveLimit,
-      records: totalRecords,
-      pages: totalRecords === 0 ? 0 : Math.ceil(totalRecords / effectiveLimit),
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: records.map((r) => ({
-      id: r.id as string & tags.Format<"uuid">,
-      variant_id: r.variant_id as string & tags.Format<"uuid">,
-      quantity_change: r.quantity_change,
-      reason: r.reason,
-      timestamp: toISOStringSafe(r.timestamp) as string &
-        tags.Format<"date-time">,
-    })),
-  };
+    data: [
+      {
+        records: paginatedRecords,
+      },
+    ],
+  } satisfies IPageIEcommerceMallInventoryRecord.IHistoryList;
 }

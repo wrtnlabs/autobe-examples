@@ -2,7 +2,6 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
-import type { IShoppingMallAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministratorGrade";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -14,22 +13,24 @@ import { authorize_administrator_join } from "../../../authorize/authorize_admin
 import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
 import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
 
-/**
- * Test that the API returns 404 Not Found when an administrator attempts
- * to retrieve a non-existent customer profile.
- *
- * Business Rule: 'If customer not found or deleted_at is not null, return 404 Not Found'
- * This validates the non-existent customer path of that rule.
- */
 export async function test_api_customer_profile_not_found(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate administrator
+  // 1. Create administrator connection
   const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(adminConnection, {});
-  // 2. Generate a random UUID that does not correspond to any existing customer
+  // 2. Authenticate as administrator
+  await authorize_administrator_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    },
+  });
+  // 3. Generate a non-existent UUID
   const nonExistentCustomerId = typia.random<string & tags.Format<"uuid">>();
-  // 3. Attempt to retrieve non-existent customer and verify 404 error
+  // 4. Attempt to retrieve non-existent customer and expect 404 error
   await TestValidator.httpError(
     "should return 404 for non-existent customer",
     404,

@@ -19,11 +19,6 @@ export namespace DiscussionBoardTagTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        articleTags: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.discussion_board_article_tagsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_tagsFindManyArgs;
   }
@@ -33,11 +28,10 @@ export namespace DiscussionBoardTagTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
+      description: input.description ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-      article_count: input.articleTags.length,
     };
   }
 }

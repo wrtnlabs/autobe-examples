@@ -6,12 +6,12 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_like_moderator_role(
-  input?: DeepPartial<IRedditLikeModeratorRole.ICreate> | undefined,
+  input?: DeepPartial<IRedditLikeModeratorRole.ICreate>,
 ): IRedditLikeModeratorRole.ICreate {
   return {
-    user_id: input?.user_id ?? typia.random<string & tags.Format<"uuid">>(),
     community_id:
       input?.community_id ?? typia.random<string & tags.Format<"uuid">>(),
-    role: "moderator",
+    user_id: input?.user_id ?? typia.random<string & tags.Format<"uuid">>(),
+    role: input?.role ?? RandomGenerator.pick(["owner", "moderator"] as const),
   };
 }

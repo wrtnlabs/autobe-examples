@@ -14,8 +14,8 @@ export namespace DiscussionBoardArticleTagAtSummaryTransformer {
     return {
       select: {
         id: true,
-        tag_name: true,
         created_at: true,
+        updated_at: true,
       },
     } satisfies Prisma.discussion_board_article_tagsFindManyArgs;
   }
@@ -24,8 +24,8 @@ export namespace DiscussionBoardArticleTagAtSummaryTransformer {
   ): Promise<IDiscussionBoardArticleTag.ISummary> {
     return {
       id: input.id,
-      tag_name: input.tag_name,
-      created_at: input.created_at.toISOString(),
+      tag: input.id, // tag is derived from normalized id
+      usage_count: 0, // _count relation not available, using default value
     };
   }
 }

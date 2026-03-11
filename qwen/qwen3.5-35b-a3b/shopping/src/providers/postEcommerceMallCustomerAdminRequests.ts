@@ -1,5 +1,11 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallAdminRequestRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequest";
+import { IEcommerceMallAdminRequestRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequestOfCustomer";
+import { IEcommerceMallAdminRequestRequestOfSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequestOfSeller";
+import { IEcommerceMallAdminRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestSnapshot";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,6 +16,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { EcommerceMallAdminRequestRequestTransformer } from "../transformers/EcommerceMallAdminRequestRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,51 +24,64 @@ export async function postEcommerceMallCustomerAdminRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallAdminRequestRequest.ICreate;
 }): Promise<IEcommerceMallAdminRequestRequest> {
-  // Validate reason is not empty or whitespace only
-  if (props.body.reason.trim().length === 0) {
-    throw new HttpException("Reason cannot be empty", 400);
-  }
-  // Get customer from database
-  const customer = await MyGlobal.prisma.ecommerce_mall_customers.findUnique({
-    where: { id: props.customer.id },
-    select: { id: true, is_banned: true },
-  });
-  if (customer === null) {
-    throw new HttpException("Customer not found", 404);
-  }
-  // Check if customer is banned
-  if (customer.is_banned) {
-    throw new HttpException("Banned customers cannot submit requests", 403);
-  }
-  // Verify no pending admin request exists
-  const existingPendingRequest =
-    await MyGlobal.prisma.ecommerce_mall_admin_request_requests.findFirst({
+  const customerResult =
+    await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
       where: {
-        admin: {
-          id: props.customer.id,
-        },
-        request_status: "pending",
+        id: props.customer.id,
         deleted_at: null,
       },
+      select: { id: true, is_banned: true },
     });
-  if (existingPendingRequest !== null) {
-    throw new HttpException("Pending admin request already exists", 409);
+  if (customerResult === null) {
+    throw new HttpException("Customer not found", 404);
   }
-  // Generate UUID for the request
-  const id: string & tags.Format<"uuid"> = v4();
-  // Create the admin request record
-  const created =
-    await MyGlobal.prisma.ecommerce_mall_admin_request_requests.create({
+  if (customerResult.is_banned) {
+    throw new HttpException("Customer account is banned", 403);
+  }
+  const existingRequest =
+    await MyGlobal.prisma.ecommerce_mall_admin_request_request_of_customers.findFirst(
+      {
+        where: {
+          customer_id: props.customer.id,
+          adminRequest: {
+            request_status: "pending",
+            deleted_at: null,
+          },
+        },
+        include: {
+          adminRequest: {
+            select: { id: true },
+          },
+        },
+      },
+    );
+  if (existingRequest) {
+    throw new HttpException("Pending admin request already exists", 400);
+  }
+  const systemAdmin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
+    where: {
+      is_banned: false,
+    },
+    select: { id: true },
+  });
+  if (systemAdmin === null) {
+    throw new HttpException(
+      "No system admin available to review requests",
+      503,
+    );
+  }
+  const requestId: string & tags.Format<"uuid"> = v4();
+  const customerRequestId: string & tags.Format<"uuid"> = v4();
+  const [adminRequest, customerLink] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.ecommerce_mall_admin_request_requests.create({
       data: {
-        id,
+        id: requestId,
         reason: props.body.reason,
         request_status: "pending",
         created_at: new Date(),
         updated_at: new Date(),
         deleted_at: null,
-        admin: {
-          connect: { id: props.customer.id },
-        },
+        admin: { connect: { id: systemAdmin.id } },
       },
       select: {
         id: true,
@@ -70,34 +90,26 @@ export async function postEcommerceMallCustomerAdminRequests(props: {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        admin: {
-          select: {
-            id: true,
-            email: true,
-            is_banned: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
       },
-    });
-  // Transform to response DTO
-  const response: IEcommerceMallAdminRequestRequest = {
-    id: created.id,
-    reason: created.reason,
-    request_status: typia.assert<"pending" | "approved" | "rejected">(
-      created.request_status,
-    ),
-    created_at: created.created_at.toISOString(),
-    updated_at: created.updated_at.toISOString(),
-    deleted_at: created.deleted_at ? created.deleted_at.toISOString() : null,
-    admin: {
-      id: created.admin.id,
-      email: created.admin.email,
-      is_banned: created.admin.is_banned,
-      created_at: created.admin.created_at.toISOString(),
-      updated_at: created.admin.updated_at.toISOString(),
-    },
-  } satisfies IEcommerceMallAdminRequestRequest;
-  return response;
+    }),
+    MyGlobal.prisma.ecommerce_mall_admin_request_request_of_customers.create({
+      data: {
+        id: customerRequestId,
+        admin_request_id: requestId,
+        customer_id: props.customer.id,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    }),
+  ]);
+  const fullRequest =
+    await MyGlobal.prisma.ecommerce_mall_admin_request_requests.findUniqueOrThrow(
+      {
+        where: { id: requestId },
+        ...EcommerceMallAdminRequestRequestTransformer.select(),
+      },
+    );
+  return await EcommerceMallAdminRequestRequestTransformer.transform(
+    fullRequest,
+  );
 }

@@ -10,18 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace DiscussionBoardCommentCollector {
   export async function collect(props: {
     body: IDiscussionBoardComment.ICreate;
-    discussionBoardUsers: IEntity;
-    discussionBoardUserSessions: IEntity;
-    discussionBoardArticles: IEntity;
+    discussionBoardArticles: IEntity; // from path parameter articleId
+    discussionBoardMembers: IEntity; // from authorized actor
+    discussionBoardMemberSessions: IEntity; // from authorized session
   }) {
-    const id = v4();
+    const id: string = v4();
     return {
       id,
       content: props.body.content,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      author: { connect: { id: props.discussionBoardUsers.id } },
+      author: { connect: { id: props.discussionBoardMembers.id } },
       article: { connect: { id: props.discussionBoardArticles.id } },
     } satisfies Prisma.discussion_board_commentsCreateInput;
   }

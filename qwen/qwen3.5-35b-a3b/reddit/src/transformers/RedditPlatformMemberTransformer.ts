@@ -1,13 +1,23 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformComment";
+import { IRedditPlatformCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommentVote";
 import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
 import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
+import { IRedditPlatformMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMemberSession";
+import { IRedditPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPost";
+import { IRedditPlatformPostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformPostVote";
+import { IRedditPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditPlatformCommunityAtSummaryTransformer } from "./RedditPlatformCommunityAtSummaryTransformer";
-import { RedditPlatformMemberAtSummaryTransformer } from "./RedditPlatformMemberAtSummaryTransformer";
+import { RedditPlatformCommentAtSummaryTransformer } from "./RedditPlatformCommentAtSummaryTransformer";
+import { RedditPlatformCommentVoteTransformer } from "./RedditPlatformCommentVoteTransformer";
+import { RedditPlatformMemberSessionAtSummaryTransformer } from "./RedditPlatformMemberSessionAtSummaryTransformer";
+import { RedditPlatformPostAtSummaryTransformer } from "./RedditPlatformPostAtSummaryTransformer";
+import { RedditPlatformPostVoteTransformer } from "./RedditPlatformPostVoteTransformer";
+import { RedditPlatformReportAtSummaryTransformer } from "./RedditPlatformReportAtSummaryTransformer";
 
 export namespace RedditPlatformMemberTransformer {
   export type Payload = Prisma.reddit_platform_membersGetPayload<
@@ -28,25 +38,24 @@ export namespace RedditPlatformMemberTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
+        sessions: RedditPlatformMemberSessionAtSummaryTransformer.select(),
         passwordResetTokens: true,
         emailVerifications: true,
         ownedCommunities: true,
-        posts: true,
-        memberPostVotes: true,
+        posts: RedditPlatformPostAtSummaryTransformer.select(),
+        memberPostVotes: RedditPlatformPostVoteTransformer.select(),
         postSnapshots: true,
-        comments: true,
-        commentVotes: true,
-        reports: true,
+        comments: RedditPlatformCommentAtSummaryTransformer.select(),
+        commentVotes: RedditPlatformCommentVoteTransformer.select(),
+        reports: RedditPlatformReportAtSummaryTransformer.select(),
         resolvedReports: true,
         subscriptions: true,
-        moderatorOfCommunities:
-          RedditPlatformCommunityAtSummaryTransformer.select(),
+        moderatorOfCommunities: true,
         moderationAuditLogs: true,
         userModerationAuditLogs: true,
         moderatorHistoryRecords: true,
         moderatorHistoryActions: true,
-        bannedUsers: RedditPlatformMemberAtSummaryTransformer.select(),
+        bannedUsers: true,
         issuedBans: true,
       },
     } satisfies Prisma.reddit_platform_membersFindManyArgs;
@@ -56,24 +65,39 @@ export namespace RedditPlatformMemberTransformer {
   ): Promise<IRedditPlatformMember> {
     return {
       id: input.id,
-      email: input.email,
       username: input.username,
-      displayName: input.display_name,
+      display_name: input.display_name,
       bio: input.bio ?? null,
-      avatarUrl: input.avatar_url ?? null,
-      karmaScore: input.karma_score,
-      isActive: input.is_active,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      moderatorOfCommunities: await ArrayUtil.asyncMap(
-        input.moderatorOfCommunities,
-        RedditPlatformCommunityAtSummaryTransformer.transform,
+      avatar_url: input.avatar_url ?? null,
+      karma_score: input.karma_score,
+      is_active: input.is_active,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      sessions: await ArrayUtil.asyncMap(
+        input.sessions,
+        RedditPlatformMemberSessionAtSummaryTransformer.transform,
       ),
-      bannedUsers: await ArrayUtil.asyncMap(
-        input.bannedUsers,
-        RedditPlatformMemberAtSummaryTransformer.transform,
+      posts: await ArrayUtil.asyncMap(
+        input.posts,
+        RedditPlatformPostAtSummaryTransformer.transform,
       ),
-    };
+      comments: await ArrayUtil.asyncMap(
+        input.comments,
+        RedditPlatformCommentAtSummaryTransformer.transform,
+      ),
+      postVotes: await ArrayUtil.asyncMap(
+        input.memberPostVotes,
+        RedditPlatformPostVoteTransformer.transform,
+      ),
+      commentVotes: await ArrayUtil.asyncMap(
+        input.commentVotes,
+        RedditPlatformCommentVoteTransformer.transform,
+      ),
+      reports: await ArrayUtil.asyncMap(
+        input.reports,
+        RedditPlatformReportAtSummaryTransformer.transform,
+      ),
+    } satisfies IRedditPlatformMember;
   }
 }

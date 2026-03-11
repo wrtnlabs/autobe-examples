@@ -9,6 +9,8 @@ export function prepare_random_reddit_platform_community_subscription(
   input?: DeepPartial<IRedditPlatformCommunitySubscription.ICreate>,
 ): IRedditPlatformCommunitySubscription.ICreate {
   return {
-    confirmSubscription: input?.confirmSubscription ?? true,
+    reddit_platform_community_id:
+      input?.reddit_platform_community_id ??
+      typia.random<string & tags.Format<"uuid">>(),
   };
 }

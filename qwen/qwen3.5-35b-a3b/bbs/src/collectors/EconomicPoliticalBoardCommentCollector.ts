@@ -16,16 +16,14 @@ export namespace EconomicPoliticalBoardCommentCollector {
     const id: string = v4();
     return {
       id,
-      author: {
-        connect: { id: props.economicPoliticalBoardAdministratorRoles.id },
-      },
-      article: {
-        connect: { id: props.economicPoliticalBoardArticles.id },
-      },
       content: props.body.content,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      author: {
+        connect: { id: props.economicPoliticalBoardAdministratorRoles.id },
+      },
+      article: { connect: { id: props.economicPoliticalBoardArticles.id } },
     } satisfies Prisma.economic_political_board_commentsCreateInput;
   }
 }

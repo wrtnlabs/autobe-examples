@@ -1,15 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditLikeCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeCommunity";
-import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
-import { IRedditLikePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePost";
 import { IRedditLikePostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePostVote";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
-import { RedditLikePostAtSummaryTransformer } from "./RedditLikePostAtSummaryTransformer";
 
 export namespace RedditLikePostVoteTransformer {
   export type Payload = Prisma.reddit_like_post_votesGetPayload<
@@ -19,10 +14,10 @@ export namespace RedditLikePostVoteTransformer {
     return {
       select: {
         id: true,
+        voter_id: true,
+        post_id: true,
         value: true,
         created_at: true,
-        voter: RedditLikeMemberAtSummaryTransformer.select(),
-        post: RedditLikePostAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_post_votesFindManyArgs;
   }
@@ -31,10 +26,15 @@ export namespace RedditLikePostVoteTransformer {
   ): Promise<IRedditLikePostVote> {
     return {
       id: input.id,
-      value: typia.assert<-1 | 0 | 1>(input.value),
+      voter_id: input.voter_id,
+      post_id: input.post_id,
+      value:
+        input.value === 1 || input.value === -1
+          ? input.value
+          : input.value > 0
+            ? 1
+            : -1,
       created_at: toISOStringSafe(input.created_at),
-      voter: await RedditLikeMemberAtSummaryTransformer.transform(input.voter),
-      post: await RedditLikePostAtSummaryTransformer.transform(input.post),
     };
   }
 }

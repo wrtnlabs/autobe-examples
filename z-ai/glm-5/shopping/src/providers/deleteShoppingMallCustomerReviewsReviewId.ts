@@ -13,31 +13,24 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
-  reviewId: string & tags.Format<"uuid">;
+  reviewId: string;
 }): Promise<void> {
-  // Find the review to verify ownership
+  // Find the review
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
-    select: {
-      id: true,
-      shopping_mall_customer_id: true,
-      deleted_at: true,
-    },
+    select: { id: true, shopping_mall_customer_id: true, deleted_at: true },
   });
-  // Verify customer is the original author
+  // Verify ownership
   if (review.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Already deleted - return early for idempotency
+  // Check if already deleted
   if (review.deleted_at !== null) {
-    return;
+    throw new HttpException("Review already deleted", 400);
   }
-  // Perform soft delete by setting deleted_at timestamp
+  // Soft delete
   await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
-    data: {
-      deleted_at: new Date(),
-      updated_at: new Date(),
-    },
+    data: { deleted_at: new Date() },
   });
 }

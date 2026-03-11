@@ -14,7 +14,7 @@ export async function memberAuthorize(request: {
 
   const member = await MyGlobal.prisma.todo_app_members.findFirst({
     where: {
-      id: payload.id,
+      todo_app_user_id: payload.id,
       deleted_at: null,
     },
   });

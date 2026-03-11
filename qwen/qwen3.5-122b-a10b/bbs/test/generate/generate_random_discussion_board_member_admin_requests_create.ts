@@ -14,7 +14,7 @@ import { prepare_random_discussion_board_admin_request } from "../prepare/prepar
 export async function generate_random_discussion_board_member_admin_requests_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IDiscussionBoardAdminRequest.ICreate>;
+    body?: DeepPartial<IDiscussionBoardAdminRequest.ICreate> | undefined;
   },
 ): Promise<IDiscussionBoardAdminRequest> {
   const prepared: IDiscussionBoardAdminRequest.ICreate =

@@ -1,13 +1,10 @@
 import { IEconomicPoliticalBoardAdministratorRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRequest";
-import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer } from "./EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer";
 
 export namespace EconomicPoliticalBoardAdministratorRequestAtSummaryTransformer {
   export type Payload =
@@ -24,9 +21,8 @@ export namespace EconomicPoliticalBoardAdministratorRequestAtSummaryTransformer 
         review_notes: true,
         created_at: true,
         updated_at: true,
-        user: EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
-        reviewedByAdmin:
-          EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
+        user: true,
+        reviewedByAdmin: true,
       },
     } satisfies Prisma.economic_political_board_administrator_requestsFindManyArgs;
   }
@@ -36,12 +32,9 @@ export namespace EconomicPoliticalBoardAdministratorRequestAtSummaryTransformer 
     return {
       id: input.id,
       reason: input.reason,
-      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
-      createdAt: toISOStringSafe(input.created_at),
-      author:
-        await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
-          input.user,
-        ),
+      status: input.status,
+      created_at: input.created_at.toISOString(),
+      user_id: input.user.id,
     };
   }
 }

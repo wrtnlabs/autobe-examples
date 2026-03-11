@@ -9,8 +9,6 @@ export function prepare_random_shopping_mall_wishlist_item(
   input?: DeepPartial<IShoppingMallWishlistItem.ICreate>,
 ): IShoppingMallWishlistItem.ICreate {
   return {
-    shopping_mall_product_id:
-      input?.shopping_mall_product_id ??
-      typia.random<string & tags.Format<"uuid">>(),
+    productId: input?.productId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

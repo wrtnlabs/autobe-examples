@@ -6,25 +6,26 @@ import { IDiscussionBoardArticle } from "../../../api/structures/IDiscussionBoar
 import { IPageIDiscussionBoardArticle } from "../../../api/structures/IPageIDiscussionBoardArticle";
 import { getDiscussionBoardArticlesArticleId } from "../../../providers/getDiscussionBoardArticlesArticleId";
 import { patchDiscussionBoardArticles } from "../../../providers/patchDiscussionBoardArticles";
+import { patchDiscussionBoardArticlesSearch } from "../../../providers/patchDiscussionBoardArticlesSearch";
 
 @Controller("/discussionBoard/articles")
 export class DiscussionboardArticlesController {
   /**
    * Retrieve a filtered and paginated list of discussion board articles with advanced search capabilities.
    *
-   * This operation provides comprehensive article discovery features including section-based filtering, tag-based categorization, full-text search on title and content, author filtering, and date range queries. Users can browse articles across all sections or focus on specific topic areas.
+   * This operation provides comprehensive article browsing functionality for all actors (guests, members, and administrators). Users can search articles by title or body content using partial text matching via GIN trigram indexes, filter by specific sections or authors, and apply date range filters for temporal queries. The endpoint supports cursor-based pagination to efficiently handle large result sets while maintaining consistent ordering.
    *
-   * The response includes article summaries optimized for list displays, containing essential metadata such as title, excerpt, author information, section details, tag lists, creation/update timestamps, and comment counts. Full article content is excluded to optimize list performance and should be fetched separately via GET /articles/{id} when needed.
+   * Article visibility is controlled by the deleted_at field: only articles with null deleted_at values are returned in normal queries, ensuring soft-deleted content remains hidden from public view. Administrators may have additional filtering capabilities for moderation purposes. The discussion_board_article_tags junction table is queried to retrieve associated tags for each article in the result set.
    *
-   * Pagination uses cursor-based navigation for consistent performance with large datasets. Sorting supports both newest-first and oldest-first ordering. The operation respects article visibility rules, excluding soft-deleted articles from results unless accessed by administrators with elevated privileges.
+   * The response includes article summaries optimized for list displays, containing essential metadata such as title, section information, author details, creation/update timestamps, and computed attachment counts from related junction tables. Full article content is retrieved through the dedicated detail endpoint (GET /articles/{articleId}).
    *
-   * Guest users can browse all public articles without authentication. Authenticated members receive the same browsing capabilities with additional personalization options. Banned users are blocked from accessing this endpoint regardless of their authentication status.
+   * Related operations: Use GET /articles/{articleId} to retrieve complete article details including full body content and attachment information. Use PATCH /sections to browse available sections for filtering purposes.
    *
    * @param connection
-   * @param body Search criteria, filtering options, and pagination parameters for article listing
+   * @param body Search criteria, filters, and pagination parameters for article listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query discussion_board_articles table with cursor-based pagination and advanced filtering. Apply WHERE conditions on: section_id (exact match), tag names (via discussion_board_article_tags join), title/body text (GIN trigram search), date ranges, author ID. Sort by created_at ASC/DESC. Filter out soft-deleted articles (deleted_at IS NULL) unless admin access. Join with discussion_board_sections for section metadata, discussion_board_members for author info, and discussion_board_article_tags + discussion_board_tags for tag lists. Return summary projection excluding full body content. Implement cursor pagination using created_at and id as composite cursor. Validate pagination parameters (page, limit) within bounds. Apply rate limiting per user. Check user ban status before returning results.
+   * @x-autobe-specification Query discussion_board_articles table with pagination, filtering, and sorting. Apply search filters on title (trigram-based full-text search), body content, section ID, member ID, and date ranges. Filter out soft-deleted articles (deleted_at IS NULL) for regular queries. Implement cursor-based pagination using created_at and id for consistent ordering. Join with discussion_board_sections for section name and discussion_board_members for member display name when requested. Validate that section_id references exist if specified. Return article summaries with essential fields: id, title, section information, author information, timestamps, and attachment counts. Implement rate limiting per actor type. Cache frequently accessed section and member lookups.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -43,23 +44,57 @@ export class DiscussionboardArticlesController {
   }
 
   /**
-   * Retrieve a single discussion board article with complete content, author information, tags, and attachment details.
+   * Retrieve detailed information about a specific article by its unique identifier.
    *
-   * This operation provides full access to an article's title, body content, metadata, and all associated information including the author's profile, section categorization, assigned tags, and file/image attachments. The article must exist and not be soft-deleted (deleted_at is null) to be accessible.
+   * This operation returns the complete article record including title, body content, ownership information, section categorization, and timestamps. The article must exist and not be soft-deleted (deleted_at must be null) for successful retrieval.
    *
-   * **Access Control**: All actors (guest, member, and admin) can view published articles. Guests can access this endpoint without authentication. Banned members are blocked from authenticated operations including this endpoint when logged in.
+   * **Security and Access Control**:
    *
-   * **Article Visibility**: Only articles with null deleted_at values are returned. Soft-deleted articles are hidden from all users but preserved for audit purposes. Administrators have the same viewing access as other users - they use separate deletion endpoints for moderation.
+   * All actor types (guest, member, admin) are authorized to view articles. This supports the public nature of the discussion board where unauthenticated visitors can browse and read content. Article visibility is not restricted by author ownership or ban status - articles from banned users remain visible.
    *
-   * **Related Operations**: After retrieving an article, users can view its comments via GET /articles/{articleId}/comments, add new comments via POST /articles/{articleId}/comments, or download attachments via GET /attachments/{id}/download and GET /images/{id}/download.
+   * **Database Relationships**:
    *
-   * **Data Relationships**: The response includes complete information about the article's author (discussion_board_members), the section it belongs to (discussion_board_sections), all assigned tags (discussion_board_tags via discussion_board_article_tags junction), and URIs for any attached files or images.
+   * The response includes the article's core fields from the discussion_board_articles table. Related entities (tags, comments) are accessed through separate endpoints:
+   * - Tags: Use the article tags endpoint to retrieve associated tag information
+   * - Comments: Use the comments endpoint to retrieve comments for this article
+   * - Section: Use the section endpoint to retrieve section details
+   *
+   * **Soft Deletion Behavior**:
+   *
+   * Articles with a non-null deleted_at timestamp are considered soft-deleted and will not be returned by this operation. This preserves the article data for audit purposes while removing it from public visibility. Administrators may have separate endpoints for accessing deleted content.
+   *
+   * **Related Operations**:
+   *
+   * - `PATCH /articles` - Search and list articles with filtering
+   * - `POST /articles` - Create a new article (members only)
+   * - `PUT /articles/{articleId}` - Update an existing article (owner or admin only)
+   * - `DELETE /articles/{articleId}` - Delete an article (owner or admin only)
+   * - `GET /sections/{sectionId}/articles` - List articles within a specific section
    *
    * @param connection
-   * @param articleId Target article's unique identifier (UUID scope: global)
+   * @param articleId Unique identifier of the article to retrieve (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query discussion_board_articles table by UUID primary key with soft delete filter (deleted_at IS NULL). Join with discussion_board_members for author information (display_name, bio). Join with discussion_board_sections for section details (name, description). Query discussion_board_article_tags junction table and join with discussion_board_tags for tag names and descriptions. Count comments from discussion_board_comments where discussion_board_article_id matches and deleted_at IS NULL. Return full article object with embedded author, section, tags array, comment count, and attachment URIs. Implement optimistic locking via updated_at timestamp for concurrent edit detection. Validate article exists and is not soft-deleted before returning data. Apply authorization check to ensure user is not banned.
+   * @x-autobe-specification Query discussion_board_articles table by id UUID primary key.
+   *
+   * Validation and filtering:
+   * - Verify article exists (id matches)
+   * - Verify article is not soft-deleted (deleted_at IS NULL)
+   * - Return 404 if article not found or soft-deleted
+   *
+   * Query structure:
+   * SELECT id, discussion_board_section_id, discussion_board_member_id, title, body, created_at, updated_at, deleted_at
+   * FROM discussion_board_articles
+   * WHERE id = :articleId AND deleted_at IS NULL
+   *
+   * If query returns no rows, return 404 Not Found.
+   *
+   * No authorization checks required - all actors can view articles.
+   *
+   * Performance considerations:
+   * - Use primary key index on id column
+   * - Article content (body) may be large, ensure efficient serialization
+   * - Consider caching for frequently accessed articles
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":articleId")
@@ -70,6 +105,41 @@ export class DiscussionboardArticlesController {
     try {
       return await getDiscussionBoardArticlesArticleId({
         articleId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search and filter articles across the discussion board with advanced query capabilities.
+   *
+   * This operation provides comprehensive article search functionality, allowing users to find content by keyword matching across article titles and body text. The search uses full-text indexing for efficient query performance and returns relevant articles sorted by recency.
+   *
+   * Users can refine search results by filtering with one or more tags. When multiple tags are specified, the system applies AND logic, returning only articles that contain all the specified tags. Tag matching is case-insensitive for better user experience.
+   *
+   * The endpoint supports comprehensive pagination to handle large result sets efficiently. Results include article summaries with essential metadata including title, author information, associated tags, section categorization, and timestamps. This allows users to browse search results without loading full article content.
+   *
+   * Security considerations: All actors (guest, member, admin) can search articles. Soft-deleted articles are completely excluded from search results for all users - only active articles with deleted_at IS NULL are returned. Search results respect data isolation rules.
+   *
+   * Related operations: Use GET /articles/{articleId} to retrieve full article details after identifying articles from search results. Use PATCH /sections to browse articles within a specific section without keyword search.
+   *
+   * @param connection
+   * @param body Search criteria including keyword query, tag filters, pagination, and sorting options
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Query discussion_board_articles table with full-text search on title and body columns using GIN trigram indexes. Join with discussion_board_article_tags and discussion_board_tags for tag filtering. Apply AND logic for multiple tag filters (article must have ALL specified tags). Filter out soft-deleted articles (deleted_at IS NULL). Implement cursor-based or offset pagination with configurable page size. Sort by created_at descending (newest first) by default, support alternative sort options. Return article summaries with title, author information, tags, section, and timestamps. Handle empty search query by returning all articles or error per business rules. Validate search query length limits and pagination parameter ranges.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch("search")
+  public async search(
+    @TypedBody()
+    body: IDiscussionBoardArticle.IRequest,
+  ): Promise<IPageIDiscussionBoardArticle.ISummary> {
+    try {
+      return await patchDiscussionBoardArticlesSearch({
+        body,
       });
     } catch (error) {
       console.log(error);

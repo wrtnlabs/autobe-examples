@@ -1,39 +1,49 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
-import { IPageIShoppingMallSellerSession } from "../../../../structures/IPageIShoppingMallSellerSession";
+import { IPageIShoppingMallCustomerSession } from "../../../../structures/IPageIShoppingMallCustomerSession";
 import { IShoppingMallCustomerSession } from "../../../../structures/IShoppingMallCustomerSession";
-import { IShoppingMallSellerSession } from "../../../../structures/IShoppingMallSellerSession";
 
 /**
- * Retrieve a paginated list of authentication sessions for the currently logged-in user.
+ * Retrieve a filtered and paginated list of authentication sessions across all actor types (customers, sellers, and administrators).
  *
- * This endpoint allows users to view their complete login history across all devices and browsers. Each session record captures connection metadata including IP address, request URL, and HTTP referrer at the time of login. This information helps users monitor their account security and identify any unauthorized access attempts.
+ * This administrative endpoint provides comprehensive session visibility for security monitoring, audit trails, and access pattern analysis. Sessions represent successful authentication events with captured connection metadata including IP addresses, request URLs, and referrer information.
  *
- * The response is paginated and supports filtering by creation date range. Sessions are sorted by creation timestamp in descending order, showing the most recent login sessions first. Note that sessions remain in history even after expiration for audit trail purposes.
+ * Administrators can filter sessions by actor type to focus on specific user populations, search by user identifier to track individual user access patterns, or filter by IP address to investigate suspicious activity from specific sources. Date range filtering supports both creation time (login events) and expiration time for session lifecycle analysis.
  *
- * This operation works for all actor types (customers, sellers, and administrators) - the system automatically queries the appropriate session table based on the authenticated user's type.
+ * The response includes pagination with configurable page sizes and supports sorting by creation date to view recent or historical sessions. Each session summary provides essential identification and temporal information for quick administrative review.
+ *
+ * Related operations: Session data is created automatically during login via POST /customers/login, POST /sellers/login, and POST /administrators/login. Sessions are invalidated on logout or when accounts are banned, suspended, or demoted.
  *
  * @param props.connection
- * @param props.body Search criteria for session listing with pagination parameters
+ * @param props.body Search criteria including actor type filter, user identifier, IP/href patterns, date ranges, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the appropriate session table based on the authenticated user's actor type:
+ * @x-autobe-specification Query session records from shopping_mall_customer_sessions, shopping_mall_seller_sessions, and shopping_mall_administrator_sessions tables with unified result aggregation.
  *
- * 1. Extract user ID and actor type from JWT token claims (sub and type claims)
- * 2. Query the corresponding session table:
- *    - If actor type is 'customer': query shopping_mall_customer_sessions
- *    - If actor type is 'seller': query shopping_mall_seller_sessions
- *    - If actor type is 'administrator': query shopping_mall_administrator_sessions
- * 3. Apply filters from request body:
- *    - Filter by created_at date range if provided
- *    - Sort by created_at descending (newest first)
- * 4. Implement cursor-based pagination using created_at and id
- * 5. Return paginated list with session summary information
+ * Service layer implementation:
+ * 1. Parse IRequest filters for actor type, user ID, IP, href, referrer, and date ranges
+ * 2. If actor_type filter provided, query only the corresponding table; otherwise query all three tables
+ * 3. Apply IP and href pattern matching using LIKE or ILIKE for partial matches
+ * 4. Apply date range filters on created_at and expired_at columns
+ * 5. Combine results with UNION ALL, adding actor_type discriminator to each row
+ * 6. Sort by created_at descending (newest first) by default
+ * 7. Implement cursor-based pagination using session id and created_at
+ * 8. Calculate derived fields: is_expired (current timestamp > expired_at), is_active (current timestamp <= expired_at)
  *
- * The operation should only return sessions belonging to the authenticated user, enforced by the user_id foreign key relationship. Sessions past their expired_at timestamp are still included in history for audit purposes.
+ * Database queries:
+ * - SELECT id, actor_type, user_id, ip, href, referrer, created_at, expired_at FROM each session table
+ * - WHERE clauses for all provided filters
+ * - ORDER BY created_at DESC
+ * - LIMIT/OFFSET for pagination
+ *
+ * Validation rules:
+ * - Actor type must be one of: customer, seller, administrator, or omitted for all
+ * - User ID must be valid UUID if provided
+ * - Date ranges must have start <= end if both provided
+ * - Page size default 20, maximum 100
  * @path /shoppingMall/customer/sessions
  * @accessor api.functional.shoppingMall.customer.sessions.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -63,12 +73,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria for session listing with pagination parameters
+     * Search criteria including actor type filter, user identifier, IP/href patterns, date ranges, and pagination parameters
      */
-    body: IShoppingMallSellerSession.IRequest;
+    body: IShoppingMallCustomerSession.IRequest;
   };
-  export type Body = IShoppingMallSellerSession.IRequest;
-  export type Response = IPageIShoppingMallSellerSession.ISummary;
+  export type Body = IShoppingMallCustomerSession.IRequest;
+  export type Response = IPageIShoppingMallCustomerSession.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -84,8 +94,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/shoppingMall/customer/sessions";
-  export const random = (): IPageIShoppingMallSellerSession.ISummary =>
-    typia.random<IPageIShoppingMallSellerSession.ISummary>();
+  export const random = (): IPageIShoppingMallCustomerSession.ISummary =>
+    typia.random<IPageIShoppingMallCustomerSession.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -112,19 +122,41 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific customer authentication session by its unique identifier.
+ * Retrieve detailed information about a specific authentication session.
  *
- * This endpoint returns session metadata for customer login events, including the login timestamp, expiration time, client IP address, request URL (href), and HTTP referrer header. Sessions are created upon successful customer authentication and each represents a single login event.
+ * This endpoint allows administrators to examine session details for security auditing and monitoring purposes. Sessions represent authentication events with captured connection metadata including IP address, request URL, and referrer information.
  *
- * The session record captures connection context at login time: the client IP address for security auditing and anomaly detection, the href (request URL) that initiated the authentication, and the referrer header indicating the previous page. Sessions have a maximum duration of 24 hours and are invalidated upon expiration, explicit logout, password change, or if the customer account is banned.
+ * The session data includes the actor type and reference (whether the session belongs to a customer, seller, or administrator), the IP address from which the login originated, the URL that initiated the session, optional referrer information, and temporal boundaries showing when the session was created and when it expires.
  *
- * This operation is useful for session validation, security auditing, and verifying active login sessions. Only the session owner (authenticated customer) or administrators can access session details. The returned session ID corresponds to the 'sid' claim in JWT tokens used for customer authentication.
+ * Session records are append-only and cannot be modified after creation. Sessions have a maximum duration of 24 hours and are automatically invalidated upon expiration. Sessions can also be invalidated manually on explicit logout, account ban/suspension, or password change.
+ *
+ * This operation is restricted to administrators for security and privacy reasons, as session data may contain sensitive connection information useful for security investigations.
  *
  * @param props.connection
- * @param props.sessionId Unique session identifier. Corresponds to the 'sid' claim in JWT authentication tokens. Used to retrieve specific session details from customer_sessions, seller_sessions, or administrator_sessions table.
+ * @param props.sessionId Unique session identifier (UUID) used to locate the specific authentication session
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve a session record by its unique identifier from the appropriate session table (customer_sessions, seller_sessions, or administrator_sessions based on the session ID prefix/content). Query the session table to find the session by ID. Validate that the session has not expired by comparing expired_at with current timestamp. Return the session entity with all fields: id, user reference (customer_id/seller_id/administrator_id depending on session type), ip, href, referrer, created_at, expired_at. The operation should be accessible by the session owner or administrators for audit purposes. Return 404 if session ID does not exist.
+ * @x-autobe-specification Query session data across all three session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions) by the provided sessionId UUID.
+ *
+ * Implementation steps:
+ * 1. Validate sessionId is a valid UUID format
+ * 2. Query all three session tables to find the session (since session IDs are unique across tables, only one match will exist)
+ * 3. If no session found, return 404 Not Found
+ * 4. Join with the corresponding actor table (shopping_mall_customers, shopping_mall_sellers, or shopping_mall_administrators) to retrieve actor reference
+ * 5. Map the session type to actorType enum value ('customer' | 'seller' | 'administrator')
+ * 6. Return unified session response with all fields
+ *
+ * The response includes:
+ * - id: The session UUID
+ * - actorType: Type of actor who owns the session
+ * - actorId: UUID reference to the actor
+ * - ip: Client IP address at login time
+ * - href: Request URL that initiated the session
+ * - referrer: HTTP referrer header (nullable)
+ * - createdAt: Session creation timestamp
+ * - expiredAt: Session expiration timestamp
+ *
+ * Authorization: Administrator only. Verify authenticated user has administrator role before allowing access.
  * @path /shoppingMall/customer/sessions/:sessionId
  * @accessor api.functional.shoppingMall.customer.sessions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -153,9 +185,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique session identifier. Corresponds to the 'sid' claim in JWT authentication tokens. Used to retrieve specific session details from customer_sessions, seller_sessions, or administrator_sessions table.
+     * Unique session identifier (UUID) used to locate the specific authentication session
      */
-    sessionId: string & tags.Format<"uuid">;
+    sessionId: string;
   };
   export type Response = IShoppingMallCustomerSession;
 

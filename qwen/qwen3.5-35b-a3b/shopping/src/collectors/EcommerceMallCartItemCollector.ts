@@ -12,19 +12,12 @@ export namespace EcommerceMallCartItemCollector {
     body: IEcommerceMallCartItem.ICreate;
     ecommerceMallShoppingCarts: IEntity;
   }) {
-    // Fetch variant to get price at time of addition
+    const id: string = v4();
+    // Query variant to get current price at addition time
     const variant =
-      await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+      await MyGlobal.prisma.ecommerce_mall_product_variants.findFirstOrThrow({
         where: { id: props.body.variant_id },
       });
-    // Validate variant is active and has stock
-    if (!variant.is_active) {
-      throw new Error("Variant is not active");
-    }
-    if (variant.stock_quantity === 0) {
-      throw new Error("Variant is out of stock");
-    }
-    const id: string = v4();
     return {
       id,
       quantity: props.body.quantity,

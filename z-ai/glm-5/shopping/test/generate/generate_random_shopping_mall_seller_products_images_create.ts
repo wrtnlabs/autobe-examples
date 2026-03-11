@@ -15,7 +15,7 @@ import { prepare_random_shopping_mall_product_image } from "../prepare/prepare_r
 export async function generate_random_shopping_mall_seller_products_images_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IShoppingMallProductImage.ICreate>;
+    body?: DeepPartial<IShoppingMallProductImage.ICreate> | undefined;
     params: {
       productId: string;
     };
@@ -23,13 +23,11 @@ export async function generate_random_shopping_mall_seller_products_images_creat
 ): Promise<IShoppingMallProductImage> {
   const prepared: IShoppingMallProductImage.ICreate =
     prepare_random_shopping_mall_product_image(props.body);
-  const result: IShoppingMallProductImage =
-    await api.functional.shoppingMall.seller.products.images.create(
-      connection,
-      {
-        productId: props.params.productId,
-        body: prepared,
-      },
-    );
-  return result;
+  return await api.functional.shoppingMall.seller.products.images.create(
+    connection,
+    {
+      body: prepared,
+      productId: props.params.productId,
+    },
+  );
 }

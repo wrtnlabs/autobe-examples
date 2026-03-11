@@ -7,26 +7,23 @@ import { IDiscussionBoardAdminRequest } from "../../../../../structures/IDiscuss
 import { IPageIDiscussionBoardAdminRequest } from "../../../../../structures/IPageIDiscussionBoardAdminRequest";
 
 /**
- * Retrieve a filtered and paginated list of pending administrator privilege requests from the discussion_board_admin_requests table.
+ * Retrieve a filtered and paginated list of pending administrator privilege requests for review by super administrators.
  *
- * This operation provides super administrators with comprehensive visibility into all administrator requests awaiting review. Each request record contains the submitting member's justification reason (discussion_board_admin_requests.reason), current request status (discussion_board_admin_requests.status), submission timestamp (discussion_board_admin_requests.submitted_at), and review timestamp (discussion_board_admin_requests.reviewed_at, null for pending requests).
+ * This operation provides super administrators with the ability to view all administrator requests that are currently awaiting review. Each request includes the submitting member's display name, their justification reason for requesting admin privileges, and the submission timestamp.
  *
- * The operation joins with discussion_board_members to include submitter profile information, specifically the display name (discussion_board_members.display_name) and email address (discussion_board_members.email). This enables super administrators to evaluate each request with full context about the requesting member.
+ * Only super administrators (users with grade='super' in discussion_board_admins) are authorized to access this endpoint. Regular administrators and members are denied access. The system filters requests to show only those with status='pending' and excludes soft-deleted records (deleted_at IS NULL).
  *
- * Authorization is restricted to super administrators only (discussion_board_admins.grade = 'super'). Regular administrators and unauthenticated users receive authorization errors. Results are sorted by submitted_at in descending order, ensuring the most recent requests appear first for timely review.
+ * Results are sorted by submission timestamp in descending order (newest first) by default, allowing super administrators to review the most recent requests first. The operation supports comprehensive pagination with configurable page sizes and cursor-based navigation for efficient handling of large request volumes.
  *
- * Pagination is configured through the request body parameters to efficiently handle large volumes of pending requests. The response follows the IPageIDiscussionBoardAdminRequest.ISummary structure with pagination metadata and request summary data.
+ * The database enforces a unique constraint on [discussion_board_member_id, status], ensuring each member can have at most one pending request at any time. This prevents duplicate submissions while a request is awaiting review.
  *
- * Related operations:
- * - PUT /admin-requests/{id}/approve: Approve a pending request (super admin only)
- * - PUT /admin-requests/{id}/reject: Reject a pending request (super admin only)
- * - GET /admin-requests/{id}: View detailed information about a specific request
+ * Related operations: POST /admin-requests for members to submit new requests, GET /admin-requests/{id} for retrieving individual request details, PUT /admin-requests/{id} for super administrators to approve or reject requests.
  *
  * @param props.connection
- * @param props.body Pagination and filtering parameters for pending administrator requests list
+ * @param props.body Search criteria and pagination parameters for filtering pending administrator requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query discussion_board_admin_requests table with status='pending' filter. Join with discussion_board_members on discussion_board_member_id to retrieve submitter's display_name and email. Apply pagination from request body (page, limit parameters) with offset-based pagination. Sort results by submitted_at DESC (newest first). Verify requesting user has super administrator grade from discussion_board_admins table. Return paginated results with IPageIDiscussionBoardAdminRequest.ISummary structure including request metadata and associated member information.
+ * @x-autobe-specification Query discussion_board_admin_requests table with status='pending' filter. Join with discussion_board_members to retrieve submitting member's display_name and ban_status. Apply pagination from request body (page, page_size, cursor). Sort by submitted_at descending (newest first) as default. Validate requester is super administrator (grade='super' in discussion_board_admins). Return paginated summary containing request id, member display name, reason, submitted_at, and status. Enforce single pending request per user constraint when displaying list.
  * @path /discussionBoard/admin/admin-requests/pending
  * @accessor api.functional.discussionBoard.admin.admin_requests.pending.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -56,7 +53,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Pagination and filtering parameters for pending administrator requests list
+     * Search criteria and pagination parameters for filtering pending administrator requests
      */
     body: IDiscussionBoardAdminRequest.IRequest;
   };

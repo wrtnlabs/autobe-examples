@@ -11,12 +11,10 @@ export function prepare_random_economic_political_board_comment(
   return {
     content:
       input?.content ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 3,
-        sentenceMax: 5,
-        wordMin: 8,
-        wordMax: 12,
+      RandomGenerator.paragraph({
+        sentences: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
+        >(),
       }),
   };
 }

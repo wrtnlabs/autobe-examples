@@ -1,5 +1,11 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallAdminRequestRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequest";
+import { IEcommerceMallAdminRequestRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequestOfCustomer";
+import { IEcommerceMallAdminRequestRequestOfSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestRequestOfSeller";
+import { IEcommerceMallAdminRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestSnapshot";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,7 +16,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallAdminAtSummaryTransformer } from "../transformers/EcommerceMallAdminAtSummaryTransformer";
 import { EcommerceMallAdminRequestRequestTransformer } from "../transformers/EcommerceMallAdminRequestRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,24 +27,15 @@ export async function getEcommerceMallAdminAdminRequestsAdminRequestId(props: {
   const request =
     await MyGlobal.prisma.ecommerce_mall_admin_request_requests.findUniqueOrThrow(
       {
-        where: { id: props.adminRequestId },
-        select: {
-          id: true,
-          reason: true,
-          request_status: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          ecommerce_mall_admin_id: true,
-          admin: EcommerceMallAdminAtSummaryTransformer.select(),
-          snapshots: {},
-          customerRequests: {},
-          sellerRequests: {},
+        where: {
+          id: props.adminRequestId,
+          deleted_at: null,
         },
+        ...EcommerceMallAdminRequestRequestTransformer.select(),
       },
     );
-  if (request.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
+  if (request.admin.id !== props.admin.id) {
+    throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallAdminRequestRequestTransformer.transform(request);
 }

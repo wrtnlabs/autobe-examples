@@ -9,34 +9,24 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { DiscussionBoardAdminTransformer } from "../transformers/DiscussionBoardAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postDiscussionBoardAuthAdminJoin(props: {
+  ip: string;
   body: IDiscussionBoardAdmin.IJoin;
 }): Promise<IDiscussionBoardAdmin.IAuthorized> {
   // 1. Check email uniqueness
-  const existingByEmail =
-    await MyGlobal.prisma.discussion_board_admins.findFirst({
-      where: { email: props.body.email, deleted_at: null },
-    });
-  if (existingByEmail) {
+  const existing = await MyGlobal.prisma.discussion_board_admins.findFirst({
+    where: { email: props.body.email, deleted_at: null },
+  });
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Check display_name uniqueness
-  const existingByDisplayName =
-    await MyGlobal.prisma.discussion_board_admins.findFirst({
-      where: { display_name: props.body.display_name, deleted_at: null },
-    });
-  if (existingByDisplayName) {
-    throw new HttpException("Display name already exists", 409);
-  }
-  // 3. Create admin record (manual - password hashing handled by PasswordUtil)
-  const adminId = v4();
+  // 2. Create admin record
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  const now = new Date();
-  const nowIso = toISOStringSafe(now);
+  const adminId: string & tags.Format<"uuid"> = v4();
+  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
   const admin = await MyGlobal.prisma.discussion_board_admins.create({
     data: {
       id: adminId,
@@ -44,60 +34,75 @@ export async function postDiscussionBoardAuthAdminJoin(props: {
       password_hash: passwordHash,
       display_name: props.body.display_name,
       bio: props.body.bio ?? null,
-      grade: "regular",
-      created_at: now,
-      updated_at: now,
+      grade: props.body.grade ?? "regular",
+      created_at: nowIso,
+      updated_at: nowIso,
       deleted_at: null,
-    } satisfies Prisma.discussion_board_adminsCreateInput,
-    ...DiscussionBoardAdminTransformer.select(),
+    },
+    select: {
+      id: true,
+      display_name: true,
+      bio: true,
+      grade: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
-  // 4. Create session record
-  const sessionId = v4();
-  const accessExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+  // 3. Create session record
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const session = await MyGlobal.prisma.discussion_board_admin_sessions.create({
+  const accessExpiresIso: string & tags.Format<"date-time"> =
+    toISOStringSafe(accessExpires);
+  const refreshExpiresIso: string & tags.Format<"date-time"> =
+    toISOStringSafe(refreshExpires);
+  await MyGlobal.prisma.discussion_board_admin_sessions.create({
     data: {
       id: sessionId,
-      discussionBoardAdmin: { connect: { id: admin.id } },
-      ip: props.body.ip ?? "127.0.0.1",
+      discussion_board_admin_id: adminId,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: now,
-      expired_at: accessExpires,
-    } satisfies Prisma.discussion_board_admin_sessionsCreateInput,
+      referrer: props.body.referrer ?? null,
+      created_at: nowIso,
+      expired_at: accessExpiresIso,
+    },
   });
-  // 5. Generate JWT tokens
-  const token = {
+  // 4. Generate JWT tokens
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
+        id: adminId,
+        session_id: sessionId,
         created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "30m", issuer: "autobe" },
+      { expiresIn: "15m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "admin",
-        id: admin.id,
-        session_id: session.id,
+        id: adminId,
+        session_id: sessionId,
         tokenType: "refresh",
         created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpiresIso,
+    refreshable_until: refreshExpiresIso,
   };
-  // 6. Return IAuthorized
-  const adminData = await DiscussionBoardAdminTransformer.transform(admin);
-  const result = {
-    ...adminData,
-    grade: typia.assert<"regular" | "super">(adminData.grade),
+  // 5. Return authorized response
+  return {
+    id: admin.id,
+    display_name: admin.display_name,
+    bio: admin.bio,
+    grade: admin.grade,
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
+    email: props.body.email,
+    deleted_at: null,
     token,
-  };
-  return result satisfies IDiscussionBoardAdmin.IAuthorized;
+  } satisfies IDiscussionBoardAdmin.IAuthorized;
 }

@@ -17,6 +17,12 @@ export namespace DiscussionBoardSectionSnapshotAtSummaryTransformer {
         name: true,
         description: true,
         created_at: true,
+        snapshot_reason: true,
+        section: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.discussion_board_sectionsFindManyArgs,
       },
     } satisfies Prisma.discussion_board_section_snapshotsFindManyArgs;
   }
@@ -26,8 +32,8 @@ export namespace DiscussionBoardSectionSnapshotAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
       created_at: input.created_at.toISOString(),
+      snapshot_reason: input.snapshot_reason ?? null,
     };
   }
 }

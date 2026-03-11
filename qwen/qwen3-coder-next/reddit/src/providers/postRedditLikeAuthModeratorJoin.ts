@@ -13,92 +13,94 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeAuthModeratorJoin(props: {
+  ip: string;
   body: IRedditLikeModerator.IJoin;
 }): Promise<IRedditLikeModerator.IAuthorized> {
-  // 1. Check duplicate email
-  const existingModeratorByEmail =
-    await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: { email: props.body.email },
-    });
-  if (existingModeratorByEmail) {
-    throw new HttpException("Email already registered", 409);
-  }
-  // 2. Check duplicate username
-  const existingModeratorByUsername =
+  const existingEmail = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: { email: props.body.email },
+  });
+  if (existingEmail) throw new HttpException("Email already registered", 409);
+  const existingUsername =
     await MyGlobal.prisma.reddit_like_moderators.findFirst({
       where: { username: props.body.username },
     });
-  if (existingModeratorByUsername) {
-    throw new HttpException("Username already taken", 409);
-  }
-  // 3. Generate IDs
-  const moderatorId = v4() as string & tags.Format<"uuid">;
-  const verificationToken = v4();
-  const hashedToken = await PasswordUtil.hash(verificationToken);
-  const verificationRecordId = v4() as string & tags.Format<"uuid">;
-  // 4. Create moderator record
+  if (existingUsername) throw new HttpException("Username already taken", 409);
+  const now = toISOStringSafe(new Date());
   const moderator = await MyGlobal.prisma.reddit_like_moderators.create({
     data: {
-      id: moderatorId,
+      id: v4(),
       email: props.body.email,
-      email_verified_at: null,
-      password_hash: await PasswordUtil.hash(props.body.password),
       username: props.body.username,
       display_name: props.body.display_name,
-      bio: props.body.bio,
-      avatar_url: props.body.avatar_url,
+      password_hash: await PasswordUtil.hash(props.body.password),
       karma_score: 0,
-      created_at: toISOStringSafe(new Date()) as string &
-        tags.Format<"date-time">,
-      updated_at: toISOStringSafe(new Date()) as string &
-        tags.Format<"date-time">,
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      karma_score: true,
+    },
   });
-  // 5. Create email verification record
+  const emailToken = v4();
+  const emailTokenHash = await PasswordUtil.hash(emailToken);
+  const emailTokenExpires = toISOStringSafe(
+    new Date(Date.now() + 24 * 60 * 60 * 1000),
+  );
   await MyGlobal.prisma.reddit_like_moderator_email_verifications.create({
     data: {
-      id: verificationRecordId,
-      moderator_id: moderatorId,
-      token_hash: hashedToken,
-      expires_at: toISOStringSafe(
-        new Date(Date.now() + 24 * 60 * 60 * 1000),
-      ) as string & tags.Format<"date-time">,
-      created_at: toISOStringSafe(new Date()) as string &
-        tags.Format<"date-time">,
-      updated_at: toISOStringSafe(new Date()) as string &
-        tags.Format<"date-time">,
-      deleted_at: null,
+      id: v4(),
+      moderator_id: moderator.id,
+      token_hash: emailTokenHash,
+      created_at: now,
+      updated_at: now,
+      expires_at: emailTokenExpires,
     },
   });
-  // 6. Build response without sensitive verification info
-  return {
-    id: moderator.id,
-    email: moderator.email,
-    email_verified_at: moderator.email_verified_at
-      ? (toISOStringSafe(moderator.email_verified_at) as string &
-          tags.Format<"date-time">)
-      : ("1970-01-01T00:00:00.000Z" as string & tags.Format<"date-time">),
-    username: moderator.username,
-    display_name: moderator.display_name,
-    bio: moderator.bio ?? "",
-    avatar_url: moderator.avatar_url ?? "",
-    karma_score: moderator.karma_score,
-    created_at: toISOStringSafe(moderator.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(moderator.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at: moderator.deleted_at
-      ? (toISOStringSafe(moderator.deleted_at) as string &
-          tags.Format<"date-time">)
-      : ("1970-01-01T00:00:00.000Z" as string & tags.Format<"date-time">),
-    token: {
-      access: "verification_required",
-      refresh: "verification_required",
-      expired_at: "1970-01-01T00:00:00.000Z" as string &
-        tags.Format<"date-time">,
-      refreshable_until: "1970-01-01T00:00:00.000Z" as string &
-        tags.Format<"date-time">,
+  const session = await MyGlobal.prisma.reddit_like_moderator_sessions.create({
+    data: {
+      id: v4(),
+      moderator: { connect: { id: moderator.id } },
+      ip: props.ip,
+      href: props.ip, // Use IP as default href
+      expired_at: toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000)),
+      created_at: now,
     },
+  });
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "moderator",
+        id: moderator.id,
+        session_id: session.id,
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "moderator",
+        id: moderator.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: now,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
+  return {
+    ...moderator,
+    token,
   } satisfies IRedditLikeModerator.IAuthorized;
 }

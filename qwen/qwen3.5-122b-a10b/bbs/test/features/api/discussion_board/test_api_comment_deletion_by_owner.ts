@@ -5,7 +5,6 @@ import type { IDiscussionBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/stru
 import type { IDiscussionBoardComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardComment";
 import type { IDiscussionBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardMember";
 import type { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
-import type { IDiscussionBoardTag } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardTag";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -27,30 +26,21 @@ import { prepare_random_discussion_board_comment } from "../../../prepare/prepar
 import { prepare_random_discussion_board_section } from "../../../prepare/prepare_random_discussion_board_section";
 
 /**
- * Test that a member user can successfully delete their own comment from an article through soft deletion.
+ * Test that a member can successfully delete their own comment from an article.
  *
- * Setup Phase:
- * 1. Create admin account and authenticate
- * 2. Create a section as administrator
- * 3. Create a member account and authenticate
- * 4. Create an article in the section as the member
- * 5. Create a comment on the article as the same member
- *
- * Test Execution:
- * 1. Call DELETE /discussionBoard/member/articles/{articleId}/comments/{commentId}
- * 2. Verify the erase operation completes successfully
- *
- * Business Logic Validation:
- * - Soft deletion preserves data for audit trail while hiding from normal queries
- * - Only the comment owner can delete their own comment
- * - The deletion is immediate and removes the comment from all public views
+ * This test validates the complete comment deletion workflow:
+ * 1. Admin creates a section for article categorization
+ * 2. Member creates an article in that section
+ * 3. Member creates a comment on their article
+ * 4. Member deletes their own comment successfully
+ * 5. Verify attempting to delete the same comment again fails (comment no longer exists)
  */
 export async function test_api_comment_deletion_by_owner(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin account and authenticate
+  // 1. Admin setup - create section
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth = await authorize_admin_join(adminConnection, {
+  await authorize_admin_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -59,57 +49,71 @@ export async function test_api_comment_deletion_by_owner(
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IDiscussionBoardAdmin.IJoin,
   });
-  typia.assert(adminAuth);
-  // 2. Create section as administrator
   const section = await generate_random_discussion_board_admin_sections_create(
     adminConnection,
-    {},
+    {
+      body: {
+        name: RandomGenerator.name(2),
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+      } satisfies IDiscussionBoardSection.ICreate,
+    },
   );
   typia.assert(section);
-  // 3. Create member account and authenticate
+  // 2. Member setup - create article
   const memberConnection: api.IConnection = { host: connection.host };
-  const memberAuth = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
+      displayName: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IDiscussionBoardMember.IJoin,
   });
-  typia.assert(memberAuth);
-  // 4. Create article in the section as the member
   const article = await generate_random_discussion_board_member_articles_create(
     memberConnection,
     {
       body: {
-        discussion_board_section_id: section.id,
-        title: RandomGenerator.paragraph({ sentences: 2 }),
+        title: RandomGenerator.name(3),
         body: RandomGenerator.content({ paragraphs: 3 }),
+        discussion_board_section_id: section.id,
       } satisfies IDiscussionBoardArticle.ICreate,
     },
   );
   typia.assert(article);
-  // 5. Create comment on the article as the same member
+  // 3. Member creates a comment on the article
   const comment =
     await generate_random_discussion_board_member_articles_comments_create(
       memberConnection,
       {
-        body: {
-          content: RandomGenerator.paragraph({ sentences: 3 }),
-        } satisfies IDiscussionBoardComment.ICreate,
         params: {
           articleId: article.id,
         },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 2 }),
+        } satisfies IDiscussionBoardComment.ICreate,
       },
     );
   typia.assert(comment);
-  // 6. Delete the comment as its owner
+  // 4. Delete the comment using member's authentication - should succeed
   await api.functional.discussionBoard.member.articles.comments.erase(
     memberConnection,
     {
       articleId: article.id,
       commentId: comment.id,
     },
+  );
+  // 5. Verify attempting to delete the same comment again fails (soft-deleted)
+  await TestValidator.httpError(
+    "cannot delete already deleted comment",
+    404,
+    async () =>
+      await api.functional.discussionBoard.member.articles.comments.erase(
+        memberConnection,
+        {
+          articleId: article.id,
+          commentId: comment.id,
+        },
+      ),
   );
 }

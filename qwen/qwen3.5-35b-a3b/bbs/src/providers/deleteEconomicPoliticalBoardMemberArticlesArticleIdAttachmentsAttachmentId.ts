@@ -16,40 +16,36 @@ export async function deleteEconomicPoliticalBoardMemberArticlesArticleIdAttachm
   articleId: string & tags.Format<"uuid">;
   attachmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Step 1: Verify article exists and get its author
   const article =
     await MyGlobal.prisma.economic_political_board_articles.findUniqueOrThrow({
       where: { id: props.articleId },
-      select: { id: true, author_id: true },
+      select: { id: true, author_id: true, deleted_at: true },
     });
-  const isOwner = article.author_id === props.member.id;
-  if (!isOwner) {
-    const adminRole =
-      await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst(
-        {
-          where: { user_id: props.member.id },
-        },
-      );
-    if (adminRole === null) {
-      throw new HttpException("Forbidden", 403);
-    }
+  // Step 2: Verify article is not already deleted
+  if (article.deleted_at !== null) {
+    throw new HttpException("Article not found", 404);
   }
+  // Step 3: Verify member owns the article
+  if (article.author_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 4: Verify attachment exists and belongs to this article
   const attachment =
-    await MyGlobal.prisma.economic_political_board_attachments.findFirstOrThrow(
+    await MyGlobal.prisma.economic_political_board_attachments.findUniqueOrThrow(
       {
         where: {
           id: props.attachmentId,
           article_id: props.articleId,
-          deleted_at: null,
         },
+        select: { id: true },
       },
     );
-  const now: string & tags.Format<"date-time"> = new Date().toISOString();
+  // Step 5: Soft delete the attachment
   await MyGlobal.prisma.economic_political_board_attachments.update({
     where: { id: props.attachmentId },
-    data: { deleted_at: now, updated_at: now },
-  });
-  await MyGlobal.prisma.economic_political_board_articles.update({
-    where: { id: props.articleId },
-    data: { updated_at: now },
+    data: {
+      deleted_at: new Date(),
+    },
   });
 }

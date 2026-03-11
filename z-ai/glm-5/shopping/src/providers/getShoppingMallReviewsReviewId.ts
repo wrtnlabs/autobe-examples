@@ -18,14 +18,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallReviewsReviewId(props: {
-  reviewId: string & tags.Format<"uuid">;
+  reviewId: string;
 }): Promise<IShoppingMallReview> {
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findFirstOrThrow({
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: {
       id: props.reviewId,
       deleted_at: null,
     },
     ...ShoppingMallReviewTransformer.select(),
   });
-  return await ShoppingMallReviewTransformer.transform(review);
+  const result = await ShoppingMallReviewTransformer.transform(review);
+  // Display 'deleted user' if customer account is soft-deleted
+  if (result.customer.deletedAt !== null) {
+    result.customer.displayName = "deleted user";
+  }
+  return result;
 }

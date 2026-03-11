@@ -21,12 +21,15 @@ export namespace RedditPlatformCommentCollector {
       updated_at: new Date(),
       deleted_at: null,
       author: { connect: { id: props.redditPlatformMembers.id } },
-      post: props.body.post_id
-        ? { connect: { id: props.body.post_id } }
+      post: props.body.postId
+        ? { connect: { id: props.body.postId } }
         : undefined,
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      parent: props.body.parentId
+        ? { connect: { id: props.body.parentId } }
         : undefined,
+      replies: undefined,
+      votes: undefined,
+      moderationAuditLogs: undefined,
     } satisfies Prisma.reddit_platform_commentsCreateInput;
   }
 }

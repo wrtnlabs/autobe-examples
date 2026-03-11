@@ -4,17 +4,50 @@ import { IAuthorizationToken } from "./IAuthorizationToken";
 
 export namespace IEconomicPoliticalBoardMember {
   /**
-   * Authorization response containing user identification and JWT tokens for API authentication.
+   * Request body for refreshing an access token. Submit a valid refresh token to obtain a new pair of access and refresh tokens without re-authentication. This enables seamless continued access to protected resources while maintaining security through token rotation.
+   */
+  export type IRefresh = {
+    /**
+     * Refresh token for renewing access credentials. This is a JWT string that must be valid and not expired. The token will be validated by the server, and upon successful validation, new access and refresh tokens will be issued.
+     *
+     * @x-autobe-specification JWT refresh token provided by client. The server validates the token's cryptographic signature and expiration timestamp. On successful validation, a new token pair is generated (token rotation). The refresh token is not stored as a database column but validated against session state and JWT claims.
+     */
+    refresh: string;
+  };
+
+  /**
+   * Login credentials for an existing member account. Provides the email address and password required to authenticate the member and obtain access tokens for API operations.
+   */
+  export type ILogin = {
+    /**
+     * Member's email address used to identify their account. The system will query the User table by this email to locate the account for authentication.
+     *
+     * @x-autobe-specification Email address provided by the member for authentication. Used to query the database to locate the corresponding User record. Validation: email must exist in the database, must be valid email format.
+     */
+    email: string & tags.Format<"email">;
+
+    /**
+     * Member's password for authentication. This plain text value is hashed using bcrypt or argon2 and verified against the stored password hash in the database.
+     *
+     * @x-autobe-specification Plain text password provided by the member. The system hashes this value using bcrypt or argon2 and verifies it against the stored passwordHashed column in the users table. Password is never stored as plain text in the database or API responses. Validation: must match the stored hash, minimum length requirements apply.
+     */
+    password: string;
+  };
+
+  /**
+   * Authentication response containing member identifier and JWT tokens for accessing protected resources.
    *
-   * This response type is returned after successful member authentication operations including registration, login, and token refresh. It provides the user ID for client-side identification and a complete token object with access and refresh tokens along with their expiration timestamps.
+   * This response is returned upon successful registration, login, or token refresh operations. The id field contains the unique member identifier extracted from the authentication token. The token object contains the complete authorization token structure with access and refresh tokens along with their expiration timestamps.
    *
-   * The access token must be included in the Authorization header using the Bearer scheme for all authenticated API requests. The refresh token enables obtaining new access tokens without re-authentication, maintaining seamless user sessions. Expiration timestamps help clients manage token renewal proactively.
+   * Members use the access token to authenticate API requests by including it in the Authorization header. The refresh token allows obtaining new access tokens without re-entering credentials. Both tokens have defined expiration times to ensure security.
    */
   export type IAuthorized = {
     /**
-     * Unique identifier of the authenticated user.
+     * Unique identifier of the authenticated member.
      *
-     * @x-autobe-specification User ID from JWT access token payload (economic_political_board_users.id). Extracted during authentication and embedded in JWT claims for stateless client identification. Used for client-side user identification and JWT claim validation. Data source: economic_political_board_users table (not in available schemas), retrieved during login/registration.
+     * A UUID string representing the member's unique identity in the system. This identifier is extracted from the authentication token and used to correlate API requests with the specific member. Available after successful registration, login, or token refresh.
+     *
+     * @x-autobe-specification Member identifier extracted from JWT subject claim (User.id). This is a UUID string representing the authenticated member's unique identifier in the database. Populated by: 1) During registration: new User.id from created record, 2) During login: User.id from queried User record, 3) During refresh: same User.id from JWT verification. Used by API middleware to identify the authenticated user for authorization checks.
      */
     id: string & tags.Format<"uuid">;
 
@@ -27,126 +60,77 @@ export namespace IEconomicPoliticalBoardMember {
   };
 
   /**
-   * Registration request body for creating a new member account on the Economic Political Board discussion platform.
-   *
-   * This DTO contains the required authentication credentials (email and password) and profile information (displayName and bio) for new member registration. The password is provided as plain text and will be securely hashed by the backend before storage. Session context information (source URL, referrer, and IP address) is included for tracking the registration source and enhancing security audit trails.
+   * Registration request body for creating a new member account in the Economic/Political Discussion Board system. This endpoint accepts an email address and password for authentication, along with the user's display name for their profile. Session context information (current page URL, referrer, and IP address) is required for security tracking, analytics, and fraud prevention purposes.
    */
   export type IJoin = {
     /**
-     * User's email address used for authentication and account identification.
+     * User's email address for authentication and account identification.
      *
-     * @x-autobe-specification Maps to economic_political_board_users.email column. Must be unique across all users. Validation: RFC 5322 email format, uniqueness check against existing users before account creation.
+     * @x-autobe-specification User email for authentication. Validated for proper format and database uniqueness constraint.
      */
     email: string & tags.Format<"email">;
 
     /**
-     * User's account password for authentication. Stored as hashed value for security.
+     * Account password for authentication.
      *
-     * @x-autobe-specification User-provided plain text password. Backend transforms: bcrypt or Argon2 hashing algorithm with salt, stored as passwordHashed in economic_political_board_users.passwordHashed column. Validation: minimum length (enforced by business rules), no plain text storage.
+     * @x-autobe-specification Plaintext password for authentication. Backend MUST hash using bcrypt/argon2 to User.passwordHash.
      */
-    password: string & tags.Format<"password">;
+    password: string;
 
     /**
-     * User's public display name shown in profile and on posts.
+     * Display name shown in user profiles and content attribution.
      *
-     * @x-autobe-specification Maps to economic_political_board_profiles.displayName column. Unique constraint enforced. Validation: minimum and maximum length per business rules, uniqueness check against existing profiles, no impersonation patterns.
+     * @x-autobe-specification Display name for Profile record. Created in same transaction as User via Profile relation with userId FK.
      */
-    displayName: string;
+    name: string;
 
     /**
-     * User's short biographical description shown on their profile page.
+     * URL of the page where registration was initiated.
      *
-     * @x-autobe-specification Maps to economic_political_board_profiles.bio column. Optional field. Validation: maximum length limit, no prohibited content (contact info, spam). Empty bio allowed.
-     */
-    bio?: string | undefined;
-
-    /**
-     * The URL or page that redirected the user to the registration form.
-     *
-     * @x-autobe-specification Source URL of registration request. Not stored in user/profile tables. Tracked separately for session/audit purposes. Captures the page or link that led user to registration. Optional in SSR scenarios where client may not know source URL.
+     * @x-autobe-specification URL of current page where registration initiated. Captured from browser session.
      */
     href: string & tags.Format<"uri">;
 
     /**
-     * The referring website or page that sent the user to register.
+     * URL of the page that referred the user to registration.
      *
-     * @x-autobe-specification HTTP Referrer header value from registration request. Not stored in user/profile tables. Tracked separately for session/audit purposes. Helps identify marketing campaigns, entry points, or suspicious registration patterns. Optional in SSR scenarios.
+     * @x-autobe-specification Referring page URL that directed user to registration. Captured from HTTP request header.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
-     * User's IP address during registration. Used for security tracking and rate limiting.
+     * Client IP address captured at registration time for security tracking.
      *
-     * @x-autobe-specification Client IP address from registration request. Not stored in user/profile tables. Tracked separately for session/audit purposes. Format: IPv4 (or IPv6 if supported). Used for rate limiting, fraud detection, and security monitoring. Optional in SSR where server captures IP instead.
+     * @x-autobe-specification Client IP address for security logging. Optional when client cannot determine its own IP (SSR case), server captures as fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
 
   /**
-   * Request body for member authentication. Provides email and password credentials to authenticate a registered member account. The system validates the credentials against stored user data, checks if the account has been banned, and issues JWT access and refresh tokens upon successful authentication.
-   */
-  export type ILogin = {
-    /**
-     * User's registered email address used as the primary identifier for authentication.
-     *
-     * @x-autobe-specification Email is used to query the economic_political_board_users table by email column. Input validation ensures standard email format. The email must match a registered account; if no matching user exists, authentication fails with 401 Unauthorized.
-     */
-    email: string & tags.Format<"email">;
-
-    /**
-     * User's password (provided in plaintext, will be hashed for verification).
-     *
-     * @x-autobe-specification Password is received as plaintext from the client, then hashed using the same algorithm (bcrypt or Argon2) used during registration. The hashed value is compared with the stored passwordHash in the economic_political_board_users table using constant-time comparison to prevent timing attacks. Security: rate limiting applies to prevent brute-force attacks. The original plaintext password is never stored.
-     */
-    password: string & tags.Format<"password">;
-  };
-
-  /**
-   * Request body for renewing a JWT access token using a refresh token.
-   *
-   * Contains the refresh token that was issued during member registration or login. This long-lived token can be exchanged for a new short-lived access token, allowing session continuation without re-entering credentials. The refresh token is validated against a server-side token store that tracks token rotation and revocation for security.
-   */
-  export type IRefresh = {
-    /**
-     * Refresh token for renewal.
-     *
-     * The long-lived authentication token issued during registration or login that can be exchanged for a new access token. This token enables seamless session continuation without requiring the user to re-authenticate with credentials. Stored securely and transmitted only to the token refresh endpoint.
-     *
-     * @x-autobe-specification JWT refresh token string issued during registration/login (typically 1-30 days validity). Format: JWT (three Base64URL-encoded parts: header.payload.signature). Validation requires: 1) JWT structure verification, 2) Signature verification using issuer's public key, 3) Expiration check (exp claim), 4) Server-side token store lookup by userId for token existence and revocation status. The token is NOT stored as a database column but in the server-side refresh token store (economic_political_board_refresh_tokens). On successful renewal: old token is revoked and a new refresh token is issued (token rotation).
-     */
-    refreshToken: string;
-  };
-
-  /**
-   * Lightweight member summary entity for API responses, containing user identification (id, email) and profile information (displayName, bio). This DTO provides minimal member metadata for display purposes in article listings, comment threads, and administrative role displays, while intentionally excluding sensitive data such as password hashes, ban status, and administrative timestamps.
+   * Lightweight member entity for display in article listings and user references. Contains essential identification fields including member identifier, display name for user presentation, and account creation timestamp.
    */
   export type ISummary = {
     /**
-     * Unique identifier of the member (UUID format).
+     * Unique identifier for the member.
      *
-     * @x-autobe-specification Mapped from user.id in the User table joined with Profile table on user.id = profile.userId. UUID format from primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.id. UUID primary key identifying the member record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
-     * Member's email address used for authentication and identification.
+     * Timestamp when the member account was created.
      *
-     * @x-autobe-specification Mapped from user.email in the User table joined with Profile table on user.id = profile.userId. Email format string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from economic_political_board_administrator_roles.created_at. Timestamp when member account was created.
      */
-    email: string & tags.Format<"email">;
+    createdAt: string & tags.Format<"date-time">;
 
     /**
-     * Member's display name shown in community interactions and profile views.
+     * Display name of the member for user identification and article author attribution.
      *
-     * @x-autobe-specification Mapped from profile.displayName in the Profile table joined with User table on user.id = profile.userId. String field for display purposes.
+     * @x-autobe-specification Computed property: JOIN economic_political_board_administrator_roles with user profiles table on user_id, select display_name field. Returns the member's display name for user identification and article author attribution. This is a cross-table join result, not a direct column mapping.
      */
     displayName: string;
-
-    /**
-     * Member's bio or about text displayed on their profile page.
-     *
-     * @x-autobe-specification Mapped from profile.bio in the Profile table joined with User table on user.id = profile.userId. Text field for user biography.
-     */
-    bio: string;
   };
 }

@@ -16,90 +16,89 @@ export async function postDiscussionBoardAuthGuestRefresh(props: {
   body: IDiscussionBoardGuest.IRefresh;
 }): Promise<IDiscussionBoardGuest.IAuthorized> {
   // 1. Verify refresh token
-  let decoded: {
+  let decoded: unknown;
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // 2. Assert and validate token payload
+  const payload = typia.assert<{
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
     type: "guest";
-    created_at: string & tags.Format<"date-time">;
-  };
-  try {
-    decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
-  } catch (error) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+    created_at: string;
+  }>(decoded);
+  if (payload.type !== "guest") {
+    throw new HttpException("Invalid token type", 401);
   }
-  // 2. Validate token type
-  if (decoded.type !== "guest") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  // 3. Validate session exists and is active
+  // 3. Validate session exists and matches
   const session =
     await MyGlobal.prisma.discussion_board_guest_sessions.findFirst({
       where: {
-        id: decoded.session_id,
-        discussion_board_guest_id: decoded.id,
+        id: payload.session_id,
+        discussion_board_guest_id: payload.id,
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // Check if session is expired
-  const sessionExpiredAt = new Date(session.expired_at);
-  if (sessionExpiredAt < new Date()) {
-    throw new HttpException("Session expired", 401);
-  }
-  // 4. Validate guest account exists and is not soft-deleted
+  // 4. Validate guest account not deleted
   const guest = await MyGlobal.prisma.discussion_board_guests.findUnique({
-    where: { id: decoded.id },
+    where: { id: payload.id },
   });
   if (!guest) {
-    throw new HttpException("Guest account not found", 401);
+    throw new HttpException("Guest account not found", 404);
   }
   if (guest.deleted_at !== null) {
-    throw new HttpException("Guest account has been deleted", 401);
+    throw new HttpException("Guest account has been deleted", 403);
   }
   // 5. Generate new tokens with SAME session_id
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const newAccessToken = jwt.sign(
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 30 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nowIso = now.toISOString();
+  const accessExpiresIso = accessExpires.toISOString();
+  const refreshExpiresIso = refreshExpires.toISOString();
+  const accessToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      type: "guest",
+      id: payload.id,
+      session_id: payload.session_id,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    { expiresIn: "30m", issuer: "autobe" },
   );
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
+      type: "guest",
+      id: payload.id,
+      session_id: payload.session_id,
       tokenType: "refresh",
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
   // 6. Update session expiration
   await MyGlobal.prisma.discussion_board_guest_sessions.update({
-    where: { id: decoded.session_id },
+    where: { id: payload.session_id },
     data: { expired_at: refreshExpires },
   });
   // 7. Return authorized response
-  return typia.assert<IDiscussionBoardGuest.IAuthorized>({
-    id: guest.id,
-    device_fingerprint: guest.device_fingerprint,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
-    deleted_at: guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null,
+  return {
+    id: payload.id,
+    displayName: undefined,
     token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso as string & tags.Format<"date-time">,
+      refreshable_until: refreshExpiresIso as string & tags.Format<"date-time">,
     },
-  });
+  };
 }

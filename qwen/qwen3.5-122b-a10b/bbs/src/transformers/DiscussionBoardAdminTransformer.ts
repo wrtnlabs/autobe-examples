@@ -14,13 +14,11 @@ export namespace DiscussionBoardAdminTransformer {
     return {
       select: {
         id: true,
-        email: true,
         display_name: true,
         bio: true,
         grade: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
       },
     } satisfies Prisma.discussion_board_adminsFindManyArgs;
   }
@@ -29,13 +27,11 @@ export namespace DiscussionBoardAdminTransformer {
   ): Promise<IDiscussionBoardAdmin> {
     return {
       id: input.id,
-      email: input.email,
       display_name: input.display_name,
-      bio: input.bio ?? null,
+      bio: input.bio,
       grade: input.grade,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

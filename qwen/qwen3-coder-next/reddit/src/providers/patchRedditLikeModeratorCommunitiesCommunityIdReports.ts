@@ -1,7 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditLikeReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditLikeReport";
+import { IRedditLikeComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeComment";
+import { IRedditLikeCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeCommunity";
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
+import { IRedditLikePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePost";
 import { IRedditLikeReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -12,73 +15,84 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
-import { RedditLikeReportAtSummaryTransformer } from "../transformers/RedditLikeReportAtSummaryTransformer";
+import { RedditLikeReportTransformer } from "../transformers/RedditLikeReportTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeModeratorCommunitiesCommunityIdReports(props: {
   moderator: ModeratorPayload;
-  communityId: string & tags.Format<"uuid">;
+  communityId: string;
   body: IRedditLikeReport.IRequest;
-}): Promise<IPageIRedditLikeReport.ISummary> {
-  // Check if moderator has access to this community
-  const moderatorRole =
-    await MyGlobal.prisma.reddit_like_moderator_roles.findFirst({
+}): Promise<IPageIRedditLikeReport> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 10;
+  const skip = (page - 1) * limit;
+  // Verify moderator has role in target community
+  const role =
+    await MyGlobal.prisma.reddit_like_moderator_roles.findFirstOrThrow({
       where: {
         user_id: props.moderator.id,
         community_id: props.communityId,
       },
+      select: { id: true, role: true },
     });
-  if (!moderatorRole) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Build where condition
-  const where: Prisma.reddit_like_reportsWhereInput = {
-    status: "pending",
-    deleted_at: null,
-    OR: [
-      {
-        reportedPost: {
-          community_id: props.communityId,
-        },
-      },
-      {
-        reportedComment: {
-          post: {
+  const status = props.body.status;
+  const data = await MyGlobal.prisma.reddit_like_reports.findMany({
+    where: {
+      deleted_at: null,
+      ...(status !== null ? { status } : {}),
+      OR: [
+        {
+          reportedPost: {
             community_id: props.communityId,
+            deleted_at: null,
           },
         },
-      },
-    ],
-  };
-  // Parse pagination parameters
-  const page = Math.max(1, Math.floor(props.body.page || 1));
-  const limit = Math.min(100, Math.max(1, Math.floor(props.body.limit || 20)));
-  const skip = (page - 1) * limit;
-  // Parse sort parameters with proper SortOrder
-  const orderBy: Prisma.reddit_like_reportsOrderByWithRelationInput =
-    props.body.sort === "created_at_desc"
-      ? { created_at: "desc" as const }
-      : { created_at: "asc" as const };
-  // Query reports with pagination
-  const [reports, total] = await Promise.all([
-    MyGlobal.prisma.reddit_like_reports.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy,
-      ...RedditLikeReportAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.reddit_like_reports.count({ where }),
-  ]);
-  // Transform to response format
-  const data = await Promise.all(
-    reports.map((report) =>
-      RedditLikeReportAtSummaryTransformer.transform(report as any),
-    ),
+        {
+          reportedComment: {
+            post: {
+              community_id: props.communityId,
+              deleted_at: null,
+            },
+          },
+        },
+      ],
+    },
+    skip,
+    take: limit,
+    orderBy: {
+      created_at: props.body.sortOrder === "asc" ? "asc" : "desc",
+    },
+    ...RedditLikeReportTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.reddit_like_reports.count({
+    where: {
+      deleted_at: null,
+      ...(status !== null ? { status } : {}),
+      OR: [
+        {
+          reportedPost: {
+            community_id: props.communityId,
+            deleted_at: null,
+          },
+        },
+        {
+          reportedComment: {
+            post: {
+              community_id: props.communityId,
+              deleted_at: null,
+            },
+          },
+        },
+      ],
+    },
+  });
+  const transformed = await ArrayUtil.asyncMap(
+    data,
+    RedditLikeReportTransformer.transform,
   );
   return {
-    data,
+    data: transformed,
     pagination: {
       current: page,
       limit,

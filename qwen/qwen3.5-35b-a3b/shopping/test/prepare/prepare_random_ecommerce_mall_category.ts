@@ -6,14 +6,19 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_category(
-  input?: DeepPartial<IEcommerceMallCategory.ICreate>,
+  input?: DeepPartial<IEcommerceMallCategory.ICreate> | undefined,
 ): IEcommerceMallCategory.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(2),
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 3 }),
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
+      input?.description ??
+      (Math.random() > 0.5
+        ? null
+        : RandomGenerator.paragraph({ sentences: 2 })),
     parent_category_id:
-      input?.parent_category_id ?? typia.random<string & tags.Format<"uuid">>(),
-    is_leaf: input?.is_leaf ?? typia.random<boolean>(),
+      input?.parent_category_id ??
+      (Math.random() > 0.5
+        ? null
+        : typia.random<string & tags.Format<"uuid">>()),
   };
 }

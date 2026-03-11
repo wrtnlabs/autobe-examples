@@ -10,40 +10,44 @@ import { patchEcommerceMallProductsProductIdVariants } from "../../../../provide
 @Controller("/ecommerceMall/products/:productId/variants")
 export class EcommercemallProductsVariantsController {
   /**
-   * Retrieve a filtered and paginated list of product variants associated with a specific product.
+   * Retrieve a paginated list of product variants for a specific product, with advanced search and filtering capabilities.
    *
-   * This operation provides access to all variants of a given product, including their SKU codes, option combinations (stored as JSON), stock quantities, optional price overrides, and active status. Variants represent specific product configurations such as size/color combinations that customers can select before adding to cart.
+   * This operation returns all available variants associated with the specified product, including their SKU codes, option combinations, stock quantities, and pricing information. Customers can browse variants to select the specific product configuration they wish to purchase.
    *
-   * The response supports advanced filtering capabilities including stock availability (in-stock/out-of-stock), active/inactive status, SKU code pattern matching, and price range queries. Pagination with configurable page size enables efficient retrieval of variant lists even when products have many options.
+   * The operation supports multiple filter options including SKU code search, stock availability filtering, active status filtering, and price range queries. Results are returned with cursor-based pagination optimized for large variant sets.
    *
-   * Security: Sellers can retrieve variants for their own products. Customers can browse publicly available variants. Variant deletion is prevented by business rules to maintain order history integrity.
-   *
-   * Related Operations: This operation should be pre-executed to obtain the list of variants. Individual variant details are obtained by specifying the variant SKU or ID in a separate retrieval operation. Stock quantities returned here must be validated before cart additions.
+   * For sellers, this operation provides management access to view and track all variants of their products. Admins can audit variant data across all products in the system. Variants are filtered by active status by default, showing only currently available product configurations.
    *
    * @param connection
-   * @param productId Unique identifier of the parent product whose variants are being retrieved
-   * @param body Search criteria, filters, and pagination parameters for variant list
+   * @param productId The UUID of the product whose variants should be retrieved
+   * @param body Search criteria and pagination parameters for variant filtering
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_product_variants table filtered by product_id matching the path parameter productId.
+   * @x-autobe-specification Query ecommerce_mall_product_variants table with filter: product_id = {productId from path}, is_active = true (default for customer views).
    *
-   * Apply search filters from request body:
-   * - stock_status: filter by 'in_stock' (stock_quantity > 0) or 'out_of_stock' (stock_quantity = 0)
-   * - active_status: filter by is_active boolean
-   * - sku_pattern: partial match on sku_code field
-   * - min_price/max_price: filter by price_override or base product price if override is null
-   * - sort_by: options include 'stock_quantity', 'price_override', 'created_at', 'sku_code'
-   * - sort_direction: 'asc' or 'desc'
+   * Apply search filters from requestBody:
+   * - sku_code: exact match or partial match
+   * - stock_quantity: filter by >= minimum stock, = 0 (out of stock)
+   * - is_active: boolean filter
+   * - price range: minimum and maximum price (consider base_price from parent product if price_override is null)
+   * - option_values: filter by specific option combinations (JSON contains check)
+   * - orderBy: support sorting by created_at, updated_at, stock_quantity, sku_code
    *
-   * Apply cursor-based pagination from request body (page, pageSize). Return cursor for next page if more results exist.
+   * Pagination: implement cursor-based pagination with page, limit parameters. Return hasNext cursor for large result sets.
    *
-   * Include only active variants by default unless active_status filter explicitly requests inactive.
+   * Authorization checks:
+   * - Customer: allow view of any product's variants
+   * - Seller: allow view only of variants from products they own
+   * - Admin: allow view of all product variants
    *
-   * Order by stock_quantity DESC by default to show available items first.
+   * Return IPageIEcommerceMallProductVariant.ISummary with:
+   * - pagination: { page, limit, totalCount, hasNext }
+   * - data: array of IShoppingProductVariant.ISummary objects
    *
-   * Join with parent product table if price_override is null to calculate actual selling price (base_price vs price_override).
-   *
-   * Apply seller ownership validation: only allow product owner to access variants via this endpoint. Public customers can view active variants only.
+   * Error handling:
+   * - Return 404 if product does not exist
+   * - Return 403 if seller attempts to view other seller's variants
+   * - Return 400 if invalid filter parameters are provided
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -51,7 +55,7 @@ export class EcommercemallProductsVariantsController {
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IEcommerceMallProductVariant.ISRequest,
+    body: IEcommerceMallProductVariant.IRequest,
   ): Promise<IPageIEcommerceMallProductVariant.ISummary> {
     try {
       return await patchEcommerceMallProductsProductIdVariants({
@@ -67,30 +71,50 @@ export class EcommercemallProductsVariantsController {
   /**
    * Retrieve detailed information about a specific product variant within a product catalog.
    *
-   * This operation provides comprehensive variant details including SKU code, option values configuration, pricing information (base price and optional override), current stock quantity, and active status. The endpoint supports both customer browsing and seller management workflows.
+   * This endpoint returns complete variant details including the unique SKU code, JSON-stored option values (such as size, color, material), pricing information with potential price override, and current stock availability. Variants represent specific option combinations of a parent product that customers can browse and purchase.
    *
-   * Customers can view variant options before adding items to their shopping cart. Sellers can access this endpoint to manage variant details and verify product configurations.
+   * The operation verifies that the requested variant belongs to the specified product and handles soft-deleted variants appropriately. Variants with a deleted_at timestamp (soft deleted) are still retrievable via this endpoint to support order history and dispute resolution. The is_active field indicates purchase availability and display status, which is separate from the soft deletion status.
    *
-   * The response includes immutable snapshots of the variant's state at the time of retrieval, ensuring customers see accurate information consistent with purchase agreements.
+   * This endpoint is typically called when a customer clicks on a specific variant option on a product detail page to view availability, pricing, and variant-specific information. For list operations of multiple variants within a product, use the PATCH /ecommerceMall/products/{productId}/variants endpoint instead.
+   *
+   * ### Database Schema Reference
+   * This operation maps to the ecommerce_mall_product_variants table, accessing fields: id, sku_code, option_values, price_override, stock_quantity, is_active, created_at, updated_at, and deleted_at (for soft delete status).
+   *
+   * ### Related Operations
+   * - PATCH /ecommerceMall/products/{productId}/variants - List variants for a product with filtering and pagination
+   * - POST /ecommerceMall/products/{productId}/variants - Create a new variant (seller only)
+   * - PUT /ecommerceMall/products/{productId}/variants/{variantId} - Update variant details (seller only)
+   * - GET /ecommerceMall/products/{productId} - Retrieve parent product details
    *
    * @param connection
-   * @param productId Unique identifier of the parent product
-   * @param variantId Unique identifier of the variant to retrieve
+   * @param productId Unique identifier of the parent product this variant belongs to
+   * @param variantId Unique identifier of the product variant to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_product_variants table for the specific variant matching the variantId path parameter.
+   * @x-autobe-specification Retrieve the product variant matching the specified variantId from the ecommerce_mall_product_variants table.
    *
-   * Verify that the variant belongs to the product specified by productId path parameter by checking the product foreign key relationship.
+   * 1. Query the database for a variant with matching id = {variantId}
+   * 2. Verify the variant belongs to the product with id = {productId} by checking product_id field
+   * 3. Return 404 Not Found if the variant does not exist or does not belong to the specified product
+   * 4. Validate variant is accessible to the caller (seller must own the product, customer can browse any active product)
+   * 5. Construct the response including all variant fields: id, sku_code, option_values, price_override, stock_quantity, is_active, created_at, updated_at
+   * 6. Calculate final price by applying price_override if present, otherwise use the parent product's base_price
+   * 7. Include parent product context: product id, name, and isActive status for display context
    *
-   * Apply authorization checks: customers can view active variants; sellers can view all their product variants regardless of active status.
+   * Business rules to enforce:
+   * - Variants without SKUs are invalid - reject requests where sku_code is null
+   * - SKU uniqueness is scoped per product - this variant's SKU must not conflict with other variants of the same product
+   * - Only active variants should be returned for customer-facing operations
+   * - If the parent product is inactive or deleted, the variant may still be retrieved but marked as unavailable
    *
-   * Return complete variant data including: id, skuCode, optionValues (JSON), priceOverride (nullable), stockQuantity, isActive, createdAt, updatedAt.
+   * Error handling:
+   * - Return 404 if variant not found or does not belong to the product
+   * - Return 404 if the product referenced by the variant is not found
+   * - Return 403 if the caller does not have permission to view this variant
    *
-   * Calculate and include display status (inStock, outOfStock, unavailable) based on stockQuantity and isActive fields.
-   *
-   * If variant not found or does not belong to specified product, return 404 Not Found.
-   *
-   * If product does not exist, return 404 Not Found.
+   * Performance considerations:
+   * - Add index on (product_id, id) for efficient variant lookup within product context
+   * - Consider caching active product-variant mappings for frequent customer browsing
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":variantId")

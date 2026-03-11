@@ -2,28 +2,50 @@ import { IConnection } from "@nestia/fetcher";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia from "typia";
 
-import { IRedditPlatformDashboard } from "../../../../structures/IRedditPlatformDashboard";
+import { IRedditPlatformModeratorHistory } from "../../../../structures/IRedditPlatformModeratorHistory";
 
 /**
- * Retrieve a comprehensive moderation dashboard for authenticated moderators.
+ * Retrieve the moderator dashboard containing pending reports, community statistics, and moderation overview.
  *
- * This operation provides a centralized view of all moderation-related activities and statistics across communities where the user has moderator privileges. The dashboard aggregates data from multiple sources including pending reports, recent moderation actions, banned users, and community statistics.
+ * This endpoint provides moderators with a centralized view of all pending reports across communities where they serve as moderators. The dashboard displays reports grouped by community, showing submission counts by status (pending, resolved, dismissed) and total report counts.
  *
- * The dashboard includes sections for quick action items (pending reports requiring attention), recent moderation activity timeline, community overview statistics, and active ban lists. All data is scoped to communities where the authenticated user serves as a moderator.
+ * The response includes comprehensive report information: the reported content (post title or comment preview), reporter identity, reason text, timestamp, and content type (post or comment). Reports are sorted by creation timestamp with newest first, and pending reports are prioritized.
  *
- * Requires authenticated member access. Moderators can only access dashboard data for communities they moderate.
+ * Access is restricted to authenticated members who have moderator privileges in at least one community. Unauthorized users receive access denied responses. The dashboard includes summary statistics such as total pending reports, reports awaiting review for more than 24 hours, and community-level breakdowns.
+ *
+ * The dashboard updates in real-time when new reports are submitted to any moderated community. Moderators can filter reports by content type, submission date range, or reporter username. Empty state messages display when no pending reports exist for a community.
+ *
+ * Note: This endpoint does not update report view status. Separate view tracking is maintained in the reddit_platform_report_views table for moderation workflow analytics.
  *
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the reddit_platform_reports table for all pending reports where the user has moderator privileges in the associated community.
- * Join with reddit_platform_posts and reddit_platform_comments tables to fetch reported content details (title for posts, content text for comments).
- * Join with reddit_platform_members to fetch reporter username and reported content author username.
- * Query reddit_platform_community_bans for all active bans across moderated communities.
- * Aggregate moderation activity from reddit_platform_moderation_audit_logs for recent actions.
- * Query reddit_platform_communities for community statistics (subscriber count, post count, active moderators).
- * Apply filtering to ensure all data is scoped to communities where the user has moderator privileges via reddit_platform_community_moderators.
- * Return structured dashboard data with sections: pendingReports, recentActivity, communityStats, activeBans.
+ * @x-autobe-specification Query moderator_dashboard view or compute from underlying tables.
+ *
+ * 1. Authentication: Verify JWT token and extract member_id
+ * 2. Authorization: Query reddit_platform_community_moderators to find all communities where user_id = member_id
+ * 3. Data aggregation:
+ *    - SELECT from reddit_platform_reports WHERE community_id IN (moderated communities) AND status = 'pending' AND deleted_at IS NULL
+ *    - JOIN reddit_platform_communities for community details
+ *    - JOIN reddit_platform_members for reporter username
+ *    - For reports: determine reported_content_type, query either reddit_platform_posts or reddit_platform_comments for content preview
+ * 4. Sort by created_at DESC, newest first
+ * 5. Calculate summary statistics:
+ *    - pending_count: count of reports with status 'pending'
+ *    - resolved_count: count of reports with status 'resolved'
+ *    - dismissed_count: count of reports with status 'dismissed'
+ *    - communities_count: count of distinct communities with reports
+ *    - reports_over_24h: count of pending reports created_at < NOW() - INTERVAL '24 hours'
+ * 6. For each report, return:
+ *    - report id, status, created_at
+ *    - reporter id and username
+ *    - community id, name
+ *    - reported_content_type ('POST' or 'COMMENT')
+ *    - content title (for posts) or content preview (first 200 chars for comments)
+ *    - reason text
+ *    - time elapsed since submission
+ * 7. Apply pagination if report count exceeds threshold (100 reports)
+ * 8. Return empty state message if no pending reports found for user's communities
  * @path /redditPlatform/admin/dashboard
  * @accessor api.functional.redditPlatform.admin.dashboard.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -47,7 +69,7 @@ export async function at(connection: IConnection): Promise<at.Response> {
       );
 }
 export namespace at {
-  export type Response = IRedditPlatformDashboard;
+  export type Response = IRedditPlatformModeratorHistory.IResponse;
 
   export const METADATA = {
     method: "GET",
@@ -60,8 +82,8 @@ export namespace at {
   } as const;
 
   export const path = () => "/redditPlatform/admin/dashboard";
-  export const random = (): IRedditPlatformDashboard =>
-    typia.random<IRedditPlatformDashboard>();
+  export const random = (): IRedditPlatformModeratorHistory.IResponse =>
+    typia.random<IRedditPlatformModeratorHistory.IResponse>();
   export const simulate = (_connection: IConnection): Response => {
     return random();
   };

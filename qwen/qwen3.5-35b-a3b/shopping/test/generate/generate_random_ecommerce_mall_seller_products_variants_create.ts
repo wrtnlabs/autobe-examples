@@ -27,7 +27,7 @@ export async function generate_random_ecommerce_mall_seller_products_variants_cr
     await api.functional.ecommerceMall.seller.products.variants.create(
       connection,
       {
-        productId: props.params?.productId ?? "",
+        productId: props.params?.productId ?? ("00000000-0000-0000-0000-000000000000" satisfies string as string & tags.Format<"uuid">),
         body: prepared,
       },
     );

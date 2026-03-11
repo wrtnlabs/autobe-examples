@@ -1,8 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
-import { IRedditPlatformCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunityBan";
-import { IRedditPlatformCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunityModerator";
-import { IRedditPlatformCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunitySubscription";
 import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -22,38 +19,64 @@ export async function putRedditPlatformMemberCommunitiesCommunityId(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditPlatformCommunity.IUpdate;
 }): Promise<IRedditPlatformCommunity> {
+  // Step 1-2: Query community and verify it exists
   const community =
     await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
       where: { id: props.communityId },
     });
+  // Step 3: Verify community is not soft-deleted
+  if (community.deleted_at !== null) {
+    throw new HttpException("Community has been deleted", 410);
+  }
+  // Step 4: Verify ownership
   if (community.owner_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Step 5: Check name uniqueness if name is provided
+  if (props.body.name !== undefined) {
+    const existing =
+      await MyGlobal.prisma.reddit_platform_communities.findFirst({
+        where: {
+          name: props.body.name,
+          id: {
+            not: props.communityId,
+          },
+          deleted_at: null,
+        },
+      });
+    if (existing !== null) {
+      throw new HttpException("Community name already exists", 409);
+    }
+  }
+  // Step 6: Build update data
   const updateData: {
-    description: string | null;
-    icon_url: string | null;
-    updated_at: string & tags.Format<"date-time">;
+    name?: string | undefined;
+    description?: string | null | undefined;
+    icon_url?: (string & tags.Format<"uri">) | null | undefined;
+    updated_at: Date;
   } = {
-    description: props.body.description ?? null,
-    icon_url: props.body.icon_url ?? null,
-    updated_at: toISOStringSafe(new Date()),
+    updated_at: new Date(),
   };
-  await MyGlobal.prisma.reddit_platform_communities.update({
+  if (props.body.name !== undefined) {
+    updateData.name = props.body.name;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (props.body.icon_url !== undefined) {
+    updateData.icon_url = props.body.icon_url;
+  }
+  // Step 7: Execute update
+  const updated = await MyGlobal.prisma.reddit_platform_communities.update({
     where: { id: props.communityId },
-    data: {
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.icon_url !== undefined && {
-        icon_url: props.body.icon_url,
-      }),
-      updated_at: toISOStringSafe(new Date()),
-    },
+    data: updateData,
   });
-  const updated =
+  // Step 8: Re-query with transformer select
+  const result =
     await MyGlobal.prisma.reddit_platform_communities.findUniqueOrThrow({
       where: { id: props.communityId },
       ...RedditPlatformCommunityTransformer.select(),
     });
-  return await RedditPlatformCommunityTransformer.transform(updated);
+  // Step 9: Transform and return
+  return await RedditPlatformCommunityTransformer.transform(result);
 }

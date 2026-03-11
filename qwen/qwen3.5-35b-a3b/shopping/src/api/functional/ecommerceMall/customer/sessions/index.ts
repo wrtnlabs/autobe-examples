@@ -4,54 +4,53 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallCustomerSession } from "../../../../structures/IEcommerceMallCustomerSession";
+import { IEcommerceMallSellerSession } from "../../../../structures/IEcommerceMallSellerSession";
 import { IPageIEcommerceMallCustomerSession } from "../../../../structures/IPageIEcommerceMallCustomerSession";
 
 /**
- * Retrieve a paginated list of authentication sessions for the current customer account.
+ * Retrieve a filtered and paginated list of user sessions for the authenticated customer.
  *
- * This operation allows customers to view all their active and expired login sessions across different devices and browsers. Each session record includes connection metadata such as IP address, user agent (browser), referrer URL, and creation/expiration timestamps.
+ * This operation provides advanced search capabilities for viewing customer sessions, supporting filters by session status, creation date ranges, device information, and geographic location. The response includes session summary information optimized for list displays in account management interfaces.
  *
- * The session list supports filtering by status (active or expired), date range filtering for session creation, and sorting by creation timestamp. Customers can use this endpoint to monitor unauthorized access, manage concurrent session limits (5 sessions for customers), and identify sessions to terminate manually.
+ * **Access Control**:
+ * - Individual customers can only view their own sessions
+ * - All session view operations are logged for audit purposes
+ * - Suspicious activity patterns may trigger security alerts
  *
- * Sessions that have passed their expiration time (expired_at) are automatically invalidated by the authentication system but remain visible in the session history for audit purposes. Active sessions can be manually terminated to immediately revoke access.
+ * The session records include information such as session identifiers (masked for security), device identifiers, last activity timestamps, IP addresses (stored for security purposes), and session status (active or invalidated).
  *
- * This operation is authenticated and returns only sessions belonging to the currently authenticated customer account. Each customer session is linked to the ecommerce_mall_customer_sessions table with proper ownership isolation.
+ * **Security Considerations**:
+ * - Session tokens are returned in masked format to prevent token theft
+ * - Only session metadata is included, never full tokens
+ * - Access control enforces customer-level isolation
+ * - All session view operations are logged for audit purposes
+ *
+ * **Related Operations**:
+ * - GET /customer/sessions/{sessionId} for detailed session information
+ * - POST /customer/sessions/{sessionId}/terminate for manual session termination
+ * - PATCH /customer/sessions/terminate-all for bulk session termination
  *
  * @param props.connection
- * @param props.body Session search criteria and pagination parameters
+ * @param props.body Search criteria and pagination parameters for session retrieval. Supports filtering by session status, creation date range, device type, and geographic location.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_customer_sessions table filtered by customer_id from the authenticated user's context.
+ * @x-autobe-specification Query session tables (ecommerce_mall_customer_sessions, ecommerce_mall_seller_sessions, ecommerce_mall_admin_sessions) with pagination and filtering.
  *
- * Apply filters:
- * - status: 'active' (expired_at > now) or 'expired' (expired_at <= now)
- * - created_at: date range filter (from/to)
- * - ip: partial match filter
- * - href: partial match filter
- * - referrer: partial match filter
+ * Apply search filters on actor_type, session_status (active/invalidated), creation date range, last activity timestamp range, device type (mobile/web/desktop), and geographic location.
  *
- * Apply pagination:
- * - page: cursor-based pagination with pageSize
- * - sortOrder: ascending or descending by created_at
+ * Join with actor tables (customers, sellers, admins) to include actor details and account status.
  *
- * Join with ecommerce_mall_customers for additional customer metadata if needed.
+ * For non-admin users, filter results to only include sessions belonging to the authenticated user.
  *
- * Return cursor-based pagination with cursor field for next page navigation.
+ * Return cursor-based pagination for large result sets with configurable page size.
  *
- * Calculate session status (active/expired) based on comparison between expired_at and current time.
+ * Apply concurrent session limit policies: customers (max 5), sellers (max 3), mobile (max 1 concurrent).
  *
- * Filter results to only include sessions belonging to the authenticated customer (customer_id = current_user_id).
+ * Include session metadata: token (masked), device fingerprint, last activity timestamp, IP address (stored for security), user agent string.
  *
- * Handle edge cases:
- * - No sessions found: return empty data array with pagination metadata
- * - Concurrent session limit exceeded: include warning flag in response
- * - Suspended/banned account: do not return sessions, return 403 Forbidden
+ * Handle security events: sessions invalidated due to password changes, account deletion, suspension, ban, or security policy violations.
  *
- * Include in response:
- * - Total session count for the customer
- * - Number of currently active sessions
- * - Most recent session timestamp
- * - Whether current session count is approaching the limit of 5 concurrent sessions
+ * Sort by creation date (descending) by default, with optional sorting by last activity or actor type.
  * @path /ecommerceMall/customer/sessions
  * @accessor api.functional.ecommerceMall.customer.sessions.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -81,7 +80,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Session search criteria and pagination parameters
+     * Search criteria and pagination parameters for session retrieval. Supports filtering by session status, creation date range, device type, and geographic location.
      */
     body: IEcommerceMallCustomerSession.IRequest;
   };
@@ -130,54 +129,45 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about an authenticated session.
+ * Retrieve a specific authentication session record by its unique identifier.
  *
- * This operation returns comprehensive session metadata including the user account association, connection information, and validity timestamps. Sessions are created during authentication and track user activity across devices for security auditing and session management.
+ * This operation fetches detailed information about a user's active or expired session, including connection metadata and timing information. The session record contains the IP address, request URL (href), referrer information, creation timestamp, and expiration time.
  *
- * The endpoint provides visibility into:
- * - Session identifier and associated user account ID
- * - Connection metadata: IP address, referrer URL, and href (browser context)
- * - Session lifecycle: creation timestamp and expiration timestamp
- * - Session validity status based on current time comparison with expired_at
+ * The endpoint supports three session types: customer, seller, and administrator sessions. The calling user can only retrieve sessions they own, or administrators can retrieve any session for audit and security monitoring purposes.
  *
- * Sessions may belong to three actor types: customer, seller, or administrator. Each session type is tracked in its respective table (ecommerce_mall_customer_sessions, ecommerce_mall_seller_sessions, ecommerce_mall_admin_sessions) with identical schema structure.
- *
- * Security Considerations:
- * - Access is restricted to the session owner or administrative users with session oversight privileges
- * - Session data is immutable once created - no updates or modifications allowed
- * - Expired sessions are automatically invalidated and should not be returned
- * - Connection metadata (IP, referrer) is captured for security audit and abuse detection
- *
- * This endpoint is typically used for:
- * - Session validation during authentication flows
- * - Displaying active session information in user account settings
- * - Security audits and troubleshooting user access issues
- * - Concurrent session management and monitoring
+ * Session information is used for security auditing, concurrent session management, and helping users identify unauthorized access from unknown devices or locations.
  *
  * @param props.connection
- * @param props.sessionId UUID identifier of the session to retrieve
+ * @param props.sessionId Unique identifier of the session to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the appropriate session table (customer/seller/admin) by sessionId.
+ * @x-autobe-specification Query the appropriate session table (ecommerce_mall_customer_sessions, ecommerce_mall_seller_sessions, or ecommerce_mall_admin_sessions) based on session ownership.
  *
- * 1. Validate sessionId is a valid UUID format
- * 2. Perform case-insensitive search across all session tables or use a union query
- * 3. Retrieve complete session record with all fields
- * 4. Verify session is not expired (expired_at > current timestamp)
- * 5. Return session data with IEcommerceMallSession response type
- * 6. Throw 404 error if session not found or already expired
+ * Validation Logic:
+ * 1. Verify sessionId is a valid UUID format
+ * 2. Determine session type based on session record found
+ * 3. Check authorization:
+ *    - For customer sessions: require authenticated customer with matching customer_id
+ *    - For seller sessions: require authenticated seller with matching seller_id
+ *    - For admin sessions: require authenticated admin with admin_id or super admin privileges
+ * 4. If session not found, return 404 Not Found
+ * 5. If unauthorized, return 403 Forbidden
  *
- * Service Layer Logic:
- * - Session ownership validation in authorization middleware
- * - Cross-type session lookup using union or type-agnostic query
- * - Expiration status calculation in service layer
- * - No modification operations - read-only retrieval
+ * Query Implementation:
+ * - Select session record by id using UUID lookup
+ * - Join with corresponding user table (customers/sellers/admins) only for verification if needed
+ * - Include all session metadata in response
+ * - Calculate session status (active/expired) by comparing expired_at with current time
+ *
+ * Error Handling:
+ * - 404: Session record does not exist
+ * - 403: Requesting user does not own this session and is not authorized administrator
+ * - 401: No authentication provided or invalid authentication token
  *
  * Edge Cases:
- * - Session already expired: return 404 Not Found
- * - Session belongs to different user: return 403 Forbidden
- * - Malformed UUID: return 400 Bad Request
- * - Deleted user account: session should not exist (cascade delete)
+ * - Session already expired: Return full session data but mark status as expired
+ * - Session being invalidated: Handle gracefully without errors
+ * - Session from deleted/banned user: Include session record but indicate user status
  * @path /ecommerceMall/customer/sessions/:sessionId
  * @accessor api.functional.ecommerceMall.customer.sessions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -206,11 +196,11 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * UUID identifier of the session to retrieve
+     * Unique identifier of the session to retrieve
      */
     sessionId: string & tags.Format<"uuid">;
   };
-  export type Response = IEcommerceMallCustomerSession;
+  export type Response = IEcommerceMallSellerSession;
 
   export const METADATA = {
     method: "GET",
@@ -224,8 +214,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/ecommerceMall/customer/sessions/${encodeURIComponent(props.sessionId ?? "null")}`;
-  export const random = (): IEcommerceMallCustomerSession =>
-    typia.random<IEcommerceMallCustomerSession>();
+  export const random = (): IEcommerceMallSellerSession =>
+    typia.random<IEcommerceMallSellerSession>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,

@@ -9,100 +9,112 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeAdminAtSummaryTransformer } from "../transformers/RedditLikeAdminAtSummaryTransformer";
-import { RedditLikeAdminTransformer } from "../transformers/RedditLikeAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeAuthAdminJoin(props: {
+  ip: string;
   body: IRedditLikeAdmin.IJoin;
 }): Promise<IRedditLikeAdmin.IAuthorized> {
-  // Check duplicate email
-  const existingByEmail = await MyGlobal.prisma.reddit_like_admins.findFirst({
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const existing = await MyGlobal.prisma.reddit_like_admins.findFirst({
     where: { email: props.body.email },
   });
-  if (existingByEmail) throw new HttpException("Email already registered", 409);
-  // Check duplicate username
-  const existingByUsername = await MyGlobal.prisma.reddit_like_admins.findFirst(
-    {
-      where: { username: props.body.username },
-    },
-  );
-  if (existingByUsername)
-    throw new HttpException("Username already registered", 409);
-  // Create admin record with hashed password
+  if (existing) throw new HttpException("Email already registered", 409);
   const admin = await MyGlobal.prisma.reddit_like_admins.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
       username: props.body.username,
-      display_name: props.body.display_name,
+      display_name: props.body.displayName,
       bio: props.body.bio ?? null,
-      avatar_url: props.body.avatar_url ?? null,
+      avatar_url: props.body.avatarUrl ?? null,
       karma_score: 0,
     },
-    ...RedditLikeAdminTransformer.select(),
-  });
-  // Generate email verification token
-  const verificationId = v4();
-  const createdAt = toISOStringSafe(new Date());
-  const expiresAt = toISOStringSafe(new Date(Date.now() + 24 * 60 * 60 * 1000));
-  await MyGlobal.prisma.reddit_like_admin_email_verifications.create({
-    data: {
-      id: verificationId,
-      admin: {
-        connect: { id: admin.id },
-      },
-      token: verificationId,
-      created_at: createdAt,
-      updated_at: createdAt,
-      expires_at: expiresAt,
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      display_name: true,
+      bio: true,
+      avatar_url: true,
     },
   });
-  // Generate JWT tokens
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.reddit_like_admin_sessions.create({
     data: {
-      id: v4(),
-      admin: {
-        connect: { id: admin.id },
-      },
-      created_at: toISOStringSafe(new Date()),
-      expired_at: toISOStringSafe(accessExpires),
-      ip: "0.0.0.0",
-      href: "join",
+      id: v4() as string & tags.Format<"uuid">,
+      reddit_like_admin_id: admin.id,
+      ip: props.ip,
+      href: "/",
+      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
+      expired_at: accessExpires.toISOString() as string &
+        tags.Format<"date-time">,
+    },
+    select: {
+      id: true,
+      reddit_like_admin_id: true,
+      ip: true,
+      href: true,
+      created_at: true,
+      expired_at: true,
     },
   });
-  const token: IAuthorizationToken = {
+  const token = {
     access: jwt.sign(
       {
-        type: "admin",
+        type: "admin" as const,
         id: admin.id,
         session_id: session.id,
-        created_at: toISOStringSafe(new Date()),
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
-        type: "admin",
+        type: "admin" as const,
         id: admin.id,
         session_id: session.id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
+        tokenType: "refresh" as const,
+        created_at: new Date().toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
+  } satisfies IAuthorizationToken;
+  const emailVerificationToken =
+    await MyGlobal.prisma.reddit_like_admin_email_verifications.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        reddit_like_admin_id: admin.id,
+        token: v4(),
+        expires_at: new Date(
+          Date.now() + 24 * 60 * 60 * 1000,
+        ).toISOString() as string & tags.Format<"date-time">,
+        created_at: new Date().toISOString() as string &
+          tags.Format<"date-time">,
+        updated_at: new Date().toISOString() as string &
+          tags.Format<"date-time">,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        reddit_like_admin_id: true,
+        token: true,
+        expires_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
   return {
-    ...(await RedditLikeAdminTransformer.transform(admin)),
-    admin: await RedditLikeAdminAtSummaryTransformer.transform(admin),
+    id: admin.id,
     token,
   } satisfies IRedditLikeAdmin.IAuthorized;
 }

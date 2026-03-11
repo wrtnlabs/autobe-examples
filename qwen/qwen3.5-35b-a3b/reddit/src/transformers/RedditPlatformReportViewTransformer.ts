@@ -1,5 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformAdmin";
+import { IRedditPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformCommunity";
+import { IRedditPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformMember";
 import { IRedditPlatformReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReport";
 import { IRedditPlatformReportView } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformReportView";
 import { ArrayUtil } from "@nestia/e2e";
@@ -31,15 +33,13 @@ export namespace RedditPlatformReportViewTransformer {
   ): Promise<IRedditPlatformReportView> {
     return {
       id: input.id,
-      viewed_at: input.viewed_at.toISOString(),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
       moderator: await RedditPlatformAdminAtSummaryTransformer.transform(
         input.moderator,
       ),
       report: await RedditPlatformReportAtSummaryTransformer.transform(
         input.report,
       ),
+      viewed_at: input.viewed_at.toISOString(),
     };
   }
 }

@@ -11,9 +11,8 @@ export namespace ShoppingMallCategoryCollector {
   export async function collect(props: {
     body: IShoppingMallCategory.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       name: props.body.name,
       description: props.body.description ?? null,
       created_at: new Date(),

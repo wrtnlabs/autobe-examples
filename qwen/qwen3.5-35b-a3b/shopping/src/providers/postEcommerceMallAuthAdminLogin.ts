@@ -16,94 +16,87 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   ip: string;
   body: IEcommerceMallAdmin.ILogin;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  // 1. Find admin by email with password_hash
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
+  const adminRecord = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
     where: { email: props.body.email },
     select: {
       id: true,
       email: true,
+      password_hash: true,
       is_banned: true,
       ban_reason: true,
       created_at: true,
       updated_at: true,
-      password_hash: true,
-    } satisfies Prisma.ecommerce_mall_adminsSelect,
+    },
   });
-  if (!admin) {
+  if (!adminRecord) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 2. Check if banned
-  if (admin.is_banned) {
-    throw new HttpException("Account is banned", 401);
+  if (adminRecord.is_banned) {
+    throw new HttpException(adminRecord.ban_reason ?? "Account is banned", 401);
   }
-  // 3. Verify password
-  const isValid = await PasswordUtil.verify(
+  const passwordValid = await PasswordUtil.verify(
     props.body.password,
-    admin.password_hash,
+    adminRecord.password_hash,
   );
-  if (!isValid) {
+  if (!passwordValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Create new session with timestamps as string & tags.Format<'date-time'>
-  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+  const accessExpiresTime: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
   );
-  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+  const refreshExpiresTime: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const created_at: string & tags.Format<"date-time"> = toISOStringSafe(
+  const nowTime: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(),
   );
+  const sessionId: string & tags.Format<"uuid"> = v4();
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
     data: {
       id: sessionId,
-      admin: { connect: { id: admin.id } },
-      created_at: created_at,
-      expired_at: accessExpires,
+      admin_id: adminRecord.id,
       ip: props.ip,
       href: "",
       referrer: "",
-    } satisfies Prisma.ecommerce_mall_admin_sessionsCreateInput,
+      created_at: nowTime,
+      expired_at: accessExpiresTime,
+    },
   });
-  // 5. Generate JWT tokens using only string timestamps
-  const tokenPayload: {
-    type: "admin";
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-    created_at: string & tags.Format<"date-time">;
-  } = {
-    type: "admin",
-    id: admin.id,
-    session_id: session.id,
-    created_at: created_at,
-  };
+  const tokenAccess: string = jwt.sign(
+    {
+      type: "admin" as const,
+      id: adminRecord.id,
+      session_id: sessionId,
+      created_at: nowTime,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const tokenRefresh: string = jwt.sign(
+    {
+      type: "admin" as const,
+      id: adminRecord.id,
+      session_id: sessionId,
+      tokenType: "refresh" as const,
+      created_at: nowTime,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   const token: IAuthorizationToken = {
-    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
-      issuer: "autobe",
-    }),
-    refresh: jwt.sign(
-      {
-        ...tokenPayload,
-        tokenType: "refresh",
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    access: tokenAccess,
+    refresh: tokenRefresh,
+    expired_at: accessExpiresTime,
+    refreshable_until: refreshExpiresTime,
   };
-  // 6. Return IAuthorized with admin data and token
-  return {
-    id: admin.id,
-    email: admin.email,
-    is_banned: admin.is_banned,
-    ban_reason: admin.ban_reason,
-    created_at: toISOStringSafe(admin.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(admin.updated_at) as string &
-      tags.Format<"date-time">,
+  const response: IEcommerceMallAdmin.IAuthorized = {
+    id: adminRecord.id,
+    email: adminRecord.email,
+    isBanned: adminRecord.is_banned,
+    banReason: adminRecord.ban_reason,
+    createdAt: toISOStringSafe(adminRecord.created_at),
+    updatedAt: toISOStringSafe(adminRecord.updated_at),
     token,
-  } satisfies IEcommerceMallAdmin.IAuthorized;
+  };
+  return response;
 }

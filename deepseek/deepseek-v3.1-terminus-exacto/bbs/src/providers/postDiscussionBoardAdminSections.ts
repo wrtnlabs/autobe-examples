@@ -1,4 +1,3 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -19,51 +18,26 @@ export async function postDiscussionBoardAdminSections(props: {
   admin: AdminPayload;
   body: IDiscussionBoardSection.ICreate;
 }): Promise<IDiscussionBoardSection> {
-  // Validate section name length from analysis files (2-50 characters)
-  if (props.body.name.length < 2 || props.body.name.length > 50) {
-    throw new HttpException(
-      "Section name must be between 2 and 50 characters",
-      400,
-    );
-  }
-  // Validate section name uniqueness
-  const existingSection =
-    await MyGlobal.prisma.discussion_board_sections.findFirst({
-      where: { name: props.body.name, deleted_at: null },
-    });
-  if (existingSection) {
-    throw new HttpException("Section name already exists", 400);
-  }
-  // Validate description length from analysis files (10-500 characters)
-  if (
-    props.body.description.length < 10 ||
-    props.body.description.length > 500
-  ) {
-    throw new HttpException(
-      "Section description must be between 10 and 500 characters",
-      400,
-    );
-  }
-  // Validate status value if provided
-  if (
-    props.body.status &&
-    !["active", "inactive", "archived"].includes(props.body.status)
-  ) {
-    throw new HttpException(
-      "Status must be one of: active, inactive, archived",
-      400,
-    );
-  }
-  // Use collector for create data preparation
-  const createData = await DiscussionBoardSectionCollector.collect({
-    body: props.body,
-    discussionBoardAdmins: { id: props.admin.id },
+  // Validate name uniqueness against active sections
+  const existing = await MyGlobal.prisma.discussion_board_sections.findFirst({
+    where: {
+      name: props.body.name,
+      deleted_at: null,
+    },
   });
-  // Create the section
+  if (existing) {
+    throw new HttpException(
+      `Section name '${props.body.name}' already exists`,
+      409,
+    );
+  }
+  // Create section using collector
   const created = await MyGlobal.prisma.discussion_board_sections.create({
-    data: createData,
+    data: await DiscussionBoardSectionCollector.collect({
+      body: props.body,
+    }),
     ...DiscussionBoardSectionTransformer.select(),
   });
-  // Transform and return
+  // Transform to DTO
   return await DiscussionBoardSectionTransformer.transform(created);
 }

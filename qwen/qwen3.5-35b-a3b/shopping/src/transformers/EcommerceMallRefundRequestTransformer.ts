@@ -1,4 +1,3 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -24,9 +23,6 @@ export namespace EcommerceMallRefundRequestTransformer {
         updated_at: true,
         deleted_at: true,
         orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        statusSnapshots: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_snapshot_auditsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs;
   }
@@ -35,16 +31,15 @@ export namespace EcommerceMallRefundRequestTransformer {
   ): Promise<IEcommerceMallRefundRequest> {
     return {
       id: input.id,
+      reason: input.reason,
+      request_status: input.request_status,
+      time_limit: input.time_limit?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       order_item: await EcommerceMallOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
-      reason: input.reason,
-      request_status: typia.assert<"pending" | "approved" | "rejected">(
-        input.request_status,
-      ),
-      time_limit: toISOStringSafe(input.time_limit ?? new Date()),
-      created_at: toISOStringSafe(input.created_at ?? new Date()),
-      updated_at: toISOStringSafe(input.updated_at ?? new Date()),
-    };
+    } satisfies IEcommerceMallRefundRequest;
   }
 }

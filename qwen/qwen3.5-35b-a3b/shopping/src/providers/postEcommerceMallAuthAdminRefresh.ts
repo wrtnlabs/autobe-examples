@@ -15,27 +15,25 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthAdminRefresh(props: {
   body: IEcommerceMallAdmin.IRefresh;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "admin";
-  };
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as {
-      id: string;
-      session_id: string;
-      type: "admin";
-    };
-  } catch {
+  // 1. Verify refresh token signature
+  const verifyResult = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  );
+  if (typeof verifyResult !== "object" || verifyResult === null) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
+  const decoded = verifyResult as {
+    id: string;
+    session_id: string;
+    type: string;
+  };
+  // 2. Validate token type
   if (decoded.type !== "admin") {
     throw new HttpException("Invalid token type", 401);
   }
+  // 3. Validate session exists and is active
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.findFirst(
     {
       where: {
@@ -44,60 +42,80 @@ export async function postEcommerceMallAuthAdminRefresh(props: {
       },
     },
   );
-  if (session === null) {
+  if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
+  // 4. Check session has not expired
+  if (toISOStringSafe(session.expired_at) < toISOStringSafe(new Date())) {
+    throw new HttpException("Session expired", 401);
+  }
+  // 5. Validate admin exists and is not banned
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
     where: { id: decoded.id },
+    select: {
+      id: true,
+      email: true,
+      is_banned: true,
+      ban_reason: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
-  if (admin.is_banned === true) {
+  if (admin.is_banned) {
     throw new HttpException("Account has been banned", 403);
   }
-  const accessExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 60 * 60 * 1000,
-  ).toISOString();
-  const refreshExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const access = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "60m", issuer: "autobe" },
+  // 6. Generate new tokens (reuse same session_id for session continuity)
+  const currentTime = toISOStringSafe(new Date());
+  const accessExpiration = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
   );
-  const refresh = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
+  const refreshExpiration = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const newAccessTokenPayload = {
+    type: "admin" as const,
+    id: decoded.id,
+    session_id: decoded.session_id,
+    created_at: currentTime,
+  };
+  const newAccessToken = jwt.sign(
+    newAccessTokenPayload,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const newRefreshTokenPayload = {
+    type: "admin" as const,
+    id: decoded.id,
+    session_id: decoded.session_id,
+    tokenType: "refresh" as const,
+    created_at: currentTime,
+  };
+  const newRefreshToken = jwt.sign(
+    newRefreshTokenPayload,
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
+  // 7. Update session expiration to extend session
   await MyGlobal.prisma.ecommerce_mall_admin_sessions.update({
     where: { id: decoded.session_id },
     data: {
-      expired_at: new Date(refreshExpires),
+      expired_at: new Date(refreshExpiration),
     },
   });
-  return {
+  // 8. Build and return authorized response
+  const response: IEcommerceMallAdmin.IAuthorized = {
     id: admin.id,
     email: admin.email,
-    is_banned: admin.is_banned,
-    ban_reason: admin.ban_reason,
-    created_at: admin.created_at.toISOString(),
-    updated_at: admin.updated_at.toISOString(),
+    isBanned: admin.is_banned,
+    banReason: admin.ban_reason,
+    createdAt: toISOStringSafe(admin.created_at),
+    updatedAt: toISOStringSafe(admin.updated_at),
     token: {
-      access,
-      refresh,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpiration,
+      refreshable_until: refreshExpiration,
     },
   };
+  return response;
 }

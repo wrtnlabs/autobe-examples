@@ -18,11 +18,7 @@ export namespace EconomicPoliticalBoardTagTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        articleTags: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.economic_political_board_article_tagsFindManyArgs,
+        articleTags: true,
       },
     } satisfies Prisma.economic_political_board_tagsFindManyArgs;
   }
@@ -35,6 +31,7 @@ export namespace EconomicPoliticalBoardTagTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
+      article_count: input.articleTags.length,
     };
   }
 }

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTodo";
 import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+import { ITodoAppUser } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUser";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { TodoAppTodoAtSummaryTransformer } from "../transformers/TodoAppTodoAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,74 +20,58 @@ export async function patchTodoAppMemberTodos(props: {
   member: MemberPayload;
   body: ITodoAppTodo.IRequest;
 }): Promise<IPageITodoAppTodo.ISummary> {
-  const limit = props.body.limit;
-  const offset = props.body.offset ?? 0;
-  // Determine sort field and direction with proper null handling
-  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput = {};
-  switch (props.body.sort_by) {
-    case "created_at":
-      orderBy.created_at = props.body.sort_order;
-      break;
-    case "start_date":
-      orderBy.start_date = props.body.sort_order;
-      break;
-    case "due_date":
-      orderBy.due_date = props.body.sort_order;
-      break;
-  }
-  // Determine filter for is_complete
-  let isCompleteFilter: boolean | undefined;
-  if (props.body.is_complete === "true") {
-    isCompleteFilter = true;
-  } else if (props.body.is_complete === "false") {
-    isCompleteFilter = false;
-  }
-  // 'all' means no filter (undefined)
-  // Build where clause with user isolation
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Build where clause
   const where: Prisma.todo_app_todosWhereInput = {
     todo_app_user_id: props.member.id,
-    is_complete: isCompleteFilter,
-    // Add search filtering if search term is provided
-    ...(props.body.search !== undefined && {
-      title: {
-        contains: props.body.search,
-        mode: "insensitive",
-      },
-    }),
+    is_trashed: false,
+    deleted_at: null,
   };
-  // Execute queries sequentially
+  // Status filter
+  if (props.body.status) {
+    if (props.body.status === "complete") {
+      where.is_complete = true;
+    } else if (props.body.status === "incomplete") {
+      where.is_complete = false;
+    }
+  }
+  // Build order by clause
+  const orderBy: Prisma.todo_app_todosOrderByWithRelationInput[] = [];
+  if (props.body.sort) {
+    if (props.body.sort === "createdAt") {
+      orderBy.push({ created_at: props.body.direction ?? "desc" });
+    } else if (props.body.sort === "startAt") {
+      orderBy.push({ start_date: props.body.direction ?? "desc" });
+    } else if (props.body.sort === "dueAt") {
+      orderBy.push({ due_date: props.body.direction ?? "desc" });
+    }
+  } else {
+    orderBy.push({ created_at: "desc" });
+  }
+  // Fetch data
   const data = await MyGlobal.prisma.todo_app_todos.findMany({
     where,
-    orderBy,
-    skip: offset,
+    skip,
     take: limit,
-    select: {
-      id: true,
-      title: true,
-      is_complete: true,
-      created_at: true,
-    },
+    orderBy,
+    ...TodoAppTodoAtSummaryTransformer.select(),
   });
+  // Fetch total count
   const total = await MyGlobal.prisma.todo_app_todos.count({
     where,
   });
-  // Transform results to ISummary format with proper datetime conversion
-  const summaries: ITodoAppTodo.ISummary[] = data.map((todo) => ({
-    id: todo.id,
-    title: todo.title,
-    is_complete: todo.is_complete,
-    created_at: todo.created_at.toISOString(),
-  }));
-  // Calculate pagination information
-  const pages = limit > 0 ? Math.ceil(total / limit) : 0;
-  const current = Math.floor(offset / limit) + 1;
   return {
-    data: summaries,
+    data: await ArrayUtil.asyncMap(
+      data,
+      TodoAppTodoAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: current as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: pages as number & tags.Type<"int32"> & tags.Minimum<0>,
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
   };
 }

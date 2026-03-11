@@ -2,7 +2,7 @@ import { TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IShoppingMallSellerDashboard } from "../../../../api/structures/IShoppingMallSellerDashboard";
+import { IShoppingMallSeller } from "../../../../api/structures/IShoppingMallSeller";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
 import { getShoppingMallSellerDashboard } from "../../../../providers/getShoppingMallSellerDashboard";
@@ -10,42 +10,104 @@ import { getShoppingMallSellerDashboard } from "../../../../providers/getShoppin
 @Controller("/shoppingMall/seller/dashboard")
 export class ShoppingmallSellerDashboardController {
   /**
-   * Retrieve the seller's dashboard statistics including product count, order items count, pending requests, and inventory alerts.
+   * Retrieve the authenticated seller's dashboard summary displaying key business metrics for their shop.
    *
-   * This endpoint provides a comprehensive overview of the seller's shop performance and pending tasks. It aggregates data from multiple sources to give sellers immediate visibility into their business metrics and action items.
+   * This endpoint provides sellers with an at-a-glance view of their shop's performance and pending tasks. The dashboard aggregates statistics across multiple domains to help sellers manage their business efficiently.
    *
-   * The dashboard displays key metrics including total active products, cumulative order items across all products, and counts of pending cancellation and refund requests that require the seller's attention. Additionally, it identifies product variants with low stock levels to help sellers manage inventory proactively.
+   * **Authentication and Authorization**:
+   * - Requires seller authentication
+   * - Seller must have 'approved' approval_status
+   * - Suspended sellers (suspended=true) are denied access
+   * - Banned sellers (banned=true) are denied access
    *
-   * Access to the dashboard is restricted to approved sellers only. Sellers with pending approval status, suspended accounts, or banned accounts will receive an authorization error. This ensures that only active, approved sellers can view and manage their shop through the dashboard interface.
+   * **Metrics Returned**:
+   * 1. **Total Products Count**: Number of active (non-deleted) products owned by the seller, referenced from shopping_mall_products table where shopping_mall_seller_id matches the authenticated seller and deleted_at is null.
    *
-   * The response data is calculated in real-time to provide accurate, up-to-date information. Sellers should check the dashboard regularly to stay informed about pending customer requests that require their response, as timely handling of cancellations and refunds is essential for maintaining good customer relationships.
+   * 2. **Total Order Items Count**: Count of all order items for the seller's products across all statuses (paid, shipped, delivered, cancelled, refunded), queried from shopping_mall_order_items where shopping_mall_seller_id matches the authenticated seller.
+   *
+   * 3. **Pending Cancellation Requests Count**: Number of cancellation requests with status='pending' awaiting seller response, queried from shopping_mall_cancellation_requests where shopping_mall_seller_id matches the authenticated seller and status='pending'.
+   *
+   * 4. **Pending Refund Requests Count**: Number of refund requests with status='pending' awaiting seller response, joined through shopping_mall_order_items to find requests for the seller's products.
+   *
+   * 5. **Low Stock Variants Count**: Product variants with stock quantity below a defined threshold (e.g., 10 units), calculated from inventory records.
+   *
+   * **Dashboard Purpose**: Enables sellers to quickly identify items requiring attention (pending requests, low stock) and monitor overall shop activity without navigating through multiple list pages.
+   *
+   * **Related Operations**: Sellers can drill down into specific metrics using GET /seller/products, GET /seller/orders, GET /seller/cancellation-requests, and GET /seller/refund-requests endpoints.
    *
    * @param connection
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve aggregated dashboard statistics for the authenticated seller.
+   * @x-autobe-specification Implementation steps:
    *
-   * 1. Authentication: Extract seller_id from authenticated session. Return 401 if not authenticated.
+   * 1. **Authentication Check**: Extract seller ID from JWT token in Authorization header. Validate session is active.
    *
-   * 2. Authorization: Verify seller has approval_status='approved', suspended=false, and banned=false. Return 403 if not approved or if suspended/banned.
+   * 2. **Authorization Check**: Query shopping_mall_sellers table to verify:
+   *    - approval_status = 'approved'
+   *    - suspended = false
+   *    - banned = false
+   *    Return 403 Forbidden if any check fails with appropriate error message.
    *
-   * 3. Query Execution:
-   *    - Product count: SELECT COUNT(*) FROM shopping_mall_products WHERE shopping_mall_seller_id = seller_id AND deleted_at IS NULL
-   *    - Order items count: SELECT COUNT(*) FROM shopping_mall_order_items WHERE shopping_mall_seller_id = seller_id
-   *    - Pending cancellations: SELECT COUNT(*) FROM shopping_mall_cancellation_requests WHERE shopping_mall_seller_id = seller_id AND status = 'pending'
-   *    - Pending refunds: SELECT COUNT(*) FROM shopping_mall_refund_requests r JOIN shopping_mall_order_items oi ON r.shopping_mall_order_item_id = oi.id WHERE oi.shopping_mall_seller_id = seller_id AND r.status = 'pending'
-   *    - Low stock variants: Query variants with their calculated stock (sum of inventory_records.quantity_change) below threshold, joined with products to filter by seller_id
+   * 3. **Product Count Query**:
+   *    ```sql
+   *    SELECT COUNT(*) FROM shopping_mall_products
+   *    WHERE shopping_mall_seller_id = :sellerId
+   *    AND deleted_at IS NULL
+   *    ```
    *
-   * 4. Response Construction: Combine all counts into IShoppingMallSellerDashboard response object.
+   * 4. **Order Items Count Query**:
+   *    ```sql
+   *    SELECT COUNT(*) FROM shopping_mall_order_items
+   *    WHERE shopping_mall_seller_id = :sellerId
+   *    AND deleted_at IS NULL
+   *    ```
    *
-   * 5. Performance: All queries should be optimized with existing indexes on seller_id and status columns. Consider caching for frequently accessed dashboard data.
+   * 5. **Pending Cancellation Requests Query**:
+   *    Use index on (shopping_mall_seller_id, status) for optimal performance:
+   *    ```sql
+   *    SELECT COUNT(*) FROM shopping_mall_cancellation_requests
+   *    WHERE shopping_mall_seller_id = :sellerId
+   *    AND status = 'pending'
+   *    ```
+   *
+   * 6. **Pending Refund Requests Query**:
+   *    Join through order_items to find refund requests for seller's products:
+   *    ```sql
+   *    SELECT COUNT(*) FROM shopping_mall_refund_requests r
+   *    JOIN shopping_mall_order_items oi ON r.shopping_mall_order_item_id = oi.id
+   *    WHERE oi.shopping_mall_seller_id = :sellerId
+   *    AND r.status = 'pending'
+   *    ```
+   *
+   * 7. **Low Stock Variants Query**:
+   *    Calculate current stock from inventory records:
+   *    ```sql
+   *    SELECT COUNT(DISTINCT pv.id)
+   *    FROM shopping_mall_product_variants pv
+   *    JOIN shopping_mall_products p ON pv.shopping_mall_product_id = p.id
+   *    LEFT JOIN (
+   *      SELECT shopping_mall_product_variant_id, SUM(quantity_change) as stock
+   *      FROM shopping_mall_inventory_records
+   *      GROUP BY shopping_mall_product_variant_id
+   *    ) ir ON pv.id = ir.shopping_mall_product_variant_id
+   *    WHERE p.shopping_mall_seller_id = :sellerId
+   *    AND COALESCE(ir.stock, 0) < :lowStockThreshold
+   *    ```
+   *
+   * 8. **Response Assembly**: Construct IShoppingMallSeller.IDashboard response with all computed counts.
+   *
+   * 9. **Caching Consideration**: Consider caching dashboard metrics for 60 seconds to reduce database load during repeated dashboard refreshes. Invalidate on product/order/request state changes.
+   *
+   * Error Handling:
+   * - 401 Unauthorized: Missing or invalid authentication token
+   * - 403 Forbidden: Seller not approved, suspended, or banned
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get()
   public async at(
     @SellerAuth()
     seller: SellerPayload,
-  ): Promise<IShoppingMallSellerDashboard> {
+  ): Promise<IShoppingMallSeller.IDashboard> {
     try {
       return await getShoppingMallSellerDashboard({
         seller,

@@ -14,77 +14,33 @@ import { authorize_guest_refresh } from "../../../authorize/authorize_guest_refr
 export async function test_api_guest_join_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Prepare guest join request with required fields only
-  const joinRequest: IRedditLikeGuest.IJoin = {
-    device_id: typia.random<string & tags.Format<"uuid">>(),
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-  };
-  // Call guest join endpoint
-  const result: IRedditLikeGuest.IAuthorized =
-    await api.functional.redditLike.auth.guest.join(connection, {
-      body: joinRequest,
-    });
-  // Validate response structure
-  typia.assert(result);
-  // Verify required properties exist
-  TestValidator.predicate("has guest id", result.id !== undefined);
-  TestValidator.predicate("has device_id", result.device_id !== undefined);
-  TestValidator.predicate("has created_at", result.created_at !== undefined);
-  TestValidator.predicate("has updated_at", result.updated_at !== undefined);
-  TestValidator.predicate("has access token", result.access !== undefined);
-  TestValidator.predicate("has refresh token", result.refresh !== undefined);
-  TestValidator.predicate("has expired_at", result.expired_at !== undefined);
-  // Validate UUID formats
+  // Generate valid device_id for guest account
+  const device_id = typia.random<string & tags.Format<"uuid">>();
+  // Create guest account with valid device_id
+  const output = await api.functional.redditLike.auth.guest.join(connection, {
+    body: { device_id } satisfies IRedditLikeGuest.IJoin,
+  });
+  // Validate response structure and content
+  typia.assert(output);
+  // Verify essential fields
+  TestValidator.equals("device_id matches input", output.device_id, device_id);
+  TestValidator.predicate("has valid id", /^[0-9a-f-]{36}$/i.test(output.id));
   TestValidator.predicate(
-    "guest id is UUID",
-    /^[0-9a-f-]{36}$/i.test(result.id),
+    "has valid access token",
+    output.token.access.length > 0,
   );
   TestValidator.predicate(
-    "device_id is UUID",
-    /^[0-9a-f-]{36}$/i.test(result.device_id),
-  );
-  // Validate timestamp formats (ISO 8601)
-  TestValidator.predicate(
-    "created_at is ISO 8601",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(result.created_at),
+    "has valid refresh token",
+    output.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "expired_at is ISO 8601",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(result.expired_at),
+    "has valid expired_at",
+    output.token.expired_at.length > 0,
   );
-  // Validate access token is JWT format (3 parts separated by dots)
   TestValidator.predicate(
-    "access token is JWT format",
-    /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(result.access),
+    "has valid refreshable_until",
+    output.token.refreshable_until.length > 0,
   );
-  // Validate refresh token is JWT format
-  TestValidator.predicate(
-    "refresh token is JWT format",
-    /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(result.refresh),
-  );
-  // Validate token object structure
-  TestValidator.predicate(
-    "has token object",
-    result.token !== undefined && result.token !== null,
-  );
-  if (result.token) {
-    TestValidator.predicate(
-      "token has access",
-      result.token.access !== undefined && result.token.access !== null,
-    );
-    TestValidator.predicate(
-      "token has refresh",
-      result.token.refresh !== undefined && result.token.refresh !== null,
-    );
-    TestValidator.predicate(
-      "token has expired_at",
-      result.token.expired_at !== undefined && result.token.expired_at !== null,
-    );
-    TestValidator.predicate(
-      "token has refreshable_until",
-      result.token.refreshable_until !== undefined &&
-        result.token.refreshable_until !== null,
-    );
-  }
+  TestValidator.predicate("has valid created_at", output.created_at.length > 0);
+  TestValidator.predicate("has valid updated_at", output.updated_at.length > 0);
 }

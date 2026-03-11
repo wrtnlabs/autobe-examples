@@ -38,18 +38,19 @@ export namespace ShoppingMallProductVariantTransformer {
   ): Promise<IShoppingMallProductVariant> {
     return {
       id: input.id,
-      product: await ShoppingMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
-      skuCode: input.sku_code,
-      optionValues: JSON.parse(input.option_values),
-      price: input.price ?? undefined,
-      stockQuantity: input.inventoryRecords.reduce(
+      sku_code: input.sku_code,
+      option_values: JSON.parse(input.option_values),
+      price: input.price,
+      stock_quantity: input.inventoryRecords.reduce(
         (sum, record) => sum + record.quantity_change,
         0,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

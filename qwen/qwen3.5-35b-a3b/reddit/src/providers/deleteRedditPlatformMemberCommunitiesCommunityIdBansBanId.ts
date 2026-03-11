@@ -16,44 +16,47 @@ export async function deleteRedditPlatformMemberCommunitiesCommunityIdBansBanId(
   communityId: string & tags.Format<"uuid">;
   banId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Fetch the ban record and verify it belongs to the specified community
-  const ban = await MyGlobal.prisma.reddit_platform_community_bans.findFirst({
-    where: {
-      id: props.banId,
-      community_id: props.communityId,
-      deleted_at: null,
-    },
-    include: {
-      community: {
-        select: {
-          owner_id: true,
-          moderators: {
-            select: {
-              user_id: true,
-            },
-          },
+  // Step 1: Verify the ban record exists and belongs to the specified community
+  const ban =
+    await MyGlobal.prisma.reddit_platform_community_bans.findUniqueOrThrow({
+      where: { id: props.banId },
+      select: {
+        id: true,
+        community_id: true,
+        user_id: true,
+        banned_by: true,
+        deleted_at: true,
+        community: {
+          select: { owner_id: true },
         },
       },
-    },
-  });
-  if (ban === null) {
-    throw new HttpException("Ban not found", 404);
+    });
+  // Verify ban belongs to the specified community
+  if (ban.community_id !== props.communityId) {
+    throw new HttpException("Ban not found in this community", 404);
   }
-  // Step 2: Verify the requesting member is the owner or moderator of the community
+  // Step 2: Verify the ban is currently active (not already deleted)
+  if (ban.deleted_at !== null) {
+    throw new HttpException("Ban has already been removed", 404);
+  }
+  // Step 3: Verify authorization - check if member is owner or moderator
   const isOwner = ban.community.owner_id === props.member.id;
-  const isModerator = ban.community.moderators.some(
-    (mod) => mod.user_id === props.member.id,
-  );
+  const isModerator =
+    await MyGlobal.prisma.reddit_platform_community_moderators.findFirst({
+      where: {
+        community_id: props.communityId,
+        user_id: props.member.id,
+      },
+    });
   if (!isOwner && !isModerator) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Soft delete the ban record
+  // Step 4: Soft delete the ban record by setting deleted_at
   await MyGlobal.prisma.reddit_platform_community_bans.update({
-    where: {
-      id: props.banId,
-    },
+    where: { id: props.banId },
     data: {
       deleted_at: new Date(),
+      updated_at: new Date(),
     },
   });
 }

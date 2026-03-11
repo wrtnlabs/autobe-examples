@@ -1,1 +1,1 @@
-export * as actions from "./actions/index";
+export * as conduct from "./conduct/index";

@@ -1,215 +1,66 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallShipment } from "../../../../structures/IPageIShoppingMallShipment";
 import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipment";
 
 /**
- * Create a new shipment for order fulfillment, bundling one or more paid order items together.
+ * Retrieve a filtered and paginated list of shipments created by the authenticated seller.
  *
- * This operation allows sellers to ship their products to customers. When creating a shipment, the seller enters the carrier name and tracking number, and selects which of their paid order items to include. All items in the same shipment share the same tracking information, enabling customers to track their packages through the carrier's website.
+ * This operation allows sellers to view and search through shipments they have created for order fulfillment. Each shipment represents a physical package containing one or more order items from the seller's products, with carrier and tracking information.
  *
- * Sellers can ship items individually or bundle multiple items together. This flexibility allows sellers to optimize their shipping process based on package size, item availability, and shipping preferences. For example, a seller might ship lightweight items separately but bundle heavy items together.
+ * **Seller Access Only:**
+ * - Results are automatically filtered to show only shipments created by the authenticated seller
+ * - Sellers cannot view shipments from other sellers
  *
- * The shipment record is stored in the shopping_mall_shipments table and is associated with a single order via the order_id foreign key. All items in the shipment must belong to that same order. If a customer ordered items from multiple sellers, each seller creates their own shipment independently. When the shipment is created, all included order items in the shopping_mall_order_items table automatically transition from 'paid' to 'shipped' status, and their shopping_mall_shipment_id foreign key is set to link them to the shipment.
+ * **Filtering Options:**
+ * The operation supports filtering by order ID to find all shipments for a specific order, by carrier name for carrier-specific queries, and by delivery status (pending delivery or delivered). Date range filters allow searching by shipping date or delivery date.
  *
- * Security and validation: Only the seller who owns the order items can create a shipment for them. All items must have 'paid' status, meaning payment has been confirmed but the items have not yet been shipped. Items cannot be included in multiple shipments (each order item can only have one shopping_mall_shipment_id). Suspended or banned sellers cannot create shipments.
+ * **Related Operations:**
+ * - Use `GET /seller/shipments/{shipmentId}` to view detailed shipment information
+ * - Use `POST /seller/shipments` to create a new shipment for order items
+ * - Customers can view shipments via `GET /customers/orders/{orderId}/shipments`
+ *
+ * **Database References:**
+ * The shipment entity (shopping_mall_shipments) references the seller (shopping_mall_sellers) who created it and the order (shopping_mall_orders) it belongs to. Order items (shopping_mall_order_items) reference their shipment via shopping_mall_shipment_id when shipped.
  *
  * @param props.connection
- * @param props.body Shipment creation data including order context, carrier information, and items to ship
+ * @param props.body Search criteria for filtering shipments including order, carrier, status, and date ranges
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
  * @x-autobe-specification Implementation steps:
  *
- * 1. Authenticate seller from JWT token and verify seller account is not suspended or banned
+ * 1. **Authorization Check**: Identify authenticated actor (customer, seller, or administrator)
  *
- * 2. Validate request body:
- *    - order_id must reference an existing order
- *    - order_item_ids array must not be empty
- *    - carrier_name is required text
- *    - tracking_number is required text
+ * 2. **Build Query**:
+ *    - For customers: JOIN shipments with orders filtered by shopping_mall_customer_id = current customer
+ *    - For sellers: Filter shipments by seller_id = current seller
+ *    - For administrators: No automatic filtering (apply request filters only)
  *
- * 3. Fetch all specified order items and validate:
- *    - All order items exist
- *    - All order items have status 'paid' (not already shipped, cancelled, or refunded)
- *    - All order items belong to the authenticated seller (shopping_mall_seller_id matches)
- *    - All order items belong to the same order (shopping_mall_order_id matches order_id from request)
- *    - No order item is already assigned to a shipment (shopping_mall_shipment_id is null)
+ * 3. **Apply Request Filters**:
+ *    - orderId: Filter by shopping_mall_shipments.order_id
+ *    - sellerId: Filter by shopping_mall_shipments.seller_id (admin only, ignore for others)
+ *    - carrierName: Case-insensitive partial match on carrier_name
+ *    - status: 'pending_delivery' (delivered_at IS NULL), 'delivered' (delivered_at IS NOT NULL)
+ *    - shippedFrom/shippedTo: Date range filter on shipped_at
+ *    - deliveredFrom/deliveredTo: Date range filter on delivered_at
  *
- * 4. Create shipment record:
- *    - Set seller_id to authenticated seller
- *    - Set order_id from request
- *    - Set carrier_name and tracking_number from request
- *    - Set shipped_at to current timestamp
- *    - Set delivered_at to null
+ * 4. **Pagination**: Apply cursor-based pagination with configurable page size (default 20, max 100)
  *
- * 5. Update all specified order items:
- *    - Set shopping_mall_shipment_id to the new shipment's id
- *    - Change status from 'paid' to 'shipped'
- *    - Update updated_at timestamp
+ * 5. **Response Assembly**:
+ *    - Include shipment summary with id, carrier_name, tracking_number, shipped_at, delivered_at
+ *    - Include related order info (order_number)
+ *    - Include seller info (shop_name) if relevant
+ *    - Include item count in shipment
  *
- * 6. Update order status (derived):
- *    - If any items are now shipped and none delivered, order status becomes 'shipped'
- *    - Recalculate based on all item statuses
+ * 6. **Order**: Sort by created_at DESC (newest first) by default
  *
- * 7. Return created shipment with included order items
- *
- * Error handling:
- * - 401 if not authenticated as seller
- * - 403 if seller is suspended/banned or trying to ship another seller's items
- * - 400 if any item is not in 'paid' status
- * - 400 if items are from different orders
- * - 404 if order or any order item not found
- * @path /shoppingMall/seller/shipments
- * @accessor api.functional.shoppingMall.seller.shipments.create
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function create(
-  connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
-  return true === connection.simulate
-    ? create.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...create.METADATA,
-          path: create.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace create {
-  export type Props = {
-    /**
-     * Shipment creation data including order context, carrier information, and items to ship
-     */
-    body: IShoppingMallShipment.ICreate;
-  };
-  export type Body = IShoppingMallShipment.ICreate;
-  export type Response = IShoppingMallShipment;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/shoppingMall/seller/shipments",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/shoppingMall/seller/shipments";
-  export const random = (): IShoppingMallShipment =>
-    typia.random<IShoppingMallShipment>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Search and retrieve a paginated list of shipments with comprehensive filtering capabilities.
- *
- * This endpoint allows users to search shipments based on various criteria. Sellers can view their own shipments to track deliveries they've dispatched. Customers can view shipments for their orders to track package delivery status. Administrators can view all shipments for platform oversight.
- *
- * The shipments table (shopping_mall_shipments) contains carrier name, tracking number, shipped_at timestamp, delivered_at timestamp, and relationships to the seller who created the shipment and the order it belongs to. Each shipment groups one or more order items from the same seller.
- *
- * Key business rules:
- * - Sellers create shipments when shipping order items with status 'paid'
- * - Each shipment can contain multiple order items from the same seller
- * - Different sellers always ship separately (separate shipments)
- * - Delivery can be confirmed by customer or automatically after 14 days
- * - Once delivery is confirmed, all items in the shipment change to 'delivered' status
- *
- * Filtering supports:
- * - Order ID to view shipments for a specific order
- * - Seller ID to view shipments by a specific seller
- * - Carrier name for carrier-based searches
- * - Tracking number for direct shipment lookup
- * - Date range filters for shipped_at, delivered_at, and created_at
- * - Delivery status (pending vs delivered)
- *
- * The response includes pagination metadata and shipment summaries with essential tracking information.
- *
- * @param props.connection
- * @param props.body Search criteria and pagination parameters for shipment listing. Supports filtering by order, seller, carrier, tracking number, and date ranges.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation:
- *
- * 1. Authentication & Authorization:
- *    - Extract user from JWT token
- *    - Determine actor type (customer, seller, administrator)
- *    - Apply role-based filtering:
- *      * Sellers: filter WHERE seller_id = current_user.seller_id
- *      * Customers: join through orders WHERE customer_id = current_user.customer_id
- *      * Administrators: no role filter (can see all)
- *
- * 2. Query Building:
- *    - Start with shopping_mall_shipments as base table
- *    - Apply filters from IRequest body:
- *      * orderId: WHERE order_id = ?
- *      * sellerId: WHERE seller_id = ?
- *      * carrierName: WHERE carrier_name ILIKE '%?%'
- *      * trackingNumber: WHERE tracking_number = ?
- *      * shippedFrom/shippedTo: WHERE shipped_at BETWEEN ? AND ?
- *      * deliveredFrom/deliveredTo: WHERE delivered_at BETWEEN ? AND ?
- *      * createdFrom/createdTo: WHERE created_at BETWEEN ? AND ?
- *      * delivered: if true, WHERE delivered_at IS NOT NULL; if false, WHERE delivered_at IS NULL
- *    - Exclude deleted records: WHERE deleted_at IS NULL
- *
- * 3. Pagination:
- *    - Use cursor-based pagination for consistent results
- *    - Apply limit and cursor from request
- *    - Return pagination metadata (hasMore, nextCursor, totalCount)
- *
- * 4. Data Retrieval:
- *    - SELECT shipment fields: id, seller_id, order_id, carrier_name, tracking_number, shipped_at, delivered_at, created_at
- *    - Include seller information (shop name from shopping_mall_sellers)
- *    - Include order number from shopping_mall_orders
- *    - Count associated order items per shipment
- *
- * 5. Response Assembly:
- *    - Map results to IShoppingMallShipment.ISummary format
- *    - Include pagination metadata
- *    - Return IPageIShoppingMallShipment.ISummary
- *
- * 6. Error Handling:
- *    - 401 Unauthorized if not authenticated
- *    - 400 Bad Request for invalid filter values
- *    - Empty result set returns empty data array (not error)
+ * 7. **Edge Cases**:
+ *    - If orderId filter provided but user has no access to that order, return empty result
+ *    - Handle deleted orders gracefully (include with 'deleted order' note)
+ *    - Include soft-deleted shipments only if explicitly requested (admin only)
  * @path /shoppingMall/seller/shipments
  * @accessor api.functional.shoppingMall.seller.shipments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -239,7 +90,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for shipment listing. Supports filtering by order, seller, carrier, tracking number, and date ranges.
+     * Search criteria for filtering shipments including order, carrier, status, and date ranges
      */
     body: IShoppingMallShipment.IRequest;
   };
@@ -288,34 +139,30 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific shipment including carrier details, tracking number, shipping and delivery timestamps, and all order items included in the shipment.
+ * Retrieve detailed shipment information for a seller to view their shipped order items including carrier details, tracking number, shipping status, and contained order items.
  *
- * This endpoint allows customers to view tracking information for shipments containing their ordered items, sellers to review shipments they have created, and administrators to oversee any shipment on the platform. Each shipment represents a physical package sent by a seller containing one or more order items from the same order.
+ * This endpoint allows sellers to access shipments they created for order fulfillment. The response includes the carrier name and tracking number that customers can use to track packages, along with timestamps for shipping and delivery confirmation.
  *
- * The response includes the carrier name and tracking number that customers can use to track their package on the carrier's website. The shipped_at timestamp indicates when the seller created the shipment, and delivered_at shows when delivery was confirmed (either by customer confirmation or automatically after 14 days).
+ * Each shipment groups order items from the same seller that were bundled together for shipping. Sellers create shipments when fulfilling orders, entering carrier and tracking information. The shipment belongs to exactly one seller and one order.
  *
- * The included order items section shows which specific items from the order are in this shipment, along with their product details preserved from the purchase-time snapshot. This enables customers to understand exactly what products and quantities are being tracked in each shipment.
- *
- * Authorization is enforced to ensure customers can only view shipments for their own orders, sellers can only view shipments they created, and administrators have platform-wide access.
+ * Sellers can only view shipments they created (where shipment.seller_id matches their account). Attempting to access another seller's shipment will result in 403 Forbidden. If the shipment has not been delivered yet, the delivered_at field will be null. Delivery can be confirmed by the customer or automatically after 14 days from shipping.
  *
  * @param props.connection
- * @param props.shipmentId Unique identifier of the shipment to retrieve. Must be a valid UUID referencing an existing shipment record.
+ * @param props.shipmentId Unique identifier of the shipment to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve shipment record by ID with authorization check.
- *
- * 1. Query shopping_mall_shipments table by shipmentId
- * 2. If not found, return 404 error
- * 3. Perform authorization check based on actor type:
- *    - Customer: verify the shipment's order belongs to the authenticated customer via shopping_mall_orders.shopping_mall_customer_id
- *    - Seller: verify the shipment.seller_id matches the authenticated seller's ID
- *    - Administrator: allow access to any shipment
- * 4. If unauthorized, return 403 error
- * 5. Join with shopping_mall_sellers to get shop_name
- * 6. Join with shopping_mall_orders to get order_number
- * 7. Query shopping_mall_order_items where shopping_mall_shipment_id = shipmentId to get included items
- * 8. For each order item, include: product name (from snapshot), variant options, quantity, price, status
- * 9. Return assembled IShoppingMallShipment response
+ * @x-autobe-specification 1. Retrieve the shipment record by ID from shopping_mall_shipments table
+ * 2. Verify authorization based on actor role:
+ *    - Customer: Check if shipment.order_id links to an order belonging to the authenticated customer via shopping_mall_orders.shopping_mall_customer_id
+ *    - Seller: Check if shipment.seller_id matches the authenticated seller's ID
+ *    - Administrator: Allow access to any shipment
+ * 3. If not authorized, return 403 Forbidden
+ * 4. If shipment not found or deleted_at is not null, return 404 Not Found
+ * 5. Include related data:
+ *    - Seller: Join with shopping_mall_sellers for seller profile (id, shop_name, logo_image)
+ *    - Order: Join with shopping_mall_orders for order context (id, order_number)
+ *    - Order Items: Query shopping_mall_order_items where shopping_mall_shipment_id matches, include product name, variant options, quantity, price, status
+ * 6. Return complete shipment object with nested relationships
  * @path /shoppingMall/seller/shipments/:shipmentId
  * @accessor api.functional.shoppingMall.seller.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -344,9 +191,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the shipment to retrieve. Must be a valid UUID referencing an existing shipment record.
+     * Unique identifier of the shipment to retrieve.
      */
-    shipmentId: string & tags.Format<"uuid">;
+    shipmentId: string;
   };
   export type Response = IShoppingMallShipment;
 
@@ -376,6 +223,131 @@ export namespace at {
     });
     try {
       assert.param("shipmentId")(() => typia.assert(props.shipmentId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update carrier name and tracking number for an existing shipment.
+ *
+ * This operation allows sellers to modify the shipping carrier and tracking number for a shipment they previously created. Only the seller who created the shipment is authorized to update it.
+ *
+ * The carrier name identifies the shipping company (e.g., FedEx, UPS, DHL), and the tracking number enables customers to track their package status through the carrier's website. These fields may need correction if initially entered incorrectly.
+ *
+ * Upon successful update, the shipment record is modified and the updated information is immediately available for customer viewing. This operation does not affect the shipment's order items, shipped_at timestamp, or delivery status.
+ *
+ * Related operations:
+ * - POST /seller/shipments - Create a new shipment
+ * - GET /customers/orders/{orderId}/shipments - View order shipments
+ * - POST /customers/shipments/{shipmentId}/confirm-delivery - Confirm delivery
+ *
+ * @param props.connection
+ * @param props.shipmentId Unique identifier of the shipment to update (UUID format)
+ * @param props.body Updated carrier name and tracking number for the shipment
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Implementation steps:
+ *
+ * 1. **Authorization Verification**: Validate that the authenticated user is a seller and owns the shipment by checking shopping_mall_shipments.seller_id matches the seller's ID.
+ *
+ * 2. **Fetch Shipment**: Query shopping_mall_shipments by the provided shipmentId UUID. Return 404 if not found.
+ *
+ * 3. **Ownership Check**: If seller_id does not match authenticated seller, return 403 Forbidden.
+ *
+ * 4. **Update Fields**: Update carrier_name and tracking_number from request body. Update updated_at timestamp to current time.
+ *
+ * 5. **Validation Rules**:
+ *    - carrier_name: Required, non-empty string, max 100 characters
+ *    - tracking_number: Required, non-empty string, max 100 characters
+ *
+ * 6. **Database Transaction**: Execute update within a transaction to ensure data consistency.
+ *
+ * 7. **Response**: Return the updated shipment with all fields including seller info and related order items for display context.
+ *
+ * Edge cases:
+ * - Shipment not found: Return 404
+ * - Not seller's shipment: Return 403
+ * - Invalid carrier_name or tracking_number: Return 400 validation error
+ * @path /shoppingMall/seller/shipments/:shipmentId
+ * @accessor api.functional.shoppingMall.seller.shipments.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * Unique identifier of the shipment to update (UUID format)
+     */
+    shipmentId: string;
+
+    /**
+     * Updated carrier name and tracking number for the shipment
+     */
+    body: IShoppingMallShipment.IUpdate;
+  };
+  export type Body = IShoppingMallShipment.IUpdate;
+  export type Response = IShoppingMallShipment;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/shoppingMall/seller/shipments/:shipmentId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/seller/shipments/${encodeURIComponent(props.shipmentId ?? "null")}`;
+  export const random = (): IShoppingMallShipment =>
+    typia.random<IShoppingMallShipment>();
+  export const simulate = (
+    connection: IConnection,
+    props: update.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: update.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("shipmentId")(() => typia.assert(props.shipmentId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

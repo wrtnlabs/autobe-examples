@@ -26,6 +26,7 @@ export namespace ShoppingMallReviewTransformer {
         content: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
         customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         product: ShoppingMallProductAtSummaryTransformer.select(),
         order: ShoppingMallOrderAtSummaryTransformer.select(),
@@ -37,6 +38,8 @@ export namespace ShoppingMallReviewTransformer {
   ): Promise<IShoppingMallReview> {
     return {
       id: input.id,
+      rating: input.rating,
+      content: input.content,
       customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
@@ -44,10 +47,9 @@ export namespace ShoppingMallReviewTransformer {
         input.product,
       ),
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
-      rating: input.rating,
-      content: input.content ?? undefined,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

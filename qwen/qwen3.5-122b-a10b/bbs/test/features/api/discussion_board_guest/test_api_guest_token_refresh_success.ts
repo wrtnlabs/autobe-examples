@@ -11,81 +11,63 @@ import typia, { tags } from "typia";
 import { authorize_guest_join } from "../../../authorize/authorize_guest_join";
 import { authorize_guest_refresh } from "../../../authorize/authorize_guest_refresh";
 
-/**
- * Test successful guest token refresh with valid refresh token.
- * 1. Create guest session via join endpoint to obtain initial refresh token
- * 2. Call refresh endpoint with the valid refresh token
- * 3. Verify response contains new access and refresh tokens
- * 4. Verify new tokens have valid expiration timestamps
- * 5. Verify the new access token can be used to access protected guest endpoints
- */
 export async function test_api_guest_token_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create guest session to obtain initial refresh token
+  // 1. Create guest account to obtain initial refresh token
   const guestConnection: api.IConnection = { host: connection.host };
   const initialAuth = await authorize_guest_join(guestConnection, {
     body: {
-      device_fingerprint: RandomGenerator.alphabets(32),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
+      deviceFingerprint: RandomGenerator.alphaNumeric(32),
     } satisfies IDiscussionBoardGuest.IJoin,
   });
   typia.assert(initialAuth);
-  // Store initial token for comparison
-  const initialRefreshToken = initialAuth.token.refresh;
-  const initialExpiredAt = initialAuth.token.expired_at;
-  // 2. Call refresh endpoint with the valid refresh token
-  const refreshConnection: api.IConnection = { host: connection.host };
-  const refreshedAuth = await authorize_guest_refresh(refreshConnection, {
+  // Store old refresh token for validation
+  const oldRefreshToken = initialAuth.token.refresh;
+  const oldExpiresAt = initialAuth.token.expired_at;
+  const oldRefreshableUntil = initialAuth.token.refreshable_until;
+  // 2. Wait briefly to ensure session is established
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  // 3. Call refresh endpoint with valid refresh token
+  const refreshedAuth = await authorize_guest_refresh(guestConnection, {
     body: {
-      refresh: initialRefreshToken,
+      refresh_token: oldRefreshToken,
     } satisfies IDiscussionBoardGuest.IRefresh,
   });
   typia.assert(refreshedAuth);
-  // 3. Verify response contains new access and refresh tokens
+  // 4. Verify response contains new tokens
   TestValidator.predicate(
-    "has access token",
-    refreshedAuth.token.access.length > 0,
+    "has new access token",
+    refreshedAuth.token.access !== "",
   );
   TestValidator.predicate(
-    "has refresh token",
-    refreshedAuth.token.refresh.length > 0,
+    "has new refresh token",
+    refreshedAuth.token.refresh !== "",
   );
-  TestValidator.predicate(
-    "has expired_at",
-    refreshedAuth.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "has refreshable_until",
-    refreshedAuth.token.refreshable_until.length > 0,
-  );
-  // 4. Verify new tokens have valid expiration timestamps
-  TestValidator.predicate("expired_at is valid date-time", () => {
-    const date = new Date(refreshedAuth.token.expired_at);
-    return !isNaN(date.getTime());
-  });
-  TestValidator.predicate("refreshable_until is valid date-time", () => {
-    const date = new Date(refreshedAuth.token.refreshable_until);
-    return !isNaN(date.getTime());
-  });
-  // 5. Verify tokens are different from initial (token rotation)
+  // 5. Verify new tokens have updated expiration timestamps
   TestValidator.notEquals(
-    "access token rotated",
-    initialAuth.token.access,
-    refreshedAuth.token.access,
+    "access token expired_at updated",
+    oldExpiresAt,
+    refreshedAuth.token.expired_at,
   );
   TestValidator.notEquals(
-    "refresh token rotated",
-    initialRefreshToken,
-    refreshedAuth.token.refresh,
+    "refresh token refreshable_until updated",
+    oldRefreshableUntil,
+    refreshedAuth.token.refreshable_until,
   );
-  // 6. Verify the new access token can be used to access protected guest endpoints
-  // The refreshConnection already has the new token in headers from authorize_guest_refresh
-  TestValidator.predicate("new token is in connection headers", () => {
-    return (
-      refreshConnection.headers?.Authorization === refreshedAuth.token.access
-    );
+  // 6. Verify old refresh token is invalidated (token rotation)
+  // Try to use old refresh token - should fail
+  await TestValidator.error("old refresh token invalidated", async () => {
+    await authorize_guest_refresh(guestConnection, {
+      body: {
+        refresh_token: oldRefreshToken,
+      } satisfies IDiscussionBoardGuest.IRefresh,
+    });
   });
+  // 7. Verify new access token can be used for authenticated requests
+  // (The authorize_guest_refresh already updated guestConnection.headers with new token)
+  TestValidator.predicate(
+    "guest ID matches",
+    refreshedAuth.id === initialAuth.id,
+  );
 }

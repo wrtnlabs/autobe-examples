@@ -11,15 +11,19 @@ export function prepare_random_discussion_board_article(
   return {
     title:
       input?.title ??
-      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
-    content:
-      input?.content ??
+      RandomGenerator.paragraph({
+        sentences: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<3> & tags.Maximum<5>
+        >(),
+      }),
+    body:
+      input?.body ??
       RandomGenerator.content({
-        paragraphs: 2,
-        sentenceMin: 10,
-        sentenceMax: 15,
-        wordMin: 5,
-        wordMax: 10,
+        paragraphs: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<2> & tags.Maximum<4>
+        >(),
+        sentenceMin: 3,
+        sentenceMax: 8,
       }),
     discussion_board_section_id:
       input?.discussion_board_section_id ??

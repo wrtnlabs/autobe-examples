@@ -36,11 +36,6 @@ export namespace EcommerceMallProductSnapshotTransformer {
   ): Promise<IEcommerceMallProductSnapshot> {
     return {
       id: input.id,
-      name: input.name,
-      description: input.description ?? undefined,
-      base_price: Number(input.base_price),
-      is_active: input.is_active,
-      created_at: input.created_at.toISOString(),
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
@@ -52,6 +47,11 @@ export namespace EcommerceMallProductSnapshotTransformer {
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-    } as IEcommerceMallProductSnapshot;
+      name: input.name,
+      description: input.description,
+      basePrice: Number(input.base_price),
+      isActive: input.is_active,
+      createdAt: input.created_at.toISOString(),
+    } satisfies IEcommerceMallProductSnapshot;
   }
 }

@@ -6,13 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_like_comment_vote(
-  input?: DeepPartial<IRedditLikeCommentVote.ICreate>,
+  input?: DeepPartial<IRedditLikeCommentVote.ICreate> | undefined,
 ): IRedditLikeCommentVote.ICreate {
   return {
-    value:
-      input?.value ??
-      typia.random<
-        number & tags.Type<"int32"> & tags.Minimum<-1> & tags.Maximum<1>
-      >(),
+    value: input?.value ?? RandomGenerator.pick([1, -1, null] as const),
   };
 }

@@ -14,7 +14,10 @@ export async function authorize_member_login(
     body: IDiscussionBoardMember.ILogin;
   },
 ): Promise<IDiscussionBoardMember.IAuthorized> {
-  return await api.functional.discussionBoard.auth.member.login(connection, {
-    body: props.body,
-  });
+  return await api.functional.discussionBoard.auth.member.login.signIn(
+    connection,
+    {
+      body: props.body,
+    },
+  );
 }

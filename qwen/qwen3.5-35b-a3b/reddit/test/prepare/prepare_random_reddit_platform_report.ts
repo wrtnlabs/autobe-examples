@@ -6,7 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_reddit_platform_report(
-  input?: DeepPartial<IRedditPlatformReport.ICreate> | undefined,
+  input?: DeepPartial<IRedditPlatformReport.ICreate>,
 ): IRedditPlatformReport.ICreate {
   return {
     community_id:
@@ -19,6 +19,6 @@ export function prepare_random_reddit_platform_report(
       typia.random<string & tags.Format<"uuid">>(),
     reason:
       input?.reason ??
-      RandomGenerator.paragraph({ sentences: 3, wordMin: 4, wordMax: 8 }),
+      typia.random<string & tags.MinLength<10> & tags.MaxLength<500>>(),
   };
 }

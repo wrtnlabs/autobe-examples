@@ -1,89 +1,154 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IShoppingMallRefundRequest } from "../../../../api/structures/IShoppingMallRefundRequest";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { putShoppingMallSellerRefundRequestsRefundRequestId } from "../../../../providers/putShoppingMallSellerRefundRequestsRefundRequestId";
+import { patchShoppingMallSellerRefundRequestsRefundRequestIdApprove } from "../../../../providers/patchShoppingMallSellerRefundRequestsRefundRequestIdApprove";
+import { patchShoppingMallSellerRefundRequestsRefundRequestIdReject } from "../../../../providers/patchShoppingMallSellerRefundRequestsRefundRequestIdReject";
 
 @Controller("/shoppingMall/seller/refund-requests/:refundRequestId")
 export class ShoppingmallSellerRefund_requestsController {
   /**
-   * Allows sellers to respond to pending refund requests by approving or rejecting them.
+   * Approve a pending refund request for an order item sold by the authenticated seller.
    *
-   * This operation is exclusively for sellers who own the product associated with the order item. When a seller approves a refund request, the system automatically processes the refund payment, changes the order item status to 'refunded', and restores the stock quantity for the product variant through an inventory record. The approval triggers a complete refund workflow including payment processing and inventory restoration.
+   * This operation allows a seller to approve a customer's refund request for a delivered order item within the 7-day eligibility window. When approved, the refund request status changes from 'pending' to 'approved', the associated order item status transitions to 'refunded', and a positive inventory record is automatically created to restore the stock quantity for the affected product variant.
    *
-   * When a seller rejects a refund request, the order item status remains 'delivered' and no stock modifications occur. The customer is notified of the rejection.
+   * The system validates that: (1) the refund request exists and has 'pending' status, (2) the authenticated seller owns the product associated with the order item, (3) the seller account is not banned. Suspended sellers retain the ability to approve refund requests to fulfill existing obligations.
    *
-   * All responses (both approvals and rejections) create an immutable snapshot of the request state for audit trail and dispute resolution purposes. The snapshot captures the original reason text, the final status, and the response timestamp.
+   * Upon successful approval, an immutable snapshot of the refund request state is created in shopping_mall_refund_request_snapshots, preserving the reason text, approved status, and timestamp for audit trail and dispute resolution purposes. The approval triggers the refund payment processing workflow.
    *
-   * Status transitions are one-way: a pending request can only transition to 'approved' or 'rejected'. Once resolved, the status cannot be modified further. If a seller attempts to respond to an already-resolved request, the operation is rejected with an error.
-   *
-   * This operation requires seller authentication. Only the seller who owns the product for the specific order item can approve or reject the refund request. Other sellers, customers, and administrators cannot perform this operation. Suspended sellers can still respond to refund requests for their products, but banned sellers are denied access.
+   * Related operations: GET /seller/refund-requests to list pending refund requests, PATCH /refund-requests/{id}/reject to reject a refund request.
    *
    * @param connection
-   * @param refundRequestId Unique identifier of the refund request to respond to (UUID format)
-   * @param body Seller's response to the refund request containing approval or rejection decision
+   * @param refundRequestId UUID of the refund request to approve. Must correspond to a pending refund request for an order item sold by the authenticated seller.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation Steps:
+   * @x-autobe-specification Implementation flow for approving a refund request:
    *
-   * 1. Validate Path Parameter:
-   *    - Retrieve refund request by refundRequestId
-   *    - Return 404 if not found
+   * 1. **Authentication & Authorization**: Verify seller authentication token. Extract seller ID from JWT claims.
    *
-   * 2. Authorization Check:
-   *    - Get authenticated seller from context
-   *    - Retrieve order item and its associated product
-   *    - Verify seller owns the product (shopping_mall_product.seller_id matches authenticated seller)
-   *    - Return 403 if seller does not own the product
+   * 2. **Fetch Refund Request**: Query shopping_mall_refund_requests by refundRequestId. If not found, return 404 error. If status is not 'pending', return 400 error (request already processed).
    *
-   * 3. Status Validation:
-   *    - Verify refund request status is 'pending'
-   *    - Return 400 if status is 'approved' or 'rejected' (status finality)
+   * 3. **Verify Seller Ownership**:
+   *    - Join refund_request -> order_item -> product -> seller
+   *    - Compare the seller_id from the product with the authenticated seller's ID
+   *    - If mismatch, return 403 error (seller not authorized for this request)
    *
-   * 4. Validate Request Body:
-   *    - decision must be 'approve' or 'reject'
+   * 4. **Verify Seller Status**: Check seller account is not banned. Suspended sellers can still approve requests.
    *
-   * 5. Process Response:
-   *    - Update status to 'approved' or 'rejected'
-   *    - Set responded_at to current timestamp
+   * 5. **Database Transaction** (atomic):
+   *    a. Update refund request:
+   *       - SET status = 'approved'
+   *       - SET responded_at = CURRENT_TIMESTAMP
+   *    b. Update order item:
+   *       - SET status = 'refunded'
+   *    c. Create inventory record in shopping_mall_inventory_records:
+   *       - variant_id = order_item.product_variant_id
+   *       - refund_request_id = refundRequestId
+   *       - quantity_change = order_item.quantity (positive to restore stock)
+   *       - reason = 'Refund approved'
+   *       - created_at = CURRENT_TIMESTAMP
+   *    d. Create snapshot in shopping_mall_refund_request_snapshots:
+   *       - refund_request_id = refundRequestId
+   *       - reason = refund_request.reason
+   *       - status = 'approved'
+   *       - created_at = CURRENT_TIMESTAMP
    *
-   * 6. Create Snapshot:
-   *    - Create IShoppingMallRefundRequestSnapshot with:
-   *      - reason (from original request)
-   *      - status (new status)
-   *      - created_at (current timestamp)
-   *      - Reference to refund request
+   * 6. **Post-Approval Actions**:
+   *    - Trigger refund payment processing (external integration)
+   *    - Recalculate order status based on all order items
    *
-   * 7. If Approved:
-   *    - Update order item status to 'refunded'
-   *    - Create positive inventory record for the product variant
-   *    - Trigger refund payment processing
-   *    - Recalculate parent order status
-   *
-   * 8. If Rejected:
-   *    - Order item status remains 'delivered'
-   *    - No inventory changes
-   *
-   * 9. Return updated refund request entity
+   * 7. **Response**: Return updated refund request with approval timestamp.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
-  public async update(
+  @TypedRoute.Patch("approve")
+  public async approve(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("refundRequestId")
-    refundRequestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IShoppingMallRefundRequest.IUpdate,
+    refundRequestId: string,
   ): Promise<IShoppingMallRefundRequest> {
     try {
-      return await putShoppingMallSellerRefundRequestsRefundRequestId({
+      return await patchShoppingMallSellerRefundRequestsRefundRequestIdApprove({
         seller,
         refundRequestId,
-        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject a customer's refund request for a delivered order item.
+   *
+   * This operation allows authenticated sellers to decline refund requests submitted by customers for delivered products. The seller must be the owner of the product associated with the order item referenced by the refund request. This restriction ensures that only the responsible seller can make decisions about refunds for their products.
+   *
+   * The refund request must be in 'pending' status to be eligible for rejection. Once rejected, the status becomes terminal - no further status changes are permitted. The rejection is recorded with an immutable snapshot in the shopping_mall_refund_request_snapshots table, preserving the complete state for audit trail and potential dispute resolution.
+   *
+   * Upon successful rejection, the responded_at timestamp is set to record when the seller responded to the request. The customer who submitted the refund request is notified of the rejection.
+   *
+   * Authorization: Requires seller authentication. The authenticated seller must own the product associated with the order item in the refund request. Sellers with suspended accounts can still reject refund requests, but banned sellers cannot.
+   *
+   * Related operations: GET /seller/refund-requests to list pending refund requests, PATCH /refund-requests/{refundRequestId}/approve to approve refund requests.
+   *
+   * @param connection
+   * @param refundRequestId Unique identifier of the refund request to reject. Must be a valid UUID referencing an existing refund request in 'pending' status.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Implementation steps for rejecting a refund request:
+   *
+   * 1. Authentication: Extract seller identity from JWT token in Authorization header.
+   *
+   * 2. Input Validation:
+   *    - Validate refundRequestId is a valid UUID format
+   *    - Query shopping_mall_refund_requests table to find the request
+   *    - Return 404 if refund request does not exist
+   *
+   * 3. Business Rule Validation:
+   *    - Check refund request status is 'pending' (return 400 if not)
+   *    - Query shopping_mall_order_items to get the order item
+   *    - Query shopping_mall_products via shopping_mall_order_items to verify seller ownership
+   *    - Return 403 if authenticated seller does not own the product
+   *    - Check seller is not banned (return 403 if banned)
+   *    - Note: Suspended sellers CAN reject refund requests (can process existing orders)
+   *
+   * 4. Transaction - Execute atomically:
+   *    a. Update shopping_mall_refund_requests:
+   *       - Set status = 'rejected'
+   *       - Set responded_at = current timestamp
+   *    b. Create shopping_mall_refund_request_snapshots record:
+   *       - shopping_mall_refund_request_id = request ID
+   *       - reason = copy of original reason from refund request
+   *       - status = 'rejected'
+   *       - created_at = current timestamp
+   *    c. Both operations must succeed or both fail (snapshot creation failure prevents status change)
+   *
+   * 5. Response: Return updated refund request with populated relationships
+   *
+   * 6. Side Effects: Trigger notification to customer about refund request rejection
+   *
+   * Error handling:
+   * - 401: Missing or invalid authentication
+   * - 403: Seller does not own product, or seller is banned
+   * - 404: Refund request not found
+   * - 400: Refund request already approved or rejected (not in pending status)
+   * - 500: Snapshot creation failure (transaction rolled back)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch("reject")
+  public async reject(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("refundRequestId")
+    refundRequestId: string,
+  ): Promise<IShoppingMallRefundRequest> {
+    try {
+      return await patchShoppingMallSellerRefundRequestsRefundRequestIdReject({
+        seller,
+        refundRequestId,
       });
     } catch (error) {
       console.log(error);

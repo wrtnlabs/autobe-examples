@@ -35,6 +35,7 @@ export namespace RedditPlatformCommentAtSummaryTransformer {
   ): Promise<IRedditPlatformComment.ISummary> {
     return {
       id: input.id,
+      content: input.content,
       vote_score: input.vote_score,
       author: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.author,

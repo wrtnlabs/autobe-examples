@@ -1,7 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditLikeMember";
-import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
+import { IPageIRedditLikeSearchResult } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditLikeSearchResult";
+import { IRedditLikeContentSearch } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeContentSearch";
+import { IRedditLikeSearchResult } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeSearchResult";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,195 +17,179 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeAdminSearchContent(props: {
   admin: AdminPayload;
-  body: IRedditLikeMember.IRequest;
-}): Promise<IPageIRedditLikeMember.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  body: IRedditLikeContentSearch.IRequest;
+}): Promise<IPageIRedditLikeSearchResult.ISummary> {
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(100, Math.max(1, props.body.limit ?? 20));
   const skip = (page - 1) * limit;
-  const posts = await MyGlobal.prisma.reddit_like_posts.findMany({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                title: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                content: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      score: true,
-      created_at: true,
-    },
-    skip,
-    take: limit,
-  });
-  const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                content: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      content: true,
-      vote_score: true,
-      created_at: true,
-    },
-    skip,
-    take: limit,
-  });
-  const communities = await MyGlobal.prisma.reddit_like_communities.findMany({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      name: true,
-      created_at: true,
-    },
-    skip,
-    take: limit,
-  });
-  // Count total records for pagination
-  const totalPosts = await MyGlobal.prisma.reddit_like_posts.count({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                title: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                content: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-  });
-  const totalComments = await MyGlobal.prisma.reddit_like_comments.count({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                content: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-  });
-  const totalCommunities = await MyGlobal.prisma.reddit_like_communities.count({
-    where: {
-      ...(props.body.search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: props.body.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {}),
-      deleted_at: null,
-    },
-  });
-  const totalRecords = totalPosts + totalComments + totalCommunities;
-  // Transform results to IRedditLikeMember.ISummary format
-  const transformPost = (post: any): IRedditLikeMember.ISummary => ({
-    id: post.id as string & tags.Format<"uuid">,
-    entity_type: "post" as const,
+  const query = props.body.query;
+  const communityId = props.body.community_id;
+  const typeFilter = props.body.type;
+  const sort = props.body.sort ?? "relevance";
+  // Build post WHERE conditions
+  const postWhere: Prisma.reddit_like_postsWhereInput = {
+    deleted_at: null,
+    ...(communityId && { community_id: communityId }),
+  };
+  // Full-text search on title and content
+  if (query) {
+    postWhere.OR = [
+      { title: { contains: query } },
+      { content: { contains: query } },
+    ];
+  }
+  // Filter by type
+  if (typeFilter) {
+    postWhere.type = typeFilter;
+  }
+  // Parse date range
+  const startDate = props.body.start_date
+    ? new Date(props.body.start_date)
+    : null;
+  const endDate = props.body.end_date ? new Date(props.body.end_date) : null;
+  // Filter by date range
+  if (startDate || endDate) {
+    postWhere.created_at = {};
+    if (startDate) postWhere.created_at.gte = startDate;
+    if (endDate) postWhere.created_at.lte = endDate;
+  }
+  // Build comment WHERE conditions
+  const commentWhere: Prisma.reddit_like_commentsWhereInput = {
+    deleted_at: null,
+  };
+  // Full-text search on content
+  if (query) {
+    commentWhere.content = { contains: query };
+  }
+  // Filter by community
+  if (communityId) {
+    commentWhere.post = { community_id: communityId };
+  }
+  // Filter by date range
+  if (startDate || endDate) {
+    commentWhere.created_at = {};
+    if (startDate) commentWhere.created_at.gte = startDate;
+    if (endDate) commentWhere.created_at.lte = endDate;
+  }
+  // Get total counts for pagination
+  const [postCount, commentCount] = await Promise.all([
+    MyGlobal.prisma.reddit_like_posts.count({ where: postWhere }),
+    MyGlobal.prisma.reddit_like_comments.count({ where: commentWhere }),
+  ]);
+  // Execute search with proper sorting
+  let postOrderBy: Prisma.reddit_like_postsOrderByWithRelationInput;
+  let commentOrderBy: Prisma.reddit_like_commentsOrderByWithRelationInput;
+  if (sort === "new") {
+    postOrderBy = { created_at: "desc" };
+    commentOrderBy = { created_at: "desc" };
+  } else if (sort === "hot") {
+    postOrderBy = { score: "desc" };
+    commentOrderBy = { vote_score: "desc" };
+  } else if (sort === "controversial") {
+    postOrderBy = { score: "asc" };
+    commentOrderBy = { vote_score: "asc" };
+  } else {
+    // relevance - default to score desc
+    postOrderBy = { score: "desc" };
+    commentOrderBy = { vote_score: "desc" };
+  }
+  const [posts, comments] = await Promise.all([
+    MyGlobal.prisma.reddit_like_posts.findMany({
+      where: postWhere,
+      orderBy: postOrderBy,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        type: true,
+        url: true,
+        image_url: true,
+        score: true,
+        created_at: true,
+        author: { select: { id: true, username: true, display_name: true } },
+        community: { select: { id: true, name: true, icon_url: true } },
+      },
+    }),
+    MyGlobal.prisma.reddit_like_comments.findMany({
+      where: commentWhere,
+      orderBy: commentOrderBy,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        content: true,
+        vote_score: true,
+        created_at: true,
+        author: { select: { id: true, username: true, display_name: true } },
+        post: {
+          select: {
+            id: true,
+            title: true,
+            community: { select: { id: true, name: true, icon_url: true } },
+          },
+        },
+      },
+    }),
+  ]);
+  // Transform posts to search results
+  const postResults: IRedditLikeSearchResult.ISummary[] = posts.map((post) => ({
+    type: "post" as const,
+    id: post.id,
     title: post.title,
-    content: (post.content || "").substring(0, 200),
+    content: post.content || "",
+    url: post.url || undefined,
+    image_url: post.image_url || undefined,
     score: post.score,
-    hit_count: 0,
     created_at: toISOStringSafe(post.created_at),
-  });
-  const transformComment = (comment: any): IRedditLikeMember.ISummary => ({
-    id: comment.id as string & tags.Format<"uuid">,
-    entity_type: "comment" as const,
-    title: "",
-    content: comment.content.substring(0, 200),
-    score: comment.vote_score,
-    hit_count: 0,
-    created_at: toISOStringSafe(comment.created_at),
-  });
-  const transformCommunity = (community: any): IRedditLikeMember.ISummary => ({
-    id: community.id as string & tags.Format<"uuid">,
-    entity_type: "community" as const,
-    title: community.name,
-    content: "",
-    score: 0,
-    hit_count: 0,
-    created_at: toISOStringSafe(community.created_at),
-  });
-  const data = [
-    ...posts.map(transformPost),
-    ...comments.map(transformComment),
-    ...communities.map(transformCommunity),
-  ];
-  // Sort by creation date descending (newest first)
-  const sortedData = data.sort((a, b) =>
-    b.created_at.localeCompare(a.created_at),
+    author: {
+      id: post.author.id,
+      username: post.author.username,
+      display_name: post.author.display_name,
+    },
+    community: {
+      id: post.community.id,
+      name: post.community.name,
+      icon_url: post.community.icon_url,
+    },
+  }));
+  // Transform comments to search results
+  const commentResults: IRedditLikeSearchResult.ISummary[] = comments.map(
+    (comment) => ({
+      type: "comment" as const,
+      id: comment.id,
+      content: comment.content,
+      score: comment.vote_score,
+      created_at: toISOStringSafe(comment.created_at),
+      author: {
+        id: comment.author.id,
+        username: comment.author.username,
+        display_name: comment.author.display_name,
+      },
+      post: {
+        id: comment.post.id,
+        title: comment.post.title,
+        community: {
+          id: comment.post.community.id,
+          name: comment.post.community.name,
+          icon_url: comment.post.community.icon_url,
+        },
+      },
+    }),
   );
+  // Combine results
+  const allResults = [...postResults, ...commentResults];
+  // Calculate total for pagination
+  const total = allResults.length;
+  const pages = Math.ceil(total / limit);
   return {
     pagination: {
       current: page,
-      limit: limit,
-      records: totalRecords,
-      pages: Math.ceil(totalRecords / limit),
+      limit,
+      records: total,
+      pages,
     },
-    data: sortedData,
+    data: allResults,
   };
 }

@@ -12,13 +12,13 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst({
+  const administrator = await MyGlobal.prisma.economic_political_board_administrator_roles.findFirst({
     where: {
       user_id: payload.id,
     },
   });
 
-  if (admin === null) {
+  if (administrator === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

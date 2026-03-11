@@ -8,17 +8,9 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
 
 export namespace ShoppingMallCategoryTransformer {
-  // Explicit Payload type since Prisma inference doesn't properly resolve
-  // nested select from neighbor transformer with type-annotated return
-  export type Payload = {
-    id: string;
-    name: string;
-    description: string | null;
-    created_at: Date;
-    updated_at: Date;
-    deleted_at: Date | null;
-    parent: ShoppingMallCategoryAtSummaryTransformer.Payload | null;
-  };
+  export type Payload = Prisma.shopping_mall_categoriesGetPayload<
+    ReturnType<typeof select>
+  >;
   export function select() {
     return {
       select: {
@@ -27,8 +19,8 @@ export namespace ShoppingMallCategoryTransformer {
         description: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         parent: ShoppingMallCategoryAtSummaryTransformer.select(),
+        children: ShoppingMallCategoryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_categoriesFindManyArgs;
   }
@@ -38,16 +30,16 @@ export namespace ShoppingMallCategoryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
-      parent:
-        input.parent !== null
-          ? await ShoppingMallCategoryAtSummaryTransformer.transform(
-              input.parent,
-            )
-          : null,
+      description: input.description ?? null,
+      parent: input.parent
+        ? await ShoppingMallCategoryAtSummaryTransformer.transform(input.parent)
+        : null,
+      children: await ArrayUtil.asyncMap(
+        input.children,
+        ShoppingMallCategoryAtSummaryTransformer.transform,
+      ),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

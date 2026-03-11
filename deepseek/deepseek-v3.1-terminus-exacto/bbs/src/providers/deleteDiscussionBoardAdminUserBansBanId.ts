@@ -15,34 +15,55 @@ export async function deleteDiscussionBoardAdminUserBansBanId(props: {
   admin: AdminPayload;
   banId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // First verify the ban exists
+  // First, check if the ban exists
   const ban =
     await MyGlobal.prisma.discussion_board_user_bans.findUniqueOrThrow({
       where: { id: props.banId },
+      select: {
+        id: true,
+        admin_id: true,
+        status: true,
+        unbanned_at: true,
+      },
     });
-  // Check if ban is currently active
-  if (ban.ban_status !== "active") {
-    throw new HttpException(
-      `Cannot revoke ban with status: ${ban.ban_status}`,
-      400,
-    );
+  // Validate ban is active
+  if (ban.status !== "active") {
+    throw new HttpException("Cannot remove a ban that is not active", 400);
   }
-  // Check if ban has naturally expired using string comparison
-  const now = toISOStringSafe(new Date());
-  const banEndsAtISO = ban.ban_ends_at
-    ? toISOStringSafe(ban.ban_ends_at)
-    : null;
-  if (banEndsAtISO && banEndsAtISO < now) {
-    throw new HttpException("Ban has already expired naturally", 400);
+  // Check if ban has already been removed
+  if (ban.unbanned_at !== null) {
+    throw new HttpException("Ban has already been removed", 400);
   }
-  // Soft delete by updating ban status to revoked
+  // Check authorization
+  const isBanningAdmin = ban.admin_id === props.admin.id;
+  if (!isBanningAdmin) {
+    // If not the banning admin, check if they have super admin privileges
+    const admin =
+      await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow({
+        where: {
+          id: props.admin.id,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          admin_grade: true,
+        },
+      });
+    // Only super admins can remove bans they didn't create
+    if (admin.admin_grade !== "super") {
+      throw new HttpException(
+        "Only super administrators can remove bans created by other admins",
+        403,
+      );
+    }
+  }
+  // Update the ban record to mark as removed
+  const now = new Date();
   await MyGlobal.prisma.discussion_board_user_bans.update({
     where: { id: props.banId },
     data: {
-      ban_status: "revoked",
-      revoked_at: now,
-      revoked_by_id: props.admin.id,
-      revocation_reason: "Revoked by administrator via API",
+      status: "removed",
+      unbanned_at: now,
       updated_at: now,
     },
   });

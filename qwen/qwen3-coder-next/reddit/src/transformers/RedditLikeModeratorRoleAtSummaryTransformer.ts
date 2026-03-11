@@ -16,12 +16,6 @@ export namespace RedditLikeModeratorRoleAtSummaryTransformer {
         id: true,
         role: true,
         created_at: true,
-        user: {
-          select: {
-            username: true,
-          },
-        } satisfies Prisma.reddit_like_membersFindManyArgs,
-        community: true,
       },
     } satisfies Prisma.reddit_like_moderator_rolesFindManyArgs;
   }
@@ -30,9 +24,8 @@ export namespace RedditLikeModeratorRoleAtSummaryTransformer {
   ): Promise<IRedditLikeModeratorRole.ISummary> {
     return {
       id: input.id,
-      username: input.user.username,
-      role: input.role as "owner" | "moderator",
-      created_at: input.created_at.toISOString(),
+      role: typia.assert<"owner" | "moderator">(input.role),
+      created_at: toISOStringSafe(input.created_at),
     };
   }
 }

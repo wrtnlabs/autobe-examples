@@ -1,7 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import type { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import type { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import type { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -23,9 +22,7 @@ export async function generate_random_economic_political_board_admin_sections_cr
   const result: IEconomicPoliticalBoardSection =
     await api.functional.economicPoliticalBoard.admin.sections.create(
       connection,
-      {
-        body: prepared,
-      },
+      { body: prepared },
     );
   return result;
 }

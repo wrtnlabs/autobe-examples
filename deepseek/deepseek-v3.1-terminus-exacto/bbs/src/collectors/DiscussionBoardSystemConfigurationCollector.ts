@@ -13,13 +13,13 @@ export namespace DiscussionBoardSystemConfigurationCollector {
   }) {
     const id: string = v4();
     return {
+      // Scalar fields with direct mapping
       id,
-      config_key: props.body.config_key,
-      config_value: props.body.config_value,
+      key: props.body.key,
+      value: props.body.value ?? null,
       data_type: props.body.data_type,
       description: props.body.description,
-      category: props.body.category,
-      is_sensitive: props.body.is_sensitive ?? false,
+      // Timestamps
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

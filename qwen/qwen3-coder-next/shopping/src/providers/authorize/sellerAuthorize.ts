@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { SellerPayload } from "../../decorators/payload/SellerPayload";
@@ -9,20 +9,20 @@ export async function sellerAuthorize(request: {
   const payload: SellerPayload = jwtAuthorize({ request }) as SellerPayload;
 
   if (payload.type !== "seller") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new UnauthorizedException("Invalid token type");
   }
 
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
+  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
     where: {
-      shopping_mall_user_id: payload.id,
-      user: {
-        deleted_at: null,
-      },
+      id: payload.id,
+      deleted_at: null,
+      is_suspended: false,
+      approval_status: "approved",
     },
   });
 
   if (seller === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Seller account not found or not approved");
   }
 
   return payload;

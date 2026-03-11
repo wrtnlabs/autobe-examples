@@ -9,14 +9,24 @@ export function prepare_random_shopping_mall_address(
   input?: DeepPartial<IShoppingMallAddress.ICreate>,
 ): IShoppingMallAddress.ICreate {
   return {
-    recipient_name: input?.recipient_name ?? RandomGenerator.name(2),
-    phone_number: input?.phone_number ?? RandomGenerator.mobile(),
-    street_address:
-      input?.street_address ?? RandomGenerator.paragraph({ sentences: 1 }),
+    recipientName: input?.recipientName ?? RandomGenerator.name(),
+    phoneNumber: input?.phoneNumber ?? RandomGenerator.mobile(),
+    streetAddress:
+      input?.streetAddress ?? RandomGenerator.paragraph({ sentences: 2 }),
     city: input?.city ?? RandomGenerator.name(1),
-    state_province: input?.state_province ?? RandomGenerator.name(1),
-    postal_code: input?.postal_code ?? RandomGenerator.alphaNumeric(6),
-    country: input?.country ?? RandomGenerator.name(1),
-    is_default: input?.is_default ?? typia.random<boolean>(),
+    stateProvince: input?.stateProvince ?? RandomGenerator.name(1),
+    postalCode: input?.postalCode ?? RandomGenerator.alphaNumeric(6),
+    country:
+      input?.country ??
+      RandomGenerator.pick([
+        "United States",
+        "Canada",
+        "United Kingdom",
+        "Australia",
+        "Germany",
+        "France",
+        "Japan",
+        "South Korea",
+      ] as const),
   };
 }

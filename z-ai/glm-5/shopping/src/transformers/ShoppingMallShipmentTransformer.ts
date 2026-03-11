@@ -42,21 +42,21 @@ export namespace ShoppingMallShipmentTransformer {
   ): Promise<IShoppingMallShipment> {
     return {
       id: input.id,
-      carrier_name: input.carrier_name,
-      tracking_number: input.tracking_number,
-      shipped_at: input.shipped_at.toISOString(),
-      delivered_at: input.delivered_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      carrierName: input.carrier_name,
+      trackingNumber: input.tracking_number,
+      shippedAt: input.shipped_at.toISOString(),
+      deliveredAt: input.delivered_at?.toISOString() ?? null,
       orderItems: await ArrayUtil.asyncMap(
         input.orderItems,
         ShoppingMallOrderItemAtSummaryTransformer.transform,
       ),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

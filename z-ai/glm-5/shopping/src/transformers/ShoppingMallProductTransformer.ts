@@ -10,8 +10,8 @@ import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
-import { ShoppingMallProductImageAtSummaryTransformer } from "./ShoppingMallProductImageAtSummaryTransformer";
-import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
+import { ShoppingMallProductImageTransformer } from "./ShoppingMallProductImageTransformer";
+import { ShoppingMallProductVariantTransformer } from "./ShoppingMallProductVariantTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallProductTransformer {
@@ -27,14 +27,14 @@ export namespace ShoppingMallProductTransformer {
         base_price: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        images: ShoppingMallProductImageAtSummaryTransformer.select(),
-        variants: ShoppingMallProductVariantAtSummaryTransformer.select(),
+        variants: ShoppingMallProductVariantTransformer.select(),
+        images: ShoppingMallProductImageTransformer.select(),
         reviews: {
           select: {
             rating: true,
-            deleted_at: true,
           },
         } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
       },
@@ -43,12 +43,6 @@ export namespace ShoppingMallProductTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProduct> {
-    const activeReviews = input.reviews.filter((r) => r.deleted_at === null);
-    const averageRating =
-      activeReviews.length > 0
-        ? activeReviews.reduce((sum, r) => sum + r.rating, 0) /
-          activeReviews.length
-        : null;
     return {
       id: input.id,
       name: input.name,
@@ -60,18 +54,23 @@ export namespace ShoppingMallProductTransformer {
       category: await ShoppingMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
-      images: await ArrayUtil.asyncMap(
-        input.images,
-        ShoppingMallProductImageAtSummaryTransformer.transform,
-      ),
       variants: await ArrayUtil.asyncMap(
         input.variants,
-        ShoppingMallProductVariantAtSummaryTransformer.transform,
+        ShoppingMallProductVariantTransformer.transform,
       ),
-      average_rating: averageRating,
-      total_review_count: activeReviews.length,
+      images: await ArrayUtil.asyncMap(
+        input.images,
+        ShoppingMallProductImageTransformer.transform,
+      ),
+      average_rating:
+        input.reviews.length > 0
+          ? input.reviews.reduce((sum, r) => sum + r.rating, 0) /
+            input.reviews.length
+          : 0,
+      review_count: input.reviews.length,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

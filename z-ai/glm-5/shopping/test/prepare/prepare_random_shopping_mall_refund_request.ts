@@ -13,6 +13,6 @@ export function prepare_random_shopping_mall_refund_request(
       input?.orderItemId ?? typia.random<string & tags.Format<"uuid">>(),
     reason:
       input?.reason ??
-      RandomGenerator.paragraph({ sentences: 5, wordMin: 4, wordMax: 8 }),
+      RandomGenerator.paragraph({ sentences: 5, wordMin: 3, wordMax: 8 }),
   };
 }

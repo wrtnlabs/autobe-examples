@@ -21,59 +21,57 @@ export async function postShoppingMallCustomerWishlistsItems(props: {
   customer: CustomerPayload;
   body: IShoppingMallWishlistItem.ICreate;
 }): Promise<IShoppingMallWishlistItem> {
-  // Step 1: Get customer's wishlist (one-to-one relationship)
-  const wishlist =
-    await MyGlobal.prisma.shopping_mall_wishlists.findUniqueOrThrow({
-      where: { shopping_mall_customer_id: props.customer.id },
-    });
-  // Step 2: Validate product exists with active seller
-  const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
+  // 1. Validate product exists and is not deleted
+  await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
     where: {
-      id: props.body.shopping_mall_product_id,
+      id: props.body.productId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      seller: {
-        select: {
-          id: true,
-          suspended: true,
-          banned: true,
-        },
-      },
+  });
+  // 2. Resolve customer's wishlist (create if not exists)
+  let wishlist = await MyGlobal.prisma.shopping_mall_wishlists.findFirst({
+    where: {
+      shopping_mall_customer_id: props.customer.id,
     },
   });
-  if (product === null) {
-    throw new HttpException("Product not found", 404);
+  if (wishlist === null) {
+    wishlist = await MyGlobal.prisma.shopping_mall_wishlists.create({
+      data: {
+        id: v4(),
+        shopping_mall_customer_id: props.customer.id,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
   }
-  if (product.seller.suspended || product.seller.banned) {
-    throw new HttpException("Seller is not available", 403);
-  }
-  // Step 3: Check for duplicate in wishlist
+  // 3. Check for duplicate
   const existing = await MyGlobal.prisma.shopping_mall_wishlist_items.findFirst(
     {
       where: {
         shopping_mall_wishlist_id: wishlist.id,
-        shopping_mall_product_id: props.body.shopping_mall_product_id,
+        shopping_mall_product_id: props.body.productId,
       },
     },
   );
   if (existing !== null) {
     throw new HttpException("Product already in wishlist", 409);
   }
-  // Step 4: Create wishlist item using collector
+  // 4. Create wishlist item using Collector
+  const createInput = await ShoppingMallWishlistItemCollector.collect({
+    body: props.body,
+    shoppingMallCustomers: { id: props.customer.id },
+    shoppingMallCustomerSessions: { id: props.customer.session_id },
+    shoppingMallWishlists: { id: wishlist.id },
+  });
   const created = await MyGlobal.prisma.shopping_mall_wishlist_items.create({
-    data: await ShoppingMallWishlistItemCollector.collect({
-      body: props.body,
-      shoppingMallWishlists: { id: wishlist.id },
-    }),
+    data: createInput,
     ...ShoppingMallWishlistItemTransformer.select(),
   });
-  // Step 5: Update wishlist updated_at timestamp
+  // 5. Update wishlist timestamp
   await MyGlobal.prisma.shopping_mall_wishlists.update({
     where: { id: wishlist.id },
     data: { updated_at: new Date() },
   });
-  // Step 6: Return transformed result
+  // 6. Transform and return
   return await ShoppingMallWishlistItemTransformer.transform(created);
 }

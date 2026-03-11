@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -13,98 +14,107 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallSellerProductsProductId(props: {
   seller: SellerPayload;
-  productId: string & tags.Format<"uuid">;
+  productId: string;
+  body: IShoppingMallProduct.IErase;
 }): Promise<void> {
-  // 1. Verify product exists and seller owns it
+  // Step 1: Find product and verify it exists and is not deleted
   const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
     where: { id: props.productId },
-    select: { id: true, shopping_mall_seller_id: true, deleted_at: true },
+    select: {
+      id: true,
+      shopping_mall_seller_id: true,
+      deleted_at: true,
+    },
   });
   if (product === null || product.deleted_at !== null) {
     throw new HttpException("Product not found", 404);
   }
+  // Step 2: Verify seller ownership
   if (product.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 2. Check for pending order items (paid or shipped status)
-  const pendingOrderItems =
-    await MyGlobal.prisma.shopping_mall_order_items.count({
+  // Step 3: Get all active variants for this product
+  const variants =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
       where: {
         shopping_mall_product_id: props.productId,
-        status: { in: ["paid", "shipped"] },
         deleted_at: null,
       },
-    });
-  if (pendingOrderItems > 0) {
-    throw new HttpException(
-      "Cannot delete product with pending order items",
-      400,
-    );
-  }
-  // 3. Check for pending cancellation requests
-  const pendingCancellations =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
-      where: {
-        status: "pending",
-        orderItem: {
-          shopping_mall_product_id: props.productId,
-        },
-      },
-    });
-  if (pendingCancellations > 0) {
-    throw new HttpException(
-      "Cannot delete product with pending cancellation requests",
-      400,
-    );
-  }
-  // 4. Check for pending refund requests
-  const pendingRefunds =
-    await MyGlobal.prisma.shopping_mall_refund_requests.count({
-      where: {
-        status: "pending",
-        orderItem: {
-          shopping_mall_product_id: props.productId,
-        },
-      },
-    });
-  if (pendingRefunds > 0) {
-    throw new HttpException(
-      "Cannot delete product with pending refund requests",
-      400,
-    );
-  }
-  // 5. Execute cascade deletion in transaction
-  const now = new Date();
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Get all variant IDs for inventory record deletion
-    const variants = await tx.shopping_mall_product_variants.findMany({
-      where: { shopping_mall_product_id: props.productId },
       select: { id: true },
     });
-    const variantIds = variants.map((v) => v.id);
-    // Hard delete inventory records for all variants
-    if (variantIds.length > 0) {
-      await tx.shopping_mall_inventory_records.deleteMany({
-        where: { variant_id: { in: variantIds } },
+  const variantIds = variants.map((v) => v.id);
+  // Step 4: Check for blocking conditions
+  if (variantIds.length > 0) {
+    // Check for order items with paid or shipped status
+    const pendingOrderItems =
+      await MyGlobal.prisma.shopping_mall_order_items.count({
+        where: {
+          shopping_mall_product_variant_id: { in: variantIds },
+          status: { in: ["paid", "shipped"] },
+          deleted_at: null,
+        },
       });
+    if (pendingOrderItems > 0) {
+      throw new HttpException(
+        "Cannot delete product: pending order items exist",
+        400,
+      );
     }
-    // Hard delete product images
-    await tx.shopping_mall_product_images.deleteMany({
-      where: { shopping_mall_product_id: props.productId },
-    });
-    // Delete wishlist items referencing this product
-    await tx.shopping_mall_wishlist_items.deleteMany({
-      where: { shopping_mall_product_id: props.productId },
-    });
-    // Soft delete all variants
-    await tx.shopping_mall_product_variants.updateMany({
-      where: { shopping_mall_product_id: props.productId },
-      data: { deleted_at: now },
-    });
+    // Check for pending cancellation requests
+    const pendingCancellations =
+      await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
+        where: {
+          orderItem: {
+            shopping_mall_product_variant_id: { in: variantIds },
+            deleted_at: null,
+          },
+          status: "pending",
+        },
+      });
+    if (pendingCancellations > 0) {
+      throw new HttpException(
+        "Cannot delete product: pending cancellation requests exist",
+        400,
+      );
+    }
+    // Check for pending refund requests
+    const pendingRefunds =
+      await MyGlobal.prisma.shopping_mall_refund_requests.count({
+        where: {
+          orderItem: {
+            shopping_mall_product_variant_id: { in: variantIds },
+            deleted_at: null,
+          },
+          status: "pending",
+        },
+      });
+    if (pendingRefunds > 0) {
+      throw new HttpException(
+        "Cannot delete product: pending refund requests exist",
+        400,
+      );
+    }
+  }
+  // Step 5: Execute soft deletion with cascade
+  const now = new Date();
+  await MyGlobal.prisma.$transaction(async (tx) => {
     // Soft delete the product
     await tx.shopping_mall_products.update({
       where: { id: props.productId },
       data: { deleted_at: now },
     });
+    // Soft delete all variants
+    await tx.shopping_mall_product_variants.updateMany({
+      where: {
+        shopping_mall_product_id: props.productId,
+        deleted_at: null,
+      },
+      data: { deleted_at: now },
+    });
+    // Hard delete wishlist items
+    await tx.shopping_mall_wishlist_items.deleteMany({
+      where: { shopping_mall_product_id: props.productId },
+    });
   });
+  // Note: props.body.reason is available for audit logging
 }

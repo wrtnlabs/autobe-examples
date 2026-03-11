@@ -11,6 +11,9 @@ export function prepare_random_discussion_board_tag(
   return {
     name: input?.name ?? RandomGenerator.name(),
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
+      input?.description ??
+      (Math.random() > 0.5
+        ? RandomGenerator.paragraph({ sentences: 2 })
+        : null),
   };
 }

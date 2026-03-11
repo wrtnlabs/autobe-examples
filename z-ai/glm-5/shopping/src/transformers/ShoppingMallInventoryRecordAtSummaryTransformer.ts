@@ -1,24 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCancellationRequestAtSummaryTransformer } from "./ShoppingMallCancellationRequestAtSummaryTransformer";
-import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
 import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
-import { ShoppingMallRefundRequestAtSummaryTransformer } from "./ShoppingMallRefundRequestAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallInventoryRecordAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_inventory_recordsGetPayload<
@@ -32,44 +20,39 @@ export namespace ShoppingMallInventoryRecordAtSummaryTransformer {
         reason: true,
         created_at: true,
         variant: ShoppingMallProductVariantAtSummaryTransformer.select(),
-        order: ShoppingMallOrderAtSummaryTransformer.select(),
-        cancellationRequest:
-          ShoppingMallCancellationRequestAtSummaryTransformer.select(),
-        refundRequest: ShoppingMallRefundRequestAtSummaryTransformer.select(),
-        seller: ShoppingMallSellerAtSummaryTransformer.select(),
+        order: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_ordersFindFirstArgs,
+        cancellationRequest: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_cancellation_requestsFindFirstArgs,
+        refundRequest: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_refund_requestsFindFirstArgs,
+        seller: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_sellersFindFirstArgs,
       },
     } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallInventoryRecord.ISummary> {
+    const sourceType = input.seller
+      ? "manual"
+      : input.order
+        ? "order"
+        : input.cancellationRequest
+          ? "cancellation"
+          : "refund";
     return {
       id: input.id,
+      quantityChange: input.quantity_change,
+      reason: input.reason,
+      sourceType,
       variant: await ShoppingMallProductVariantAtSummaryTransformer.transform(
         input.variant,
       ),
-      order:
-        input.order !== null
-          ? await ShoppingMallOrderAtSummaryTransformer.transform(input.order)
-          : null,
-      cancellationRequest:
-        input.cancellationRequest !== null
-          ? await ShoppingMallCancellationRequestAtSummaryTransformer.transform(
-              input.cancellationRequest,
-            )
-          : null,
-      refundRequest:
-        input.refundRequest !== null
-          ? await ShoppingMallRefundRequestAtSummaryTransformer.transform(
-              input.refundRequest,
-            )
-          : null,
-      seller:
-        input.seller !== null
-          ? await ShoppingMallSellerAtSummaryTransformer.transform(input.seller)
-          : null,
-      quantityChange: input.quantity_change,
-      reason: input.reason,
       createdAt: input.created_at.toISOString(),
     };
   }

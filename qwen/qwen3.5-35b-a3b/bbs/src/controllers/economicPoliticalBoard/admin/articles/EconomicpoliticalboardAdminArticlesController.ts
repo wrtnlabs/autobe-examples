@@ -1,0 +1,133 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IEconomicPoliticalBoardArticle } from "../../../../api/structures/IEconomicPoliticalBoardArticle";
+import { AdminAuth } from "../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { deleteEconomicPoliticalBoardAdminArticlesArticleId } from "../../../../providers/deleteEconomicPoliticalBoardAdminArticlesArticleId";
+import { putEconomicPoliticalBoardAdminArticlesArticleId } from "../../../../providers/putEconomicPoliticalBoardAdminArticlesArticleId";
+
+@Controller("/economicPoliticalBoard/admin/articles/:articleId")
+export class EconomicpoliticalboardAdminArticlesController {
+  /**
+   * Update an existing article's metadata, including title, content, tags, and file attachments.
+   *
+   * This operation allows the article's author to modify their own article's content and associated metadata. The operation requires authentication and validates that the requesting user is the article's author before allowing any updates.
+   *
+   * The operation supports partial updates, meaning you can update any subset of the available fields (title, content, tags, attachments) without specifying all fields. Unspecified fields retain their current values.
+   *
+   * Tags are managed as a list of tag names. Providing an empty array will remove all tags from the article. Providing a list of tag names will replace the article's current tags with the new list.
+   *
+   * Attachments are also managed as a complete replacement list. The entire attachment list for the article will be replaced with the provided attachments. Each attachment must include a fileUrl, fileName, and fileType.
+   *
+   * If the user is not the article's author, the operation will be rejected with a 403 Forbidden error. If the article does not exist, the operation will return a 404 Not Found error.
+   *
+   * The operation completes as an atomic transaction, ensuring that if any part of the update fails (e.g., tag or attachment creation), the entire operation is rolled back and no partial changes are persisted.
+   *
+   * @param connection
+   * @param articleId UUID of the article to update
+   * @param body Article update data including optional fields for title, content, tags, and attachments
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification 1. Validate that the requesting user is authenticated.
+   * 2. Query the economic_political_board_articles table for the article matching the articleId path parameter.
+   * 3. Verify that the article exists; return 404 if not found.
+   * 4. Verify that the authenticated user's ID matches the article's authorId field; return 403 Forbidden if not the author.
+   * 5. If title is provided in the request body, validate that it is a non-empty string with maximum length 500 characters.
+   * 6. If content is provided in the request body, validate that it is a non-empty string with maximum length 50000 characters.
+   * 7. If tags array is provided, validate each tag name against the economic_political_board_tags table:
+   *    - For each tag name, check if it exists in the tags table.
+   *    - If a tag does not exist, return 400 Bad Request with error message "Tag not found: {tagName}".
+   *    - Collect all valid tag IDs for the article-tag relationship updates.
+   * 8. If attachments array is provided, validate each attachment object:
+   *    - Each attachment must include fileUrl (string, valid URI format), fileName (string, max 255 characters), and fileType (must be 'image' or 'file').
+   *    - Delete all existing attachments for this article from the economic_political_board_attachments table.
+   *    - Create new attachment records with the provided data, setting articleId to the current article's ID.
+   * 9. Begin a database transaction to ensure atomicity of the operation.
+   * 10. Update the article's title field if provided, content field if provided.
+   * 11. Update the article-tag relationships: delete all existing relationships for this article from economic_political_board_article_tags, then insert new relationships for all provided tag IDs.
+   * 12. Update the article's updatedAt timestamp to the current time.
+   * 13. Commit the transaction.
+   * 14. Query the article again to retrieve the complete updated article object, including the new tag relationships and attachment count.
+   * 15. Return the updated article object with status 200 OK.
+   *
+   * Error conditions:
+   * - 401 Unauthorized: User is not authenticated
+   * - 403 Forbidden: User is not the article's author
+   * - 404 Not Found: Article with the given ID does not exist
+   * - 400 Bad Request: Invalid field values, tag not found, or attachment validation failed
+   * - 500 Internal Server Error: Database transaction failure or other server-side error
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put()
+  public async update(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEconomicPoliticalBoardArticle.IUpdate,
+  ): Promise<IEconomicPoliticalBoardArticle> {
+    try {
+      return await putEconomicPoliticalBoardAdminArticlesArticleId({
+        admin,
+        articleId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove an article from the economic/political discussion board platform.
+   *
+   * This operation requires explicit confirmation from the user before executing the deletion. Members can only delete articles they have authored, while administrators have the authority to delete any article regardless of ownership.
+   *
+   * Upon deletion, the system automatically cascades the removal to all associated resources including comments, file attachments, and tag relationships. The article content is permanently destroyed and cannot be recovered. All related statistics are updated to reflect the deletion across sections and author profiles.
+   *
+   * The operation requires authentication. Guest users cannot perform deletions. Authorization is enforced through role-based access control that validates the requester's identity against article ownership or administrative privileges.
+   *
+   * Successful deletion returns the complete article data that was removed, including its identifier, title, and timestamps. This allows the client to confirm the deletion in the user interface and update the local state accordingly.
+   *
+   * @param connection
+   * @param articleId The unique identifier of the article to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification 1. Validate articleId is valid UUID format
+   * 2. Query economic_political_board_articles for article with given articleId
+   * 3. If article not found, return 404 Not Found
+   * 4. Check authorization:
+   *    - If request user is member: verify authorId matches request user's userId, return 403 if not
+   *    - If request user is admin: allow deletion regardless of authorId
+   * 5. Start database transaction
+   * 6. Delete all comments from economic_political_board_comments where articleId = {articleId}
+   * 7. Delete all attachments from economic_political_board_attachments where articleId = {articleId}
+   * 8. Delete all article-tag relationships from economic_political_board_article_tags where articleId = {articleId}
+   * 9. Delete the article from economic_political_board_articles
+   * 10. Update section's article count if needed
+   * 11. Update author's article count statistics
+   * 12. Commit transaction
+   * 13. Return deleted article data in response
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete()
+  public async erase(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("articleId")
+    articleId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteEconomicPoliticalBoardAdminArticlesArticleId({
+        admin,
+        articleId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

@@ -4,53 +4,61 @@ import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
 import typia, { tags } from "typia";
 
 import { IEconomicPoliticalBoardSection } from "../../../../structures/IEconomicPoliticalBoardSection";
-import { IEconomicPoliticalBoardSectionAnalytic } from "../../../../structures/IEconomicPoliticalBoardSectionAnalytic";
-import { IPageIEconomicPoliticalBoardSection } from "../../../../structures/IPageIEconomicPoliticalBoardSection";
 
 /**
- * Create a new topic categorization section for the economic/political discussion board.
+ * Create a new topic section for organizing articles in the economic/political discussion board.
  *
- * This operation allows administrators to establish new topic areas where members can post and discuss articles. Each section requires a unique name that identifies its topic focus, and an optional description that explains the section's purpose and scope to guide member contributions.
+ * This endpoint allows administrators to create new sections that categorize and organize articles by topic. Each section requires a unique name and descriptive text that explains the section's purpose and scope.
  *
- * Section creation is restricted to administrators only. Regular members and guests cannot create sections. When a section is created, it becomes immediately available in the section list for article assignment.
+ * The system enforces several business rules during section creation:
+ * - Section names must be unique across the entire board
+ * - Both name and description fields are required
+ * - Names containing only whitespace will be rejected
+ * - The requesting user must have administrator privileges
  *
- * **Validation Rules**:
- * - Section name is required and must be unique across all sections
- * - Section name cannot contain only whitespace characters
- * - Duplicate section names are rejected to prevent confusion
+ * Upon successful creation, the endpoint returns the complete section entity including its auto-generated ID, creation timestamp, and the administrator ID who created it.
  *
- * **Related Operations**:
- * - Use PATCH /sections to retrieve the list of all sections
- * - Use GET /sections/{id} to retrieve details of a specific section
- * - Use PUT /sections/{id} to update section information (admin only)
- * - Use DELETE /sections/{id} to remove a section (admin only)
+ * Authorization: This operation is restricted to administrators only. Guest users and regular members will receive an access denied response if they attempt to use this endpoint.
+ *
+ * Related operations:
+ * - GET /sections - Retrieve the complete list of all available sections
+ * - GET /sections/{sectionId} - View details of a specific section
+ * - PUT /sections/{sectionId} - Update an existing section (admin only)
+ * - DELETE /sections/{sectionId} - Remove a section (admin only)
  *
  * @param props.connection
- * @param props.body Section creation data including the required unique name and optional description
+ * @param props.body Section creation data including the unique name and descriptive text.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Create a new economic_political_board_sections record with the provided name and description.
+ * @x-autobe-specification Create a new section record in the economic_political_board_sections table.
  *
- * 1. Verify user has administrator privileges from authentication context
- * 2. Normalize and validate section name:
- *    - Trim whitespace from input
- *    - Check that name is not empty after trimming
- *    - Query database for existing sections with same name (case-sensitive comparison)
- *    - Reject with 409 Conflict if duplicate name exists
- * 3. Insert new record into economic_political_board_sections:
- *    - id: Generate UUID
- *    - name: Store validated name
- *    - description: Store provided description (nullable)
- *    - created_at: Set to current timestamp (timezone-aware)
- *    - updated_at: Set to current timestamp (timezone-aware)
- *    - deleted_at: Set to null (not soft deleted)
- * 4. Return the complete created section record with all fields
+ * 1. Authorization: Verify the requesting user has admin actor privileges. Reject with 403 Forbidden if user is guest or member.
  *
- * **Error Handling**:
- * - 401 Unauthorized: User is not authenticated
- * - 403 Forbidden: User does not have administrator privileges
- * - 400 Bad Request: Name field is empty or contains only whitespace
- * - 409 Conflict: Section name already exists
+ * 2. Input validation:
+ *    - Validate name field: non-empty string with at least one non-whitespace character
+ *    - Validate name uniqueness: Check economic_political_board_sections table for existing section with same name (case-sensitive comparison)
+ *    - Validate description: non-null string (allow empty or short descriptions per business rule)
+ *    - Validate request body is valid JSON with required fields
+ *
+ * 3. Business logic:
+ *    - Extract current user ID from authenticated session
+ *    - Generate new section record with:
+ *      - name: from request body (unique constraint enforced)
+ *      - description: from request body (required field)
+ *      - createdByAdminId: authenticated user ID
+ *      - createdAt: current timestamp (NOW())
+ *      - updatedAt: current timestamp (NOW())
+ *    - Handle duplicate name violation with 409 Conflict response
+ *
+ * 4. Database operation:
+ *    - Insert new record into economic_political_board_sections table
+ *    - Return the complete inserted record
+ *
+ * 5. Error handling:
+ *    - 403 Forbidden: User lacks admin privileges
+ *    - 400 Bad Request: Invalid input (non-string name, empty/whitespace name, missing fields, invalid JSON)
+ *    - 409 Conflict: Section name already exists
+ *    - 500 Internal Server Error: Database insertion failure
  * @path /economicPoliticalBoard/admin/sections
  * @accessor api.functional.economicPoliticalBoard.admin.sections.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -80,7 +88,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Section creation data including the required unique name and optional description
+     * Section creation data including the unique name and descriptive text.
      */
     body: IEconomicPoliticalBoardSection.ICreate;
   };
@@ -129,248 +137,25 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated and filtered list of discussion board sections.
+ * Update an existing discussion board section's metadata including its name and description.
  *
- * This operation provides comprehensive browsing capabilities for sections that organize articles within the economic/political discussion board. It supports pagination for large result sets, sorting options to arrange sections by creation date or name, and filtering to find specific sections.
+ * This operation allows administrators to modify the name and/or description of an existing section. The section must exist and not be soft-deleted. When updating the name, the new name must be unique across all sections and not match any other section's name.
  *
- * All sections are visible to guests, members, and administrators. The operation returns section metadata including name, description, article count, and creation timestamp. Soft-deleted sections are excluded from the list unless explicitly requested by an administrator.
+ * Authorization is restricted to administrators only. Regular members and guests cannot modify sections. The system validates that the section owner is an administrator before processing the update.
+ *
+ * The updated_at timestamp is automatically set to the current time when the update is processed. All other section properties (id, created_at) remain unchanged.
  *
  * **Related Operations**:
- * - `GET /sections/{id}` - Retrieve detailed information for a specific section
- * - `POST /articles` - Create articles within a section (section must exist)
+ * - GET /sections/{sectionId} - Retrieve section details before editing
+ * - POST /sections - Create a new section
+ * - DELETE /sections/{sectionId} - Soft delete a section
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for section listing
+ * @param props.sectionId The UUID of the section to update
+ * @param props.body The update data for the section. Provide any fields you want to modify.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query economic_political_board_sections table with pagination, filtering, and sorting.
- *
- * **Search Criteria**:
- * - Apply name search using LIKE with wildcards for partial matching
- * - Filter by creation date range using minimum/maximum timestamps
- * - Sort by created_at (descending for newest first, ascending for oldest first) or name (alphabetically)
- * - Handle soft-deleted sections: exclude by default, include when deleted_at filter is applied
- *
- * **Pagination**:
- * - Support cursor-based pagination for efficient large result set traversal
- * - Return page size, current page token, and total count for UI rendering
- * - Default page size is 20 items with configurable maximum of 100
- *
- * **Sorting**:
- * - Default sort: created_at DESC (newest sections first)
- * - Alternative: created_at ASC (oldest first)
- * - Alternative: name ASC (alphabetical)
- *
- * **Authorization**:
- * - Public access: guests, members, and administrators can view section list
- * - Soft-delete visibility: only administrators can query soft-deleted sections
- *
- * **Performance**:
- * - Leverage created_at index for date-based sorting
- * - Use name unique index for name-based filtering optimization
- * @path /economicPoliticalBoard/admin/sections
- * @accessor api.functional.economicPoliticalBoard.admin.sections.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Search criteria and pagination parameters for section listing
-     */
-    body: IEconomicPoliticalBoardSection.IRequest;
-  };
-  export type Body = IEconomicPoliticalBoardSection.IRequest;
-  export type Response = IPageIEconomicPoliticalBoardSection.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/economicPoliticalBoard/admin/sections",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/economicPoliticalBoard/admin/sections";
-  export const random = (): IPageIEconomicPoliticalBoardSection.ISummary =>
-    typia.random<IPageIEconomicPoliticalBoardSection.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve detailed information about a specific section in the economic/political discussion board, including its metadata and the articles contained within it.
- *
- * This operation returns a single section identified by its unique identifier, along with the section's name, description, creation timestamp, and the articles assigned to that section. The section serves as a topic categorization container for organizing articles in the discussion board.
- *
- * The response includes comprehensive section metadata as defined in the economic_political_board_sections database table, including the name field for the section's display title, the description field for the section's topic explanation, and the createdAt timestamp for when the section was created. The section's creation metadata also includes the ID of the administrator who created it.
- *
- * Articles within the section are returned as a list of summaries, sorted by newest first by default. Each article summary includes the article ID, title, and brief metadata to facilitate article browsing and navigation.
- *
- * This operation supports unrestricted access - both guest users and registered members can view section details to explore the discussion board's topics and find relevant articles.
- *
- * @param props.connection
- * @param props.sectionId The unique identifier of the section to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the economic_political_board_sections table for a single section record using the sectionId path parameter. The sectionId should be validated as a UUID format string.
- *
- * Perform a database SELECT query with WHERE clause on the id column to fetch the section record. Ensure the section exists before returning; if not found, return 404 Not Found error.
- *
- * Join or separately query the economic_political_board_articles table to retrieve articles belonging to this section, filtering by sectionId and ordering by createdAt DESC to show newest articles first. Apply pagination to the articles list if a query parameter is provided.
- *
- * Construct the response object with section fields (id, name, description, createdAt, updatedAt, createdByAdminId) and an articles array containing article summaries.
- *
- * No authorization checks are required for this operation as section browsing is public.
- * @path /economicPoliticalBoard/admin/sections/:sectionId
- * @accessor api.functional.economicPoliticalBoard.admin.sections.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * The unique identifier of the section to retrieve
-     */
-    sectionId: string & tags.Format<"uuid">;
-  };
-  export type Response = IEconomicPoliticalBoardSection;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/economicPoliticalBoard/admin/sections/:sectionId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/economicPoliticalBoard/admin/sections/${encodeURIComponent(props.sectionId ?? "null")}`;
-  export const random = (): IEconomicPoliticalBoardSection =>
-    typia.random<IEconomicPoliticalBoardSection>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("sectionId")(() => typia.assert(props.sectionId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update an existing section's metadata (name and description) in the economic/political discussion board.
- *
- * This operation allows administrators to modify the name and description of an existing section. Sections are topic categorization areas that organize all articles in the discussion board. Only administrators can update section information, ensuring that topic organization remains under administrative control.
- *
- * The section name must be unique across all sections. When updating a section's name, the system validates that the new name does not conflict with existing section names. The section's creation timestamp, ID, and other system-managed fields remain unchanged.
- *
- * This operation is restricted to administrators only. Regular members and guests cannot modify sections. Banned users are also blocked from accessing this endpoint.
- *
- * @param props.connection
- * @param props.sectionId Unique identifier of the section to update
- * @param props.body Section update data with new name and/or description
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query economic_political_board_sections table for the section matching sectionId path parameter.
- *
- * Validate that the requesting user has administrator privileges. Return 403 Forbidden for non-admin users.
- *
- * Validate that the section exists and is not soft-deleted (deleted_at is null). Return 404 Not Found if section not found or already deleted.
- *
- * Validate new name for uniqueness via @@unique([name]) constraint. If name already exists on another section, return 409 Conflict with error detail indicating which section name is taken.
- *
- * Update section.name and section.description fields from request body.
- *
- * Set updated_at to current timestamp (UTC).
- *
- * Return 200 OK with the complete updated section record including id, name, description, created_at, updated_at.
- *
- * Transaction: All validation and update operations must occur within a single database transaction to maintain data consistency.
+ * @x-autobe-specification Query economic_political_board_sections table to find the section matching the sectionId path parameter. Check that the section is not soft-deleted (deleted_at is NULL). Verify the requesting user has administrator privileges. Update the name field if provided in the request body, ensuring the new name does not violate the @@unique([name]) constraint. Update the description field if provided. Set updated_at to CURRENT_TIMESTAMP. Return the complete updated section object including id, name, description, created_at, updated_at, and deleted_at fields. Handle uniqueness constraint violations by returning appropriate error response.
  * @path /economicPoliticalBoard/admin/sections/:sectionId
  * @accessor api.functional.economicPoliticalBoard.admin.sections.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -400,12 +185,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the section to update
+     * The UUID of the section to update
      */
     sectionId: string & tags.Format<"uuid">;
 
     /**
-     * Section update data with new name and/or description
+     * The update data for the section. Provide any fields you want to modify.
      */
     body: IEconomicPoliticalBoardSection.IUpdate;
   };
@@ -456,45 +241,36 @@ export namespace update {
 }
 
 /**
- * Permanently remove a section from the discussion board along with all associated articles and comments.
+ * Permanently delete a section from the discussion board along with all its articles and comments.
  *
- * This operation allows administrators to delete sections that are no longer needed or are being reorganized. When a section is deleted, ALL articles within that section and ALL comments on those articles are also permanently removed from the system.
+ * This operation removes a topic categorization section from the economic/political discussion board. When a section is deleted, the system performs a cascading delete operation that removes:
+ * - The section record itself
+ * - All articles within that section
+ * - All comments on those articles
  *
- * Administrators must verify the section exists and has appropriate permissions before deletion. The operation logs the deletion with the administrator's identity and timestamp for audit purposes.
+ * This operation requires administrator privileges. Regular members and guests will receive an access denied error if they attempt to delete sections. The system logs the deletion with the administrator's identity and timestamp for audit purposes.
  *
- * GUESTS and MEMBERS cannot perform section deletion. Only administrators have the authority to remove sections from the discussion board.
- *
- * Before deleting a section, consider that:
- * - All articles in the section will be permanently lost
- * - All comments on those articles will be permanently lost
- * - This action cannot be undone
- * - The section name and description will no longer be accessible
+ * Before executing the deletion, the system verifies that the section exists. If the section does not exist, the operation fails with a not found error. The system also tracks which administrator performed the deletion action using the createdByAdminId field.
  *
  * @param props.connection
- * @param props.sectionId The UUID identifier of the section to be deleted
+ * @param props.sectionId The unique identifier of the section to delete (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Verify the requesting user has administrator privileges
- * 2. Check if the section with the given sectionId exists
- * 3. If section does not exist, return 404 Not Found
- * 4. If user is not an administrator, return 403 Forbidden
- * 5. Begin database transaction
- * 6. Delete all comments on articles within this section
- * 7. Delete all articles within this section
- * 8. Delete the section record
- * 9. Commit transaction
- * 10. Log the deletion with admin ID and timestamp
- * 11. Return 204 No Content
+ * @x-autobe-specification Verify the requesting user has administrator status (check economic_political_board_administrator_roles table).
  *
- * Error handling:
- * - 404 if section does not exist
- * - 403 if user lacks administrator privileges
- * - 409 if concurrent modification detected
- * - 500 on database error
+ * Query economic_political_board_sections table to find the section by id (UUID).
+ * If section not found, throw 404 Not Found error.
  *
- * Validation:
- * - sectionId must be valid UUID format
- * - Admin status must be verified before cascade deletion
+ * Within a transaction, perform cascading deletes:
+ * 1. Delete all comments from articles in this section
+ * 2. Delete all articles in this section
+ * 3. Delete the section record itself
+ *
+ * Update the economic_political_board_sections table to record this deletion.
+ *
+ * Log the deletion action by updating any audit tables with the adminId and timestamp.
+ *
+ * Return 204 No Content on success.
  * @path /economicPoliticalBoard/admin/sections/:sectionId
  * @accessor api.functional.economicPoliticalBoard.admin.sections.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -523,7 +299,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The UUID identifier of the section to be deleted
+     * The unique identifier of the section to delete (UUID format)
      */
     sectionId: string & tags.Format<"uuid">;
   };
@@ -553,123 +329,6 @@ export namespace erase {
     });
     try {
       assert.param("sectionId")(() => typia.assert(props.sectionId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve comprehensive analytics and statistical data for a specific section of the economic/political discussion board.
- *
- * This endpoint provides insights into section performance and engagement metrics, including article counts, comment statistics, recent activity trends, and tag distribution patterns. The data is computed on-demand from the economic_political_board_articles and related tables.
- *
- * GUESTS AND REGISTERED USERS CAN access section analytics to understand topic popularity and engagement levels. ANALYTICS DATA IS SHOWN PUBLICLY to encourage participation in popular topics.
- *
- * The endpoint supports flexible filtering via request body to control which metrics are returned and the time range of analysis. This enables efficient queries for different use cases such as dashboard widgets or trend analysis.
- *
- * @param props.connection
- * @param props.sectionId The unique identifier of the section to retrieve analytics for.
- * @param props.body Analytics filter criteria including date range and metric selection.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query economic_political_board_sections by sectionId to verify section exists and is not soft-deleted.
- *
- * Compute the following analytics metrics:
- * - Article count: Count of non-deleted articles where sectionId matches
- * - Comment count: Sum of commentCount from all articles in section
- * - Active authors: Count of distinct authorIds from articles
- * - Recent activity: Articles created within last 30 days
- * - Tag distribution: Count of articles per unique tag (top 10)
- * - Date range filtering: Only include articles where createdAt >= requested startDate
- *
- * If startDate is not provided, default to 90 days ago.
- *
- * If metricFilter is provided, only return metrics in the filter array (e.g., ['articleCount', 'commentCount', 'recentActivity']).
- *
- * Return analytics data in a single JSON response with metadata about computation time.
- *
- * Handle soft-deleted sections gracefully: return 404 with error if section.deleted_at is not null.
- *
- * Optimize query with indexes on section.created_at and article.section_id.
- * @path /economicPoliticalBoard/admin/sections/:sectionId/analytics
- * @accessor api.functional.economicPoliticalBoard.admin.sections.analytics
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function analytics(
-  connection: IConnection,
-  props: analytics.Props,
-): Promise<analytics.Response> {
-  return true === connection.simulate
-    ? analytics.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...analytics.METADATA,
-          path: analytics.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace analytics {
-  export type Props = {
-    /**
-     * The unique identifier of the section to retrieve analytics for.
-     */
-    sectionId: string & tags.Format<"uuid">;
-
-    /**
-     * Analytics filter criteria including date range and metric selection.
-     */
-    body: IEconomicPoliticalBoardSectionAnalytic.IRequest;
-  };
-  export type Body = IEconomicPoliticalBoardSectionAnalytic.IRequest;
-  export type Response = IEconomicPoliticalBoardSectionAnalytic;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/economicPoliticalBoard/admin/sections/:sectionId/analytics",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/economicPoliticalBoard/admin/sections/${encodeURIComponent(props.sectionId ?? "null")}/analytics`;
-  export const random = (): IEconomicPoliticalBoardSectionAnalytic =>
-    typia.random<IEconomicPoliticalBoardSectionAnalytic>();
-  export const simulate = (
-    connection: IConnection,
-    props: analytics.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: analytics.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("sectionId")(() => typia.assert(props.sectionId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

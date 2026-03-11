@@ -1,14 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import { IShoppingMallOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshot";
-import { IShoppingMallOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotVariantOption";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,12 +13,10 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCancellationRequestAtSummaryTransformer } from "./ShoppingMallCancellationRequestAtSummaryTransformer";
 import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
 import { ShoppingMallOrderItemSnapshotTransformer } from "./ShoppingMallOrderItemSnapshotTransformer";
 import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
-import { ShoppingMallRefundRequestAtSummaryTransformer } from "./ShoppingMallRefundRequestAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 import { ShoppingMallShipmentAtSummaryTransformer } from "./ShoppingMallShipmentAtSummaryTransformer";
 
@@ -45,9 +40,6 @@ export namespace ShoppingMallOrderItemTransformer {
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
         shipment: ShoppingMallShipmentAtSummaryTransformer.select(),
         snapshot: ShoppingMallOrderItemSnapshotTransformer.select(),
-        cancellationRequest:
-          ShoppingMallCancellationRequestAtSummaryTransformer.select(),
-        refundRequest: ShoppingMallRefundRequestAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }
@@ -71,30 +63,15 @@ export namespace ShoppingMallOrderItemTransformer {
             input.shipment,
           )
         : null,
-      quantity: input.quantity,
-      price: input.price,
-      status: input.status as
-        | "paid"
-        | "shipped"
-        | "delivered"
-        | "cancelled"
-        | "refunded",
       snapshot: await ShoppingMallOrderItemSnapshotTransformer.transform(
         input.snapshot!,
       ),
-      cancellationRequest: input.cancellationRequest
-        ? await ShoppingMallCancellationRequestAtSummaryTransformer.transform(
-            input.cancellationRequest,
-          )
-        : undefined,
-      refundRequest: input.refundRequest
-        ? await ShoppingMallRefundRequestAtSummaryTransformer.transform(
-            input.refundRequest,
-          )
-        : undefined,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      quantity: input.quantity,
+      price: input.price,
+      status: input.status as IShoppingMallOrderItem["status"],
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

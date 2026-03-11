@@ -15,7 +15,7 @@ export async function generate_random_reddit_platform_member_communities_bans_cr
   connection: api.IConnection,
   props: {
     body?: DeepPartial<IRedditPlatformCommunityBan.ICreate>;
-    params?: {
+    params: {
       communityId: string;
     };
   },
@@ -26,7 +26,7 @@ export async function generate_random_reddit_platform_member_communities_bans_cr
     await api.functional.redditPlatform.member.communities.bans.create(
       connection,
       {
-        communityId: props.params?.communityId ?? "00000000-0000-0000-0000-000000000000",
+        communityId: props.params.communityId,
         body: prepared,
       },
     );

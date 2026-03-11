@@ -16,12 +16,18 @@ export async function authorize_admin_join(
 ): Promise<IRedditPlatformAdmin.IAuthorized> {
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    username: props.body?.username ?? RandomGenerator.alphaNumeric(16),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    username: props.body?.username ?? RandomGenerator.alphaNumeric(12),
+    display_name: props.body?.display_name ?? RandomGenerator.name(),
+    bio: props.body?.bio ?? RandomGenerator.paragraph(),
+    avatar_url:
+      props.body?.avatar_url ??
+      typia.random<string & tags.Format<"uri">>() ??
+      null,
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>() ?? null,
   } satisfies IRedditPlatformAdmin.IJoin;
   return await api.functional.redditPlatform.auth.admin.join(connection, {
     body: joinInput,

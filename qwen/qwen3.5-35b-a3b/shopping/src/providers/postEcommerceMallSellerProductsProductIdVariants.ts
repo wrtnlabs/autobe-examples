@@ -22,36 +22,49 @@ export async function postEcommerceMallSellerProductsProductIdVariants(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.ICreate;
 }): Promise<IEcommerceMallProductVariant> {
-  // Verify product exists and belongs to seller
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      seller_id: props.seller.id,
-      deleted_at: null,
-    },
-  });
-  if (product === null) {
-    throw new HttpException("Product not found", 404);
-  }
-  // Check for SKU conflict within the product
-  const existingVariant =
+  // Verify product exists, is active, and seller owns it
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: {
+        id: props.productId,
+        seller_id: props.seller.id,
+        is_active: true,
+        deleted_at: null,
+      },
+      select: { id: true, name: true },
+    });
+  // Check SKU uniqueness within the product
+  const existingVariantWithSameSku =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
       where: {
-        sku_code: props.body.sku_code,
         product_id: props.productId,
+        sku_code: props.body.sku_code,
         deleted_at: null,
       },
     });
-  if (existingVariant !== null) {
+  if (existingVariantWithSameSku !== null) {
     throw new HttpException("SKU code already exists for this product", 409);
+  }
+  // Check option values uniqueness within the product
+  const existingVariantWithSameOptions =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
+      where: {
+        product_id: props.productId,
+        option_values: JSON.stringify(props.body.option_values),
+        deleted_at: null,
+      },
+    });
+  if (existingVariantWithSameOptions !== null) {
+    throw new HttpException(
+      "Option values combination already exists for this product",
+      409,
+    );
   }
   // Create variant using collector
   const created = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
     data: await EcommerceMallProductVariantCollector.collect({
       body: props.body,
-      ecommerceMallProducts: {
-        id: product.id,
-      } as IEntity,
+      ecommerceMallProducts: { id: props.productId },
     }),
     ...EcommerceMallProductVariantTransformer.select(),
   });

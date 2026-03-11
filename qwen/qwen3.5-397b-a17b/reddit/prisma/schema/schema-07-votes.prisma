@@ -1,0 +1,116 @@
+/// Tracks user votes on posts with direction (upvote or downvote). Each
+/// member can cast exactly one vote per post, enforced by unique constraint
+/// on member and post combination. Used for calculating post vote scores and
+/// adjusting member karma scores.
+///
+/// References {@link reddit_community_members} for the voter and {@link
+/// reddit_community_posts} for the voted content. Vote direction determines
+/// karma impact: upvotes increase karma, downvotes decrease karma. Supports
+/// vote modification and soft deletion for audit trail compliance.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast the vote. {@link reddit_community_members.id}
+  member_id String
+  
+  /// Post that was voted on. {@link reddit_community_posts.id}
+  post_id String
+  
+  /// Vote direction: 'up' for upvote or 'down' for downvote. Corresponds to
+  /// Vote Direction Enumeration. Determines karma adjustment direction.
+  direction String
+  
+  /// Timestamp when the vote was initially cast. Used for vote history
+  /// tracking and karma calculation.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified. Updated when vote direction
+  /// changes or vote is removed/restored.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when vote is active. Set when vote is removed
+  /// to maintain audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_community_post_vote_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, post_id])
+  @@index([post_id, created_at])
+  @@index([member_id, created_at])
+}
+
+/// Point-in-time snapshots of post vote records for audit trail, vote
+/// history tracking, and karma calculation verification. Captures the state
+/// of votes at specific moments for historical analysis and compliance. Each
+/// snapshot records the vote direction and member/post references, enabling
+/// reconstruction of vote history and verification of karma score changes
+/// over time even if the original vote record is deleted.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_vote_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original post vote being snapshotted. {@link
+  /// reddit_community_post_votes.id}.
+  reddit_community_post_vote_id String
+  
+  /// Denormalized reference to the member who cast the vote. {@link
+  /// reddit_community_members.id}. Preserved for audit queries even if parent
+  /// vote is deleted.
+  member_id String
+  
+  /// Denormalized reference to the post that was voted on. {@link
+  /// reddit_community_posts.id}. Preserved for audit queries even if parent
+  /// vote is deleted.
+  post_id String
+  
+  /// Vote direction captured at snapshot time (up or down). Represents the
+  /// vote state at the moment the snapshot was created.
+  direction String
+  
+  /// Timestamp when the snapshot was created. Records the exact moment the
+  /// vote state was captured for audit purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  postVote reddit_community_post_votes @relation(fields: [reddit_community_post_vote_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_vote_id, created_at], map: "reddit_community_post_vote_snapshots_reddit_community__d164bf5d")
+  @@index([member_id, created_at])
+  @@index([post_id, created_at])
+}

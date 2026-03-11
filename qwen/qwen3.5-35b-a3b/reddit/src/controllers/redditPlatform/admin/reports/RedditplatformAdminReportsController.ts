@@ -2,119 +2,59 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIRedditPlatformReportSnapshot } from "../../../../api/structures/IPageIRedditPlatformReportSnapshot";
 import { IRedditPlatformReport } from "../../../../api/structures/IRedditPlatformReport";
-import { IRedditPlatformReportSnapshot } from "../../../../api/structures/IRedditPlatformReportSnapshot";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { patchRedditPlatformAdminReportsReportId } from "../../../../providers/patchRedditPlatformAdminReportsReportId";
-import { patchRedditPlatformAdminReportsReportIdSnapshots } from "../../../../providers/patchRedditPlatformAdminReportsReportIdSnapshots";
 
 @Controller("/redditPlatform/admin/reports/:reportId")
 export class RedditplatformAdminReportsController {
   /**
-   * Update the status of a content moderation report through moderator approval or dismissal actions.
+   * Resolves a content moderation report by approving or dismissing it.
    *
-   * This endpoint enables moderators to review pending reports and take appropriate action by either approving the report (which marks the content for deletion) or dismissing it (which finds the report invalid). When a report is approved, the reported content will be deleted and the report status transitions to RESOLVED. When dismissed, the report status changes to DISMISSED without further action on the content.
+   * This operation allows community moderators to review and resolve pending content reports. Moderators can approve a report (marking it as RESOLVED and triggering content deletion) or dismiss a report (marking it as DISMISSED, indicating the report was unfounded).
    *
-   * The operation requires moderator authentication and community-level permissions. The moderator's ID is automatically captured in the resolved_by_id field to maintain an audit trail of who made the moderation decision. Status transitions are validated to ensure reports can only be modified from PENDING state.
+   * The operation validates that the requesting moderator has proper permissions for the community where the reported content exists. Only moderators of that specific community can resolve reports within it. The moderator's ID is recorded in the resolved_by_id field for audit purposes.
    *
-   * Associated report views are automatically recorded when moderators access this endpoint, and snapshots are created to maintain a point-in-time record of the status change for compliance purposes. The operation returns the updated report with all fields including the new status and resolver information.
+   * Upon approval, the reported content (post or comment) is flagged for deletion. The report status transitions from PENDING to either RESOLVED or DISMISSED based on the moderator's decision. All resolution actions are logged for compliance and transparency.
    *
    * @param connection
-   * @param reportId UUID identifier of the report to update
-   * @param body Status update information for the report
+   * @param reportId UUID of the report to resolve
+   * @param body Resolution action to perform on the report
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate moderator authentication through session token
-   * 2. Verify moderator has permissions for the community associated with the report (check reddit_platform_communities)
-   * 3. Fetch the report by reportId from reddit_platform_reports
-   * 4. Validate report exists and status is currently PENDING (section 370)
-   * 5. Validate report has not been soft deleted (deleted_at is null)
-   * 6. Validate request contains status field with valid value: RESOLVED or DISMISSED
-   * 7. Capture the authenticated moderator's user ID as resolved_by_id
-   * 8. Update report status to the provided value and set resolved_by_id
-   * 9. Create a new snapshot record in reddit_platform_report_snapshots to audit the state change
-   * 10. Record a view event in reddit_platform_report_views (moderator viewed the report for resolution)
-   * 11. If status is RESOLVED, mark reported content for deletion in background job queue
-   * 12. Return the updated report with all fields including new status and resolved_by_id
-   * 13. Handle concurrency conflicts with optimistic locking on updated_at timestamp
+   * @x-autobe-specification 1. Validate authentication - caller must be authenticated as member
+   * 2. Load report by UUID from reddit_platform_reports
+   * 3. Verify report exists and status is PENDING (only pending reports can be resolved)
+   * 4. Load community from report's community_id
+   * 5. Query reddit_platform_community_moderators to verify caller has moderator role for this community
+   * 6. Validate request body contains valid action (approve or dismiss)
+   * 7. Update report:
+   *    - Set status to RESOLVED (if approve) or DISMISSED (if dismiss)
+   *    - Set resolved_by_id to caller's user ID
+   *    - Update updated_at timestamp
+   * 8. IF action is 'approve': flag reported content (post/comment) for moderator deletion
+   * 9. Log moderation action to reddit_platform_moderation_audit_logs
+   * 10. Return updated report object
+   *
+   * Edge cases:
+   * - Report not found: return 404
+   * - Report already resolved: return 409 Conflict
+   * - Caller not moderator of community: return 403 Forbidden
+   * - Invalid action value: return 400 Bad Request
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async updateStatus(
+  public async resolve(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("reportId")
     reportId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IRedditPlatformReport.IStatusUpdate,
+    body: IRedditPlatformReport.IResolveRequest,
   ): Promise<IRedditPlatformReport> {
     try {
       return await patchRedditPlatformAdminReportsReportId({
-        admin,
-        reportId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve the complete audit history snapshots for a specific content moderation report.
-   *
-   * This operation provides moderators with a chronological view of all state transitions a report has undergone, documenting each change from pending status to either resolved or dismissed outcome. Each snapshot captures the report's state at that point in time, including the reason text, reported content details, and resolution information.
-   *
-   * The audit trail shows the complete lifecycle of the report, including when it was submitted, which moderator handled the resolution, and the timestamp of resolution. This information is essential for compliance auditing, moderator performance tracking, and maintaining transparency in the moderation process.
-   *
-   * Access is restricted to moderators of the community where the reported content was posted. The operation supports filtering by resolution status, date ranges, and specific moderators who performed resolutions. All snapshots are returned in chronological order with the most recent snapshot first.
-   *
-   * This endpoint is useful for reviewing moderation history, investigating patterns in report handling, and maintaining audit trails for compliance purposes.
-   *
-   * @param connection
-   * @param reportId UUID identifier of the report whose snapshot history to retrieve
-   * @param body Filter and pagination parameters for report snapshot retrieval
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_platform_report_snapshots table for all snapshots belonging to a specific report (reddit_platform_report_id = reportId).
-   *
-   * Apply optional filters:
-   * - status: filter by status at snapshot time (pending, resolved, dismissed)
-   * - snapshot_created_at_from: start date range filter (timestamp)
-   * - snapshot_created_at_to: end date range filter (timestamp)
-   * - resolved_by: filter by moderator ID who resolved the report
-   *
-   * Apply sorting:
-   * - sortBy: snapshot_created_at (asc/desc), default: snapshot_created_at DESC
-   *
-   * Apply pagination:
-   * - page: cursor or page number
-   * - limit: records per page (max 100)
-   *
-   * Return snapshots chronologically ordered, showing the audit trail from report creation to final resolution (if applicable).
-   *
-   * Join with reddit_platform_members for reporter display name if requested.
-   *
-   * Validate that reportId exists and belongs to a community where the authenticated user has moderator privileges.
-   *
-   * If no snapshots found for report, return empty paginated result with pagination metadata.
-   *
-   * If authenticated user lacks moderator privileges for the report's community, return 403 Forbidden error.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch("snapshots")
-  public async snapshots(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("reportId")
-    reportId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IRedditPlatformReportSnapshot.IRequest,
-  ): Promise<IPageIRedditPlatformReportSnapshot> {
-    try {
-      return await patchRedditPlatformAdminReportsReportIdSnapshots({
         admin,
         reportId,
         body,

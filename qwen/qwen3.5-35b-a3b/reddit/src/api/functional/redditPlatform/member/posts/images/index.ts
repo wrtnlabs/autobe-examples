@@ -6,69 +6,59 @@ import typia, { tags } from "typia";
 import { IRedditPlatformPostImage } from "../../../../../structures/IRedditPlatformPostImage";
 
 /**
- * Upload an image file metadata to an existing image-type post in the Reddit Platform.
+ * Create a new image file record associated with an existing post in the Reddit-like community platform.
  *
- * This operation allows authenticated members to associate image file metadata with IMAGE-type posts in their subscribed communities. The post must already exist with `post_type` set to IMAGE. The image record is stored in the `reddit_platform_post_images` table.
+ * This operation enables authenticated members to upload image files for association with posts by providing image data, which is then validated for format and size, and stored with metadata in the system. The uploaded image is processed through the content delivery network (CDN) for optimal global distribution and caching.
  *
- * The system validates the uploaded image file metadata for format (JPEG, PNG, or GIF) and file size (maximum 10 megabytes). All image files undergo malware scanning before being made available for display.
+ * The image upload process includes format validation (JPEG, PNG, GIF only), size verification (maximum 10MB per file), and metadata preservation (original filename, MIME type, file size). Upon successful upload, the system generates a unique file path for storage and returns the complete image record for reference.
  *
- * **Image Record Fields**:
- * - `id`: Auto-generated UUID primary key
- * - `post_id`: Parent post reference (cascade delete on post deletion)
- * - `filename`: Original uploaded filename
- * - `mime_type`: Detected MIME type (e.g., 'image/jpeg')
- * - `file_size`: File size in bytes
- * - `file_path`: Storage path for CDN access
- * - `created_at`: Upload timestamp
- * - `updated_at`: Last update timestamp
- * - `deleted_at`: Soft delete timestamp (NULL if active)
+ * Image files are soft-deleted when the parent post is deleted or when explicitly removed, preserving audit trail records with deleted_at timestamps. Only authenticated members can upload images to posts in communities they subscribe to. Guest users must sign in before uploading images to any post in the platform.
  *
- * **Requirements**:
- * - User must be authenticated as a member
- * - Post must exist and be of type IMAGE
- * - File must be in JPEG, PNG, or GIF format
- * - File size must not exceed 10MB
- *
- * **Security**:
- * - Malware scanning is performed on all uploads
- * - Images are inaccessible until virus scan completes
- * - Access control restricts uploads to post authors and community moderators
- * - Deleted images are soft-deleted (soft_delete_column: deleted_at) and preserved for audit trail
+ * **Dependencies**: This operation requires a valid post ID that exists and is not soft-deleted. The user must be authenticated as a member and have appropriate permissions (post author or community moderator).
  *
  * @param props.connection
- * @param props.postId ID of the image post to attach the image file to.
- * @param props.body Image metadata required for creating the image record, including original filename, detected MIME type, and file size in bytes
+ * @param props.postId Unique identifier of the post to attach the image. The post must exist and not be soft-deleted.
+ * @param props.body Image file upload data including file URI, metadata, and original filename
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new image record in reddit_platform_post_images table.
+ * @x-autobe-specification 1. Validate authentication: Verify JWT token and confirm user is authenticated member
+ * 2. Validate post existence: Query reddit_platform_posts table to confirm postId exists and is not soft-deleted
+ * 3. Validate post ownership or community moderation: Confirm user is author of post or moderator of the post's community
+ * 4. Accept file upload: Extract file data from request body (URI string format for CDN upload)
+ * 5. Validate file format: Check MIME type is JPEG, PNG, or GIF only. Reject unsupported formats
+ * 6. Validate file size: Check file_size is within limit (maximum 10MB = 10485760 bytes). Reject oversized files
+ * 7. Validate post type compatibility: Check post_type allows images (IMAGE posts only, or TEXT/LINK posts if platform allows image attachments)
+ * 8. Generate storage path: Create unique file path for CDN upload (pattern: uploads/posts/{postId}/{filename})
+ * 9. Upload to CDN: Transfer image file to CDN storage at generated path
+ * 10. Create image record: Insert into reddit_platform_post_images table with fields:
+ *     - id: auto-generated UUID
+ *     - post_id: from path parameter
+ *     - filename: original filename from upload
+ *     - mime_type: validated MIME type
+ *     - file_size: file size in bytes
+ *     - file_path: CDN storage path
+ *     - created_at: current timestamp
+ *     - updated_at: current timestamp
+ * 11. Update post metadata: Increment post's comment_count or engagement metrics if required
+ * 12. Return success: Respond with full post image record including CDN URL
  *
- * 1. Validate user is authenticated (member actor required)
- * 2. Verify post exists by postId and is of type IMAGE
- * 3. Verify user is the post author (reddit_platform_member_id matches)
- * 4. Validate image file:
- *    - Format: JPEG, PNG, or GIF only
- *    - Size: maximum 10MB
- *    - Content type matches file extension
- * 5. Perform malware scan on uploaded file
- * 6. Generate unique storage path for CDN
- * 7. Create record in reddit_platform_post_images:
- *    - post_id: from path parameter
- *    - filename: original filename (e.g., 'vacation.jpg')
- *    - mime_type: detected MIME type (e.g., 'image/jpeg')
- *    - file_size: file size in bytes
- *    - file_path: storage path (e.g., 'uploads/posts/{postId}/{filename}')
- *    - created_at: current timestamp
- * 8. Return created image record with all fields
+ * Edge cases:
+ * - If post is deleted, reject with 404 error
+ * - If file format is invalid, reject with 400 error and list supported formats
+ * - If file size exceeds limit, reject with 400 error and include maximum allowed size
+ * - If authentication fails, reject with 401 error
+ * - If user lacks permission (not author or moderator), reject with 403 error
+ * - If CDN upload fails, return 503 error with retry suggestion
  * @path /redditPlatform/member/posts/:postId/images
- * @accessor api.functional.redditPlatform.member.posts.images.createImage
+ * @accessor api.functional.redditPlatform.member.posts.images.uploadImage
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function createImage(
+export async function uploadImage(
   connection: IConnection,
-  props: createImage.Props,
-): Promise<createImage.Response> {
+  props: uploadImage.Props,
+): Promise<uploadImage.Response> {
   return true === connection.simulate
-    ? createImage.simulate(connection, props)
+    ? uploadImage.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -78,22 +68,22 @@ export async function createImage(
           },
         },
         {
-          ...createImage.METADATA,
-          path: createImage.path(props),
+          ...uploadImage.METADATA,
+          path: uploadImage.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace createImage {
+export namespace uploadImage {
   export type Props = {
     /**
-     * ID of the image post to attach the image file to.
+     * Unique identifier of the post to attach the image. The post must exist and not be soft-deleted.
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * Image metadata required for creating the image record, including original filename, detected MIME type, and file size in bytes
+     * Image file upload data including file URI, metadata, and original filename
      */
     body: IRedditPlatformPostImage.ICreate;
   };
@@ -119,17 +109,162 @@ export namespace createImage {
     typia.random<IRedditPlatformPostImage>();
   export const simulate = (
     connection: IConnection,
-    props: createImage.Props,
+    props: uploadImage.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: createImage.path(props),
+      path: uploadImage.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("postId")(() => typia.assert(props.postId));
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Delete an image file associated with a specific post in the Reddit platform.
+ *
+ * This operation permanently removes an image file from the system media storage when a user or moderator deletes an image from a post. The image file is marked as deleted in the database and removed from the CDN cache to prevent further access.
+ *
+ * **Authorization Requirements**:
+ * - The requesting user must own the parent post, or
+ * - The user must have moderator privileges in the post's community
+ * - Moderators can delete any image in their community regardless of ownership
+ * - Unauthenticated users (guests) cannot delete images
+ *
+ * **Deletion Behavior**:
+ * - The image file is removed from CDN storage immediately
+ * - The database record is soft-deleted (deleted_at timestamp set)
+ * - The image URL becomes invalid and inaccessible
+ * - All associated thumbnails are also cleaned up
+ * - The post's image references are updated to remove this image
+ *
+ * **Error Conditions**:
+ * - 404 Not Found: Post or image does not exist
+ * - 403 Forbidden: User does not own the post and is not a community moderator
+ * - 404 Not Found: Image already deleted
+ * - 400 Bad Request: Image is not associated with the specified post
+ *
+ * **Related Operations**:
+ * - GET /posts/{postId} - View post details including associated images
+ * - POST /posts/{postId}/images - Upload a new image to a post
+ * - PUT /posts/{postId} - Update post (can also be used to remove image reference)
+ *
+ * @param props.connection
+ * @param props.postId UUID of the parent post containing the image
+ * @param props.imageId UUID of the image file to delete
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification Delete image file from CDN storage and mark as soft-deleted in database.
+ *
+ * **Implementation Steps**:
+ * 1. Validate path parameters: postId and imageId must be valid UUID format
+ * 2. Query reddit_platform_posts table to fetch post by postId
+ * 3. If post not found, return 404 error
+ * 4. Query reddit_platform_post_images table to fetch image by imageId
+ * 5. Verify image exists and belongs to the specified postId (check post_id match)
+ * 6. If image not found or doesn't belong to post, return 404 error
+ * 7. Check authorization:
+ *    - If requesting user owns the post (post.author_id == user.id), allow deletion
+ *    - If user is a moderator of the post's community, allow deletion
+ *    - Otherwise, return 403 Forbidden
+ * 8. Remove image file from CDN storage (delete file at file_path)
+ * 9. Invalidate CDN cache entry for the image
+ * 10. Update the image record: set deleted_at = CURRENT_TIMESTAMP
+ * 11. If soft delete is enabled and record must be preserved, return image metadata for audit
+ * 12. Return 204 No Content on successful deletion
+ *
+ * **Validation Rules**:
+ * - Image must belong to the specified post (post_id foreign key constraint)
+ * - User must own post OR be community moderator
+ * - Image must not already be deleted (check deleted_at is null)
+ * - Post must not already be deleted (cascade behavior)
+ *
+ * **Edge Cases**:
+ * - If post is already deleted, image deletion should also fail (cascade constraint)
+ * - If image file is missing from storage, mark as deleted in database anyway
+ * - If user is both post owner and moderator, owner privileges apply
+ *
+ * **Database Transaction**:
+ * - Wrap CDN removal and database update in transaction
+ * - Roll back if CDN removal fails
+ * - Commit transaction on success
+ * @path /redditPlatform/member/posts/:postId/images/:imageId
+ * @accessor api.functional.redditPlatform.member.posts.images.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * UUID of the parent post containing the image
+     */
+    postId: string & tags.Format<"uuid">;
+
+    /**
+     * UUID of the image file to delete
+     */
+    imageId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/redditPlatform/member/posts/:postId/images/:imageId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditPlatform/member/posts/${encodeURIComponent(props.postId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("postId")(() => typia.assert(props.postId));
+      assert.param("imageId")(() => typia.assert(props.imageId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

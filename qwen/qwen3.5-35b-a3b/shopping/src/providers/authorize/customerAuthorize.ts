@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { CustomerPayload } from "../../decorators/payload/CustomerPayload";
@@ -15,11 +15,7 @@ export async function customerAuthorize(request: {
   const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
     where: {
       id: payload.id,
-      emailVerifications: {
-        some: {
-          used_at: { not: null },
-        },
-      },
+      deleted_at: null,
     },
   });
 

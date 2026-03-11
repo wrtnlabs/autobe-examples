@@ -1,27 +1,29 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallCustomer } from "../../../../structures/IPageIShoppingMallCustomer";
 import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCustomer";
 
 /**
- * Retrieve a filtered and paginated list of customer accounts.
+ * Retrieve a filtered and paginated list of customer accounts for administrative oversight.
  *
- * This operation provides administrators with comprehensive customer search capabilities for platform oversight and moderation. Administrators can search customers by email address, display name, phone number, account status (banned), and registration date range.
+ * This operation provides administrators with comprehensive customer account management capabilities including searching by email address, display name, phone number, filtering by account status (banned/active), and filtering by registration date range. The search supports partial matching for display names using trigram-based fuzzy search.
  *
- * The search supports partial matching for text fields, enabling flexible lookups without requiring exact input. Display name searches utilize PostgreSQL trigram indexing for fuzzy matching, accommodating typos and partial names.
+ * **Security and Authorization:**
+ * This endpoint requires administrator authentication. Only users with administrator privileges can access customer account listings. Unauthorized access attempts are logged for security auditing.
  *
- * Results are paginated to handle large customer bases efficiently. Each result includes essential customer information: unique identifier, email address, display name, phone number, current ban status, and registration timestamp. Password data is never included in responses.
+ * **Database Entities:**
+ * Queries the shopping_mall_customers table with filtering on email (case-insensitive exact match), display_name (fuzzy match using gin_trgm_ops index), phone_number (partial match), banned status, and created_at timestamp range.
  *
- * This endpoint supports administrator workflows including:
- * - Identifying accounts for ban/unban actions
- * - Resolving customer support inquiries
- * - Monitoring platform growth and registration patterns
- * - Investigating potentially fraudulent accounts
+ * **Related Operations:**
+ * - GET /customers/{customerId} - Retrieve detailed customer information
+ * - PATCH /customers/{customerId}/ban - Ban a customer account
+ * - PATCH /customers/{customerId}/unban - Unban a customer account
  *
- * Only administrators with regular or super grade privileges may access this operation. Customer accounts are excluded from results if they have been soft-deleted.
+ * **Pagination:**
+ * Supports cursor-based pagination with configurable page sizes. Results are sorted by creation date (newest first) by default, with optional sorting by display name.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for customer listing
@@ -29,22 +31,26 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @x-autobe-authorization-actor administrator
  * @x-autobe-specification Query shopping_mall_customers table with pagination and filtering.
  *
- * Apply search filters:
- * - email: partial match (case-insensitive)
- * - display_name: trigram search using gin_trgm_ops index
- * - phone_number: partial match
- * - banned: boolean filter
- * - created_at: date range filter (from/to)
+ * **Implementation Steps:**
+ * 1. Verify administrator authentication from JWT token
+ * 2. Parse IRequest filters from request body
+ * 3. Build WHERE clause conditions:
+ *    - email: case-insensitive exact match using LOWER()
+ *    - displayName: fuzzy search using trigram similarity if search term provided
+ *    - phoneNumber: partial match using LIKE
+ *    - banned: boolean filter if specified
+ *    - createdAt: date range filter using created_at >= from AND created_at <= to
+ * 4. Exclude soft-deleted customers (deleted_at IS NULL) by default
+ * 5. Apply pagination with cursor-based approach using created_at as cursor
+ * 6. Execute query with LEFT JOIN to shopping_mall_orders for order count statistics
+ * 7. Transform results to ISummary format with aggregated order count
+ * 8. Return IPage structure with pagination metadata
  *
- * Exclude deleted_at IS NOT NULL records from results.
- *
- * Return cursor-based pagination with configurable page size.
- * Sort options: created_at (newest/oldest), email (alphabetical).
- *
- * Response includes customer summary: id, email, display_name, phone_number, banned status, created_at.
- * Excludes password_hash for security.
- *
- * Authorization: administrator only (grade: regular or super).
+ * **Performance Considerations:**
+ * - Use GIN trigram index for display_name search
+ * - Use B-tree index on created_at for pagination cursor
+ * - Limit maximum page size to 100 items
+ * - Cache frequent search patterns with TTL
  * @path /shoppingMall/administrator/customers
  * @accessor api.functional.shoppingMall.administrator.customers.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -123,46 +129,54 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed profile information for a specific customer account.
+ * Retrieves a specific customer's profile information by their unique identifier.
  *
- * This operation provides access to customer profile data including the customer's unique identifier, email address, display name, phone number, account ban status, and account creation/modification timestamps.
+ * This operation allows administrators to view detailed customer account information for administrative oversight, customer support, and account moderation purposes. The response includes the customer's email address, display name, phone number, account ban status, and creation/update timestamps.
  *
- * The customer's email address is used for authentication and must be unique across all customer accounts. The display name serves as the customer's public identity visible in reviews and other platform interactions. The phone number is stored for contact purposes and can be edited by the customer at any time.
+ * **Business Context:**
+ * Customers are registered shoppers who browse products, manage carts, place orders, write reviews, and manage wishlists. Each customer has a unique email for authentication and maintains profile information including display name (their public identity) and phone number for contact purposes.
  *
- * The banned status indicates whether the customer account has been banned by an administrator. Banned customers cannot log in to the platform. Account creation and modification timestamps provide audit trail information for administrative purposes.
+ * **Security Considerations:**
+ * - This endpoint is restricted to administrator access only
+ * - Customer email addresses are considered sensitive authentication information
+ * - Account status (banned flag) indicates whether the customer can log in
  *
- * Security Considerations:
- * - Customer authentication token must be validated before granting access
- * - Customers may only view their own profile unless they have administrator privileges
- * - Sensitive authentication data (password_hash) is never exposed in the response
- * - Soft-deleted accounts are not accessible through this endpoint
+ * **Response Fields:**
+ * - id: Unique UUID identifier for the customer
+ * - email: Customer's email address used for authentication (unique, case-insensitive)
+ * - displayName: Customer's public display name shown in reviews and interactions (optional, max 50 characters)
+ * - phoneNumber: Customer's phone number for contact purposes (optional)
+ * - banned: Flag indicating if the account is banned (banned customers cannot log in)
+ * - createdAt: Timestamp when the customer account was created
+ * - updatedAt: Timestamp when the customer account was last modified
+ * - deletedAt: Timestamp for soft deletion (null if account is active)
  *
- * Administrators can view any customer profile for platform oversight purposes. This supports user management operations including account verification and ban management.
+ * **Related Operations:**
+ * - GET /customers - List all customers (administrative)
+ * - PATCH /customers/{customerId}/ban - Ban customer
+ * - PATCH /customers/{customerId}/unban - Unban customer
  *
  * @param props.connection
- * @param props.customerId Unique identifier of the customer profile to retrieve (UUID format, global scope)
+ * @param props.customerId Unique identifier of the customer to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Retrieve a single customer profile by UUID identifier.
+ * @x-autobe-specification Implementation should query the shopping_mall_customers table by primary key id.
  *
- * 1. Query shopping_mall_customers table by id (customerId path parameter)
- * 2. If customer not found or deleted_at is not null, return 404 Not Found
- * 3. Map database fields to response DTO:
- *    - id → id
- *    - email → email
- *    - display_name → displayName
- *    - phone_number → phoneNumber
- *    - banned → banned
- *    - created_at → createdAt
- *    - updated_at → updatedAt
- * 4. Exclude password_hash and deleted_at from response (security/sensitive data)
- * 5. Authorization: Customer can view own profile, administrators can view any profile
- * 6. Return 403 Forbidden if authenticated user lacks permission to view this profile
- *
- * Edge Cases:
- * - Non-existent customerId → 404 Not Found
- * - Soft-deleted customer (deleted_at not null) → 404 Not Found
- * - Unauthorized access attempt → 403 Forbidden
+ * 1. Validate the customerId path parameter is a valid UUID format
+ * 2. Query shopping_mall_customers table WHERE id = customerId
+ * 3. Return 404 Not Found if customer does not exist
+ * 4. Return the complete customer entity including:
+ *    - id (UUID)
+ *    - email (string)
+ *    - displayName (string, nullable)
+ *    - phoneNumber (string, nullable)
+ *    - banned (boolean)
+ *    - createdAt (datetime)
+ *    - updatedAt (datetime)
+ *    - deletedAt (datetime, nullable)
+ * 5. Apply field name transformation from snake_case to camelCase in response DTO
+ * 6. Administrator authentication and authorization must be verified before processing
+ * 7. Log the access for audit purposes
  * @path /shoppingMall/administrator/customers/:customerId
  * @accessor api.functional.shoppingMall.administrator.customers.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -191,9 +205,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the customer profile to retrieve (UUID format, global scope)
+     * Unique identifier of the customer to retrieve (UUID format)
      */
-    customerId: string & tags.Format<"uuid">;
+    customerId: string;
   };
   export type Response = IShoppingMallCustomer;
 

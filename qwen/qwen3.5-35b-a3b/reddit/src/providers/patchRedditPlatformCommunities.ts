@@ -19,80 +19,65 @@ export async function patchRedditPlatformCommunities(props: {
   body: IRedditPlatformCommunity.IRequest;
 }): Promise<IPageIRedditPlatformCommunity.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const sort = props.body.sort ?? "created_at";
-  const order = props.body.order ?? "desc";
-  // Clamp pagination values
-  const validatedPage = page < 1 ? 1 : page;
-  const validatedLimit = limit > 100 ? 100 : limit < 1 ? 1 : limit;
-  // Validate and normalize sort field
-  const validatedSort: "name" | "subscriber_count" | "created_at" = [
-    "name",
-    "subscriber_count",
-    "created_at",
-  ].includes(sort)
-    ? sort
-    : "created_at";
-  // Validate and normalize order value
-  const validatedOrder: "asc" | "desc" = ["asc", "desc"].includes(order)
-    ? order
-    : "desc";
-  // Build WHERE clause
-  const whereInput: Prisma.reddit_platform_communitiesWhereInput = {
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  const whereClause: Prisma.reddit_platform_communitiesWhereInput = {
     deleted_at: null,
-    ...(props.body.name !== undefined &&
-      props.body.name !== "" && {
-        name: {
-          contains: props.body.name,
-          mode: "insensitive" as const,
-        },
-      }),
-    ...(props.body.minSubscribers !== undefined && {
-      subscriber_count: {
-        gte: props.body.minSubscribers,
-      },
-    }),
-    ...(props.body.maxSubscribers !== undefined && {
-      subscriber_count: {
-        lte: props.body.maxSubscribers,
-      },
-    }),
-  } satisfies Prisma.reddit_platform_communitiesWhereInput;
-  // Build ORDER BY clause
+  };
+  if (
+    props.body.searchQuery !== undefined &&
+    props.body.searchQuery !== null &&
+    props.body.searchQuery.trim().length > 0
+  ) {
+    whereClause.name = {
+      contains: props.body.searchQuery.toLowerCase(),
+      mode: "insensitive",
+    };
+  }
   const orderByInput: Prisma.reddit_platform_communitiesOrderByWithRelationInput[] =
-    [
-      {
-        [validatedSort]: validatedOrder,
-      },
-    ] satisfies Prisma.reddit_platform_communitiesOrderByWithRelationInput[];
-  // Calculate pagination
-  const skip = (validatedPage - 1) * validatedLimit;
-  // Query communities with pagination
+    props.body.sortBy === "created_at"
+      ? [
+          {
+            created_at: props.body.sortOrder === "asc" ? "asc" : "desc",
+          },
+        ]
+      : props.body.sortBy === "subscriber_count"
+        ? [
+            {
+              subscriber_count: "desc",
+            },
+          ]
+        : props.body.sortBy === "name"
+          ? [
+              {
+                name: "asc",
+              },
+            ]
+          : [
+              {
+                created_at: "desc",
+              },
+            ];
   const data = await MyGlobal.prisma.reddit_platform_communities.findMany({
-    where: whereInput,
-    skip,
-    take: validatedLimit,
+    where: whereClause,
     orderBy: orderByInput,
+    skip,
+    take: limit,
     ...RedditPlatformCommunityAtSummaryTransformer.select(),
   });
-  // Query total count
   const total = await MyGlobal.prisma.reddit_platform_communities.count({
-    where: whereInput,
+    where: whereClause,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditPlatformCommunityAtSummaryTransformer.transform,
-  );
-  // Build pagination metadata
-  const pages = total === 0 ? 0 : Math.ceil(total / validatedLimit);
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditPlatformCommunityAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: validatedPage,
-      limit: validatedLimit,
+      current: page,
+      limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditPlatformCommunity.ISummary;
+  };
 }

@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardBanRecord";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEconomicPoliticalBoardBanRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEconomicPoliticalBoardBanRecord";
@@ -14,7 +13,6 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 import { EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer";
-import { EconomicPoliticalBoardBanRecordAtSummaryTransformer } from "../transformers/EconomicPoliticalBoardBanRecordAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,50 +21,69 @@ export async function patchEconomicPoliticalBoardAdminBanRecords(props: {
   body: IEconomicPoliticalBoardBanRecord.IRequest;
 }): Promise<IPageIEconomicPoliticalBoardBanRecord.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? props.body.pageSize ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const sortBy = props.body.sortBy ?? "created_at";
-  const sortOrder = props.body.sortOrder ?? "desc";
   const whereInput: Prisma.economic_political_board_ban_recordsWhereInput = {
-    ...(props.body.dateFrom && { created_at: { gte: props.body.dateFrom } }),
-    ...(props.body.dateTo && { created_at: { lte: props.body.dateTo } }),
-    ...(props.body.reasonKeywords && {
-      reason: { contains: props.body.reasonKeywords, mode: "insensitive" },
+    ...(props.body.userId && { user_id: props.body.userId }),
+    ...(props.body.bannedByAdminId && {
+      banned_by_admin_id: props.body.bannedByAdminId,
     }),
-  };
-  const orderByInput: Prisma.economic_political_board_ban_recordsOrderByWithRelationInput[] =
-    sortBy === "created_at"
-      ? [{ created_at: sortOrder as "asc" | "desc" }]
-      : sortBy === "user_id"
-        ? [{ user_id: sortOrder as "asc" | "desc" }]
-        : [{ banned_by_admin_id: sortOrder as "asc" | "desc" }];
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
+    }),
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
+    }),
+    ...(props.body.reasonKeyword && {
+      reason: { contains: props.body.reasonKeyword, mode: "insensitive" },
+    }),
+  } satisfies Prisma.economic_political_board_ban_recordsWhereInput;
+  const orderByInput = (
+    props.body.sortBy === "oldest"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const }
+  ) satisfies Prisma.economic_political_board_ban_recordsOrderByWithRelationInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.economic_political_board_ban_records.findMany({
       where: whereInput,
-      orderBy: orderByInput,
       skip,
       take: limit,
-      include: {
+      orderBy: orderByInput,
+      select: {
+        id: true,
         user: EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
         bannedByAdmin:
           EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
+        reason: true,
+        created_at: true,
       },
     }),
     MyGlobal.prisma.economic_political_board_ban_records.count({
       where: whereInput,
     }),
   ]);
-  const resultData = await ArrayUtil.asyncMap(
-    data,
-    EconomicPoliticalBoardBanRecordAtSummaryTransformer.transform,
-  );
+  const transformedData = await ArrayUtil.asyncMap(data, async (record) => {
+    return {
+      id: record.id as string & tags.Format<"uuid">,
+      user: await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
+        record.user,
+      ),
+      bannedByAdmin:
+        await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
+          record.bannedByAdmin,
+        ),
+      reason: record.reason,
+      createdAt: record.created_at.toISOString(),
+    } satisfies IEconomicPoliticalBoardBanRecord.ISummary;
+  });
+  const pages = total === 0 ? 0 : Math.ceil(total / limit);
   return {
-    data: resultData,
+    data: transformedData,
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages,
     } satisfies IPage.IPagination,
   };
 }

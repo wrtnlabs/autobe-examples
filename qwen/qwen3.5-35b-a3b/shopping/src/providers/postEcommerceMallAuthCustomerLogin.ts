@@ -13,10 +13,12 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallAuthCustomerLogin(props: {
+  ip: string;
   body: IEcommerceMallCustomer.ILogin;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
+  // 1. Find customer by email with password_hash
   const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
@@ -25,80 +27,82 @@ export async function postEcommerceMallAuthCustomerLogin(props: {
       ban_reason: true,
       created_at: true,
       updated_at: true,
-      deleted_at: true,
     },
   });
   if (!customer) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const isValid = await PasswordUtil.verify(
+  // 2. Verify password
+  const isValid: boolean = await PasswordUtil.verify(
     props.body.password,
     customer.password_hash,
   );
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
+  // 3. Check ban status
   if (customer.is_banned) {
-    throw new HttpException("Account is banned", 401);
+    throw new HttpException(
+      customer.ban_reason !== null ? customer.ban_reason : "Account is banned",
+      401,
+    );
   }
-  const accessExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 60 * 60 * 1000,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const refreshExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const sessionId: string & tags.Format<"uuid"> = v4();
+  // 4. Create session with proper timestamp handling
+  const accessExpires: Date = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires: Date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const sessionCreatedAt: Date = new Date();
   const session = await MyGlobal.prisma.ecommerce_mall_customer_sessions.create(
     {
       data: {
-        id: sessionId,
+        id: v4() as string & tags.Format<"uuid">,
         customer_id: customer.id,
-        ip: "",
-        href: "",
-        referrer: "",
-        created_at: new Date().toISOString(),
+        ip:
+          props.body.ip !== null && props.body.ip !== undefined
+            ? props.body.ip
+            : props.ip,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: sessionCreatedAt,
         expired_at: accessExpires,
       },
     },
   );
+  // 5. Generate JWT tokens with proper typing
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "customer",
         id: customer.id,
-        session_id: sessionId,
-        created_at: new Date().toISOString(),
+        session_id: session.id,
+        created_at: sessionCreatedAt.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "60m", issuer: "autobe" },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "customer",
         id: customer.id,
-        session_id: sessionId,
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: new Date().toISOString(),
+        created_at: sessionCreatedAt.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
-  const deletedAtValue: (string & tags.Format<"date-time">) | null =
-    customer.deleted_at
-      ? ((customer.deleted_at as Date).toISOString() as string &
-          tags.Format<"date-time">)
-      : null;
+  // 6. Return IAuthorized with proper date format
   const result: IEcommerceMallCustomer.IAuthorized = {
-    id: customer.id,
+    id: customer.id as string & tags.Format<"uuid">,
     email: customer.email,
-    isBanned: customer.is_banned,
-    banReason: customer.ban_reason,
-    createdAt: (customer.created_at as Date).toISOString(),
-    updatedAt: (customer.updated_at as Date).toISOString(),
-    deletedAt: deletedAtValue,
+    is_banned: customer.is_banned,
+    ban_reason: customer.ban_reason,
+    created_at: customer.created_at.toISOString() as string &
+      tags.Format<"date-time">,
+    updated_at: customer.updated_at.toISOString() as string &
+      tags.Format<"date-time">,
     token,
   };
   return result;

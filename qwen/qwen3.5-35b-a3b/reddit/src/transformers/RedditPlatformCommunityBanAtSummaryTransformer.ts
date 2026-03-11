@@ -31,25 +31,21 @@ export namespace RedditPlatformCommunityBanAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IRedditPlatformCommunityBan.ISummary> {
-    const now = new Date();
-    const isActive =
-      input.deleted_at === null &&
-      (input.expires_at === null || input.expires_at > now);
     return {
       id: input.id,
-      user: await RedditPlatformMemberAtSummaryTransformer.transform(
-        input.bannedUser,
-      ),
       community: await RedditPlatformCommunityAtSummaryTransformer.transform(
         input.community,
+      ),
+      bannedUser: await RedditPlatformMemberAtSummaryTransformer.transform(
+        input.bannedUser,
       ),
       bannedBy: await RedditPlatformMemberAtSummaryTransformer.transform(
         input.bannedBy,
       ),
-      createdAt: input.created_at.toISOString(),
-      expiresAt: input.expires_at?.toISOString() ?? null,
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      isActive,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      expires_at: input.expires_at?.toISOString() ?? null,
     };
   }
 }

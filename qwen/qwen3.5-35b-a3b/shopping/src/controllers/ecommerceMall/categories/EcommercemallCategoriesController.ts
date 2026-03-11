@@ -10,42 +10,58 @@ import { patchEcommerceMallCategories } from "../../../providers/patchEcommerceM
 @Controller("/ecommerceMall/categories")
 export class EcommercemallCategoriesController {
   /**
-   * Retrieve a filtered and paginated list of product categories with hierarchical structure support.
+   * Retrieve a filtered and paginated list of categories with hierarchical organization.
    *
-   * This operation provides advanced search and filtering capabilities for the product catalog category system. Categories are organized in a parent-child tree structure with one level of nesting allowed (parent categories and their subcategories). The operation supports searching by category name and description, filtering by parent category, sorting by various fields, and cursor-based pagination for efficient large dataset handling.
+   * This operation provides advanced search capabilities for administrators to manage the product category structure. Search by name or description using partial matching (case-insensitive), filter by parent category to view subcategories, and sort results alphabetically or by creation date.
    *
-   * Categories can be root-level (parent_category_id is null) or subcategories (referencing a parent category). The is_leaf flag indicates whether a category has no children. Search results maintain parent-child relationships, allowing clients to reconstruct the category tree structure for display.
+   * The category hierarchy enforces one-level nesting (top-level categories with optional direct subcategories). The database supports soft deletion for categories via the deleted_at field, allowing administrators to filter results to include or exclude deleted categories when needed. Results include category metadata such as leaf status (whether the category has subcategories), product counts when requested, and timestamps.
    *
-   * This operation provides public access to all active categories for customers to browse and discover products, as well as for administrative dashboards and seller product oversight views.
+   * Supports comprehensive pagination with configurable page sizes and cursor-based navigation for efficient retrieval of large result sets. All operations are restricted to administrators only.
+   *
+   * Related operations:
+   * - `POST /categories` for creating new categories
+   * - `GET /categories/{categoryId}` for retrieving a specific category
+   * - `PUT /categories/{categoryId}` for editing category properties
+   * - `DELETE /categories/{categoryId}` for permanently removing a category
    *
    * @param connection
    * @param body Search criteria and pagination parameters for category listing
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_categories table with pagination and filtering.
+   * @x-autobe-specification Query ecommerce_mall_categories table with pagination and filtering.
    *
-   * Apply the following filters:
-   * - Name: case-insensitive partial match (using gin_trgm_ops index)
-   * - Description: case-insensitive partial match
-   * - Parent category: filter by parent_category_id (null for root categories, UUID for specific parent)
-   * - is_leaf: filter to show only leaf categories or only parent categories
+   * Apply search filters:
+   * - name: partial match, case-insensitive
+   * - description: partial match, case-insensitive
+   * - parentCategoryId: filter by specific parent (null for top-level, UUID for subcategories)
+   * - includeInactive: include deleted/excluded categories
+   * - searchQuery: combined search across name and description
    *
-   * Sorting options:
-   * - by name: alphabetical order (ascending/descending)
-   * - by created_at: creation date order (ascending/descending)
-   * - default: name ascending
+   * Apply sorting:
+   * - by name (alphabetical, ascending/descending)
+   * - by creation date (newest/oldest)
+   * - default: alphabetical by name
    *
    * Pagination:
-   * - Use cursor-based pagination for cursor: parameter
-   * - Return next_cursor in response for subsequent page requests
-   * - Default page size: 20 items
-   * - Maximum page size: 100 items
+   * - cursor-based pagination for performance
+   * - configurable page size (10-100 items)
+   * - return nextCursor for pagination
    *
-   * Include parent category information in response for tree reconstruction.
-   * Do not include deleted categories (deleted_at is null).
+   * Enforce one-level nesting hierarchy:
+   * - When parentCategoryId is provided, only categories without parents (top-level) should be returned
+   * - Categories with parents are subcategories of that parent
    *
-   * Join with parent category to provide hierarchical context.
-   * Order results by parent category first, then by child name for consistent tree display.
+   * Validation:
+   * - Verify parent category exists if filtering by parent
+   * - Validate page size boundaries (10-100)
+   * - Return 404 if filtering by non-existent parent category
+   *
+   * Return category summary with:
+   * - id, name, description
+   * - parentCategory reference (if top-level)
+   * - isLeaf flag
+   * - productCount (optional, if requested)
+   * - createdAt timestamp
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -64,47 +80,36 @@ export class EcommercemallCategoriesController {
   }
 
   /**
-   * Retrieve a single category by its unique identifier.
+   * Retrieve detailed information about a specific product category in the ecommerce platform's hierarchical catalog structure.
    *
-   * This operation returns complete information about a specific category including its name (which must be unique within the same parent level), description, hierarchical parent relationship enabled by parent_category_id, and an optional computed product count for browsing context. Categories are organizational units in the product catalog used to group related products for customer browsing and discovery.
+   * This operation returns complete category information including the category name, description, hierarchical position (parent category reference), and metadata such as whether it is a leaf category (contains no subcategories) or a parent category. The response includes computed counts showing the total number of products within this category and its subcategories, as well as the count of direct child subcategories.
    *
-   * Only administrators can create, edit, or delete categories. Customers and sellers can read and browse categories to discover products. The operation returns the full category entity with all relevant details including the hierarchical structure that enables navigation through the category tree (root categories have null parent_category_id, while subcategories reference their parent). The is_leaf flag indicates whether a category has no child subcategories.
+   * Categories organize products in a tree structure with one level of nesting - each category can have a single parent (making it a child category) or be a root category with no parent. The name must be unique within the same parent level to avoid duplicate category names in the same position of the hierarchy.
    *
-   * Categories are soft-deletable via the deleted_at timestamp field. Retrieved categories are those where deleted_at is null, ensuring customers only see active categories in browsing views. This operation is typically used when a customer or admin clicks on a specific category to view its products, or when populating category dropdown selectors for product management operations.
+   * This endpoint is accessible by both customer and admin actors. Customers use this endpoint to browse categories when shopping for products. Administrators use it to view category details when managing the catalog structure. Categories may contain products, and the product count reflects all products within this category and any of its child subcategories.
    *
-   * This operation complements the category list endpoint (PATCH /ecommerceMall/categories) and category creation endpoint (POST /ecommerceMall/categories for admins) to provide complete category management functionality.
+   * If the category has been deleted (soft-deleted with deleted_at timestamp set), the operation will return a 404 Not Found error to prevent access to removed categories.
    *
    * @param connection
-   * @param categoryId Unique identifier of the category to retrieve
+   * @param categoryId The unique identifier of the category to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_categories table for the category with the specified ID.
+   * @x-autobe-specification Query the ecommerce_mall_categories table for the category with id matching the categoryId path parameter.
    *
-   * 1. Validate categoryId is a valid UUID format
-   * 2. Perform database query: SELECT * FROM ecommerce_mall_categories WHERE id = categoryId
-   * 3. If no category found, return 404 Not Found error
-   * 4. If found, join with ecommerce_mall_products to calculate product count
-   * 5. Include parent category information if parentCategory_id is not null
-   * 6. Return full category entity with all fields populated
+   * 1. Validate that the category exists and is not soft-deleted (deleted_at is NULL)
+   * 2. Fetch parent category relationship if parent_category_id is set
+   * 3. Calculate product count by counting all ecommerce_mall_products where category_id matches and product.is_active = true
+   * 4. Calculate subcategory count by counting child categories where parent_category_id equals the current category's id
+   * 5. Check is_leaf flag to confirm whether this category has children
+   * 6. Return full category object with parent_id, name, description, is_leaf, created_at, updated_at, plus computed product_count and subcategory_count fields
    *
-   * Business logic:
-   * - Category names must be unique within their parent level (same parent category)
-   * - Subcategories can only be one level deep (no sub-subcategories)
-   * - Product count reflects the total number of active products in this category and its subcategories (if applicable)
-   * - Categories can be browsed by any authenticated user
+   * Authorization: Allow both admin and customer roles to read category information.
    *
-   * Error handling:
-   * - 404: Category not found - when no category exists with the specified ID
-   * - 401: Unauthorized - when no authentication token is provided
-   * - 403: Forbidden - when user role lacks permission (if implemented)
+   * Error cases:
+   * - 404 Not Found: Category with specified ID does not exist or has been deleted
+   * - 403 Forbidden: Access denied (if implementing category visibility restrictions)
    *
-   * Dependencies:
-   * - No pre-execution required
-   * - Should be used in conjunction with:
-   *   - PATCH /categories for category list operations
-   *   - POST /categories (admin only) for category creation
-   *   - PUT /categories/{categoryId} (admin only) for category updates
-   *   - DELETE /categories/{categoryId} (admin only) for category deletion
+   * The categoryId parameter is a UUID string that uniquely identifies the category within the database.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":categoryId")

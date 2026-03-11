@@ -21,12 +21,12 @@ export namespace DiscussionBoardBanRecordAtSummaryTransformer {
         reason: true,
         banned_at: true,
         unbanned_at: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
         discussionBoardMember:
           DiscussionBoardMemberAtSummaryTransformer.select(),
         discussionBoardAdmin: DiscussionBoardAdminAtSummaryTransformer.select(),
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     } satisfies Prisma.discussion_board_ban_recordsFindManyArgs;
   }
@@ -46,9 +46,6 @@ export namespace DiscussionBoardBanRecordAtSummaryTransformer {
         await DiscussionBoardAdminAtSummaryTransformer.transform(
           input.discussionBoardAdmin,
         ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

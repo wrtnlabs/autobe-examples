@@ -1,4 +1,3 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,13 +15,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getDiscussionBoardSectionsSectionId(props: {
   sectionId: string & tags.Format<"uuid">;
 }): Promise<IDiscussionBoardSection> {
+  // Fetch the section by ID and ensure it's not soft-deleted
   const section =
     await MyGlobal.prisma.discussion_board_sections.findUniqueOrThrow({
       where: {
         id: props.sectionId,
-        status: "active",
+        deleted_at: null, // Only return active sections
       },
       ...DiscussionBoardSectionTransformer.select(),
     });
+  // Transform the database payload to API response DTO
   return await DiscussionBoardSectionTransformer.transform(section);
 }

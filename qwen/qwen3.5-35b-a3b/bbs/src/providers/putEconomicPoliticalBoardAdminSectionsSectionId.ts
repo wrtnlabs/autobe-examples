@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
 import { IEconomicPoliticalBoardArticle } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardArticle";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEconomicPoliticalBoardSection } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardSection";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -22,47 +21,39 @@ export async function putEconomicPoliticalBoardAdminSectionsSectionId(props: {
   body: IEconomicPoliticalBoardSection.IUpdate;
 }): Promise<IEconomicPoliticalBoardSection> {
   const existingSection =
-    await MyGlobal.prisma.economic_political_board_sections.findUnique({
+    await MyGlobal.prisma.economic_political_board_sections.findUniqueOrThrow({
       where: { id: props.sectionId },
-      select: { id: true, deleted_at: true },
+      ...EconomicPoliticalBoardSectionTransformer.select(),
     });
-  if (existingSection === null || existingSection.deleted_at !== null) {
+  if (existingSection.deleted_at !== null) {
     throw new HttpException("Section not found", 404);
   }
-  const updateData: {
-    name?: string;
-    description?: string | null;
-    updated_at: Date;
-  } = {
-    updated_at: new Date(),
-  };
-  if (props.body.name !== undefined) {
-    const otherSection =
+  if (
+    props.body.name !== undefined &&
+    props.body.name !== existingSection.name
+  ) {
+    const duplicateSection =
       await MyGlobal.prisma.economic_political_board_sections.findFirst({
         where: {
           name: props.body.name,
-          AND: [
-            {
-              NOT: {
-                id: props.sectionId,
-              },
-            },
-          ],
+          id: { not: props.sectionId },
+          deleted_at: null,
         },
-        select: { id: true },
       });
-    if (otherSection !== null) {
+    if (duplicateSection !== null) {
       throw new HttpException("Section name already exists", 409);
     }
-    updateData.name = props.body.name;
-  }
-  if (props.body.description !== undefined) {
-    updateData.description = props.body.description;
   }
   const updated =
     await MyGlobal.prisma.economic_political_board_sections.update({
       where: { id: props.sectionId },
-      data: updateData,
+      data: {
+        ...(props.body.name !== undefined && { name: props.body.name }),
+        ...(props.body.description !== undefined && {
+          description: props.body.description,
+        }),
+        updated_at: new Date(),
+      },
       ...EconomicPoliticalBoardSectionTransformer.select(),
     });
   return await EconomicPoliticalBoardSectionTransformer.transform(updated);

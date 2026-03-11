@@ -19,26 +19,25 @@ export namespace ShoppingMallProductSnapshotAtSummaryTransformer {
         base_price: true,
         images: true,
         created_at: true,
-        skuSnapshots: {
+        _count: {
           select: {
-            id: true,
+            skuSnapshots: true,
           },
-        } satisfies Prisma.shopping_mall_product_snapshot_skusesFindManyArgs,
+        },
       },
     } satisfies Prisma.shopping_mall_product_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductSnapshot.ISummary> {
-    const imageUrls: string[] = JSON.parse(input.images);
     return {
       id: input.id,
       name: input.name,
       description: input.description,
-      base_price: input.base_price,
-      thumbnail: imageUrls.length > 0 ? imageUrls[0] : null,
-      variantCount: input.skuSnapshots.length,
-      created_at: input.created_at.toISOString(),
+      basePrice: input.base_price,
+      images: JSON.parse(input.images),
+      createdAt: input.created_at.toISOString(),
+      variantCount: input._count.skuSnapshots,
     };
   }
 }

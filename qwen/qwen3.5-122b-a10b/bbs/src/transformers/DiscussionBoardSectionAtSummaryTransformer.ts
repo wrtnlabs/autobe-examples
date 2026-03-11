@@ -22,12 +22,12 @@ export namespace DiscussionBoardSectionAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         creator: DiscussionBoardAdminAtSummaryTransformer.select(),
-        articles: {
-          select: { id: true },
-        } satisfies Prisma.discussion_board_articlesFindManyArgs,
         snapshots: {
-          select: { id: true },
+          select: {},
         } satisfies Prisma.discussion_board_section_snapshotsFindManyArgs,
+        articles: {
+          select: {},
+        } satisfies Prisma.discussion_board_articlesFindManyArgs,
       },
     } satisfies Prisma.discussion_board_sectionsFindManyArgs;
   }
@@ -38,11 +38,12 @@ export namespace DiscussionBoardSectionAtSummaryTransformer {
       id: input.id,
       name: input.name,
       description: input.description ?? null,
-      created_at: input.created_at.toISOString(),
       creator: await DiscussionBoardAdminAtSummaryTransformer.transform(
         input.creator,
       ),
-      article_count: input.articles.length,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

@@ -22,7 +22,7 @@ export namespace DiscussionBoardBanRecordCollector {
       updated_at: new Date(),
       deleted_at: null,
       discussionBoardMember: {
-        connect: { id: props.body.discussionBoardMemberId },
+        connect: { id: props.body.discussion_board_member_id },
       },
       discussionBoardAdmin: { connect: { id: props.discussionBoardAdmins.id } },
     } satisfies Prisma.discussion_board_ban_recordsCreateInput;

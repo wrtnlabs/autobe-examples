@@ -13,45 +13,44 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteShoppingMallAdministratorCategoriesCategoryId(props: {
   administrator: AdministratorPayload;
-  categoryId: string & tags.Format<"uuid">;
+  categoryId: string;
 }): Promise<void> {
-  // 1. Find the category and check if it's not soft-deleted
+  // 1. Find the category and check if it exists and is not already deleted
   const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
     where: { id: props.categoryId },
+    select: { id: true, deleted_at: true },
   });
   if (category === null || category.deleted_at !== null) {
     throw new HttpException("Category not found", 404);
   }
-  // 2. Check if products exist in this category
-  const productsCount = await MyGlobal.prisma.shopping_mall_products.count({
+  // 2. Check if any products are assigned to this category
+  const productCount = await MyGlobal.prisma.shopping_mall_products.count({
     where: {
       shopping_mall_category_id: props.categoryId,
       deleted_at: null,
     },
   });
-  if (productsCount > 0) {
+  if (productCount > 0) {
     throw new HttpException(
-      "Cannot delete category with existing products. Reassign products first.",
+      "Cannot delete category with assigned products. Please reassign products first.",
       400,
     );
   }
-  // Use transaction for atomicity
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // 3. Promote subcategories to top-level (set parent_id to null)
-    await tx.shopping_mall_categories.updateMany({
+  // 3. Promote subcategories to top-level categories and soft delete in transaction
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_categories.updateMany({
       where: { parent_id: props.categoryId },
       data: {
         parent_id: null,
         updated_at: new Date(),
       },
-    });
-    // 4. Soft delete the category
-    await tx.shopping_mall_categories.update({
+    }),
+    MyGlobal.prisma.shopping_mall_categories.update({
       where: { id: props.categoryId },
       data: {
         deleted_at: new Date(),
         updated_at: new Date(),
       },
-    });
-  });
+    }),
+  ]);
 }

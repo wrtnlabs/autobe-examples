@@ -5,66 +5,38 @@ import typia, { tags } from "typia";
 import { IEcommerceMallProductVariant } from "../../../../../api/structures/IEcommerceMallProductVariant";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
+import { deleteEcommerceMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/deleteEcommerceMallSellerProductsProductIdVariantsVariantId";
 import { postEcommerceMallSellerProductsProductIdVariants } from "../../../../../providers/postEcommerceMallSellerProductsProductIdVariants";
 import { putEcommerceMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/putEcommerceMallSellerProductsProductIdVariantsVariantId";
 
 @Controller("/ecommerceMall/seller/products/:productId/variants")
 export class EcommercemallSellerProductsVariantsController {
   /**
-   * Create a new product variant for an existing product.
+   * Create a new product variant for an existing product in the ecommerce mall catalog.
    *
-   * This operation allows sellers to add a new variant (specific option combination) to their product catalog. Each variant represents a unique product configuration with its own SKU code, stock quantity, and optionally a price override from the product's base price.
+   * This operation allows sellers to add new variants to their products, enabling customers to purchase products with different option combinations (such as color, size, material, etc.). Each variant represents a specific SKU with its own stock quantity and optional price override, as documented in the ecommerce_mall_product_variants database schema.
    *
-   * Security & Authorization:
-   * - Only the product's owning seller can create variants
-   * - Seller must have approved account status
-   * - Product must exist and be accessible by the seller
+   * The seller must own the target product to create variants. The system validates that the SKU code is globally unique across all products (not just within the target product), and that option values do not duplicate any existing variant's option combination. Products without any variants are marked as unavailable for purchase in search results and product listings according to the product availability requirements (section 904, 1146).
    *
-   * Business Rules:
-   * - SKU code must be unique within the product (not globally unique)
-   * - At least one variant is required for a product to be purchasable
-   * - Option values must be provided as JSON to describe the variant configuration (e.g., {"size":"Large","color":"Red"})
-   * - Stock quantity must be a positive integer
-   * - If price_override is null, the product's base_price is used
-   *
-   * Validation:
-   * - SKU code uniqueness is validated before variant creation
-   * - Stock quantity must be ≥ 0
-   * - Product must exist and belong to the authenticated seller
-   *
-   * Related Operations:
-   * - GET /products/{productId} - View product details before adding variants
-   * - PATCH /products/{productId}/variants/{variantId} - Update variant after creation
-   * - GET /products/{productId}/variants - List all variants for a product
-   * - DELETE /products/{productId}/variants/{variantId} - Delete a variant (if not the last one)
+   * When a variant is created, the product's availability status may change if this is the first variant added to the product. The variant uses the isActive flag for availability control rather than soft deletion, with inactive variants removed from search results while preserved for historical order references.
    *
    * @param connection
-   * @param productId The unique identifier of the parent product
+   * @param productId UUID identifier of the product to add the variant to
    * @param body Variant creation data including SKU code, option values, stock quantity, and optional price override
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the request and verify the user has seller role
-   * 2. Load the product by productId from ecommerce_mall_products table
-   * 3. Verify the product exists and seller_id matches the authenticated seller's id
-   * 4. Validate that the product is not soft-deleted (deleted_at is null)
-   * 5. Validate request body:
-   *    - sku_code: required, max 50 characters, unique within this product
-   *    - option_values: required, valid JSON object
-   *    - stock_quantity: required, integer ≥ 0
-   *    - price_override: optional, float (null allowed)
-   * 6. Check for SKU code conflict within the product (@@unique([sku_code]))
-   * 7. If this is the first variant, verify the product can accept variants
-   * 8. Insert new record into ecommerce_mall_product_variants with:
-   *    - id: generated UUID
-   *    - product_id: from path parameter
-   *    - sku_code: from request body
-   *    - option_values: JSON string from request body
-   *    - price_override: from request body or null
-   *    - stock_quantity: from request body
-   *    - is_active: true (default)
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   * 9. Return the complete created variant with all fields
+   * @x-autobe-specification 1. Verify the authenticated seller owns the target product by checking product.seller_id matches seller.id
+   * 2. Validate that the product exists and is active
+   * 3. Check for SKU uniqueness: query all variants for the target product and verify no variant.sku_code matches the requested sku_code
+   * 4. Check for option values uniqueness: query all variants for the target product and verify no variant.option_values matches the requested option_values JSON
+   * 5. Validate stock_quantity is a positive integer
+   * 6. Validate sku_code length does not exceed 50 characters
+   * 7. Validate option_values is a valid JSON object with meaningful option keys and values
+   * 8. If price_override is provided, validate it is a positive decimal number
+   * 9. Create the variant record with product_id, sku_code, option_values, price_override, stock_quantity, isActive (default true), and timestamps
+   * 10. Return the created variant with full details including id, product_id, sku_code, option_values, price_override, stock_quantity, is_active, product_id, created_at, updated_at
+   * 11. If product has no variants before this creation, the product becomes purchasable
+   * 12. On validation failure, return appropriate error codes (404 for product not found, 403 for unauthorized, 409 for duplicate SKU or duplicate option values, 422 for validation errors)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -89,34 +61,32 @@ export class EcommercemallSellerProductsVariantsController {
   }
 
   /**
-   * Update an existing product variant with new option values, SKU code, price override, or stock quantity.
+   * Update an existing product variant with new attribute values.
    *
-   * This operation allows sellers to modify their product variants to reflect changes in product specifications, pricing, or inventory levels. The variant must belong to the authenticated seller's product and will be validated against business rules before any changes are applied.
+   * This operation allows sellers to modify the SKU code, option values, price override, stock quantity, and active status of a specific product variant. The operation performs comprehensive validation including SKU uniqueness checking within the same product, stock quantity validation, and variant minimum requirements.
    *
-   * The update operation performs comprehensive validation including SKU uniqueness within the product's variant set, verification that at least one variant remains active after the update, and stock quantity constraints. Snapshot records are created to preserve the before and after state for dispute resolution and audit trails.
+   * The variant identified by path parameters must belong to the specified product. All changes are validated against business rules before persistence. Upon successful update, the productVariant table record is modified and the updatedAt timestamp is automatically set.
    *
-   * The operation supports partial updates - only the fields included in the request body will be modified. All updates are logged to the product variant snapshot table for audit trail purposes.
-   *
-   * **Important**: This operation does not modify the variant's `deleted_at` field. Variants are marked as soft-deleted through a separate deletion operation. When a variant has `deleted_at` set, it is considered deleted but preserved for historical reference.
+   * Sellers can only update variants they own (belong to their products). The operation ensures data integrity by rejecting invalid SKU combinations, preventing deletion of the last variant, and validating option value formats.
    *
    * @param connection
-   * @param productId Parent product's UUID
-   * @param variantId Variant's UUID
-   * @param body Fields to update for the product variant. Only include fields that need to be modified.
+   * @param productId UUID of the parent product that owns this variant
+   * @param variantId UUID of the variant to update
+   * @param body Update data for the product variant. Fields not provided will remain unchanged.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Verify seller authorization - authenticated seller must own the parent product
-   * 2. Fetch variant from database matching product_id and variant_id
-   * 3. Validate variant exists and is not already deleted (deleted_at is null)
-   * 4. Validate SKU uniqueness - new SKU must not exist in other variants of the same product (allow current SKU if unchanged)
-   * 5. Apply only provided fields from request body (partial update)
-   * 6. If stock_quantity is being updated to 0 and this is the last active variant, reject with error
-   * 7. Ensure stock_quantity >= 0
-   * 8. Validate option_values JSON structure if provided
-   * 9. Update variant record with new values and updated_at timestamp
-   * 10. Create snapshot record for audit trail with oldValues and newValues
-   * 11. Return updated variant with all fields including timestamps
-   * 12. Handle constraint violations with appropriate HTTP status codes (400, 404, 409)
+   * @x-autobe-specification 1. Fetch the product from ecommerce_mall_products using productId from path parameter.
+   * 2. Verify the seller making the request owns the product (product.seller_id = current_user.id).
+   * 3. Fetch the variant from ecommerce_mall_product_variants using variantId.
+   * 4. Validate the variant belongs to the specified product (variant.product_id = productId).
+   * 5. Validate SKU uniqueness: check if new skuCode conflicts with other variants of the same product (excluding current variant).
+   * 6. Validate variant minimum: if updating stockQuantity to 0 or deactivating the variant, ensure the product will still have at least one active variant.
+   * 7. Validate option values: ensure optionValues JSON contains meaningful, distinguishable values.
+   * 8. Validate stockQuantity: must be a non-negative integer.
+   * 9. Validate isActive: boolean field indicating variant availability.
+   * 10. Update the variant record with new values.
+   * 11. Set updatedAt to current timestamp.
+   * 12. Return the complete updated variant object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":variantId")
@@ -136,6 +106,107 @@ export class EcommercemallSellerProductsVariantsController {
         productId,
         variantId,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a specific product variant from a seller's product catalog.
+   *
+   * This operation removes a product variant that belongs to the specified product. The variant will be soft-deleted (marked as deleted while preserving for audit purposes) along with its current inventory record (historical inventory records are preserved for audit purposes). The variant must not have any active transactions before deletion can proceed.
+   *
+   * The operation enforces the following business rules:
+   *
+   * 1. Ownership verification: Only the seller who owns the parent product can delete the variant, or an administrator with policy violation privileges.
+   *
+   * 2. Transaction restrictions: Deletion is blocked if any order item for this variant has status 'paid' or 'shipped'.
+   *
+   * 3. Request restrictions: Deletion is blocked if any pending cancellation or refund requests exist for this variant.
+   *
+   * When successful, the variant is soft-deleted and removed from all active product listings and search results. The product's other variants remain unaffected and available for purchase.
+   *
+   * Related operations: GET /products/{productId}/variants (list all variants of a product), PUT /products/{productId}/variants/{variantId} (update variant), PATCH /products/{productId}/variants (search/filter variants)
+   *
+   * @param connection
+   * @param productId UUID of the parent product containing this variant
+   * @param variantId UUID of the variant to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification DELETE operation implementation steps:
+   *
+   * 1. **Authorization Check**:
+   *    - Retrieve the product record using productId from path parameter
+   *    - Verify the requesting seller is the owner of the product (product.seller_id = current seller.id)
+   *    - OR verify the requesting user has admin privileges
+   *    - Reject with 403 if neither condition is met
+   *
+   * 2. **Variant Existence Check**:
+   *    - Query ecommerce_mall_product_variants for variant_id matching the path parameter
+   *    - Filter by product_id and is_deleted = false
+   *    - Return 404 if variant not found or already deleted
+   *
+   * 3. **Ownership Verification**:
+   *    - Verify the variant's product_id matches the productId path parameter (defense in depth)
+   *    - Reject with 404 if mismatch
+   *
+   * 4. **Deletion Restrictions Check**:
+   *    - Query order_items table where variant_id matches and item_status in ('paid', 'shipped')
+   *    - If any matching order items exist, reject with 409 Conflict, include list of blocking order item IDs
+   *    - Query cancellation_requests table where order_item.variant_id matches and request_status = 'pending'
+   *    - If any pending cancellation requests exist, reject with 409 Conflict, include list of blocking request IDs
+   *    - Query refund_requests table where order_item.variant_id matches and request_status = 'pending'
+   *    - If any pending refund requests exist, reject with 409 Conflict, include list of blocking request IDs
+   *
+   * 5. **Last Variant Protection**:
+   *    - Query ecommerce_mall_product_variants count where product_id matches and is_deleted = false and is_active = true
+   *    - If count <= 1 (this is the last variant), reject with 409 Conflict
+   *    - Error message must indicate that at least one variant must remain for the product to be purchasable
+   *
+   * 6. **Delete Variant Record**:
+   *    - Set deleted_at to current timestamp for the variant record
+   *    - OR permanently delete the row if hard delete policy is enforced
+   *    - The schema shows deleted_at column exists, suggesting soft deletion is available
+   *    - CASCADE will automatically delete related records if configured
+   *
+   * 7. **Delete Current Inventory Record**:
+   *    - Query inventory_records for variant_id matching current stock record
+   *    - Delete the current inventory record (not historical records)
+   *    - Historical inventory records are preserved for audit
+   *
+   * 8. **Cleanup References**:
+   *    - Remove variant from any customer wishlists that reference it
+   *    - Update product status to reflect remaining variant count
+   *    - Remove variant from cache indexes
+   *
+   * 9. **Audit Logging**:
+   *    - Create a snapshot record capturing the deleted variant state before deletion
+   *    - Log deletion event for admin audit trail
+   *    - Record who initiated deletion (seller_id or admin_id)
+   *
+   * 10. **Response**:
+   *     - Return 204 No Content if deletion successful
+   *     - Return 403 Forbidden for unauthorized access
+   *     - Return 404 Not Found if product/variant not found
+   *     - Return 409 Conflict for deletion restriction violations
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":variantId")
+  public async erase(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("variantId")
+    variantId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteEcommerceMallSellerProductsProductIdVariantsVariantId({
+        seller,
+        productId,
+        variantId,
       });
     } catch (error) {
       console.log(error);

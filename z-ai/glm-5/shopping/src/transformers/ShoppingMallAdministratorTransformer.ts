@@ -1,4 +1,3 @@
-import { IEAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IEAdministratorGrade";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
 import { ArrayUtil } from "@nestia/e2e";
@@ -29,7 +28,7 @@ export namespace ShoppingMallAdministratorTransformer {
     return {
       id: input.id,
       email: input.email,
-      grade: input.grade as IEAdministratorGrade,
+      grade: input.grade as "regular" | "super",
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

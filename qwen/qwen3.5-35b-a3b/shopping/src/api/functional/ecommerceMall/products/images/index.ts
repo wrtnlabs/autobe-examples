@@ -6,89 +6,57 @@ import typia, { tags } from "typia";
 import { IEcommerceMallProductImage } from "../../../../structures/IEcommerceMallProductImage";
 
 /**
- * Batch update product image display order for a product's image gallery.
+ * Manage product images for a specific product, including reordering images, setting the primary/thumbnail image, and batch operations.
  *
- * This operation allows sellers to reorder product images by adjusting their display_order values. The display_order determines the sequence in which images appear in the product image gallery, with lower values appearing first. The first image (lowest display_order) serves as the main product thumbnail in search results and catalog listings.
+ * This operation allows sellers who own a product to modify the display order of their product images and select which image should appear as the primary thumbnail in product listings and search results.
  *
- * **Authorization**:
- * - Only the seller who owns the product can manage its images
- * - Product ownership is verified by matching the authenticated seller's ID with the product's seller_id
- * - Attempts to modify images for products owned by other sellers will be rejected with a 403 Forbidden error
+ * The operation supports batch reordering of multiple images in a single request, enabling efficient gallery management. Sellers can rearrange all images according to their preferred display sequence.
  *
- * **Business Rules**:
- * - Products must have at least one image to be published (section 143)
- * - Maximum 20 images per product (section 989)
- * - All image IDs in the request must belong to the specified product
- * - Display order values must be unique within a product's image set
- * - If a product has only one image and it is the last remaining image, deletion is not permitted
+ * Only the seller who owns the product (product.sellerId) can manage its images. Non-owner requests will be rejected with a 403 Forbidden response.
  *
- * **Snapshot Preservation**:
- * - A product snapshot is created immediately before applying any image changes (section 325, 638)
- * - Snapshots include the complete image list with all display_order values at time of change
- * - Snapshots are immutable and preserved even after product deletion (section 325)
- * - Super administrators and product owners can view image history snapshots
+ * This endpoint is typically accessed from the product management interface in the seller dashboard, where sellers can drag-and-drop images to reorder them or click an image to set it as primary.
  *
- * **Immediate Visibility**:
- * - Changes are reflected instantly in all customer-facing product views
- * - The image gallery updates in real-time without page reload
- * - Deleted images are removed from customer views immediately upon operation completion
- *
- * **Related Operations**:
- * - `POST /products/{productId}/images` - Upload new images to a product
- * - `DELETE /products/{productId}/images/{imageId}` - Delete a single image
- * - `GET /products/{productId}/images` - Retrieve current image list
- *
- * **Error Handling**:
- * - 404 Not Found: Product not found or image IDs do not belong to product
- * - 403 Forbidden: Authenticated seller does not own this product
- * - 400 Bad Request: Invalid display_order values, duplicate display_orders, or product has fewer images than requested operations
- * - 422 Unprocessable Entity: Product would have zero images after operation (last image removal not allowed)
- *
- * **Database Schema Reference**:
- * - Table: ecommerce_mall_product_images
- * - Columns: id (uuid), product_id (uuid), image_url (varchar), display_order (int), created_at (timestamptz), updated_at (timestamptz), deleted_at (timestamptz nullable)
- * - Index: [product_id, display_order] ensures efficient retrieval of ordered image list per product
+ * Related operations:
+ * - GET /products/{productId} - View product details including current image gallery
+ * - PATCH /products/{productId} - Update other product properties
  *
  * @param props.connection
- * @param props.productId The unique identifier of the product whose images are being reordered
- * @param props.body Batch image reordering operations. Each operation specifies an image ID and its new display_order value. All image IDs must belong to the specified product. Display order values must be unique within the product's image set.
+ * @param props.productId ID of the product whose images are being managed
+ * @param props.body Image management instructions including reordering and thumbnail selection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1. Verify authenticated user is a seller actor with valid session
- * 2. Query ecommerce_mall_products for productId, verify seller_id matches authenticated user's ID
- * 3. Verify product exists and is not soft-deleted (deleted_at is NULL)
- * 4. For each image operation in request body:
- *    - Verify image_id belongs to this product (product_id match)
- *    - Verify display_order value is valid (non-negative integer)
- * 5. Check that operation won't result in fewer than one image if product currently has images (section 143)
- * 6. If image_count would be zero after deletions, reject with 422 error (last image must be preserved)
- * 7. Begin database transaction:
- *    a. Create product snapshot in ecommerce_mall_product_snapshots or ecommerce_mall_snapshot_audits:
- *       - Record recordType = 'Product'
- *       - Record recordId = productId
- *       - Capture oldValues = current image list with display_order values
- *       - Capture newValues = will be updated after operation completes
- *       - Record changedBy = authenticated seller's ID
- *       - Record changedAt = current timestamp
- *    b. Update ecommerce_mall_product_images:
- *       - For each reorder operation: UPDATE display_order WHERE id = image_id AND product_id = productId
- *       - Set updated_at = current timestamp for affected images
- *    c. Commit transaction
- * 8. Query updated image list from ecommerce_mall_product_images:
- *    - SELECT id, image_url, display_order, created_at, updated_at
- *    - WHERE product_id = productId AND deleted_at IS NULL
- *    - ORDER BY display_order ASC
- * 9. Return the complete updated image list with all images sorted by display_order
+ * @x-autobe-specification Query the ecommerce_mall_product_images table for images belonging to the specified product (productId).
+ *
+ * Verify that the authenticated seller is the product owner by checking product.sellerId matches the authenticated seller's ID. Return 403 if not authorized.
+ *
+ * Validate the request body contains valid image management instructions:
+ * - imageOrders: array of {imageId, newDisplayOrder} for images to reorder
+ * - thumbnailImageId: optional image ID to set as primary/thumbnail
+ *
+ * Apply image reordering: update displayOrder field for each image in imageOrders array within a database transaction.
+ * Apply thumbnail selection: no separate database column - thumbnail is determined by displayOrder (lowest value = primary). Ensure the selected thumbnail image has displayOrder = 1 after reordering.
+ *
+ * Validate all referenced image IDs exist and belong to the target product.
+ * Return 400 if any image ID is invalid or belongs to a different product.
+ *
+ * After successful update, query and return the complete updated image list with new display orders.
+ *
+ * Handle edge cases:
+ * - Empty request body is valid (no changes needed) - return current state
+ * - Multiple images with same displayOrder should be rejected
+ * - Cannot remove the last image - validate minimum image count if deletion is supported
+ *
+ * Database transaction: wrap all update operations in a single transaction to ensure consistency.
  * @path /ecommerceMall/products/:productId/images
- * @accessor api.functional.ecommerceMall.products.images.reorder
+ * @accessor api.functional.ecommerceMall.products.images.manage
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function reorder(
+export async function manage(
   connection: IConnection,
-  props: reorder.Props,
-): Promise<reorder.Response> {
+  props: manage.Props,
+): Promise<manage.Response> {
   return true === connection.simulate
-    ? reorder.simulate(connection, props)
+    ? manage.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -98,26 +66,26 @@ export async function reorder(
           },
         },
         {
-          ...reorder.METADATA,
-          path: reorder.path(props),
+          ...manage.METADATA,
+          path: manage.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace reorder {
+export namespace manage {
   export type Props = {
     /**
-     * The unique identifier of the product whose images are being reordered
+     * ID of the product whose images are being managed
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Batch image reordering operations. Each operation specifies an image ID and its new display_order value. All image IDs must belong to the specified product. Display order values must be unique within the product's image set.
+     * Image management instructions including reordering and thumbnail selection
      */
-    body: IEcommerceMallProductImage.IUpdate;
+    body: IEcommerceMallProductImage.IManageRequest;
   };
-  export type Body = IEcommerceMallProductImage.IUpdate;
+  export type Body = IEcommerceMallProductImage.IManageRequest;
   export type Response = IEcommerceMallProductImage.ISummary;
 
   export const METADATA = {
@@ -139,12 +107,12 @@ export namespace reorder {
     typia.random<IEcommerceMallProductImage.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: reorder.Props,
+    props: manage.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: reorder.path(props),
+      path: manage.path(props),
       contentType: "application/json",
     });
     try {
@@ -164,28 +132,44 @@ export namespace reorder {
 }
 
 /**
- * Retrieve detailed information about a specific product image by its unique identifier.
+ * Retrieve a specific product image by its unique identifier.
  *
- * This operation returns complete image metadata including the image URL, display order sequence, and creation timestamp. The image serves as part of a product's visual catalog that customers browse during shopping. Images are displayed in display order, with the first image typically serving as the main product thumbnail in search results and category listings.
+ * This operation returns detailed information about a single product image, including the image URL, display order, and timestamps. Product images are visual assets that sellers upload to showcase their products in the ecommerce marketplace.
  *
- * Images can be viewed by both customer and seller actors. Customers access images when browsing product details, while sellers manage their product images through product editing interfaces. Each image maintains a reference to its parent product, enabling proper ownership validation and cascading deletion when products are removed from the catalog.
+ * The returned image data includes the full image URL for customer viewing on product detail pages, the display order that determines thumbnail presentation in search results, and metadata about when the image was created and last updated.
  *
- * The operation validates that the image exists and belongs to the specified product before returning data. If the image has been soft-deleted (marked for removal but preserved for audit purposes), the operation returns a not-found error rather than exposing deleted content.
+ * Access to product images is controlled by ownership: customers can view any publicly available product images, while sellers can only access images for products they own. If the specified image does not exist, has been soft-deleted (deleted_at is set), or does not belong to the specified product, an appropriate error is returned.
+ *
+ * Related operations:
+ * - `GET /products/{productId}/images` (index) to list all images for a product
+ * - `GET /products/{productId}` (at) to retrieve product details including image count
  *
  * @param props.connection
- * @param props.productId The unique identifier of the product that owns this image. The image must belong to this product.
- * @param props.imageId The unique identifier of the product image to retrieve.
+ * @param props.productId Unique identifier of the product that owns this image
+ * @param props.imageId Unique identifier of the product image to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_product_images table for the image record matching both product_id and image_id path parameters. Perform join validation to ensure the image belongs to the specified product.
+ * @x-autobe-specification Retrieve a single product image record from ecommerce_mall_product_images table by its id field.
  *
- * Apply soft delete filter - only return records where deleted_at is NULL. Return 404 if the image record does not exist or has been soft-deleted.
+ * Steps:
+ * 1. Validate that productId and imageId are valid UUID format
+ * 2. Query ecommerce_mall_product_images where id = imageId AND product_id = productId
+ * 3. Check that deleted_at is NULL (image not soft-deleted)
+ * 4. Verify product ownership if caller is seller (seller must own the product)
+ * 5. Return complete image record including id, image_url, display_order, created_at, updated_at
+ * 6. If no record found, return 404 Not Found
  *
- * Build response entity including all fields: id, product_id, image_url (80000 char max), display_order (int), created_at (timestamp), updated_at (timestamp), and product reference for complete entity representation.
+ * Business rules:
+ * - Only return images where deleted_at is NULL (active images only)
+ * - Validate that image belongs to the specified product (prevent IDOR attacks)
+ * - Sellers can only access images for products they own
+ * - Customers can access any active product images for public products
  *
- * Validate UUID format for both path parameters. Return 400 for invalid UUID formats.
- *
- * Include product_id in response for customer applications to maintain image-product context without requiring additional queries.
+ * Edge cases:
+ * - Image exists but belongs to different product: return 404
+ * - Image has been soft-deleted: return 404
+ * - Product does not exist: return 404
+ * - imageId does not exist: return 404
  * @path /ecommerceMall/products/:productId/images/:imageId
  * @accessor api.functional.ecommerceMall.products.images.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -214,12 +198,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The unique identifier of the product that owns this image. The image must belong to this product.
+     * Unique identifier of the product that owns this image
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * The unique identifier of the product image to retrieve.
+     * Unique identifier of the product image to retrieve
      */
     imageId: string & tags.Format<"uuid">;
   };

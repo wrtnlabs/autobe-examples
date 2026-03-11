@@ -15,62 +15,63 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditPlatformAuthAdminRefresh(props: {
   body: IRedditPlatformAdmin.IRefresh;
 }): Promise<IRedditPlatformAdmin.IAuthorized> {
-  // 1. Verify refresh token
+  // 1. Verify refresh token JWT
   const decoded = jwt.verify(
     props.body.refresh_token,
     MyGlobal.env.JWT_SECRET_KEY,
     { issuer: "autobe" },
   ) as {
-    id: string;
-    session_id: string;
-    type: string;
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "admin";
   };
-  if (decoded.type !== "admin") {
-    throw new HttpException("Invalid token type", 401);
-  }
-  // 2. Validate session exists and is not revoked
+  // 2. Validate session exists and is active
   const session =
     await MyGlobal.prisma.reddit_platform_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
         admin_id: decoded.id,
         deleted_at: null,
+        expired_at: {
+          gt: new Date(),
+        },
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 3. Validate admin account exists
+  // 3. Validate admin account exists and is active
   const admin = await MyGlobal.prisma.reddit_platform_admins.findUniqueOrThrow({
     where: { id: decoded.id },
   });
-  // 4. Validate admin account is active
   if (!admin.is_active) {
-    throw new HttpException("Account has been deactivated", 403);
+    throw new HttpException("Admin account is suspended", 403);
   }
-  // 5. Generate new tokens (SAME session_id)
-  const now = new Date().toISOString();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-  const refreshExpires = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const newAccessToken = jwt.sign(
+  // 4. Calculate new expiration times
+  const accessExpiresTime = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiresTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpires: string & tags.Format<"date-time"> =
+    toISOStringSafe(accessExpiresTime);
+  const refreshExpires: string & tags.Format<"date-time"> =
+    toISOStringSafe(refreshExpiresTime);
+  // 5. Generate new tokens (same session_id)
+  const access = jwt.sign(
     {
       type: "admin",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const newRefreshToken = jwt.sign(
+  const refresh = jwt.sign(
     {
       type: "admin",
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now,
+      created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
@@ -79,29 +80,37 @@ export async function postRedditPlatformAuthAdminRefresh(props: {
   await MyGlobal.prisma.reddit_platform_admin_sessions.update({
     where: { id: decoded.session_id },
     data: {
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
-      expired_at: new Date(refreshExpires),
-      updated_at: new Date(now),
+      access_token: access,
+      refresh_token: refresh,
+      expired_at: refreshExpiresTime,
+      updated_at: new Date(),
     },
   });
-  // 7. Return authorized response
-  const response: IRedditPlatformAdmin.IAuthorized = {
-    id: admin.id as string & tags.Format<"uuid">,
-    email: admin.email,
+  // 7. Build response
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
+  const email: string & tags.Format<"email"> = admin.email;
+  const id: string & tags.Format<"uuid"> = admin.id;
+  const created_at: string & tags.Format<"date-time"> = toISOStringSafe(
+    admin.created_at,
+  );
+  const updated_at: string & tags.Format<"date-time"> = toISOStringSafe(
+    admin.updated_at,
+  );
+  return {
+    id,
+    email,
     username: admin.username,
     display_name: admin.display_name,
-    bio: admin.bio,
-    avatar_url: admin.avatar_url,
+    bio: admin.bio ?? "",
+    avatar_url: admin.avatar_url ?? "",
     is_active: admin.is_active,
-    created_at: admin.created_at.toISOString(),
-    updated_at: admin.updated_at.toISOString(),
-    token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    },
+    created_at,
+    updated_at,
+    token,
   };
-  return response;
 }

@@ -19,81 +19,109 @@ export async function patchEcommerceMallSellerVariantsVariantIdInventoryRecords(
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallInventoryRecord.IRequest;
 }): Promise<IPageIEcommerceMallInventoryRecord.ISummary> {
-  await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-    where: {
-      id: props.variantId,
-      product: {
-        seller_id: props.seller.id,
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const sortBy: "newest" | "oldest" | undefined = props.body.sortBy;
+  const reasonFilter: string | undefined = props.body.reason;
+  const dateRange:
+    | {
+        start?: string & tags.Format<"date-time">;
+        end?: string & tags.Format<"date-time">;
+      }
+    | undefined = props.body.dateRange;
+  if (page < 1 || !Number.isInteger(page)) {
+    throw new HttpException("Invalid page number", 400);
+  }
+  if (limit < 1 || limit > 100 || !Number.isInteger(limit)) {
+    throw new HttpException("Invalid limit", 400);
+  }
+  const variant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+      where: {
+        id: props.variantId,
         deleted_at: null,
       },
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  const page = props.body.page ? parseInt(props.body.page, 10) : 1;
-  const limit = props.body.limit ?? props.body.pageSize ?? 100;
-  const pageSize = Math.min(Math.max(limit, 1), 100);
-  const skip = (page - 1) * pageSize;
-  const whereInput = {
+      select: {
+        id: true,
+        product_id: true,
+      },
+    });
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: {
+        id: variant.product_id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        seller_id: true,
+      },
+    });
+  if (product.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const whereInput: {
+    variant_id: string & tags.Format<"uuid">;
+    reason?: string;
+    timestamp?: {
+      gte?: string & tags.Format<"date-time">;
+      lte?: string & tags.Format<"date-time">;
+    };
+  } = {
     variant_id: props.variantId,
-    ...(props.body.startDate !== undefined && {
-      timestamp: { gte: new Date(props.body.startDate) },
-    }),
-    ...(props.body.endDate !== undefined && {
-      timestamp: { lte: new Date(props.body.endDate) },
-    }),
-    ...(props.body.reasonType !== undefined && {
-      reason: props.body.reasonType,
-    }),
-  } satisfies Prisma.ecommerce_mall_inventory_recordsWhereInput;
-  const orderByInput = [
-    {
-      timestamp: props.body.sortOrder === "asc" ? "asc" : "desc",
-    },
-  ] satisfies Prisma.ecommerce_mall_inventory_recordsOrderByWithRelationInput[];
+  };
+  if (reasonFilter !== undefined) {
+    whereInput.reason = reasonFilter;
+  }
+  if (dateRange !== undefined) {
+    whereInput.timestamp = {};
+    if (dateRange.start !== undefined) {
+      whereInput.timestamp.gte = dateRange.start;
+    }
+    if (dateRange.end !== undefined) {
+      whereInput.timestamp.lte = dateRange.end;
+    }
+  }
+  const orderByInput: Prisma.ecommerce_mall_inventory_recordsOrderByWithRelationInput[] =
+    sortBy === "oldest" ? [{ timestamp: "asc" }] : [{ timestamp: "desc" }];
   const data = await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
     where: whereInput,
     orderBy: orderByInput,
-    skip,
-    take: pageSize,
-    select: {
-      id: true,
-      variant_id: true,
-      quantity_change: true,
-      reason: true,
-      timestamp: true,
-    } satisfies Prisma.ecommerce_mall_inventory_recordsSelect,
+    skip: (page - 1) * limit,
+    take: limit,
   });
   const total = await MyGlobal.prisma.ecommerce_mall_inventory_records.count({
     where: whereInput,
   });
-  const currentStockResult =
-    await MyGlobal.prisma.ecommerce_mall_inventory_records.aggregate({
-      where: {
-        variant_id: props.variantId,
-      },
-      _sum: {
-        quantity_change: true,
-      },
+  const allRecords =
+    await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
+      where: whereInput,
+      orderBy: [{ timestamp: "asc" }],
     });
-  const currentStock = currentStockResult._sum.quantity_change ?? 0;
-  const transformedData = data.map(
-    (record) =>
-      ({
-        id: record.id,
-        variant_id: record.variant_id,
-        quantity_change: record.quantity_change,
-        reason: record.reason,
-        timestamp: toISOStringSafe(record.timestamp),
-      }) satisfies IEcommerceMallInventoryRecord.ISummary,
-  );
+  const runningTotalMap: Record<string, number> = {};
+  let cumulativeSum: number = 0;
+  for (const record of allRecords) {
+    cumulativeSum += record.quantity_change;
+    runningTotalMap[record.id] = cumulativeSum;
+  }
+  const dataWithStock: IEcommerceMallInventoryRecord.ISummary[] = data.map(
+    (record) => ({
+      id: record.id as string & tags.Format<"uuid">,
+      variant_id: record.variant_id as string & tags.Format<"uuid">,
+      quantity_change: record.quantity_change,
+      reason: record.reason,
+      timestamp: toISOStringSafe(record.timestamp) as string &
+        tags.Format<"date-time">,
+      current_stock: runningTotalMap[record.id],
+    }),
+  ) satisfies IEcommerceMallInventoryRecord.ISummary[];
   return {
+    data: dataWithStock,
     pagination: {
       current: page,
-      limit: pageSize,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / pageSize),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
   } satisfies IPageIEcommerceMallInventoryRecord.ISummary;
 }

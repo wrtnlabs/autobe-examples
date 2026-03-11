@@ -22,15 +22,21 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallSellerShipmentsShipmentId(props: {
   seller: SellerPayload;
-  shipmentId: string & tags.Format<"uuid">;
+  shipmentId: string;
 }): Promise<IShoppingMallShipment> {
+  // Query shipment with authorization check
   const shipment =
-    await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
-      where: { id: props.shipmentId },
+    await MyGlobal.prisma.shopping_mall_shipments.findFirstOrThrow({
+      where: {
+        id: props.shipmentId,
+        deleted_at: null,
+      },
       ...ShoppingMallShipmentTransformer.select(),
     });
+  // Authorization check - seller must own the shipment
   if (shipment.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Transform and return
   return await ShoppingMallShipmentTransformer.transform(shipment);
 }

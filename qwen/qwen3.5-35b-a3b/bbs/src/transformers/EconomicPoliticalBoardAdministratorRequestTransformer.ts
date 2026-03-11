@@ -1,6 +1,5 @@
 import { IEconomicPoliticalBoardAdministratorRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRequest";
 import { IEconomicPoliticalBoardAdministratorRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardAdministratorRole";
-import { IEconomicPoliticalBoardMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEconomicPoliticalBoardMember";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -24,11 +23,7 @@ export namespace EconomicPoliticalBoardAdministratorRequestTransformer {
         review_notes: true,
         created_at: true,
         updated_at: true,
-        user: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.economic_political_board_administrator_rolesFindManyArgs,
+        user: EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
         reviewedByAdmin:
           EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.select(),
       },
@@ -39,26 +34,20 @@ export namespace EconomicPoliticalBoardAdministratorRequestTransformer {
   ): Promise<IEconomicPoliticalBoardAdministratorRequest> {
     return {
       id: input.id,
-      user: {
-        id: input.user.id,
-        email: "" as string & tags.Format<"email">,
-        displayName: "" as string,
-        bio: "" as string,
-      } as IEconomicPoliticalBoardMember.ISummary,
       reason: input.reason,
-      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
-      reviewed_by_admin_id: input.reviewed_by_admin_id ?? undefined,
-      reviewed_by_admin: input.reviewedByAdmin
+      status: input.status,
+      reviewed_at: input.reviewed_at?.toISOString() ?? null,
+      review_notes: input.review_notes ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      user: await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
+        input.user,
+      ),
+      reviewedByAdmin: input.reviewedByAdmin
         ? await EconomicPoliticalBoardAdministratorRoleAtSummaryTransformer.transform(
             input.reviewedByAdmin,
           )
         : null,
-      reviewed_at: input.reviewed_at
-        ? toISOStringSafe(input.reviewed_at)
-        : null,
-      review_notes: input.review_notes ?? null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
     };
   }
 }

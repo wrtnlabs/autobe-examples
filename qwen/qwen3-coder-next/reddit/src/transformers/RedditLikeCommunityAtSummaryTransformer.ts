@@ -17,6 +17,38 @@ export namespace RedditLikeCommunityAtSummaryTransformer {
         name: true,
         icon_url: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        owner: {
+          select: {
+            id: true,
+          },
+        },
+        posts: {
+          select: {
+            id: true,
+          },
+        },
+        subscriptions: {
+          select: {
+            id: true,
+          },
+        },
+        moderatorRoles: {
+          select: {
+            id: true,
+          },
+        },
+        userBans: {
+          select: {
+            id: true,
+          },
+        },
+        _count: {
+          select: {
+            subscriptions: true,
+          },
+        },
       },
     } satisfies Prisma.reddit_like_communitiesFindManyArgs;
   }
@@ -24,10 +56,9 @@ export namespace RedditLikeCommunityAtSummaryTransformer {
     input: Payload,
   ): Promise<IRedditLikeCommunity.ISummary> {
     return {
-      id: input.id,
       name: input.name,
-      icon_url: input.icon_url,
-      created_at: input.created_at.toISOString(),
+      icon_url: input.icon_url ?? null,
+      subscriber_count: input._count.subscriptions,
     };
   }
 }

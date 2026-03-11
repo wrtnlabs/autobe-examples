@@ -19,7 +19,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeModeratorReportsReportId(props: {
   moderator: ModeratorPayload;
-  reportId: string & tags.Format<"uuid">;
+  reportId: string;
 }): Promise<IRedditLikeReport> {
   const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
     where: { id: props.reportId },

@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdminSessions } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminSessions";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -12,10 +11,19 @@ import typia, { tags } from "typia";
 export async function authorize_customer_join(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallCustomer.IJoin;
+    body: IEcommerceMallCustomer.IJoin;
   },
-): Promise<IShoppingMallCustomer.IAuthorized> {
-  return await api.functional.shoppingMall.auth.customer.join(connection, {
-    body: props.body,
+): Promise<IEcommerceMallCustomer.IAuthorized> {
+  const joinInput = {
+    email: props.body.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body.password ?? RandomGenerator.alphaNumeric(16),
+    name: props.body.name,
+    phone: props.body.phone,
+    href: props.body.href,
+    referrer: props.body.referrer,
+    ip: props.body.ip,
+  } satisfies IEcommerceMallCustomer.IJoin;
+  return await api.functional.ecommerceMall.auth.customer.join(connection, {
+    body: joinInput,
   });
 }

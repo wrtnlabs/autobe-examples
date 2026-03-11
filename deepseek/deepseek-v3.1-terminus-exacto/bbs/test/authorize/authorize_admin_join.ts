@@ -17,11 +17,6 @@ export async function authorize_admin_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    display_name: props.body?.display_name ?? RandomGenerator.name(),
-    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
-    referrer:
-      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IDiscussionBoardAdmin.IJoin;
   return await api.functional.discussionBoard.auth.admin.join(connection, {
     body: joinInput,

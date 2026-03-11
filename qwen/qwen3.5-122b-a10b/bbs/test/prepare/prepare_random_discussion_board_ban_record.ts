@@ -9,9 +9,9 @@ export function prepare_random_discussion_board_ban_record(
   input?: DeepPartial<IDiscussionBoardBanRecord.ICreate>,
 ): IDiscussionBoardBanRecord.ICreate {
   return {
-    discussionBoardMemberId:
-      input?.discussionBoardMemberId ??
+    discussion_board_member_id:
+      input?.discussion_board_member_id ??
       typia.random<string & tags.Format<"uuid">>(),
-    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 5 }),
   };
 }

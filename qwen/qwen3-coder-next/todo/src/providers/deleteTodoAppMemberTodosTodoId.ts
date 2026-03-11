@@ -15,34 +15,29 @@ export async function deleteTodoAppMemberTodosTodoId(props: {
   member: MemberPayload;
   todoId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const now = toISOStringSafe(new Date());
-  // Find and verify the todo belongs to the current member
   const todo = await MyGlobal.prisma.todo_app_todos.findUniqueOrThrow({
-    where: { id: props.todoId, todo_app_user_id: props.member.id },
+    where: {
+      id: props.todoId,
+      todo_app_user_id: props.member.id,
+    },
+    select: {
+      id: true,
+      is_trashed: true,
+      updated_at: true,
+    },
   });
-  // Check if already trashed (idempotent operation)
   if (todo.is_trashed) {
-    return;
-  }
-  // Perform soft delete with transaction
-  await MyGlobal.prisma.$transaction([
-    // Update the todo to mark as trashed
-    MyGlobal.prisma.todo_app_todos.update({
+    await MyGlobal.prisma.todo_app_todos.delete({
+      where: { id: props.todoId },
+    });
+  } else {
+    await MyGlobal.prisma.todo_app_todos.update({
       where: { id: props.todoId },
       data: {
         is_trashed: true,
-        updated_at: now,
+        updated_at: new Date().toISOString() as string &
+          tags.Format<"date-time">,
       },
-    }),
-    // Create trash entry
-    MyGlobal.prisma.todo_app_todo_trashes.create({
-      data: {
-        id: v4(),
-        todo_id: props.todoId,
-        deleted_at: now,
-        created_at: now,
-        updated_at: now,
-      },
-    }),
-  ]);
+    });
+  }
 }

@@ -1,4 +1,6 @@
 import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCancellationRequest";
@@ -11,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { EcommerceMallCancellationRequestAtSummaryTransformer } from "../transformers/EcommerceMallCancellationRequestAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,74 +22,66 @@ export async function patchEcommerceMallCustomerCancellationRequests(props: {
   body: IEcommerceMallCancellationRequest.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequest.ISummary> {
   const page = props.body.page ?? 1;
-  const pageSize = props.body.pageSize ?? 20;
-  const limit = props.body.limit ?? 100;
-  const safeLimit = Math.min(Math.max(pageSize, limit), 100);
-  const skip = (page - 1) * safeLimit;
-  const whereInput = {
+  const limit = Math.min(props.body.limit ?? 50, 50);
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.ecommerce_mall_cancellation_requestsWhereInput = {
     customer_id: props.customer.id,
     deleted_at: null,
-    ...(props.body.requestStatus !== undefined && {
-      request_status: props.body.requestStatus,
+    ...(props.body.orderItemId !== undefined && {
+      order_item_id: props.body.orderItemId,
     }),
-    ...(props.body.createdFrom !== undefined && {
-      created_at: { gte: props.body.createdFrom },
+    ...(props.body.status !== undefined && {
+      request_status: props.body.status,
     }),
-    ...(props.body.createdTo !== undefined && {
-      created_at: { lte: props.body.createdTo },
+    ...(props.body.startDate !== undefined && {
+      created_at: {
+        gte: new Date(props.body.startDate),
+      },
     }),
-    ...(props.body.search !== undefined && {
-      reason: { contains: props.body.search },
+    ...(props.body.endDate !== undefined && {
+      created_at: {
+        lte: new Date(props.body.endDate),
+      },
     }),
   } satisfies Prisma.ecommerce_mall_cancellation_requestsWhereInput;
-  const orderByInput = (
-    props.body.sort === "createdAt"
-      ? { created_at: props.body.sortOrder === "ASC" ? "asc" : "desc" }
-      : props.body.sort === "updatedAt"
-        ? { updated_at: props.body.sortOrder === "ASC" ? "asc" : "desc" }
-        : props.body.sort === "requestStatus"
-          ? { request_status: props.body.sortOrder === "ASC" ? "asc" : "desc" }
-          : props.body.sort === "itemId"
-            ? { order_item_id: props.body.sortOrder === "ASC" ? "asc" : "desc" }
-            : { created_at: "desc" }
-  ) satisfies Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput;
-  const data =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
+  const orderByInput =
+    ((): Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput => {
+      const sortBy = props.body.sortBy;
+      const sortOrder = props.body.sortOrder ?? "desc";
+      if (sortBy === "requestStatus") {
+        return { request_status: sortOrder };
+      }
+      if (sortBy === "reason") {
+        return { reason: sortOrder };
+      }
+      if (sortBy === "updatedAt") {
+        return { updated_at: sortOrder };
+      }
+      return { created_at: sortOrder };
+    })();
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
       where: whereInput,
       orderBy: orderByInput,
       skip,
-      take: safeLimit,
-      select: {
-        id: true,
-        customer_id: true,
-        order_item_id: true,
-        reason: true,
-        request_status: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
+      take: limit,
+      ...EcommerceMallCancellationRequestAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
       where: whereInput,
-    });
+    }),
+  ]);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallCancellationRequestAtSummaryTransformer.transform,
+  );
   return {
-    data: data.map((record) => ({
-      id: record.id,
-      customer_id: record.customer_id,
-      order_item_id: record.order_item_id,
-      reason: record.reason,
-      request_status: typia.assert<"pending" | "approved" | "rejected">(
-        record.request_status,
-      ),
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
-    })) satisfies IEcommerceMallCancellationRequest.ISummary[],
+    data: transformedData,
     pagination: {
       current: page,
-      limit: safeLimit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / safeLimit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

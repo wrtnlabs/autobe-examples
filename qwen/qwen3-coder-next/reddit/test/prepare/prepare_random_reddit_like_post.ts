@@ -8,24 +8,24 @@ import typia, { tags } from "typia";
 export function prepare_random_reddit_like_post(
   input?: DeepPartial<IRedditLikePost.ICreate> | undefined,
 ): IRedditLikePost.ICreate {
-  const postType =
+  const type =
     input?.type ?? RandomGenerator.pick(["text", "link", "image"] as const);
   return {
-    title: input?.title ?? RandomGenerator.paragraph({ sentences: 3 }),
-    type: postType,
+    title:
+      input?.title ??
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 5, wordMax: 10 }),
+    type: type,
     content:
-      postType === "text"
+      type === "text"
         ? (input?.content ?? RandomGenerator.content({ paragraphs: 2 }))
         : (input?.content ?? null),
     url:
-      postType === "link"
+      type === "link"
         ? (input?.url ?? typia.random<string & tags.Format<"uri">>())
         : (input?.url ?? null),
     image_url:
-      postType === "image"
+      type === "image"
         ? (input?.image_url ?? typia.random<string & tags.Format<"uri">>())
         : (input?.image_url ?? null),
-    community_id:
-      input?.community_id ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

@@ -36,6 +36,7 @@ export namespace EcommerceMallAdminAtSummaryTransformer {
       id: input.id,
       email: input.email,
       is_banned: input.is_banned,
+      ban_reason: input.ban_reason,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
     };

@@ -15,22 +15,12 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         approval_status: true,
         rejection_reason: true,
         is_suspended: true,
         is_banned: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        sessions: true,
-        passwordReset: true,
-        emailVerifications: true,
-        shipments: true,
-        orderItemStatusSnapshots: true,
-        adminRequest: true,
-        products: true,
-        productSnapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }
@@ -40,13 +30,14 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      approval_status: typia.assert<"pending" | "approved" | "rejected">(
+      approvalStatus: typia.assert<"pending" | "approved" | "rejected">(
         input.approval_status,
       ),
-      rejection_reason: input.rejection_reason ?? undefined,
-      is_suspended: input.is_suspended,
-      is_banned: input.is_banned,
-      created_at: toISOStringSafe(input.created_at),
+      rejectionReason: input.rejection_reason ?? null,
+      isSuspended: input.is_suspended,
+      isBanned: input.is_banned,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
     };
   }
 }

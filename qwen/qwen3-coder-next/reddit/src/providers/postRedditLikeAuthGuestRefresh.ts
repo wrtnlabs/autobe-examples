@@ -17,10 +17,10 @@ export async function postRedditLikeAuthGuestRefresh(props: {
 }): Promise<IRedditLikeGuest.IAuthorized> {
   // 1. Verify refresh token
   let decoded: {
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
+    id: string;
+    session_id: string;
     type: "guest";
-    created_at: string & tags.Format<"date-time">;
+    created_at: string;
   };
   try {
     decoded = jwt.verify(
@@ -35,72 +35,72 @@ export async function postRedditLikeAuthGuestRefresh(props: {
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and is active
+  // 3. Validate session exists and is not expired
   const session = await MyGlobal.prisma.reddit_like_guest_sessions.findFirst({
     where: {
       id: decoded.session_id,
       reddit_like_guest_id: decoded.id,
+      expired_at: { gt: new Date().toISOString() },
+      deleted_at: null,
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate guest not deleted
+  // 4. Validate guest exists (removed deleted_at check since guest doesn't have this field)
   const guest = await MyGlobal.prisma.reddit_like_guests.findUniqueOrThrow({
     where: { id: decoded.id },
+    select: {
+      id: true,
+      device_id: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
-  // 5. Generate new tokens (SAME session_id)
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const accessToken = jwt.sign(
-    {
-      type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: now.toISOString() as string & tags.Format<"date-time">,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "2h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: now.toISOString() as string & tags.Format<"date-time">,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "14d", issuer: "autobe" },
-  );
+  // 5. Generate new tokens (SAME session_id for session continuity)
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id, // CRITICAL: Same session
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id, // CRITICAL: Same session
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  };
   // 6. Update session expiration
   await MyGlobal.prisma.reddit_like_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: {
-      expired_at: refreshExpires,
-      updated_at: now,
-    },
+    data: { expired_at: refreshExpires.toISOString() },
   });
-  // 7. Return IAuthorized response
+  // 7. Build response
   return {
     id: guest.id,
     device_id: guest.device_id,
-    created_at: guest.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: guest.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refreshable_until: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
+      access: token.access,
+      refresh: token.refresh,
+      expired_at: token.expired_at,
+      refreshable_until: token.refreshable_until,
     },
-  } satisfies IRedditLikeGuest.IAuthorized;
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(new Date()),
+  };
 }

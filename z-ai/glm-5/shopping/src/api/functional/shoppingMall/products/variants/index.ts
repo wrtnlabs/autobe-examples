@@ -1,42 +1,86 @@
 import { HttpError, IConnection } from "@nestia/fetcher";
 import { NestiaSimulator } from "@nestia/fetcher/lib/NestiaSimulator";
 import { PlainFetcher } from "@nestia/fetcher/lib/PlainFetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageIShoppingMallProductVariant } from "../../../../structures/IPageIShoppingMallProductVariant";
 import { IShoppingMallProductVariant } from "../../../../structures/IShoppingMallProductVariant";
 
 /**
- * Retrieve a filtered and paginated list of variants for a specific product.
+ * Retrieve a paginated list of product variants for a specific product with advanced search and filtering capabilities.
  *
- * This operation allows sellers and customers to browse all available variants for a product, with comprehensive filtering and sorting capabilities. Each variant represents a specific combination of product options (such as color and size) with its own SKU code, optional price override, and real-time stock availability.
+ * This operation allows sellers and administrators to search and filter variants within a product. Each variant represents a unique SKU configuration with specific option values (such as color and size combinations) and optional price overrides from the product's base price.
  *
- * **Stock Calculation**: The stock quantity for each variant is calculated by summing all inventory records (positive for restocks, negative for orders) associated with that variant. This provides accurate real-time availability information.
+ * The response includes variant information such as SKU code, option values (stored as JSON), optional price override, and calculated stock quantity derived from inventory records. Soft-deleted variants (those with deleted_at timestamp) are excluded from results by default.
  *
- * **Price Display**: Variants may have a price that overrides the product's base price. If no override price is set, the product's base price applies. The response indicates the effective price for each variant.
+ * Stock quantity for each variant is calculated by summing all associated shopping_mall_inventory_records for that variant, with positive values indicating stock additions (restocking, refund restoration) and negative values indicating deductions (order placement, adjustments). When a variant has no inventory records, its stock is treated as zero.
  *
- * **Availability**: Variants with zero stock are marked as out of stock. Soft-deleted variants (removed by seller) are excluded from results. Products with no active variants are displayed as unavailable for purchase.
+ * Security and Access Control:
+ * - Sellers can only view variants for their own products (ownership enforced via product's shopping_mall_seller_id)
+ * - Administrators can view variants for any product
+ * - Customers should use public product detail endpoints instead
  *
- * **Use Cases**:
- * - Sellers managing their product's variant catalog
- * - Customers selecting specific product options before adding to cart
- * - Inventory review and stock status monitoring
+ * Filtering Options:
+ * - Search by SKU code with partial matching
+ * - Filter by stock availability (in-stock vs out-of-stock)
+ * - Filter by price range (applies to variant price override, or falls back to product base_price when variant price is NULL)
+ * - Include or exclude soft-deleted variants (admin only)
  *
- * **Filtering Options**:
- * - SKU code: Partial match search
- * - Price range: Min/max price filtering
- * - Stock status: In-stock only filter
- *
- * **Sorting Options**:
- * - Newest/Oldest (by creation date)
- * - Price (low to high, high to low)
+ * Related Operations:
+ * - POST /products/{productId}/variants to create a new variant
+ * - PUT /products/{productId}/variants/{variantId} to update a specific variant
+ * - DELETE /products/{productId}/variants/{variantId} to soft-delete a variant
+ * - GET /seller/variants/{variantId}/inventory to view inventory history
  *
  * @param props.connection
- * @param props.productId Target product's unique identifier (UUID format)
- * @param props.body Search criteria and pagination parameters for variant listing
+ * @param props.productId Unique identifier of the product whose variants are being listed (UUID format). Must reference an existing product in shopping_mall_products table.
+ * @param props.body Search criteria and pagination parameters for filtering product variants including SKU code search, stock availability, price range, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_product_variants table filtered by shopping_mall_product_id matching the productId path parameter. Apply search filters: partial SKU code matching, price range filtering (considering variant price override or product base price as fallback), stock availability based on calculated stock from inventory records (sum of quantity_change from shopping_mall_inventory_records). Exclude soft-deleted variants (deleted_at IS NULL). Support pagination with configurable page size and cursor-based navigation. Sort options: created_at ascending/descending, price ascending/descending. Join with shopping_mall_inventory_records to calculate current stock quantity for each variant. Validate productId exists in shopping_mall_products table. Return variant summary including id, sku_code, option_values (parsed from JSON), price (or null if using base price), calculated stock quantity, and availability status.
+ * @x-autobe-specification Implementation Steps:
+ *
+ * 1. Authentication & Authorization:
+ *    - Extract user session from JWT token
+ *    - Determine user role (seller, administrator)
+ *    - For sellers: verify ownership via product.seller_id matches authenticated seller
+ *    - For administrators: allow access to any product
+ *    - Return 403 Forbidden if access denied
+ *
+ * 2. Path Parameter Validation:
+ *    - Validate productId is valid UUID format
+ *    - Query shopping_mall_products table to verify product exists
+ *    - If product not found, return 404 Not Found
+ *
+ * 3. Request Body Processing:
+ *    - Parse pagination parameters (page, limit with defaults: page=1, limit=20)
+ *    - Parse sort parameters (field, direction with default: created_at DESC)
+ *    - Build WHERE clause from search filters:
+ *      - skuCode: ILIKE search with wildcards
+ *      - inStock: join inventory_records, sum quantity_change, compare to 0
+ *      - priceRange: minPrice <= price OR base_price, maxPrice >= price OR base_price
+ *      - includeDeleted: only for admins, add deleted_at IS NOT NULL condition
+ *
+ * 4. Database Query:
+ *    - Query shopping_mall_product_variants table
+ *    - JOIN with shopping_mall_inventory_records for stock calculation
+ *    - JOIN with shopping_mall_products for base_price fallback
+ *    - Apply WHERE filters and pagination (OFFSET, LIMIT)
+ *    - Apply ORDER BY for sorting
+ *
+ * 5. Stock Calculation:
+ *    - For each variant, SUM inventory_records.quantity_change
+ *    - Handle variants with no inventory records (stock = 0)
+ *
+ * 6. Response Construction:
+ *    - Map results to IShoppingMallProductVariant.ISummary DTO
+ *    - Calculate total count for pagination metadata
+ *    - Include pagination info (currentPage, totalPages, totalCount, limit)
+ *
+ * 7. Edge Cases:
+ *    - Product has no variants: return empty paginated list
+ *    - All variants soft-deleted and includeDeleted=false: return empty list
+ *    - Invalid sort field: use default sorting
+ *    - Price override null: use product's base_price for filtering
  * @path /shoppingMall/products/:productId/variants
  * @accessor api.functional.shoppingMall.products.variants.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -66,12 +110,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Target product's unique identifier (UUID format)
+     * Unique identifier of the product whose variants are being listed (UUID format). Must reference an existing product in shopping_mall_products table.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
     /**
-     * Search criteria and pagination parameters for variant listing
+     * Search criteria and pagination parameters for filtering product variants including SKU code search, stock availability, price range, and sorting options.
      */
     body: IShoppingMallProductVariant.IRequest;
   };
@@ -124,34 +168,64 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific product variant.
  *
- * This endpoint allows customers, sellers, and administrators to view the complete details of a product variant including its SKU code, option configuration, price override, and current stock availability. **No authentication is required** as product variant information is publicly accessible for browsing and discovery purposes.
+ * This operation fetches a single variant belonging to a product, including its SKU code, option values (such as color, size), optional price override, and calculated stock quantity. The variant represents a specific purchasable configuration of the product.
  *
- * Each product variant represents a specific SKU configuration defined by the seller, containing unique option values such as color, size, or material combinations. The variant's price field optionally overrides the product's base price when set. The stock quantity shown is calculated dynamically by summing all inventory records associated with the variant, providing real-time availability information.
+ * Stock quantity is calculated dynamically by summing all inventory records associated with the variant. Positive inventory records (restocks) add to stock, while negative records (orders, adjustments) subtract from it.
  *
- * The variant must belong to the specified product; requests with mismatched product-variant IDs will return a 404 error. Deleted variants (soft-deleted) are not accessible through this endpoint but their historical data may be preserved in snapshots for audit purposes.
+ * The variant belongs to the shopping_mall_product_variants table, which stores SKU configurations with unique SKU codes across the platform. Each variant has option_values stored as JSON (e.g., {"color": "Red", "size": "Large"}) representing the distinct configuration.
+ *
+ * Soft-deleted variants (where deleted_at is not null) are excluded from results. If the variant belongs to a product whose seller is suspended, the variant remains accessible for viewing but the product may be marked accordingly.
+ *
+ * This operation is typically used when a customer selects a specific variant from a product's available options, or when a seller manages their product variants.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product (UUID format). The variant must belong to this product.
- * @param props.variantId Unique identifier of the product variant to retrieve (UUID format).
+ * @param props.productId Unique identifier of the product that the variant belongs to.
+ * @param props.variantId Unique identifier of the variant to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_product_variants table joined with shopping_mall_products to retrieve a specific variant.
+ * @x-autobe-specification Implementation steps:
  *
- * Steps:
- * 1. Validate productId exists in shopping_mall_products and is not deleted (deleted_at IS NULL)
- * 2. Query shopping_mall_product_variants for the variant matching variantId and productId
- * 3. Verify variant is not deleted (deleted_at IS NULL)
- * 4. Calculate stock_quantity by summing all shopping_mall_inventory_records.quantity_change for the variant
- * 5. Return variant details with calculated stock quantity
+ * 1. Validate path parameters:
+ *    - productId must be a valid UUID
+ *    - variantId must be a valid UUID
  *
- * Security: Any user can view product variants (public product information)
+ * 2. Query shopping_mall_product_variants table:
+ *    - Find variant where id = variantId AND shopping_mall_product_id = productId
+ *    - Filter out soft-deleted variants: deleted_at IS NULL
  *
- * Edge cases:
- * - If product not found or deleted: return 404
- * - If variant not found or deleted: return 404
- * - If variant exists but belongs to different product: return 404 (path mismatch)
- * - If no inventory records: stock_quantity defaults to 0
- * - If price is NULL: indicates product's base_price should be used
+ * 3. If variant not found:
+ *    - Return 404 Not Found (variant doesn't exist, doesn't belong to product, or is deleted)
+ *
+ * 4. Calculate stock quantity:
+ *    - Query shopping_mall_inventory_records for the variant
+ *    - SUM all quantity_change values for the variant
+ *    - If no records exist, stock quantity is 0
+ *
+ * 5. Query related product for context:
+ *    - Join with shopping_mall_products to get product name, base price
+ *    - This allows comparing variant's override price with base price
+ *
+ * 6. Build response object:
+ *    - Include variant id, sku_code, option_values, price
+ *    - Include calculated stock_quantity
+ *    - Include timestamps (created_at, updated_at)
+ *    - Include product reference info
+ *
+ * 7. Handle edge cases:
+ *    - If product is deleted, variant should still be retrievable (for historical order context)
+ *    - If seller is suspended, variant is visible but may need status indicator
+ *
+ * Database query example:
+ * ```sql
+ * SELECT pv.*,
+ *        COALESCE(SUM(ir.quantity_change), 0) as stock_quantity
+ * FROM shopping_mall_product_variants pv
+ * LEFT JOIN shopping_mall_inventory_records ir ON ir.variant_id = pv.id
+ * WHERE pv.id = $variantId
+ *   AND pv.shopping_mall_product_id = $productId
+ *   AND pv.deleted_at IS NULL
+ * GROUP BY pv.id
+ * ```
  * @path /shoppingMall/products/:productId/variants/:variantId
  * @accessor api.functional.shoppingMall.products.variants.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -180,14 +254,14 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the product (UUID format). The variant must belong to this product.
+     * Unique identifier of the product that the variant belongs to.
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
     /**
-     * Unique identifier of the product variant to retrieve (UUID format).
+     * Unique identifier of the variant to retrieve.
      */
-    variantId: string & tags.Format<"uuid">;
+    variantId: string;
   };
   export type Response = IShoppingMallProductVariant;
 

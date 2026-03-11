@@ -15,82 +15,76 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postTodoAppAuthGuestRefresh(props: {
   body: ITodoAppGuest.IRefresh;
 }): Promise<ITodoAppGuest.IAuthorized> {
-  // Find guest by device_id
-  const guest = await MyGlobal.prisma.todo_app_guests.findFirst({
-    where: {
-      device_id: props.body.device_id,
-      deleted_at: null,
-    },
-  });
-  if (!guest) {
-    throw new HttpException("Guest not found", 404);
+  // 1. Verify refresh token signature and format
+  let decoded: {
+    id: string;
+    session_id: string;
+    type: "guest";
+  };
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as typeof decoded;
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // Find most recent active session for this guest
+  // 2. Validate token type
+  if (decoded.type !== "guest") {
+    throw new HttpException("Invalid token type", 401);
+  }
+  // 3. Lookup active guest session
   const session = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
     where: {
-      todo_app_guest_id: guest.id,
+      id: decoded.session_id,
+      todo_app_guest_id: decoded.id,
+      expired_at: { gte: new Date() },
       deleted_at: null,
     },
-    orderBy: { created_at: "desc" },
   });
-  // Generate new token payload
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
+  // 5. Generate new tokens (SAME session_id)
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const now = new Date().toISOString();
-  // Create new session with updated metadata
-  const newSession = await MyGlobal.prisma.todo_app_guest_sessions.create({
+  const newAccessToken = jwt.sign(
+    {
+      type: "guest",
+      id: decoded.id,
+      session_id: decoded.session_id,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const newRefreshToken = jwt.sign(
+    {
+      type: "guest",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      token_type: "refresh",
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 6. Update session metadata
+  await MyGlobal.prisma.todo_app_guest_sessions.update({
+    where: { id: decoded.session_id },
     data: {
-      id: v4() satisfies string & tags.Format<"uuid">,
-      todo_app_guest_id: guest.id,
-      ip: session?.ip ?? "0.0.0.0",
-      user_agent: session?.user_agent ?? undefined,
-      created_at: now,
-      expired_at: refreshExpires.toISOString(),
-      updated_at: now,
-      deleted_at: null,
+      updated_at: new Date(),
     },
   });
-  // Sign tokens with session info
-  const token = {
-    access: jwt.sign(
-      {
-        type: "guest",
-        id: guest.id,
-        session_id: newSession.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "guest",
-        id: guest.id,
-        session_id: newSession.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
-  };
+  // 7. Return new tokens
   return {
-    guest: {
-      id: guest.id,
-      device_id: guest.device_id,
-    },
-    authorization: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: token.expired_at,
-    },
+    id: session.todo_app_guest_id as string & tags.Format<"uuid">,
     token: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: token.expired_at,
-      refreshable_until: token.refreshable_until,
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpires.toISOString() as string &
+        tags.Format<"date-time">,
+      refreshable_until: refreshExpires.toISOString() as string &
+        tags.Format<"date-time">,
     },
   };
 }

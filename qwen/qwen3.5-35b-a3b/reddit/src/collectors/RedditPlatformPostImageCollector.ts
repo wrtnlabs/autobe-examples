@@ -13,13 +13,12 @@ export namespace RedditPlatformPostImageCollector {
     redditPlatformPosts: IEntity;
   }) {
     const id: string = v4();
-    const file_path: string = `uploads/posts/${props.redditPlatformPosts.id}/${props.body.filename}`;
     return {
       id,
       filename: props.body.filename,
       mime_type: props.body.mime_type,
       file_size: props.body.file_size,
-      file_path,
+      file_path: props.body.file_path,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

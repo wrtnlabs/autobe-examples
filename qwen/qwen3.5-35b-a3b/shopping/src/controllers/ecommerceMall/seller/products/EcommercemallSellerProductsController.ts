@@ -5,57 +5,135 @@ import typia, { tags } from "typia";
 import { IEcommerceMallProduct } from "../../../../api/structures/IEcommerceMallProduct";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
+import { deleteEcommerceMallSellerProductsProductId } from "../../../../providers/deleteEcommerceMallSellerProductsProductId";
+import { postEcommerceMallSellerProducts } from "../../../../providers/postEcommerceMallSellerProducts";
 import { putEcommerceMallSellerProductsProductId } from "../../../../providers/putEcommerceMallSellerProductsProductId";
 
-@Controller("/ecommerceMall/seller/products/:productId")
+@Controller("/ecommerceMall/seller/products")
 export class EcommercemallSellerProductsController {
   /**
-   * Update an existing product's information including name, description, base price, category assignment, and active status.
+   * Create a new product in the ecommerce catalog.
    *
-   * This operation allows sellers to modify their own products in the ecommerce platform. The seller must be the product owner to perform this operation. Each product update automatically creates an immutable snapshot preserving the previous state and the new state, including all fields that were changed, timestamps, and the seller who made the change. These snapshots are essential for dispute resolution, audit trails, and maintaining historical accuracy of product information.
+   * This operation enables sellers to list new products for customer browsing and purchase. The product becomes immediately visible in the catalog once created (subject to seller approval status and product active flag).
    *
-   * The update accepts partial data - only fields included in the request body are modified. Fields such as id, created_at, and deleted_at cannot be updated. The base price must be a positive numeric value and cannot be removed. Category assignment can be changed to a different valid category.
+   * **Security and Authorization**:
+   * Only authenticated sellers can create products. The system verifies the seller owns the product by setting seller_id from the authenticated session context. Sellers cannot create products for other sellers.
    *
-   * Product ownership verification is enforced - sellers can only update products they created. The system validates that the product exists, the requesting seller owns it, and all business rules are satisfied (e.g., base price is positive, category exists).
+   * **Product Validation**:
+   * - Name is required and must be 1-500 characters
+   * - Category must exist and be a valid category ID
+   * - Base price must be a positive number
+   * - Description is optional but recommended for customer product understanding
    *
-   * When a product is updated, the updated_at timestamp is automatically set to the current time. The product remains in its category or becomes uncategorized if the assigned category was deleted. If the product has no active variants, it will be marked as unavailable in search results per section 462.
+   * **Post-Creation Behavior**:
+   * Upon successful creation, the product is immediately listed in the catalog and searchable by customers (if is_active=true). The product must have at least one variant before it becomes fully searchable per business rules (section 1146).
    *
-   * After successful update, the complete product object is returned with all current field values including relationships to seller and category. Related products (variants, images, order items) are not modified by this operation - only the product metadata is updated.
+   * **Related Operations**:
+   * - GET /products/{productId} - Retrieve the created product details
+   * - POST /products/{productId}/variants - Add variants to the new product
+   * - GET /categories - Browse available categories when creating products
+   * - POST /products/{productId}/images - Upload product images
    *
    * @param connection
-   * @param productId The unique identifier of the product to update. Must match the authenticated seller's product ownership.
-   * @param body Product fields to update. Only provided fields will be modified. Fields like id, created_at, and deleted_at cannot be updated.
+   * @param body Product creation data including name, category, price, and active status
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Verify the product exists by querying ecommerce_mall_products WHERE id = productId
-   * 2. Verify the requesting seller owns the product by checking seller_id matches authenticated user's ID
-   * 3. Validate request body:
-   *    - If base_price is provided, validate it is a positive number (> 0)
-   *    - If category_id is provided, verify the category exists in ecommerce_mall_categories
-   *    - Validate name length does not exceed 500 characters if provided
-   * 4. If category_id is provided and refers to deleted or non-existent category, reject the request
-   * 5. If no category_id is provided and the current category was deleted, automatically assign as uncategorized (handle via cascading delete on category or manual uncategorized assignment)
-   * 6. Perform the update:
-   *    - Update name, description, base_price, category_id, and is_active fields based on request body
-   *    - Set updated_at = current timestamp
-   *    - Do not update id, created_at, or deleted_at fields
-   * 7. Create a product snapshot:
-   *    - Query the product before update to capture old values
-   *    - Create snapshot record with recordType='ecommerce_mall_product', recordId=productId
-   *    - Store oldValues with all fields before update
-   *    - Store newValues with updated fields
-   *    - Record changedAt = current timestamp
-   *    - Record changedBy = authenticated seller's ID
-   *    - Include all variant data snapshots at time of change
-   * 8. If the product becomes inactive (is_active=false), verify it is removed from search index
-   * 9. Return the updated product with all current field values including seller and category relationship data
-   * 10. Handle validation errors:
-   *     - 404 Not Found if product does not exist
-   *     - 403 Forbidden if seller is not the product owner
-   *     - 400 Bad Request if base_price is not positive, name exceeds 500 chars, or category_id is invalid
+   * @x-autobe-specification Create a new product record in ecommerce_mall_products table.
+   *
+   * Service layer logic:
+   * 1. Authenticate the requesting seller and extract seller_id from JWT session token
+   * 2. Validate request body:
+   *    - Verify name exists and is within 1-500 character limit
+   *    - Validate base_price is positive (> 0)
+   *    - Verify category_id references an existing ecommerce_mall_categories record
+   * 3. Create product record with:
+   *    - id: Generate new UUID
+   *    - seller_id: From authenticated seller context (not from request body)
+   *    - category_id: From request body
+   *    - name: From request body
+   *    - description: From request body (can be null)
+   *    - base_price: From request body
+   *    - is_active: From request body (default to true if not specified)
+   *    - created_at: Set to current UTC timestamp
+   *    - updated_at: Set to current UTC timestamp
+   * 4. Return the complete created product record
+   *
+   * Business rules and validation:
+   * - Seller must have approval_status = 'approved' to create products
+   * - If seller is suspended (is_suspended = true), reject product creation
+   * - Name must be unique within the seller's product catalog (no duplicate names)
+   * - Category must not be soft-deleted (deleted_at is null)
+   *
+   * Edge cases:
+   * - If category does not exist, return 404 Not Found
+   * - If seller is not approved, return 403 Forbidden
+   * - If seller is suspended, return 403 Forbidden
+   * - If validation fails, return 400 Bad Request with error details
+   *
+   * Transaction handling:
+   * - All operations occur within a single database transaction
+   * - If product creation fails, no partial records are created
+   * - Rollback on any validation error
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
+  @TypedRoute.Post()
+  public async create(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedBody()
+    body: IEcommerceMallProduct.ICreate,
+  ): Promise<IEcommerceMallProduct> {
+    try {
+      return await postEcommerceMallSellerProducts({
+        seller,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing product's information and attributes.
+   *
+   * This operation allows the product's owning seller to modify product details including name, description, base price, category assignment, and active status. The seller must own the product to perform this update operation - the system verifies the authenticated seller's ID matches the product's seller_id before applying changes.
+   *
+   * When the product's category is changed, the system automatically creates an immutable product snapshot preserving the previous state including the old category assignment. This snapshot is required for audit trails and dispute resolution (section 461).
+   *
+   * The product's isActive flag can be toggled to hide or show the product in customer search results and category listings. Deactivated products remain in the system but are not visible for purchase or browsing. Products can be reactivated at any time by setting isActive to true.
+   *
+   * All field changes are validated against business rules: name must not exceed 500 characters, base_price must be a positive value, and category_id must reference an existing active category. The seller_id cannot be modified as products cannot be transferred between sellers (section 792).
+   *
+   * After a successful update, the product's updated_at timestamp is automatically set to the current time. The operation returns the complete updated product record for verification.
+   *
+   * @param connection
+   * @param productId The unique identifier of the product to update
+   * @param body Product update fields. The seller_id field cannot be modified as products cannot be transferred between sellers.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Validate productId is a valid UUID format
+   * 2. Query ecommerce_mall_products table to retrieve the product record
+   * 3. Verify product exists and is not soft-deleted (deleted_at is null)
+   * 4. Extract authenticated seller's ID from request context (jwt.userId or equivalent)
+   * 5. Verify product.seller_id equals authenticated seller_id - if not, return 403 Forbidden
+   * 6. Validate request body fields:
+   *    - name: if provided, max 500 characters, non-empty
+   *    - description: if provided, max text limit, can be null
+   *    - base_price: if provided, must be positive number > 0
+   *    - category_id: if provided, must reference existing ecommerce_mall_categories record
+   *    - is_active: boolean, optional
+   * 7. If category_id differs from product.category_id, create product snapshot:
+   *    - Record type: 'ecommerce_mall_products'
+   *    - Record ID: productId
+   *    - Changes: { 'category_change': { 'from': old_category_id, 'to': new_category_id } }
+   *    - Save snapshot before applying update
+   * 8. Update product record with provided fields (exclude seller_id and id)
+   * 9. Set updated_at to current timestamp
+   * 10. Return 200 with complete updated product record
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":productId")
   public async update(
     @SellerAuth()
     seller: SellerPayload,
@@ -69,6 +147,77 @@ export class EcommercemallSellerProductsController {
         seller,
         productId,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a product from the seller's product catalog using soft deletion.
+   *
+   * This operation removes a product from active listings by marking it as deleted (soft delete) rather than permanently removing it from the database. The product becomes invisible to customers in search results and category browsing while preserving all historical data for audit trails and dispute resolution.
+   *
+   * Authorization requires:
+   * - **Seller ownership**: The requesting seller must be the product owner to delete their own products
+   * - **Admin privileges**: Administrators can delete products for policy violations regardless of ownership
+   *
+   * When a product is soft-deleted, THE system SHALL:
+   * - Remove the product from all customer search results
+   * - Remove the product from all category listings
+   * - Mark the product as inactive (deleted_at timestamp set)
+   * - Keep all product variants but mark them as inactive
+   * - Keep all inventory records for historical accuracy
+   * - Remove the product from all customer wishlists automatically
+   * - Preserve all snapshot audit records
+   *
+   * **Seller Deletion Restrictions**:
+   * - Products with active orders (paid or shipped status order items) should not be deleted
+   * - Products with pending cancellation requests should not be deleted
+   * - Products with pending refund requests should not be deleted
+   *
+   * Customers cannot view deleted products in their normal browsing experience. Deleted products remain accessible only through administrative interfaces for audit and dispute resolution purposes. Administrators can view deleted products through snapshot records in ecommerce_mall_snapshot_audits.
+   *
+   * Deleted product records cannot be permanently removed and are preserved indefinitely for legal compliance and dispute resolution purposes.
+   *
+   * @param connection
+   * @param productId UUID identifier of the product to delete
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Extract productId from path parameter and authenticate the request
+   * 2. Fetch the product from ecommerce_mall_products using productId
+   * 3. If product not found, return 404 Not Found
+   * 4. Check authorization:
+   *    - If requestor is admin: allow deletion for any reason
+   *    - If requestor is seller: verify sellerId matches product.sellerId, return 403 if not owner
+   *    - Otherwise: return 401 Unauthorized
+   * 5. For seller-only deletions, validate deletion restrictions:
+   *    - Query ecommerce_mall_order_items for any order items with product variants that have status 'paid' or 'shipped'
+   *    - Query ecommerce_mall_cancellation_requests for any pending cancellation requests referencing product variants
+   *    - Query ecommerce_mall_refund_requests for any pending refund requests referencing product variants
+   *    - If any pending items/requests exist, return 409 Conflict with details of what prevents deletion
+   * 6. Begin database transaction:
+   *    a. Delete all ecommerce_mall_product_variants where product_id = productId
+   *    b. Delete all ecommerce_mall_inventory_records where variant_id references the deleted variants
+   *    c. Delete all ecommerce_mall_wishlists where product_id = productId
+   *    d. Delete the product from ecommerce_mall_products
+   * 7. Commit transaction
+   * 8. Return the deleted product data (including its ID) in the response
+   * 9. Return 200 OK with the deleted product information
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":productId")
+  public async erase(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteEcommerceMallSellerProductsProductId({
+        seller,
+        productId,
       });
     } catch (error) {
       console.log(error);

@@ -1,4 +1,3 @@
-import { IDiscussionBoardAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardAdmin";
 import { IDiscussionBoardSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IDiscussionBoardSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -19,39 +18,41 @@ export async function patchDiscussionBoardSuperAdmins(props: {
   body: IDiscussionBoardSuperAdmin.IRequest;
 }): Promise<IPageIDiscussionBoardSuperAdmin.ISummary> {
   const page = Math.max(1, props.body.page ?? 1);
-  const limit = Math.min(Math.max(1, props.body.limit ?? 100), 100);
+  const limit = Math.min(100, Math.max(1, props.body.limit ?? 100));
   const skip = (page - 1) * limit;
-  // Build where clause with proper type safety
-  const whereInput: Prisma.discussion_board_section_administratorsWhereInput = {
+  const whereInput: Prisma.discussion_board_super_adminsWhereInput = {
     deleted_at: null,
-    ...(props.body.permission_level && {
-      permission_level: props.body.permission_level,
+    ...(props.body.search && {
+      email: { contains: props.body.search, mode: "insensitive" },
     }),
-    ...(props.body.assignment_date_start && {
-      assignment_date: {
-        gte: props.body.assignment_date_start,
-      },
+    ...(props.body.admin_grade && {
+      admin_grade: props.body.admin_grade,
     }),
-    ...(props.body.assignment_date_end && {
-      assignment_date: {
-        lte: props.body.assignment_date_end,
-      },
+    ...(props.body.created_at_start && {
+      created_at: { gte: new Date(props.body.created_at_start) },
+    }),
+    ...(props.body.created_at_end && {
+      created_at: { lte: new Date(props.body.created_at_end) },
+    }),
+    ...(props.body.updated_at_start && {
+      updated_at: { gte: new Date(props.body.updated_at_start) },
+    }),
+    ...(props.body.updated_at_end && {
+      updated_at: { lte: new Date(props.body.updated_at_end) },
     }),
   };
-  // Execute queries sequentially
-  const data =
-    await MyGlobal.prisma.discussion_board_section_administrators.findMany({
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.discussion_board_super_admins.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { assignment_date: "desc" },
+      orderBy: { created_at: "desc" },
       ...DiscussionBoardSuperAdminAtSummaryTransformer.select(),
-    });
-  const total =
-    await MyGlobal.prisma.discussion_board_section_administrators.count({
+    }),
+    MyGlobal.prisma.discussion_board_super_admins.count({
       where: whereInput,
-    });
-  // Transform data using the transformer
+    }),
+  ]);
   const transformedData = await ArrayUtil.asyncMap(
     data,
     DiscussionBoardSuperAdminAtSummaryTransformer.transform,
@@ -62,7 +63,7 @@ export async function patchDiscussionBoardSuperAdmins(props: {
       current: page,
       limit: limit,
       records: total,
-      pages: total > 0 ? Math.ceil(total / limit) : 0,
-    } satisfies IPage.IPagination,
+      pages: Math.ceil(total / limit),
+    },
   };
 }

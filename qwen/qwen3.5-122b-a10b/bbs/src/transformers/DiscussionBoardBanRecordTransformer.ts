@@ -11,9 +11,27 @@ import { DiscussionBoardAdminAtSummaryTransformer } from "./DiscussionBoardAdmin
 import { DiscussionBoardMemberAtSummaryTransformer } from "./DiscussionBoardMemberAtSummaryTransformer";
 
 export namespace DiscussionBoardBanRecordTransformer {
-  export type Payload = Prisma.discussion_board_ban_recordsGetPayload<
-    ReturnType<typeof select>
-  >;
+  export async function transform(
+    input: Prisma.discussion_board_ban_recordsGetPayload<
+      ReturnType<typeof select>
+    >,
+  ): Promise<IDiscussionBoardBanRecord> {
+    return {
+      id: input.id,
+      member: await DiscussionBoardMemberAtSummaryTransformer.transform(
+        input.discussionBoardMember,
+      ),
+      admin: await DiscussionBoardAdminAtSummaryTransformer.transform(
+        input.discussionBoardAdmin,
+      ),
+      reason: input.reason,
+      banned_at: input.banned_at.toISOString(),
+      unbanned_at: input.unbanned_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    };
+  }
   export function select() {
     return {
       select: {
@@ -30,27 +48,7 @@ export namespace DiscussionBoardBanRecordTransformer {
       },
     } satisfies Prisma.discussion_board_ban_recordsFindManyArgs;
   }
-  export async function transform(
-    input: Payload,
-  ): Promise<IDiscussionBoardBanRecord> {
-    return {
-      id: input.id,
-      discussion_board_member_id: input.discussionBoardMember.id,
-      discussion_board_admin_id: input.discussionBoardAdmin.id,
-      discussionBoardMember:
-        await DiscussionBoardMemberAtSummaryTransformer.transform(
-          input.discussionBoardMember,
-        ),
-      discussionBoardAdmin:
-        await DiscussionBoardAdminAtSummaryTransformer.transform(
-          input.discussionBoardAdmin,
-        ),
-      reason: input.reason,
-      banned_at: input.banned_at.toISOString(),
-      unbanned_at: input.unbanned_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
-  }
+  export type Payload = Prisma.discussion_board_ban_recordsGetPayload<
+    ReturnType<typeof select>
+  >;
 }

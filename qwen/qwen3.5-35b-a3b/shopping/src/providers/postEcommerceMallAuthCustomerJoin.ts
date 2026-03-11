@@ -9,112 +9,95 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallCustomerSessionTransformer } from "../transformers/EcommerceMallCustomerSessionTransformer";
-import { EcommerceMallCustomerTransformer } from "../transformers/EcommerceMallCustomerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallAuthCustomerJoin(props: {
+  ip: string;
   body: IEcommerceMallCustomer.IJoin;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
   // 1. Check duplicate email
   const existing = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
+    select: { id: true },
   });
-  if (existing) {
+  if (existing !== null) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Create customer
-  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  // 2. Create customer record (hash password using PasswordUtil)
   const customer = await MyGlobal.prisma.ecommerce_mall_customers.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
       is_banned: false,
       ban_reason: null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
       deleted_at: null,
     },
-    ...EcommerceMallCustomerTransformer.select(),
+    select: {
+      id: true,
+      email: true,
+      is_banned: true,
+      ban_reason: true,
+      created_at: true,
+      updated_at: true,
+    },
   });
-  // 3. Create session
-  const sessionExpiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  // 3. Create session record
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_mall_customer_sessions.create(
     {
       data: {
-        id: v4() as string & tags.Format<"uuid">,
+        id: v4(),
         customer_id: customer.id,
-        ip: props.body.ip ?? "0.0.0.0",
+        ip: props.body.ip ?? props.ip,
         href: props.body.href,
         referrer: props.body.referrer,
-        created_at: new Date(),
-        expired_at: new Date(sessionExpiresAt),
+        created_at: toISOStringSafe(new Date()),
+        expired_at: toISOStringSafe(accessExpires),
       },
-      ...EcommerceMallCustomerSessionTransformer.select(),
+      select: {
+        id: true,
+      },
     },
   );
-  // 4. Create email verification token
-  const verificationToken = v4() as string;
-  const verificationExpires: string & tags.Format<"date-time"> =
-    toISOStringSafe(new Date(Date.now() + 24 * 60 * 60 * 1000));
-  await MyGlobal.prisma.ecommerce_mall_customer_email_verifications.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      customer_id: customer.id,
-      token: verificationToken,
-      expires_at: new Date(verificationExpires),
-      used_at: null,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  // 5. Generate JWT tokens
-  const jwtPayload: {
-    type: "customer";
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-    created_at: string & tags.Format<"date-time">;
-  } = {
-    type: "customer",
-    id: customer.id,
-    session_id: session.id,
-    created_at: nowIso,
-  };
-  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  // 4. Generate JWT tokens
   const token: IAuthorizationToken = {
-    access: jwt.sign(jwtPayload, MyGlobal.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
-      issuer: "autobe",
-    }),
-    refresh: jwt.sign(
+    access: jwt.sign(
       {
-        ...jwtPayload,
-        tokenType: "refresh",
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    refresh: jwt.sign(
+      {
+        type: "customer",
+        id: customer.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 6. Return IAuthorized
-  const transformedCustomer =
-    await EcommerceMallCustomerTransformer.transform(customer);
+  // 5. Return IAuthorized
   return {
-    ...transformedCustomer,
-    banReason: transformedCustomer.banReason ?? null,
+    id: customer.id,
+    email: customer.email,
+    is_banned: customer.is_banned,
+    ban_reason: customer.ban_reason,
+    created_at: toISOStringSafe(customer.created_at),
+    updated_at: toISOStringSafe(customer.updated_at),
     token,
   } satisfies IEcommerceMallCustomer.IAuthorized;
 }

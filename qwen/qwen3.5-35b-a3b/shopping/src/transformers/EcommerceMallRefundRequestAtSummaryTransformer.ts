@@ -1,4 +1,3 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -19,12 +18,9 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
         id: true,
         reason: true,
         request_status: true,
-        time_limit: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        statusSnapshots: { select: {} },
       },
     } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs;
   }
@@ -37,12 +33,11 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
         input.orderItem,
       ),
       reason: input.reason,
-      request_status: typia.assert<"pending" | "approved" | "rejected">(
+      requestStatus: typia.assert<"pending" | "approved" | "rejected">(
         input.request_status,
       ),
-      time_limit: input.time_limit ? toISOStringSafe(input.time_limit) : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
     };
   }
 }

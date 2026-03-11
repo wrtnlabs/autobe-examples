@@ -26,21 +26,20 @@ export namespace RedditLikeReportTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        reporter: {
-          select: RedditLikeMemberAtSummaryTransformer.select().select,
-        } satisfies Prisma.reddit_like_membersFindManyArgs,
-        reportedPost: {
-          select: RedditLikePostAtSummaryTransformer.select().select,
-        } satisfies Prisma.reddit_like_postsFindManyArgs,
-        reportedComment: {
-          select: RedditLikeCommentAtSummaryTransformer.select().select,
-        } satisfies Prisma.reddit_like_commentsFindManyArgs,
+        reporter: RedditLikeMemberAtSummaryTransformer.select(),
+        reportedPost: RedditLikePostAtSummaryTransformer.select(),
+        reportedComment: RedditLikeCommentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_reportsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IRedditLikeReport> {
     return {
       id: input.id,
+      reason: input.reason,
+      status: typia.assert<"pending" | "approved" | "dismissed">(input.status),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       reporter: await RedditLikeMemberAtSummaryTransformer.transform(
         input.reporter,
       ),
@@ -49,14 +48,9 @@ export namespace RedditLikeReportTransformer {
         : null,
       reportedComment: input.reportedComment
         ? await RedditLikeCommentAtSummaryTransformer.transform(
-            input.reportedComment as any,
+            input.reportedComment,
           )
         : null,
-      reason: input.reason,
-      status: input.status as "pending" | "approved" | "dismissed",
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

@@ -1,4 +1,3 @@
-import { IEAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IEAdministratorGrade";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,14 +15,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallAdministratorAdministratorsAdministratorId(props: {
   administrator: AdministratorPayload;
-  administratorId: string & tags.Format<"uuid">;
+  administratorId: string;
 }): Promise<IShoppingMallAdministrator> {
   const administrator =
-    await MyGlobal.prisma.shopping_mall_administrators.findFirstOrThrow({
-      where: {
-        id: props.administratorId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.shopping_mall_administrators.findUniqueOrThrow({
+      where: { id: props.administratorId },
       ...ShoppingMallAdministratorTransformer.select(),
     });
   return await ShoppingMallAdministratorTransformer.transform(administrator);

@@ -9,7 +9,6 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
 
 export namespace EcommerceMallCartItemAtSummaryTransformer {
@@ -22,40 +21,33 @@ export namespace EcommerceMallCartItemAtSummaryTransformer {
         id: true,
         quantity: true,
         price: true,
-        variant: {
-          select: {
-            id: true,
-            stock_quantity: true,
-            price_override: true,
-            sku_code: true,
-            is_active: true,
-            product: EcommerceMallProductAtSummaryTransformer.select(),
-          },
-        },
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        cart: true,
+        variant: EcommerceMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_cart_itemsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallCartItem.ISummary> {
-    const stockQuantity = input.variant.stock_quantity;
-    const itemQuantity = input.quantity;
-    let availability: "available" | "low_stock" | "out_of_stock";
-    if (stockQuantity === 0) {
-      availability = "out_of_stock";
-    } else if (stockQuantity >= itemQuantity) {
-      availability = "available";
-    } else {
-      availability = "low_stock";
-    }
+    const variant =
+      await EcommerceMallProductVariantAtSummaryTransformer.transform(
+        input.variant,
+      );
     return {
       id: input.id,
       quantity: input.quantity,
       price: input.price,
-      variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(
-        input.variant,
-      ),
-      availability,
+      addedAt: input.created_at.toISOString(),
+      variant: variant,
+      availability:
+        variant.product.isActive &&
+        variant.isActive &&
+        variant.stockQuantity > 0
+          ? "available"
+          : "unavailable",
     };
   }
 }

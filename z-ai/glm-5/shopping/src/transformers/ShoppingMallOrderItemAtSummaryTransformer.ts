@@ -6,6 +6,7 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
@@ -15,6 +16,7 @@ import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSumm
 import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
+import { ShoppingMallShipmentAtSummaryTransformer } from "./ShoppingMallShipmentAtSummaryTransformer";
 
 export namespace ShoppingMallOrderItemAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_order_itemsGetPayload<
@@ -28,11 +30,12 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
         price: true,
         status: true,
         created_at: true,
-        shopping_mall_shipment_id: true,
-        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        updated_at: true,
         product: ShoppingMallProductAtSummaryTransformer.select(),
         variant: ShoppingMallProductVariantAtSummaryTransformer.select(),
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        shipment: ShoppingMallShipmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }
@@ -44,9 +47,6 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
       quantity: input.quantity,
       price: input.price,
       status: input.status,
-      created_at: input.created_at.toISOString(),
-      shipment_id: input.shopping_mall_shipment_id ?? null,
-      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
@@ -56,6 +56,14 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
+      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      shipment: input.shipment
+        ? await ShoppingMallShipmentAtSummaryTransformer.transform(
+            input.shipment,
+          )
+        : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

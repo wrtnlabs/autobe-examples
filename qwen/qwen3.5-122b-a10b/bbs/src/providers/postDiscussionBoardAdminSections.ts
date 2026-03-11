@@ -19,12 +19,15 @@ export async function postDiscussionBoardAdminSections(props: {
   admin: AdminPayload;
   body: IDiscussionBoardSection.ICreate;
 }): Promise<IDiscussionBoardSection> {
+  const admin = await MyGlobal.prisma.discussion_board_admins.findUniqueOrThrow(
+    {
+      where: { id: props.admin.id },
+    },
+  );
   const created = await MyGlobal.prisma.discussion_board_sections.create({
     data: await DiscussionBoardSectionCollector.collect({
       body: props.body,
-      discussionBoardAdmins: {
-        id: props.admin.id,
-      } as IEntity,
+      discussionBoardAdmins: admin,
     }),
     ...DiscussionBoardSectionTransformer.select(),
   });

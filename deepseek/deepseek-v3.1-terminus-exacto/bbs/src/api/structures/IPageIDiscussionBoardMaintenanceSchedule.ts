@@ -1,5 +1,5 @@
 import { IDiscussionBoardMaintenanceSchedule } from "./IDiscussionBoardMaintenanceSchedule";
-import { IPageIDiscussionBoardSection } from "./IPageIDiscussionBoardSection";
+import { IPage } from "./IPage";
 
 export namespace IPageIDiscussionBoardMaintenanceSchedule {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIDiscussionBoardMaintenanceSchedule {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPageIDiscussionBoardSection.IPagination;
+    pagination: IPage.IPagination;
 
     /**
      * List of records.
