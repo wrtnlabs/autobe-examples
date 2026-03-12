@@ -1,0 +1,179 @@
+/// Main order records representing customer purchase transactions in the
+/// shopping mall platform.
+///
+/// Each order captures a customer's purchase at a point in time, including
+/// the shipping address snapshot (preserved for historical accuracy), total
+/// price, and overall order status. The order status is derived from the
+/// statuses of all its constituent order items.
+///
+/// **Key Relationships**:
+/// - Belongs to {@link shopping_mall_customers} - the customer who placed
+/// the order
+/// - Has many {@link shopping_mall_order_items} - individual line items
+/// within the order
+///
+/// **Important Notes**:
+/// - Shipping address is stored as a JSON snapshot (not a foreign key) to
+/// preserve the exact address state at order time, even if the customer
+/// later modifies or deletes their address
+/// - Order status is computed from order item statuses: paid, shipped,
+/// delivered, cancelled, refunded, or partially_completed
+/// - Orders support soft deletion via deleted_at field
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}. The customer who
+  /// placed this order.
+  shopping_mall_customer_id String
+  
+  /// JSON snapshot of the shipping address at order time. Stored as text to
+  /// preserve historical accuracy even if the customer later modifies or
+  /// deletes their address.
+  shipping_address_snapshot String
+  
+  /// Total price of all order items at the time of purchase. This is a
+  /// snapshot of the price and should not change even if product prices are
+  /// later modified.
+  total_price Float
+  
+  /// Overall order status derived from all order item statuses. Possible
+  /// values: paid, shipped, delivered, cancelled, refunded,
+  /// partially_completed.
+  status String
+  
+  /// Timestamp when the order was created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order was soft-deleted. NULL means the order is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_customer_id, created_at])
+}
+
+/// Individual line items within customer orders representing purchased
+/// products.
+///
+/// Each order item captures a specific purchase with quantity, price at time
+/// of purchase, and current fulfillment status. Order items are independent
+/// entities that can be individually shipped, cancelled, refunded, or
+/// reviewed.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_orders} as part of a customer's
+/// purchase transaction
+/// - References {@link shopping_mall_sellers} for the merchant fulfilling
+/// this item
+/// - Has many {@link shopping_mall_shipments} for delivery tracking
+/// - Has many {@link shopping_mall_cancellation_requests} for pre-shipment
+/// cancellations
+/// - Has many {@link shopping_mall_refund_requests} for post-delivery returns
+/// - Has many {@link shopping_mall_reviews} for customer feedback
+///
+/// Purchase-time snapshots (product_snapshot, variant_snapshot,
+/// seller_profile_snapshot) preserve the state of referenced entities at
+/// order placement time, ensuring order history remains accurate even if
+/// products or seller profiles are later modified or deleted.
+///
+/// Status workflow: paid → shipped → delivered, with cancelled or refunded
+/// as alternative terminal states.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_mall_orders.id}. This order item is part
+  /// of the referenced customer order transaction.
+  shopping_mall_order_id String
+  
+  /// Selling merchant's {@link shopping_mall_sellers.id}. The seller
+  /// responsible for fulfilling this order item.
+  shopping_mall_seller_id String
+  
+  /// Number of units purchased in this order line item.
+  quantity Int
+  
+  /// Unit price at time of purchase. Preserved for historical accuracy even if
+  /// product price changes later.
+  price Float
+  
+  /// Current fulfillment status. Valid values: paid (order placed, payment
+  /// confirmed), shipped (item dispatched), delivered (item received by
+  /// customer), cancelled (pre-shipment cancellation approved), refunded
+  /// (post-delivery return approved).
+  status String
+  
+  /// JSON snapshot of product state at order placement time. Preserves product
+  /// name, description, and other details for historical order records.
+  product_snapshot String
+  
+  /// JSON snapshot of product variant state at order placement time. Preserves
+  /// SKU, option values, and variant-specific details.
+  variant_snapshot String
+  
+  /// JSON snapshot of seller profile at order placement time. Preserves shop
+  /// name and seller information for order history.
+  seller_profile_snapshot String
+  
+  /// Timestamp when this order item was created during checkout.
+  created_at DateTime
+  
+  /// Timestamp when this order item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this order item was soft deleted. Null if the item is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItem shopping_mall_shipment_items?
+  reviews shopping_mall_reviews[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id, status])
+  @@index([shopping_mall_seller_id])
+  @@index([created_at])
+}

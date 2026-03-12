@@ -1,0 +1,374 @@
+/// Guest user accounts for unauthenticated visitors who have not yet
+/// registered or logged in.
+///
+/// Guest users are identified by temporary device tokens rather than
+/// email/password credentials. This table serves as the foundation for
+/// anonymous user sessions before they transition to registered member
+/// accounts.
+///
+/// Key characteristics:
+/// - Identified by unique device tokens generated on first visit
+/// - No authentication credentials (email/password) required
+/// - Can transition to member accounts through registration
+/// - All guest data is private and isolated per device
+/// - Soft-deletable for data retention and audit purposes
+///
+/// Relationships:
+/// - Has many {@link multi_user_todo_guest_sessions} (child table, FK
+/// direction: sessions → guests)
+/// - May convert to {@link multi_user_todo_members} upon registration
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device token identifying the guest user. Generated automatically
+  /// on first visit and used for anonymous session tracking before
+  /// registration.
+  device_token String
+  
+  /// Timestamp when the guest account was created on first visit.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft-deleted. Null indicates active
+  /// guest account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions multi_user_todo_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_token])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Session tokens for unauthenticated guest access with temporary identifiers.
+///
+/// This table tracks authentication sessions for guest actors who have not
+/// yet registered or logged in as members. Each session records connection
+/// metadata (IP address, href, referrer) and temporal information (creation
+/// time, expiration time) for security auditing and session management.
+///
+/// Key relationships:
+/// - Belongs to {@link multi_user_todo_guests} (many sessions per guest)
+/// - Stores append-only audit trail of guest login events
+///
+/// Behavioral notes:
+/// - Sessions are created when guests establish temporary access
+/// - Sessions expire automatically for security purposes
+/// - Sessions are invalidated when guests register or log in as members
+/// - This table is append-only and managed through authentication flows, not
+/// direct user CRUD operations
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link multi_user_todo_guests.id}.
+  multi_user_todo_guest_id String
+  
+  /// IP address from which the guest session was established.
+  ip String
+  
+  /// URL of the page where the guest session was initiated.
+  href String
+  
+  /// Referrer URL that led to the guest session initiation.
+  referrer String?
+  
+  /// Timestamp when the guest session was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest session expires.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest multi_user_todo_guests @relation(fields: [multi_user_todo_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_guest_id, created_at], map: "multi_user_todo_guest_sessions_multi_user_todo_guest_i_a66d6799")
+}
+
+/// Registered member accounts with email authentication, password
+/// credentials, and profile information.
+///
+/// This table represents authenticated users in the multi-user todo
+/// application. Each member has a unique email address for login, a securely
+/// hashed password, and a display name for identification. Members own todo
+/// items and edit history entries, which are stored in separate tables with
+/// foreign key references to this table.
+///
+/// Key relationships:
+/// - One-to-many with {@link multi_user_todo_member_sessions} for active
+/// login sessions
+/// - One-to-many with {@link multi_user_todo_todos} for owned todo items
+/// - One-to-many with {@link multi_user_todo_member_password_resets} for
+/// password recovery tokens
+/// - One-to-many with {@link multi_user_todo_member_email_verifications} for
+/// email confirmation tokens
+///
+/// Account deletion uses soft delete (deleted_at) to preserve audit trails
+/// while preventing login access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and account identification.
+  email String
+  
+  /// BCrypt hashed password for secure authentication credential storage.
+  password_hash String
+  
+  /// User's public display name shown in the application interface.
+  display_name String
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted. Null indicates active
+  /// account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions multi_user_todo_member_sessions[]
+  passwordResets multi_user_todo_member_password_resets[]
+  emailVerifications multi_user_todo_member_email_verifications[]
+  todos multi_user_todo_todos[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens for authenticated member access with refresh rotation.
+///
+/// This table tracks active login sessions for registered members ({@link
+/// multi_user_todo_members}). Each session represents a single authenticated
+/// connection and stores connection metadata for security auditing and
+/// session management.
+///
+/// **Key Characteristics**:
+/// - One member can have multiple concurrent sessions (e.g., mobile + desktop)
+/// - Sessions are append-only audit trail of login events
+/// - Expired sessions are retained for security auditing
+/// - Supports token refresh rotation for enhanced security
+///
+/// **Relationships**:
+/// - Belongs to: {@link multi_user_todo_members} (one-to-many)
+/// - Managed through: Authentication flows, not direct user CRUD
+///
+/// **Security Notes**:
+/// - expired_at is NOT NULL to enforce session expiration
+/// - Connection metadata (ip, href, referrer) supports fraud detection
+/// - Sessions are automatically invalidated on password change or account
+/// deletion
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link multi_user_todo_members.id}. This foreign key
+  /// establishes the relationship between the session and the authenticated
+  /// member account.
+  multi_user_todo_member_id String
+  
+  /// IP address from which the session was created. Used for security auditing
+  /// and fraud detection.
+  ip String
+  
+  /// URL of the page that initiated the authentication request. Used for
+  /// security auditing and session context tracking.
+  href String
+  
+  /// Referrer URL from the authentication request. Used for security auditing
+  /// and tracking authentication sources.
+  referrer String
+  
+  /// Timestamp when the session was created (login time). Used for session age
+  /// calculation and expiration checks.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. NOT NULL to enforce mandatory session
+  /// expiration for security. Used to validate active sessions.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_member_sessions_multi_user_todo_member_ae42118b")
+}
+
+/// Password reset tokens for member account recovery.
+///
+/// This table stores one-time use tokens that allow members to reset their
+/// forgotten passwords. Each token is associated with a specific member
+/// account and has an expiration time for security. Once a token is used or
+/// expires, it cannot be used again.
+///
+/// Key relationships:
+/// - References {@link multi_user_todo_members} to identify which member
+/// requested the password reset
+/// - Tokens are generated when a member requests a password reset via email
+/// - Used tokens are marked with used_at timestamp to prevent reuse
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member account requesting password reset. {@link
+  /// multi_user_todo_members.id}
+  multi_user_todo_member_id String
+  
+  /// Unique one-time use token for password reset verification. Generated
+  /// securely and sent to member's email.
+  token String
+  
+  /// Timestamp when the password reset token was generated.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token expires. Tokens are invalid after
+  /// this time for security.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was used. Null if token has not
+  /// been used yet.
+  used_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_member_password_resets_multi_user_todo_26de42c3")
+}
+
+/// Email verification tokens for new member registration confirmation.
+///
+/// This table stores verification tokens sent to members during the
+/// registration process. When a new member registers with an email address,
+/// a verification token is generated and sent to their email. The member
+/// must click the verification link (containing the token) to confirm their
+/// email address is valid and activate their account.
+///
+/// Each verification token is unique and has an expiration time. Once used,
+/// the token is marked as used and cannot be reused. Members may have
+/// multiple verification tokens if they request new verification emails
+/// before completing the initial verification.
+///
+/// **Key relationships**:
+/// - References {@link multi_user_todo_members} through
+/// multi_user_todo_member_id (1:N relationship - one member can have
+/// multiple verification attempts)
+///
+/// **Business rules**:
+/// - Each token is unique and single-use
+/// - Tokens expire after a set duration for security
+/// - Used tokens cannot be reused
+/// - Multiple tokens may exist for the same member if they request re-sending
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link multi_user_todo_members.id}. Links this
+  /// verification token to the member account being verified.
+  multi_user_todo_member_id String
+  
+  /// Unique verification token sent to the member's email. This token is
+  /// included in the verification link and must be validated when the member
+  /// clicks to confirm their email address.
+  verification_token String
+  
+  /// Timestamp when this verification token was generated and sent to the
+  /// member.
+  created_at DateTime
+  
+  /// Timestamp when this verification token expires. Tokens cannot be used
+  /// after this time for security purposes.
+  expired_at DateTime
+  
+  /// Timestamp when this verification token was successfully used to verify
+  /// the member's email. Null if the token has not yet been used.
+  used_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([verification_token], map: "multi_user_todo_member_email_verifications_verificatio_a634e5dc")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_member_email_verifications_multi_user__634988d1")
+}

@@ -1,0 +1,133 @@
+/// Organizational containers for grouping articles by topic within the
+/// discussion board.
+///
+/// Sections serve as the primary categorization mechanism for articles,
+/// allowing users to browse content by subject matter (e.g., Politics,
+/// Economy, Current Affairs). Each section has a unique name and optional
+/// description that explains its purpose and scope.
+///
+/// **Management**: Sections are created, edited, and deleted exclusively by
+/// administrators. Regular users and guests can only view sections and
+/// browse articles within them.
+///
+/// **Relationships**:
+/// - One-to-many with {@link discussion_board_articles}: Each section can
+/// contain multiple articles, and each article belongs to exactly one
+/// section.
+/// - Managed by {@link discussion_board_administrators}: Only administrators
+/// have permission to modify sections.
+///
+/// **Business Rules**:
+/// - Section names must be unique across the entire board to prevent confusion.
+/// - Sections cannot be deleted if they contain articles (referential
+/// integrity).
+/// - Section modifications are tracked in {@link
+/// discussion_board_section_snapshots} for audit purposes.
+/// - Soft delete is supported via `deleted_at` field to preserve historical
+/// data.
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_sections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique name of the section used for identification and display. Must be
+  /// distinct from all other sections.
+  name String
+  
+  /// Optional description explaining the section's purpose, scope, and
+  /// guidelines for content.
+  description String?
+  
+  /// Timestamp when the section was created.
+  created_at DateTime
+  
+  /// Timestamp when the section was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the section was soft deleted. Null indicates the section
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots discussion_board_section_snapshots[]
+  articles discussion_board_articles[]
+  articleSnapshots discussion_board_article_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of section modifications for audit trail and
+/// revision history.
+///
+/// This table captures the complete state of a section at the moment of
+/// modification, preserving historical data for compliance and audit
+/// requirements. Each record represents a specific version of a section,
+/// enabling version control, change tracking, and historical analysis of
+/// section configurations.
+///
+/// Key characteristics:
+/// - Immutable records: Once created, snapshots are append-only to maintain
+/// an accurate audit trail
+/// - Complete state capture: All section properties are denormalized to
+/// preserve exact historical state
+/// - Reference model: {@link discussion_board_sections}
+///
+/// Temporal field semantics:
+/// - section_created_at: When the original section was created (from parent)
+/// - section_updated_at: When the section was last modified before this
+/// snapshot (from parent)
+/// - created_at: When this snapshot was taken
+///
+/// @namespace Sections
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_section_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the section being snapshot. {@link
+  /// discussion_board_sections.id}
+  discussion_board_sections_id String
+  
+  /// Name of the section at the time of snapshot.
+  name String
+  
+  /// Description of the section at the time of snapshot.
+  description String?
+  
+  /// Timestamp when the original section was created (captured from parent).
+  section_created_at DateTime
+  
+  /// Timestamp when the section was last modified before this snapshot
+  /// (captured from parent).
+  section_updated_at DateTime
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  section discussion_board_sections @relation(fields: [discussion_board_sections_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_sections_id, created_at], map: "discussion_board_section_snapshots_discussion_board_se_45627c08")
+}

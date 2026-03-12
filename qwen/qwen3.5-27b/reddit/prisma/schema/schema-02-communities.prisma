@@ -1,0 +1,143 @@
+/// Core community entities that organize content and users on the platform.
+///
+/// Communities serve as the primary organizational structure for posts and
+/// comments. Each community has a unique name, optional description, and
+/// icon image. The user who creates a community automatically becomes its
+/// owner with full moderation authority.
+///
+/// Key relationships:
+/// - Owned by a single {@link reddit_clone_members.id} (the creator)
+/// - Has many {@link reddit_clone_subscriptions} (users subscribed to this
+/// community)
+/// - Contains many {@link reddit_clone_posts} (posts created within this
+/// community)
+/// - Has many {@link reddit_clone_community_moderators} (moderator assignments)
+///
+/// The subscriber_count field is denormalized for query performance and is
+/// maintained through application logic or database triggers when
+/// subscriptions are created or deleted.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created and owns this community. {@link
+  /// reddit_clone_members.id}
+  owner_id String
+  
+  /// Unique community name (3-50 characters). Used for URL routing and display.
+  name String
+  
+  /// Community description text (0-500 characters). Optional field explaining
+  /// the community's purpose.
+  description String?
+  
+  /// URL to the community's icon image. Optional field for visual
+  /// identification.
+  icon String?
+  
+  /// Number of users subscribed to this community. Denormalized for query
+  /// performance.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_clone_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  moderators reddit_clone_community_moderators[]
+  posts reddit_clone_posts[]
+  reports reddit_clone_reports[]
+  reportSnapshots reddit_clone_reports_snapshots[]
+  bans reddit_clone_bans[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Moderator assignments linking users to communities with specific roles
+/// for access control.
+///
+/// This table establishes which users have moderation privileges over which
+/// communities. It supports the two-tier moderation system where:
+///
+/// - **Owner role**: The user who created the community, with full
+/// administrative control
+/// - **Mod role**: Appointed moderators with limited moderation powers
+///
+/// **Key business rules**:
+/// - Each user can have only one role per community
+/// - The community creator automatically becomes the owner
+/// - Only owners can add/remove other moderators
+/// - Moderators cannot remove each other
+/// - Supports audit trail through snapshot tables
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community being moderated. {@link
+  /// reddit_clone_communities.id}
+  reddit_clone_communities_id String
+  
+  /// Reference to the user who is a moderator. {@link reddit_clone_members.id}
+  reddit_clone_members_id String
+  
+  /// The moderation role: 'owner' for full control or 'mod' for limited
+  /// moderation powers.
+  role String
+  
+  /// Timestamp when this moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator assignment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this moderator assignment was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_communities_id], references: [id], onDelete: Cascade)
+  member reddit_clone_members @relation(fields: [reddit_clone_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_communities_id, reddit_clone_members_id], map: "reddit_clone_community_moderators_reddit_clone_communi_8fbdc87b")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_communities_id, role], map: "reddit_clone_community_moderators_reddit_clone_communi_bfc2b2b5")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_members_id, role], map: "reddit_clone_community_moderators_reddit_clone_members_09178721")
+}

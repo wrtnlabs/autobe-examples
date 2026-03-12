@@ -1,0 +1,115 @@
+/// Master table storing unique tag names for article categorization and
+/// filtering.
+///
+/// This table maintains the canonical list of all tags used across the
+/// discussion board system. Each tag represents a free-text label that can
+/// be assigned to articles for organizational purposes. Tags are created
+/// dynamically when users assign them to articles, with no predefined
+/// vocabulary or approval process required.
+///
+/// Key characteristics:
+/// - Tags are free-text with no length restrictions
+/// - Tag names are case-sensitive and preserve exact user input
+/// - Multiple articles can share the same tag
+/// - Tags exist independently of articles and persist even when all
+/// associated articles are deleted
+/// - Used for article filtering, search, and categorization across the platform
+///
+/// Related entities:
+/// - {@link discussion_board_article_tags}: Junction table linking tags to
+/// articles (many-to-many relationship)
+/// - {@link discussion_board_articles}: Articles that can have multiple tags
+/// assigned
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The tag name as entered by the user. Preserves exact text including
+  /// capitalization and spacing. No predefined vocabulary or validation
+  /// against allowed values.
+  name String
+  
+  /// Timestamp when this tag was first created and added to the system.
+  created_at DateTime
+  
+  /// Timestamp when this tag was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this tag was soft deleted. Null indicates the tag is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articleTags discussion_board_article_tags[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Junction table for the many-to-many relationship between articles and tags.
+///
+/// This table enables free-text tag assignment to articles for
+/// categorization, filtering, and search functionality. Each record
+/// represents a single tag assignment to an article.
+///
+/// Key characteristics:
+///
+/// - **M:N Relationship**: Links {@link discussion_board_articles} to {@link
+/// discussion_board_tags}
+/// - **No Duplicates**: Composite unique constraint prevents assigning the
+/// same tag to an article multiple times
+/// - **Tag Filtering**: Supports filtering articles by specific tags
+/// - **Audit Trail**: Created_at timestamp tracks when tags were assigned
+///
+/// Usage patterns:
+///
+/// - When creating an article with tags, insert records into this table
+/// - When editing article tags, delete old assignments and insert new ones
+/// - When deleting an article, all associated records are cascade-deleted
+///
+/// @namespace Tags
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_article_tags {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the article this tag is assigned to. {@link
+  /// discussion_board_articles.id}
+  discussion_board_article_id String
+  
+  /// References the tag assigned to this article. {@link
+  /// discussion_board_tags.id}
+  discussion_board_tag_id String
+  
+  /// Timestamp when this tag was assigned to the article.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  article discussion_board_articles @relation(fields: [discussion_board_article_id], references: [id], onDelete: Cascade)
+  tag discussion_board_tags @relation(fields: [discussion_board_tag_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_article_id, discussion_board_tag_id], map: "discussion_board_article_tags_discussion_board_article_b5fcd131")
+  @@index([discussion_board_tag_id])
+}

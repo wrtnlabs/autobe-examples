@@ -1,0 +1,510 @@
+/// Temporary guest accounts for anonymous platform access. Guests browse
+/// sections and view public articles without registration. Identified by
+/// device fingerprint for session continuity across page loads. No
+/// authentication required, but actions are attributed to the device for
+/// basic personalization and rate limiting.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device identifier (browser fingerprint, user-agent, or similar)
+  /// that identifies this guest across requests.
+  device_fingerprint String
+  
+  /// Timestamp when this guest identity was first created.
+  created_at DateTime
+  
+  /// Timestamp when this guest record was last modified.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions discussion_board_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([created_at])
+}
+
+/// Temporary session tokens for guest access without authentication
+/// credentials.
+///
+/// This table tracks login sessions for guest actors identified by device
+/// fingerprint. Each session stores connection metadata (IP address, current
+/// URL, referrer) and temporal information for session lifecycle management.
+/// Sessions are created when a guest authenticates and terminated on logout
+/// or expiration.
+///
+/// **Key Relationships**:
+/// - Belongs to {@link discussion_board_guests} - one-to-many relationship
+/// where a guest can have multiple sessions over time (but only one active
+/// at a time per session lifecycle requirements)
+/// - Session tokens are used for JWT-based authentication
+/// - Connection metadata supports security auditing and abuse detection
+///
+/// **Behavioral Notes**:
+/// - Sessions expire after configured timeout (30 minutes inactivity)
+/// - New login terminates existing session (one active session per guest)
+/// - Append-only table - sessions are never updated, only created and
+/// logically expired
+/// - Used for tracking guest access patterns and security monitoring
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link discussion_board_guests.id}. References the guest
+  /// account this session belongs to.
+  discussion_board_guest_id String
+  
+  /// IP address of the client device when the session was created. Used for
+  /// security auditing and abuse detection.
+  ip String
+  
+  /// Current URL (href) of the page when the session was created. Tracks the
+  /// entry point for the session.
+  href String
+  
+  /// Referrer URL that led to the session creation. Used for tracking traffic
+  /// sources and security analysis.
+  referrer String?
+  
+  /// Timestamp when the session was created. Used for session expiration
+  /// calculation and audit trail.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. NOT NULL for security - ensures all
+  /// sessions have a defined expiration time.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest discussion_board_guests @relation(fields: [discussion_board_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_guest_id, created_at], map: "discussion_board_guest_sessions_discussion_board_guest_b6816fda")
+}
+
+/// Registered member accounts with email and password authentication
+/// credentials.
+///
+/// Members are authenticated users who can create articles, write comments,
+/// manage their profile, submit administrator requests, and participate in
+/// community discussions. Each member has a unique email address for login,
+/// a hashed password for security, and optional profile information
+/// including display name and bio.
+///
+/// Members can be banned by administrators, which prevents login while
+/// preserving their existing content. When a member deletes their account,
+/// all their articles and comments are also deleted. Members can request to
+/// become administrators through the admin request system.
+///
+/// Key relationships:
+/// - Owns {@link discussion_board_articles} - articles created by the member
+/// - Owns {@link discussion_board_comments} - comments written by the member
+/// - Owns {@link discussion_board_admin_requests} - admin privilege requests
+/// submitted by the member
+/// - Subject of {@link discussion_board_ban_records} - ban actions applied
+/// to the member
+/// - Has {@link discussion_board_member_sessions} - active authentication
+/// sessions
+/// - Has {@link discussion_board_member_password_resets} - password reset
+/// tokens
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for member authentication and login.
+  email String
+  
+  /// Hashed password for member authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Public display name shown on articles, comments, and profile pages.
+  display_name String?
+  
+  /// Optional biographical text displayed on the member's profile page.
+  bio String?
+  
+  /// Whether the member account is currently banned and cannot log in.
+  banned Boolean
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft deleted. Null means account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions discussion_board_member_sessions[]
+  passwordResets discussion_board_member_password_resets[]
+  articles discussion_board_articles[]
+  articleSnapshots discussion_board_article_snapshots[]
+  articleViews discussion_board_article_views[]
+  comments discussion_board_comments[]
+  adminRequests discussion_board_admin_requests[]
+  banRecord discussion_board_ban_record_of_members?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// token support. Tracks active login sessions for member accounts,
+/// recording connection metadata and temporal boundaries for security
+/// auditing and session management.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the authenticated member account. {@link
+  /// discussion_board_members.id}
+  discussion_board_member_id String
+  
+  /// IP address of the client device during session creation.
+  ip String
+  
+  /// URL of the page that initiated the authentication flow.
+  href String
+  
+  /// HTTP referrer header from the authentication request.
+  referrer String?
+  
+  /// Timestamp when this session was created.
+  created_at DateTime
+  
+  /// Timestamp when this session token expires.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  articles discussion_board_articles[]
+  articleSnapshots discussion_board_article_snapshots[]
+  articleViews discussion_board_article_views[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_member_id, created_at], map: "discussion_board_member_sessions_discussion_board_memb_336fc309")
+}
+
+/// Stores time-limited, single-use tokens for member account password
+/// recovery. Each record represents a password reset request with an
+/// expiring token that can be used exactly once to verify identity and allow
+/// password change without requiring current credentials.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account requesting the password reset. Links to
+  /// {@link discussion_board_members.id}.
+  discussion_board_members_id String
+  
+  /// Cryptographically secure random token for password reset verification.
+  token String
+  
+  /// Timestamp when the password reset request was initiated.
+  created_at DateTime
+  
+  /// Timestamp when this password reset token expires.
+  expired_at DateTime
+  
+  /// Timestamp when the token was successfully used. Remains null if token is
+  /// still valid and unused.
+  used_at DateTime?
+  
+  /// User agent string from the original password reset request for security
+  /// auditing.
+  user_agent String?
+  
+  /// IP address from the original password reset request for security auditing.
+  ip_address String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member discussion_board_members @relation(fields: [discussion_board_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_members_id, created_at], map: "discussion_board_member_password_resets_discussion_boa_0e76f79c")
+  @@index([expired_at])
+}
+
+/// Administrator accounts with email and password authentication and
+/// elevated privileges.
+///
+/// This table stores administrator user accounts with authentication
+/// credentials and privilege levels. Administrators have two grades: regular
+/// administrator and super administrator. Super administrators have the
+/// authority to promote/demote other administrators and manage section
+/// organization.
+///
+/// Key relationships:
+/// - Owns `discussion_board_ban_records` for user suspension actions
+/// - Manages `discussion_board_sections` for content organization
+/// - Reviews `discussion_board_admin_requests` for privilege escalations
+/// - Owns `discussion_board_administrator_sessions` for active login sessions
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for administrator authentication.
+  email String
+  
+  /// Password hash for administrator authentication.
+  password_hash String
+  
+  /// Display name shown in the interface.
+  display_name String?
+  
+  /// Short biographical text for the administrator profile.
+  bio String?
+  
+  /// Administrator grade: 'regular' or 'super'.
+  grade String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this record.
+  updated_at DateTime
+  
+  /// Timestamp when the account was logically deleted (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  session discussion_board_administrator_sessions?
+  passwordResets discussion_board_administrator_password_resets[]
+  reviewedAdminRequests discussion_board_admin_requests[]
+  adminRequestDecisions discussion_board_admin_request_decisions[]
+  bansImposeds discussion_board_ban_records[]
+  banRecords discussion_board_ban_record_of_administrators[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([grade, created_at])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh token support.
+///
+/// This table tracks active login sessions for administrators, storing
+/// connection metadata, JWT token hashes, and expiration information. Each
+/// administrator can have only one active session at a time, ensuring secure
+/// single-device access.
+///
+/// Key relationships:
+/// - References {@link discussion_board_administrators} to associate the
+/// session with the authenticated administrator
+/// - Uses unique constraint on administrator_id to enforce single active
+/// session policy
+///
+/// Security features:
+/// - Stores token hashes instead of raw tokens for security
+/// - Tracks access token (15-minute expiration) and refresh token (7-day
+/// expiration)
+/// - Records connection metadata (IP, href, referrer) for audit trail
+/// - expired_at field indicates session termination (logout, expiration, or
+/// forced invalidation)
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link discussion_board_administrators.id}.
+  /// Enforces one active session per administrator.
+  discussion_board_administrator_id String
+  
+  /// IP address from which the administrator logged in. Used for security
+  /// auditing and session validation.
+  ip String?
+  
+  /// URL or endpoint where the administrator initiated the session. Used for
+  /// tracking session origin.
+  href String?
+  
+  /// Referrer URL that led to the authentication page. Used for security
+  /// analysis and audit trail.
+  referrer String?
+  
+  /// Hash of the access token (15-minute expiration). Stored as hash for
+  /// security, not the raw token.
+  access_token_hash String?
+  
+  /// Hash of the refresh token (7-day expiration). Stored as hash for
+  /// security, enables token refresh without re-authentication.
+  refresh_token_hash String?
+  
+  /// Expiration timestamp for the access token. Typically 15 minutes from
+  /// session creation.
+  access_token_expires_at DateTime?
+  
+  /// Expiration timestamp for the refresh token. Typically 7 days from session
+  /// creation.
+  refresh_token_expires_at DateTime?
+  
+  /// Timestamp when the session was created. Records the login time for audit
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when the session was terminated. Set on logout, token
+  /// expiration, or forced invalidation. Null indicates active session.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberBanRecords discussion_board_ban_record_of_members[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([discussion_board_administrator_id], map: "discussion_board_administrator_sessions_discussion_boa_d6db3309")
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrator_id, created_at], map: "discussion_board_administrator_sessions_discussion_boa_a6f19473")
+  @@index([expired_at])
+}
+
+/// Password reset tokens for administrator account recovery. Each record
+/// represents a one-time, time-limited token sent to an administrator's
+/// email for secure password recovery. The token is single-use and expires
+/// after a short period for security. When a token is used, it is marked as
+/// consumed and cannot be reused.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model discussion_board_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator account requesting the password reset.
+  /// {@link discussion_board_administrators.id}
+  discussion_board_administrators_id String
+  
+  /// Cryptographically secure random token sent to administrator email for
+  /// identity verification during password reset flow.
+  token String
+  
+  /// Type of token operation. Distinguishes between 'password-reset' and other
+  /// potential token types for extensibility.
+  token_type String
+  
+  /// Timestamp when this password reset token expires for security. Tokens are
+  /// time-limited to prevent replay attacks.
+  expires_at DateTime
+  
+  /// Timestamp when this token was redeemed for password reset. Null if not
+  /// yet used, set to current time when token is consumed.
+  used_at DateTime?
+  
+  /// Timestamp when this password reset token was generated.
+  created_at DateTime
+  
+  /// Timestamp when this record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator discussion_board_administrators @relation(fields: [discussion_board_administrators_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([discussion_board_administrators_id, created_at], map: "discussion_board_administrator_password_resets_discuss_d2ad87ff")
+  @@index([expires_at])
+}

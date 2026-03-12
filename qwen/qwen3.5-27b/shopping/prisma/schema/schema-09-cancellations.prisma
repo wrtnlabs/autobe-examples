@@ -1,0 +1,161 @@
+/// Customer requests to cancel order items before shipment.
+///
+/// This table stores cancellation requests submitted by customers for order
+/// items that have not yet been shipped. Each request includes the reason
+/// for cancellation, current status (pending, approved, or rejected), and
+/// timestamps for when the request was made and when the seller responded.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_order_items} - the specific order item
+/// being cancelled
+/// - Belongs to {@link shopping_mall_customers} - the customer who submitted
+/// the request
+/// - Belongs to {@link shopping_mall_sellers} - the seller who responded to
+/// the request (populated when status changes from pending)
+///
+/// Business rules:
+/// - Cancellation requests are only allowed for order items with "paid"
+/// status (not yet shipped)
+/// - Sellers must respond to approve or reject the request
+/// - When approved, the order item status changes to "cancelled" and stock
+/// is restored
+/// - When rejected, the seller must provide a rejection reason
+/// - Immutable snapshots are created when the seller responds (stored in
+/// {@link shopping_mall_cancellation_snapshots})
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item being cancelled. {@link shopping_mall_order_items.id}
+  shopping_mall_order_item_id String
+  
+  /// The customer who submitted the cancellation request. {@link
+  /// shopping_mall_customers.id}
+  shopping_mall_customer_id String
+  
+  /// The seller who responded to the cancellation request. Null while status
+  /// is pending, populated when seller approves or rejects. {@link
+  /// shopping_mall_sellers.id}
+  shopping_mall_seller_id String?
+  
+  /// The customer's reason for requesting cancellation of the order item.
+  reason String
+  
+  /// Current status of the cancellation request: pending (awaiting seller
+  /// response), approved (seller agreed to cancel), or rejected (seller
+  /// declined the request).
+  status String
+  
+  /// The seller's reason for rejecting the cancellation request. Only
+  /// populated when status is 'rejected'. Null for pending or approved
+  /// requests.
+  rejection_reason String?
+  
+  /// Timestamp when the customer submitted the cancellation request.
+  requested_at DateTime
+  
+  /// Timestamp when the seller responded to the cancellation request (approved
+  /// or rejected). Null while status is pending.
+  responded_at DateTime?
+  
+  /// Timestamp when this cancellation request record was created in the
+  /// database.
+  created_at DateTime
+  
+  /// Timestamp when this cancellation request record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this cancellation request was soft deleted. Null if the
+  /// record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_cust_664625f4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_orde_706003cc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_sell_7a74fcd3")
+  @@index([status, created_at])
+}
+
+/// Immutable audit trail capturing cancellation request state at approval or
+/// rejection time.
+///
+/// This table preserves the complete state of {@link
+/// shopping_mall_cancellation_requests} whenever a seller responds to a
+/// cancellation request (approve or reject). Each snapshot is immutable and
+/// cannot be modified or deleted after creation, ensuring a permanent record
+/// for dispute resolution and customer transparency.
+///
+/// Customers can view snapshots of their own cancellation requests to see
+/// the seller's decision, response timestamp, and the original request
+/// reason. This supports transparency in the cancellation workflow and
+/// provides evidence for any disputes.
+///
+/// **Key Characteristics**:
+/// - Append-only: Snapshots are created but never modified or deleted
+/// - Immutable: Once created, snapshot data cannot be altered
+/// - Customer-accessible: Customers can view snapshots of their own requests
+/// - Complete state capture: Includes previous state, new state, and all
+/// relevant fields
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced cancellation request's {@link
+  /// shopping_mall_cancellation_requests.id}. Each snapshot is tied to a
+  /// specific cancellation request and captures its state at a point in time.
+  shopping_mall_cancellation_request_id String
+  
+  /// Complete JSON snapshot of the cancellation request state at the time of
+  /// capture. Includes previous state, new state (approved/rejected), seller
+  /// response, response timestamp, and all other relevant fields. This field
+  /// is immutable after creation.
+  snapshot_data String
+  
+  /// Timestamp when this snapshot was created. Records the exact moment the
+  /// cancellation request state was captured, typically when the seller
+  /// responds with approval or rejection.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id, created_at], map: "shopping_mall_cancellation_snapshots_shopping_mall_can_ba77f670")
+}
