@@ -1,0 +1,129 @@
+/// Moderator role assignments linking users to communities where they have
+/// moderation privileges.
+///
+/// Each record represents a user with moderator authority in a specific
+/// community. The community creator is automatically assigned as owner
+/// (is_owner=true), while other moderators are added by the owner or
+/// existing moderators. Tracks who added each moderator to enforce removal
+/// rules (only owner can remove moderators).
+///
+/// Related entities: {@link reddit_clone_members} as the moderator, {@link
+/// reddit_clone_communities} as the moderated community, {@link
+/// reddit_clone_bans} for ban actions taken by moderators.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who has moderator privileges in this community. {@link
+  /// reddit_clone_members.id}
+  member_id String
+  
+  /// Community where this user has moderator privileges. {@link
+  /// reddit_clone_communities.id}
+  community_id String
+  
+  /// Moderator who added this user as moderator. Null for community owner who
+  /// created the community. {@link reddit_clone_members.id}
+  added_by_id String?
+  
+  /// Whether this moderator is the community owner (creator). Owners have
+  /// highest authority and can remove other moderators.
+  is_owner Boolean
+  
+  /// Timestamp when this moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this moderator assignment was soft deleted (removed). Null
+  /// if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation("reddit_clone_moderators_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  addedBy reddit_clone_members? @relation("reddit_clone_moderators_of_added_by_id", fields: [added_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportActions reddit_clone_report_actions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_id, member_id])
+  @@index([community_id, created_at])
+  @@index([member_id, created_at])
+  @@index([added_by_id])
+}
+
+/// Tracks users banned from specific communities with issuer reference and
+/// ban details.
+///
+/// Records community-level bans issued by moderators against members. Each
+/// ban links a banned user to a community with the moderator who issued it.
+/// Supports soft deletion for unbanning - when deleted_at is set, the ban is
+/// lifted and the user can participate again.
+///
+/// Related to {@link reddit_clone_moderators} for moderator authority
+/// validation and {@link reddit_clone_communities} for community scope.
+/// References {@link reddit_clone_members} for both the banned user and the
+/// issuing moderator.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Banned user's {@link reddit_clone_members.id}.
+  member_id String
+  
+  /// Community's {@link reddit_clone_communities.id} where the ban applies.
+  community_id String
+  
+  /// Issuing moderator's {@link reddit_clone_members.id}.
+  issuer_id String
+  
+  /// Reason for the ban explaining why the user was banned from the community.
+  reason String
+  
+  /// Timestamp when the ban was issued.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was lifted (null if still active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation("reddit_clone_bans_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  issuer reddit_clone_members @relation("reddit_clone_bans_of_issuer_id", fields: [issuer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, community_id])
+  @@index([community_id, deleted_at])
+  @@index([issuer_id, created_at])
+}

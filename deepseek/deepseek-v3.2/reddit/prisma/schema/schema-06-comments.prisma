@@ -1,0 +1,151 @@
+/// Main comment table storing user comments on posts with hierarchical reply
+/// structure supporting unlimited nesting depth. Comments are created by
+/// authenticated members and can be edited or deleted by their authors.
+///
+/// Each comment belongs to exactly one post and one member (author).
+/// Comments can have a parent comment for reply chains, enabling threaded
+/// discussions with unlimited nesting. The vote_score field is denormalized
+/// for performance and updated by vote operations to reflect current
+/// upvote/downvote balance.
+///
+/// Comments support soft deletion through the deleted_at field, allowing
+/// content removal while preserving referential integrity. When a comment is
+/// deleted, its replies are preserved but displayed with appropriate context
+/// indicators. {@link community_platform_members} as authors, {@link
+/// community_platform_posts} as parent posts, and {@link
+/// community_platform_comment_snapshots} for edit history tracking.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authoring member who created this comment. {@link
+  /// community_platform_members.id}.
+  member_id String
+  
+  /// Parent post that this comment belongs to. {@link
+  /// community_platform_posts.id}.
+  post_id String
+  
+  /// Parent comment for reply threads, enabling hierarchical nesting. Null for
+  /// top-level comments. {@link community_platform_comments.id}.
+  parent_comment_id String?
+  
+  /// Text content of the comment written by the member. Supports markdown or
+  /// rich text formatting as specified by platform requirements.
+  content String
+  
+  /// Denormalized vote score calculated as total upvotes minus total
+  /// downvotes. Updated by vote operations for performance optimization in
+  /// sorting and display.
+  vote_score Int
+  
+  /// Timestamp when the comment was initially created. Used for sorting by
+  /// 'New' and displaying time since posting.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last modified. Updated on content edits to
+  /// track modification history.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted. Null indicates active
+  /// comment. Used for content removal while preserving referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies community_platform_comments[] @relation("recursive")
+  snapshots community_platform_comment_snapshots[]
+  votes community_platform_comment_votes[]
+  voteSnapshots community_platform_comment_vote_snapshots[]
+  commentReports community_platform_report_of_comments[]
+  reportedByUsers community_platform_user_report_of_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id, created_at])
+  @@index([member_id, created_at])
+  @@index([parent_comment_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Historical snapshots of comments for audit trail and version control.
+///
+/// Captures the complete state of a comment at the moment it is created,
+/// edited, or deleted. This enables tracking comment changes over time,
+/// supporting features like edit history, content moderation audit trails,
+/// and data recovery. Each snapshot contains a denormalized copy of all
+/// comment fields, including text content, parent relationships, and status
+/// at that point in time.
+///
+/// Snapshots reference the original comment via {@link
+/// community_platform_comments.id} and optionally the member who performed
+/// the edit via {@link community_platform_members.id} (null for
+/// system-initiated deletions). The snapshot status indicates whether the
+/// comment was being created, edited, or deleted at that moment.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original comment being snapshotted. {@link
+  /// community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Member who performed the edit that triggered this snapshot. Null for
+  /// system-initiated deletions or auto-generated snapshots. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String?
+  
+  /// Snapshot trigger status indicating why this snapshot was created.
+  status String
+  
+  /// Full text content of the comment at snapshot time.
+  body String
+  
+  /// Parent comment ID for nested replies, captured at snapshot time.
+  parent_comment_id String?
+  
+  /// Post ID that this comment belongs to, captured at snapshot time.
+  post_id String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  editor community_platform_members? @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_snapshots_community_platfor_a4c0672a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_snapshots_community_platfor_3ebe06a2")
+  @@index([post_id, created_at])
+}

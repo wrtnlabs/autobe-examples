@@ -1,0 +1,224 @@
+/// Main report entity for content violations submitted by users targeting
+/// posts or comments within communities.
+///
+/// Reports allow users to flag inappropriate content for moderator review.
+/// Each report captures the reporting user's identity, the community
+/// context, the reason for reporting, and the current review status. The
+/// actual target content (post or comment) is linked through child subtype
+/// tables to maintain clean polymorphic relationships.
+///
+/// Reports progress through a lifecycle from 'pending' (awaiting review) to
+/// either 'approved' (violation confirmed, action taken) or 'dismissed' (no
+/// violation found). Status transitions are tracked via {@link
+/// reddit_like_report_snapshots} for audit purposes.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who submitted this report. {@link reddit_like_members.id}
+  reporter_id String
+  
+  /// The community where the reported content exists. {@link
+  /// reddit_like_communities.id}
+  community_id String
+  
+  /// The reason provided by the reporter for why the content violates
+  /// community guidelines.
+  reason String
+  
+  /// Current review status of the report: 'pending' (awaiting moderator
+  /// review), 'approved' (violation confirmed), or 'dismissed' (no violation
+  /// found).
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_like_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportOfPost reddit_like_report_of_posts?
+  commentReport reddit_like_report_of_comments?
+  snapshots reddit_like_report_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reporter_id, created_at])
+  @@index([community_id, status])
+  @@index([status, created_at])
+}
+
+/// Subtype table linking reports to specific posts when the report target is
+/// a post.
+///
+/// This table implements the polymorphic ownership pattern for the Report
+/// entity, allowing reports to target either posts or comments. Each record
+/// represents a report that specifically targets a post within a community.
+/// The relationship with reddit_like_reports is 1:1, ensuring a report
+/// targets exactly one content type (either a post or a comment, never
+/// both).
+///
+/// {@link reddit_like_reports} represents the main report entity with common
+/// fields like reporter, reason, status, and community. This subtype table
+/// provides the specific post reference.
+/// {@link reddit_like_posts} is the target content being reported.
+/// {@link reddit_like_report_of_comments} is the counterpart table for
+/// reports targeting comments.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged report's {@link reddit_like_reports.id}. References the main
+  /// report entity.
+  reddit_like_report_id String
+  
+  /// Target post's {@link reddit_like_posts.id}. References the post being
+  /// reported.
+  reddit_like_post_id String
+  
+  /// Creation time of the record.
+  created_at DateTime
+  
+  /// Last update time of the record.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_like_reports @relation(fields: [reddit_like_report_id], references: [id], onDelete: Cascade)
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_like_report_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_report_id, reddit_like_post_id], map: "reddit_like_report_of_posts_reddit_like_report_id_redd_847cbdf4")
+  @@index([reddit_like_post_id, created_at])
+}
+
+///
+/// Subtype table linking reports to specific comments when the report target
+/// is a comment.
+///
+/// This table implements the polymorphic ownership pattern for content
+/// reports in the moderation system.
+/// Reports can target either posts or comments, and this subtype table
+/// establishes the relationship
+/// when a user reports a comment for violating community standards.
+///
+/// Each record represents a 1:1 relationship between a report and the
+/// specific comment being flagged.
+/// The report entity in {@link reddit_like_reports} contains the reporter,
+/// reason text, community context,
+/// and resolution status, while this subtype identifies which comment was
+/// reported.
+///
+/// {@link reddit_like_reports}
+/// {@link reddit_like_comments}
+///
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main report entity. {@link reddit_like_reports.id}
+  report_id String
+  
+  /// The reported comment being flagged. {@link reddit_like_comments.id}
+  comment_id String
+  
+  /// When this report-comment association was created.
+  created_at DateTime
+  
+  /// When this record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_like_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  comment reddit_like_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([report_id])
+  @@index([comment_id, created_at])
+}
+
+/// Point-in-time snapshots of report states capturing status transitions for
+/// audit trail purposes.
+///
+/// Records the complete history of report status changes as moderators
+/// review and resolve content reports. Each snapshot preserves the report
+/// state at a specific moment, enabling accountability tracking and
+/// reconstruction of the moderation workflow lifecycle from initial
+/// submission (pending) through final resolution (approved or dismissed).
+///
+/// Snapshots are append-only and immutable, creating a permanent audit trail
+/// of all moderation decisions.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_report_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target report's {@link reddit_like_reports.id}.
+  reddit_like_report_id String
+  
+  /// Report status at the time of snapshot. One of: 'pending', 'approved',
+  /// 'dismissed'. Captures the current state in the moderation workflow.
+  status String
+  
+  /// Timestamp when this snapshot was captured, marking the point in time of
+  /// the status transition.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_like_reports @relation(fields: [reddit_like_report_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_report_id, created_at], map: "reddit_like_report_snapshots_reddit_like_report_id_cre_23612904")
+}

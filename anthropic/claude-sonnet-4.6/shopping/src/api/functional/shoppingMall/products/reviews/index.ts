@@ -1,0 +1,354 @@
+import {
+  HttpError,
+  IConnection,
+  NestiaSimulator,
+  PlainFetcher,
+} from "@nestia/fetcher";
+import typia, { tags } from "typia";
+
+import { IPageIShoppingMallReview } from "../../../../structures/IPageIShoppingMallReview";
+import { IShoppingMallReview } from "../../../../structures/IShoppingMallReview";
+import { IShoppingMallReviewStatistic } from "../../../../structures/IShoppingMallReviewStatistic";
+
+/**
+ * Retrieve a paginated and filtered list of purchase-verified customer reviews for a specific product.
+ *
+ * This operation returns all non-deleted reviews associated with the product identified by `productId`. Only reviews whose `deleted_at` field is null are included — reviews that have been marked as deleted by their authors are fully excluded from results and counts. The list is intended for display on the product detail page and supports the platform's review browsing experience.
+ *
+ * Each review in the response includes the reviewer's display name (shown as "deleted user" if the customer has deleted their account), the star rating (integer 1–5), the optional text body, and the date the review was written or last edited. Reviews are sorted by newest first by default, reflecting either the original submission date or the date of the most recent edit — so recently edited reviews appear at the top.
+ *
+ * The response includes pagination metadata and the total count of non-deleted reviews for the product. The average rating derived from all non-deleted reviews may also be included in the aggregate summary, reflecting the arithmetic mean of all qualifying star ratings as described in the platform's rating calculation rules.
+ *
+ * This endpoint is publicly accessible and does not require authentication. Customers, sellers, administrators, and anonymous visitors may all retrieve product reviews. The `productId` path parameter must correspond to an existing, non-deleted product in the `shopping_mall_products` table.
+ *
+ * Search criteria may be provided in the request body to filter reviews by rating value, keyword match in the review body text, or date range of submission. Pagination parameters (page number, page size) control how many results are returned per request.
+ *
+ * Related operations:
+ * - `GET /products/{productId}` should be called first to verify the product exists and retrieve its overall metadata including average rating and review count.
+ * - `POST /products/{productId}/reviews` is used by eligible customers to submit a new review for this product.
+ * - `GET /products/{productId}/reviews/{reviewId}` retrieves a single review in full detail.
+ * - `GET /products/{productId}/reviews/{reviewId}/snapshots` retrieves the snapshot (edit) history of a review, accessible to the review author, sellers with the product, and administrators.
+ *
+ * @param props.connection
+ * @param props.productId The unique identifier (UUID) of the product whose reviews are being retrieved. Must correspond to an existing, non-deleted product in the shopping_mall_products table.
+ * @param props.body Search criteria and pagination parameters for filtering and paginating product reviews.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification 1. Validate that the product identified by `productId` exists in `shopping_mall_products` (deleted_at IS NULL). Return 404 if not found or deleted.
+ *
+ * 2. Query `shopping_mall_reviews` with the WHERE clause:
+ *    - product_id = :productId
+ *    - deleted_at IS NULL
+ *
+ * 3. Apply optional search filters from the request body:
+ *    - rating: filter by specific star rating value(s) (1–5)
+ *    - keyword: full-text search on the `body` column using the GIN trigram index (body ILIKE '%keyword%' or tsvector search)
+ *    - createdAtFrom / createdAtTo: filter by created_at date range
+ *
+ * 4. Default sort order: updated_at DESC (most recently written or edited first).
+ *    Allow alternate sort by: created_at DESC, rating DESC/ASC.
+ *
+ * 5. JOIN shopping_mall_customers to resolve reviewer display name. If the customer record has been deleted (customer record absent or customer soft-deleted), show display name as "deleted user".
+ *
+ * 6. Apply pagination using page/limit parameters from the request body. Return total count of matching records (before pagination) for the IPage metadata.
+ *
+ * 7. Optionally compute and return the aggregate average rating across all non-deleted reviews for the product (arithmetic mean of rating field), rounded to 2 decimal places, for display alongside the paginated list.
+ *
+ * 8. Map each result row to IShoppingMallReview.ISummary including: id, customer display name, rating, body (nullable), created_at, updated_at.
+ *
+ * 9. Return IPageIShoppingMallReview.ISummary with pagination metadata (total count, current page, page size, total pages).
+ * @path /shoppingMall/products/:productId/reviews
+ * @accessor api.functional.shoppingMall.products.reviews.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * The unique identifier (UUID) of the product whose reviews are being retrieved. Must correspond to an existing, non-deleted product in the shopping_mall_products table.
+     */
+    productId: string & tags.Format<"uuid">;
+
+    /**
+     * Search criteria and pagination parameters for filtering and paginating product reviews.
+     */
+    body: IShoppingMallReview.IRequest;
+  };
+  export type Body = IShoppingMallReview.IRequest;
+  export type Response = IPageIShoppingMallReview.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/products/:productId/reviews",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/reviews`;
+  export const random = (): IPageIShoppingMallReview.ISummary =>
+    typia.random<IPageIShoppingMallReview.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve a single review by its identifier for a specific product.
+ *
+ * This operation returns the complete detail of a purchase-verified customer review associated with the given product. Reviews in the shopping mall platform are anchored to a specific order item (enforcing a 1:1 constraint at the database level via the unique constraint on `order_item_id` in `shopping_mall_reviews`), guaranteeing that only customers who have actually purchased and received the product can submit a review.
+ *
+ * The response includes the reviewer's display name, star rating (an integer from 1 to 5), optional text body content, and the original submission timestamp. If the customer who wrote the review has subsequently deleted their account, the review remains visible but the author is displayed as a deleted user rather than their display name, preserving product rating integrity as required by the platform's data retention policy.
+ *
+ * Only non-deleted reviews are returned for public access. If the requested review has been marked as deleted (i.e., the `deleted_at` field is non-null in `shopping_mall_reviews`), the system returns a not-found response to prevent deleted reviews from being visible on the product detail page. Deleted reviews are excluded from all visible review counts and rating calculations per the platform's business rules.
+ *
+ * Administrators have unrestricted access to review details and may also access the full snapshot history of any review for dispute resolution purposes, as defined in the administrator access policy. Customers may access their own review details. Sellers can view review details for reviews on their own products.
+ *
+ * This endpoint is typically used in conjunction with the product reviews list operation (`PATCH /products/{productId}/reviews`) to first retrieve a paginated summary list of reviews and then fetch full details of a specific review. To access the complete snapshot history (edit history) of the review, use the review snapshots endpoint (`GET /products/{productId}/reviews/{reviewId}/snapshots`).
+ *
+ * The `productId` path parameter scopes the review lookup to the specified product, and the system validates that the review's `product_id` foreign key matches the given productId before returning a response.
+ *
+ * @param props.connection
+ * @param props.productId The UUID of the product to which the review belongs. Used to scope and validate the review lookup against the correct product in shopping_mall_products.
+ * @param props.reviewId The UUID of the specific review to retrieve. Must correspond to a review whose product_id matches the given productId in shopping_mall_reviews.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification 1. Validate the productId path parameter as a valid UUID. Query shopping_mall_products to confirm the product exists and is not deleted (deleted_at IS NULL). Return 404 if not found.
+ *
+ * 2. Validate the reviewId path parameter as a valid UUID. Query shopping_mall_reviews where id = reviewId AND product_id = productId. This ensures the review belongs to the stated product.
+ *
+ * 3. For public and seller access: additionally check that deleted_at IS NULL on the review. Return 404 if the review is deleted. Administrators may access deleted reviews.
+ *
+ * 4. Join with shopping_mall_customers to retrieve the customer's display name. If the customer record is deleted (cascaded), show author as 'deleted user' per the retention policy.
+ *
+ * 5. Join with shopping_mall_review_snapshots to get the full snapshot history ordered by created_at ASC, to provide edit history to authorized viewers (admins, the reviewing customer, sellers for their product reviews).
+ *
+ * 6. Compute and return the review's current rating and body from the most recent snapshot or from the review's own rating/body fields.
+ *
+ * 7. Return the assembled IShoppingMallReview object including: id, productId, customerId, customerDisplayName (or 'deleted user'), orderItemId, rating, body, createdAt, updatedAt, deletedAt (if admin), and snapshots array.
+ *
+ * 8. Access control: Any authenticated or unauthenticated user can access non-deleted reviews (public product detail). Admins can access deleted reviews as well. Return 403 for unauthorized access to deleted reviews by non-admin actors.
+ * @path /shoppingMall/products/:productId/reviews/:reviewId
+ * @accessor api.functional.shoppingMall.products.reviews.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * The UUID of the product to which the review belongs. Used to scope and validate the review lookup against the correct product in shopping_mall_products.
+     */
+    productId: string & tags.Format<"uuid">;
+
+    /**
+     * The UUID of the specific review to retrieve. Must correspond to a review whose product_id matches the given productId in shopping_mall_reviews.
+     */
+    reviewId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallReview;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/products/:productId/reviews/:reviewId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/reviews/${encodeURIComponent(props.reviewId ?? "null")}`;
+  export const random = (): IShoppingMallReview =>
+    typia.random<IShoppingMallReview>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("reviewId")(() => typia.assert(props.reviewId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve aggregate review statistics for a specific product.
+ *
+ * This endpoint returns a computed summary of all purchase-verified customer reviews associated with the specified product, as stored in the `shopping_mall_reviews` table. The statistics include the arithmetic mean of star ratings (1–5) across all non-deleted reviews, as well as the total count of non-deleted reviews contributing to that average.
+ *
+ * Only reviews that have not been marked as deleted (i.e., where `deleted_at` is null) are included in the calculation. Deleted reviews are fully excluded from both the average rating value and the review count, regardless of when they were deleted. Reviews authored by customers whose accounts have since been deleted are still included, provided those reviews themselves have not been deleted.
+ *
+ * If the product currently has no non-deleted reviews, the response reflects this state by returning a null average rating and a count of zero, rather than displaying a calculated value of zero. The average rating is recalculated dynamically from the current set of active reviews each time this endpoint is called, ensuring the returned value always reflects the latest state of all non-deleted reviews.
+ *
+ * This statistics data is displayed publicly on the product detail page and in category and search listing views. It can be accessed by any actor including unauthenticated guests, customers, sellers, and administrators. There are no access restrictions on viewing review statistics.
+ *
+ * The `productId` path parameter must correspond to an existing product in `shopping_mall_products`. If the product does not exist or has been deleted, the endpoint returns a not-found error. Products belonging to suspended sellers are still accessible via this endpoint for statistics purposes.
+ *
+ * @param props.connection
+ * @param props.productId The UUID of the target product whose review statistics are to be retrieved.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification 1. Validate that the productId path parameter maps to an existing, non-deleted record in shopping_mall_products (deleted_at IS NULL). If not found, return 404.
+ * 2. Query shopping_mall_reviews where product_id = productId AND deleted_at IS NULL.
+ * 3. Compute the count of matching rows.
+ * 4. If count > 0, compute the arithmetic mean of the `rating` column (AVG(rating)) across those rows and round to a consistent precision (e.g., 1 or 2 decimal places).
+ * 5. If count == 0, set average_rating to null.
+ * 6. Return an IShoppingMallReviewStatistics object with fields: product_id (UUID), average_rating (number | null), review_count (integer >= 0).
+ * 7. No authentication is required. This endpoint is publicly accessible.
+ * 8. No pagination or filtering is needed — this is a pure aggregation over all non-deleted reviews for the product.
+ * @path /shoppingMall/products/:productId/reviews/statistics
+ * @accessor api.functional.shoppingMall.products.reviews.statistics
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function statistics(
+  connection: IConnection,
+  props: statistics.Props,
+): Promise<statistics.Response> {
+  return true === connection.simulate
+    ? statistics.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...statistics.METADATA,
+          path: statistics.path(props),
+          status: null,
+        },
+      );
+}
+export namespace statistics {
+  export type Props = {
+    /**
+     * The UUID of the target product whose review statistics are to be retrieved.
+     */
+    productId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallReviewStatistic;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/products/:productId/reviews/statistics",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/products/${encodeURIComponent(props.productId ?? "null")}/reviews/statistics`;
+  export const random = (): IShoppingMallReviewStatistic =>
+    typia.random<IShoppingMallReviewStatistic>();
+  export const simulate = (
+    connection: IConnection,
+    props: statistics.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: statistics.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}

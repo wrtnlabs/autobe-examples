@@ -1,0 +1,64 @@
+/// Customer wishlists for saved products, tracking which products each
+/// customer wants to consider later.
+///
+/// This table represents a many-to-many relationship between customers and
+/// products where customers can save products to their wishlist for future
+/// purchase consideration. Each row represents a single customer-product
+/// relationship indicating the customer wants this specific product.
+///
+/// **Key Relationships:**
+/// - {@link ecommerce_mall_customers} - Customer who owns this wishlist item
+/// (FK reference)
+/// - {@link ecommerce_mall_products} - Product saved in the customer's
+/// wishlist (FK reference)
+///
+/// **Business Context:**
+/// - Customers can add multiple products to their wishlist
+/// - The same product can appear in multiple customers' wishlists
+/// - No transactional commitment - wishlist items are informational
+/// - Soft delete support for account deletion scenarios
+///
+/// **Access Pattern:**
+/// - Customers view their own wishlist items
+/// - Products page may show "Add to Wishlist" functionality
+///
+/// @namespace Wishlist
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link ecommerce_mall_customers.id}. The customer who saved
+  /// this product to their wishlist.
+  customer_id String
+  
+  /// Product's {@link ecommerce_mall_products.id}. The product that was saved
+  /// to the customer's wishlist.
+  product_id String
+  
+  /// When this product was added to the customer's wishlist.
+  created_at DateTime
+  
+  /// Last update timestamp for this wishlist item.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when the wishlist item is removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_id])
+  @@unique([customer_id, product_id])
+  @@index([customer_id, created_at])
+}

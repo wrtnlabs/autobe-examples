@@ -1,0 +1,234 @@
+/// Main comment entity with threaded reply structure supporting unlimited
+/// nesting depth. Users create comments on posts, reply to existing
+/// comments, edit their own comments, and delete their own comments. Each
+/// comment references its author (member), parent post, and optionally a
+/// parent comment for threaded replies. Soft delete via deleted_at enables
+/// moderation tracking without data loss.
+///
+/// Key relationships:
+/// - {@link reddit_community_members.id} - comment author (required)
+/// - {@link reddit_community_posts.id} - parent post (required)
+/// - {@link reddit_community_comments.id} - parent comment for replies
+/// (optional, null for top-level comments)
+///
+/// Behavioral notes:
+/// - Unlimited reply depth via self-referential parent_comment_id
+/// - Edit history tracked in {@link reddit_community_comment_snapshots}
+/// - Deletion audit tracked in {@link reddit_community_comment_deletions}
+/// - Vote score aggregated from {@link reddit_community_votes} (filtering by
+/// target_type='comment' and target_id)
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_community_members.id}. Required for comment
+  /// attribution and ownership.
+  reddit_community_members_id String
+  
+  /// Parent post's {@link reddit_community_posts.id}. Required - comments
+  /// always belong to a post.
+  reddit_community_posts_id String
+  
+  /// Parent comment's {@link reddit_community_comments.id}. Optional - null
+  /// for top-level comments on a post, points to another comment for nested
+  /// replies. Enables unlimited threading depth.
+  parent_comment_id String?
+  
+  /// Comment content text. Required for all comments. Supports plain text with
+  /// markdown formatting for user-generated content.
+  body String
+  
+  /// Timestamp when comment was originally created.
+  created_at DateTime
+  
+  /// Timestamp when comment was last modified (edit). Updated on each edit
+  /// operation.
+  updated_at DateTime
+  
+  /// Timestamp when comment was soft-deleted. Null means active, non-null
+  /// means deleted by author or moderator. Enables moderation audit without
+  /// data loss.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_community_members @relation(fields: [reddit_community_members_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [reddit_community_posts_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies reddit_community_comments[] @relation("recursive")
+  snapshots reddit_community_comment_snapshots[] @relation("reddit_community_comment_snapshots_of_comment_id")
+  childCommentSnapshots reddit_community_comment_snapshots[] @relation("reddit_community_comment_snapshots_of_parent_comment_id")
+  deletions reddit_community_comment_deletions[]
+  votes reddit_community_votes[]
+  voteOfComments reddit_community_vote_of_comments[]
+  systemLogs reddit_community_system_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_members_id])
+  @@index([reddit_community_posts_id])
+  @@index([parent_comment_id])
+  @@index([created_at])
+}
+
+/// Audit trail of comment edits capturing point-in-time content states when
+/// users modify their comments. Stores a complete snapshot of comment data
+/// at the moment of each edit, enabling historical reconstruction of comment
+/// content and context.
+///
+/// Key characteristics:
+/// - Append-only: Snapshots are never modified or deleted once created
+/// - Denormalized: Contains all comment data at snapshot time, including
+/// author and post references
+/// - Traceable: FK to source comment for audit trail linkage
+/// - Historical: Each snapshot represents one version of the comment
+///
+/// Relationships:
+/// - Each snapshot belongs to one comment in {@link
+/// reddit_community_comments} (source of the edit)
+/// - References the comment author at snapshot time via {@link
+/// reddit_community_members.id}
+/// - References the parent post at snapshot time via {@link
+/// reddit_community_posts.id}
+///
+/// Use case: When a user edits a comment, a new snapshot is created with the
+/// updated content. This enables:
+/// - Viewing comment edit history
+/// - Reconstructing past comment states
+/// - Moderation audit trails
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source comment's {@link reddit_community_comments.id} - the comment this
+  /// snapshot belongs to
+  comment_id String
+  
+  /// Comment author's {@link reddit_community_members.id} at the time of
+  /// snapshot creation
+  author_id String
+  
+  /// Parent post's {@link reddit_community_posts.id} at the time of snapshot
+  /// creation
+  post_id String
+  
+  /// Parent comment's {@link reddit_community_comments.id} for threaded
+  /// replies (nullable for top-level comments)
+  parent_comment_id String?
+  
+  /// Comment content text at the time of this snapshot (the edited content)
+  content String
+  
+  /// Version number of this snapshot (1 for original, increments with each
+  /// edit)
+  version Int
+  
+  /// Timestamp when this snapshot was created (snapshot time)
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_community_comments @relation("reddit_community_comment_snapshots_of_comment_id", fields: [comment_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_community_comments? @relation("reddit_community_comment_snapshots_of_parent_comment_id", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id])
+  @@index([parent_comment_id])
+  @@index([comment_id])
+  @@index([author_id, created_at])
+  @@index([created_at])
+}
+
+/// Audit trail table that records deleted comments with deletion metadata
+/// for moderation purposes.
+///
+/// This table captures the historical state of comments that have been
+/// deleted by their author or by community moderators. Each deletion record
+/// includes a reference to the original comment, the timestamp of deletion,
+/// the actor who performed the deletion (via session reference), and an
+/// optional deletion reason.
+///
+/// Key relationships:
+/// - {@link reddit_community_comments} - The original comment that was
+/// deleted (1:1 relationship)
+/// - {@link reddit_community_member_sessions} - The session of the actor who
+/// performed the deletion (moderator or comment author)
+///
+/// Usage:
+/// - Moderators review deleted comment history for community management
+/// - Audit trail for deletion operations
+/// - Recovery analysis if needed (soft delete tracking)
+///
+/// This is a snapshot table (stance: "snapshot") that should never be
+/// updated or deleted once created. It provides an append-only audit log of
+/// all comment deletion events in the system.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The deleted comment's {@link reddit_community_comments.id}.
+  reddit_community_comment_id String
+  
+  /// The moderator or author session that deleted the comment. {@link
+  /// reddit_community_member_sessions.id}.
+  deleted_by_id String?
+  
+  /// Timestamp when the comment was deleted.
+  deleted_at DateTime
+  
+  /// Optional reason for deletion (e.g., moderator note, spam, harassment).
+  deletion_reason String?
+  
+  /// Record creation timestamp (same as deleted_at for this audit table).
+  created_at DateTime
+  
+  /// Record update timestamp (immutable for audit purposes).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  deletedBy reddit_community_member_sessions? @relation(fields: [deleted_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_comment_id], map: "reddit_community_comment_deletions_reddit_community_co_8a7bac36")
+  @@index([deleted_at])
+  @@index([deleted_by_id, deleted_at])
+}

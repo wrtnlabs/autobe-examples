@@ -1,0 +1,70 @@
+/// Community entities that serve as organizational containers for
+/// user-created content.
+///
+/// Each community has a unique name for discovery, optional description text
+/// and icon image, and is owned by the member who created it. The subscriber
+/// count is cached for efficient display in community lists and search
+/// results. Communities can be browsed, searched by name, and users must
+/// subscribe before creating posts within them.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who created and owns this community. The owner has highest
+  /// moderation authority. {@link community_platform_members.id}
+  owner_member_id String
+  
+  /// Optional icon image file for the community's visual representation.
+  /// {@link community_platform_files.id}
+  icon_file_id String?
+  
+  /// Unique name of the community used for discovery and search. Must be
+  /// unique across all communities.
+  name String
+  
+  /// Text description of the community's purpose and content themes.
+  description String
+  
+  /// Cached count of members subscribed to this community. Updated when
+  /// subscriptions are added or removed for efficient list display.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted. Null if the community is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner community_platform_members @relation(fields: [owner_member_id], references: [id], onDelete: Cascade)
+  icon community_platform_files? @relation(fields: [icon_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  posts community_platform_posts[]
+  moderators community_platform_moderators[]
+  bans community_platform_bans[]
+  reports community_platform_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([icon_file_id])
+  @@unique([name])
+  @@index([owner_member_id, created_at])
+}

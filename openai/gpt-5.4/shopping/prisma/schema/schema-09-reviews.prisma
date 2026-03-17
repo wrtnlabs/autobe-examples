@@ -1,0 +1,133 @@
+/// Current customer-authored product reviews for purchased products.
+///
+/// This table stores the mutable active review record shown on product
+/// detail pages and used as the source for average rating calculations over
+/// non-deleted reviews. Each review is tied to a concrete delivered purchase
+/// context through the customer, product, order, and order item
+/// relationships so eligibility and one-review-per-product-per-order rules
+/// can be enforced without denormalizing order or product data.
+///
+/// Edits and deletion events are preserved separately through {@link
+/// shopping_mall_review_snapshots}, while this table retains only the latest
+/// active state plus soft-deletion timing. Even if a customer account is
+/// later deleted, the review record remains preserved for historical product
+/// feedback visibility and dispute traceability.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authoring customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Reviewed product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Order context's {@link shopping_mall_orders.id} used to enforce one
+  /// review per product per order.
+  shopping_mall_order_id String
+  
+  /// Delivered purchase line item's {@link shopping_mall_order_items.id}
+  /// establishing review eligibility and exact purchase context.
+  shopping_mall_order_item_id String
+  
+  /// Customer-selected star rating for the reviewed product, constrained by
+  /// business rules to the allowed review score range.
+  rating Int
+  
+  /// Optional written review text describing the customer's experience with
+  /// the purchased product.
+  content String?
+  
+  /// When the review was first created.
+  created_at DateTime
+  
+  /// When the review was last edited.
+  updated_at DateTime
+  
+  /// Soft-deletion timestamp marking when the customer deleted the review
+  /// while preserving historical visibility and auditability.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviewSnapshots shopping_mall_review_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id, shopping_mall_order_id], map: "shopping_mall_reviews_shopping_mall_customer_id_shoppi_d8de5879")
+  @@index([shopping_mall_product_id, created_at])
+  @@index([shopping_mall_customer_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, shopping_mall_product_id], map: "shopping_mall_reviews_shopping_mall_order_item_id_shop_8700cff2")
+}
+
+/// Immutable snapshot-event records for {@link shopping_mall_reviews}.
+///
+/// This table records when a review snapshot was captured and why it was
+/// captured, supporting audit visibility and historical traceability for
+/// review changes without storing duplicated parent review fields. Each row
+/// belongs to exactly one review and is append-only.
+///
+/// The table intentionally keeps only child-specific snapshot metadata
+/// together with the parent review reference. Current review values such as
+/// rating, content, and deletion timestamp remain owned by {@link
+/// shopping_mall_reviews} and should be accessed through the foreign key
+/// relationship rather than duplicated here.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent review for which this snapshot event was recorded. {@link
+  /// shopping_mall_reviews.id}.
+  shopping_mall_review_id String
+  
+  /// Category of review change that caused this snapshot event to be recorded,
+  /// such as edit or delete.
+  change_type String
+  
+  /// Optional human-readable explanation for why this snapshot event was
+  /// recorded.
+  change_reason String?
+  
+  /// Timestamp when this immutable snapshot event row was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
+  @@index([change_type, created_at])
+}

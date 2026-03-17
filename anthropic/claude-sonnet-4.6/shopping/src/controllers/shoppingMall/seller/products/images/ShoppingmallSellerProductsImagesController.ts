@@ -1,0 +1,184 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IShoppingMallProductImage } from "../../../../../api/structures/IShoppingMallProductImage";
+import { SellerAuth } from "../../../../../decorators/SellerAuth";
+import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
+import { deleteShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/deleteShoppingMallSellerProductsProductIdImagesImageId";
+import { postShoppingMallSellerProductsProductIdImages } from "../../../../../providers/postShoppingMallSellerProductsProductIdImages";
+import { putShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/putShoppingMallSellerProductsProductIdImagesImageId";
+
+@Controller("/shoppingMall/seller/products/:productId/images")
+export class ShoppingmallSellerProductsImagesController {
+  /**
+   * Upload one or more images to a product owned by the authenticated seller.
+   *
+   * This operation adds new visual image assets to the specified product's image gallery. Each image is stored as a URL reference in the `shopping_mall_product_images` table, which records the product association (`shopping_mall_product_id`), the image asset URL (`url`), and a numeric display sequence (`sequence`) that controls the rendering order on the product detail page. Lower sequence values appear earlier in the gallery.
+   *
+   * When a product has no images yet, the first uploaded image is automatically assigned the lowest sequence value and becomes the main thumbnail image — the image displayed in product listing views such as search results and category pages. When images already exist, the new uploads are appended to the end of the existing sequence, receiving sequence values higher than all existing images so that the current thumbnail is not displaced.
+   *
+   * This operation is restricted exclusively to the seller who owns the product. The system validates that the authenticated seller's account matches the `shopping_mall_seller_id` stored on the `shopping_mall_products` record before proceeding. If the product belongs to a different seller, the request is denied. Administrators do not have access to this image management operation.
+   *
+   * Uploading images counts as a product edit. Immediately after the new images are inserted, the system automatically creates a new `shopping_mall_product_snapshots` record that captures the full state of the product at that moment, including the complete image sequence, all product fields, and all variant states. This snapshot is used for order history, dispute resolution, and audit purposes.
+   *
+   * The product must exist and must not have been deleted (`deleted_at` must be null) for this operation to succeed. If the product has been deleted, the request is rejected.
+   *
+   * After a successful upload, the response returns the complete current ordered list of all images for the product, including both previously existing images and the newly added ones, ordered by ascending sequence value.
+   *
+   * @param connection
+   * @param productId The UUID of the product to which images will be uploaded. Must be a product owned by the authenticated seller.
+   * @param body One or more image URLs to upload and associate with the product, provided in desired appended display order.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Authenticate the caller as a seller actor. Extract the seller's identity from the session token.
+   * 2. Look up the product by `productId` (UUID) in `shopping_mall_products`. If not found, return 404.
+   * 3. Verify `deleted_at` is null on the product record. If deleted, return 404.
+   * 4. Verify `shopping_mall_seller_id` on the product matches the authenticated seller's ID. If not, return 403.
+   * 5. Determine the current maximum `sequence` value among all existing `shopping_mall_product_images` records for this product. If no images exist, start sequence from 1.
+   * 6. For each image URL provided in the request body (in the order supplied), insert a new `shopping_mall_product_images` record:
+   *    - `id`: new UUID
+   *    - `shopping_mall_product_id`: productId
+   *    - `url`: the provided image URL
+   *    - `sequence`: incrementing from (current max + 1) for each successive image
+   *    - `created_at`: current timestamp
+   * 7. After all insertions, create a new `shopping_mall_product_snapshots` record capturing the full current product state including all images, all variants, and all product fields.
+   * 8. Update `shopping_mall_products.updated_at` to the current timestamp.
+   * 9. Query and return all `shopping_mall_product_images` for this product ordered by `sequence` ascending, wrapped in the IShoppingMallProductImage.IBundle response type.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductImage.ICreate,
+  ): Promise<IShoppingMallProductImage.IBundle> {
+    try {
+      return await postShoppingMallSellerProductsProductIdImages({
+        seller,
+        productId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a specific product image record, modifying its URL and/or display sequence position.
+   *
+   * This operation allows the seller who owns the product to update the properties of a single image associated with a product. Specifically, the seller may change the hosted image URL (pointing to a new image asset stored externally) and/or the display sequence value that controls the image's position within the product's image gallery. The `sequence` field determines the rendering order on the product detail page, with lower values displayed first. The image with the lowest `sequence` value across all images of the product is designated as the main thumbnail, which appears in search results, category listings, and other product list views.
+   *
+   * Access to this operation is strictly restricted to the seller who owns the product identified by `productId`. The system validates ownership by matching the authenticated seller's account against the `shopping_mall_seller_id` field of the `shopping_mall_products` record. Any seller attempting to update an image belonging to another seller's product will be denied. Administrators do not have access to this individual image management operation; product image changes by administrators must be carried out through product-level deletion mechanisms.
+   *
+   * The `shopping_mall_product_images` table stores each image as a record with a `url` (a varchar pointing to the hosted asset, e.g., a CDN or object storage URL) and a `sequence` integer that determines its position. No two images for the same product may share the same sequence value; the system must ensure uniqueness of sequence values within the product scope after each update. If the sequence value provided conflicts with an existing image, the system should handle the conflict appropriately (e.g., by rejecting the request or shifting existing images).
+   *
+   * Because updating a product image is treated as a product edit, the system automatically creates a new `shopping_mall_product_snapshots` record immediately after the image update is applied. This snapshot captures the complete state of the product at that moment, including all current image URLs and their display order, all variant states, and all other product fields. This ensures the full visual and product state is preserved for historical records, order references, dispute resolution, and administrative review.
+   *
+   * Before calling this endpoint, the product must already exist (`POST /products` to create the product) and the image must already be associated with the product (`POST /products/{productId}/images` to upload images). Related operations include `GET /products/{productId}/images` or the product detail endpoint to retrieve the current image list and sequence values, and `DELETE /products/{productId}/images/{imageId}` to remove an image entirely.
+   *
+   * @param connection
+   * @param productId The UUID of the product that owns this image. Used to scope the image to its owning product and to validate seller ownership.
+   * @param imageId The UUID of the specific product image record to update.
+   * @param body Updated properties for the product image, including the new URL and/or display sequence position.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Authenticate the requesting actor and verify it is a seller.
+   * 2. Fetch the product record from shopping_mall_products by productId. If not found or deleted_at is not null, return 404.
+   * 3. Verify that the authenticated seller's id matches shopping_mall_products.shopping_mall_seller_id. If not, return 403 Forbidden.
+   * 4. Fetch the image record from shopping_mall_product_images by imageId, ensuring shopping_mall_product_id matches productId. If not found, return 404.
+   * 5. Validate the request body:
+   *    - If url is provided, ensure it is a valid non-empty URL string.
+   *    - If sequence is provided, ensure it is a non-negative integer.
+   *    - Check that the provided sequence value does not conflict with another image of the same product (excluding the current image). If conflict, return 409 Conflict or adjust sequence values.
+   * 6. Apply the update to the shopping_mall_product_images record (url and/or sequence fields as provided).
+   * 7. Update shopping_mall_products.updated_at to now.
+   * 8. Create a new shopping_mall_product_snapshots record capturing the full current product state (all fields, all images in current sequence order, all variant states).
+   * 9. Return the updated shopping_mall_product_images record as the response.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":imageId")
+  public async update(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("imageId")
+    imageId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductImage.IUpdate,
+  ): Promise<IShoppingMallProductImage> {
+    try {
+      return await putShoppingMallSellerProductsProductIdImagesImageId({
+        seller,
+        productId,
+        imageId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a single image from a product's image gallery.
+   *
+   * This operation targets a specific image record identified by `imageId` within the product identified by `productId`. Once the image is removed, it no longer appears in the product's gallery or any customer-facing display. The underlying `shopping_mall_product_images` record is permanently deleted from the database.
+   *
+   * Only the seller who owns the product is authorized to delete its images. The system validates product ownership by matching the authenticated seller's identity against the `shopping_mall_seller_id` recorded on the `shopping_mall_products` row. If the acting seller does not own the product, the request is rejected. Administrators do not have access to this individual image deletion operation; they must use the product deletion mechanism to remove all associated images.
+   *
+   * After deletion, the remaining images' `sequence` values are recompacted so that the display order remains continuous and without gaps. If the deleted image was the one with the lowest sequence number (i.e., the main thumbnail), the image with the next lowest sequence is automatically promoted and becomes the new main thumbnail shown in product listings, search results, and category pages.
+   *
+   * Deleting a product image is treated as a product edit. The system automatically creates a new `shopping_mall_product_snapshots` record immediately after the deletion, capturing the complete current state of the product — including all remaining images in their updated order, all variant states, and all other product fields — at that exact moment. This snapshot preserves the historical record for orders, audits, and dispute resolution. Any images captured in snapshots prior to this deletion remain intact and unaffected within those earlier snapshot records.
+   *
+   * The product must exist and must not have been previously removed (its `deleted_at` field must be null). If the product or the image does not exist, or if the image does not belong to the specified product, the request is rejected with an appropriate error.
+   *
+   * @param connection
+   * @param productId The UUID of the product that owns the image. Used to verify product existence and seller ownership before deletion.
+   * @param imageId The UUID of the product image record to be permanently removed.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Authenticate the requesting seller from the session token.
+   * 2. Load the `shopping_mall_products` row for `productId`.
+   *    - If not found or `deleted_at` is not null, return 404.
+   * 3. Verify that `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller's ID.
+   *    - If mismatch, return 403 (ownership enforcement).
+   * 4. Load the `shopping_mall_product_images` row for `imageId`.
+   *    - If not found or `shopping_mall_product_id` does not equal `productId`, return 404.
+   * 5. Begin a database transaction:
+   *    a. Delete the `shopping_mall_product_images` record for `imageId`.
+   *    b. Reload all remaining images for this product ordered by `sequence` ascending.
+   *    c. Reassign contiguous sequence values starting from 0 (or 1) to eliminate any gaps left by the deletion. Update all affected rows.
+   *    d. Determine the new first image (lowest sequence) — this is now the main thumbnail.
+   *    e. Update `shopping_mall_products.updated_at` to the current timestamp.
+   *    f. Create a new `shopping_mall_product_snapshots` record capturing the full current product state: name, description, base_price, category, all remaining images (urls and sequences), all variant SKUs, and all other product fields.
+   * 6. Commit the transaction.
+   * 7. Return HTTP 204 No Content.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":imageId")
+  public async erase(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("imageId")
+    imageId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteShoppingMallSellerProductsProductIdImagesImageId({
+        seller,
+        productId,
+        imageId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

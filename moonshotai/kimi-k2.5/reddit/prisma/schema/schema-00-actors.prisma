@@ -1,0 +1,619 @@
+/// Temporary guest accounts for unauthenticated visitors to the platform.
+/// Guests are identified by device fingerprint and can browse public content
+/// without registration. Each guest actor record represents a unique
+/// device/browser combination that allows the platform to maintain session
+/// continuity and basic personalization for non-registered users. Guest
+/// accounts are ephemeral and may be cleaned up periodically.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device identifier generated from browser and device
+  /// characteristics. Used to recognize returning guest visitors.
+  device_fingerprint String
+  
+  /// Timestamp when the guest account was first created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. When set, the guest account is considered
+  /// expired/inactive.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_like_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([created_at])
+}
+
+/// Temporary session tokens for guest access to public content. Tracks guest
+/// browsing sessions for unauthenticated visitors identified by device
+/// fingerprint. Each session is linked to a temporary guest record and
+/// includes connection metadata for security and analytics. Sessions
+/// automatically expire after a configured timeout period.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link reddit_like_guests.id}.
+  reddit_like_guest_id String
+  
+  /// Client IP address for the guest session.
+  ip String
+  
+  /// Initial page URL where the guest session was established.
+  href String
+  
+  /// HTTP referrer header from the initial request.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest reddit_like_guests @relation(fields: [reddit_like_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_like_guest_id, created_at])
+}
+
+/// Registered member accounts representing authenticated users in the
+/// reddit_like platform.
+///
+/// Members are the primary user type with full platform access. Each member
+/// has unique email credentials for authentication and a public username for
+/// identification. Members can create communities, submit posts, write
+/// comments, vote on content, subscribe to communities, and participate in
+/// community moderation when assigned.
+///
+/// This table serves as the canonical identity record for the member actor
+/// type, storing authentication credentials and core profile identifiers.
+/// Extended profile data (karma, display preferences) is stored in {@link
+/// reddit_like_user_profiles} via 1:1 relationship.
+///
+/// Members can hold multiple {@link reddit_like_member_sessions} for
+/// authentication across devices, and use {@link
+/// reddit_like_member_password_resets} for account recovery when credentials
+/// are forgotten.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and account recovery.
+  email String
+  
+  /// Public display name uniquely identifying the member across the platform.
+  username String
+  
+  /// BCrypt hashed password for authentication. Never store plaintext
+  /// passwords.
+  password_hash String
+  
+  /// Whether the member's email address has been verified through confirmation
+  /// process.
+  email_verified Boolean
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent account update.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null indicates active account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_like_member_sessions[]
+  passwordResets reddit_like_member_password_resets[]
+  moderatorRoles reddit_like_moderators[]
+  uploadedAttachments reddit_like_attachments[]
+  attachmentAccessLogs reddit_like_attachment_access_logs[]
+  avatarAttachments reddit_like_attachment_reference_of_profiles[]
+  ownedCommunities reddit_like_communities[]
+  subscriptions reddit_like_community_subscriptions[]
+  posts reddit_like_posts[]
+  authoredComments reddit_like_comments[]
+  votes reddit_like_votes[]
+  reports reddit_like_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// token support.
+///
+/// Each record represents an active authentication session for a registered
+/// member, storing JWT token identifiers for access and refresh tokens along
+/// with connection metadata. Sessions are used to track authenticated state
+/// and enable token revocation. When a member logs in, a new session is
+/// created with JWT tokens. The access token has a shorter expiration while
+/// the refresh token allows obtaining new access tokens without
+/// re-authentication.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_like_members.id}.
+  reddit_like_member_id String
+  
+  /// Hash of the JWT access token for revocation tracking and session
+  /// identification.
+  access_token_hash String
+  
+  /// Hash of the JWT refresh token for token rotation and revocation tracking.
+  refresh_token_hash String
+  
+  /// IP address from which the session was initiated.
+  ip String
+  
+  /// URL path where the login/session creation occurred.
+  href String
+  
+  /// Referrer URL that led to the login/session creation.
+  referrer String
+  
+  /// User agent string of the client browser or application.
+  user_agent String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the access token expires.
+  expires_at DateTime
+  
+  /// Timestamp when the refresh token expires.
+  refresh_expires_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([access_token_hash])
+  @@unique([refresh_token_hash])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_member_id, created_at], map: "reddit_like_member_sessions_reddit_like_member_id_crea_f11fb11f")
+  @@index([expires_at])
+  @@index([refresh_expires_at])
+}
+
+/// Password reset tokens for member account recovery.
+///
+/// Stores temporary tokens issued when members request password resets. Each
+/// token has an expiration time and can only be used once. Once a token is
+/// used to reset a password, it is marked as consumed via used_at timestamp.
+///
+/// Password reset tokens provide a secure mechanism for members to regain
+/// access to their accounts without requiring the current password. The
+/// token must be kept confidential and has a limited lifespan to prevent
+/// abuse.
+///
+/// Related to {@link reddit_like_members} as the authentication target.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who requested the password reset. References {@link
+  /// reddit_like_members.id}.
+  reddit_like_member_id String
+  
+  /// Unique password reset token string. Cryptographically secure random value
+  /// sent to member's email for identity verification.
+  token String
+  
+  /// Timestamp when the reset token becomes invalid. Members must complete
+  /// password reset before this time.
+  expires_at DateTime
+  
+  /// Timestamp when the token was consumed to reset the password. Null until
+  /// used. Prevents token reuse after successful reset.
+  used_at DateTime?
+  
+  /// Timestamp when the reset token was created.
+  created_at DateTime
+  
+  /// IP address from which the reset token was requested. Used for security
+  /// auditing and fraud detection.
+  ip_address String
+  
+  /// User agent string from the requesting client. Used for security auditing.
+  user_agent String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_member_id, created_at], map: "reddit_like_member_password_resets_reddit_like_member__140f77a9")
+  @@index([expires_at])
+}
+
+/// Links members to communities where they hold moderation privileges.
+/// Moderators authenticate as regular members (authorization-level
+/// distinction), and this table grants them governance capabilities within
+/// specific communities including content deletion, user bans, and report
+/// review.
+///
+/// Moderator privileges are scoped to individual communities. Each record
+/// represents a member's authority to moderate a specific community,
+/// including whether they can recruit additional moderators.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who holds moderator privileges. {@link reddit_like_members.id}.
+  member_id String
+  
+  /// The community where the member has moderation authority. {@link
+  /// reddit_like_communities.id}.
+  community_id String
+  
+  /// Whether this moderator can add other moderators to the community. Owners
+  /// can always add moderators; this flag allows delegation of recruitment
+  /// authority to trusted moderators.
+  can_add_moderators Boolean
+  
+  /// When the moderator role was assigned.
+  created_at DateTime
+  
+  /// When the moderator role was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for removed moderator roles. Preserves history
+  /// while revoking active privileges.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_like_moderator_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, community_id])
+  @@index([community_id, created_at])
+}
+
+/// Session tracking table for moderator login sessions.
+///
+/// Moderator sessions record authentication events and connection context
+/// for audit trail purposes. Each session represents a login event with
+/// captured metadata (IP, referrer, user agent href). Sessions are
+/// append-only for audit compliance.
+///
+/// Belongs to {@link reddit_like_moderators} as the actor table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged moderator's {@link reddit_like_moderators.id}.
+  moderator_id String
+  
+  /// Client IP address for session audit trail.
+  ip String
+  
+  /// Request origin URL or user agent href for session context tracking.
+  href String
+  
+  /// HTTP referer header for session audit trail tracking request origin.
+  referrer String
+  
+  /// Timestamp when the session was established.
+  created_at DateTime
+  
+  /// Timestamp when the session expires or was terminated.
+  expired_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  moderator reddit_like_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([moderator_id, created_at])
+}
+
+/// Community owner accounts representing users with admin-level privileges
+/// and enhanced security requirements. Owners are authenticated actors who
+/// can create communities, appoint moderators, and perform elevated
+/// moderation actions. Each owner has unique authentication credentials and
+/// manages community governance. {@link reddit_like_communities} reference
+/// owners as creators, and {@link reddit_like_owner_sessions} track login
+/// sessions.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_owners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for owner authentication and account recovery.
+  email String
+  
+  /// Hashed password for secure authentication.
+  password_hash String
+  
+  /// Unique username for public identification and profile display.
+  username String
+  
+  /// Human-readable display name shown in community ownership and moderation
+  /// contexts.
+  display_name String
+  
+  /// Whether the owner account is currently active and can authenticate.
+  is_active Boolean
+  
+  /// Timestamp when the owner account was created.
+  created_at DateTime
+  
+  /// Timestamp when the owner account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for owner account deactivation. Null if account
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_like_owner_sessions[]
+  passwordResets reddit_like_owner_password_resets[]
+  auditLogs reddit_like_owner_audit_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// JWT session tokens for owner authentication with elevated security
+/// session tracking.
+///
+/// Stores active authentication sessions for community owners, capturing
+/// connection metadata for security auditing. Each session represents a
+/// logged-in owner session with JWT token lifecycle management. Sessions are
+/// append-only for audit purposes and expire automatically for security.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_owner_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged owner's {@link reddit_like_owners.id}.
+  reddit_like_owner_id String
+  
+  /// Client IP address for security tracking.
+  ip String
+  
+  /// Current page URL at session creation.
+  href String
+  
+  /// Referrer URL for tracking session origin.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic logout.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_like_owners @relation(fields: [reddit_like_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_like_owner_id, created_at])
+}
+
+/// Password reset token storage for owner account recovery with enhanced
+/// security validations. Each record represents a single password reset
+/// request containing a cryptographically secure token sent to the owner's
+/// registered email. Tokens are single-use and time-limited to prevent
+/// abuse. {@link reddit_like_owners}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_owner_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target owner's {@link reddit_like_owners.id}.
+  reddit_like_owner_id String
+  
+  /// Cryptographically secure random token sent to owner's email for password
+  /// reset verification.
+  token String
+  
+  /// Token expiration timestamp after which the reset request becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was consumed for password reset, marking it as
+  /// used to prevent replay attacks.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_like_owners @relation(fields: [reddit_like_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_owner_id, created_at], map: "reddit_like_owner_password_resets_reddit_like_owner_id_2ff847b0")
+  @@index([expires_at])
+}
+
+/// Audit trail logging owner actions for community management accountability.
+///
+/// Records all significant actions performed by community owners, including
+/// community creation, moderator assignments, user bans, and other
+/// administrative operations. Provides an immutable history for security
+/// review and accountability purposes.
+///
+/// Each entry captures the owner who performed the action, the type of
+/// action, the affected entity (if applicable), and request metadata for
+/// forensic analysis.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_owner_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner who performed the action. {@link reddit_like_owners.id}
+  reddit_like_owner_id String
+  
+  /// Type of action performed (e.g., 'create_community', 'add_moderator',
+  /// 'remove_moderator', 'ban_user', 'delete_post').
+  action String
+  
+  /// Type of entity affected by the action (e.g., 'community', 'user', 'post',
+  /// 'comment'). Null for actions without a specific target entity.
+  entity_type String?
+  
+  /// Identifier of the specific entity affected. {@link
+  /// reddit_like_communities.id} or other entity IDs.
+  entity_id String?
+  
+  /// Additional context or parameters about the action in human-readable
+  /// format.
+  details String?
+  
+  /// IP address from which the action was performed for security tracking.
+  ip_address String?
+  
+  /// User agent string of the client that performed the action.
+  user_agent String?
+  
+  /// Timestamp when the action was performed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_like_owners @relation(fields: [reddit_like_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_owner_id, created_at], map: "reddit_like_owner_audit_logs_reddit_like_owner_id_crea_16add855")
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+}

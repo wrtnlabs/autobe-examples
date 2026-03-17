@@ -1,0 +1,55 @@
+/// Immutable audit trail of stock movements for product variants. Each
+/// record captures a single stock movement event with quantity change
+/// (positive for increases like restocks or cancellations, negative for
+/// decreases like orders or losses), reason code indicating the business
+/// event that triggered the movement, and timestamp. Current stock quantity
+/// for any variant is calculated by summing all quantity_change values.
+/// Records are never modified or deleted to maintain complete audit history
+/// for inventory reconciliation and compliance.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant's {@link shopping_mall_product_variants.id} that this
+  /// inventory movement affects.
+  product_variant_id String
+  
+  /// Amount of stock change. Positive values indicate stock increases
+  /// (restock, order cancellation, refund approval). Negative values indicate
+  /// stock decreases (order placement, adjustment, loss, damage).
+  quantity_change Int
+  
+  /// Reason code for the inventory movement. Valid values: RESTOCK (manual
+  /// inventory addition), ORDER (stock reserved for order), ADJUSTMENT (manual
+  /// correction), CANCELLATION (order cancelled, stock returned), REFUND
+  /// (refund approved, stock returned), LOSS (damaged/lost items).
+  reason String
+  
+  /// Optional reference to the business entity that triggered this movement
+  /// (e.g., order_item_id, cancellation_request_id, refund_request_id). Null
+  /// for manual restocks and adjustments.
+  reference_id String?
+  
+  /// Timestamp when the inventory record was created, representing when the
+  /// stock movement occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([product_variant_id, created_at], map: "shopping_mall_inventory_records_product_variant_id_cre_a48a8182")
+  @@index([reason])
+}

@@ -1,0 +1,201 @@
+/// User-submitted reports on posts or comments for community moderation.
+/// Reports include the reporter's reference, target content type
+/// discriminator, reason text, and review status for moderator workflow.
+/// Each report is tied to a specific community and tracks the moderation
+/// lifecycle from submission through resolution. Target content relationship
+/// uses subtype pattern: reddit_clone_report_of_posts for post targets,
+/// reddit_clone_report_of_comments for comment targets.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who submitted the report. {@link reddit_clone_members.id}
+  reporter_id String
+  
+  /// Community where the reported content exists. {@link
+  /// reddit_clone_communities.id}
+  community_id String
+  
+  /// Type of target content: POST or COMMENT. Determines which subtype table
+  /// contains the target reference.
+  target_type String
+  
+  /// User-provided explanation for why the content is being reported.
+  reason String
+  
+  /// Current moderation status: PENDING, APPROVED, or DISMISSED. Controls
+  /// report visibility and workflow.
+  review_status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted (e.g., after dismissal).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_clone_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  action reddit_clone_report_actions?
+  reportOfPost reddit_clone_report_of_posts?
+  commentReport reddit_clone_report_of_comments?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reporter_id, created_at])
+  @@index([community_id, review_status, created_at])
+  @@index([target_type])
+}
+
+/// Moderator decisions on reports tracking who approved or dismissed each
+/// report and when.
+///
+/// This table records the outcome of moderator review processes. Each report
+/// receives exactly one action - either approved (content deleted) or
+/// dismissed (content kept). The action is immutable once recorded,
+/// providing an audit trail of moderation decisions.
+///
+/// Related to {@link reddit_clone_reports} which stores the original report
+/// submission, and {@link reddit_clone_moderators} which identifies the
+/// moderator who made the decision.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_report_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Report that was acted upon. {@link reddit_clone_reports.id}
+  reddit_clone_report_id String
+  
+  /// Moderator who made the decision. {@link reddit_clone_moderators.id}
+  reddit_clone_moderator_id String
+  
+  /// Moderator decision type. Either APPROVE (deletes reported content) or
+  /// DISMISS (keeps content and closes report).
+  action String
+  
+  /// Timestamp when the moderator action was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_clone_reports @relation(fields: [reddit_clone_report_id], references: [id], onDelete: Cascade)
+  moderator reddit_clone_moderators @relation(fields: [reddit_clone_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_report_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_moderator_id, created_at], map: "reddit_clone_report_actions_reddit_clone_moderator_id__bf03ddc6")
+}
+
+/// Subtype table linking reports to post targets in the polymorphic reports
+/// system. Each report targets at most one post, enforced by unique
+/// constraint on report_id. This table exists alongside
+/// reddit_clone_report_of_comments to support reporting on both content
+/// types while maintaining referential integrity and clear domain
+/// boundaries.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent report. {@link reddit_clone_reports.id}. Unique
+  /// constraint ensures each report targets at most one post.
+  reddit_clone_report_id String
+  
+  /// Target post being reported. {@link reddit_clone_posts.id}.
+  reddit_clone_post_id String
+  
+  /// Timestamp when the report-post linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when the report-post linkage was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for the report-post linkage record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_clone_reports @relation(fields: [reddit_clone_report_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_report_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_post_id, created_at], map: "reddit_clone_report_of_posts_reddit_clone_post_id_crea_7b232d08")
+}
+
+/// Subtype table linking reports to comment targets in the polymorphic
+/// reporting system. Each report can target at most one comment, enforced
+/// through a unique constraint on the report foreign key. This table exists
+/// to support the polymorphic relationship pattern where the main {@link
+/// reddit_clone_reports} table uses a target_type discriminator, and
+/// separate subtype tables store the actual foreign key references to posts
+/// or comments. Parent temporal fields (created_at, updated_at, deleted_at)
+/// are accessed via join to {@link reddit_clone_reports}.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the main report's {@link reddit_clone_reports.id}. Unique
+  /// constraint ensures each report targets at most one comment.
+  report_id String
+  
+  /// References the reported comment's {@link reddit_clone_comments.id}.
+  comment_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_clone_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+  comment reddit_clone_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([report_id])
+  @@index([comment_id])
+}

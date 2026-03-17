@@ -1,0 +1,108 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
+import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
+import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
+import { generate_random_ecommerce_mall_seller_products_variants_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_variants_create";
+import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
+import { prepare_random_ecommerce_mall_product_variant } from "../../../prepare/prepare_random_ecommerce_mall_product_variant";
+
+export async function test_api_product_variant_with_promotional_sale_price(
+  connection: api.IConnection,
+): Promise<void> {
+  // 1. Seller registration
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerAuth = await authorize_seller_join(sellerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    },
+  });
+  typia.assert(sellerAuth);
+  // 2. Create product for variant
+  const product = await api.functional.ecommerceMall.seller.products.create(
+    sellerConnection,
+    {
+      body: {
+        name: RandomGenerator.paragraph({ sentences: 3 }),
+        description: RandomGenerator.paragraph({ sentences: 5 }),
+        category_id: typia.random<string & tags.Format<"uuid">>(),
+        base_price: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1000>
+        >(),
+      } satisfies IEcommerceMallProduct.ICreate,
+    },
+  );
+  typia.assert(product);
+  // 3. Create variant with promotional sale price
+  const salePrice: number = typia.random<
+    number & tags.Type<"uint32"> & tags.Minimum<1>
+  >() satisfies number;
+  const basePrice: number = (salePrice +
+    typia.random<
+      number & tags.Type<"uint32"> & tags.Minimum<100> & tags.Maximum<5000>
+    >()) satisfies number;
+  const sku = RandomGenerator.alphaNumeric(12);
+  const variant =
+    await api.functional.ecommerceMall.seller.products.variants.create(
+      sellerConnection,
+      {
+        productId: product.id,
+        body: {
+          sku,
+          options: {
+            size: RandomGenerator.name(2),
+            color: RandomGenerator.name(1),
+          },
+          base_price: basePrice,
+          sale_price: salePrice,
+          stock_quantity: typia.random<
+            number & tags.Type<"int32"> & tags.Minimum<1>
+          >(),
+          status: "active",
+        } satisfies IEcommerceMallProductVariant.ICreate,
+      },
+    );
+  typia.assert(variant);
+  // 4. Validate variant has correct pricing
+  TestValidator.equals(
+    "variant base price matches request",
+    variant.basePrice,
+    basePrice,
+  );
+  TestValidator.equals(
+    "variant sale price matches request",
+    variant.salePrice,
+    salePrice,
+  );
+  TestValidator.predicate(
+    "sale price is less than base price",
+    variant.salePrice !== null && variant.salePrice < variant.basePrice,
+  );
+  TestValidator.equals("variant status is active", variant.status, "active");
+  TestValidator.equals("variant sku matches request", variant.sku, sku);
+  TestValidator.predicate(
+    "variant has valid stock quantity",
+    variant.stockQuantity > 0,
+  );
+  TestValidator.equals(
+    "variant belongs to correct product",
+    variant.product.id,
+    product.id,
+  );
+}

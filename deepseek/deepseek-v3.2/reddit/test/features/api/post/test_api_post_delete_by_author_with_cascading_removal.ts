@@ -1,0 +1,136 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ICommunityPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformAdmin";
+import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
+import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import type { ICommunityPlatformFile } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformFile";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import type { ICommunityPlatformPostAttachment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostAttachment";
+import type { ICommunityPlatformPostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostLink";
+import type { ICommunityPlatformPostText } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPostText";
+import type { ICommunityPlatformSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformSubscription";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_community_platform_member_communities_create } from "../../../generate/generate_random_community_platform_member_communities_create";
+import { generate_random_community_platform_member_posts_create } from "../../../generate/generate_random_community_platform_member_posts_create";
+import { generate_random_community_platform_member_subscriptions_create } from "../../../generate/generate_random_community_platform_member_subscriptions_create";
+import { prepare_random_community_platform_community } from "../../../prepare/prepare_random_community_platform_community";
+import { prepare_random_community_platform_post } from "../../../prepare/prepare_random_community_platform_post";
+import { prepare_random_community_platform_post_attachment } from "../../../prepare/prepare_random_community_platform_post_attachment";
+import { prepare_random_community_platform_post_link } from "../../../prepare/prepare_random_community_platform_post_link";
+import { prepare_random_community_platform_post_text } from "../../../prepare/prepare_random_community_platform_post_text";
+import { prepare_random_community_platform_subscription } from "../../../prepare/prepare_random_community_platform_subscription";
+
+export async function test_api_post_delete_by_author_with_cascading_removal(
+  connection: api.IConnection,
+): Promise<void> {
+  // 1. Create two members: author and another non-mod member
+  const authorConnection: api.IConnection = { host: connection.host };
+  const authorJoin = await authorize_member_join(authorConnection, {});
+  typia.assert(authorJoin);
+  const otherMemberConnection: api.IConnection = { host: connection.host };
+  const otherMemberJoin = await authorize_member_join(
+    otherMemberConnection,
+    {},
+  );
+  typia.assert(otherMemberJoin);
+  // 2. Author creates a community
+  const community =
+    await generate_random_community_platform_member_communities_create(
+      authorConnection,
+      {},
+    );
+  typia.assert(community);
+  // 3. Author subscribes to their community to enable posting
+  await generate_random_community_platform_member_subscriptions_create(
+    authorConnection,
+    {
+      body: {
+        community_id: community.id,
+      } satisfies ICommunityPlatformSubscription.ICreate,
+    },
+  );
+  // 4. Author creates a text post
+  const post = await generate_random_community_platform_member_posts_create(
+    authorConnection,
+    {
+      body: {
+        title: RandomGenerator.paragraph({ sentences: 2 }),
+        community_name: community.name,
+        content_type: "TEXT",
+        content_text: {
+          content: RandomGenerator.content({ paragraphs: 3 }),
+        } satisfies ICommunityPlatformPostText.ICreate,
+      } satisfies ICommunityPlatformPost.ICreate,
+    },
+  );
+  typia.assert(post);
+  // 5. Other member subscribes to the community
+  await generate_random_community_platform_member_subscriptions_create(
+    otherMemberConnection,
+    {
+      body: {
+        community_id: community.id,
+      } satisfies ICommunityPlatformSubscription.ICreate,
+    },
+  );
+  // Note: Comment, vote, and report creation APIs are not available in the provided SDK.
+  // Cascading deletion of those related entities cannot be tested with current API surface.
+  // 6. Author deletes their own post
+  await api.functional.communityPlatform.member.posts.erase(authorConnection, {
+    postId: post.id,
+  });
+  // 7. Verify 404 when trying to delete non-existent post
+  await TestValidator.error(
+    "delete non-existent post returns 404",
+    async () => {
+      await api.functional.communityPlatform.member.posts.erase(
+        authorConnection,
+        {
+          postId: typia.random<string & tags.Format<"uuid">>(),
+        },
+      );
+    },
+  );
+  // 8. Create another post for permission testing
+  const anotherPost =
+    await generate_random_community_platform_member_posts_create(
+      authorConnection,
+      {
+        body: {
+          title: RandomGenerator.paragraph({ sentences: 2 }),
+          community_name: community.name,
+          content_type: "TEXT",
+          content_text: {
+            content: RandomGenerator.content({ paragraphs: 3 }),
+          } satisfies ICommunityPlatformPostText.ICreate,
+        } satisfies ICommunityPlatformPost.ICreate,
+      },
+    );
+  typia.assert(anotherPost);
+  // 9. Verify other member cannot delete the post (403)
+  await TestValidator.error(
+    "other member cannot delete post (403)",
+    async () => {
+      await api.functional.communityPlatform.member.posts.erase(
+        otherMemberConnection,
+        {
+          postId: anotherPost.id,
+        },
+      );
+    },
+  );
+  // 10. Author can delete the second post
+  await api.functional.communityPlatform.member.posts.erase(authorConnection, {
+    postId: anotherPost.id,
+  });
+}

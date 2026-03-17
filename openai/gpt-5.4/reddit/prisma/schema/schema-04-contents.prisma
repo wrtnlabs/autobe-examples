@@ -1,0 +1,544 @@
+/// Top-level community posts authored by members within a specific community.
+///
+/// This table stores the shared identity, authorship, community placement,
+/// content-type classification, and lifecycle state of each post.
+/// Variant-specific content is intentionally excluded from this model and
+/// normalized into dedicated one-to-one subtype tables such as {@link
+/// community_platform_post_texts}, {@link community_platform_post_links},
+/// and the existing image-content table, so the main post record remains
+/// free of nullable type-specific columns.
+///
+/// Each post belongs to one author in {@link community_platform_members} and
+/// one container community in {@link community_platform_communities}.
+/// Historical versions are captured separately in {@link
+/// community_platform_post_snapshots}, while comments, votes, reports, and
+/// moderation artifacts are stored in their own domain tables.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Container community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Post title shown in feeds and post detail views.
+  title String
+  
+  /// Classification of the post content variant, such as text, link, or image,
+  /// used to select the normalized subtype record.
+  post_type String
+  
+  /// Current business lifecycle state of the post, such as active, removed, or
+  /// otherwise moderated according to platform rules.
+  status String
+  
+  /// When the post was originally created.
+  created_at DateTime
+  
+  /// When the post was last updated.
+  updated_at DateTime
+  
+  /// When the post was soft-deleted, if deletion has occurred.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_post_snapshots[]
+  postImage community_platform_post_images?
+  comments community_platform_comments[]
+  textContent community_platform_post_texts?
+  link community_platform_post_links?
+  votes community_platform_post_votes[]
+  reportPosts community_platform_report_posts[]
+  moderationActionTargets community_platform_moderation_action_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_posts_community_platform_member_id__94e4a784")
+  @@index([post_type, created_at])
+}
+
+/// Point-in-time historical records of posts.
+///
+/// This snapshot table preserves the post-level state of a {@link
+/// community_platform_posts} record at specific moments so the platform can
+/// support edit history, deletion transitions, and recovery-oriented review.
+/// Each row belongs to exactly one post and represents an immutable revision
+/// in that post's lifecycle.
+///
+/// The table stores only child-specific historical attributes needed for
+/// ordered audit playback, such as revision sequencing, visibility state at
+/// capture time, and the snapshot creation timestamp. Parent-owned post
+/// fields are intentionally excluded and should be accessed through the
+/// parent {@link community_platform_posts} relation to keep the schema
+/// normalized.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Snapshot source post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Monotonic revision number assigned within one post's snapshot history.
+  revision_no Int
+  
+  /// Historical lifecycle visibility state of the post at the moment of the
+  /// snapshot, such as active, deleted, or restored.
+  visibility_state String
+  
+  /// Timestamp when this snapshot record was created to preserve the
+  /// point-in-time post state.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, revision_no], map: "community_platform_post_snapshots_community_platform_p_0065d09d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_snapshots_community_platform_p_fff76d8e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, visibility_state, created_at], map: "community_platform_post_snapshots_community_platform_p_31dfc0aa")
+}
+
+/// Stored image asset metadata for image-based posts.
+///
+/// This subsidiary table keeps image-specific file information separate from
+/// {@link community_platform_posts} so the main post record does not carry
+/// variant-specific nullable content columns. Each record belongs to exactly
+/// one post and represents the current uploaded image attached to that post,
+/// allowing the media asset to be replaced independently while preserving
+/// normalized post structure and soft-delete lifecycle handling.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owned post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Permanent storage location of the uploaded post image file.
+  storage_uri String
+  
+  /// Original client-side filename of the uploaded image for traceability and
+  /// presentation.
+  original_name String
+  
+  /// Detected MIME type of the stored image file used for validation and
+  /// delivery.
+  mime_type String
+  
+  /// Stored file size in bytes for validation, quota checks, and transfer
+  /// handling.
+  byte_size Int
+  
+  /// Pixel width of the stored image when the media processor can determine
+  /// dimensions.
+  width Int?
+  
+  /// Pixel height of the stored image when the media processor can determine
+  /// dimensions.
+  height Int?
+  
+  /// When this post image record was created.
+  created_at DateTime
+  
+  /// When this post image record was last updated.
+  updated_at DateTime
+  
+  /// When this post image record was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_post_id])
+}
+
+/// Threaded discussion comments written by members within post conversations.
+///
+/// Each record stores the current canonical comment content, its author, the
+/// post it belongs to, and an optional parent comment for reply threading.
+/// Historical revisions and attachment records are intentionally separated
+/// into {@link community_platform_comment_snapshots} and {@link
+/// community_platform_comment_files} to preserve normalization and
+/// auditability.
+///
+/// This table supports independent comment browsing, author activity views,
+/// moderation workflows, and hierarchical rendering of replies inside a post
+/// without duplicating post or member profile data.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Post containing this comment. {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Member who authored this comment. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Parent comment when this record is a reply in the thread tree. {@link
+  /// community_platform_comments.id}.
+  parent_id String?
+  
+  /// Current textual content of the comment as shown in the discussion thread.
+  body String
+  
+  /// Lifecycle state of the comment for active, edited, removed, or moderated
+  /// visibility handling.
+  status String
+  
+  /// When the comment was first created by its author.
+  created_at DateTime
+  
+  /// When the current comment record was last updated.
+  updated_at DateTime
+  
+  /// When the comment was soft-deleted or hidden from normal participation
+  /// views.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  parent community_platform_comments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children community_platform_comments[] @relation("recursive")
+  snapshots community_platform_comment_snapshots[]
+  files community_platform_comment_files[]
+  votes community_platform_comment_votes[]
+  reportComments community_platform_report_comments[]
+  moderationActionComments community_platform_moderation_action_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comments_community_platform_member__5ac10bc6")
+  @@index([parent_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, status, created_at], map: "community_platform_comments_community_platform_post_id_a1468cd0")
+}
+
+/// Point-in-time historical linkage records for {@link
+/// community_platform_comments}.
+///
+/// Each row identifies a historical snapshot event associated with one
+/// comment and is used as the anchor for comment-history reads and
+/// snapshot-scoped child records. Parent comment attributes must be accessed
+/// through the {@link community_platform_comments} relationship rather than
+/// duplicated in this child table.
+///
+/// This table remains append-oriented and supports chronological historical
+/// traversal through its own creation timestamp.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Historical parent comment's {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotFiles community_platform_comment_snapshot_files[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_comment_snapshots_community_platfor_2924cfb6")
+}
+
+/// One-to-one subtype record storing the full written body for a text-based
+/// post.
+///
+/// This table normalizes text-post content away from {@link
+/// community_platform_posts} so the parent post record does not need
+/// variant-specific nullable content columns. Each record belongs to exactly
+/// one post and exists only when the parent post uses the text content
+/// variant.
+///
+/// The table is managed through the post aggregate, preserves edit and
+/// deletion lifecycle timestamps, and supports body search over authored
+/// text content.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Full written body content of the text post variant.
+  body String
+  
+  /// When this text-post content record was created.
+  created_at DateTime
+  
+  /// When this text-post content record was last updated.
+  updated_at DateTime
+  
+  /// When this text-post content record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_post_id])
+}
+
+/// One-to-one subtype record for URL-based posts.
+///
+/// This table stores the canonical target URL and link-specific presentation
+/// metadata for a post whose content type is a link rather than text or
+/// uploaded image. It exists to keep variant-specific link data out of the
+/// main {@link community_platform_posts} table so the post aggregate remains
+/// normalized and avoids nullable columns for unrelated content forms.
+///
+/// Each record belongs to exactly one parent post and may exist only for
+/// posts using the link content variant. The stored values support full post
+/// rendering and feed-level link presentation, including recognizable
+/// source-domain display derived from the linked address.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent URL-based post's {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Canonical destination URL carried by the link post.
+  target_url String
+  
+  /// Human-readable source domain display shown in feeds and post summaries
+  /// for the linked URL.
+  domain_display String
+  
+  /// When this link subtype record was created.
+  created_at DateTime
+  
+  /// When this link subtype record was last updated.
+  updated_at DateTime
+  
+  /// When this link subtype record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_post_id])
+  @@index([created_at, updated_at])
+}
+
+/// Stored file metadata for attachments added to discussion comments.
+///
+/// Each record represents one uploaded asset attached to a single {@link
+/// community_platform_comments} row. The table keeps normalized file
+/// metadata and the external storage locator needed to retrieve or manage
+/// the asset while avoiding duplication of comment content or author data.
+/// Files are managed through their parent comment and support soft deletion
+/// for moderation, retention, or comment lifecycle handling.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Attached parent comment's {@link community_platform_comments.id}.
+  community_platform_comment_id String
+  
+  /// Original filename supplied at upload time for user-facing display and
+  /// audit context.
+  original_name String
+  
+  /// Detected or accepted media type of the uploaded file used for validation
+  /// and delivery behavior.
+  mime_type String
+  
+  /// Stable external object-storage key or path used to retrieve the uploaded
+  /// file binary.
+  storage_key String
+  
+  /// File size in bytes for validation, policy enforcement, and transfer
+  /// metadata.
+  size Int
+  
+  /// When this file attachment record was created.
+  created_at DateTime
+  
+  /// When this file attachment record was last updated.
+  updated_at DateTime
+  
+  /// When this file attachment record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotFiles community_platform_comment_snapshot_files[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([storage_key])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_files_community_platform_co_72f5e04f")
+}
+
+/// Snapshot-scoped attachment linkage records for comment history.
+///
+/// This table preserves which stored comment files were associated with a
+/// specific {@link community_platform_comment_snapshots} version, allowing
+/// historical comment revisions to retain their exact attachment set even
+/// after current attachments change. Each row represents one normalized
+/// association between a comment snapshot and one stored file from {@link
+/// community_platform_comment_files}.
+///
+/// @namespace Contents
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_snapshot_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning historical comment snapshot's {@link
+  /// community_platform_comment_snapshots.id}.
+  community_platform_comment_snapshot_id String
+  
+  /// Attached stored comment file's {@link
+  /// community_platform_comment_files.id}.
+  community_platform_comment_file_id String
+  
+  /// Timestamp when this snapshot-file association was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot-file association was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp marking when this snapshot-file association
+  /// became inactive.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentSnapshot community_platform_comment_snapshots @relation(fields: [community_platform_comment_snapshot_id], references: [id], onDelete: Cascade)
+  commentFile community_platform_comment_files @relation(fields: [community_platform_comment_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_snapshot_id, community_platform_comment_file_id], map: "community_platform_comment_snapshot_files_community_pl_bbf01355")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_file_id, created_at], map: "community_platform_comment_snapshot_files_community_pl_74399f47")
+}

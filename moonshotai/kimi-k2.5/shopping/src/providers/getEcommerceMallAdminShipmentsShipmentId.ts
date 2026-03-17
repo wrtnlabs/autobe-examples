@@ -1,0 +1,38 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { EcommerceMallShipmentTransformer } from "../transformers/EcommerceMallShipmentTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function getEcommerceMallAdminShipmentsShipmentId(props: {
+  admin: AdminPayload;
+  shipmentId: string & tags.Format<"uuid">;
+}): Promise<IEcommerceMallShipment> {
+  const shipment =
+    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+      where: { id: props.shipmentId },
+      ...EcommerceMallShipmentTransformer.select(),
+    });
+  return await EcommerceMallShipmentTransformer.transform(shipment);
+}

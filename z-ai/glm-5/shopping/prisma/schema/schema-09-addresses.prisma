@@ -1,0 +1,79 @@
+/// Customer shipping addresses with complete destination information for
+/// order delivery.
+///
+/// Each address contains recipient name, phone number, street address, city,
+/// state/province, postal code, and country. Customers can have multiple
+/// addresses with one designated as default for checkout convenience.
+///
+/// Addresses are copied to orders at checkout rather than referenced,
+/// preserving the address state at time of purchase through the order's
+/// shipping_address field. This ensures historical accuracy even if
+/// customers modify or delete addresses later.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_customers} (many addresses per customer)
+///
+/// Soft deletion via deleted_at allows addresses to be removed from
+/// customer's active list while preserving any historical references in past
+/// orders.
+///
+/// @namespace Addresses
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer's {@link shopping_mall_customers.id}. Each customer can
+  /// have multiple shipping addresses.
+  shopping_mall_customer_id String
+  
+  /// Name of the person who will receive the package at this address.
+  recipient_name String
+  
+  /// Contact phone number for delivery coordination at this address.
+  phone_number String
+  
+  /// Street address including house/building number and street name.
+  street_address String
+  
+  /// City or locality name for the shipping address.
+  city String
+  
+  /// State, province, or region name for the shipping address.
+  state_province String
+  
+  /// Postal or ZIP code for the shipping address.
+  postal_code String
+  
+  /// Country name for the shipping address.
+  country String
+  
+  /// Whether this address is the customer's default shipping address. Only one
+  /// address per customer can be default. Used for automatic selection at
+  /// checkout.
+  is_default Boolean
+  
+  /// Timestamp when the address was created.
+  created_at DateTime
+  
+  /// Timestamp when the address was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the address was soft-deleted. Null for active addresses.
+  /// Soft deletion preserves address history for past orders.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_customer_id])
+}

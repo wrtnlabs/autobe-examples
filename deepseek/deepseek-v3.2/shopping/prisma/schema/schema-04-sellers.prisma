@@ -1,0 +1,576 @@
+/// Seller business profile for public-facing shop identity.
+///
+/// Stores shop branding information including shop name, description, and
+/// optional logo. This profile represents the seller's public business
+/// identity separate from authentication credentials. Customers can view
+/// seller profiles to establish trust and verify business legitimacy.
+///
+/// Every modification to seller profile data creates a historical snapshot
+/// for audit trail purposes. The profile supports soft deletion and includes
+/// status tracking for administrative suspension actions.
+///
+/// Related to: {@link ecommerce_mall_sellers}, {@link
+/// ecommerce_mall_shop_images}, {@link ecommerce_mall_seller_snapshots}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller's authentication identity. {@link ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Unique business name of the seller's shop. Displayed on product listings,
+  /// order details, and customer-facing pages.
+  shop_name String
+  
+  /// Detailed description of the seller's business, products, and services.
+  /// Used to establish trust and provide business context to customers.
+  shop_description String
+  
+  /// Current profile status indicating operational availability. 'active':
+  /// visible and operational, 'inactive': suspended or temporarily
+  /// unavailable.
+  status String
+  
+  /// Timestamp when the seller profile was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the seller profile was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the seller profile was soft deleted. Null indicates active
+  /// profile.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shopImages ecommerce_mall_shop_images[]
+  sellerMetrics ecommerce_mall_seller_metrics[]
+  snapshots ecommerce_mall_seller_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id])
+  @@unique([shop_name])
+  @@index([seller_id, created_at])
+  @@index([status, created_at])
+}
+
+/// Seller shop images including logos and gallery images with ordering support.
+///
+/// Each seller can have multiple shop images for branding and product
+/// display. The first image (lowest display_order) is typically used as the
+/// shop's logo or main visual. Images can be reordered by sellers to control
+/// their gallery arrangement. When a seller profile snapshot is created,
+/// shop image states are preserved through separate snapshot tables.
+///
+/// This table supports the shop branding requirements for sellers to upload
+/// logos and additional shop images that appear on their profile pages. The
+/// ordering mechanism ensures consistent display across the platform.
+///
+/// {@link ecommerce_mall_seller_profiles}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shop_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller profile that owns these shop images. {@link
+  /// ecommerce_mall_seller_profiles.id}
+  seller_profile_id String
+  
+  /// URL pointing to the shop image storage location. Supports logos and
+  /// gallery images for shop branding.
+  image_url String
+  
+  /// Position in the shop image gallery. Lower values appear first. The image
+  /// with order 0 is typically used as the shop's primary logo.
+  display_order Int
+  
+  /// Optional title or description for the shop image. Used for accessibility
+  /// and image management.
+  title String?
+  
+  /// Timestamp when this shop image was uploaded to the system.
+  created_at DateTime
+  
+  /// Timestamp when this shop image record was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates the shop image is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile ecommerce_mall_seller_profiles @relation(fields: [seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_profile_id, display_order])
+  @@index([seller_profile_id, created_at])
+}
+
+/// Daily and monthly aggregated metrics for seller dashboard reporting.
+///
+/// This table stores pre-calculated performance metrics for sellers to
+/// support dashboard display without expensive real-time calculations.
+/// Metrics include order counts, revenue totals, customer engagement
+/// statistics, and average order values aggregated by period (daily or
+/// monthly).
+///
+/// Sellers can query their historical performance through dashboard
+/// interfaces that access these pre-aggregated values, enabling fast
+/// response times for trend analysis and performance monitoring. Each record
+/// represents a specific seller's metrics for a specific time period, with
+/// uniqueness enforced at the seller-profile-period level.
+///
+/// All metric values are derived from order data through scheduled
+/// aggregation jobs and are not directly editable by users. Historical
+/// metrics provide the foundation for seller dashboard charts, revenue
+/// reports, and performance trend analysis. {@link
+/// ecommerce_mall_seller_profiles}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller profile these metrics belong to. {@link
+  /// ecommerce_mall_seller_profiles.id}.
+  ecommerce_mall_seller_profile_id String
+  
+  /// Aggregation period type: 'day' for daily metrics, 'month' for monthly
+  /// metrics. Determines how period_date is interpreted.
+  period_type String
+  
+  /// Start date of the aggregation period. For daily metrics: the specific day
+  /// at 00:00:00. For monthly metrics: the first day of the month at 00:00:00.
+  period_date DateTime
+  
+  /// Total number of orders placed during this period. Counts distinct orders
+  /// from the seller, regardless of order status.
+  order_count Int
+  
+  /// Total revenue generated during this period. Sum of order item prices
+  /// (excluding cancelled/refunded items where applicable).
+  revenue Float
+  
+  /// Number of unique customers who placed orders during this period. Counts
+  /// distinct customer profiles, not order count.
+  customer_count Int
+  
+  /// Average revenue per order for this period. Calculated as revenue /
+  /// order_count when order_count > 0.
+  average_order_value Float
+  
+  /// Timestamp when this metrics record was created by the aggregation job.
+  created_at DateTime
+  
+  /// Timestamp when this metrics record was last updated by the aggregation
+  /// job.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile ecommerce_mall_seller_profiles @relation(fields: [ecommerce_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_profile_id, period_type, period_date], map: "ecommerce_mall_seller_metrics_ecommerce_mall_seller_pr_e06f21c3")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_profile_id, period_type], map: "ecommerce_mall_seller_metrics_ecommerce_mall_seller_pr_6dc6e35f")
+}
+
+/// Immutable historical snapshots of seller profile modifications for audit
+/// trails and dispute resolution.
+///
+/// Captures the complete state of a seller's profile (shop name, shop
+/// description, and logo image) whenever any profile field is edited.
+/// Snapshots are created automatically before changes are applied to ensure
+/// data integrity for financial transparency requirements.
+///
+/// These snapshots preserve the exact business representation that customers
+/// saw at specific points in time, supporting historical order accuracy and
+/// seller reputation tracking. Administrators and profile owners can view
+/// snapshots to understand profile evolution and resolve disputes about what
+/// information was displayed to customers.
+///
+/// Each snapshot is permanent and cannot be modified or deleted, creating a
+/// complete audit trail of all seller profile changes throughout the
+/// business lifecycle. {@link ecommerce_mall_seller_profiles}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller profile that was modified. {@link
+  /// ecommerce_mall_seller_profiles.id}
+  ecommerce_mall_seller_profile_id String
+  
+  /// Shop name as it appeared at the time of snapshot creation. This is the
+  /// primary business identifier that customers see when browsing products and
+  /// making purchases.
+  shop_name String
+  
+  /// Shop description explaining the seller's business, values, and product
+  /// offerings as displayed to customers at snapshot time.
+  shop_description String
+  
+  /// URL to the seller's logo image used for visual branding and customer
+  /// recognition at the time of snapshot creation.
+  logo_image_url String?
+  
+  /// Sequential version number of this snapshot within the seller's profile
+  /// history. Increments with each profile modification to establish
+  /// chronological order.
+  snapshot_number Int
+  
+  /// Exact date and time when this snapshot was created, recording when the
+  /// profile modification occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile ecommerce_mall_seller_profiles @relation(fields: [ecommerce_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_seller_profile_id, snapshot_number], map: "ecommerce_mall_seller_snapshots_ecommerce_mall_seller__69c915dd")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_profile_id, created_at], map: "ecommerce_mall_seller_snapshots_ecommerce_mall_seller__ddee9910")
+}
+
+/// Tracks seller registration requests submitted by users before
+/// administrative approval.
+///
+/// This table stores initial seller registration data including shop name
+/// and description that users submit when requesting to become sellers on
+/// the platform. Each registration goes through an approval workflow where
+/// administrators review and decide whether to approve or reject the
+/// request. Approved registrations result in the creation of a seller
+/// account in the {@link ecommerce_mall_sellers} table and a seller profile
+/// in {@link ecommerce_mall_seller_profiles}.
+///
+/// The registration has lifecycle statuses: pending (awaiting review),
+/// approved, rejected, and withdrawn. Status transitions are tracked in the
+/// separate {@link ecommerce_mall_seller_registration_status_histories}
+/// table for audit purposes. Each user can have only one pending
+/// registration at a time, but may have multiple historical registrations
+/// with different statuses.
+///
+/// This table is subsidiary to the user entity since registrations are
+/// submitted by and managed through user accounts.
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_registrations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who submitted this seller registration request. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Requested shop name for the seller's business. This name will be used for
+  /// the seller's public shop profile if approved. Must be unique among active
+  /// shops.
+  shop_name String
+  
+  /// Description of the seller's business, products, and shop concept.
+  /// Provides context for administrators during approval review.
+  shop_description String
+  
+  /// Current status of the registration request. Values: pending (awaiting
+  /// review), approved (administrator approved), rejected (administrator
+  /// rejected), withdrawn (user cancelled). Derived from the latest status
+  /// history entry.
+  current_status String
+  
+  /// Timestamp when the user submitted this registration request.
+  created_at DateTime
+  
+  /// Timestamp when this registration record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this registration record was soft deleted. Allows for
+  /// audit trail preservation while removing from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  statusHistories ecommerce_mall_seller_registration_status_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shop_name])
+  // spellchecker: ignore-next-line
+  @@unique([customer_id, current_status], map: "ecommerce_mall_seller_registrations_customer_id_curren_11d9a3b5")
+  // spellchecker: ignore-next-line
+  @@index([current_status, created_at], map: "ecommerce_mall_seller_registrations_current_status_cre_eebc5dd8")
+}
+
+/// Seller payment account details for receiving payouts from sales.
+///
+/// Stores secure payment information including bank account details, digital
+/// wallet addresses, or payment gateway integration credentials. Each seller
+/// can have multiple payment accounts but only one can be active at a time
+/// for receiving payouts.
+///
+/// Payment accounts undergo verification processes before being activated
+/// for payouts. Account details are stored with appropriate security
+/// measures to protect sensitive financial information.
+///
+/// All account modifications are tracked for audit purposes, and deleted
+/// accounts are soft-deleted to maintain historical payout records. {@link
+/// ecommerce_mall_sellers.id}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_payment_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller who owns this payment account. {@link
+  /// ecommerce_mall_sellers.id}
+  seller_id String
+  
+  /// Type of payment method: 'bank_account', 'digital_wallet',
+  /// 'payment_gateway', or 'card'.
+  payment_method_type String
+  
+  /// Secure identifier for the payment account (masked account number, wallet
+  /// address, or gateway token).
+  account_identifier String
+  
+  /// Name of the account holder as registered with the payment provider.
+  account_holder_name String
+  
+  /// Additional routing information such as bank routing number, BIC/SWIFT
+  /// code, or wallet network.
+  routing_details String?
+  
+  /// Current verification status: 'pending_verification', 'verified',
+  /// 'suspended', or 'rejected'.
+  verification_status String
+  
+  /// Indicates if this is the primary payment account for receiving payouts.
+  is_primary Boolean
+  
+  /// Date of the most recent successful payout to this account.
+  last_payout_date DateTime?
+  
+  /// Administrator notes regarding account verification, including rejection
+  /// reasons if applicable.
+  verification_notes String?
+  
+  /// Timestamp when the payment account was created.
+  created_at DateTime
+  
+  /// Timestamp when the payment account was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the payment account was soft-deleted. Null indicates
+  /// active account.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id, is_primary])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, verification_status], map: "ecommerce_mall_seller_payment_accounts_seller_id_verif_c4c35a53")
+  // spellchecker: ignore-next-line
+  @@index([payment_method_type, verification_status], map: "ecommerce_mall_seller_payment_accounts_payment_method__11507ecc")
+  @@index([created_at])
+}
+
+/// Tracks the seller approval workflow including status changes, rejection
+/// reasons, and administrator decisions.
+///
+/// This table records the complete history of a seller's approval journey
+/// from initial registration through potential rejections and re-submissions
+/// to final approval. Each record represents a specific status transition in
+/// the approval process, allowing administrators to track decision timelines
+/// and sellers to understand their approval status.
+///
+/// When a seller first registers, an initial 'pending' record is created.
+/// Administrators can then approve or reject the seller, recording their
+/// decision and any rejection reason. If rejected, sellers can submit a new
+/// registration request, creating additional approval records. Approved
+/// sellers have a final 'approved' record that grants them selling
+/// privileges.
+///
+/// {@link ecommerce_mall_sellers.id} identifies the seller being approved,
+/// while {@link ecommerce_mall_administrators.id} identifies the
+/// administrator who made the decision (null for pending status).
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller being approved. {@link ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// The administrator who approved or rejected the seller. Null when status
+  /// is pending. {@link ecommerce_mall_administrators.id}.
+  administrator_id String?
+  
+  /// Current approval status: 'pending', 'approved', or 'rejected'.
+  status String
+  
+  /// Detailed explanation provided by administrator when rejecting a seller
+  /// registration. Required when status is 'rejected', null otherwise.
+  rejection_reason String?
+  
+  /// Timestamp when this approval record was created.
+  created_at DateTime
+  
+  /// Timestamp when this approval record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this approval record was soft-deleted. Null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, created_at])
+  @@index([status, created_at])
+  @@index([administrator_id, created_at])
+}
+
+/// Tracks status history and timestamps for seller registration requests,
+/// separating temporal data from core registration entity.
+///
+/// Each record captures a specific status transition in the seller
+/// registration approval workflow, including the status change timestamp and
+/// optional reason for status changes. This historical tracking enables
+/// audit trails of registration decisions and supports seller approval
+/// process transparency.
+///
+/// Status transitions follow the seller registration lifecycle: pending
+/// (initial submission), approved (administrator approval), or rejected
+/// (administrator rejection with reason). Multiple history records may exist
+/// for the same registration if sellers resubmit after rejection.
+///
+/// {@link ecommerce_mall_seller_registrations.id}
+///
+/// @namespace Sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_registration_status_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller registration request being tracked. {@link
+  /// ecommerce_mall_seller_registrations.id}
+  ecommerce_mall_seller_registration_id String
+  
+  /// Registration status at this point in time. Values: 'pending' (awaiting
+  /// review), 'approved' (registration accepted), 'rejected' (registration
+  /// denied).
+  status String
+  
+  /// Optional explanation for status changes, particularly important for
+  /// rejection reasons to inform sellers why their registration was denied.
+  reason String?
+  
+  /// Timestamp when this status history record was created, marking when the
+  /// registration status changed.
+  created_at DateTime
+  
+  /// Timestamp when this status history record was last updated. Rarely
+  /// changes as status history records are largely immutable after creation.
+  updated_at DateTime
+  
+  /// Timestamp when this status history record was soft-deleted. Allows for
+  /// audit trail preservation while supporting data privacy requirements.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  registration ecommerce_mall_seller_registrations @relation(fields: [ecommerce_mall_seller_registration_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_registration_id, created_at], map: "ecommerce_mall_seller_registration_status_histories_ec_e98f10a6")
+  @@index([status])
+}

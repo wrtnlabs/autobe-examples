@@ -1,0 +1,100 @@
+/// Shopping cart containers representing a customer's active shopping
+/// session. Each customer profile owns exactly one cart that accumulates
+/// items intended for purchase. Tracks cart creation and last activity
+/// timestamps for session management and cart abandonment detection. The
+/// cart serves as the container for cart items, which are stored in the
+/// shopping_mall_cart_items table.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}. Each customer has
+  /// exactly one active cart.
+  shopping_customer_id String
+  
+  /// Cart creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp, updated when cart items change or cart is
+  /// modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for cart archival. Null indicates active cart.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  items shopping_mall_cart_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_customer_id])
+}
+
+/// Individual line items within shopping carts, each representing a specific
+/// product variant with quantity and availability status. Cart items are
+/// created when customers add products to their cart and are removed during
+/// checkout or when explicitly deleted. Each cart can have multiple items,
+/// but only one item per variant (quantities are combined rather than
+/// creating duplicate lines).
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged cart's {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Referenced product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Quantity of the product variant to purchase. Combined when same variant
+  /// is added multiple times.
+  quantity Int
+  
+  /// Whether the product variant is currently available for purchase. Updated
+  /// based on stock status.
+  available Boolean
+  
+  /// Timestamp when the cart item was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last modified (quantity change or
+  /// availability update).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_0bb750f8")
+  @@index([shopping_mall_cart_id, created_at])
+}

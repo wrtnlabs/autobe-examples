@@ -1,0 +1,343 @@
+/// Main post entity storing core post information including title, type
+/// discriminator, author, community, and display metadata.
+///
+/// A post is a piece of content created by members within communities. Posts
+/// can be text posts, link posts, or image posts, with post-specific content
+/// stored in separate child tables (reddit_community_post_texts,
+/// reddit_community_post_links, and post_images).
+///
+/// This table supports the three feed types (Home Feed, Popular Feed,
+/// Community Feed) with denormalized vote_score and comment_count fields for
+/// efficient read operations. Posts are soft-deletable by authors or
+/// moderators.
+///
+/// Related entities:
+/// - {@link reddit_community_members} - the author who created the post
+/// - {@link reddit_community_communities} - the community where the post
+/// belongs
+/// - {@link reddit_community_votes} - votes on this post
+/// - {@link reddit_community_comments} - comments on this post
+/// - {@link reddit_community_reports} - reports of this post
+/// - {@link reddit_community_post_texts} - text post content
+/// - {@link reddit_community_post_links} - link post URL
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_community_members.id}
+  author_id String
+  
+  /// Community's {@link reddit_community_communities.id} where this post
+  /// belongs
+  community_id String
+  
+  /// Post title (required, up to 300 characters)
+  title String
+  
+  /// Post type discriminator: 'text', 'link', or 'image'
+  post_type String
+  
+  /// Current vote score (upvotes minus downvotes) for feed sorting
+  vote_score Int
+  
+  /// Number of comments on this post
+  comment_count Int
+  
+  /// When the post was created
+  created_at DateTime
+  
+  /// When the post was last updated
+  updated_at DateTime
+  
+  /// When the post was soft deleted (null if not deleted)
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  text reddit_community_post_texts?
+  link reddit_community_post_links?
+  snapshots reddit_community_post_snapshots[]
+  deletion reddit_community_post_deletions?
+  comments reddit_community_comments[]
+  commentSnapshots reddit_community_comment_snapshots[]
+  votes reddit_community_votes[]
+  voteOfPosts reddit_community_vote_of_posts[]
+  feedCacheEntries reddit_community_feed_caches[]
+  sortingMetric reddit_community_feed_sorting_metrics?
+  images reddit_community_file_of_posts[]
+  systemLogs reddit_community_system_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([vote_score])
+}
+
+/// Text post content body stored separately from post identity.
+///
+/// This subsidiary table contains the actual text content for posts of type
+/// 'text'. Each text post has exactly one corresponding record here, linked
+/// to the main reddit_community_posts table via a one-to-one relationship.
+///
+/// The body field stores the full text content of the post, supporting
+/// unlimited length to accommodate various text post formats from short
+/// statements to longer articles. This separation follows normalization
+/// principles by keeping post metadata (title, author, community,
+/// timestamps, vote score) separate from the content body.
+///
+/// The table is managed exclusively through the parent post entity - users
+/// never directly create or modify text records independently. All content
+/// changes flow through post editing operations, which update this table via
+/// the snapshot mechanism (reddit_community_post_snapshots) for audit trail
+/// purposes.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Text content body of the post. Supports unlimited length for various text
+  /// formats from short statements to longer articles.
+  body String
+  
+  /// Creation timestamp of this text record.
+  created_at DateTime
+  
+  /// Last update timestamp of this text record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when the parent post is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+}
+
+/// Link post content table storing the URL for link-type posts.
+///
+/// This table is a subsidiary of {@link reddit_community_posts}, holding the
+/// destination URL for posts classified as link posts. Each link post record
+/// corresponds to exactly one post in the main posts table (1:1 relationship
+/// via post_id). This normalization separates link-specific data from the
+/// common post attributes (title, author, community, timestamps, vote score)
+/// in the parent posts table.
+///
+/// When a post is created with type='link', this table stores the URL that
+/// users will be directed to when clicking the post. The table supports post
+/// editing (updates to URL) and maintains full audit trail through {@link
+/// reddit_community_post_snapshots}.
+///
+/// **Note**: Author information is accessed via the parent post's
+/// `author_id` field, not a duplicate member FK in this table.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post identity. Each link post belongs to exactly one post record.
+  /// This is a 1:1 relationship enforced by the unique constraint.
+  reddit_community_post_id String
+  
+  /// The URL string for the link post. Users clicking this post will be
+  /// redirected to this URL. Must be a valid absolute URL (e.g.,
+  /// https://example.com/page).
+  url String
+  
+  /// Parsed domain name extracted from URL (e.g., 'youtube.com' from
+  /// 'https://youtube.com/watch?v=123'). Used for displaying domain in post
+  /// list views for quick recognition.
+  domain_name String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp (nullable). When null, record is active. When
+  /// set, record is marked for deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+  @@index([domain_name])
+}
+
+/// Audit snapshots of posts that capture point-in-time states when content
+/// is edited. Each snapshot records the complete state of a post at a
+/// specific moment in time, providing an immutable historical trail for
+/// moderation, debugging, and content review purposes.
+///
+/// This table stores denormalized copies of all post fields including title,
+/// type, content (text body, link URL, or image file reference), vote score,
+/// and comment count at the time the edit occurred. Snapshots are
+/// append-only records that are never modified or deleted, preserving the
+/// complete history of post modifications.
+///
+/// Key relationships:
+/// - {@link reddit_community_posts.id} - The current version of the post
+/// being tracked
+/// - {@link reddit_community_members.id} - The user who performed the edit
+/// (can be the author or a moderator)
+///
+/// Use cases:
+/// - Moderation audit: Review what content was posted and when
+/// - Content history: Track how posts have evolved over time
+/// - Dispute resolution: Verify original post content
+/// - Debugging: Understand the state of posts at specific points in time
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Current version of the post this snapshot belongs to. {@link
+  /// reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// The member who performed the edit that created this snapshot. {@link
+  /// reddit_community_members.id}.
+  edited_by_member_id String
+  
+  /// The title of the post at the time of this snapshot.
+  title String
+  
+  /// The type of post (text, link, or image) at the time of this snapshot.
+  post_type String
+  
+  /// The text content of the post for text-type posts.
+  text_body String?
+  
+  /// The URL for link-type posts.
+  link_url String?
+  
+  /// Reference to the image file for image-type posts. Null for text and link
+  /// posts.
+  image_file_id String?
+  
+  /// The vote score (upvotes minus downvotes) at the time of this snapshot.
+  vote_score Int
+  
+  /// The total comment count (including nested replies) at the time of this
+  /// snapshot.
+  comment_count Int
+  
+  /// The timestamp when this snapshot was created, representing when the edit
+  /// occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  editedByMember reddit_community_members @relation(fields: [edited_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([edited_by_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+}
+
+/// Audit trail table that records deleted posts with deletion metadata.
+/// Tracks when posts were deleted, who deleted them, and why (reason). Used
+/// for moderation oversight, content policy enforcement audit, and
+/// historical record-keeping. References the original post via foreign key
+/// to maintain connection to the deleted content's metadata (title, author,
+/// community) through the post table. The deleter field identifies the
+/// member (user or moderator) who performed the deletion action. This table
+/// is append-only and rarely modified, serving as a permanent record of post
+/// deletion events.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Deleted post's {@link reddit_community_posts.id}. References the original
+  /// post that was deleted, allowing retrieval of post metadata (title,
+  /// author, community) even after deletion.
+  reddit_community_post_id String
+  
+  /// Member who deleted the post. Can be the post author or a community
+  /// moderator. References the member who performed the deletion action.
+  deleter_member_id String
+  
+  /// Reason for deletion. Can be empty if no reason provided. Used for
+  /// moderation audit and policy enforcement tracking.
+  deletion_reason String?
+  
+  /// Timestamp when the post was deleted. Point-in-time record of deletion
+  /// event.
+  deleted_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  deleter reddit_community_members @relation(fields: [deleter_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+  // spellchecker: ignore-next-line
+  @@index([deleter_member_id, deleted_at], map: "reddit_community_post_deletions_deleter_member_id_dele_ddf7431e")
+  @@index([deleted_at])
+}

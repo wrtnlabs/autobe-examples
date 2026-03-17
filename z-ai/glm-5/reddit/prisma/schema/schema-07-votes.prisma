@@ -1,0 +1,51 @@
+/// User votes on posts expressing approval (upvote) or disapproval (downvote).
+///
+/// Each member can cast exactly one vote per post, stored as either upvote
+/// or downvote type. The vote type can be changed by updating the record,
+/// and votes can be removed entirely through hard deletion. Vote records
+/// contribute to post score calculation (upvotes - downvotes) and member
+/// karma tracking.
+///
+/// Relationships:
+/// - References {@link community_platform_members.id} as the voter
+/// - References {@link community_platform_posts.id} as the target post
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link community_platform_members.id}
+  member_id String
+  
+  /// The post this vote targets. {@link community_platform_posts.id}
+  post_id String
+  
+  /// The type of vote cast: 'upvote' for approval (adds +1 to score) or
+  /// 'downvote' for disapproval (adds -1 to score). Can be changed by updating
+  /// this field.
+  vote_type String
+  
+  /// Timestamp when the vote was originally cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote type was last changed.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([post_id, member_id])
+  @@index([member_id, created_at])
+}

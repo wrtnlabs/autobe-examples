@@ -1,0 +1,52 @@
+/// Historical edit records tracking changes made to todos over time.
+///
+/// Each entry captures the state of a todo after a modification, including the
+/// values that were applied during the edit (title, description, start date,
+/// due date, and completion status). Entries are ordered chronologically with
+/// most recent first, enabling members to view the complete modification
+/// history of their todos. When a todo is permanently deleted, all associated
+/// history entries are cascade removed.
+///
+/// References {@link multi_user_todo_todos.id} for the associated todo.
+///
+/// @namespace History
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The todo this history entry belongs to. {@link multi_user_todo_todos.id}
+  todo_id String
+  
+  /// The title value after this edit.
+  title String
+  
+  /// The description value after this edit.
+  description String?
+  
+  /// The start date after this edit.
+  start_date DateTime?
+  
+  /// The due date after this edit.
+  due_date DateTime?
+  
+  /// The completion status after this edit.
+  is_completed Boolean
+  
+  /// Timestamp when this history entry was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_id, created_at])
+}

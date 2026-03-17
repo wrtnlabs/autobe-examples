@@ -1,0 +1,130 @@
+/// Product-level saved items that let a customer keep products for later
+/// consideration in a personal wishlist.
+///
+/// Each record links one customer account to one product listing from {@link
+/// shopping_mall_products}. The table stores only ownership and lifecycle
+/// data so wishlist browsing remains normalized while product details,
+/// seller identity, prices, and ratings are resolved from related catalog
+/// tables at query time.
+///
+/// A customer may save a product at most once, enforced by a composite
+/// unique constraint. Soft deletion supports lifecycle-safe removal while
+/// preserving auditability and compatibility with broader platform retention
+/// patterns.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlist_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Saved product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// When the product was added to the customer's wishlist.
+  created_at DateTime
+  
+  /// When this wishlist entry was last updated for lifecycle tracking.
+  updated_at DateTime
+  
+  /// When this wishlist entry was soft-deleted, if it has been removed from
+  /// the active wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_wishlist_entries_shopping_mall_customer__4ebb572e")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_wishlist_entries_shopping_mall_customer__ca4c99ee")
+}
+
+/// Variant-level basket lines in a customer's shopping cart before order
+/// creation.
+///
+/// Each record represents one selected product variant in one customer's
+/// cart and stores the requested quantity together with cart-time unit
+/// pricing and current checkout availability context. The table enforces
+/// variant-based consolidation so the same customer cannot hold duplicate
+/// cart lines for the same variant.
+///
+/// This model references both the live product and the selected variant for
+/// cart display, validation, and removal workflows, while keeping derived
+/// values such as subtotal or cart total out of storage. Historical purchase
+/// preservation belongs to order-time snapshot tables, not this pre-order
+/// cart table.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Referenced product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Selected product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Requested purchase quantity for the selected variant in this cart line.
+  quantity Int
+  
+  /// Per-unit price captured for the cart line at the time the customer most
+  /// recently set or refreshed the item.
+  unit_price Float
+  
+  /// Whether the cart line is currently available for checkout based on live
+  /// variant existence and stock eligibility.
+  availability Boolean
+  
+  /// When this cart line was first created.
+  created_at DateTime
+  
+  /// When this cart line was last updated.
+  updated_at DateTime
+  
+  /// When this cart line was soft deleted, if it has been removed from the
+  /// active cart.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_customer_id_sho_b178638a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, updated_at], map: "shopping_mall_cart_items_shopping_mall_customer_id_upd_e4ff2bbe")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, availability, updated_at], map: "shopping_mall_cart_items_shopping_mall_customer_id_ava_1691fe1b")
+}

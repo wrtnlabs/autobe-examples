@@ -1,0 +1,399 @@
+/// Main report entity storing user reports against content with status
+/// lifecycle and reason text.
+///
+/// Users can submit reports against posts or comments in communities they
+/// participate in. Each report includes a required reason text explaining
+/// the violation, and progresses through a status lifecycle (pending,
+/// approved, dismissed, resolved). Reports are reviewed by community
+/// moderators who can approve (delete content) or dismiss (keep content).
+/// The reporter's identity is tracked for accountability but may be
+/// anonymized in some cases.
+///
+/// The report entity references the reporting user via {@link
+/// community_platform_members.id} and the community via {@link
+/// community_platform_communities.id} where the content resides. Specific
+/// content targeting is handled through subtype tables for posts and
+/// comments.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reporting user's identity. {@link community_platform_members.id}
+  reporter_member_id String
+  
+  /// Community where the reported content resides. {@link
+  /// community_platform_communities.id}
+  community_id String
+  
+  /// Required explanation from the reporter describing why the content
+  /// violates community guidelines.
+  reason String
+  
+  /// Current state in the report lifecycle. Valid values: 'pending' (awaiting
+  /// review), 'approved' (moderator approved, content deleted), 'dismissed'
+  /// (moderator dismissed, content kept), 'resolved' (action taken, resolved).
+  status String
+  
+  /// Timestamp when the report was submitted by the user.
+  created_at DateTime
+  
+  /// Timestamp when the report was last modified (status change, note
+  /// addition, etc.).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for GDPR compliance and data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter community_platform_members @relation(fields: [reporter_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postReport community_platform_user_report_of_posts?
+  reportOfComment community_platform_user_report_of_comments?
+  approval community_platform_user_report_approvals?
+  dismissal community_platform_user_report_dismissals?
+  auditHistories community_platform_user_report_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, status])
+  // spellchecker: ignore-next-line
+  @@index([reporter_member_id, created_at], map: "community_platform_user_reports_reporter_member_id_cre_98f9accc")
+  @@index([status, created_at])
+}
+
+/// Subtype table specifically for reports targeting posts. Links the main
+/// user report entity to the specific post being reported, enabling the
+/// polymorphic reporting pattern where both posts and comments can be
+/// reported through separate subtype tables.
+///
+/// Each record represents a post that has been reported, connecting the
+/// general report metadata (reason, status, reporter) from the main report
+/// table with the specific post content being flagged for moderation review.
+///
+/// {@link community_platform_user_reports} contains the core report
+/// information while this table provides the post-specific targeting. This
+/// separation allows for clean polymorphic relationships without nullable
+/// foreign keys, following the subtype pattern for different content types
+/// that can be reported.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main user report containing the reason, status, and
+  /// reporter information. {@link community_platform_user_reports.id}.
+  user_report_id String
+  
+  /// Reference to the post that has been reported for moderation review.
+  /// {@link community_platform_posts.id}.
+  post_id String
+  
+  /// Timestamp when this post-specific report record was created, typically
+  /// when the user submits the report.
+  created_at DateTime
+  
+  /// Timestamp when this post-specific report record was last updated,
+  /// tracking any modifications to the report targeting.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  userReport community_platform_user_reports @relation(fields: [user_report_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id])
+  @@unique([user_report_id])
+  // spellchecker: ignore-next-line
+  @@index([user_report_id, post_id], map: "community_platform_user_report_of_posts_user_report_id_840ed26f")
+}
+
+/// Subtype table specifically for reports targeting comments, linking
+/// user-submitted reports to the specific comment being reported.
+///
+/// This table establishes the connection between a {@link
+/// community_platform_user_reports} main report entity and a {@link
+/// community_platform_comments} comment. Each comment report record must
+/// reference exactly one main report (1:1 relationship enforced by unique
+/// constraint) and exactly one comment. This subtype pattern enables the
+/// polymorphic reporting system where reports can target different content
+/// types while maintaining referential integrity and normalized data
+/// structure.
+///
+/// When a user reports a comment, a main report entity is created in {@link
+/// community_platform_user_reports} and a corresponding record is created in
+/// this table linking to the specific comment. Moderators review the report
+/// through the main report entity, with decisions tracked in {@link
+/// community_platform_user_report_approvals} or {@link
+/// community_platform_user_report_dismissals}.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The main report entity this comment report belongs to. {@link
+  /// community_platform_user_reports.id}
+  community_platform_user_report_id String
+  
+  /// The specific comment being reported in this report. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// Timestamp when this comment report linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this comment report linkage was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  userReport community_platform_user_reports @relation(fields: [community_platform_user_report_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_report_id], map: "community_platform_user_report_of_comments_community_p_c97db78a")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_user_report_of_comments_community_p_c84f1077")
+}
+
+/// Records moderator decisions to approve reports and delete content. This
+/// table captures the approval workflow where moderators review
+/// user-submitted reports and decide to take action by deleting reported
+/// content. Each approval represents a moderator's decision that the
+/// reported content violates community guidelines and should be removed.
+///
+/// Approval decisions include the specific moderator who made the decision,
+/// the timestamp of approval, and reference to the original report. This
+/// creates an audit trail of moderation actions and supports transparency in
+/// content moderation processes.
+///
+/// Each approval is linked to exactly one report and references the
+/// moderator's session for authentication context. The approval process
+/// typically follows review of the reported content against community
+/// guidelines. {@link community_platform_user_reports.id} {@link
+/// community_platform_moderation_roles.user_id}
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_report_approvals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report being approved for content deletion. {@link
+  /// community_platform_user_reports.id}
+  community_platform_user_report_id String
+  
+  /// Moderator's session during the approval decision for authentication
+  /// context. {@link community_platform_member_sessions.id}
+  moderator_session_id String
+  
+  /// Timestamp when the moderator approved the report and deleted the content.
+  approved_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report community_platform_user_reports @relation(fields: [community_platform_user_report_id], references: [id], onDelete: Cascade)
+  moderatorSession community_platform_member_sessions @relation(fields: [moderator_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([moderator_session_id], map: "community_platform_user_report_approvals_moderator_ses_dfee9507")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_user_report_id], map: "community_platform_user_report_approvals_community_pla_d9ed5832")
+  @@index([approved_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_user_report_id, approved_at], map: "community_platform_user_report_approvals_community_pla_db8291ab")
+}
+
+/// Records moderator decisions to dismiss user-submitted reports and keep
+/// the reported content unchanged. Tracks which moderator made the dismissal
+/// decision, when it occurred, and any explanatory notes.
+///
+/// This table implements the dismissal workflow described in requirement
+/// analysis section 32, where moderators determine reports are unfounded and
+/// choose not to take action against the reported content. Dismissal
+/// decisions result in the report status changing from 'pending' to
+/// 'dismissed' while leaving the reported content visible and unchanged.
+/// Dismissed reports remain in the system for audit purposes but are removed
+/// from active review lists.
+///
+/// Each dismissal is linked to a specific report through {@link
+/// community_platform_user_reports.id} and records the moderator who made
+/// the decision through {@link community_platform_members.id} (for community
+/// moderators) or {@link community_platform_admins.id} (for platform
+/// administrators). The dismissal action may include explanatory notes for
+/// transparency.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_report_dismissals {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report being dismissed. References the main user report entity {@link
+  /// community_platform_user_reports.id}.
+  user_report_id String
+  
+  /// Member moderator who dismissed the report. References the member acting
+  /// as community moderator {@link community_platform_members.id}. Nullable
+  /// when dismissal is made by an administrator.
+  moderator_member_id String?
+  
+  /// Platform administrator who dismissed the report. References the
+  /// administrator account {@link community_platform_admins.id}. Nullable when
+  /// dismissal is made by a community moderator.
+  administrator_id String?
+  
+  /// Optional explanation for why the report was dismissed. Provides
+  /// transparency to the reporting user and audit trail for moderation
+  /// decisions.
+  dismissal_reason String?
+  
+  /// Timestamp when the dismissal decision was recorded.
+  created_at DateTime
+  
+  /// Timestamp when the dismissal record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  userReport community_platform_user_reports @relation(fields: [user_report_id], references: [id], onDelete: Cascade)
+  moderatorMember community_platform_members? @relation(fields: [moderator_member_id], references: [id], onDelete: Cascade)
+  administrator community_platform_admins? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_report_id])
+  // spellchecker: ignore-next-line
+  @@index([user_report_id, created_at], map: "community_platform_user_report_dismissals_user_report__55238618")
+  // spellchecker: ignore-next-line
+  @@index([moderator_member_id, created_at], map: "community_platform_user_report_dismissals_moderator_me_63a998d0")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "community_platform_user_report_dismissals_administrato_3245a700")
+}
+
+/// Audit trail of report status changes and moderator actions for compliance.
+///
+/// Records all significant events in a report's lifecycle including
+/// creation, status updates, moderator decisions (approval/dismissal), and
+/// other administrative actions. Each entry captures who performed the
+/// action (moderator or reporting user), what action was taken, when it
+/// occurred, and any relevant old/new values for changed attributes.
+///
+/// This table supports compliance requirements by providing a complete
+/// historical record of report handling, enabling transparency in moderation
+/// workflows and accountability for administrative decisions. Historical
+/// data can be analyzed for patterns in reporting behavior, moderator
+/// response times, and decision consistency across similar cases.
+///
+/// {@link community_platform_user_reports.id} serves as the primary
+/// reference for the report being audited. Actor references may point to
+/// moderators or users depending on the action type.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_report_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The report being audited. {@link community_platform_user_reports.id}.
+  user_report_id String
+  
+  /// Type of audit action performed. Valid values: 'created' (report created),
+  /// 'status_changed' (status updated), 'approved' (moderator approved),
+  /// 'dismissed' (moderator dismissed), 'assigned' (assigned to moderator),
+  /// 'note_added' (administrative note).
+  action_type String
+  
+  /// Type of actor who performed the action. Valid values: 'moderator'
+  /// (community moderator), 'user' (reporting user), 'system' (automated
+  /// system action).
+  actor_type String
+  
+  /// Identifier of the actor who performed the action. When actor_type is
+  /// 'moderator', references a moderator user ID. When actor_type is 'user',
+  /// references the reporting user ID. When actor_type is 'system', contains a
+  /// system-generated identifier.
+  actor_id String
+  
+  /// Previous value before the action (optional). For status changes, contains
+  /// previous status. For other changes, contains relevant previous attribute
+  /// value.
+  old_value String?
+  
+  /// New value after the action (optional). For status changes, contains new
+  /// status. For other changes, contains relevant new attribute value.
+  new_value String?
+  
+  /// Additional context or explanation for the action (optional). May contain
+  /// moderator notes, user comments, or system-generated explanations.
+  notes String?
+  
+  /// When the audit event was recorded. Timestamp reflects when the action
+  /// actually occurred, not when it was logged.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  userReport community_platform_user_reports @relation(fields: [user_report_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([user_report_id, created_at], map: "community_platform_user_report_histories_user_report_i_e8cc7bb0")
+  @@index([actor_id])
+  @@index([action_type])
+}

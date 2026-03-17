@@ -1,0 +1,162 @@
+/// Customer wishlist entries linking customers to saved products at the
+/// product level (not variant level).
+///
+/// This table captures the "save for later" functionality where customers
+/// can bookmark products they are interested in purchasing later. Wishlist
+/// entries are independent entities managed by customers and can be
+/// searched, filtered, and browsed separately from the cart.
+///
+/// When a product is deleted by a seller, wishlist items referencing that
+/// product are automatically removed (cascade delete). This table links to
+/// {@link ecommerce_mall_customers} for ownership and {@link
+/// ecommerce_mall_products} for the saved product reference.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link ecommerce_mall_customers.id}. References the
+  /// customer who saved the product to their wishlist.
+  customer_id String
+  
+  /// Belonged product's {@link ecommerce_mall_products.id}. References the
+  /// product saved in the wishlist.
+  product_id String
+  
+  /// Creation time of the wishlist entry.
+  created_at DateTime
+  
+  /// Last update time of the wishlist entry. Updated when the entry is
+  /// modified or accessed.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_id])
+  @@unique([customer_id, product_id])
+  @@index([customer_id, created_at])
+}
+
+/// Customer shopping cart entries linking customers to specific product
+/// variants with quantities.
+///
+/// Each cart item represents a product variant that a customer intends to
+/// purchase. When a customer adds the same variant to their cart again,
+/// quantities are combined rather than creating separate line items. This is
+/// enforced by a unique constraint on the customer and variant combination.
+///
+/// Cart items track the desired quantity for each variant. The actual
+/// availability and stock status is checked at checkout time, not when
+/// adding to cart.
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Belonged product variant's {@link ecommerce_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Quantity of the variant in the cart.
+  quantity Int
+  
+  /// Creation time of the cart item.
+  created_at DateTime
+  
+  /// Last update time of the cart item.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, the cart item is considered removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_variant_id])
+  @@unique([customer_id, product_variant_id])
+  @@index([customer_id, created_at])
+}
+
+/// Inventory quantity change records for product variants tracking
+/// restocking, order deductions, cancellations, and adjustments.
+///
+/// Each record represents a single inventory movement event - whether stock
+/// was added (positive quantity_change) or removed (negative
+/// quantity_change). The cumulative sum of all records for a variant
+/// represents the current stock level.
+///
+/// Common record types include:
+/// - Restocking: Positive quantity_change when sellers add inventory
+/// - Order deduction: Negative quantity_change when orders are placed
+/// - Cancellation refund: Positive quantity_change when orders are cancelled
+/// - Refund restoration: Positive quantity_change when refunds are processed
+/// - Adjustment: Positive or negative quantity_change for inventory corrections
+///
+/// Records are immutable and serve as an audit trail for inventory
+/// management and dispute resolution. {@link
+/// ecommerce_mall_product_variants}
+///
+/// @namespace Shopping
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target variant's {@link ecommerce_mall_product_variants.id}.
+  product_variant_id String
+  
+  /// Quantity change amount. Positive values indicate stock increase
+  /// (restocking, cancellations, refunds). Negative values indicate stock
+  /// decrease (order placement, adjustments).
+  quantity_change Int
+  
+  /// Reason for the inventory change. Examples: 'restock', 'order_placed',
+  /// 'order_cancelled', 'refund_processed', 'inventory_adjustment',
+  /// 'damaged_goods'.
+  reason String
+  
+  /// When the inventory record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant ecommerce_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([product_variant_id, created_at], map: "ecommerce_mall_inventory_records_product_variant_id_cr_63421f17")
+}

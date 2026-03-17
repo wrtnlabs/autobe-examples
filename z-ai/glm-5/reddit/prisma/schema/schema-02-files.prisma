@@ -1,0 +1,54 @@
+/// Central file storage for uploaded images supporting user avatars,
+/// community icons, and post images. Uses owner_type discriminator to
+/// identify the owning entity (user_avatar, community_icon, post_image) with
+/// owner_id as a polymorphic reference. Each owner can have at most one file
+/// of each type, enforced by unique constraint. Files are managed through
+/// their parent entities during profile updates, community creation, or post
+/// submission.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Discriminator identifying the owning entity type. Allowed values:
+  /// 'user_avatar' for member profile images, 'community_icon' for community
+  /// icons, 'post_image' for image post content.
+  owner_type String
+  
+  /// Polymorphic reference to the owning entity's ID. The actual target table
+  /// is determined by owner_type (user_avatar→community_platform_members,
+  /// community_icon→community_platform_communities,
+  /// post_image→community_platform_posts).
+  owner_id String
+  
+  /// Storage path or URL where the file is located. Used for retrieval and
+  /// serving the uploaded file.
+  path String
+  
+  /// File size in bytes. Used for storage capacity tracking and validation.
+  size Int
+  
+  /// MIME type of the uploaded file (e.g., 'image/jpeg', 'image/png',
+  /// 'image/gif'). Used for content type validation and proper serving.
+  mime_type String
+  
+  /// Timestamp when the file was uploaded. Records upload time for auditing
+  /// and retention policies.
+  created_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  communityIcon community_platform_communities?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([owner_type, owner_id])
+}

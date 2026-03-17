@@ -1,0 +1,172 @@
+/// Main comment entities with threaded discussion support, associated with
+/// posts and enabling unlimited reply nesting through self-referential
+/// parent_comment_id. Comments require independent CRUD operations for user
+/// management and moderation workflows.
+///
+/// Key relationships:
+/// - Belongs to a {@link reddit_platform_posts} post
+/// - Created by a {@link reddit_platform_members} member
+/// - Optional parent comment for reply threading via {@link
+/// reddit_platform_comments.id}
+///
+/// Vote scores are calculated from {@link reddit_platform_comment_votes}
+/// records, not stored directly. Edit history is tracked separately in
+/// {@link reddit_platform_comment_edits}.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target post's {@link reddit_platform_posts.id}.
+  reddit_platform_post_id String
+  
+  /// Author member's {@link reddit_platform_members.id}.
+  reddit_platform_member_id String
+  
+  /// Parent comment's {@link reddit_platform_comments.id} for reply threading.
+  /// Null for top-level comments.
+  parent_comment_id String?
+  
+  /// Comment content text.
+  body String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for moderation and account deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  author reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  parent reddit_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies reddit_platform_comments[] @relation("recursive")
+  votes reddit_platform_comment_votes[]
+  editHistories reddit_platform_comment_edits[]
+  reports reddit_platform_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_platform_post_id, created_at])
+  @@index([reddit_platform_member_id])
+  @@index([parent_comment_id])
+}
+
+/// Vote records tracking member votes on comments for score calculation.
+/// Enforces one-vote-per-member-per-comment constraint through unique index.
+/// Vote type is stored as +1 for upvote or -1 for downvote, enabling
+/// accurate score computation via aggregation. Votes support modification
+/// (changing vote type) but not deletion - removed votes are handled by
+/// updating vote_type to null or removing the record.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member's {@link reddit_platform_members.id}. Only authenticated
+  /// members can vote on comments.
+  reddit_platform_member_id String
+  
+  /// Voted comment's {@link reddit_platform_comments.id}. The comment
+  /// receiving this vote.
+  reddit_platform_comments_id String
+  
+  /// Vote direction: +1 for upvote, -1 for downvote. Used to calculate comment
+  /// vote score via aggregation.
+  vote_type Int
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., vote changed from upvote
+  /// to downvote).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments @relation(fields: [reddit_platform_comments_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_platform_comments_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_member_id, reddit_platform_comments_id], map: "reddit_platform_comment_votes_reddit_platform_member_i_8fe8a0f4")
+  @@index([created_at])
+}
+
+/// Edit history for comment transparency, tracking content changes over time
+/// with timestamps. Each record captures the previous content (old_content)
+/// and new content (new_content) when a member edits a comment, enabling
+/// audit trails and edit transparency for {@link reddit_platform_comments}.
+/// Automatically created when comments are modified by {@link
+/// reddit_platform_members}. Edit records are immutable and permanently
+/// retained for moderator review and compliance purposes.
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_comment_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced comment's {@link reddit_platform_comments.id}. Each edit
+  /// record belongs to exactly one comment.
+  reddit_platform_comment_id String
+  
+  /// Editing member's {@link reddit_platform_members.id}. Records who made
+  /// this content change.
+  reddit_platform_member_id String
+  
+  /// Previous content before the edit. Captures the comment body text prior to
+  /// modification.
+  old_content String
+  
+  /// New content after the edit. Captures the updated comment body text.
+  new_content String
+  
+  /// Timestamp when this edit was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_platform_comments @relation(fields: [reddit_platform_comment_id], references: [id], onDelete: Cascade)
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_comment_id, created_at], map: "reddit_platform_comment_edits_reddit_platform_comment__a302f1fc")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_member_id, created_at], map: "reddit_platform_comment_edits_reddit_platform_member_i_c7cb06e9")
+}

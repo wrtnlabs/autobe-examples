@@ -1,0 +1,16 @@
+export * as customers from "./customers/index";
+export * as sellers from "./sellers/index";
+export * as admins from "./admins/index";
+export * as categories from "./categories/index";
+export * as products from "./products/index";
+export * as inventory_records from "./inventory_records/index";
+export * as shipments from "./shipments/index";
+export * as reviews from "./reviews/index";
+export * as notifications from "./notifications/index";
+export * as platform_configurations from "./platform_configurations/index";
+export * as refund_requests from "./refund_requests/index";
+export * as approval_requests from "./approval_requests/index";
+export * as notification from "./notification/index";
+export * as activity from "./activity/index";
+export * as search from "./search/index";
+export * as cancellation_requests from "./cancellation_requests/index";

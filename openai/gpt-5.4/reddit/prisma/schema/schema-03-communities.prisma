@@ -1,0 +1,190 @@
+/// Core shared-space records for the community platform.
+///
+/// This table stores each community's canonical identity, owner membership
+/// reference, descriptive presentation fields, and lifecycle state used for
+/// discovery and participation decisions. A community is an independently
+/// managed business entity that members can create, browse, update, and
+/// soft-delete.
+///
+/// It serves as the parent context for related subscriptions, posts,
+/// moderator assignments, bans, reports, and historical snapshots managed in
+/// other tables such as {@link community_platform_subscriptions}, {@link
+/// community_platform_posts}, and {@link
+/// community_platform_community_snapshots}. Aggregate values such as
+/// subscriber counts are intentionally not stored here and must be derived
+/// from related records.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link community_platform_members.id} who created and
+  /// manages the community.
+  community_platform_member_id String
+  
+  /// Platform-wide unique community identifier used in readable URLs and
+  /// lookup operations.
+  slug String
+  
+  /// Human-readable community name shown in listings, headers, and discovery
+  /// results.
+  title String
+  
+  /// Community summary text describing topic, purpose, and participation
+  /// context for members and guests.
+  description String
+  
+  /// Current lifecycle state of the community used to distinguish active
+  /// availability from restricted or archived business states.
+  status String
+  
+  /// When the community record was first created.
+  created_at DateTime
+  
+  /// When the community record was last updated.
+  updated_at DateTime
+  
+  /// When the community was soft-deleted, if it has been removed from active
+  /// use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_community_snapshots[]
+  subscriptions community_platform_subscriptions[]
+  posts community_platform_posts[]
+  moderators community_platform_community_moderators[]
+  communityBans community_platform_community_bans[]
+  reports community_platform_reports[]
+  moderationActions community_platform_moderation_actions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([slug])
+  @@index([status, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_communities_community_platform_memb_4d63df64")
+}
+
+/// Point-in-time historical snapshot records associated with {@link
+/// community_platform_communities}.
+///
+/// Each row belongs to exactly one community and represents an append-only
+/// historical capture used for audit inspection and snapshot sequencing. In
+/// this reviewed design, the table stores only the parent linkage and
+/// child-specific snapshot attributes, while parent-owned community data is
+/// accessed through the parent relationship instead of being duplicated in
+/// the child.
+///
+/// This design preserves snapshot identity and temporal tracking while
+/// avoiding redundant parent-field mirroring within the child table.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent community of this snapshot. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Community visibility classification captured for this snapshot when the
+  /// historical record was created.
+  visibility String
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  /// Soft deletion timestamp for the snapshot record when it is logically
+  /// removed from active historical access.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, created_at], map: "community_platform_community_snapshots_community_platf_1417c8b8")
+}
+
+/// Membership links between members and communities.
+///
+/// This table records that a specific member is subscribed to a specific
+/// community and serves as the source of truth for subscribed-community
+/// lists, community membership checks, and subscriber counting. Each record
+/// belongs to one {@link community_platform_members.id} and one {@link
+/// community_platform_communities.id}.
+///
+/// The table stores lifecycle state for the membership relationship so the
+/// platform can determine whether the subscription is currently active while
+/// also preserving standard audit timestamps and soft-deletion behavior.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Subscribed member's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Subscribed community's {@link community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Whether the subscription relationship is currently active and counts as
+  /// an effective membership link for participation and subscriber totals.
+  active Boolean
+  
+  /// When the subscription relationship was first created.
+  created_at DateTime
+  
+  /// When the subscription record was last updated.
+  updated_at DateTime
+  
+  /// When the subscription record was soft deleted, if it has been removed
+  /// from active use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_community_id], map: "community_platform_subscriptions_community_platform_me_e7913ce7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, active, created_at], map: "community_platform_subscriptions_community_platform_me_2dbf9b9e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, active, created_at], map: "community_platform_subscriptions_community_platform_co_b1fd097b")
+}

@@ -1,0 +1,134 @@
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller, Ip } from "@nestjs/common";
+import typia from "typia";
+
+import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallCustomer";
+import { postShoppingMallAuthCustomerJoin } from "../../../../providers/postShoppingMallAuthCustomerJoin";
+import { postShoppingMallAuthCustomerLogin } from "../../../../providers/postShoppingMallAuthCustomerLogin";
+import { postShoppingMallAuthCustomerRefresh } from "../../../../providers/postShoppingMallAuthCustomerRefresh";
+
+@Controller("/shoppingMall/auth/customer")
+export class ShoppingmallAuthCustomerController {
+  /**
+   * This operation registers a new customer account for the shopping mall platform. The underlying customer actor record is the canonical authenticated identity stored in `shopping_mall_customers`, which the schema describes as the record used for login, account lifecycle control, and historical ownership across orders, reviews, wishlist entries, cart items, and administrator requests. Because the requirements state that the platform requires a CustomerAccount before any platform features can be used, this endpoint is the public entry point for establishing that identity.
+   *
+   * The request must supply the credential data necessary to populate the schema-backed authentication fields, especially the unique login email address stored in `shopping_mall_customers.email` and the hashed password credential stored in `shopping_mall_customers.password_hash`. The implementation should never persist a raw password. Instead, it must transform the submitted password into a secure hash before writing the new actor record. The endpoint creates a customer in a non-banned and non-deleted state, which means `banned_at` and `deleted_at` remain unset at registration time while `created_at` and `updated_at` are initialized.
+   *
+   * This operation is also tied to the dedicated customer session model in `shopping_mall_customer_sessions`. That table is documented as storing per-login customer session records used to audit access history and enforce session expiration, including client connection context such as `ip`, `href`, and `referrer`. For a seamless registration-to-authentication flow, the endpoint should create the first session immediately after account creation and return an authorized response so the newly registered customer can enter the authenticated customer-facing area without a separate initial sign-in round trip.
+   *
+   * Security and validation are central to this operation. The `shopping_mall_customers.email` field is unique, so duplicate registration attempts for the same login identity must be rejected clearly. Since the customer table is described as preserving historical ownership and allowing account lifecycle control, the implementation must avoid guessing or silently resurrecting prior identities. It should produce predictable conflict behavior when the unique email is already occupied. Input validation should also ensure the credential format is acceptable before hashing and persistence.
+   *
+   * This operation is commonly the first step in the customer authentication workflow and is closely related to `POST /auth/customer/login` and `POST /auth/customer/refresh`. A client typically calls this endpoint to create the account and receive authorized tokens, then later uses the refresh endpoint to renew those credentials when the access token expires. If a client already has an account, it should use the login endpoint instead of repeating registration.
+   *
+   * @setHeader token.access Authorization
+   *
+   * @param connection
+   * @param body Customer registration payload containing the email and password required to create a customer account.
+   * @x-autobe-authorization-type join
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Implement customer registration by validating the incoming join payload, normalizing the email address to a canonical form, and verifying that no active or deleted customer record already occupies the unique email constraint in shopping_mall_customers. Hash the provided password before persistence. Create a new shopping_mall_customers row with a generated UUID, email, password_hash, created_at, and updated_at, leaving banned_at and deleted_at as null.
+   *
+   * After successful account creation, create an authenticated session context consistent with the dedicated actor-session pattern represented by shopping_mall_customer_sessions. Persist a new session row containing the new customer ID, the observed client ip, href, referrer, created_at, and expired_at derived from the JWT/session policy. Return IShoppingMallCustomer.IAuthorized containing the access token, refresh token, and authorized customer/session information expected by the shared authorization DTO contract.
+   *
+   * Handle unique email collisions as a business validation failure. Do not authenticate a logically deleted legacy identity by reusing it silently; require explicit conflict handling according to account lifecycle policy. Ensure all writes occur transactionally so an account is not created without a corresponding initial session when tokens are returned.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post("join")
+  public async join(
+    @Ip()
+    ip: string,
+    @TypedBody()
+    body: IShoppingMallCustomer.IJoin,
+  ): Promise<IShoppingMallCustomer.IAuthorized> {
+    try {
+      return await postShoppingMallAuthCustomerJoin({
+        ip,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * This operation authenticates an existing customer by validating the email-and-password credentials defined for the customer actor. The requirements explicitly state that a customer is identified by customer sign-in credentials based on email and password, and the `shopping_mall_customers` schema directly supports that requirement through the unique `email` column and the `password_hash` column used for customer authentication. This endpoint is therefore the canonical sign-in operation for the registered buyer role.
+   *
+   * The login flow must honor account lifecycle restrictions that are also encoded in the schema. The customer table includes `banned_at`, documented as the timestamp when the customer account was banned from login, and the loaded analysis section states that a banned customer cannot log in through normal sign-in and cannot use customer features while the ban remains in effect. Accordingly, even when the email and password are otherwise correct, the endpoint must deny authentication if `banned_at` is set. The table also includes `deleted_at`, and the loaded requirements explain that after a customer deletes the account, the identity and profile are removed from active use even though historical commerce and review references remain preserved. Therefore, deleted accounts must not be allowed to authenticate.
+   *
+   * Successful login should create a new record in `shopping_mall_customer_sessions`, the dedicated session table described as storing authenticated login sessions for registered customers. That schema captures the client connection context present at session creation, including `ip`, `href`, and `referrer`, as well as `created_at` and `expired_at`. This means the login endpoint should not merely check credentials; it should establish a durable session record that supports audit history, expiration checks, and the later refresh flow.
+   *
+   * From a security perspective, this operation must perform password verification against `password_hash` and must avoid returning unnecessary detail about credential mismatches. It should still communicate business-state rejections such as a banned account in a controlled way that is consistent with platform policy. Because platform access requires registration and sign-in for customers, this endpoint is the main gateway to customer-facing functionality such as wishlist management, cart management, ordering, shipment tracking, after-sales requests, and review writing.
+   *
+   * This endpoint is closely related to `POST /auth/customer/join` and `POST /auth/customer/refresh`. Clients call `join` to create a new identity, `login` to authenticate an existing one, and `refresh` to renew an existing authorized session without resubmitting the original password. No prior business API is required before this login call.
+   *
+   * @setHeader token.access Authorization
+   *
+   * @param connection
+   * @param body Customer login payload containing the email and password used to authenticate an existing customer account.
+   * @x-autobe-authorization-type login
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Implement customer login by locating the customer record in shopping_mall_customers using the submitted email, verifying the supplied password against password_hash, and rejecting authentication when the account does not exist, the password is invalid, the account is banned, or the account has been deleted from active use.
+   *
+   * Specifically enforce the loaded business requirement that a banned customer cannot log in through normal sign-in by checking banned_at before issuing tokens. Also reject accounts with deleted_at set because the requirements say the customer identity and profile are removed from active use after account deletion even though historical references are preserved. On successful credential validation, create a new shopping_mall_customer_sessions row containing shopping_mall_customer_id, ip, href, referrer, created_at, and expired_at.
+   *
+   * Return IShoppingMallCustomer.IAuthorized with freshly issued JWT credentials and any session-linked authorization data defined by the DTO contract. Record session creation atomically with token issuance so audit history and refresh eligibility remain aligned. Error responses should not leak whether the email or password was the incorrect credential beyond necessary business restrictions like banned access.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post("login")
+  public async login(
+    @Ip()
+    ip: string,
+    @TypedBody()
+    body: IShoppingMallCustomer.ILogin,
+  ): Promise<IShoppingMallCustomer.IAuthorized> {
+    try {
+      return await postShoppingMallAuthCustomerLogin({
+        ip,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * This operation renews customer authorization using the platform's session-backed refresh flow. The design is grounded in `shopping_mall_customer_sessions`, which the schema describes as storing per-login customer session records used to audit access history and enforce session expiration for `shopping_mall_customers`. Because that table contains `expired_at`, each refresh attempt must validate that the customer session still exists and remains within its allowed lifetime before new credentials are returned.
+   *
+   * The refresh flow also depends on the canonical customer actor record in `shopping_mall_customers`. Even though the customer may already possess a refresh token or other refresh credential, the endpoint must re-evaluate the current account state using the stored customer identity referenced by `shopping_mall_customer_sessions.shopping_mall_customer_id`. This is important because the actor table contains `banned_at` and `deleted_at`, both of which represent conditions that remove or restrict active platform access. A customer who has been banned from login or whose account has been removed from active use after deletion must not regain access indirectly through token renewal.
+   *
+   * Unlike login, this operation does not validate the original email-and-password pair again. Instead, it validates the submitted refresh payload against the active session lifecycle represented in the session table, then issues a fresh authorized response when the session remains valid. This preserves the convenience of JWT renewal while still honoring the database-backed session audit model, which records client session creation context such as `ip`, `href`, `referrer`, `created_at`, and `expired_at`.
+   *
+   * This endpoint is part of the normal post-authentication lifecycle. A client typically calls `POST /auth/customer/join` or `POST /auth/customer/login` first to obtain the initial authorized token set, then calls this refresh endpoint when the access token approaches expiration. If the session has already expired or the underlying account has become banned or inactive, the client must return to an appropriate authentication or account-recovery flow rather than expecting refresh to succeed automatically.
+   *
+   * Error handling should be strict and predictable. Invalid, expired, mismatched, or otherwise unusable refresh credentials must be rejected without creating a new session as a side effect. The endpoint exists to renew an already established authentication relationship, not to bypass the business and lifecycle constraints enforced by customer registration and normal sign-in.
+   *
+   * @setHeader token.access Authorization
+   *
+   * @param connection
+   * @param body Customer refresh payload used to renew authorization from an existing valid customer session.
+   * @x-autobe-authorization-type refresh
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Implement token refresh by validating the submitted refresh credential from IShoppingMallCustomer.IRefresh, resolving the linked customer session, and confirming that the corresponding shopping_mall_customer_sessions record is still valid. The implementation must verify the session exists, has not passed expired_at, and belongs to a customer account that remains eligible for authentication.
+   *
+   * Load the associated shopping_mall_customers row through shopping_mall_customer_id and re-check account state before issuing new tokens. Deny refresh when banned_at is set or deleted_at is set, because the actor must not regain access through refresh when normal authentication is no longer allowed. If the refresh contract rotates session identifiers or refresh tokens, update the session record or replacement record consistently with the platform token strategy while preserving auditability.
+   *
+   * Return IShoppingMallCustomer.IAuthorized with newly issued credentials. Ensure the refresh process does not require password re-entry, but still applies strong validation against tampered, expired, revoked, or mismatched session context. Expired or invalid session state must result in authentication failure without creating a new session implicitly.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post("refresh")
+  public async refresh(
+    @TypedBody()
+    body: IShoppingMallCustomer.IRefresh,
+  ): Promise<IShoppingMallCustomer.IAuthorized> {
+    try {
+      return await postShoppingMallAuthCustomerRefresh({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

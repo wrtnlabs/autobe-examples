@@ -1,0 +1,336 @@
+/// Records user votes on posts, tracking upvote/downvote status and ensuring
+/// each user has exactly one vote per post. Votes affect post sorting in
+/// feeds and contribute to both the post's score and the post author's karma
+/// score. Users can change their vote between upvote and downvote or remove
+/// it entirely, with real-time updates to post scores and karma
+/// calculations.
+///
+/// Each vote establishes a relationship between a user (member) and a post,
+/// with the vote type determining the mathematical contribution to both post
+/// score (sum of upvotes minus downvotes) and author karma (+1 for upvotes,
+/// -1 for downvotes). Vote changes are captured through snapshot tables
+/// {@link community_platform_post_vote_snapshots} for audit purposes and
+/// karma adjustment tracking. {@link community_platform_members.id} {@link
+/// community_platform_posts.id}
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who cast the vote. The vote is attached to the user who performed
+  /// the voting action, not the post author. {@link
+  /// community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Post that received the vote. Each vote targets exactly one post and
+  /// contributes to its score calculation. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Type of vote cast by the user. 'up' for upvote (+1), 'down' for downvote
+  /// (-1), null for removed vote. Vote changes trigger karma recalculations
+  /// for the post author.
+  type String?
+  
+  /// Timestamp when the vote was cast or last changed. Updated whenever vote
+  /// type changes.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified. Initially same as created_at,
+  /// updated on vote changes.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted. Null indicates active vote.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_post_vote_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_platform_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_post_id], map: "community_platform_post_votes_community_platform_membe_38b1ddb3")
+  @@index([type, created_at])
+}
+
+/// Votes cast by members on comments, tracking upvote/downvote status and
+/// ensuring one vote per user per comment.
+///
+/// This table represents the voting relationship between members and
+/// comments. Each vote influences the comment's visibility in sorting
+/// algorithms and contributes to the comment author's karma score. The
+/// system enforces a business rule that each member can cast only one vote
+/// per comment, which can be either upvote or downvote. Votes can be changed
+/// or removed by the member who cast them, affecting both comment score and
+/// author karma in real-time.
+///
+/// Relationships: Each vote belongs to a specific member through {@link
+/// community_platform_members.id} and targets a specific comment through
+/// {@link community_platform_comments.id}. The system maintains referential
+/// integrity to ensure votes are automatically removed if either the member
+/// or comment is deleted.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// The comment that received this vote. {@link
+  /// community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// The vote type indicating whether this is an upvote (positive) or downvote
+  /// (negative). Values: 'upvote' or 'downvote'.
+  type String
+  
+  /// Timestamp when the vote was initially cast by the member.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified, including type changes or
+  /// removal.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft deleted, allowing for data retention
+  /// compliance and potential restoration.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_comment_vote_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id, community_platform_comment_id], map: "community_platform_comment_votes_community_platform_me_8e8bf05c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id, created_at], map: "community_platform_comment_votes_community_platform_co_68a9b5f7")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}
+
+/// Stores karma scores for users, tracking community reputation impacted by
+/// votes on their posts and comments.
+///
+/// Karma represents a user's community standing based on community feedback
+/// through voting. Each user has exactly one karma score that increases by
+/// +1 when others upvote their content, decreases by -1 when downvoted, and
+/// adjusts when votes are removed. Karma scores can be negative and are
+/// displayed on user profiles as the primary reputation metric.
+///
+/// This table maintains a 1:1 relationship with users ({@link
+/// community_platform_members}), with real-time updates triggered by vote
+/// operations. Karma is calculated automatically and cannot be manually
+/// adjusted.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma is being tracked. Each user has exactly one karma
+  /// record. {@link community_platform_members.id}
+  member_id String
+  
+  /// Current karma score representing the user's community reputation.
+  /// Positive values indicate net appreciation, negative values indicate net
+  /// criticism. Real-time calculated from vote operations.
+  score Int
+  
+  /// Timestamp when this karma record was first created, typically when the
+  /// user account is created.
+  created_at DateTime
+  
+  /// Timestamp when this karma score was last updated, tracking changes from
+  /// vote operations.
+  updated_at DateTime
+  
+  /// Timestamp when this karma record was soft deleted, allowing for data
+  /// recovery and audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id])
+  @@index([member_id, created_at])
+  @@index([score])
+}
+
+/// Point-in-time snapshots of post votes for auditing vote changes and karma
+/// adjustments.
+///
+/// Captures historical states of votes on posts to enable tracking of karma
+/// score changes and vote modifications. Each snapshot records the complete
+/// state of a vote at a specific moment, including vote type
+/// (upvote/downvote), voter identity, and post reference. These snapshots
+/// support auditing requirements for karma adjustments and provide an
+/// immutable record of vote lifecycle changes.
+///
+/// Used in conjunction with {@link community_platform_post_votes} to
+/// maintain both current vote state and historical audit trail. References
+/// {@link community_platform_members} to identify the voting user and {@link
+/// community_platform_posts} to identify the content being voted on.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_vote_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The original vote being snapshotted for audit trail. {@link
+  /// community_platform_post_votes.id}.
+  community_platform_post_vote_id String
+  
+  /// Member who cast the vote for karma attribution tracking. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Post that received the vote for content reference. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Type of vote captured in this snapshot: 'upvote' or 'downvote'.
+  /// Determines karma impact (+1 for upvote, -1 for downvote).
+  vote_type String
+  
+  /// Karma impact value captured at snapshot time: +1 for upvote, -1 for
+  /// downvote, ±2 for vote changes. Used for audit verification.
+  karma_impact Int
+  
+  /// Reason for creating this snapshot: 'initial_vote', 'vote_change',
+  /// 'vote_removal', or 'audit_capture'. Provides context for the historical
+  /// record.
+  snapshot_reason String
+  
+  /// Timestamp when this snapshot was created. Represents the point-in-time
+  /// capture moment.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  vote community_platform_post_votes @relation(fields: [community_platform_post_vote_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_vote_id, created_at], map: "community_platform_post_vote_snapshots_community_platf_ec07e8c0")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_post_vote_snapshots_community_platf_0201b66b")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_vote_snapshots_community_platf_fc682254")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_reason, created_at], map: "community_platform_post_vote_snapshots_snapshot_reason_27b135a2")
+}
+
+/// Point-in-time snapshots of comment votes for auditing vote changes and
+/// karma adjustments.
+///
+/// Captures the state of comment votes at specific moments in time, enabling
+/// audit trails of vote modifications and tracking karma score adjustments.
+/// Each snapshot records whether a vote was an upvote or downvote, the
+/// timestamp when the snapshot was taken, and references to the comment vote
+/// being captured, the voting member, and the target comment.
+///
+/// Used for compliance, debugging, and historical analysis of voting
+/// patterns and karma calculations. {@link
+/// community_platform_comment_votes.id}, {@link
+/// community_platform_members.id}, {@link community_platform_comments.id}
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_vote_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment vote being snapshotted. {@link
+  /// community_platform_comment_votes.id}
+  comment_vote_id String
+  
+  /// The member who cast the vote. {@link community_platform_members.id}
+  member_id String
+  
+  /// The comment that was voted on. {@link community_platform_comments.id}
+  comment_id String
+  
+  /// Type of vote at snapshot time: 'upvote' or 'downvote'.
+  vote_type String
+  
+  /// Optional description of why this snapshot was created, e.g.,
+  /// 'vote_created', 'vote_changed', 'vote_removed', 'karma_adjustment'.
+  snapshot_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  commentVote community_platform_comment_votes @relation(fields: [comment_vote_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([comment_vote_id, created_at], map: "community_platform_comment_vote_snapshots_comment_vote_98482f0a")
+  // spellchecker: ignore-next-line
+  @@index([member_id, created_at], map: "community_platform_comment_vote_snapshots_member_id_cr_a8810a25")
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "community_platform_comment_vote_snapshots_comment_id_c_9f4df363")
+}

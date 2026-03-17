@@ -1,0 +1,130 @@
+/// Shipments created by sellers to track order item deliveries with carrier
+/// information and delivery lifecycle timestamps.
+///
+/// Represents the physical shipment of order items from a seller to a
+/// customer. Each shipment contains tracking information including carrier
+/// name and tracking number, along with timestamps marking key delivery
+/// milestones: when the shipment was sent (shipped_at), when it was
+/// delivered (delivered_at), when the customer confirmed receipt
+/// (delivery_confirmed_at), and the automatic delivery confirmation
+/// timestamp (auto_delivered_at).
+///
+/// Shipments are created by sellers after order items are paid and ready to
+/// ship. Multiple shipments can exist for a single order when items come
+/// from different sellers. The {@link shopping_mall_shipment_items} table
+/// links individual order items to their corresponding shipments.
+///
+/// Delivery lifecycle:
+/// - shipped_at: When seller hands package to carrier
+/// - delivered_at: When carrier marks package as delivered
+/// - delivery_confirmed_at: When customer manually confirms receipt
+/// - auto_delivered_at: System-calculated auto-confirmation (shipped_at + 14
+/// days)
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Name of the shipping carrier (e.g., FedEx, UPS, DHL, USPS). Null until
+  /// shipment is created.
+  tracking_carrier String?
+  
+  /// Tracking number provided by the carrier for package tracking. Null until
+  /// shipment is created.
+  tracking_number String?
+  
+  /// Timestamp when the seller handed the package to the carrier. Null until
+  /// actually shipped.
+  shipped_at DateTime?
+  
+  /// Timestamp when the carrier marked the package as delivered. Null until
+  /// delivery occurs.
+  delivered_at DateTime?
+  
+  /// Timestamp when the customer manually confirmed receipt of the shipment.
+  /// Null if not confirmed.
+  delivery_confirmed_at DateTime?
+  
+  /// System-calculated timestamp for automatic delivery confirmation
+  /// (shipped_at + 14 days). Used when customer doesn't manually confirm.
+  auto_delivered_at DateTime?
+  
+  /// Timestamp when the shipment record was created.
+  created_at DateTime
+  
+  /// Timestamp when the shipment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the shipment was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  items shopping_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id, created_at])
+}
+
+/// Junction table linking shipments to order items, enabling one shipment to
+/// contain multiple order items from the same seller. Each order item
+/// belongs to exactly one shipment, tracked through the unique constraint on
+/// order_item_id. This table supports consolidated shipment tracking where
+/// sellers ship multiple order items together with unified tracking
+/// information.
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged shipment's {@link shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// Belonged order item's {@link shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record removal tracking.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([shipment_id])
+}

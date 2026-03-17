@@ -1,0 +1,141 @@
+/// Core todo items owned by members with title, description, optional dates,
+/// and completion status.
+///
+/// This table stores the main todo entities that members create and manage
+/// throughout their lifecycle. Each todo belongs to exactly one member and
+/// supports soft deletion through the deleted_at field for trash
+/// functionality.
+///
+/// Key relationships:
+/// - Owned by {@link todo_app_members} through member_id foreign key
+/// - Has many {@link todo_app_todo_edit_histories} for audit trail
+///
+/// Behavioral notes:
+/// - Todos are incomplete by default (completed = false)
+/// - Soft deleted todos (deleted_at IS NOT NULL) appear in trash
+/// - Permanently deleted todos are removed from this table
+/// - All field changes are recorded in edit history table
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link todo_app_members.id}.
+  todo_app_member_id String
+  
+  /// Todo title. Required field that identifies the todo task.
+  title String
+  
+  /// Optional detailed description of the todo task. Can be empty.
+  description String?
+  
+  /// Optional start date when the todo task begins. Null if not set.
+  started_at DateTime?
+  
+  /// Optional due date when the todo task should be completed. Null if not set.
+  due_at DateTime?
+  
+  /// Completion status flag. False means incomplete (default), true means
+  /// complete.
+  completed Boolean
+  
+  /// Timestamp when the todo was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft deleted. Null means active todo,
+  /// non-null means in trash.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_todo_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, created_at])
+  @@index([todo_app_member_id, deleted_at, created_at])
+  @@index([todo_app_member_id, completed, created_at])
+  @@index([todo_app_member_id, started_at])
+  @@index([todo_app_member_id, due_at])
+}
+
+/// Audit trail recording all changes made to todos including field values
+/// after each edit.
+///
+/// This table captures point-in-time snapshots of todo modifications,
+/// enabling users to view the complete history of changes made to their
+/// todos. Each edit creates a new history entry with the updated field
+/// values.
+///
+/// Key relationships:
+/// - Belongs to {@link todo_app_todos} via todo_app_todo_id (required)
+/// - Multiple history entries per todo (1:N relationship)
+///
+/// Behavioral notes:
+/// - Append-only: New entries are created on each edit, never updated
+/// - Permanently deleted when parent todo is permanently deleted or when
+/// user account is deleted
+/// - Sorted by created_at descending (most recent first) when viewing history
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged todo's {@link todo_app_todos.id}.
+  todo_app_todo_id String
+  
+  /// Title value after this edit. Null if title was not changed in this edit.
+  title String?
+  
+  /// Description value after this edit. Null if description was not changed in
+  /// this edit.
+  description String?
+  
+  /// Start date value after this edit. Null if start date was not changed in
+  /// this edit.
+  started_at DateTime?
+  
+  /// Due date value after this edit. Null if due date was not changed in this
+  /// edit.
+  due_at DateTime?
+  
+  /// Completion status after this edit. Null if completion status was not
+  /// changed in this edit.
+  completed Boolean?
+  
+  /// Timestamp when this edit was made.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}

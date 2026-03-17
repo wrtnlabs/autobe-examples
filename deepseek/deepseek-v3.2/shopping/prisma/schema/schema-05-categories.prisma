@@ -1,0 +1,240 @@
+/// Main category table storing all product categories and subcategories with
+/// hierarchical relationships.
+///
+/// Categories serve as logical product groupings for marketplace
+/// organization, supporting one-level nesting of subcategories within parent
+/// categories. Each category includes a name, description, and status to
+/// control visibility and lifecycle. Categories are exclusively managed by
+/// platform administrators for consistent product classification.
+///
+/// Subcategories inherit the organizational structure of parent categories
+/// while providing more specific product grouping. The hierarchical
+/// relationship enables efficient navigation from broad product categories
+/// to specific subcategories.
+///
+/// {@link ecommerce_mall_administrators.id} as creator and modifier for
+/// administrator management tracking.
+/// {@link ecommerce_mall_categories.id} for parent-child relationships
+/// enabling one-level subcategory nesting.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category for hierarchical nesting. References parent category's
+  /// {@link ecommerce_mall_categories.id}. Null for top-level categories.
+  parent_id String?
+  
+  /// Administrator who created this category. References {@link
+  /// ecommerce_mall_administrators.id}.
+  created_by String
+  
+  /// Administrator who last modified this category. References {@link
+  /// ecommerce_mall_administrators.id}.
+  updated_by String
+  
+  /// Category name for product classification. Must be clear and descriptive
+  /// for customer navigation.
+  name String
+  
+  /// Detailed description explaining the category scope and included product
+  /// types.
+  description String
+  
+  /// Category lifecycle status. Active categories are visible in product
+  /// listings, Archived categories are hidden but preserved, Deleted
+  /// categories are soft-deleted.
+  status String
+  
+  /// Timestamp when this category was created.
+  created_at DateTime
+  
+  /// Timestamp when this category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this category was soft-deleted. Null for active categories.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  creator ecommerce_mall_administrators @relation("ecommerce_mall_categories_of_created_by", fields: [created_by], references: [id], onDelete: Cascade)
+  modifier ecommerce_mall_administrators @relation("ecommerce_mall_categories_of_updated_by", fields: [updated_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children ecommerce_mall_categories[] @relation("recursive")
+  categorySnapshots ecommerce_mall_category_snapshots[]
+  uncategorizedProducts ecommerce_mall_uncategorized_products[]
+  products ecommerce_mall_products[]
+  productSnapshots ecommerce_mall_product_snapshots[]
+  administratorActionLogs ecommerce_mall_administrator_action_logs[]
+  administratorActions ecommerce_mall_administrator_category_actions[]
+  platformOversightLogs ecommerce_mall_administrator_platform_oversight_logs[]
+  administratorDecisionRecords ecommerce_mall_administrator_decision_records[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([updated_by])
+  @@unique([name])
+  @@index([parent_id, status])
+  @@index([created_by, created_at])
+  @@index([status, updated_at])
+}
+
+/// Historical snapshots of category changes, preserving previous states for
+/// audit trails.
+///
+/// Created automatically whenever categories are modified, archived, or
+/// deleted by administrators. This table serves as an immutable audit trail
+/// that captures the complete state of a category at specific points in
+/// time, including all fields such as name, description, status, and parent
+/// relationships.
+///
+/// Each snapshot records which administrator made the change and when it
+/// occurred, providing full traceability for category management operations.
+/// These records are preserved even if the original category is deleted,
+/// maintaining compliance with the platform's Snapshot Principle for
+/// financial transparency.
+///
+/// {@link ecommerce_mall_categories} for the current category state.
+/// {@link ecommerce_mall_administrators} for administrator information.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_category_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The category that was snapshotted. {@link ecommerce_mall_categories.id}.
+  ecommerce_mall_category_id String
+  
+  /// The administrator who made the change that triggered the snapshot. {@link
+  /// ecommerce_mall_administrators.id}.
+  ecommerce_mall_administrator_id String
+  
+  /// Category name as it existed at snapshot time.
+  name String
+  
+  /// Category description as it existed at snapshot time.
+  description String?
+  
+  /// Category status at snapshot time. Must be one of: 'Active', 'Archived',
+  /// 'Deleted'.
+  status String
+  
+  /// Name of parent category at snapshot time, denormalized for historical
+  /// reference. Null if category was top-level.
+  parent_category_name String?
+  
+  /// Timestamp when this snapshot was created. Represents the exact moment the
+  /// category state was captured.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated. Typically null for
+  /// immutable snapshots.
+  updated_at DateTime?
+  
+  /// Timestamp when this snapshot was soft-deleted. Allows for audit trail
+  /// preservation while supporting data retention policies.
+  deleted_at DateTime?
+  
+  /// Optional reason for the change that triggered this snapshot, provided by
+  /// the administrator.
+  change_reason String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators @relation(fields: [ecommerce_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id, created_at], map: "ecommerce_mall_category_snapshots_ecommerce_mall_categ_c05c0894")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_id, created_at], map: "ecommerce_mall_category_snapshots_ecommerce_mall_admin_a6a6dfa1")
+  @@index([status, created_at])
+}
+
+/// Tracks products that have become uncategorized due to category deletion,
+/// enabling administrators to reclassify them properly.
+///
+/// When a category is deleted (status changed to 'Deleted'), all products
+/// previously classified under that category become uncategorized. This
+/// table captures those products with references to the deleted category for
+/// historical context. Administrators can later review this list and
+/// reassign products to appropriate active categories.
+///
+/// Each record represents a single product that needs reclassification. The
+/// product remains in this table until an administrator assigns it to a new
+/// category, at which point the reclassified_at timestamp is set and the
+/// administrator responsible is recorded.
+///
+/// This table ensures no products are lost in classification limbo and
+/// provides an audit trail of category deletion impacts on product
+/// organization. {@link ecommerce_mall_products.id}, {@link
+/// ecommerce_mall_categories.id}, {@link ecommerce_mall_administrators.id}
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_uncategorized_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product that became uncategorized. {@link ecommerce_mall_products.id}
+  product_id String
+  
+  /// The category that was deleted, causing the product to become
+  /// uncategorized. This is a historical reference to the category at the time
+  /// of deletion. {@link ecommerce_mall_categories.id}
+  category_id String
+  
+  /// The administrator who reclassified the product into a new category, if
+  /// reclassification has occurred. {@link ecommerce_mall_administrators.id}
+  administrator_id String?
+  
+  /// When the product became uncategorized due to category deletion.
+  created_at DateTime
+  
+  /// When the product was reclassified into a new category by an
+  /// administrator. Null indicates the product is still awaiting
+  /// reclassification.
+  reclassified_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators? @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([administrator_id])
+  @@unique([product_id])
+  @@index([product_id, created_at])
+  @@index([category_id])
+  @@index([reclassified_at])
+}

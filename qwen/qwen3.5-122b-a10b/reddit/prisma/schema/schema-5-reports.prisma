@@ -1,0 +1,129 @@
+/// User-submitted content violation reports with status workflow
+/// (pending/approved/dismissed), linking to reported posts or comments via
+/// polymorphic reference, including reason text, timestamps, and moderator
+/// review tracking. Reports enable community moderation by allowing users to
+/// flag inappropriate content for moderator review.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who submitted the report. {@link reddit_platform_members.id}.
+  reporter_id String
+  
+  /// Reported post, if the report targets a post. Null for comment reports.
+  /// {@link reddit_platform_posts.id}.
+  post_id String?
+  
+  /// Reported comment, if the report targets a comment. Null for post reports.
+  /// {@link reddit_platform_comments.id}.
+  comment_id String?
+  
+  /// Moderator who reviewed and resolved the report. Null for pending reports.
+  /// {@link reddit_platform_members.id}.
+  reviewer_id String?
+  
+  /// Text reason provided by the reporter explaining why the content violates
+  /// community rules.
+  reason String
+  
+  /// Current status of the report: pending (awaiting review), approved
+  /// (content deleted), or dismissed (content kept).
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated (e.g., status changed).
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_platform_members @relation("reddit_platform_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts? @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  reviewer reddit_platform_members? @relation("reddit_platform_reports_of_reviewer_id", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_platform_report_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  @@unique([reporter_id, post_id])
+  @@unique([reporter_id, comment_id])
+  @@index([status])
+  @@index([post_id])
+  @@index([comment_id])
+  @@index([created_at])
+}
+
+/// Audit trail capturing status change history for reports, enabling
+/// moderation analytics and compliance tracking of report lifecycle
+/// transitions. Each snapshot records the state of a report at a specific
+/// point in time, including status (pending/approved/dismissed), reason
+/// text, and moderator reviewer information. This table supports historical
+/// analysis of moderation workflows and regulatory compliance requirements.
+///
+/// Relationships:
+/// - Belongs to {@link reddit_platform_reports} - one report has many snapshots
+/// - Snapshots are append-only records of status transitions
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_report_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target report's {@link reddit_platform_reports.id}. Each snapshot belongs
+  /// to exactly one report.
+  reddit_platform_report_id String
+  
+  /// Member who reviewed and resolved the report at snapshot time. Nullable
+  /// for pending reports awaiting moderation. {@link
+  /// reddit_platform_members.id}.
+  moderator_reviewed_by String?
+  
+  /// Report status at snapshot time. Values: pending (awaiting review),
+  /// approved (content deleted), dismissed (content kept).
+  status String
+  
+  /// Report reason text captured at snapshot time. Nullable if reason was not
+  /// provided or removed.
+  reason String?
+  
+  /// Timestamp when this snapshot was created, marking the point-in-time state
+  /// capture.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_platform_reports @relation(fields: [reddit_platform_report_id], references: [id], onDelete: Cascade)
+  moderator reddit_platform_members? @relation(fields: [moderator_reviewed_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([moderator_reviewed_by])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_report_id, created_at], map: "reddit_platform_report_snapshots_reddit_platform_repor_1c7bcc96")
+}

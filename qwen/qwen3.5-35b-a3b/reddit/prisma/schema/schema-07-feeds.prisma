@@ -1,0 +1,213 @@
+/// Materialized view for feed performance optimization.
+///
+/// Stores pre-computed post listings for three feed types: home feed
+/// (subscribed communities only), popular feed (all communities), and
+/// community feed (single community). Each cache entry represents a post in
+/// a specific feed context with pre-calculated sort order and metrics.
+///
+/// This is a read-only denormalized table used for fast paginated browsing.
+/// Cache entries are regenerated periodically or on content changes. The
+/// table uses materialized view pattern with @material directive for
+/// PostgreSQL.
+///
+/// Referenced entities:
+/// - {@link reddit_community_posts} - Source of post data
+/// - {@link reddit_community_members} - Author reference
+/// - {@link reddit_community_communities} - Community reference for feed
+/// context
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_feed_caches {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source post's {@link reddit_community_posts.id}. References the post
+  /// included in the cache.
+  reddit_community_post_id String
+  
+  /// When feed_type is 'home': the {@link reddit_community_communities.id} for
+  /// the subscribed community. NULL for popular and community feeds.
+  reddit_community_community_id String?
+  
+  /// Feed type discriminator: 'home' (subscribed communities only), 'popular'
+  /// (all communities), or 'community' (single community).
+  feed_type String
+  
+  /// Pre-calculated vote score (upvotes - downvotes) for sorting.
+  vote_score Int
+  
+  /// Total comment count on the post for display in feed list.
+  comment_count Int
+  
+  /// Sort order value for pagination. For 'hot' feed: computed from recent
+  /// activity and votes. For 'new': post created_at. For 'top': aggregated
+  /// score over time period. For 'controversial': variance-based metric.
+  sort_order Int
+  
+  /// Timestamp when this cache entry was last refreshed. Used for cache
+  /// invalidation.
+  last_refreshed_at DateTime
+  
+  /// Cache entry creation timestamp.
+  created_at DateTime
+  
+  /// Cache entry update timestamp (always same as created_at for materialized
+  /// views).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities? @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_community_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_post_id, feed_type, reddit_community_community_id], map: "reddit_community_feed_caches_reddit_community_post_id__3dbaf314")
+  @@index([feed_type])
+  @@index([sort_order])
+}
+
+/// Pre-calculated metrics for sorting algorithms (hot and controversial)
+/// applied to posts in feed displays.
+///
+/// Stores vote counts and computed scores that enable efficient feed sorting
+/// without real-time vote aggregation:
+///
+/// - hot_score: Computed score combining vote score and recency factor for
+/// "hot" feed sorting (recent posts with many upvotes appear first)
+/// - controversy_score: Computed metric for controversial sorting (posts
+/// with many votes but score close to zero)
+/// - total_upvotes: Count of upvotes received by the post
+/// - total_downvotes: Count of downvotes received by the post
+///
+/// This table is updated when votes occur to maintain pre-calculated values
+/// for fast feed queries.
+///
+/// @namespace Feeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_feed_sorting_metrics {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {@link reddit_community_posts.id}. One metric entry per
+  /// post.
+  reddit_community_post_id String
+  
+  /// Computed hot score combining vote score and recency factor for hot feed
+  /// sorting.
+  hot_score Float
+  
+  /// Computed controversy score for controversial feed sorting (ratio of total
+  /// votes to score difference from zero).
+  controversy_score Float
+  
+  /// Total count of upvotes received by the post.
+  total_upvotes Int
+  
+  /// Total count of downvotes received by the post.
+  total_downvotes Int
+  
+  /// Timestamp of the most recent vote on this post.
+  last_vote_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_post_id], map: "reddit_community_feed_sorting_metrics_reddit_community_c8f71b2f")
+  @@index([hot_score])
+  @@index([controversy_score])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, updated_at], map: "reddit_community_feed_sorting_metrics_reddit_community_6dddcfa5")
+}
+
+/// Track feed query history for analytics and optimization purposes.
+///
+/// This subsidiary table records every feed query made by users across all
+/// feed types (Home, Popular, Community) and sorting options (Hot, New, Top,
+/// Controversial). Each record captures the pagination parameters (page
+/// number, page size) used in the query.
+///
+/// The table enables:
+/// - Query pattern analysis to optimize feed performance
+/// - User behavior tracking for personalization
+/// - Detection of unusual query patterns for abuse prevention
+/// - Analytics on which feeds and sorting options are most popular
+///
+/// Referenced by the Feeds domain for performance monitoring and
+/// optimization. The table is managed automatically by the feed system and
+/// not directly accessed by users.
+///
+/// @namespace Feeds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_feed_queries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who made the feed query. {@link reddit_community_members.id}
+  member_id String
+  
+  /// Type of feed being queried (Home, Popular, Community)
+  feed_type String
+  
+  /// Sorting option used for the feed query (Hot, New, Top, Controversial)
+  sort_option String
+  
+  /// Community ID for Community feed type queries, null for Home and Popular
+  /// feeds
+  community_id String?
+  
+  /// Page number requested in the pagination (1-indexed)
+  page_number Int
+  
+  /// Number of posts per page requested
+  page_size Int
+  
+  /// Timestamp when the feed query was made
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated
+  updated_at DateTime
+  
+  /// Soft delete timestamp for analytics data lifecycle management
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, created_at])
+  @@index([feed_type, sort_option])
+  @@index([created_at])
+}

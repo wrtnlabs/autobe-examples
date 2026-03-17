@@ -1,0 +1,218 @@
+/// Audit logs tracking system-wide activities for investigation, compliance,
+/// and debugging purposes.
+///
+/// Records all significant operations across the platform including user
+/// account activities, post operations (creation, editing, deletion),
+/// comment activities, voting actions, community management, moderation
+/// actions, and report handling. Each log entry captures the actor who
+/// performed the action, the target entity affected (posts, comments,
+/// communities, or reports), the specific operation performed, and
+/// contextual metadata.
+///
+/// Referenced by administrative tools and compliance dashboards. Logs are
+/// append-only immutable records that support temporal queries and
+/// actor-based investigation workflows.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_system_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Actor who performed the action {@link reddit_community_members.id}. Can
+  /// be a member account or guest session.
+  actor_id String?
+  
+  /// Target post affected by the action {@link reddit_community_posts.id}.
+  /// Null if action not related to a post.
+  target_post_id String?
+  
+  /// Target comment affected by the action {@link
+  /// reddit_community_comments.id}. Null if action not related to a comment.
+  target_comment_id String?
+  
+  /// Target community affected by the action {@link
+  /// reddit_community_communities.id}. Null if action not related to a
+  /// community.
+  target_community_id String?
+  
+  /// Target report affected by the action {@link reddit_community_reports.id}.
+  /// Null if action not related to a report.
+  target_report_id String?
+  
+  /// Category of activity: account_signup, account_login, account_delete,
+  /// post_create, post_edit, post_delete, comment_create, comment_edit,
+  /// comment_delete, vote_upvote, vote_downvote, vote_remove,
+  /// community_create, community_edit, moderator_add, moderator_remove,
+  /// ban_add, ban_remove, report_create, report_approve, report_dismiss
+  activity_type String
+  
+  /// Specific action performed within the activity type category
+  action_performed String
+  
+  /// Type of target entity: member, post, comment, community, report, or null
+  /// for system-wide actions
+  target_type String?
+  
+  /// JSON string containing additional context such as before/after values,
+  /// error messages, IP addresses, or other relevant audit details
+  metadata String?
+  
+  /// Timestamp when the log entry was created
+  created_at DateTime
+  
+  /// Timestamp when the log entry was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the log entry was soft deleted (if applicable)
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  actor reddit_community_members? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  targetPost reddit_community_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
+  targetComment reddit_community_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
+  targetCommunity reddit_community_communities? @relation(fields: [target_community_id], references: [id], onDelete: Cascade)
+  targetReport reddit_community_reports? @relation(fields: [target_report_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([actor_id, created_at])
+  @@index([target_post_id, created_at])
+  @@index([target_comment_id, created_at])
+  @@index([target_community_id, created_at])
+  @@index([target_report_id, created_at])
+  @@index([activity_type, created_at])
+  @@index([target_type, created_at])
+}
+
+/// Global system configuration key-value pairs for platform-wide settings
+/// not tied to specific business entities. This table stores system-level
+/// configuration parameters such as feature flags, rate limit thresholds,
+/// platform-wide defaults, and administrative settings. Each configuration
+/// item has a unique key for lookup and a string value for the setting.
+/// Managed by system administrators through dedicated configuration
+/// endpoints.
+///
+/// Key usage scenarios:
+/// - Feature flag toggles for gradual rollouts
+/// - Platform-wide limits (max posts per day, max comments per hour)
+/// - Default sorting preferences
+/// - Moderation thresholds and rules
+/// - System maintenance windows
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_system_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique configuration key identifier for the setting. Used to lookup and
+  /// retrieve configuration values. Must be unique across all records.
+  key String
+  
+  /// Configuration value as a string. Can store plain values, JSON strings, or
+  /// comma-separated lists depending on the configuration type.
+  value String
+  
+  /// Optional human-readable description of what this configuration setting
+  /// controls. Helps administrators understand the purpose of the setting.
+  description String?
+  
+  /// Timestamp when this configuration record was created.
+  created_at DateTime
+  
+  /// Timestamp when this configuration record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this configuration record was soft-deleted (for audit
+  /// trail). Null if still active.
+  deleted_at DateTime?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Rate limiting counters tracking API request counts per user and endpoint
+/// for throttling protection.
+///
+/// This table supports the system-wide rate limiting mechanism that protects
+/// API endpoints from abuse and ensures fair usage across all members. Each
+/// record tracks how many requests a specific user has made to a specific
+/// endpoint within a configurable time window.
+///
+/// Key relationships:
+/// - Belongs to a {@link reddit_community_members} user who made the requests
+/// - Tracks rate limit state per endpoint (e.g., /api/posts, /api/comments,
+/// /api/votes)
+///
+/// Usage patterns:
+/// - Created when a user first hits a rate-limited endpoint
+/// - Updated (request_count incremented) on each subsequent request within
+/// the same window
+/// - Checked by API middleware before allowing request processing
+/// - Automatically cleaned up when window expires
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_rate_limit_counters {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link reddit_community_members.id} who made the API requests.
+  reddit_community_member_id String
+  
+  /// API endpoint path being rate-limited (e.g., /api/posts, /api/comments,
+  /// /api/votes). Used for efficient endpoint-based queries.
+  endpoint String
+  
+  /// Number of requests made within the current rate limit window. Incremented
+  /// on each request and reset when window expires.
+  request_count Int
+  
+  /// Start time of the current rate limit window. Requests within
+  /// [window_start, window_end] are counted toward request_count.
+  window_start DateTime
+  
+  /// End time of the current rate limit window. When current time >=
+  /// window_end, counter resets and new window begins.
+  window_end DateTime
+  
+  /// Timestamp when this rate limit counter was first created.
+  created_at DateTime
+  
+  /// Timestamp when this rate limit counter was last updated (request_count
+  /// incremented).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail and cleanup purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, endpoint, window_start], map: "reddit_community_rate_limit_counters_reddit_community__feea5cb2")
+}

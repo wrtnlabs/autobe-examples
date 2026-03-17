@@ -1,0 +1,403 @@
+/// Core file metadata table storing uploaded file information including
+/// storage location, original filename, MIME type, file size, and integrity
+/// checksum. Serves as the central repository for all file uploads across
+/// the platform including user profile avatars, community icons, and post
+/// images.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who uploaded this file. {@link
+  /// reddit_like_members.id}
+  uploaded_by_member_id String
+  
+  /// Absolute or relative path to the file in storage system.
+  storage_path String
+  
+  /// Original filename provided by the user during upload.
+  original_filename String
+  
+  /// MIME type of the file (e.g., image/png, application/pdf).
+  mime_type String
+  
+  /// Size of the file in bytes.
+  file_size_bytes Int
+  
+  /// SHA-256 hash of the file content for integrity verification.
+  checksum_sha256 String
+  
+  /// Timestamp when the file was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the file metadata was last modified.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null if the file record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  uploadedByMember reddit_like_members @relation(fields: [uploaded_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  thumbnails reddit_like_attachment_thumbnails[]
+  references reddit_like_attachment_references[]
+  accessLogs reddit_like_attachment_access_logs[]
+  communityIcon reddit_like_communities?
+  postImageContents reddit_like_post_image_contents[] @relation("reddit_like_post_image_contents_of_attachment_id")
+  postImageThumbnailContents reddit_like_post_image_contents[] @relation("reddit_like_post_image_contents_of_thumbnail_attachment_id")
+  postImages reddit_like_post_images[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([uploaded_by_member_id, created_at])
+  @@index([mime_type])
+}
+
+/// Generated thumbnail variants for image attachments. Stores multiple
+/// size/quality variants of uploaded images to enable optimized delivery
+/// based on client requirements. Each row represents a specific thumbnail
+/// configuration (dimensions, quality, format) for a source image. {@link
+/// reddit_like_attachments}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_thumbnails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source attachment's {@link reddit_like_attachments.id}.
+  reddit_like_attachment_id String
+  
+  /// Thumbnail width in pixels.
+  width Int
+  
+  /// Thumbnail height in pixels.
+  height Int
+  
+  /// Compression quality percentage (1-100). Higher values mean better quality
+  /// but larger file size.
+  quality Int
+  
+  /// Image format of the thumbnail. Values: jpeg, png, webp.
+  format String
+  
+  /// File system path or object storage key where the thumbnail file is stored.
+  storage_path String
+  
+  /// Thumbnail file size in bytes for cache management and bandwidth
+  /// estimation.
+  file_size Int
+  
+  /// When the thumbnail was generated.
+  created_at DateTime
+  
+  /// When the thumbnail record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachment reddit_like_attachments @relation(fields: [reddit_like_attachment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_attachment_id, width, height, quality, format], map: "reddit_like_attachment_thumbnails_reddit_like_attachme_1e3126b1")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_attachment_id, created_at], map: "reddit_like_attachment_thumbnails_reddit_like_attachme_975a5f99")
+}
+
+/// Polymorphic junction table serving as the main entity for linking file
+/// attachments to various business entities in the system. This table
+/// establishes the base relationship between an attachment and the type of
+/// entity it references (profile avatar, community icon, post image). The
+/// actual entity-specific link is stored in subtype tables following the
+/// polymorphic ownership pattern. Supports attachment reuse across different
+/// entity types while maintaining referential integrity.
+///
+/// {@link reddit_like_attachments} - Parent attachment record
+/// {@link reddit_like_attachment_reference_of_profiles} - Profile avatar links
+/// {@link reddit_like_attachment_reference_of_communities} - Community
+/// icon/banner links
+/// {@link reddit_like_attachment_reference_of_posts} - Post image links
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_references {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent attachment being referenced. {@link reddit_like_attachments.id}
+  attachment_id String
+  
+  /// Type of entity this attachment references: 'profile' for user avatars,
+  /// 'community' for community icons/banners, 'post' for post images.
+  /// Determines which subtype table contains the actual entity link.
+  reference_type String
+  
+  /// Timestamp when the attachment reference was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachment reddit_like_attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  profileReference reddit_like_attachment_reference_of_profiles?
+  communityReference reddit_like_attachment_reference_of_communities?
+  postReference reddit_like_attachment_reference_of_posts?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([attachment_id, reference_type], map: "reddit_like_attachment_references_attachment_id_refere_a2cc88ad")
+  @@index([reference_type, created_at])
+}
+
+/// Audit trail tracking file access events for security compliance and
+/// access monitoring.
+///
+/// Records every access to attachment files including who accessed them,
+/// when, and from where. Supports security analysis, compliance auditing,
+/// and usage analytics. References the accessed attachment and the actor who
+/// performed the access (guest, member, moderator, or owner).
+///
+/// {@link reddit_like_attachments}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_access_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced attachment's {@link reddit_like_attachments.id}.
+  reddit_like_attachment_id String
+  
+  /// Actor who accessed the file. Nullable for unauthenticated/guest access.
+  /// {@link reddit_like_members.id} or other actor tables.
+  actor_id String?
+  
+  /// Type of actor who accessed: 'guest', 'member', 'moderator', 'owner', or
+  /// null for system/anonymous access.
+  actor_type String?
+  
+  /// Type of access performed: 'view', 'download', 'thumbnail_view',
+  /// 'metadata_read', etc.
+  access_type String
+  
+  /// IP address from which the access originated. Nullable for
+  /// privacy-compliant logging.
+  ip_address String?
+  
+  /// User agent string of the client browser/application. Nullable for
+  /// privacy-compliant logging.
+  user_agent String?
+  
+  /// HTTP referer header indicating the source page of the access request.
+  referer String?
+  
+  /// Timestamp when the access event occurred.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit retention policies. Null if record is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachment reddit_like_attachments @relation(fields: [reddit_like_attachment_id], references: [id], onDelete: Cascade)
+  actor reddit_like_members? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_attachment_id, created_at], map: "reddit_like_attachment_access_logs_reddit_like_attachm_425351d9")
+  @@index([actor_id, created_at])
+  @@index([access_type, created_at])
+  @@index([created_at])
+  @@index([ip_address])
+}
+
+/// Subtype table for polymorphic attachment references specifically linking
+/// attachments to user profiles as avatar images.
+///
+/// This table implements the subtype pattern for the attachment reference
+/// polymorphic relationship, where attachment_references serves as the main
+/// entity with a reference_type discriminator, and this table provides the
+/// profile-specific linkage. Each record represents a single avatar image
+/// attachment for a specific user profile.
+///
+/// The 1:1 relationship with attachment_references ensures that each
+/// attachment reference can be associated with at most one profile,
+/// maintaining data integrity for the polymorphic pattern.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_reference_of_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged attachment reference's {@link
+  /// reddit_like_attachment_references.id}. Links to the main polymorphic
+  /// attachment reference entity.
+  reddit_like_attachment_reference_id String
+  
+  /// Belonged member's {@link reddit_like_members.id}. The member profile that
+  /// owns this avatar attachment.
+  profile_id String
+  
+  /// When the attachment reference link was created.
+  created_at DateTime
+  
+  /// When the attachment reference link was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachmentReference reddit_like_attachment_references @relation(fields: [reddit_like_attachment_reference_id], references: [id], onDelete: Cascade)
+  member reddit_like_members @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_attachment_reference_id], map: "reddit_like_attachment_reference_of_profiles_reddit_li_93f161a5")
+  // spellchecker: ignore-next-line
+  @@index([profile_id, created_at], map: "reddit_like_attachment_reference_of_profiles_profile_i_6625f3bc")
+}
+
+/// Subtype table linking attachment references to communities for icons and
+/// banners. This table extends the polymorphic attachment_references entity
+/// to specifically associate files with communities, supporting community
+/// branding elements like icons and banner images. Each record represents a
+/// single attachment reference assigned to a community.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_reference_of_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the attachment reference entity. {@link
+  /// reddit_like_attachment_references.id}
+  attachment_reference_id String
+  
+  /// Target community for this attachment. {@link reddit_like_communities.id}
+  community_id String
+  
+  /// When this attachment reference was created.
+  created_at DateTime
+  
+  /// When this attachment reference was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachmentReference reddit_like_attachment_references @relation(fields: [attachment_reference_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([attachment_reference_id], map: "reddit_like_attachment_reference_of_communities_attach_4d80f859")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "reddit_like_attachment_reference_of_communities_commun_fee382e3")
+}
+
+/// Subtype table linking attachment references to posts for image content.
+/// Represents the post-specific implementation of the polymorphic attachment
+/// reference pattern.
+///
+/// This table maintains a 1:1 relationship with
+/// reddit_like_attachment_references where the reference_type is 'post'. It
+/// establishes the concrete link between an attachment and a specific post
+/// entity, enabling image content within posts.
+///
+/// The separation into subtype tables allows type-safe querying and
+/// maintains referential integrity with specific entity types.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_attachment_reference_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent attachment reference's {@link
+  /// reddit_like_attachment_references.id}. Establishes 1:1 relationship with
+  /// the polymorphic attachment reference.
+  attachment_reference_id String
+  
+  /// Target post's {@link reddit_like_posts.id}. Links the attachment to a
+  /// specific post.
+  post_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  attachmentReference reddit_like_attachment_references @relation(fields: [attachment_reference_id], references: [id], onDelete: Cascade)
+  post reddit_like_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id])
+  // spellchecker: ignore-next-line
+  @@unique([attachment_reference_id], map: "reddit_like_attachment_reference_of_posts_attachment_r_98255251")
+}

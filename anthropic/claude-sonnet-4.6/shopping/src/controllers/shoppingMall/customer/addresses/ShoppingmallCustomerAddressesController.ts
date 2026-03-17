@@ -1,0 +1,290 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IPageIShoppingMallCustomerAddress } from "../../../../api/structures/IPageIShoppingMallCustomerAddress";
+import { IShoppingMallCustomerAddress } from "../../../../api/structures/IShoppingMallCustomerAddress";
+import { CustomerAuth } from "../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { deleteShoppingMallCustomerAddressesAddressId } from "../../../../providers/deleteShoppingMallCustomerAddressesAddressId";
+import { getShoppingMallCustomerAddressesAddressId } from "../../../../providers/getShoppingMallCustomerAddressesAddressId";
+import { patchShoppingMallCustomerAddresses } from "../../../../providers/patchShoppingMallCustomerAddresses";
+import { postShoppingMallCustomerAddresses } from "../../../../providers/postShoppingMallCustomerAddresses";
+import { putShoppingMallCustomerAddressesAddressId } from "../../../../providers/putShoppingMallCustomerAddressesAddressId";
+
+@Controller("/shoppingMall/customer/addresses")
+export class ShoppingmallCustomerAddressesController {
+  /**
+   * Create a new shipping address for the authenticated customer.
+   *
+   * This operation adds a new delivery destination to the authenticated customer's personal address book. The customer provides all required fields — recipient name, contact phone number, street address, city, state or province, postal code, and country — along with an optional secondary address line and a flag indicating whether this address should become the customer's default shipping address.
+   *
+   * The new address is stored in the `shopping_mall_customer_addresses` table and associated exclusively with the requesting customer via the `shopping_mall_customer_id` foreign key. Address ownership is enforced at all times: a customer may only manage their own addresses, and this endpoint will always associate the created address with the authenticated customer's identity derived from the session context.
+   *
+   * If the `is_default` flag is set to `true`, the system designates this address as the customer's preferred shipping destination. Only one address per customer may be marked as default at any time; the application layer ensures this constraint is maintained when the new address is marked as default. The default address is pre-selected during checkout to simplify the ordering process.
+   *
+   * The `address_line2` field is optional and may be used to provide apartment, suite, unit, or floor information. All other address fields are required and must be non-empty. The `country` field should contain an ISO 3166-1 alpha-2 country code (e.g., 'US', 'KR').
+   *
+   * Upon successful creation, the full address record is returned including the generated UUID (`id`), all provided address fields, the `is_default` flag, and the `created_at` / `updated_at` timestamps. The returned address becomes immediately available for selection during checkout.
+   *
+   * Related operations:
+   * - `GET /addresses/{addressId}` — Retrieve a specific saved address by ID.
+   * - `PATCH /addresses` — List all saved addresses for the authenticated customer.
+   * - `PUT /addresses/{addressId}` — Update an existing saved address.
+   * - `DELETE /addresses/{addressId}` — Remove a saved address from the address book.
+   *
+   * @param connection
+   * @param body Details of the new shipping address to create, including recipient information, full address fields, and default designation flag.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the requesting user and verify they hold the customer role. Extract the customer's UUID from the session context.
+   *
+   * 2. Validate all required fields in the request body: recipient_name, phone, address_line1, city, state, postal_code, country must all be present and non-empty strings. address_line2 is optional (nullable). is_default must be a boolean.
+   *
+   * 3. If is_default is true: wrap the following in a database transaction:
+   *    a. Set is_default = false on all existing active (deleted_at IS NULL) addresses for this customer.
+   *    b. Insert the new address record with is_default = true.
+   *
+   * 4. If is_default is false: simply insert the new address record with is_default = false.
+   *
+   * 5. Generate a new UUID for the id field. Set shopping_mall_customer_id to the authenticated customer's UUID. Set created_at and updated_at to the current UTC timestamp. Set deleted_at to NULL.
+   *
+   * 6. Return the fully populated address record (all columns) as the response.
+   *
+   * Error handling:
+   * - 401 Unauthorized if no valid customer session is present.
+   * - 422 Unprocessable Entity if any required field is missing or empty.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IShoppingMallCustomerAddress.ICreate,
+  ): Promise<IShoppingMallCustomerAddress> {
+    try {
+      return await postShoppingMallCustomerAddresses({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated list of the currently authenticated customer's saved shipping addresses.
+   *
+   * This operation returns all active shipping addresses belonging to the requesting customer, as stored in the `shopping_mall_customer_addresses` table. Each address record includes the recipient's full name, contact phone number, full street-level delivery details (address_line1, optional address_line2, city, state, postal_code, country), and a flag indicating whether the address is currently designated as the customer's default shipping address (`is_default`).
+   *
+   * Addresses are strictly private to the owning customer. The system enforces ownership at all times: only the authenticated customer who created an address may view it. No other customer, seller, or unauthenticated user can access another customer's address list. The customer identity is derived from the active session, so no customer identifier needs to be supplied in the request.
+   *
+   * Addresses that have been removed by the customer (records where `deleted_at` is not null) are excluded from the results. This preserves the integrity of historical order records that may reference previously used addresses, while presenting only the customer's current active address book.
+   *
+   * The response supports pagination so that customers with a large number of saved addresses can browse them in manageable pages. Optional filtering by default status is supported through the request body. Results are ordered by creation time (`created_at`) by default, with the most recently added address appearing first.
+   *
+   * This endpoint is typically called when a customer manages their address book in account settings, or when the checkout flow needs to present the customer's saved addresses for selection. If a customer has no saved addresses, an empty paginated result is returned. Related operations include `POST /addresses` to add a new address, `PUT /addresses/{addressId}` to update an existing address, and `DELETE /addresses/{addressId}` to remove an address.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for filtering the customer's saved addresses
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the request: extract the customer identity from the active JWT session. Reject unauthenticated requests with 401.
+   *
+   * 2. Query the `shopping_mall_customer_addresses` table filtering by:
+   *    - `shopping_mall_customer_id` = authenticated customer's ID
+   *    - `deleted_at IS NULL` (active addresses only)
+   *
+   * 3. Apply optional filters from request body:
+   *    - If `isDefault` filter is provided, add `is_default = true/false` condition.
+   *    - If search keyword is provided, apply trigram search on `recipient_name` or `address_line1` using GIN indexes.
+   *
+   * 4. Apply ordering:
+   *    - Default: `created_at DESC` (most recently added first).
+   *    - Support sorting by `created_at` ASC/DESC as requested.
+   *
+   * 5. Apply pagination using the `page` and `limit` parameters from the request body. Return both the paginated data and pagination metadata (total count, current page, page size).
+   *
+   * 6. Map each result row to the `IShoppingMallCustomerAddress.ISummary` DTO including: id, recipient_name, phone, address_line1, address_line2, city, state, postal_code, country, is_default, created_at, updated_at.
+   *
+   * 7. Return the paginated response as `IPageIShoppingMallCustomerAddress.ISummary`.
+   *
+   * Edge cases:
+   * - If the customer has no active addresses, return an empty data array with total count of 0.
+   * - Ensure that filtering by `is_default = true` with no default set returns an empty result gracefully.
+   * - The `address_line2` field may be null; handle nullable mapping correctly.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IShoppingMallCustomerAddress.IRequest,
+  ): Promise<IPageIShoppingMallCustomerAddress.ISummary> {
+    try {
+      return await patchShoppingMallCustomerAddresses({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single saved shipping address belonging to the currently authenticated customer.
+   *
+   * This operation returns the complete details of one shipping address record from the `shopping_mall_customer_addresses` table, identified by its UUID. The response includes all address fields: recipient name, contact phone number, primary and optional secondary address lines, city, state or province, postal code, country (stored as an ISO 3166-1 alpha-2 code such as 'US' or 'KR'), the `is_default` flag indicating whether this is the customer's currently designated default shipping address, and the timestamps for when the record was created and last updated.
+   *
+   * Only the customer who owns the address may retrieve it. The system enforces address ownership at all times — if the requested address belongs to a different customer, the request is rejected. This mirrors the business rule that each customer's shipping addresses are private and inaccessible to any other user, seller, or administrator.
+   *
+   * Address records that have been removed by the customer (i.e., those with a non-null `deleted_at` timestamp) are treated as non-existent for the purposes of this operation. A request for such an address results in a not-found response, preserving the expected behavior that the customer's active address book contains only current, un-removed entries.
+   *
+   * To retrieve the full list of a customer's saved addresses, use `GET /addresses`. To add a new shipping address, use `POST /addresses`. To update an existing address, use `PUT /addresses/{addressId}`. To remove an address, use `DELETE /addresses/{addressId}`. To designate a default address, use `PUT /addresses/{addressId}/default`.
+   *
+   * @param connection
+   * @param addressId The UUID of the target shipping address to retrieve. Must belong to the authenticated customer and must not have been removed.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the request as a 'customer' actor. Extract the customer's ID from the session/JWT.
+   * 2. Query the shopping_mall_customer_addresses table for a record where:
+   *    - id = addressId (UUID path parameter)
+   *    - shopping_mall_customer_id = authenticated customer's ID (ownership check)
+   *    - deleted_at IS NULL (exclude soft-deleted records)
+   * 3. If no matching record is found (either non-existent, owned by another customer, or soft-deleted), return a 404 Not Found error.
+   * 4. Map the database record to the IShoppingMallCustomerAddress response DTO, including all fields: id, recipient_name, phone, address_line1, address_line2 (nullable), city, state, postal_code, country, is_default, created_at, updated_at.
+   * 5. Return the mapped DTO with HTTP 200 OK.
+   *
+   * Edge cases:
+   * - addressId is a valid UUID format but does not exist → 404
+   * - addressId belongs to a different customer → 404 (do not reveal existence)
+   * - address has been soft-deleted (deleted_at IS NOT NULL) → 404
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":addressId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("addressId")
+    addressId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallCustomerAddress> {
+    try {
+      return await getShoppingMallCustomerAddressesAddressId({
+        customer,
+        addressId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing shipping address saved to the authenticated customer's account.
+   *
+   * This operation allows a customer to modify any combination of fields on one of their saved shipping addresses, identified by the `addressId` path parameter. Updatable fields include the recipient's full name (`recipient_name`), contact phone number (`phone`), primary street address (`address_line1`), optional secondary address line (`address_line2`), city, state or province, postal code, and country (stored as an ISO 3166-1 alpha-2 code such as 'US' or 'KR'). The `is_default` flag may also be updated to designate this address as the customer's preferred shipping destination.
+   *
+   * The system strictly enforces address ownership: the address identified by `addressId` must belong to the currently authenticated customer. Any attempt to update an address that belongs to another customer is rejected outright, regardless of how the request is formed.
+   *
+   * All required fields — `recipient_name`, `phone`, `address_line1`, `city`, `state`, `postal_code`, and `country` — must be present and non-empty in the request body. If any required field is omitted or cleared, the update is rejected and the existing address data is preserved unchanged.
+   *
+   * When `is_default` is set to `true`, the system clears the `is_default` flag on any other address currently designated as the default for this customer, ensuring only one address per customer holds the default designation at any given time (enforced at the application layer as described in the `shopping_mall_customer_addresses` schema).
+   *
+   * Address edits take effect immediately — the updated values are reflected at the next checkout session when the customer selects this address. Importantly, edits do not affect any previously placed orders; the shipping address snapshot captured at order placement time remains intact and is not modified by subsequent address edits.
+   *
+   * This endpoint operates on the `shopping_mall_customer_addresses` table, which records each address's `updated_at` timestamp on every successful write. Only active (non-deleted) addresses may be updated; addresses with a non-null `deleted_at` are treated as removed and cannot be edited.
+   *
+   * To view all saved addresses before updating one, use `GET /addresses`. To add a new address, use `POST /addresses`. To remove an address, use `DELETE /addresses/{addressId}`.
+   *
+   * @param connection
+   * @param addressId The UUID of the customer address record to update (globally unique).
+   * @param body Updated field values for the target shipping address.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the requesting customer from the session token.
+   * 2. Look up the `shopping_mall_customer_addresses` record where `id = addressId` AND `deleted_at IS NULL`.
+   *    - If not found, respond with 404 Not Found.
+   *    - If found but `shopping_mall_customer_id` does not match the authenticated customer's ID, respond with 403 Forbidden.
+   * 3. Validate the request body:
+   *    - `recipient_name`, `phone`, `address_line1`, `city`, `state`, `postal_code`, `country` must all be present and non-empty strings.
+   *    - `address_line2` is optional (may be null or omitted).
+   *    - `country` should be a valid ISO 3166-1 alpha-2 code (validation recommended but not strictly enforced at DB level).
+   *    - `is_default` must be a boolean.
+   *    - Reject with 422 Unprocessable Entity if any required field is missing or empty.
+   * 4. If `is_default` is `true` in the request body:
+   *    - Within a database transaction, set `is_default = false` on all other `shopping_mall_customer_addresses` records belonging to the same customer (where `id != addressId` AND `deleted_at IS NULL` AND `is_default = true`).
+   * 5. Update the target address record with all provided field values and set `updated_at = NOW()`.
+   * 6. Commit the transaction.
+   * 7. Return the full updated `shopping_mall_customer_addresses` record as `IShoppingMallCustomerAddress`.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":addressId")
+  public async update(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("addressId")
+    addressId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallCustomerAddress.IUpdate,
+  ): Promise<IShoppingMallCustomerAddress> {
+    try {
+      return await putShoppingMallCustomerAddressesAddressId({
+        customer,
+        addressId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a saved shipping address from the authenticated customer's address book.
+   *
+   * This operation marks the specified shipping address record as removed from the customer's active address list. The underlying `shopping_mall_customer_addresses` record is retained in the database via a soft deletion mechanism (the `deleted_at` timestamp is set), ensuring that previously placed orders which captured this address at the time of order placement continue to retain a complete and accurate delivery history.
+   *
+   * Only the customer who owns the address may delete it. Each address is strictly private to the customer who created it, and the system enforces this ownership at all times. Any attempt by a customer to delete an address belonging to another account will be rejected with an authorization error.
+   *
+   * If the address being deleted is currently designated as the customer's default shipping address (i.e., its `is_default` flag is `true`), the default designation is removed along with the address. No other address automatically becomes the new default; the customer must manually set a new default if they wish to have one pre-selected at checkout.
+   *
+   * Deleting an address does not impose any restrictions based on past order usage. The business rules explicitly state that the system shall not prevent address deletion solely because it was referenced in a prior order — past orders capture a snapshot of the address at the time of placement and are fully independent of the address book state.
+   *
+   * This operation requires an authenticated customer session. The `addressId` path parameter must correspond to an active (non-deleted) address belonging to the requesting customer.
+   *
+   * @param connection
+   * @param addressId The UUID of the shipping address to be deleted. Must belong to the authenticated customer.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate the requesting customer via JWT session token.
+   * 2. Look up the `shopping_mall_customer_addresses` record by `addressId` (UUID) where `deleted_at IS NULL`.
+   * 3. Verify that the `shopping_mall_customer_id` on the record matches the authenticated customer's ID. If not, reject with a 403 Forbidden error.
+   * 4. If the record does not exist or is already soft-deleted, return a 404 Not Found error.
+   * 5. Set `deleted_at` to the current timestamp to mark the address as soft-deleted (the physical row is preserved for historical order reference integrity).
+   * 6. If `is_default` was `true` on the deleted address, clear the default designation — no other address automatically inherits the default. After deletion, the customer has no default address until they manually designate one.
+   * 7. Update `updated_at` to the current timestamp.
+   * 8. Return HTTP 200 with no body (or 204 No Content).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":addressId")
+  public async erase(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("addressId")
+    addressId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteShoppingMallCustomerAddressesAddressId({
+        customer,
+        addressId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

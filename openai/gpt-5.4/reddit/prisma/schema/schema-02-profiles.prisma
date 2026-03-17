@@ -1,0 +1,127 @@
+/// Public-facing profile records that represent how a member appears to
+/// other users on the platform.
+///
+/// Each profile belongs to exactly one {@link community_platform_members}
+/// record and stores presentation-focused data separate from authentication
+/// credentials and account security attributes. This table intentionally
+/// excludes derived activity metrics, karma, and uploaded file storage
+/// because those belong to other domain tables or are computed from related
+/// records.
+///
+/// Optional media such as avatar images are attached through {@link
+/// community_platform_profile_files}, while this table remains the canonical
+/// source for textual profile identity and biography details.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owned member account's {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Public display name shown on the member's profile and alongside authored
+  /// content.
+  display_name String
+  
+  /// Optional public biography text describing the member's profile identity
+  /// and self-introduction.
+  bio String?
+  
+  /// When the profile record was first created.
+  created_at DateTime
+  
+  /// When the profile record was most recently updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp marking when the profile was removed from active
+  /// use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  files community_platform_profile_files[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_member_id])
+}
+
+/// Stored file records attached to a public profile.
+///
+/// This table keeps uploaded media and file metadata for {@link
+/// community_platform_profiles}, primarily to support optional avatar-style
+/// visual identity without mixing binary asset metadata into the main
+/// profile record. Each file belongs to exactly one profile and is managed
+/// as a supporting resource of that profile.
+///
+/// The model stores only atomic file properties such as type, size, and
+/// access location. Lifecycle timestamps support auditing, soft deletion,
+/// and retention-oriented recovery behavior for profile media.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner profile's {@link community_platform_profiles.id}.
+  community_platform_profile_id String
+  
+  /// Business category of the uploaded profile file, such as avatar image.
+  category String
+  
+  /// Original filename supplied at upload time for user-visible reference and
+  /// audit context.
+  original_name String
+  
+  /// File extension derived from the uploaded asset format.
+  extension String
+  
+  /// MIME content type of the uploaded file used for validation and delivery
+  /// behavior.
+  mime_type String
+  
+  /// File size in bytes.
+  size Int
+  
+  /// Resolved storage location from which the uploaded file can be accessed.
+  url String
+  
+  /// Timestamp when this file record was created.
+  created_at DateTime
+  
+  /// Timestamp when this file record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this file record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  profile community_platform_profiles @relation(fields: [community_platform_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_profile_id, created_at], map: "community_platform_profile_files_community_platform_pr_66ccb2f7")
+}

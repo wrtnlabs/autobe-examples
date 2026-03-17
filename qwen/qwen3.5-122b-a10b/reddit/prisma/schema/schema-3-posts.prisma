@@ -1,0 +1,227 @@
+/// Main post entities with title, content, and type differentiation for
+/// text, link, and image posts. Posts belong to communities and are created
+/// by members, supporting vote scoring and comment threading through related
+/// entities.
+///
+/// Post types are differentiated via the post_type field with separate
+/// content storage:
+/// - Text posts: content stored in text_content field
+/// - Link posts: URL stored in url field
+/// - Image posts: file reference stored in file_id field
+///
+/// Vote scores and comment counts are calculated from
+/// reddit_platform_post_votes and reddit_platform_comments respectively, not
+/// stored as denormalized fields to maintain data integrity.
+///
+/// Related entities:
+/// - {@link reddit_platform_communities}: Parent community for the post
+/// - {@link reddit_platform_members}: Author who created the post
+/// - {@link reddit_platform_files}: Attached image file for image posts
+/// - {@link reddit_platform_post_votes}: Vote records for score calculation
+/// - {@link reddit_platform_comments}: Comments on this post
+/// - {@link reddit_platform_reports}: Reports for content moderation
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target community's {@link reddit_platform_communities.id}. Posts must
+  /// belong to a community for organization and access control.
+  community_id String
+  
+  /// Author member's {@link reddit_platform_members.id}. The member who
+  /// created this post and owns it.
+  author_id String
+  
+  /// Attached image file's {@link reddit_platform_files.id}. Only populated
+  /// for image posts; null for text and link posts.
+  file_id String?
+  
+  /// Post title. Required for all post types. Used for display in feeds and
+  /// post lists.
+  title String
+  
+  /// Post type discriminator: 'text' for text posts, 'link' for link posts,
+  /// 'image' for image posts. Determines which content field is populated.
+  post_type String
+  
+  /// Text content for text posts. Null for link and image posts. First 200
+  /// characters shown in feed previews.
+  text_content String?
+  
+  /// URL for link posts. Null for text and image posts. Domain extracted for
+  /// display in feeds.
+  url String?
+  
+  /// Creation timestamp. Used for feed sorting and 'time since posted' display.
+  created_at DateTime
+  
+  /// Last update timestamp. Updated when post title or content is edited.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null for active posts, populated when post is
+  /// deleted by author or moderator.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  author reddit_platform_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  file reddit_platform_files? @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  votes reddit_platform_post_votes[]
+  snapshots reddit_platform_post_snapshots[]
+  comments reddit_platform_comments[]
+  reports reddit_platform_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([file_id])
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([post_type])
+}
+
+/// Vote records tracking user votes on posts with upvote/downvote types,
+/// enforcing one-vote-per-user-per-post constraint for score calculation and
+/// vote management.
+///
+/// Each vote represents a member's voting action on a specific post. The
+/// table maintains vote history through soft deletion (deleted_at), allowing
+/// vote changes and removals while preserving audit trails. The unique
+/// composite index on (reddit_platform_member_id, reddit_platform_post_id)
+/// enforces the business rule that each member can cast at most one vote per
+/// post at any given time.
+///
+/// Votes are linked to {@link reddit_platform_members} for voter
+/// identification and {@link reddit_platform_posts} for the voted content.
+/// The vote type field stores "upvote" or "downvote" values, which determine
+/// the score impact (+1 or -1) used in post ranking calculations.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member's {@link reddit_platform_members.id}.
+  reddit_platform_member_id String
+  
+  /// Voted post's {@link reddit_platform_posts.id}.
+  reddit_platform_post_id String
+  
+  /// Vote type: "upvote" or "downvote". Determines score impact (+1 or -1).
+  type String
+  
+  /// Timestamp when the vote was cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., vote changed or removed).
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft-deleted (vote removed by user).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_member_id, reddit_platform_post_id], map: "reddit_platform_post_votes_reddit_platform_member_id_r_2949aa0d")
+  @@index([reddit_platform_post_id])
+  @@index([reddit_platform_member_id])
+}
+
+/// Point-in-time snapshots of posts capturing historical states for audit
+/// trail and version tracking. Each snapshot preserves the complete state of
+/// a post at a specific moment, including title, content, type, vote score,
+/// and comment count. These snapshots enable content history review,
+/// moderation analytics, and data recovery without denormalizing the main
+/// post entity. Referenced by {@link reddit_platform_posts} for historical
+/// state preservation.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced post's {@link reddit_platform_posts.id}. Links this snapshot
+  /// to its parent post entity.
+  reddit_platform_post_id String
+  
+  /// Post author's {@link reddit_platform_members.id} at the time of snapshot.
+  /// Preserves historical authorship even if post is transferred.
+  reddit_platform_member_id String
+  
+  /// Post's community {@link reddit_platform_communities.id} at the time of
+  /// snapshot. Maintains community association history.
+  reddit_platform_community_id String
+  
+  /// Post title at the time of snapshot. Preserves historical title even if
+  /// post is edited.
+  title String
+  
+  /// Post content at the time of snapshot. For text posts, contains the full
+  /// text. For link posts, contains the URL. For image posts, may contain
+  /// metadata or description.
+  content String?
+  
+  /// Post type enumeration at snapshot time: 'text' for text posts, 'link' for
+  /// URL posts, 'image' for image posts. Preserves historical type
+  /// classification.
+  post_type String
+  
+  /// Vote score at the time of snapshot. Calculated as total upvotes minus
+  /// downvotes. Preserves historical scoring state.
+  vote_score Int
+  
+  /// Comment count at the time of snapshot. Number of comments on the post
+  /// when snapshot was created. Preserves historical engagement metrics.
+  comment_count Int
+  
+  /// Timestamp when this snapshot was created. Indicates the point-in-time
+  /// when post state was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
+  author reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_platform_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id], map: "reddit_platform_post_snapshots_reddit_platform_communi_16992d58")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_post_id, created_at], map: "reddit_platform_post_snapshots_reddit_platform_post_id_341ea95f")
+}

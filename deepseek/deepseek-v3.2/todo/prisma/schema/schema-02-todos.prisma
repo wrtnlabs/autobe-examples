@@ -1,0 +1,200 @@
+/// Main todo entities containing core task attributes and ownership
+/// relationships. Each todo represents a personal task created by a member
+/// with attributes like title, description, start date, due date, and
+/// completion status.
+///
+/// Todos are the central business entity in the personal task management
+/// system. Members can create, view, edit, mark as complete/incomplete, and
+/// delete their todos. The system maintains strict data isolation ensuring
+/// each member can only access their own todos. Edit history is tracked
+/// separately by the TodoHistories component, while soft deletion is managed
+/// through trash tables.
+///
+/// Key business rules:
+/// - Each todo must have a title
+/// - Due dates cannot be before start dates when both are provided
+/// - Todos default to incomplete status when created
+/// - All operations are scoped to the owning member
+///
+/// {@link todo_app_members.id} owns these todos, and {@link
+/// todo_app_todo_histories.id} tracks their edit history.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member's {@link todo_app_members.id}.
+  todo_app_member_id String
+  
+  /// Descriptive title of the todo task. This is the primary identifier shown
+  /// in lists and must be provided.
+  title String
+  
+  /// Optional detailed explanation or notes about the todo task. Can be empty
+  /// or omitted for simple todos.
+  description String?
+  
+  /// Optional planned start date and time for the todo task. When not
+  /// provided, the todo has no scheduled start time.
+  start_date DateTime?
+  
+  /// Optional deadline date and time for completing the todo task. When not
+  /// provided, the todo has no specific due date. Business validation ensures
+  /// due_date is not before start_date when both are provided.
+  due_date DateTime?
+  
+  /// Indicates whether the todo task has been marked as complete. Defaults to
+  /// false for new todos. Members can toggle this status.
+  completed Boolean
+  
+  /// Timestamp when the todo was created. Automatically set by the system.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified. Automatically updated by the
+  /// system on changes.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  trashItem todo_app_todo_trash_items?
+  trashEntry todo_app_todo_trash_entries?
+  editHistories todo_app_todo_histories[]
+  historySnapshots todo_app_todo_history_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, created_at])
+  @@index([todo_app_member_id, completed])
+  @@index([todo_app_member_id, due_date])
+}
+
+/// Stores todos that have been soft-deleted, enabling restoration.
+///
+/// This table tracks todos that users have deleted but not permanently
+/// removed from the system. Each entry represents a todo moved to the trash,
+/// preserving its data and edit history for potential restoration. The table
+/// maintains a 1:1 relationship with {@link todo_app_todos} through the
+/// unique foreign key constraint.
+///
+/// When a user deletes a todo, the system creates a record here while
+/// removing the todo from the normal todo list. Users can later view their
+/// trash, restore deleted todos, or permanently delete them from this table.
+/// The deletion timestamp represents when the todo was moved to trash, which
+/// helps with chronological browsing of deleted items.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_trash_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The deleted todo's identifier. {@link todo_app_todos.id}.
+  todo_app_todo_id String
+  
+  /// Timestamp when the todo was moved to trash. This field is required and
+  /// represents the deletion time for chronological sorting of trash items.
+  deleted_at DateTime
+  
+  /// Optional note about why the todo was deleted. Users or the system can
+  /// record context about the deletion for future reference.
+  reason String?
+  
+  /// Timestamp when this trash entry was created.
+  created_at DateTime
+  
+  /// Timestamp when this trash entry was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([deleted_at, todo_app_todo_id])
+}
+
+/// Records of todo soft deletions with timestamps and optional restoration
+/// data.
+///
+/// This table tracks when todos are moved to the trash (soft deleted), when
+/// they are restored, and when they are permanently deleted from the trash.
+/// Each todo can have at most one trash entry record, establishing a 1:1
+/// relationship with the main todo table. The table serves as an audit trail
+/// for todo lifecycle management, recording who deleted the todo and when.
+///
+/// When a user deletes a todo, a record is created here with deleted_at set
+/// to the current timestamp. If the user later restores the todo from trash,
+/// restored_at is populated. If the user permanently deletes the todo from
+/// trash, permanently_deleted_at is populated. This three-state tracking
+/// allows for comprehensive trash management while maintaining data
+/// isolation per user.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_trash_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The todo that was moved to trash. {@link todo_app_todos.id}.
+  todo_app_todo_id String
+  
+  /// The member who performed the deletion. {@link todo_app_members.id}.
+  todo_app_member_id String
+  
+  /// Timestamp when the todo was moved to trash (soft deleted). This field is
+  /// always populated when the record is created.
+  deleted_at DateTime
+  
+  /// Timestamp when the todo was restored from trash back to active status.
+  /// Null if the todo remains in trash or was permanently deleted.
+  restored_at DateTime?
+  
+  /// Timestamp when the todo was permanently deleted from trash. Null if the
+  /// todo is still in trash or was restored.
+  permanently_deleted_at DateTime?
+  
+  /// Timestamp when this trash entry record was created.
+  created_at DateTime
+  
+  /// Timestamp when this trash entry record was last updated (e.g., when
+  /// restored or permanently deleted).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_todo_id])
+  @@index([todo_app_member_id, deleted_at])
+}

@@ -1,0 +1,148 @@
+/// Main vote entity tracking user votes on content (posts and comments).
+///
+/// The `reddit_like_votes` table serves as the base polymorphic entity for
+/// all voting activity in the platform. It tracks which member cast the
+/// vote, the vote type (upvote or downvote), and timestamps. The actual
+/// content target (post or comment) is determined by records in the subtype
+/// tables: {@link reddit_like_post_votes} for post votes and {@link
+/// reddit_like_comment_votes} for comment votes.
+///
+/// **Vote Lifecycle:**
+/// - Votes are created when members click upvote/downvote buttons
+/// - Members can change their vote (upvote ↔ downvote)
+/// - Only one vote per member per content item (enforced by unique
+/// constraint in subtype tables)
+/// - Vote counts contribute to the karma scoring system
+///
+/// **Polymorphic Pattern:**
+/// This table contains the shared vote data. The subtype tables link this
+/// vote to either a post or a comment, creating a clean polymorphic
+/// relationship without nullable foreign keys or type discrimination fields.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Voting member's {@link reddit_like_members.id}. The user who cast this
+  /// vote.
+  member_id String
+  
+  /// Type of vote cast: 'upvote' or 'downvote'. Determines whether this vote
+  /// adds or subtracts from the content's score.
+  vote_type String
+  
+  /// Timestamp when the vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last changed (e.g., user changed from upvote
+  /// to downvote).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postVote reddit_like_post_votes?
+  commentVote reddit_like_comment_votes?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, created_at])
+}
+
+/// Subtype table linking votes to posts in the polymorphic voting system.
+/// Each record represents a vote cast on a specific post, with a 1:1
+/// relationship to the main vote entity. This table enables the polymorphic
+/// pattern where votes can target either posts or comments, but never both
+/// simultaneously.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent vote entity. {@link reddit_like_votes.id}
+  reddit_like_vote_id String
+  
+  /// Reference to the post being voted on. {@link reddit_like_posts.id}
+  reddit_like_post_id String
+  
+  /// Timestamp when the vote-post link was created.
+  created_at DateTime
+  
+  /// Timestamp when the vote-post link was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  vote reddit_like_votes @relation(fields: [reddit_like_vote_id], references: [id], onDelete: Cascade)
+  post reddit_like_posts @relation(fields: [reddit_like_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_like_vote_id])
+  @@index([reddit_like_post_id])
+}
+
+/// Subtype table for votes on comments, implementing the polymorphic voting
+/// pattern.
+///
+/// Each record represents a 1:1 relationship with a vote in
+/// reddit_like_votes, specifically linking that vote to a comment target.
+/// This table enables the polymorphic design where votes can target either
+/// posts or comments through separate subtype tables.
+///
+/// {@link reddit_like_votes} — The main vote entity containing user, vote
+/// type, and timestamp.
+/// {@link reddit_like_comments} — The comment being voted on.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main vote entity. {@link reddit_like_votes.id}
+  vote_id String
+  
+  /// The comment being voted on. {@link reddit_like_comments.id}
+  comment_id String
+  
+  /// When the vote-comment association was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  vote reddit_like_votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
+  comment reddit_like_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([vote_id])
+  @@index([comment_id, created_at])
+}

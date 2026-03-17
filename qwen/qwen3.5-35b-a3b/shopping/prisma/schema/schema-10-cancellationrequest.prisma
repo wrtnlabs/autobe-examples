@@ -1,0 +1,163 @@
+/// Customer cancellation requests for order items before shipping.
+///
+/// This table stores cancellation requests initiated by customers for
+/// specific order items. When a customer wants to cancel an item before it
+/// ships, they create a cancellation request with a reason. The seller can
+/// then approve or reject the request with a response. The system tracks the
+/// request status throughout this workflow.
+///
+/// Business purpose:
+/// - Allow customers to request item cancellation before shipment
+/// - Enable sellers to approve or reject cancellation requests with
+/// justification
+/// - Track cancellation workflow status (pending, approved, rejected)
+/// - Preserve customer reasons and seller responses for dispute resolution
+///
+/// Key relationships:
+/// - {@link EcommerceMallOrderItem} - The specific order item being cancelled
+/// - {@link EcommerceMallCustomer} - The customer who initiated the
+/// cancellation request
+/// - {@link EcommerceMallSeller} - The seller who must respond to the
+/// request (via order item's seller_id)
+///
+/// Workflow states:
+/// - pending: Request awaiting seller response
+/// - approved: Seller approved, order item will be cancelled
+/// - rejected: Seller denied the request with explanation
+///
+/// Soft delete enabled to maintain audit trail while removing from active
+/// workflows.
+///
+/// @namespace CancellationRequest
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order item this cancellation request targets. {@link
+  /// EcommerceMallOrderItem.id}
+  order_item_id String
+  
+  /// The customer who created this cancellation request. {@link
+  /// EcommerceMallCustomer.id}
+  customer_id String
+  
+  /// The seller who must respond to this cancellation request. {@link
+  /// EcommerceMallSeller.id}
+  seller_id String
+  
+  /// Current status of the cancellation request. Values: pending, approved,
+  /// rejected.
+  status String
+  
+  /// Customer's reason for requesting cancellation.
+  reason String
+  
+  /// Seller's response when rejecting the request. NULL if approved or still
+  /// pending.
+  seller_response String?
+  
+  /// When the cancellation request was created.
+  created_at DateTime
+  
+  /// Last update timestamp for the cancellation request.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  inventoryRecords ecommerce_mall_inventory_records[]
+  snapshots ecommerce_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_item_id])
+  @@index([customer_id])
+  @@index([seller_id])
+  @@index([status])
+}
+
+/// Immutable audit trail table recording point-in-time state changes for
+/// cancellation requests when sellers approve or reject them.
+///
+/// This snapshot table serves as an historical record for dispute resolution
+/// and audit purposes. Each record captures the complete state of a
+/// cancellation request at a specific moment, including the status before
+/// and after the change, the actor type performing the action, and the type
+/// of action taken.
+///
+/// Key relationships:
+/// - {@link ecommerce_mall_cancellation_requests.id} - Parent cancellation
+/// request being tracked
+/// - Actor type tracking to identify which actor performed the action
+///
+/// Snapshots are append-only and never modified, ensuring a reliable
+/// historical trail of all cancellation request lifecycle events.
+///
+/// Note: This table does not duplicate parent entity fields (status, reason,
+/// seller_response) as they are accessed via the {@link
+/// ecommerce_mall_cancellation_requests} FK reference.
+///
+/// @namespace CancellationRequest
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced cancellation request's {@link
+  /// ecommerce_mall_cancellation_requests.id}.
+  cancellation_request_id String
+  
+  /// Type of actor performing the action (e.g., 'seller').
+  actor_type String
+  
+  /// Cancellation request status before the state change (e.g., 'pending',
+  /// 'approved', 'rejected').
+  status_before String?
+  
+  /// Cancellation request status after the state change.
+  status_after String?
+  
+  /// Type of action performed (e.g., 'approved', 'rejected').
+  action String
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when the snapshot was last updated (same as created_at for
+  /// snapshots).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id], map: "ecommerce_mall_cancellation_request_snapshots_cancella_7d177ee1")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, created_at], map: "ecommerce_mall_cancellation_request_snapshots_actor_ty_1a6e639d")
+}

@@ -1,0 +1,155 @@
+/// Hierarchical product categories with parent-child relationships for
+/// organizing the product catalog.
+///
+/// Categories form the organizational structure that customers use to browse
+/// and discover products. Each category can have a parent category, enabling
+/// nested categorization. Categories support metadata including display
+/// order for ranking, optional icons for visual branding, and active status
+/// for toggling visibility without deletion.
+///
+/// **Key Relationships**:
+/// - Self-referencing parent_id creates category hierarchy (parent-child)
+/// - Referenced by {@link ecommerce_mall_products} for product classification
+/// - Snapshots tracked in {@link ecommerce_mall_category_snapshots} for
+/// audit trail
+///
+/// **Business Behavior**:
+/// - Slug is unique across all categories for URL routing
+/// - Display order determines category ranking within parent
+/// - Active flag allows soft-deactivation without losing associated products
+/// - Categories can have multiple child categories up to the defined nesting
+/// limit
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link ecommerce_mall_categories.id}. Enables
+  /// hierarchical category structure.
+  parent_id String?
+  
+  /// Human-readable display name of the category. Must be unique within the
+  /// same parent level.
+  name String
+  
+  /// URL-friendly unique identifier for the category. Used for routing and
+  /// SEO. Must be unique across all categories.
+  slug String
+  
+  /// Detailed description of the category for display on category pages.
+  description String?
+  
+  /// Numeric ordering value for displaying categories. Lower values appear
+  /// first.
+  display_order Int
+  
+  /// Optional URI for category icon image or emoji character.
+  icon_uri String?
+  
+  /// Whether the category is currently active and visible to customers.
+  is_active Boolean
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children ecommerce_mall_categories[] @relation("recursive")
+  snapshots ecommerce_mall_category_snapshots[]
+  products ecommerce_mall_products[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([slug])
+  @@index([parent_id, display_order])
+}
+
+/// Point-in-time snapshots of category changes for audit trail and
+/// historical reference.
+///
+/// Captures the complete state of a category at a specific moment in time,
+/// enabling audit trails, dispute resolution, and historical analysis. Each
+/// snapshot is immutable and references the original category via
+/// snapshot_id.
+///
+/// This snapshot table stores denormalized copies of all category fields,
+/// providing a complete record of the category's state when the snapshot was
+/// created. The table supports historical queries such as "what was the
+/// category structure at time X" or "how did the category hierarchy evolve
+/// over time."
+///
+/// {@link ecommerce_mall_categories} - Parent category table that this
+/// snapshot references.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_category_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The category this snapshot represents. {@link
+  /// ecommerce_mall_categories.id}
+  snapshot_id String
+  
+  /// Unique category code for identification.
+  code String
+  
+  /// Display name of the category.
+  name String
+  
+  /// Detailed description of the category.
+  description String?
+  
+  /// URL-friendly identifier for the category.
+  slug String
+  
+  /// Reference to the parent category in hierarchical structure (null for root
+  /// categories).
+  parent_id String?
+  
+  /// Hierarchy level of the category in the tree structure.
+  level Int
+  
+  /// Display order of the category within its parent.
+  sort_order Int
+  
+  /// Whether the category is active and visible.
+  is_active Boolean
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  category ecommerce_mall_categories @relation(fields: [snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([snapshot_id, created_at])
+}

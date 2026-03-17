@@ -1,0 +1,48 @@
+/// User profile information including display name, bio text, and avatar image.
+///
+/// Each member has exactly one profile that stores their public-facing
+/// identity separate from authentication credentials. Profiles are publicly
+/// viewable and editable by the owner. The profile references {@link
+/// reddit_clone_members} through a 1:1 relationship.
+///
+/// @namespace UserProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_clone_members.id}.
+  member_id String
+  
+  /// User's public display name shown on profile and posts.
+  display_name String
+  
+  /// Optional biographical text about the user.
+  bio String?
+  
+  /// Optional avatar image URI for profile picture.
+  avatar String?
+  
+  /// Profile creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for profile removal.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id])
+}

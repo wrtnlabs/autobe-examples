@@ -1,0 +1,68 @@
+/// Edit history records for todo items, storing complete snapshots of todo
+/// state at each modification. Each entry captures the values of title,
+/// description, start_date, and due_date at the time of edit, along with the
+/// timestamp and the member who made the change. History entries are sorted
+/// from most recent to oldest for chronological review. When a todo is
+/// permanently deleted, all associated history entries are also removed.
+///
+/// Key relationships:
+/// - Created by {@link multi_user_todo_members} - the member who made the edit
+///
+/// Behavioral notes:
+/// - Append-only: History entries are never modified after creation
+/// - Soft delete support: deleted_at allows recovery if needed
+/// - Privacy isolation: Only the todo owner and system can access history
+///
+/// @namespace TodoHistory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who made the edit's {@link multi_user_todo_members.id}. Tracks the
+  /// actor responsible for this history entry.
+  multi_user_todo_member_id String
+  
+  /// Timestamp when the edit occurred. Used for chronological sorting of
+  /// history entries (most recent first).
+  changed_at DateTime
+  
+  /// Snapshot of the todo's title at the time of edit. Null if title was not
+  /// changed in this edit.
+  title String?
+  
+  /// Snapshot of the todo's description at the time of edit. Null if
+  /// description was not changed in this edit.
+  description String?
+  
+  /// Snapshot of the todo's start date at the time of edit. Null if start date
+  /// was not changed in this edit.
+  start_date DateTime?
+  
+  /// Snapshot of the todo's due date at the time of edit. Null if due date was
+  /// not changed in this edit.
+  due_date DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Allows recovery of deleted history entries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([multi_user_todo_member_id])
+}

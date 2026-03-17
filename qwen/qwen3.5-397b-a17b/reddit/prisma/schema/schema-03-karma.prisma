@@ -1,0 +1,102 @@
+/// Stores each user's karma score that aggregates all vote impacts from
+/// their posts and comments across the platform.
+///
+/// Each member has exactly one karma score record that tracks their
+/// contribution reputation. The score increases when others upvote the
+/// user's posts or comments, and decreases on downvotes. Karma can be
+/// negative and is displayed on user profiles.
+///
+/// This table maintains the current score only. For audit trail and karma
+/// change history, see {@link reddit_clone_karma_score_changes}.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_karma_scores {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link reddit_clone_members.id}. Each user has exactly
+  /// one karma score record.
+  member_id String
+  
+  /// Current karma score aggregated from all vote impacts on user's posts and
+  /// comments. Can be negative.
+  score Int
+  
+  /// Creation timestamp when the karma score record was first created.
+  created_at DateTime
+  
+  /// Last update timestamp when the karma score was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  changes reddit_clone_karma_score_changes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id])
+}
+
+/// Tracks individual karma changes with source type, amount, and timestamp
+/// for audit trail and user karma history visibility.
+///
+/// Each record represents a single karma change event caused by a vote on
+/// the user's post or comment. This table provides transparency into how
+/// karma scores change over time and supports debugging karma calculation
+/// issues.
+///
+/// Related to {@link reddit_clone_karma_scores} as the parent score record.
+/// Source references point to either {@link reddit_clone_posts} or {@link
+/// reddit_clone_comments} based on source_type.
+///
+/// @namespace Karma
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_karma_score_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the karma score record that was modified. {@link
+  /// reddit_clone_karma_scores.id}
+  reddit_clone_karma_score_id String
+  
+  /// Type of content that caused the karma change: POST or COMMENT
+  source_type String
+  
+  /// ID of the post or comment that was voted on, referencing either
+  /// reddit_clone_posts.id or reddit_clone_comments.id
+  source_id String
+  
+  /// Amount of karma change (positive for upvotes, negative for downvotes)
+  change_amount Int
+  
+  /// Timestamp when the karma change occurred
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  karmaScore reddit_clone_karma_scores @relation(fields: [reddit_clone_karma_score_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_karma_score_id, created_at], map: "reddit_clone_karma_score_changes_reddit_clone_karma_sc_04963a89")
+}

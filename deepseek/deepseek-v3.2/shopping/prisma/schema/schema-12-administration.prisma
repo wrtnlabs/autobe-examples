@@ -1,0 +1,1525 @@
+/// Administrator hierarchy and grade assignment history tracking regular vs
+/// super administrator status changes.
+///
+/// This table maintains historical grade assignments for administrators,
+/// distinguishing between regular and super administrator privileges at
+/// specific points in time. Super administrators have exclusive authority to
+/// manage the administrator hierarchy, including promotion and demotion of
+/// other administrators, while regular administrators have elevated platform
+/// management permissions but cannot modify the hierarchy.
+///
+/// Each record represents a historical grade assignment for a specific
+/// administrator, with validity periods to track when grade changes occur.
+/// The assigned_grade captures the privilege level at that historical
+/// moment, which may differ from the administrator's current grade. This
+/// historical tracking supports audit trails of hierarchy changes and
+/// provides context for administrative decision-making. {@link
+/// ecommerce_mall_administrators}
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_grades {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator whose grade assignment history is being
+  /// tracked. {@link ecommerce_mall_administrators.id}
+  administrator_id String
+  
+  /// Reference to the administrator who assigned this historical grade. For
+  /// initial assignments, this may be the same as administrator_id. For
+  /// promotions/demotions, this tracks which super administrator performed the
+  /// action. {@link ecommerce_mall_administrators.id}
+  assigned_by_administrator_id String?
+  
+  /// Historical administrator grade indicating privilege level at assignment
+  /// time. Must be either 'regular' or 'super'. Captures the grade value at
+  /// that historical moment, which may differ from current administrator
+  /// grade. Super administrators have additional privileges including
+  /// hierarchy management and promotion/demotion authority.
+  assigned_grade String
+  
+  /// Timestamp when this historical grade assignment became effective. For the
+  /// current active grade, this should match the most recent valid assignment.
+  assigned_at DateTime
+  
+  /// Timestamp when this historical grade assignment expires or is superseded.
+  /// Null indicates this is the current active grade assignment. When a new
+  /// grade is assigned, the previous grade's expires_at should be set to the
+  /// new assignment time.
+  expires_at DateTime?
+  
+  /// Reason for the historical grade assignment, promotion, or demotion. This
+  /// provides context for hierarchy changes and helps maintain audit trail of
+  /// administrative decisions.
+  reason String?
+  
+  /// Timestamp when this historical grade assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this historical grade assignment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this historical grade assignment record was soft deleted.
+  /// Allows tracking of historical grade assignments while maintaining
+  /// referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation("ecommerce_mall_administrator_grades_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
+  assignedByAdministrator ecommerce_mall_administrators? @relation("ecommerce_mall_administrator_grades_of_assigned_by_adm_145b9a4d", fields: [assigned_by_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administratorAssignments ecommerce_mall_administrator_users[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([administrator_id, assigned_at], map: "ecommerce_mall_administrator_grades_administrator_id_a_829a4744")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, expires_at], map: "ecommerce_mall_administrator_grades_administrator_id_e_c93c7aa2")
+  // spellchecker: ignore-next-line
+  @@index([assigned_grade, expires_at], map: "ecommerce_mall_administrator_grades_assigned_grade_exp_b002673c")
+  // spellchecker: ignore-next-line
+  @@index([assigned_by_administrator_id], map: "ecommerce_mall_administrator_grades_assigned_by_admini_ebe5d289")
+}
+
+/// Log of administrative actions taken across the platform for auditing and
+/// oversight.
+///
+/// Records all significant actions performed by administrators including
+/// user management (ban/unban), seller approvals/suspensions, product
+/// deletions, order interventions, category management, and platform
+/// oversight activities. Each log entry captures what action was performed,
+/// by which administrator, when, and the target entity affected. This table
+/// serves as the primary audit trail for all administrative activities,
+/// enabling compliance monitoring, dispute resolution, and historical
+/// analysis of platform governance.
+///
+/// Actions are categorized by type and status, with optional metadata
+/// providing additional context about the action. The log preserves deleted
+/// records via soft delete to maintain complete audit trails even for
+/// removed administrative actions.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_action_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the action. {@link
+  /// ecommerce_mall_administrators.id}
+  administrator_id String
+  
+  /// Customer affected by the action, if applicable. {@link
+  /// ecommerce_mall_customers.id}
+  customer_id String?
+  
+  /// Seller affected by the action, if applicable. {@link
+  /// ecommerce_mall_sellers.id}
+  seller_id String?
+  
+  /// Product affected by the action, if applicable. {@link
+  /// ecommerce_mall_products.id}
+  product_id String?
+  
+  /// Order affected by the action, if applicable. {@link
+  /// ecommerce_mall_orders.id}
+  order_id String?
+  
+  /// Category affected by the action, if applicable. {@link
+  /// ecommerce_mall_categories.id}
+  category_id String?
+  
+  /// Type of administrative action performed. Examples: 'customer_ban',
+  /// 'seller_approval', 'product_deletion', 'order_intervention',
+  /// 'category_management', 'platform_oversight'.
+  action_type String
+  
+  /// Detailed description of what action was performed, including context and
+  /// rationale.
+  description String
+  
+  /// Status of the action: 'success' for completed actions, 'failed' for
+  /// attempted actions that did not complete successfully, 'pending' for
+  /// actions requiring follow-up.
+  status String
+  
+  /// Timestamp when the action was performed and logged.
+  created_at DateTime
+  
+  /// Timestamp when the action log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the action log entry was soft-deleted. Null indicates
+  /// active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products? @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  metadata ecommerce_mall_administrator_action_log_metadata[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_action_logs_administrator_9484de01")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "ecommerce_mall_administrator_action_logs_action_type_c_4c403e0d")
+  @@index([customer_id])
+  @@index([seller_id])
+  @@index([product_id])
+  @@index([order_id])
+  @@index([category_id])
+  @@index([status, created_at])
+  @@index([deleted_at])
+}
+
+/// Tracks seller account suspensions enforced by administrators for policy
+/// violations or platform integrity concerns.
+///
+/// Administrators can independently create, search, filter, and manage
+/// suspension records. When a seller is suspended, their products are hidden
+/// from search and category listings, and they cannot create or edit
+/// products. However, suspended sellers can still process existing orders
+/// including shipping items and responding to cancellation/refund requests.
+///
+/// Each suspension record includes the suspension reason, effective period
+/// (with optional end date for temporary suspensions), and the administrator
+/// who enforced it. Suspensions can be manually ended by administrators
+/// (unsuspension) or automatically expire based on end date.
+///
+/// This table supports the requirement that administrators can suspend and
+/// unsuspend seller accounts while preserving the ability for sellers to
+/// fulfill existing obligations.
+///
+/// Related entities: {@link ecommerce_mall_sellers} (suspended seller),
+/// {@link ecommerce_mall_administrators} (enforcing administrator).
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_seller_suspensions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Suspended seller's identity. {@link ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Administrator who enforced the suspension. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Detailed explanation for the suspension, providing transparency about
+  /// policy violations or platform integrity concerns.
+  reason String
+  
+  /// Current suspension status: 'active' (currently enforced), 'expired' (end
+  /// date passed), or 'manually_ended' (administrator unsuspended).
+  status String
+  
+  /// Date and time when the suspension takes effect, marking when seller
+  /// restrictions begin.
+  start_date DateTime
+  
+  /// Optional end date for temporary suspensions. If null, suspension is
+  /// indefinite until manually ended.
+  end_date DateTime?
+  
+  /// Date and time when the suspension was manually ended by an administrator
+  /// (unsuspension). Null for active or expired suspensions.
+  ended_at DateTime?
+  
+  /// Timestamp when this suspension record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this suspension record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this suspension record was soft deleted. Null for active
+  /// records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([seller_id, status, start_date], map: "ecommerce_mall_administrator_seller_suspensions_seller_c7d640d2")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at, status], map: "ecommerce_mall_administrator_seller_suspensions_admini_4d43418c")
+  // spellchecker: ignore-next-line
+  @@index([status, start_date], map: "ecommerce_mall_administrator_seller_suspensions_status_b467948b")
+  @@index([start_date])
+}
+
+/// Tracks all administrative actions performed on categories for audit and
+/// compliance purposes.
+///
+/// This table records when administrators create, edit, delete, archive, or
+/// restore categories in the system. Each action includes details about what
+/// was changed, who performed the action, and when it occurred. This
+/// provides a complete audit trail for category management as required by
+/// the Snapshot Principle and platform compliance requirements.
+///
+/// Actions reference the administrator who performed them via {@link
+/// ecommerce_mall_administrators.id} and the affected category via {@link
+/// ecommerce_mall_categories.id} (when applicable). For category creation
+/// actions, the category_id may be null until the category is created, then
+/// linked via subsequent update.
+///
+/// All category management operations are captured here, including status
+/// transitions between Active, Archived, and Deleted states.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_category_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the category action. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Category affected by the action. Null for creation actions before
+  /// category is created. {@link ecommerce_mall_categories.id}.
+  category_id String?
+  
+  /// Type of administrative action performed on the category. CREATE for new
+  /// categories, EDIT for modifications, DELETE for removal, ARCHIVE for
+  /// hiding, RESTORE for unarchiving.
+  action_type String
+  
+  /// Status of the action execution. SUCCESSFUL for completed actions, FAILED
+  /// for errors, PENDING for in-progress operations.
+  action_status String
+  
+  /// Previous category name before EDIT action. Null for CREATE and other
+  /// non-edit actions.
+  old_category_name String?
+  
+  /// New category name after EDIT action or created name for CREATE action.
+  new_category_name String?
+  
+  /// Previous category description before EDIT action. Null for CREATE and
+  /// other non-edit actions.
+  old_category_description String?
+  
+  /// New category description after EDIT action or created description for
+  /// CREATE action.
+  new_category_description String?
+  
+  /// Previous parent category ID before EDIT action that changes hierarchy.
+  /// Null for CREATE and other non-edit actions.
+  old_parent_category_id String?
+  
+  /// New parent category ID after EDIT action that changes hierarchy. Null for
+  /// CREATE and other non-edit actions.
+  new_parent_category_id String?
+  
+  /// Previous category status before status change action. One of: ACTIVE,
+  /// ARCHIVED, DELETED.
+  old_status String?
+  
+  /// New category status after status change action. One of: ACTIVE, ARCHIVED,
+  /// DELETED.
+  new_status String?
+  
+  /// Error message or reason when action_status is FAILED. Null for successful
+  /// actions.
+  failure_reason String?
+  
+  /// IP address of the administrator when performing the action for security
+  /// auditing.
+  ip_address String?
+  
+  /// User agent string of the administrator's browser/device for audit trail.
+  user_agent String?
+  
+  /// Timestamp when the administrative action was initiated.
+  created_at DateTime
+  
+  /// Timestamp when the action record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the action record. Null for active records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_category_actions_administ_277c8a47")
+  // spellchecker: ignore-next-line
+  @@index([category_id, created_at], map: "ecommerce_mall_administrator_category_actions_category_5b1445f6")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "ecommerce_mall_administrator_category_actions_action_t_db38a720")
+  // spellchecker: ignore-next-line
+  @@index([action_status, created_at], map: "ecommerce_mall_administrator_category_actions_action_s_86818afc")
+}
+
+/// Administrative product deletion records for policy violations, preserving
+/// deletion reasons and timestamps for audit purposes.
+///
+/// This table captures when administrators delete products from the platform
+/// for policy violations or other administrative reasons. Each record
+/// includes the administrator who performed the deletion, the product being
+/// deleted, the reason for deletion, and timestamps. These records serve as
+/// an audit trail for platform oversight and ensure accountability for
+/// product removals.
+///
+/// The deletion reason is required and provides justification for the
+/// action, which can be reviewed by other administrators or used for dispute
+/// resolution. Records are immutable and cannot be modified after creation
+/// to maintain audit integrity.
+///
+/// {@link ecommerce_mall_administrators.id} for administrator accountability
+/// {@link ecommerce_mall_products.id} for the product being deleted
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_product_deletions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the product deletion. {@link
+  /// ecommerce_mall_administrators.id}
+  administrator_id String
+  
+  /// Product that was deleted by the administrator. {@link
+  /// ecommerce_mall_products.id}
+  product_id String
+  
+  /// Reason for the administrative product deletion, providing justification
+  /// for the action.
+  deletion_reason String
+  
+  /// Timestamp when the administrative deletion record was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrative deletion record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_product_deletions_adminis_860aa577")
+  // spellchecker: ignore-next-line
+  @@index([product_id, created_at], map: "ecommerce_mall_administrator_product_deletions_product_b2ec5c58")
+}
+
+/// Tracks administrative order interventions where administrators can
+/// force-cancel or force-refund order items or entire orders.
+///
+/// This table records all platform administrator interventions on orders,
+/// including force cancellations (refunds customer and restores stock) and
+/// force refunds. Each intervention captures the administrator who performed
+/// it, the target order and optional specific order item, intervention type,
+/// reason for the action, and execution status for auditing purposes.
+///
+/// These records serve as an audit trail for platform integrity enforcement
+/// and are referenced in administrative oversight logs. {@link
+/// ecommerce_mall_administrators.id} identifies the administrator who
+/// performed the intervention, while {@link ecommerce_mall_orders.id} and
+/// optionally {@link ecommerce_mall_order_items.id} identify the affected
+/// order and specific item.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_order_interventions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the intervention. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Target order affected by the intervention. {@link
+  /// ecommerce_mall_orders.id}.
+  order_id String
+  
+  /// Specific order item targeted (nullable for order-level interventions).
+  /// {@link ecommerce_mall_order_items.id}.
+  order_item_id String?
+  
+  /// Type of administrative intervention: 'force_cancel' for pre-shipment
+  /// cancellations with refund, or 'force_refund' for post-delivery refunds.
+  intervention_type String
+  
+  /// Administrator's reason or justification for the intervention, required
+  /// for audit trail and transparency.
+  reason String
+  
+  /// Execution status of the intervention: 'pending' for scheduled actions,
+  /// 'executing' for in-progress, 'completed' for successful execution, or
+  /// 'failed' for unsuccessful attempts.
+  status String
+  
+  /// Timestamp when the intervention was actually executed (processing
+  /// completed).
+  executed_at DateTime?
+  
+  /// Error message if the intervention failed during execution, null for
+  /// successful interventions.
+  error_message String?
+  
+  /// Timestamp when the intervention record was created.
+  created_at DateTime
+  
+  /// Timestamp when the intervention record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the intervention record was soft deleted (for audit trail
+  /// preservation).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items? @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([order_item_id], map: "ecommerce_mall_administrator_order_interventions_order_0261928b")
+  // spellchecker: ignore-next-line
+  @@index([order_id, created_at], map: "ecommerce_mall_administrator_order_interventions_order_99886579")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_order_interventions_admin_978e1271")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "ecommerce_mall_administrator_order_interventions_statu_f2ba4ae3")
+}
+
+/// Customer account ban records tracking ban periods, reasons, and
+/// administrative oversight.
+///
+/// This table records administrative actions where customers are banned from
+/// the platform. Each ban includes the administrator who imposed the ban,
+/// the customer who was banned, the effective period of the ban, the reason
+/// for the ban, and the current status. Bans can be temporary (with an
+/// expiration date) or indefinite (no expiration). When a customer is
+/// banned, they cannot log in or access the platform until the ban is
+/// lifted.
+///
+/// Administrators can view all active bans, search by customer or
+/// administrator, and manage ban status. The ban status tracks whether the
+/// ban is currently active, has expired, or has been manually revoked by an
+/// administrator. Ban records are preserved for audit purposes even after
+/// they expire or are revoked.
+///
+/// Bans affect customer login capabilities and platform access. When a ban
+/// is active, the customer's login attempts are blocked. When a ban expires
+/// or is revoked, the customer can resume normal platform access.
+///
+/// Related tables: {@link ecommerce_mall_administrators} (who performed the
+/// ban), {@link ecommerce_mall_customers} (who was banned).
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_customer_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who imposed the ban. This references the administrator who
+  /// took the action. {@link ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Customer who was banned. This references the customer account that is
+  /// subject to the ban. {@link ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Reason for the ban as entered by the administrator. This provides
+  /// justification for the administrative action and is visible to other
+  /// administrators for oversight. Should be clear and specific to support
+  /// audit requirements.
+  ban_reason String
+  
+  /// Current status of the ban. Values: 'active' (ban is currently in effect),
+  /// 'expired' (ban period has ended), 'revoked' (administrator manually
+  /// lifted the ban before expiration).
+  status String
+  
+  /// Date and time when the ban becomes effective. This is typically when the
+  /// administrator creates the ban record, but can be set to a future date for
+  /// scheduled bans.
+  effective_from DateTime
+  
+  /// Date and time when the ban expires. If null, the ban is indefinite (no
+  /// expiration). For temporary bans, this defines the ban duration. After
+  /// this date, the status automatically changes to 'expired'.
+  effective_until DateTime?
+  
+  /// Date and time when an administrator manually revoked the ban before its
+  /// expiration. Null if the ban has not been revoked. When set, the status
+  /// should be 'revoked'.
+  revoked_at DateTime?
+  
+  /// Reason for revoking the ban, if applicable. This provides audit trail for
+  /// why a ban was lifted before its expiration date.
+  revoked_reason String?
+  
+  /// Timestamp when this ban record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this ban record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this ban record was soft-deleted. Null if not deleted.
+  /// Allows administrators to remove ban records from active views while
+  /// preserving audit history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  banSnapshots ecommerce_mall_administrator_customer_ban_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([customer_id, status], map: "ecommerce_mall_administrator_customer_bans_customer_id_82edc4c1")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_customer_bans_administrat_87dd915b")
+  // spellchecker: ignore-next-line
+  @@index([effective_from, effective_until], map: "ecommerce_mall_administrator_customer_bans_effective_f_0a4b7933")
+}
+
+/// Audit log of all platform oversight actions performed by administrators
+/// for compliance monitoring and accountability.
+///
+/// This table records every oversight action taken by administrators across
+/// the platform, including seller management, customer account oversight,
+/// product oversight, category management, and order interventions. Each
+/// record captures who performed the action, what action was taken, which
+/// entity was affected, and the outcome. These logs serve as an immutable
+/// audit trail for compliance monitoring, dispute resolution, and platform
+/// integrity verification.
+///
+/// Records in this table are never modified or deleted, providing a complete
+/// historical record of all administrative oversight activities as required
+/// by the Snapshot Principle and financial audit requirements.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_platform_oversight_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the oversight action. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Target seller affected by the oversight action, if applicable. {@link
+  /// ecommerce_mall_sellers.id}.
+  target_seller_id String?
+  
+  /// Target customer affected by the oversight action, if applicable. {@link
+  /// ecommerce_mall_customers.id}.
+  target_customer_id String?
+  
+  /// Target product affected by the oversight action, if applicable. {@link
+  /// ecommerce_mall_products.id}.
+  target_product_id String?
+  
+  /// Target category affected by the oversight action, if applicable. {@link
+  /// ecommerce_mall_categories.id}.
+  target_category_id String?
+  
+  /// Target order affected by the oversight action, if applicable. {@link
+  /// ecommerce_mall_orders.id}.
+  target_order_id String?
+  
+  /// Type of oversight action performed. Valid values: 'seller_suspension',
+  /// 'seller_unsuspension', 'customer_ban', 'customer_unban',
+  /// 'product_deletion', 'category_creation', 'category_modification',
+  /// 'category_deletion', 'order_force_cancellation', 'order_force_refund',
+  /// 'seller_approval', 'seller_rejection', 'administrator_promotion',
+  /// 'administrator_demotion'.
+  action_type String
+  
+  /// Human-readable description of the oversight action, explaining what was
+  /// done and why.
+  description String
+  
+  /// Detailed information about the action, including any specific parameters,
+  /// values changed, or additional context. This field may contain structured
+  /// data in JSON format to capture complex action details.
+  details String
+  
+  /// Result or outcome of the oversight action. Valid values: 'success',
+  /// 'failed', 'partial_success', 'pending', 'cancelled'.
+  outcome String
+  
+  /// IP address from which the oversight action was performed, for security
+  /// auditing purposes.
+  ip_address String
+  
+  /// User agent string of the browser or client used to perform the oversight
+  /// action, for client identification.
+  user_agent String
+  
+  /// Timestamp when the oversight action was recorded. This represents when
+  /// the action actually occurred in the system.
+  created_at DateTime
+  
+  /// Timestamp when the oversight action record was last updated. For audit
+  /// logs, this should rarely change once created.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  targetSeller ecommerce_mall_sellers? @relation(fields: [target_seller_id], references: [id], onDelete: Cascade)
+  targetCustomer ecommerce_mall_customers? @relation(fields: [target_customer_id], references: [id], onDelete: Cascade)
+  targetProduct ecommerce_mall_products? @relation(fields: [target_product_id], references: [id], onDelete: Cascade)
+  targetCategory ecommerce_mall_categories? @relation(fields: [target_category_id], references: [id], onDelete: Cascade)
+  targetOrder ecommerce_mall_orders? @relation(fields: [target_order_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([target_category_id], map: "ecommerce_mall_administrator_platform_oversight_logs_t_7ee9f8d3")
+  // spellchecker: ignore-next-line
+  @@index([target_order_id], map: "ecommerce_mall_administrator_platform_oversight_logs_t_79e1d456")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_a_ab5fd042")
+  // spellchecker: ignore-next-line
+  @@index([action_type, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_a_303988af")
+  // spellchecker: ignore-next-line
+  @@index([target_seller_id, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_t_6b9d0eb8")
+  // spellchecker: ignore-next-line
+  @@index([target_customer_id, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_t_f6cbe012")
+  // spellchecker: ignore-next-line
+  @@index([target_product_id, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_t_3400bf5a")
+  // spellchecker: ignore-next-line
+  @@index([outcome, created_at], map: "ecommerce_mall_administrator_platform_oversight_logs_o_a80b243e")
+}
+
+/// string
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_decision_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who made the decision. {@link
+  /// ecommerce_mall_administrators.id}
+  administrator_id String
+  
+  /// Type of administrative decision being recorded. Valid values:
+  /// 'seller_approval', 'seller_suspension', 'seller_unsuspension',
+  /// 'product_deletion', 'category_action', 'order_intervention',
+  /// 'customer_ban', 'customer_unban', 'administrator_promotion',
+  /// 'administrator_demotion', 'platform_integrity_action'.
+  decision_type String
+  
+  /// Type of entity affected by the decision. Valid values: 'seller',
+  /// 'customer', 'product', 'category', 'order_item', 'administrator',
+  /// 'platform'.
+  target_entity_type String
+  
+  /// ID of the target entity affected by the decision. References the primary
+  /// key of the corresponding entity table based on target_entity_type.
+  target_entity_id String?
+  
+  /// Outcome of the administrative decision. Valid values: 'approved',
+  /// 'rejected', 'suspended', 'unsuspended', 'deleted', 'cancelled',
+  /// 'refunded', 'banned', 'unbanned', 'promoted', 'demoted', 'enforced'.
+  decision_outcome String
+  
+  /// Administrator's reason or justification for the decision. Provides
+  /// context for why the action was taken, which may be referenced during
+  /// disputes or compliance reviews.
+  decision_reason String?
+  
+  /// Additional notes or details about the decision that may be relevant for
+  /// historical context or future reference.
+  decision_notes String?
+  
+  /// JSON representation of the target entity's state before the decision was
+  /// made. Captures relevant attributes and values that existed prior to the
+  /// administrative action.
+  before_state_json String?
+  
+  /// JSON representation of the target entity's state after the decision was
+  /// made. Captures the resulting state following the administrative action.
+  after_state_json String?
+  
+  /// Timestamp when the decision snapshot was created. This represents when
+  /// the administrative decision was formally recorded in the system.
+  created_at DateTime
+  
+  /// Timestamp when the decision snapshot was last updated. While snapshots
+  /// are typically immutable, this field tracks any metadata updates.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_decision_snapshots_admini_3142fd1b")
+  // spellchecker: ignore-next-line
+  @@index([decision_type, created_at], map: "ecommerce_mall_administrator_decision_snapshots_decisi_6b87b46b")
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id, created_at], map: "ecommerce_mall_administrator_decision_snapshots_target_aa3445c2")
+}
+
+/// Comprehensive access logging for administrator activities including login
+/// attempts, session management, and security events.
+///
+/// Tracks all administrator access patterns for security monitoring, anomaly
+/// detection, and audit trail compliance. Each record captures the access
+/// context including IP address, user agent, success status, and activity
+/// type to support forensic analysis and security incident investigation.
+///
+/// This table supports the platform's security posture by providing detailed
+/// visibility into administrator access patterns, enabling detection of
+/// suspicious activities, and maintaining compliance with security audit
+/// requirements. {@link ecommerce_mall_administrators.id}
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_access_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed the access activity. {@link
+  /// ecommerce_mall_administrators.id}
+  administrator_id String
+  
+  /// The session associated with this access activity, if applicable. {@link
+  /// ecommerce_mall_administrator_sessions.id}
+  session_id String?
+  
+  /// Type of access activity performed, such as 'login_attempt',
+  /// 'session_renewal', 'logout', 'failed_authentication', 'password_change',
+  /// or 'access_denied'.
+  activity_type String
+  
+  /// IP address from which the access activity originated, supporting
+  /// geo-location analysis and IP-based security controls.
+  ip_address String
+  
+  /// HTTP User-Agent header from the client browser or application, supporting
+  /// device and browser fingerprinting.
+  user_agent String?
+  
+  /// Indicates whether the access activity was successful (true) or failed
+  /// (false).
+  success Boolean
+  
+  /// Reason for access failure, such as 'invalid_credentials',
+  /// 'expired_session', 'ip_blocked', 'account_suspended', or
+  /// 'rate_limit_exceeded'.
+  failure_reason String?
+  
+  /// Additional context information in JSON format, such as request headers,
+  /// query parameters, or security context details for forensic analysis.
+  metadata String?
+  
+  /// Timestamp when the access activity was recorded, serving as the audit
+  /// trail reference point.
+  created_at DateTime
+  
+  /// Timestamp when the access log record was last updated, supporting data
+  /// integrity monitoring.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  session ecommerce_mall_administrator_sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([session_id])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_access_logs_administrator_64434fea")
+  // spellchecker: ignore-next-line
+  @@index([activity_type, created_at], map: "ecommerce_mall_administrator_access_logs_activity_type_daa08271")
+  // spellchecker: ignore-next-line
+  @@index([ip_address, created_at], map: "ecommerce_mall_administrator_access_logs_ip_address_cr_f36e6fd4")
+  @@index([success, created_at])
+}
+
+/// Links administrator users to their current administrator grade assignments.
+///
+/// This table establishes which users (from the administrator actor table)
+/// have administrator privileges and what grade (regular or super
+/// administrator) they currently hold. Each administrator can have only one
+/// active grade assignment at a time, tracked through this relationship
+/// table. When administrators are promoted or demoted, new records are
+/// created to maintain historical tracking of grade changes.
+///
+/// The relationship is essential for enforcing the administrator hierarchy
+/// where super administrators have additional privileges including the
+/// ability to promote/demote other administrators. This table serves as the
+/// authoritative source for determining an administrator's current grade and
+/// associated permissions within the platform.
+///
+/// {@link ecommerce_mall_administrators.id} references the administrator
+/// user identity, while {@link ecommerce_mall_administrator_grades.id}
+/// references the specific grade configuration currently assigned to that
+/// administrator.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_users {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator user identity. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Reference to the administrator grade configuration currently assigned.
+  /// {@link ecommerce_mall_administrator_grades.id}.
+  administrator_grade_id String
+  
+  /// Timestamp when this grade assignment was created, typically when an
+  /// administrator is initially assigned a grade or promoted/demoted.
+  created_at DateTime
+  
+  /// Timestamp when this grade assignment was last updated, useful for
+  /// tracking recent changes to administrator privileges.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  grade ecommerce_mall_administrator_grades @relation(fields: [administrator_grade_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecords ecommerce_mall_administrator_decision_records[] @relation("ecommerce_mall_administrator_decision_records_of_admin_fd44ae64")
+  reviewedDecisionRecords ecommerce_mall_administrator_decision_records[] @relation("ecommerce_mall_administrator_decision_records_of_revie_ccf4d5fa")
+  affectingDecisionRecords ecommerce_mall_administrator_decision_records[] @relation("ecommerce_mall_administrator_decision_records_of_affec_7f7c715f")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([administrator_id])
+  @@index([administrator_grade_id])
+  @@index([created_at])
+}
+
+/// Historical records of administrator grade changes including promotion and
+/// demotion actions.
+///
+/// Tracks when administrators are promoted from regular to super
+/// administrator status or demoted from super to regular administrator
+/// status. Each record includes the administrator being changed, the
+/// administrator performing the change, previous and new grades, reason for
+/// the change, and timestamp for audit purposes.
+///
+/// Super administrators can promote regular administrators to super status
+/// and demote other super administrators to regular status. Super
+/// administrators cannot demote themselves as enforced by business rules.
+/// Historical records are immutable and serve as an audit trail for
+/// administrator hierarchy management.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_promotion_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator whose grade is being changed. References {@link
+  /// ecommerce_mall_administrators.id}.
+  target_administrator_id String
+  
+  /// The administrator performing the grade change. References {@link
+  /// ecommerce_mall_administrators.id}.
+  performing_administrator_id String
+  
+  /// Previous administrator grade before the change. Valid values are
+  /// 'regular' for regular administrator or 'super' for super administrator.
+  previous_grade String
+  
+  /// New administrator grade after the change. Valid values are 'regular' for
+  /// regular administrator or 'super' for super administrator.
+  new_grade String
+  
+  /// Reason for the grade change, explaining why the promotion or demotion was
+  /// performed. Provides context for audit trail and historical reference.
+  reason String?
+  
+  /// Timestamp when the grade change record was created. This represents when
+  /// the promotion or demotion action occurred.
+  created_at DateTime
+  
+  /// Timestamp when the grade change record was last updated. Since historical
+  /// records are typically immutable, this usually matches created_at unless
+  /// corrections are made.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  targetAdministrator ecommerce_mall_administrators @relation("ecommerce_mall_administrator_promotion_histories_of_ta_59b6b1a6", fields: [target_administrator_id], references: [id], onDelete: Cascade)
+  performingAdministrator ecommerce_mall_administrators @relation("ecommerce_mall_administrator_promotion_histories_of_pe_931fea3d", fields: [performing_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  decisionRecord ecommerce_mall_administrator_decision_records?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([target_administrator_id, created_at], map: "ecommerce_mall_administrator_promotion_histories_targe_ec456044")
+  // spellchecker: ignore-next-line
+  @@index([performing_administrator_id, created_at], map: "ecommerce_mall_administrator_promotion_histories_perfo_625cad29")
+  // spellchecker: ignore-next-line
+  @@index([previous_grade, new_grade], map: "ecommerce_mall_administrator_promotion_histories_previ_a04f08fe")
+}
+
+/// Detailed logs of administrator review activities including approvals,
+/// rejections, and decisions. This table serves as a comprehensive audit
+/// trail for all administrative review actions across the platform.
+///
+/// Records include seller registration approvals/rejections, seller
+/// suspension/unsuspension actions, administrator promotions/demotions,
+/// category management, product deletions, order interventions, customer
+/// bans, and administrator request reviews. Each log entry captures the
+/// administrator's decision, reason, and related session context for full
+/// accountability and historical reference.
+///
+/// Logs are immutable once created and form part of the platform's integrity
+/// assurance system as described in section 25 (Policy Enforcement and
+/// Platform Integrity).
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_review_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who performed the review action. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Administrator session during which the review was performed. {@link
+  /// ecommerce_mall_administrator_sessions.id}.
+  administrator_session_id String
+  
+  /// Type of entity being reviewed. Valid values: 'seller_registration',
+  /// 'seller_suspension', 'administrator_promotion', 'category', 'product',
+  /// 'order', 'customer_ban', 'administrator_request'.
+  entity_type String
+  
+  /// ID of the entity being reviewed. References the primary key of the
+  /// corresponding entity table.
+  entity_id String
+  
+  /// Type of decision made. Valid values: 'approved', 'rejected', 'suspended',
+  /// 'unsuspended', 'promoted', 'demoted', 'created', 'edited', 'deleted',
+  /// 'banned', 'unbanned', 'force_cancelled', 'force_refunded'.
+  decision_type String
+  
+  /// Reason provided for the decision. Required for rejections and
+  /// suspensions, optional for other decision types.
+  reason String?
+  
+  /// Timestamp when the review log entry was created.
+  created_at DateTime
+  
+  /// Timestamp when the review log entry was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the review log entry was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  administratorSession ecommerce_mall_administrator_sessions @relation(fields: [administrator_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_session_id], map: "ecommerce_mall_administrator_review_logs_administrator_de147b28")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_review_logs_administrator_931ea4b0")
+  // spellchecker: ignore-next-line
+  @@index([entity_type, entity_id, created_at], map: "ecommerce_mall_administrator_review_logs_entity_type_e_26a39ba9")
+  // spellchecker: ignore-next-line
+  @@index([decision_type, created_at], map: "ecommerce_mall_administrator_review_logs_decision_type_1a1fcd8a")
+}
+
+/// Individual decision records capturing administrator reasoning and
+/// justification for actions across the platform.
+///
+/// This table serves as the central audit trail for all administrator
+/// decisions, including seller approvals/rejections, seller suspensions,
+/// product deletions, order interventions, customer bans, category
+/// management actions, and administrator promotions/demotions. Each record
+/// preserves the complete context of a decision: who made it, when, why,
+/// what entity was affected, and what the outcome was.
+///
+/// Decision records support platform integrity by documenting justification
+/// for enforcement actions and providing transparency for dispute
+/// resolution. They reference specific administrative action tables while
+/// maintaining a separate audit trail of the decision-making rationale.
+/// {@link ecommerce_mall_administrator_users.id} identifies the
+/// administrator who made the decision, while various foreign keys reference
+/// the affected entities and related action records.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_decision_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator who made the decision. {@link
+  /// ecommerce_mall_administrator_users.id}.
+  administrator_user_id String
+  
+  /// Administrator who reviewed the decision (for multi-level approval
+  /// workflows). {@link ecommerce_mall_administrator_users.id}.
+  reviewed_by_administrator_id String?
+  
+  /// Reference to specific seller suspension action. {@link
+  /// ecommerce_mall_administrator_seller_suspensions.id}.
+  seller_suspension_id String?
+  
+  /// Reference to specific product deletion action. {@link
+  /// ecommerce_mall_administrator_product_deletions.id}.
+  product_deletion_id String?
+  
+  /// Reference to specific order intervention action. {@link
+  /// ecommerce_mall_administrator_order_interventions.id}.
+  order_intervention_id String?
+  
+  /// Reference to specific customer ban action. {@link
+  /// ecommerce_mall_administrator_customer_bans.id}.
+  customer_ban_id String?
+  
+  /// Reference to specific category management action. {@link
+  /// ecommerce_mall_administrator_category_actions.id}.
+  category_action_id String?
+  
+  /// Reference to specific administrator promotion/demotion history. {@link
+  /// ecommerce_mall_administrator_promotion_histories.id}.
+  administrator_promotion_history_id String?
+  
+  /// Seller affected by the decision. {@link ecommerce_mall_sellers.id}.
+  affected_seller_id String?
+  
+  /// Product affected by the decision. {@link ecommerce_mall_products.id}.
+  affected_product_id String?
+  
+  /// Order item affected by the decision. {@link
+  /// ecommerce_mall_order_items.id}.
+  affected_order_item_id String?
+  
+  /// Customer affected by the decision. {@link ecommerce_mall_customers.id}.
+  affected_customer_id String?
+  
+  /// Category affected by the decision. {@link ecommerce_mall_categories.id}.
+  affected_category_id String?
+  
+  /// Administrator affected by the decision (for promotions/demotions). {@link
+  /// ecommerce_mall_administrator_users.id}.
+  affected_administrator_id String?
+  
+  /// Type of administrative decision being recorded. Values include:
+  /// seller_approval, seller_rejection, seller_suspension,
+  /// seller_unsuspension, product_deletion, order_force_cancellation,
+  /// order_force_refund, customer_ban, customer_unban, category_creation,
+  /// category_edition, category_deletion, administrator_promotion,
+  /// administrator_demotion.
+  decision_type String
+  
+  /// Detailed justification and reasoning for the administrative decision.
+  /// This field captures the administrator's explanation for the action taken,
+  /// including policy references, evidence, and business rationale.
+  reason String
+  
+  /// Current status of the decision. Values: pending_review (awaiting review
+  /// by another administrator), approved (decision approved for
+  /// implementation), rejected (decision rejected during review), implemented
+  /// (decision successfully executed), cancelled (decision cancelled before
+  /// implementation).
+  status String
+  
+  /// Optional URL reference to supporting evidence, documentation, or external
+  /// records that informed the decision. Used for providing additional context
+  /// or proof for enforcement actions.
+  reference_url String?
+  
+  /// Comments and notes from the reviewing administrator during multi-level
+  /// approval workflows. Captures feedback, questions, or additional
+  /// requirements for the decision.
+  review_notes String?
+  
+  /// Timestamp when the decision record was initially created. This represents
+  /// when the administrator first proposed or documented the decision.
+  created_at DateTime
+  
+  /// Timestamp when the decision record was last modified. Updated whenever
+  /// the status, reason, or other fields are changed.
+  updated_at DateTime
+  
+  /// Timestamp when the decision was reviewed by another administrator. Null
+  /// until review occurs in multi-level approval workflows.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the decision was successfully implemented and executed.
+  /// Null until the associated administrative action is completed.
+  implemented_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorUser ecommerce_mall_administrator_users @relation("ecommerce_mall_administrator_decision_records_of_admin_fd44ae64", fields: [administrator_user_id], references: [id], onDelete: Cascade)
+  reviewedByAdministrator ecommerce_mall_administrator_users? @relation("ecommerce_mall_administrator_decision_records_of_revie_ccf4d5fa", fields: [reviewed_by_administrator_id], references: [id], onDelete: Cascade)
+  sellerSuspension ecommerce_mall_administrator_seller_suspensions? @relation(fields: [seller_suspension_id], references: [id], onDelete: Cascade)
+  productDeletion ecommerce_mall_administrator_product_deletions? @relation(fields: [product_deletion_id], references: [id], onDelete: Cascade)
+  orderIntervention ecommerce_mall_administrator_order_interventions? @relation(fields: [order_intervention_id], references: [id], onDelete: Cascade)
+  customerBan ecommerce_mall_administrator_customer_bans? @relation(fields: [customer_ban_id], references: [id], onDelete: Cascade)
+  categoryAction ecommerce_mall_administrator_category_actions? @relation(fields: [category_action_id], references: [id], onDelete: Cascade)
+  administratorPromotionHistory ecommerce_mall_administrator_promotion_histories? @relation(fields: [administrator_promotion_history_id], references: [id], onDelete: Cascade)
+  affectedSeller ecommerce_mall_sellers? @relation(fields: [affected_seller_id], references: [id], onDelete: Cascade)
+  affectedProduct ecommerce_mall_products? @relation(fields: [affected_product_id], references: [id], onDelete: Cascade)
+  affectedOrderItem ecommerce_mall_order_items? @relation(fields: [affected_order_item_id], references: [id], onDelete: Cascade)
+  affectedCustomer ecommerce_mall_customers? @relation(fields: [affected_customer_id], references: [id], onDelete: Cascade)
+  affectedCategory ecommerce_mall_categories? @relation(fields: [affected_category_id], references: [id], onDelete: Cascade)
+  affectedAdministrator ecommerce_mall_administrator_users? @relation("ecommerce_mall_administrator_decision_records_of_affec_7f7c715f", fields: [affected_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_administrator_id], map: "ecommerce_mall_administrator_decision_records_reviewed_f5534519")
+  // spellchecker: ignore-next-line
+  @@unique([seller_suspension_id], map: "ecommerce_mall_administrator_decision_records_seller_s_c6b9006c")
+  // spellchecker: ignore-next-line
+  @@unique([product_deletion_id], map: "ecommerce_mall_administrator_decision_records_product__d6432af5")
+  // spellchecker: ignore-next-line
+  @@unique([order_intervention_id], map: "ecommerce_mall_administrator_decision_records_order_in_b2279a66")
+  // spellchecker: ignore-next-line
+  @@unique([customer_ban_id], map: "ecommerce_mall_administrator_decision_records_customer_ca3094c2")
+  // spellchecker: ignore-next-line
+  @@unique([category_action_id], map: "ecommerce_mall_administrator_decision_records_category_4d282f28")
+  // spellchecker: ignore-next-line
+  @@unique([administrator_promotion_history_id], map: "ecommerce_mall_administrator_decision_records_administ_7d937a3e")
+  // spellchecker: ignore-next-line
+  @@index([affected_order_item_id], map: "ecommerce_mall_administrator_decision_records_affected_00ffa8a4")
+  // spellchecker: ignore-next-line
+  @@index([affected_category_id], map: "ecommerce_mall_administrator_decision_records_affected_facd7ba1")
+  // spellchecker: ignore-next-line
+  @@index([affected_administrator_id], map: "ecommerce_mall_administrator_decision_records_affected_ec1751cc")
+  // spellchecker: ignore-next-line
+  @@index([administrator_user_id, created_at], map: "ecommerce_mall_administrator_decision_records_administ_cee2098a")
+  // spellchecker: ignore-next-line
+  @@index([decision_type, status], map: "ecommerce_mall_administrator_decision_records_decision_3de52eca")
+  // spellchecker: ignore-next-line
+  @@index([affected_seller_id, decision_type], map: "ecommerce_mall_administrator_decision_records_affected_021e3137")
+  // spellchecker: ignore-next-line
+  @@index([affected_product_id, decision_type], map: "ecommerce_mall_administrator_decision_records_affected_978dbfa6")
+  // spellchecker: ignore-next-line
+  @@index([affected_customer_id, decision_type], map: "ecommerce_mall_administrator_decision_records_affected_fb7ff702")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "ecommerce_mall_administrator_decision_records_status_c_5cf70854")
+}
+
+/// Snapshot records of customer ban modifications for audit trail and
+/// historical reference.
+///
+/// This table preserves previous states when customer bans are created,
+/// modified, revoked, or deleted by administrators. Each snapshot captures
+/// the complete state of a customer ban at a specific point in time,
+/// including ban reason, status, effective dates, and administrative
+/// metadata. Snapshots are immutable and cannot be modified or deleted once
+/// created, ensuring a complete audit trail for compliance and dispute
+/// resolution.
+///
+/// Snapshots are created automatically whenever an administrator modifies a
+/// customer ban, including initial creation, status changes, reason updates,
+/// or deletion. The snapshot preserves the values before the change,
+/// allowing historical reconstruction of ban states. For ban deletions, the
+/// final state before deletion is captured.
+///
+/// This table supports the platform's financial integrity requirements by
+/// providing transparent tracking of all customer account restrictions and
+/// administrative actions affecting user access.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_customer_ban_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer ban record that was modified. {@link
+  /// ecommerce_mall_administrator_customer_bans.id}.
+  ecommerce_mall_administrator_customer_ban_id String
+  
+  /// Administrator who performed the ban modification. {@link
+  /// ecommerce_mall_administrators.id}.
+  administrator_id String
+  
+  /// Reason for the customer ban as recorded at the time of snapshot creation.
+  /// This captures the administrative justification for the ban action.
+  reason String
+  
+  /// Ban status at the time of snapshot creation. Common values include
+  /// 'active', 'suspended', 'revoked', or 'pending_review'. This preserves the
+  /// operational state of the ban.
+  status String
+  
+  /// Effective start date of the ban period as recorded in the snapshot. This
+  /// preserves when the ban was scheduled to begin taking effect.
+  banned_from DateTime
+  
+  /// Scheduled end date of the ban period as recorded in the snapshot. Null
+  /// indicates an indefinite or permanent ban. This preserves the intended
+  /// duration at the time of the ban modification.
+  banned_until DateTime?
+  
+  /// Additional contextual metadata about the snapshot creation, such as
+  /// system context, change type (create, update, delete), or administrative
+  /// notes. Used for detailed audit trail analysis.
+  snapshot_metadata String?
+  
+  /// Timestamp when this snapshot record was created. This represents when the
+  /// ban state was captured for historical preservation.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated. For immutable
+  /// snapshots, this typically matches created_at unless metadata corrections
+  /// are applied.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerBan ecommerce_mall_administrator_customer_bans @relation(fields: [ecommerce_mall_administrator_customer_ban_id], references: [id], onDelete: Cascade)
+  administrator ecommerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_customer_ban_id, created_at], map: "ecommerce_mall_administrator_customer_ban_snapshots_ec_11de38d7")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "ecommerce_mall_administrator_customer_ban_snapshots_ad_c03c2038")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "ecommerce_mall_administrator_customer_ban_snapshots_st_1fe9ca34")
+}
+
+/// Key-value metadata storage for administrator action logs, normalizing
+/// additional JSON data into separate table for First Normal Form (1NF)
+/// compliance.
+///
+/// Each administrator action log can have multiple metadata key-value pairs
+/// that provide additional context or structured data about the
+/// administrative action. This table stores those pairs in normalized form
+/// rather than as JSON strings in the main action log table, ensuring proper
+/// database normalization and query capabilities.
+///
+/// Metadata examples might include: request payload details, affected entity
+/// identifiers, action-specific parameters, or system context information
+/// that supplements the main log entry.
+///
+/// This table is managed indirectly through administrator action log
+/// operations and provides supporting data for audit trails and
+/// administrative oversight. {@link
+/// ecommerce_mall_administrator_action_logs}
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_action_log_metadata {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated administrator action log. {@link
+  /// ecommerce_mall_administrator_action_logs.id}
+  administrator_action_log_id String
+  
+  /// Metadata key identifying the type of additional data stored. Examples:
+  /// 'affected_user_id', 'policy_rule', 'request_payload', 'system_context'.
+  key String
+  
+  /// Metadata value associated with the key. Contains the actual data in
+  /// string format, which can represent identifiers, JSON strings, or other
+  /// structured information.
+  value String
+  
+  /// Timestamp when this metadata record was created. Automatically set when
+  /// the metadata is added to an action log.
+  created_at DateTime
+  
+  /// Timestamp when this metadata record was last updated. Updated whenever
+  /// metadata values are modified.
+  updated_at DateTime
+  
+  /// Timestamp when this metadata record was soft-deleted. Null indicates the
+  /// metadata is active and not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  actionLog ecommerce_mall_administrator_action_logs @relation(fields: [administrator_action_log_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([administrator_action_log_id, key], map: "ecommerce_mall_administrator_action_log_metadata_admin_d9941479")
+  @@index([key, value])
+  @@index([created_at])
+}

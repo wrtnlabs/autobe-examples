@@ -1,0 +1,135 @@
+/// Purchase-verified customer reviews for products in the shopping mall
+/// platform.
+///
+/// Each review is anchored to a specific {@link shopping_mall_order_items}
+/// record, guaranteeing that only customers who have actually purchased and
+/// received a product can submit a review. This 1:1 relationship between an
+/// order item and a review enforces purchase verification at the database
+/// level via a unique constraint.
+///
+/// A review also references the {@link shopping_mall_customers} who wrote it
+/// and the {@link shopping_mall_products} being reviewed, enabling efficient
+/// querying of all reviews for a product or all reviews by a customer.
+///
+/// Reviews include a mandatory star rating (integer 1–5) and an optional
+/// text body. Review content changes are tracked through {@link
+/// shopping_mall_review_snapshots}, which capture immutable point-in-time
+/// states of the review before each edit, providing a full audit trail.
+///
+/// Soft deletion is supported via the `deleted_at` timestamp, allowing
+/// reviews to be hidden from public view while retaining the record for
+/// audit and dispute resolution purposes.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The customer who authored this review. References {@link
+  /// shopping_mall_customers.id}.
+  customer_id String
+  
+  /// The product being reviewed. References {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// The specific order item that qualifies this review as purchase-verified.
+  /// Enforces a 1:1 constraint: each order item may have at most one review.
+  /// References {@link shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Star rating given by the customer, expressed as an integer from 1 (worst)
+  /// to 5 (best). Required for all reviews.
+  rating Int
+  
+  /// Optional free-text content of the review written by the customer. May be
+  /// null if the customer chose to leave only a star rating without written
+  /// feedback.
+  body String?
+  
+  /// Timestamp when the review was first created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this review record, including
+  /// content edits.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When non-null, the review is considered deleted
+  /// and hidden from public view but retained for audit and dispute resolution
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_review_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([customer_id, created_at])
+  @@index([product_id, created_at])
+}
+
+/// Immutable historical snapshots of a review's content captured before each
+/// edit.
+///
+/// Each record preserves the exact rating and text content of a {@link
+/// shopping_mall_reviews} at a specific point in time. A new snapshot is
+/// appended whenever the customer edits their review, ensuring the full edit
+/// history is retained for audit and dispute resolution purposes.
+///
+/// These records are append-only and are never modified or deleted after
+/// creation.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The review this snapshot belongs to. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Star rating captured at the time of this snapshot. Integer value between
+  /// 1 and 5 inclusive, representing the customer's satisfaction level with
+  /// the product at this point in review history.
+  rating Int
+  
+  /// Optional text content of the review captured at the time of this
+  /// snapshot. May be null if the customer submitted a rating-only review
+  /// without written feedback.
+  body String?
+  
+  /// Timestamp when this snapshot was created, corresponding to the moment the
+  /// review was edited or first submitted. Immutable after creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
+}

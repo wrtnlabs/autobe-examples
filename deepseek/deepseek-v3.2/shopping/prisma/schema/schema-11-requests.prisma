@@ -1,0 +1,750 @@
+/// Administrator requests submitted by users wanting to become
+/// administrators. Tracks request submissions with reason text, status
+/// workflow, and review processing. Any authenticated user (customer or
+/// seller) can submit a request to become an administrator. Super
+/// administrators review and approve or reject these requests. Duplicate
+/// pending requests from the same user are prevented to avoid spamming. When
+/// a request is approved, the user becomes a regular administrator with
+/// platform management privileges.
+///
+/// The request includes the submission reason, current status, and
+/// timestamps for submission and processing. Each request is reviewed by a
+/// super administrator who provides approval or rejection. The snapshot
+/// principle applies - all status changes create immutable snapshots for
+/// audit trails via the {@link
+/// ecommerce_mall_administrator_request_snapshots} table.
+///
+/// This table serves as the central registry for administrator promotion
+/// requests, with subtype tables {@link
+/// ecommerce_mall_administrator_request_customers} and {@link
+/// ecommerce_mall_administrator_request_sellers} handling the specific actor
+/// relationships using the proper main entity + subtype pattern for
+/// polymorphic ownership.
+///
+/// Status field values: 'pending' (awaiting review), 'approved' (request
+/// granted), 'rejected' (request denied). Status transitions follow
+/// workflow: pending → approved/rejected.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super administrator who reviewed this request. Null while request is
+  /// pending. {@link ecommerce_mall_administrators.id}
+  reviewing_administrator_id String?
+  
+  /// User-provided reason for requesting administrator privileges. Explains
+  /// why the user wants to become an administrator and what they intend to
+  /// contribute to platform management.
+  reason String
+  
+  /// Current status of the administrator request. 'pending': awaiting review,
+  /// 'approved': request granted and user promoted to administrator,
+  /// 'rejected': request denied. Status transitions follow defined workflow
+  /// rules.
+  status String
+  
+  /// Timestamp when a super administrator reviewed and processed this request.
+  /// Null while request is pending.
+  processed_at DateTime?
+  
+  /// Timestamp when the user submitted this administrator request.
+  created_at DateTime
+  
+  /// Timestamp when this request record was last modified, including status
+  /// changes and processing updates.
+  updated_at DateTime
+  
+  /// Timestamp when this request was soft deleted. Null if request is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reviewingAdministrator ecommerce_mall_administrators? @relation(fields: [reviewing_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_administrator_request_snapshots[]
+  customerSubmission ecommerce_mall_administrator_request_customers?
+  sellerRequest ecommerce_mall_administrator_request_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reviewing_administrator_id], map: "ecommerce_mall_administrator_requests_reviewing_admini_16fb7af5")
+  @@index([status, created_at])
+}
+
+/// Cancellation requests for order items that have not yet shipped, enabling
+/// customers to formally request item cancellation with seller approval
+/// workflow.
+///
+/// Customers can submit cancellation requests for individual order items
+/// with 'paid' status (pre-shipment), providing a reason for the
+/// cancellation. Each request is linked to the specific customer submitting
+/// it, the order item being requested for cancellation, and the seller
+/// responsible for approval decisions.
+///
+/// The request status tracks progression through the approval workflow:
+/// 'pending' (awaiting seller response), 'approved' (seller agreed to
+/// cancel), or 'rejected' (seller declined). When a seller responds to a
+/// cancellation request through {@link
+/// ecommerce_mall_cancellation_request_responses}, a snapshot is
+/// automatically created via {@link
+/// ecommerce_mall_cancellation_request_snapshots} for audit trail purposes.
+///
+/// Approved cancellation requests trigger financial reimbursement to the
+/// customer and stock quantity restoration for the cancelled variant via
+/// automatic inventory record creation. Rejected requests preserve the
+/// seller's decision reason and maintain the order item in its current
+/// 'paid' status.
+///
+/// Each order item can have only one active ('pending') cancellation request
+/// at any time, preventing duplicate request submissions. Deleted customer
+/// accounts preserve their cancellation requests, but are displayed with
+/// appropriate anonymization.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the cancellation request. {@link
+  /// ecommerce_mall_customers.id}
+  customer_id String
+  
+  /// Order item being requested for cancellation. Must have 'paid' status.
+  /// {@link ecommerce_mall_order_items.id}
+  order_item_id String
+  
+  /// Seller responsible for approving or rejecting the cancellation request.
+  /// {@link ecommerce_mall_sellers.id}
+  seller_id String
+  
+  /// Customer's explanation for requesting cancellation of the order item.
+  /// Provides context to help sellers make informed approval decisions.
+  reason String
+  
+  /// Current state of the cancellation request in the approval workflow. Valid
+  /// values: 'pending' (awaiting seller response), 'approved' (seller agreed
+  /// to cancel), 'rejected' (seller declined).
+  status String
+  
+  /// Timestamp when the cancellation request was initially submitted by the
+  /// customer.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last modified, including
+  /// status changes.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_cancellation_request_snapshots[]
+  response ecommerce_mall_cancellation_request_responses?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([customer_id, created_at])
+  @@index([seller_id, status])
+}
+
+/// Refund requests for delivered order items within 7-day window. Customers
+/// can request refunds for items with 'delivered' status within 7 days of
+/// delivery, providing a reason for the request. Sellers can approve or
+/// reject the request with optional explanation.
+///
+/// When a refund request is approved, the customer receives financial
+/// reimbursement for the specific order item and the stock quantity is
+/// restored via inventory record. If rejected, the seller's response reason
+/// provides closure to the customer. All decisions create immutable
+/// snapshots for audit trails and dispute resolution.
+///
+/// Refund requests follow strict business constraints: 7-day submission
+/// window from delivery confirmation, delivered status requirement, one
+/// active request per order item, and seller-specific ownership for
+/// decision-making. This structured process ensures accountability while
+/// supporting post-purchase issue resolution.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the refund request. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Order item being requested for refund. Must have 'delivered' status and
+  /// be within 7-day window from delivery confirmation. {@link
+  /// ecommerce_mall_order_items.id}.
+  order_item_id String
+  
+  /// Seller responsible for evaluating and deciding on the refund request.
+  /// {@link ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Customer's explanation for requesting the refund, describing the specific
+  /// issue with the delivered item such as damage, incorrect product, quality
+  /// problems, or unmet expectations.
+  reason String
+  
+  /// Current state of the refund request in the evaluation workflow. Valid
+  /// values: 'pending' (awaiting seller response), 'approved' (seller agreed
+  /// to refund), 'rejected' (seller declined refund).
+  status String
+  
+  /// Optional explanation provided by the seller when rejecting a refund
+  /// request, helping customers understand the decision and providing closure.
+  seller_response_reason String?
+  
+  /// Timestamp when the order item was confirmed as delivered, used to
+  /// calculate the 7-day refund eligibility window.
+  delivery_confirmed_at DateTime
+  
+  /// Calculated expiration timestamp representing the deadline for refund
+  /// request submission (7 days after delivery confirmation). Used for
+  /// automatic validation of eligibility window.
+  expires_at DateTime
+  
+  /// Timestamp when the seller approved or rejected the refund request, or
+  /// when an administrator intervened.
+  responded_at DateTime?
+  
+  /// Timestamp when the refund request was submitted by the customer.
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last modified (status change,
+  /// seller response, etc.).
+  updated_at DateTime
+  
+  /// Timestamp when the refund request was soft-deleted. Preserved for
+  /// historical reference while removing from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_refund_request_snapshots[]
+  response ecommerce_mall_refund_request_responses?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id, status])
+  @@index([customer_id, created_at])
+  @@index([seller_id, status, created_at])
+  @@index([status, expires_at])
+}
+
+/// Immutable snapshot records capturing the complete state of administrator
+/// request changes for audit trails and historical reference.
+///
+/// When an administrator request's status changes (pending →
+/// approved/rejected), a snapshot is automatically created to preserve the
+/// previous state. This ensures full transparency in the administrator
+/// approval workflow and provides an audit trail for platform management
+/// decisions.
+///
+/// Each snapshot contains a denormalized copy of all relevant administrator
+/// request fields at the moment of status change, including the request
+/// reason, current status, any administrator response, and timestamps.
+/// Snapshots cannot be modified or deleted, maintaining the integrity of the
+/// administrator approval audit trail.
+///
+/// This table works with {@link ecommerce_mall_administrator_requests} to
+/// provide comprehensive oversight of the administrator appointment process,
+/// supporting platform integrity requirements.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator request being snapshotted. {@link
+  /// ecommerce_mall_administrator_requests.id}.
+  ecommerce_mall_administrator_request_id String
+  
+  /// The administrator who reviewed the request, if the status has been
+  /// changed from pending. {@link ecommerce_mall_administrators.id}.
+  reviewed_by_admin_id String?
+  
+  /// The status of the administrator request at the time of snapshot creation.
+  /// Typically 'pending', 'approved', or 'rejected'.
+  status String
+  
+  /// The reason provided by the user requesting administrator status, as
+  /// recorded at snapshot time.
+  reason String
+  
+  /// The response from the reviewing administrator (if any), explaining
+  /// approval or rejection decision.
+  admin_response String?
+  
+  /// Timestamp when this snapshot was created, recording the exact moment of
+  /// administrator request state capture.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated. For audit purposes,
+  /// should typically match created_at as snapshots are immutable.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest ecommerce_mall_administrator_requests @relation(fields: [ecommerce_mall_administrator_request_id], references: [id], onDelete: Cascade)
+  reviewingAdministrator ecommerce_mall_administrators? @relation(fields: [reviewed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_admin_id], map: "ecommerce_mall_administrator_request_snapshots_reviewe_d85b8da7")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_administrator_request_id, created_at], map: "ecommerce_mall_administrator_request_snapshots_ecommer_eadf60b4")
+}
+
+/// Immutable snapshot records capturing the reference to cancellation
+/// requests at the moment of status changes.
+///
+/// Created automatically whenever a seller responds to a cancellation
+/// request (approves or rejects), this table preserves only the reference to
+/// the original request and creation timestamp for audit trails. All request
+/// attributes (reason, status, customer, seller, order item) are accessed
+/// through the parent cancellation request via foreign key join, maintaining
+/// proper normalization.
+///
+/// These snapshots support financial transparency requirements by providing
+/// an immutable record of when cancellation request changes occurred. They
+/// can be reviewed by relevant parties (customers, sellers, administrators)
+/// to understand the timing of status transitions while avoiding data
+/// duplication. {@link ecommerce_mall_cancellation_requests.id}
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original cancellation request that this snapshot
+  /// captures. {@link ecommerce_mall_cancellation_requests.id}
+  cancellation_request_id String
+  
+  /// Timestamp when this snapshot was created, capturing the exact moment of
+  /// request state preservation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id, created_at], map: "ecommerce_mall_cancellation_request_snapshots_cancella_9beb819a")
+}
+
+/// Immutable snapshot records capturing the complete state of refund
+/// requests at the moment of status changes, preserving previous states for
+/// audit trails and dispute resolution.
+///
+/// This table captures the exact state of a refund request whenever a seller
+/// responds to it. Each snapshot preserves the refund request's status,
+/// customer's reason, seller's response, and all actor references at the
+/// moment before the response is processed. Snapshots are created whenever a
+/// seller approves or rejects a refund request, ensuring financial
+/// transparency and audit compliance as required by the Snapshot Principle.
+///
+/// Snapshots include foreign key references to all related entities
+/// (customer, seller, order_item) to provide complete context for
+/// independent audit analysis. They are immutable and cannot be modified or
+/// deleted, providing a permanent record for dispute resolution and
+/// financial auditing.
+///
+/// References the parent {@link ecommerce_mall_refund_requests} and serves
+/// as historical documentation of the refund workflow lifecycle.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request that this snapshot captures. {@link
+  /// ecommerce_mall_refund_requests.id}.
+  ecommerce_mall_refund_request_id String
+  
+  /// Customer who submitted the refund request. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Seller responsible for responding to the refund request. {@link
+  /// ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Order item being refunded. {@link ecommerce_mall_order_items.id}.
+  order_item_id String
+  
+  /// Status captured at the moment of snapshot creation. This is the status
+  /// from the parent refund request at the time the snapshot was taken,
+  /// preserving the historical state for audit purposes.
+  snapshot_status String
+  
+  /// Customer's reason for requesting a refund, preserved exactly as submitted
+  /// at the time of snapshot creation. This duplicates the parent's reason
+  /// field for historical accuracy in audits.
+  customer_reason String
+  
+  /// Seller's response reason captured at snapshot time, if a response
+  /// existed. Nullable because snapshots may capture pending states before
+  /// seller response.
+  seller_response_reason String?
+  
+  /// Seller's response status at snapshot time (approved, rejected, or null if
+  /// pending). Captures the decision state for audit purposes.
+  response_status String?
+  
+  /// Timestamp when this snapshot was created. Represents the exact moment
+  /// when the refund request state was captured for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated. For snapshots, this
+  /// should rarely change as they are meant to be immutable after creation.
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was marked as deleted. Since snapshots are
+  /// immutable audit records, this should typically be null unless exceptional
+  /// administrative action is required.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest ecommerce_mall_refund_requests @relation(fields: [ecommerce_mall_refund_request_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_refund_request_id, created_at], map: "ecommerce_mall_refund_request_snapshots_ecommerce_mall_a453dd40")
+  // spellchecker: ignore-next-line
+  @@index([customer_id, created_at], map: "ecommerce_mall_refund_request_snapshots_customer_id_cr_5c2dbf3e")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "ecommerce_mall_refund_request_snapshots_seller_id_crea_555edde5")
+  // spellchecker: ignore-next-line
+  @@index([order_item_id, created_at], map: "ecommerce_mall_refund_request_snapshots_order_item_id__ae18fd8e")
+}
+
+/// Seller responses to cancellation requests with decision and explanation.
+///
+/// When a seller receives a cancellation request from a customer for an
+/// order item, they must respond with an 'approved' or 'rejected' decision
+/// and provide an explanation for their decision. This table records the
+/// seller's formal response, which triggers the cancellation workflow and
+/// creates a snapshot for audit purposes.
+///
+/// Each response is tied to exactly one cancellation request and records
+/// which seller made the decision. The response determines whether the order
+/// item will be cancelled and its stock restored, or whether the
+/// cancellation request is denied and the order proceeds normally.
+///
+/// This table is part of the financial audit trail required for the
+/// platform's money handling. All responses are immutable once created and
+/// are referenced in snapshots for dispute resolution.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The cancellation request being responded to. {@link
+  /// ecommerce_mall_cancellation_requests.id}.
+  ecommerce_mall_cancellation_request_id String
+  
+  /// The seller who made the response decision. {@link
+  /// ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// The seller's decision on the cancellation request. Must be either
+  /// 'approved' or 'rejected'. Approved decisions trigger order item
+  /// cancellation, refund processing, and stock restoration. Rejected
+  /// decisions leave the order item in 'paid' status to proceed with shipping.
+  decision String
+  
+  /// The seller's explanation for their decision. Provides business context
+  /// for why the cancellation was approved or rejected, which customers can
+  /// view and administrators can reference for dispute resolution.
+  explanation String
+  
+  /// Timestamp when the seller submitted their response. This records when the
+  /// decision was made in the cancellation workflow.
+  created_at DateTime
+  
+  /// Timestamp when the response was last updated. Responses are generally
+  /// immutable once created, but this field supports potential corrections
+  /// during the review window.
+  updated_at DateTime
+  
+  /// Timestamp when the response was soft-deleted. Responses should not be
+  /// deleted under normal circumstances as they are part of the financial
+  /// audit trail, but this supports exceptional cases.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [ecommerce_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_cancellation_request_id], map: "ecommerce_mall_cancellation_request_responses_ecommerc_249aee3e")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "ecommerce_mall_cancellation_request_responses_seller_i_91d33e9b")
+  // spellchecker: ignore-next-line
+  @@index([decision, created_at], map: "ecommerce_mall_cancellation_request_responses_decision_00bf64e8")
+}
+
+/// Seller responses to customer refund requests with approval/rejection
+/// decisions and explanatory text.
+///
+/// Each refund request for a delivered order item can receive exactly one
+/// seller response. The response includes the seller's decision (approve or
+/// reject) and an optional explanation. When a seller responds, a snapshot
+/// of the refund request state is automatically created as required by the
+/// Snapshot Principle. Approved refunds trigger refund processing and
+/// restore stock quantities via inventory records.
+///
+/// This table maintains a 1:1 relationship with {@link
+/// ecommerce_mall_refund_requests} through the unique foreign key
+/// constraint. Each response must be associated with an active seller
+/// session for audit purposes.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_request_responses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The refund request being responded to. {@link
+  /// ecommerce_mall_refund_requests.id}.
+  refund_request_id String
+  
+  /// Seller who made the decision on the refund request. {@link
+  /// ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Active seller session during the decision. {@link
+  /// ecommerce_mall_seller_sessions.id}.
+  seller_session_id String
+  
+  /// Seller's decision on the refund request. Must be either 'approved' or
+  /// 'rejected'.
+  decision String
+  
+  /// Optional text explaining the decision rationale. Provides transparency to
+  /// customers about why refunds were approved or rejected.
+  explanation String?
+  
+  /// Timestamp when the seller response was created.
+  created_at DateTime
+  
+  /// Timestamp when the seller response was last updated. Typically matches
+  /// created_at since responses are immutable after creation.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest ecommerce_mall_refund_requests @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  sellerSession ecommerce_mall_seller_sessions @relation(fields: [seller_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_session_id])
+  @@unique([refund_request_id])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "ecommerce_mall_refund_request_responses_seller_id_crea_b002e143")
+  @@index([decision])
+}
+
+/// Links administrator requests to specific customer actors who submitted them.
+///
+/// Implements the subtype pattern for customer-originated administrator
+/// requests with 1:1 relationship to main request table. Each record
+/// represents a customer's submission of an administrator request,
+/// maintaining the connection between the request and the customer actor for
+/// accountability and tracking purposes.
+///
+/// Related to {@link ecommerce_mall_administrator_requests} as the main
+/// request entity and {@link ecommerce_mall_customers} as the submitting
+/// actor.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_request_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator request being linked to this customer submission.
+  /// {@link ecommerce_mall_administrator_requests.id}.
+  administrator_request_id String
+  
+  /// The customer actor who submitted this administrator request. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Timestamp when this customer request submission was created.
+  created_at DateTime
+  
+  /// Timestamp when this customer request submission was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this customer request submission was soft-deleted. Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest ecommerce_mall_administrator_requests @relation(fields: [administrator_request_id], references: [id], onDelete: Cascade)
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([administrator_request_id], map: "ecommerce_mall_administrator_request_customers_adminis_f2106aec")
+  // spellchecker: ignore-next-line
+  @@index([customer_id, created_at], map: "ecommerce_mall_administrator_request_customers_custome_a7031e69")
+  @@index([deleted_at])
+}
+
+/// Links administrator requests to specific seller actors who submitted
+/// them. Implements the subtype pattern for seller-originated administrator
+/// requests with 1:1 relationship to main request table.
+///
+/// This table records which sellers have submitted requests to become
+/// administrators, maintaining the connection between the administrator
+/// request and the seller actor's identity. The 1:1 constraint ensures each
+/// administrator request can have at most one seller origin, while the
+/// foreign key to sellers ensures proper actor authentication and identity
+/// tracking.
+///
+/// {@link ecommerce_mall_administrator_requests} for the main request being
+/// linked.
+/// {@link ecommerce_mall_sellers} for the seller actor who submitted the
+/// request.
+///
+/// @namespace Requests
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_administrator_request_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Main administrator request being linked to a seller. {@link
+  /// ecommerce_mall_administrator_requests.id}.
+  administrator_request_id String
+  
+  /// Seller actor who submitted the administrator request. {@link
+  /// ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Timestamp when the seller was linked to this administrator request.
+  created_at DateTime
+  
+  /// Timestamp when this link record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest ecommerce_mall_administrator_requests @relation(fields: [administrator_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([administrator_request_id], map: "ecommerce_mall_administrator_request_sellers_administr_d3413927")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "ecommerce_mall_administrator_request_sellers_seller_id_0f5de927")
+}

@@ -1,0 +1,62 @@
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia from "typia";
+
+import { IPageIShoppingMallRefundRequest } from "../../../../api/structures/IPageIShoppingMallRefundRequest";
+import { IShoppingMallRefundRequest } from "../../../../api/structures/IShoppingMallRefundRequest";
+import { CustomerAuth } from "../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { patchShoppingMallCustomerRefundRequests } from "../../../../providers/patchShoppingMallCustomerRefundRequests";
+
+@Controller("/shoppingMall/customer/refundRequests")
+export class ShoppingmallCustomerRefundrequestsController {
+  /**
+   * Retrieve a paginated and filtered list of refund requests across the shopping mall platform.
+   *
+   * This operation provides a comprehensive search interface for refund requests stored in the `shopping_mall_refund_requests` table. Each refund request represents a formal post-delivery dispute mechanism through which a customer seeks a monetary refund for a specific delivered order item. The system enforces a 7-day eligibility window from the moment an order item transitions to 'delivered' status — requests submitted after this window are rejected at the service layer.
+   *
+   * Access to this endpoint is role-aware. Customers are shown only their own refund requests, scoped to their account identity. Sellers are shown only refund requests pertaining to order items belonging to their products, so they can track and respond to pending refund demands. Administrators and super administrators have full, unrestricted access to all refund requests across all customers and sellers, enabling platform-level oversight and dispute resolution as described in the business rules.
+   *
+   * The request body supports filtering by refund request status ('pending', 'approved', 'rejected'), submission date range, and keyword search against the customer's written reason field. Pagination is cursor or page-based and configurable in page size. Results are sorted by creation timestamp descending by default, enabling reviewers to see the most recently submitted requests first.
+   *
+   * The response returns a paginated summary of refund requests, including each request's unique identifier, associated order item reference, current resolution status, submission timestamp, and a truncated version of the reason text. Full details for a specific refund request, including its complete snapshot history of seller decisions, can be obtained through the corresponding GET endpoint.
+   *
+   * Before calling this endpoint, callers may need to reference `PATCH /orders` or `PATCH /orders/{orderId}/items` to locate order items of interest, and then use the refund request summary to navigate to individual request details. Administrators reviewing disputes should also consult `GET /refundRequests/{refundRequestId}/snapshots` to obtain the full chronological audit trail of seller decisions for a given refund request.
+   *
+   * @param connection
+   * @param body Search criteria, filters, and pagination parameters for listing refund requests
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification 1. Authenticate and identify the calling actor (customer, seller, admin, superAdmin).
+   * 2. Parse and validate the IShoppingMallRefundRequest.IRequest body: extract pagination params (page, limit), optional status filter (one of 'pending', 'approved', 'rejected'), optional date range (createdAtFrom, createdAtTo), and optional keyword for reason text search.
+   * 3. Build a base query against shopping_mall_refund_requests joined with shopping_mall_order_items for scope enforcement:
+   *    - If actor is a customer: add WHERE shopping_mall_order_items.shopping_mall_order_id IN (SELECT id FROM shopping_mall_orders WHERE shopping_mall_customer_id = :callerId)
+   *    - If actor is a seller: add WHERE shopping_mall_order_items.shopping_mall_product_variant_id IN (SELECT id FROM shopping_mall_product_variants WHERE shopping_mall_product_id IN (SELECT id FROM shopping_mall_products WHERE shopping_mall_seller_id = :callerId))
+   *    - If actor is admin or superAdmin: no scoping restriction
+   * 4. Apply optional filters:
+   *    - status filter: WHERE shopping_mall_refund_requests.status = :status
+   *    - date range: WHERE shopping_mall_refund_requests.created_at BETWEEN :createdAtFrom AND :createdAtTo
+   *    - reason keyword: WHERE shopping_mall_refund_requests.reason ILIKE '%:keyword%' (uses GIN trgm index on reason column)
+   * 5. Apply sorting (default: created_at DESC, configurable by caller).
+   * 6. Apply pagination and compute total count for IPage metadata.
+   * 7. Return IPageIShoppingMallRefundRequest.ISummary with pagination object and data array of summary DTOs, each including id, order_item_id, status, reason (truncated), created_at, updated_at.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IShoppingMallRefundRequest.IRequest,
+  ): Promise<IPageIShoppingMallRefundRequest.ISummary> {
+    try {
+      return await patchShoppingMallCustomerRefundRequests({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

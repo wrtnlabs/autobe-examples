@@ -1,0 +1,129 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IPageIShoppingMallProductSnapshotSkusOption } from "../../../../../../api/structures/IPageIShoppingMallProductSnapshotSkusOption";
+import { IShoppingMallProductSnapshotSkusOption } from "../../../../../../api/structures/IShoppingMallProductSnapshotSkusOption";
+import { AdminAuth } from "../../../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../../../decorators/payload/AdminPayload";
+import { getShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptionsOptionId } from "../../../../../../providers/getShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptionsOptionId";
+import { patchShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptions } from "../../../../../../providers/patchShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptions";
+
+@Controller("/shoppingMall/admin/snapshots/:snapshotId/skuses/:skuId/options")
+export class ShoppingmallAdminSnapshotsSkusesOptionsController {
+  /**
+   * Retrieve a paginated and filterable list of option key-value pairs belonging to a specific product snapshot SKU.
+   *
+   * This operation returns the individual option entries (e.g., `color: red`, `size: XL`, `material: cotton`) that were captured as part of a product snapshot SKU record (`shopping_mall_product_snapshot_skus_options`). Each option record preserves the exact dimension name (`key`) and its selected value (`value`) as they existed at the precise moment the parent product snapshot was created.
+   *
+   * The `snapshotId` path parameter identifies the parent `shopping_mall_product_snapshots` record — an immutable, point-in-time capture of a product's full state created automatically whenever a seller edits a product or an order is placed. The `skuId` identifies the specific `shopping_mall_product_snapshot_skuses` record nested within that snapshot, which preserves the state of a single product variant including its SKU code and price. The options returned by this endpoint collectively form the complete set of option dimensions (e.g., color, size) that uniquely configured that variant at snapshot time.
+   *
+   * All records returned are immutable historical data — created once during snapshot capture and never modified or deleted thereafter. This immutability guarantees that retrieved option data reflects exactly what existed at the time of snapshotting, providing a trustworthy basis for dispute resolution, audit trails, and historical order record integrity.
+   *
+   * Access to this endpoint is restricted to administrators only. Administrators have unrestricted access to product snapshot data across all products on the platform, regardless of which seller created the product or whether the product has since been deleted. This supports platform-wide oversight, dispute resolution, and compliance review responsibilities.
+   *
+   * Results are returned in paginated form and sorted by the `sequence` field by default, which reflects the display order of options within the snapshot SKU. Callers may also filter results by option key or value text to locate specific dimension entries across a large variant option set.
+   *
+   * Related operations: administrators can retrieve the list of snapshots for any product via the product snapshot list endpoint, and can retrieve a specific snapshot's full details and its SKU list before drilling into this option-level endpoint.
+   *
+   * @param connection
+   * @param snapshotId The UUID of the parent product snapshot record (shopping_mall_product_snapshots.id) whose SKU options are being listed.
+   * @param skuId The UUID of the product snapshot SKU record (shopping_mall_product_snapshot_skuses.id) whose option key-value pairs are being listed.
+   * @param body Search criteria and pagination parameters for filtering and paginating the snapshot SKU option list.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification 1. Validate that snapshotId corresponds to an existing shopping_mall_product_snapshots record. Return 404 if not found.
+   * 2. Validate that skuId corresponds to an existing shopping_mall_product_snapshot_skuses record with product_snapshot_id matching snapshotId. Return 404 if the SKU does not exist or does not belong to the specified snapshot.
+   * 3. Apply authorization checks: the caller must be the seller who owns the product associated with the snapshot (via shopping_mall_product_snapshots.product_id → shopping_mall_products.shopping_mall_seller_id) or an administrator. Return 403 if unauthorized.
+   * 4. Query shopping_mall_product_snapshot_skus_options WHERE product_snapshot_skus_id = skuId.
+   * 5. Apply optional keyword filters from the request body if provided: filter by key using trigram/ILIKE match on the key column, filter by value using trigram/ILIKE match on the value column.
+   * 6. Sort by sequence ASC by default; allow override if sort parameter is provided in the request body.
+   * 7. Apply pagination using page and limit from the request body, returning the appropriate slice of results alongside total count for pagination metadata.
+   * 8. Return the paginated list of options as IPageIShoppingMallProductSnapshotSkusOption.ISummary.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("snapshotId")
+    snapshotId: string & tags.Format<"uuid">,
+    @TypedParam("skuId")
+    skuId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductSnapshotSkusOption.IRequest,
+  ): Promise<IPageIShoppingMallProductSnapshotSkusOption.ISummary> {
+    try {
+      return await patchShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptions({
+        admin,
+        snapshotId,
+        skuId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single option key-value pair from a specific product snapshot SKU.
+   *
+   * This endpoint returns an individual option entry (e.g., `color: red`, `size: XL`, `material: cotton`) that belongs to a product snapshot SKU record (`shopping_mall_product_snapshot_skuses`), which in turn belongs to a product snapshot (`shopping_mall_product_snapshots`). The option captures the exact attribute dimension name (`key`) and the specific attribute value (`value`) as they existed at the exact moment the parent product snapshot was created.
+   *
+   * Product snapshot option records are stored in the `shopping_mall_product_snapshot_skus_options` table. Each option record is identified by a UUID primary key and is linked to its parent snapshot SKU via `product_snapshot_skus_id`. Options within a single snapshot SKU are ordered by the `sequence` field so that the complete variant configuration can be reconstructed in its original display order. Together, all option records for a given snapshot SKU form the full combination of dimension values (e.g., color + size + material) that uniquely described the variant at snapshot time.
+   *
+   * These records are immutable historical data. They are created once when the snapshot SKU is captured and are never modified or deleted. This immutability guarantees that historical variant configuration data embedded in order items — referenced in order detail views, dispute resolution, cancellation and refund handling — always reflects exactly what existed at the time the snapshot was taken.
+   *
+   * Access to this endpoint is restricted based on actor role:
+   * - **Sellers** may only access options that belong to snapshot SKUs of their own products. They cannot access snapshot option data for other sellers' products.
+   * - **Customers** may access snapshot options as part of viewing their own order item snapshots. The option data is presented naturally within order detail views to show exactly what was purchased.
+   * - **Administrators** have platform-wide access to all product snapshot option records regardless of which seller or customer is involved, supporting dispute investigation and audit responsibilities.
+   *
+   * To navigate to this endpoint, the caller must first identify the relevant product snapshot ID (e.g., by listing snapshots for a product), then the relevant snapshot SKU ID within that snapshot, and finally the specific option ID within that SKU.
+   *
+   * @param connection
+   * @param snapshotId The UUID of the parent product snapshot record (`shopping_mall_product_snapshots.id`) to which the target SKU and option belong.
+   * @param skuId The UUID of the parent product snapshot SKU record (`shopping_mall_product_snapshot_skuses.id`) to which the target option belongs.
+   * @param optionId The UUID of the specific product snapshot SKU option record (`shopping_mall_product_snapshot_skus_options.id`) to retrieve.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Implementation steps:
+   *
+   * 1. Validate that `snapshotId` (UUID) corresponds to an existing `shopping_mall_product_snapshots` record. If not found, return 404.
+   * 2. Validate that `skuId` (UUID) corresponds to an existing `shopping_mall_product_snapshot_skuses` record where `product_snapshot_id = snapshotId`. If not found or mismatched parent, return 404.
+   * 3. Validate that `optionId` (UUID) corresponds to an existing `shopping_mall_product_snapshot_skus_options` record where `product_snapshot_skus_id = skuId`. If not found or mismatched parent, return 404.
+   * 4. Apply authorization checks:
+   *    - For seller actors: join through `shopping_mall_product_snapshot_skuses` → `shopping_mall_product_snapshots` → `shopping_mall_products` and verify the product belongs to the authenticated seller. Return 403 if not.
+   *    - For customer actors: join through `shopping_mall_order_item_snapshots` to verify the snapshot is referenced by an order item that belongs to one of the customer's orders. Return 403 if not.
+   *    - For admin/superAdmin actors: no ownership restriction; allow access to any snapshot option.
+   * 5. Return the `shopping_mall_product_snapshot_skus_options` record with fields: `id`, `product_snapshot_skus_id`, `sequence`, `key`, `value`.
+   * 6. No pagination, no request body, no modification logic — this is a pure read of a single immutable record.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":optionId")
+  public async at(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("snapshotId")
+    snapshotId: string & tags.Format<"uuid">,
+    @TypedParam("skuId")
+    skuId: string & tags.Format<"uuid">,
+    @TypedParam("optionId")
+    optionId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallProductSnapshotSkusOption> {
+    try {
+      return await getShoppingMallAdminSnapshotsSnapshotIdSkusesSkuIdOptionsOptionId(
+        {
+          admin,
+          snapshotId,
+          skuId,
+          optionId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

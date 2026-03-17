@@ -1,0 +1,38 @@
+/// Junction table linking customers to products they want to save for later.
+/// Each entry represents one product in a customer's wishlist with the
+/// timestamp when it was added. The unique constraint on customer_id and
+/// product_id prevents duplicate entries, ensuring each product appears only
+/// once per customer's wishlist.
+///
+/// @namespace Wishlist
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Wished product's {@link shopping_mall_products.id}.
+  product_id String
+  
+  /// Timestamp when the product was added to the wishlist.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_id])
+  @@unique([customer_id, product_id])
+  @@index([customer_id])
+}

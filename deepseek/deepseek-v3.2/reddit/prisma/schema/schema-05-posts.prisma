@@ -1,0 +1,449 @@
+/// Main posts table storing user-created content within communities.
+///
+/// Posts are the primary content unit in the community platform, containing
+/// titles, content types (text/link/image), and belonging to specific
+/// communities. Each post tracks its author, community membership, content
+/// type, and temporal lifecycle for feeds, sorting, and moderation
+/// workflows. Vote scores and comment counts are calculated from related
+/// tables to maintain normalization.
+///
+/// Posts support three content types: TEXT posts with textual content stored
+/// in {@link community_platform_post_texts}, LINK posts with URLs stored in
+/// {@link community_platform_post_links}, and IMAGE posts with uploaded
+/// files stored in {@link community_platform_post_attachments}. Historical
+/// versions are captured in {@link community_platform_post_snapshots} for
+/// audit trails.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author who created the post. {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Community where the post was created. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Post title displayed in feeds and post pages. Required for all post types.
+  title String
+  
+  /// Type of post content: TEXT for text posts, LINK for URL posts, IMAGE for
+  /// image posts. Determines which content table stores the actual content.
+  content_type String
+  
+  /// Timestamp when the post was initially created. Used for chronological
+  /// sorting in feeds.
+  created_at DateTime
+  
+  /// Timestamp when the post was last modified. Updated on title or content
+  /// edits.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft deleted, typically when author account
+  /// is deleted. Null indicates active post.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_post_snapshots[]
+  viewStats community_platform_post_view_stats[]
+  linkContent community_platform_post_links?
+  textContent community_platform_post_texts?
+  attachments community_platform_post_attachments[]
+  comments community_platform_comments[]
+  postVotes community_platform_post_votes[]
+  voteSnapshots community_platform_post_vote_snapshots[]
+  reports community_platform_report_of_posts[]
+  postReports community_platform_user_report_of_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_posts_community_platform_community__4df12ea5")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_posts_community_platform_member_id__94e4a784")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_platform_member_id, created_at], map: "community_platform_posts_community_platform_community__590a879a")
+}
+
+/// Historical point-in-time snapshots of post data for audit trail and
+/// version control.
+///
+/// This table captures the complete state of a post whenever it is created
+/// or edited, preserving all fields as they existed at that moment in time.
+/// Each snapshot maintains a frozen copy of the post's attributes including
+/// title, content type, community reference, author information, and
+/// temporal fields. Snapshots are automatically created when posts are
+/// initially created and each time they are subsequently edited, enabling
+/// full audit trails of post modifications and allowing users to view past
+/// versions.
+///
+/// {@link community_platform_posts} entities can have multiple snapshots
+/// representing their evolution over time, with each snapshot linked back to
+/// the original post for context and traceability.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent post for which this snapshot was captured. {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Title of the post at the time of snapshot capture, preserved as
+  /// historical record.
+  snapshot_title String
+  
+  /// Content type of the post at snapshot time. Valid values: 'text', 'link',
+  /// or 'image'.
+  snapshot_content_type String
+  
+  /// Author of the post at snapshot time. {@link
+  /// community_platform_members.id}.
+  snapshot_community_platform_member_id String
+  
+  /// Community hosting the post at snapshot time. {@link
+  /// community_platform_communities.id}.
+  snapshot_community_platform_community_id String
+  
+  /// Original creation timestamp of the post at snapshot time.
+  snapshot_created_at DateTime
+  
+  /// Last update timestamp of the post at snapshot time.
+  snapshot_updated_at DateTime?
+  
+  /// Soft deletion timestamp of the post at snapshot time, if applicable.
+  snapshot_deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was created, representing the exact moment
+  /// the post state was captured.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated, typically matches
+  /// created_at for immutable snapshots.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_snapshots_community_platform_p_fff76d8e")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_community_platform_community_id, created_at], map: "community_platform_post_snapshots_snapshot_community_p_4eaec332")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_community_platform_member_id, created_at], map: "community_platform_post_snapshots_snapshot_community_p_a1bf0121")
+}
+
+/// Tracks post viewing statistics including view counts and unique viewer
+/// metrics for analytics and engagement measurement.
+///
+/// This table records aggregate viewing metrics for posts to support
+/// popularity analysis, user engagement tracking, and content performance
+/// evaluation. The actor_type field distinguishes between authenticated
+/// member views and anonymous guest views for segmentation analysis.
+///
+/// {@link community_platform_posts.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_view_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post being viewed. {@link community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Type of viewer actor: 'member' for authenticated users, 'guest' for
+  /// anonymous viewers.
+  actor_type String
+  
+  /// Total number of views recorded for this post view statistic.
+  view_count Int
+  
+  /// Count of distinct viewers for this post view statistic.
+  unique_viewer_count Int
+  
+  /// Timestamp when this view statistic was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this view statistic was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_view_stats_community_platform__ae40360d")
+  @@index([created_at])
+}
+
+/// Stores URL and metadata for link-type posts, enabling rich link previews
+/// and domain extraction for display.
+///
+/// Link posts contain external URLs that users share within communities.
+/// This table captures the full URL along with extracted metadata such as
+/// domain name, page title, description, and thumbnail for enhanced display
+/// in feeds. The domain extraction supports the feed display requirement
+/// where link posts show the domain name (e.g., 'youtube.com') instead of
+/// the full URL.
+///
+/// Each link record has a strict 1:1 relationship with its parent post
+/// through the unique constraint on community_platform_post_id. This ensures
+/// that link content remains properly associated with the post content while
+/// maintaining normalization by separating URL data from the main post
+/// structure.
+///
+/// Link metadata is typically populated during post creation or updated
+/// through background processes that fetch page metadata, allowing the
+/// platform to display rich link previews without requiring user-provided
+/// descriptions.
+///
+/// {@link community_platform_posts.id} {@link
+/// community_platform_post_snapshots.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that contains this link. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Full URL of the linked content. Must be a valid, accessible URL that
+  /// meets platform security requirements for external links. Used for
+  /// redirecting users to the original content.
+  url String
+  
+  /// Extracted domain name from the URL for display purposes (e.g.,
+  /// 'youtube.com', 'github.com'). Automatically populated during link
+  /// processing to support feed display requirements where link posts show the
+  /// domain name.
+  domain String
+  
+  /// Title extracted from the linked webpage for preview display. Populated
+  /// automatically through metadata fetching processes and used to enhance
+  /// link presentation in feeds.
+  title String?
+  
+  /// Description or summary extracted from the linked webpage for preview
+  /// display. Provides additional context about the link content without
+  /// requiring users to click through.
+  description String?
+  
+  /// URL to a thumbnail image associated with the linked content for visual
+  /// previews. Extracted from Open Graph metadata or similar page markup when
+  /// available.
+  thumbnail_url String?
+  
+  /// Timestamp when this link record was created, typically matching the
+  /// parent post creation time. Used for audit tracking and chronological
+  /// ordering.
+  created_at DateTime
+  
+  /// Timestamp when this link record was last updated, such as when metadata
+  /// is refreshed or URL is changed during post editing. Used for
+  /// synchronization and change tracking.
+  updated_at DateTime
+  
+  /// Timestamp when this link record was soft-deleted, preserving the data for
+  /// recovery or audit purposes while marking it as inactive. Null indicates
+  /// the link is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_post_id])
+  @@index([created_at])
+  @@index([domain, created_at])
+}
+
+/// Stores text content for text-type posts with formatting and length tracking.
+///
+/// This table contains the actual text content for posts of type 'text',
+/// separate from the main post metadata to support normalization and
+/// efficient storage. Each text post has exactly one entry in this table,
+/// establishing a 1:1 relationship with the parent post. The content field
+/// stores the full text, while formatting indicates whether the text uses
+/// markdown, plain text, or other formatting standards. Content length is
+/// tracked for display purposes and to support preview generation (e.g.,
+/// first 200 characters in post lists).
+///
+/// Text content is managed through the parent post entity and is
+/// automatically deleted or archived when the parent post is removed. {@link
+/// community_platform_posts.id}
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent text post. Each post can have only one text
+  /// content entry, establishing a 1:1 relationship. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// Full text content of the post. This field stores the complete text that
+  /// users write for text-type posts. Supports extended length for detailed
+  /// content.
+  content String
+  
+  /// Formatting standard used for the text content. Common values: 'markdown',
+  /// 'plain', 'html'. Determines how the content should be rendered and
+  /// processed.
+  formatting String
+  
+  /// Character count of the content for display optimization and preview
+  /// generation. Automatically calculated to support features like showing
+  /// 'first 200 characters' in post lists.
+  content_length Int
+  
+  /// Timestamp when the text content was soft-deleted, supporting audit trails
+  /// and content recovery workflows. Null indicates the content is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([community_platform_post_id])
+  @@index([content_length])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, deleted_at], map: "community_platform_post_texts_community_platform_post__af5c6fbe")
+}
+
+/// File attachments for posts, supporting multiple files per post including
+/// images, documents, and other media types.
+///
+/// Each attachment represents a single file uploaded to a post, with
+/// metadata about the file type, original filename, size, and MIME type.
+/// Attachments are ordered within a post using the position field to control
+/// display sequence. When a post is deleted, all its attachments are
+/// soft-deleted via the deleted_at field.
+///
+/// File content is stored in the {@link community_platform_files} table from
+/// the Systematic component, while this table maintains the association
+/// between posts and their files.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_attachments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post that this attachment belongs to. {@link
+  /// community_platform_posts.id}
+  community_platform_post_id String
+  
+  /// The file content referenced by this attachment. {@link
+  /// community_platform_files.id}
+  community_platform_file_id String
+  
+  /// Display order of this attachment within its post, starting from 0. Lower
+  /// numbers appear first when rendering multiple attachments.
+  position Int
+  
+  /// Categorization of file type such as 'image', 'document', 'video', or
+  /// 'audio' for content-specific rendering.
+  file_type String
+  
+  /// Original filename as uploaded by the user, preserved for download and
+  /// reference purposes.
+  original_filename String
+  
+  /// Size of the file in bytes, used for storage management and user
+  /// information.
+  file_size Int
+  
+  /// MIME type identifier for the file content, used for proper content-type
+  /// headers and browser handling.
+  mime_type String
+  
+  /// Timestamp when this attachment was created and associated with the post.
+  created_at DateTime
+  
+  /// Timestamp when this attachment's metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this attachment was soft-deleted, typically when its
+  /// parent post is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  file community_platform_files @relation(fields: [community_platform_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_file_id], map: "community_platform_post_attachments_community_platform_71015de5")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_post_id, community_platform_file_id], map: "community_platform_post_attachments_community_platform_0e388096")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, position], map: "community_platform_post_attachments_community_platform_ed083d86")
+  @@index([file_type, created_at])
+}

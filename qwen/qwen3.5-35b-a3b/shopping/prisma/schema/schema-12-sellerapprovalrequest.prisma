@@ -1,0 +1,153 @@
+/// Seller registration approval requests tracking the onboarding workflow.
+///
+/// This table captures seller registration requests that require
+/// administrator approval before the seller can begin selling on the
+/// platform. Each request represents a new seller account awaiting review.
+///
+/// Key relationships:
+/// - Belongs to a single {@link ecommerce_mall_seller} actor who submitted
+/// the registration
+/// - Has many snapshots recorded in {@link
+/// ecommerce_mall_seller_approval_snapshots} for audit trail
+///
+/// Status workflow:
+/// - pending: Initial state when seller submits registration
+/// - approved: Administrator has approved, seller can now sell
+/// - rejected: Administrator rejected with reasons in rejection_reason field
+///
+/// Resubmission:
+/// - When rejected, sellers can submit new approval requests
+/// - Each rejection is tracked in snapshot history for audit purposes
+///
+/// @namespace SellerApprovalRequest
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller actor's {@link ecommerce_mall_sellers.id}.
+  seller_id String
+  
+  /// Approval request status: pending, approved, or rejected.
+  status String
+  
+  /// Administrator's reason for rejecting the approval request. Only populated
+  /// when status is rejected.
+  rejection_reason String?
+  
+  /// Timestamp when the approval request was created.
+  created_at DateTime
+  
+  /// Timestamp when the approval request was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_mall_seller_approval_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id])
+  @@index([status])
+}
+
+/// Immutable audit trail recording point-in-time state changes of seller
+/// approval requests for dispute resolution and historical reference.
+///
+/// This snapshot table captures the complete state of a seller approval
+/// request at specific moments (approval, rejection, resubmission). Each
+/// snapshot is immutable and serves as an authoritative record of what the
+/// approval request looked like at that point in time.
+///
+/// Business Context:
+/// - Records state transitions between pending, approved, and rejected statuses
+/// - Captures rejection reasons when administrators reject registrations
+/// - Links to the main approval request through
+/// ecommerce_mall_seller_approval_request_id
+/// - Links to the seller (ecommerce_mall_seller_id) for audit ownership
+/// - Links to the actor who made the change (admin or superAdmin) for
+/// accountability
+///
+/// Relationships:
+/// - Belongs to one approval request: {@link
+/// ecommerce_mall_seller_approval_requests}
+/// - Belongs to one seller: {@link ecommerce_mall_sellers}
+/// - Belongs to one actor who made the change: polymorphic reference via
+/// actor_type and actor_id
+///
+/// @namespace SellerApprovalRequest
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_approval_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller approval request this snapshot belongs to. {@link
+  /// ecommerce_mall_seller_approval_requests.id}
+  ecommerce_mall_seller_approval_request_id String
+  
+  /// Reference to the seller whose approval request this snapshot records.
+  /// {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Reference to the admin or superAdmin who made the approval/rejection
+  /// decision. {@link ecommerce_mall_admins.id} or {@link
+  /// ecommerce_mall_super_admins.id}
+  actor_id String?
+  
+  /// Type of actor who made the decision: admin or superAdmin. Used with
+  /// actor_id for polymorphic ownership pattern.
+  actor_type String
+  
+  /// Status of the approval request before this state change: pending,
+  /// approved, or rejected
+  from_status String
+  
+  /// Status of the approval request after this state change: pending,
+  /// approved, or rejected
+  to_status String
+  
+  /// Administrator-provided rejection reason when the approval request was
+  /// rejected. Nullable for approved or pending states.
+  rejection_reason String?
+  
+  /// Timestamp when this snapshot was created, recording the point in time of
+  /// the state change.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  approvalRequest ecommerce_mall_seller_approval_requests @relation(fields: [ecommerce_mall_seller_approval_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  actor ecommerce_mall_admins? @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_approval_request_id, created_at], map: "ecommerce_mall_seller_approval_snapshots_ecommerce_mal_379ccfbb")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_approval_snapshots_ecommerce_mal_e28ed5c0")
+  // spellchecker: ignore-next-line
+  @@index([actor_id, created_at], map: "ecommerce_mall_seller_approval_snapshots_actor_id_crea_7febf4a7")
+  @@index([to_status])
+}

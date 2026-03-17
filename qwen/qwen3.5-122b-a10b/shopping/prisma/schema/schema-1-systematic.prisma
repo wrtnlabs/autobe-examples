@@ -1,0 +1,237 @@
+/// Stock quantity change history for product variants, tracking all
+/// inventory modifications including restocking, order deductions,
+/// cancellation/refund restorations, and manual adjustments. Each record
+/// captures the quantity change amount, reason for change, timestamp, and
+/// current stock level after the change. Current stock is calculated by
+/// summing all historical records for a variant. This table supports audit
+/// trails and dispute resolution for inventory discrepancies.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product variant whose inventory is being tracked. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Amount of stock quantity change. Positive values indicate restocking or
+  /// restorations (cancellation/refund). Negative values indicate deductions
+  /// (orders, adjustments, losses).
+  quantity_change Int
+  
+  /// Reason for the inventory change. Examples: 'restock', 'order_placement',
+  /// 'cancellation_approved', 'refund_approved', 'manual_adjustment',
+  /// 'inventory_loss'.
+  reason String
+  
+  /// Timestamp when the inventory change occurred. Server-generated to ensure
+  /// accurate chronological ordering of inventory history.
+  recorded_at DateTime
+  
+  /// Stock quantity after this change was applied. Snapshot of current stock
+  /// at the time of recording, useful for quick verification without
+  /// recalculating from history.
+  current_stock Int
+  
+  /// Record creation timestamp for audit trail.
+  created_at DateTime
+  
+  /// Record last update timestamp for audit trail.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Inventory records should typically not be
+  /// deleted to maintain audit trail integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, recorded_at], map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_ff4f20bd")
+}
+
+/// Immutable audit trail snapshots capturing order item state at purchase
+/// time. Records complete product details (name, description), variant
+/// options (SKU, option values), pricing information, and seller profile
+/// (shop name, logo) as they existed when the order was placed. These
+/// snapshots are critical for dispute resolution, purchase history
+/// verification, and preserving seller profile information even after
+/// sellers modify their shops or delete accounts. Snapshots are append-only
+/// and cannot be deleted, maintaining a permanent record of all transactions
+/// on this money-exchange platform. Each order item may have multiple
+/// snapshots if modified after purchase (e.g., status changes,
+/// cancellation/refund requests).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced order item's {@link ecommerce_mall_order_items.id}. Each order
+  /// item can have multiple snapshots over its lifecycle (purchase, status
+  /// changes, cancellation, refund).
+  order_item_id String
+  
+  /// Administrator who triggered this snapshot change. Nullable for
+  /// system-created snapshots (e.g., automatic purchase snapshots). References
+  /// {@link ecommerce_mall_admins.id}.
+  changed_by_id String?
+  
+  /// Type of snapshot event. Values: 'purchase' (initial order creation),
+  /// 'status_change' (item status update), 'cancellation' (cancellation
+  /// request), 'refund' (refund request). Distinguishes different lifecycle
+  /// events for the same order item.
+  snapshot_type String
+  
+  /// Timestamp when this snapshot was created. For purchase snapshots, this
+  /// equals the order creation time. For subsequent snapshots, this captures
+  /// when the change occurred.
+  created_at DateTime
+  
+  /// JSON object containing the order item state before this change. Null for
+  /// initial purchase snapshots. Contains fields like: productName,
+  /// productDescription, variantSku, variantOptions, unitPrice,
+  /// sellerShopName, sellerLogo, itemStatus, etc.
+  previous_values String?
+  
+  /// JSON object containing the complete order item state after this change.
+  /// Always populated. Contains: productName, productDescription, variantSku,
+  /// variantOptions, unitPrice, sellerShopName, sellerLogo, itemStatus,
+  /// quantity, and all other order item fields at snapshot time.
+  current_values String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  changedBy ecommerce_mall_admins? @relation(fields: [changed_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([changed_by_id])
+  // spellchecker: ignore-next-line
+  @@index([order_item_id, created_at], map: "ecommerce_mall_order_item_snapshots_order_item_id_crea_ce456eaa")
+  @@index([created_at])
+}
+
+/// Immutable audit trail snapshots capturing all review modifications
+/// including rating changes, content edits, and deletion status. Each
+/// snapshot records the complete state of a review before and after
+/// modification, with timestamp and the customer who made the change.
+/// Snapshots are preserved even after review deletion for dispute resolution
+/// and audit purposes. {@link ecommerce_mall_reviews} {@link
+/// ecommerce_mall_customers}
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target review's {@link ecommerce_mall_reviews.id}. The review entity that
+  /// was modified and triggered this snapshot creation.
+  ecommerce_mall_review_id String
+  
+  /// Customer who made the change's {@link ecommerce_mall_customers.id}.
+  /// Records the actor responsible for the review modification.
+  changed_by_customer_id String
+  
+  /// Timestamp when the snapshot was created. Server-enforced to ensure audit
+  /// trail integrity.
+  created_at DateTime
+  
+  /// JSON string containing the review state before modification. Includes
+  /// rating (1-5), content (text), and isDeleted (boolean) fields.
+  previous_values String
+  
+  /// JSON string containing the review state after modification. Includes
+  /// rating (1-5), content (text), and isDeleted (boolean) fields.
+  current_values String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review ecommerce_mall_reviews @relation(fields: [ecommerce_mall_review_id], references: [id], onDelete: Cascade)
+  changedByCustomer ecommerce_mall_customers @relation(fields: [changed_by_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([changed_by_customer_id])
+  @@index([ecommerce_mall_review_id])
+  @@index([created_at])
+}
+
+/// Immutable audit trail capturing seller profile modifications including
+/// shop name, description, and logo changes. Each snapshot records the
+/// complete seller state at the time of modification with previous and
+/// current values, timestamp, and the administrator who made the change (if
+/// applicable). Snapshots are preserved for dispute resolution and
+/// administrator oversight, even after seller account deletion. This table
+/// supports the snapshot principle requiring all data modifications in this
+/// money-exchange platform to be recorded with before/after values.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller account whose profile was modified. {@link
+  /// ecommerce_mall_sellers.id}.
+  ecommerce_mall_seller_id String
+  
+  /// Administrator who made the profile change. Null when seller updates their
+  /// own profile. {@link ecommerce_mall_admins.id}.
+  ecommerce_mall_admin_id String?
+  
+  /// Timestamp when the snapshot was created. Always set by server at
+  /// modification time.
+  created_at DateTime
+  
+  /// JSON string containing seller profile values before the modification.
+  /// Includes shop_name, shop_description, and logo fields.
+  previous_values String
+  
+  /// JSON string containing seller profile values after the modification.
+  /// Includes shop_name, shop_description, and logo fields.
+  current_values String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  admin ecommerce_mall_admins? @relation(fields: [ecommerce_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_admin_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_seller_snapshots_ecommerce_mall_seller__dc6ac79f")
+}

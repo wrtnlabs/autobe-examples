@@ -1,0 +1,133 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { ICommunityPlatformComment } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformComment";
+import type { ICommunityPlatformCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommentVote";
+import type { ICommunityPlatformCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformCommunity";
+import type { ICommunityPlatformFile } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformFile";
+import type { ICommunityPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformMember";
+import type { ICommunityPlatformPost } from "@ORGANIZATION/PROJECT-api/lib/structures/ICommunityPlatformPost";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_community_platform_member_communities_create } from "../../../generate/generate_random_community_platform_member_communities_create";
+import { generate_random_community_platform_member_communities_posts_create } from "../../../generate/generate_random_community_platform_member_communities_posts_create";
+import { generate_random_community_platform_member_posts_comments_create } from "../../../generate/generate_random_community_platform_member_posts_comments_create";
+import { generate_random_community_platform_member_posts_comments_vote_create } from "../../../generate/generate_random_community_platform_member_posts_comments_vote_create";
+import { prepare_random_community_platform_comment } from "../../../prepare/prepare_random_community_platform_comment";
+import { prepare_random_community_platform_comment_vote } from "../../../prepare/prepare_random_community_platform_comment_vote";
+import { prepare_random_community_platform_community } from "../../../prepare/prepare_random_community_platform_community";
+import { prepare_random_community_platform_post } from "../../../prepare/prepare_random_community_platform_post";
+
+/**
+ * Test the retrieval of an existing downvote cast on a comment.
+ *
+ * Setup steps:
+ * 1. Authenticate as a member
+ * 2. Create a community
+ * 3. Create a text post in the community
+ * 4. Create a comment on the post
+ * 5. Cast a downvote on the comment
+ *
+ * Test execution:
+ * - Retrieve the downvote by its ID
+ *
+ * Validation points:
+ * - Vote record contains correct voteType 'downvote'
+ * - All timestamps are valid
+ * - Member information is correctly populated
+ */
+export async function test_api_comment_vote_retrieval_downvote(
+  connection: api.IConnection,
+): Promise<void> {
+  // 1. Authenticate as a member
+  const memberConnection: api.IConnection = { host: connection.host };
+  const member = await authorize_member_join(memberConnection, {});
+  typia.assert(member);
+  // 2. Create a community
+  const community =
+    await generate_random_community_platform_member_communities_create(
+      memberConnection,
+      {},
+    );
+  typia.assert(community);
+  // 3. Create a text post in the community
+  const post =
+    await generate_random_community_platform_member_communities_posts_create(
+      memberConnection,
+      {
+        params: {
+          communityId: community.id,
+        },
+        body: {
+          postType: "text",
+        },
+      },
+    );
+  typia.assert(post);
+  // 4. Create a comment on the post
+  const comment =
+    await generate_random_community_platform_member_posts_comments_create(
+      memberConnection,
+      {
+        params: {
+          postId: post.id,
+        },
+      },
+    );
+  typia.assert(comment);
+  // 5. Cast a downvote on the comment
+  const vote =
+    await generate_random_community_platform_member_posts_comments_vote_create(
+      memberConnection,
+      {
+        params: {
+          postId: post.id,
+          commentId: comment.id,
+        },
+        body: {
+          vote_type: "downvote",
+        },
+      },
+    );
+  typia.assert(vote);
+  // Test execution: Retrieve the downvote by its ID
+  const retrievedVote =
+    await api.functional.communityPlatform.posts.comments.votes.at(
+      memberConnection,
+      {
+        postId: post.id,
+        commentId: comment.id,
+        voteId: vote.id,
+      },
+    );
+  typia.assert(retrievedVote);
+  // Validation
+  TestValidator.equals("vote id matches", retrievedVote.id, vote.id);
+  TestValidator.equals(
+    "vote type is downvote",
+    retrievedVote.voteType,
+    "downvote",
+  );
+  TestValidator.equals("member id matches", retrievedVote.member.id, member.id);
+  TestValidator.equals("deleted at is null", retrievedVote.deletedAt, null);
+  TestValidator.predicate(
+    "created at is valid ISO 8601",
+    new Date(retrievedVote.createdAt).toISOString() === retrievedVote.createdAt,
+  );
+  TestValidator.predicate(
+    "updated at is valid ISO 8601",
+    new Date(retrievedVote.updatedAt).toISOString() === retrievedVote.updatedAt,
+  );
+  TestValidator.predicate(
+    "member is fully populated",
+    retrievedVote.member.username !== undefined &&
+      retrievedVote.member.karma !== undefined,
+  );
+}

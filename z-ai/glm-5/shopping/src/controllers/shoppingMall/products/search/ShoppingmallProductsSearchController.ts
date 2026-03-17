@@ -1,0 +1,94 @@
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia from "typia";
+
+import { IPageIShoppingMallProduct } from "../../../../api/structures/IPageIShoppingMallProduct";
+import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallProduct";
+import { patchShoppingMallProductsSearch } from "../../../../providers/patchShoppingMallProductsSearch";
+
+@Controller("/shoppingMall/products/search")
+export class ShoppingmallProductsSearchController {
+  /**
+   * Search and discover products by name with comprehensive filtering and sorting capabilities.
+   *
+   * This operation enables customers to search for products across all approved sellers on the platform. The search functionality supports partial matching on product names and returns paginated results optimized for browsing.
+   *
+   * **Filtering Options**
+   * - Category: Filter products by category or subcategory. When a parent category is specified, products from both the parent and its subcategories are included.
+   * - Price Range: Filter products by minimum and/or maximum base price.
+   * - In-Stock Only: When enabled, only shows products with at least one variant having stock quantity greater than zero.
+   *
+   * **Sorting Options**
+   * - Newest First: Products ordered by creation date in descending order.
+   * - Price Low to High: Products ordered by base price in ascending order.
+   * - Price High to Low: Products ordered by base price in descending order.
+   *
+   * **Result Display**
+   * Each product in the results includes: main image thumbnail (first image by display order), product name, base price or price range if variants have different prices, seller shop name, and average rating if reviews exist.
+   *
+   * **Visibility Rules**
+   * The search excludes deleted products (shopping_mall_products.deleted_at IS NOT NULL) and products from suspended or banned sellers (shopping_mall_sellers.suspended = true OR shopping_mall_sellers.banned = true). Products without variants are still shown but marked as unavailable for purchase.
+   *
+   * **Pagination**
+   * Results are paginated with configurable page size. The response includes pagination metadata for navigation.
+   *
+   * **Authorization**
+   * This is a public endpoint accessible to all users including guests, customers, sellers, and administrators.
+   *
+   * @param connection
+   * @param body Search criteria including query text, filters, sorting options, and pagination parameters
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Implementation involves querying shopping_mall_products with multiple joins and filters.
+   *
+   * **Primary Query**
+   * 1. SELECT from shopping_mall_products with LEFT JOIN to shopping_mall_sellers, shopping_mall_categories, shopping_mall_product_images, shopping_mall_product_variants, and shopping_mall_reviews
+   * 2. Apply WHERE clause:
+   *    - shopping_mall_products.deleted_at IS NULL (exclude soft-deleted products)
+   *    - shopping_mall_sellers.suspended = false AND shopping_mall_sellers.banned = false (exclude suspended/banned sellers)
+   *    - shopping_mall_sellers.approval_status = 'approved' (only approved sellers)
+   *    - ILIKE search on shopping_mall_products.name for partial matching
+   *    - Category filter: shopping_mall_products.shopping_mall_category_id IN (category_ids including subcategories)
+   *    - Price range: shopping_mall_products.base_price BETWEEN min AND max
+   *    - In-stock filter: EXISTS variant with stock > 0 (via inventory records)
+   *
+   * **Category Hierarchy Handling**
+   * When category filter is applied, retrieve both the category ID and all child category IDs (WHERE parent_id = category_id) to include products from subcategories.
+   *
+   * **Image Retrieval**
+   * For each product, get the main image by selecting shopping_mall_product_images with MINIMUM display_order for that product.
+   *
+   * **Stock Calculation**
+   * Stock availability is calculated from shopping_mall_inventory_records grouped by variant_id with SUM(quantity_change). A product has stock if at least one variant has total_stock > 0.
+   *
+   * **Rating Calculation**
+   * Average rating is computed as AVG(shopping_mall_reviews.rating) grouped by product_id, excluding soft-deleted reviews.
+   *
+   * **Price Range Display**
+   * When variants have different prices (shopping_mall_product_variants.price overriding base_price), display as price range (min to max). Otherwise display base_price.
+   *
+   * **Sorting**
+   * Apply ORDER BY based on sort parameter:
+   * - 'newest': shopping_mall_products.created_at DESC
+   * - 'price_asc': shopping_mall_products.base_price ASC
+   * - 'price_desc': shopping_mall_products.base_price DESC
+   *
+   * **Pagination**
+   * Use cursor-based or offset-based pagination with configurable limit. Return pagination metadata including total count, current page, and next/previous cursors.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: IShoppingMallProduct.IRequest,
+  ): Promise<IPageIShoppingMallProduct.ISummary> {
+    try {
+      return await patchShoppingMallProductsSearch({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

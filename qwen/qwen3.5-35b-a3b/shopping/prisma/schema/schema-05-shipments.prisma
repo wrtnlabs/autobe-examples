@@ -1,0 +1,395 @@
+/// Main shipment entity tracking physical delivery logistics for order
+/// fulfillment.
+///
+/// This table represents shipments that coordinate the delivery of order
+/// items from sellers to customers. Each shipment is associated with an
+/// order and fulfilled by a seller. The table tracks carrier information
+/// (carrier name, phone, website), and delivery status throughout the
+/// shipping lifecycle.
+///
+/// Shipments are managed by sellers (who create them when fulfilling orders)
+/// and admins (who monitor logistics performance). Customers can track their
+/// shipments via tracking codes stored in the associated tracking codes
+/// table.
+///
+/// Related entities:
+/// - {@link ecommerce_mall_orders} - The order being shipped (one order may
+/// have multiple shipments if items ship separately)
+/// - {@link ecommerce_mall_sellers} - The seller fulfilling the shipment
+/// - {@link ecommerce_mall_shipment_tracking_codes} - Child table storing
+/// multiple carrier tracking codes per shipment (replaces comma-separated
+/// tracking_numbers)
+/// - {@link ecommerce_mall_shipment_snapshots} - Audit trail for shipment
+/// state changes
+///
+/// Key fields:
+/// - carrier_name, carrier_phone, carrier_website: Single carrier reference
+/// (the primary carrier for this shipment)
+/// - status: Current delivery lifecycle state
+/// - shipped_at, delivered_at, estimated_delivery_at: Temporal tracking for
+/// delivery milestones
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The order being shipped. {@link ecommerce_mall_orders.id}
+  ecommerce_mall_order_id String
+  
+  /// The seller fulfilling this shipment. {@link ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Primary shipping carrier name (e.g., FedEx, UPS, DHL).
+  carrier_name String?
+  
+  /// Carrier customer service phone number.
+  carrier_phone String?
+  
+  /// Carrier's official website URL for tracking.
+  carrier_website String?
+  
+  /// Current delivery status: pending, in-transit, delivered, failed,
+  /// cancelled.
+  status String
+  
+  /// When the shipment was marked as shipped (carrier pickup or dispatch).
+  shipped_at DateTime?
+  
+  /// When the shipment was successfully delivered to customer.
+  delivered_at DateTime?
+  
+  /// Estimated delivery date provided by carrier.
+  estimated_delivery_at DateTime?
+  
+  /// Final delivery address for this shipment.
+  delivery_address String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for order cancellations or returns.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_mall_orders @relation(fields: [ecommerce_mall_order_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems ecommerce_mall_shipments_order_items[]
+  snapshots ecommerce_mall_shipment_snapshots[]
+  trackingUpdates ecommerce_mall_shipment_tracking_updates[]
+  trackingCodes ecommerce_mall_shipment_tracking_codes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_order_id, status])
+  @@index([ecommerce_mall_seller_id, status])
+  @@index([status])
+}
+
+/// Junction table linking shipments to order items for fulfillment tracking.
+///
+/// This table represents the many-to-many relationship between shipments and
+/// order items, recording which order items are included in each shipment
+/// and the quantity shipped. A shipment can contain multiple order items
+/// from the same seller, and an order item may be split across multiple
+/// shipments if partial fulfillment is required.
+///
+/// Business purpose:
+/// - Tracks order item fulfillment within shipments
+/// - Records shipped quantity (may differ from original order quantity for
+/// partial shipments)
+/// - Enables query for all order items in a shipment or all shipments
+/// containing a specific order item
+/// - Supports inventory deduction and tracking workflows
+///
+/// Relationships:
+/// - BelongsTo {@link ecommerce_mall_shipments} - Each line item is part of
+/// one shipment
+/// - BelongsTo {@link ecommerce_mall_order_items} - Each line item
+/// references the original order item being fulfilled
+///
+/// Managed through parent entities: Users do not independently create or
+/// delete records; they are automatically generated during shipment creation
+/// and fulfillment processes.
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipments_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment's {@link ecommerce_mall_shipments.id} that contains this order
+  /// item.
+  ecommerce_mall_shipment_id String
+  
+  /// Order item's {@link ecommerce_mall_order_items.id} being fulfilled in
+  /// this shipment.
+  ecommerce_mall_order_item_id String
+  
+  /// Quantity of this order item being shipped. May differ from original order
+  /// quantity if partial shipment.
+  shipped_quantity Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [ecommerce_mall_shipment_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_shipment_id, ecommerce_mall_order_item_id], map: "ecommerce_mall_shipments_order_items_ecommerce_mall_sh_6f158bef")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shipment_id], map: "ecommerce_mall_shipments_order_items_ecommerce_mall_sh_3b3bf821")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_order_item_id], map: "ecommerce_mall_shipments_order_items_ecommerce_mall_or_2c8712d1")
+}
+
+/// Audit trail snapshots capturing point-in-time state of shipments for
+/// dispute resolution and historical reference.
+///
+/// Each snapshot records the complete state of a shipment at a specific
+/// moment, including carrier information, tracking details, status, and
+/// timestamps. Snapshots are immutable historical records used for:
+///
+/// - Dispute resolution: Verify shipment state at specific points in time
+/// - Audit trail: Track all state changes and tracking updates
+/// - Historical analysis: Analyze shipment lifecycle patterns
+/// - Regulatory compliance: Maintain permanent records of delivery status
+///
+/// References the parent {@link ecommerce_mall_shipments} entity and
+/// indirectly references {@link ecommerce_mall_orders} and {@link
+/// ecommerce_mall_sellers} through the shipment relationship.
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged shipment's {@link ecommerce_mall_shipments.id}
+  ecommerce_mall_shipment_id String
+  
+  /// Carrier-assigned tracking number for package identification
+  tracking_number String
+  
+  /// Name of the shipping carrier (e.g., FedEx, UPS, DHL)
+  carrier_name String?
+  
+  /// Carrier customer service contact information or website
+  carrier_contact String?
+  
+  /// Current shipment status (pending, in transit, out for delivery,
+  /// delivered, exception, returned)
+  status String
+  
+  /// Originally estimated delivery date
+  estimated_delivery_date DateTime?
+  
+  /// Actual delivery completion timestamp (null if not delivered)
+  actual_delivery_date DateTime?
+  
+  /// Date and time when package was handed to carrier
+  shipped_date DateTime?
+  
+  /// URL for tracking package status with carrier
+  tracking_url String?
+  
+  /// Shipping service level (standard, express, overnight, economy)
+  shipping_method String?
+  
+  /// Package weight in kilograms
+  weight_kg Float?
+  
+  /// Package length in centimeters
+  dimensions_length_cm Float?
+  
+  /// Package width in centimeters
+  dimensions_width_cm Float?
+  
+  /// Package height in centimeters
+  dimensions_height_cm Float?
+  
+  /// Complete delivery address including recipient name, street, city, state,
+  /// postal code, country
+  delivery_address String?
+  
+  /// Whether signature was required for delivery
+  signature_required Boolean?
+  
+  /// Whether a signature was actually obtained for delivery
+  signature_obtained Boolean?
+  
+  /// Delivery notes such as 'Left at front door', 'Signed by recipient', etc.
+  delivery_notes String?
+  
+  /// Description of any delivery exception (weather delay, address issue,
+  /// failed delivery attempt)
+  exception_description String?
+  
+  /// Timestamp when this snapshot was created
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [ecommerce_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_shipment_id, created_at], map: "ecommerce_mall_shipment_snapshots_ecommerce_mall_shipm_79a73276")
+  @@index([status])
+  @@index([actual_delivery_date])
+}
+
+/// Carrier tracking status updates for shipment delivery lifecycle tracking.
+///
+/// This subsidiary table records all tracking status changes pushed by
+/// carriers or shipping systems. Each update represents a state transition
+/// in the shipment's delivery journey (pending → in_transit →
+/// out_for_delivery → delivered).
+///
+/// Relationships:
+/// - Belongs to {@link ecommerce_mall_shipments} - one shipment has many
+/// tracking updates
+/// - Used by customers and sellers to monitor delivery progress
+/// - Read-only from user perspective - automatically created by carrier API
+/// integration
+///
+/// Temporal fields:
+/// - created_at: when tracking update was recorded
+/// - updated_at: last modification timestamp (for consistency)
+/// - deleted_at: soft delete (optional)
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_tracking_updates {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment's {@link ecommerce_mall_shipments.id} this tracking update
+  /// belongs to.
+  shipment_id String
+  
+  /// Current tracking status from carrier (pending, in_transit,
+  /// out_for_delivery, delivered, failed, exception).
+  tracking_status String
+  
+  /// JSON payload from carrier API containing full tracking event data. Stored
+  /// as string due to external-integration feature requirement.
+  carrier_response String?
+  
+  /// When this tracking update was recorded.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable for active records).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shipment_id, created_at], map: "ecommerce_mall_shipment_tracking_updates_shipment_id_c_4c29663c")
+}
+
+/// Child table storing multiple carrier tracking codes per shipment.
+///
+/// Supports one shipment having multiple carrier tracking codes (e.g.,
+/// primary carrier code plus additional tracking from sub-carriers). Each
+/// record contains the carrier name and tracking code separately for proper
+/// 1NF normalization.
+///
+/// This subsidiary table is managed through the parent
+/// ecommerce_mall_shipments entity and is not independently created or
+/// modified by users. Tracking codes are permanently retained for audit and
+/// dispute resolution purposes.
+///
+/// Related entities: {@link ecommerce_mall_shipments} (parent shipment)
+///
+/// @namespace Shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipment_tracking_codes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent shipment's {@link ecommerce_mall_shipments.id}.
+  shipment_id String
+  
+  /// Name of the carrier providing the tracking service (e.g., FedEx, UPS,
+  /// DHL, USPS).
+  carrier_name String
+  
+  /// Unique tracking code provided by the carrier for this shipment segment.
+  tracking_code String
+  
+  /// Timestamp when this tracking code record was created.
+  created_at DateTime
+  
+  /// Timestamp when this tracking code record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shipment_id, tracking_code], map: "ecommerce_mall_shipment_tracking_codes_shipment_id_tra_7203879b")
+  @@index([shipment_id])
+}

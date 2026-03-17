@@ -1,0 +1,417 @@
+/// Main product listings in the shopping mall catalog. Each product
+/// represents an item for sale with a name, description, and base price.
+/// Products are owned by sellers and classified into categories. This table
+/// maintains active product state, while historical states are preserved in
+/// {@link shopping_mall_product_snapshots} for order integrity. Soft delete
+/// (deleted flag) hides products from search while preserving them for
+/// existing order references.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner seller's {@link shopping_mall_sellers.id}. Products belong to
+  /// exactly one seller who manages the listing.
+  shopping_seller_id String
+  
+  /// Assigned category's {@link shopping_mall_categories.id}. Products are
+  /// classified into exactly one category for organization and browsing.
+  shopping_category_id String
+  
+  /// Product name displayed in listings and search results. Should be
+  /// descriptive and unique within seller's catalog.
+  name String
+  
+  /// Detailed product description explaining features, specifications, and
+  /// usage information. Supports rich text formatting.
+  description String?
+  
+  /// Base price of the product in the platform's currency. Individual variant
+  /// prices may override this value. Must be positive.
+  base_price Float
+  
+  /// Soft delete flag. When true, product is hidden from search and browsing
+  /// but preserved for historical order references. Defaults to false.
+  deleted Boolean
+  
+  /// Timestamp when the product was first created. Immutable after initial
+  /// insertion.
+  created_at DateTime
+  
+  /// Timestamp when the product was last modified. Updated on every edit
+  /// operation.
+  updated_at DateTime
+  
+  /// Timestamp when the product was soft deleted. Null if product is active.
+  /// Used for audit trail and potential recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_seller_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images shopping_mall_product_images[]
+  variants shopping_mall_product_variants[]
+  snapshots shopping_mall_product_snapshots[]
+  wishlists shopping_mall_wishlists[]
+  reviews shopping_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_seller_id, created_at])
+  @@index([shopping_category_id])
+}
+
+/// Product images providing visual representation for product listings. Each
+/// product can have multiple images arranged in a specific display order.
+/// Images are managed through their parent product and support soft deletion
+/// for removal while preserving historical data.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// URL of the product image stored in cloud storage or CDN.
+  image_url String
+  
+  /// Display order of the image within the product's image gallery. Lower
+  /// numbers appear first.
+  display_order Int
+  
+  /// Timestamp when the product image was created.
+  created_at DateTime
+  
+  /// Timestamp when the product image was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the product image was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, display_order], map: "shopping_mall_product_images_shopping_mall_product_id__1e493e13")
+}
+
+/// Product variants representing different configurations (SKU) of a
+/// product. Each variant has a unique SKU code, optional price override, and
+/// stock quantity. Variant option values (e.g., color, size) are stored in
+/// the child table shopping_mall_product_variant_options to maintain 1NF
+/// compliance. Variants are managed by sellers through their products and
+/// are referenced by cart items, order items, and inventory records. Soft
+/// delete support allows variants to be hidden while preserving historical
+/// order data.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Unique stock keeping unit code identifying this specific variant
+  /// configuration.
+  sku_code String
+  
+  /// Optional price override for this variant. If null, the product's base
+  /// price is used.
+  price Float?
+  
+  /// Current available stock quantity for this variant.
+  stock_quantity Int
+  
+  /// Whether this variant has been soft deleted and should be hidden from
+  /// catalog.
+  deleted Boolean
+  
+  /// Timestamp when this variant was first created.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this variant was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_product_variant_snapshots[]
+  options shopping_mall_product_variant_options[]
+  inventoryRecords shopping_mall_inventory_records[]
+  cartItems shopping_mall_cart_items[]
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([sku_code])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, deleted], map: "shopping_mall_product_variants_shopping_mall_product_i_a34d841a")
+}
+
+/// Immutable point-in-time captures of product state referenced by order
+/// items for historical accuracy. Each snapshot preserves the product's
+/// name, description, category, and base price at the moment of creation,
+/// ensuring order history remains accurate even if the original product is
+/// modified or deleted. Snapshots are created when products are edited and
+/// are never modified or deleted. Contains multiple {@link
+/// shopping_mall_product_snapshot_images} and referenced by {@link
+/// shopping_mall_order_items}.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product's {@link shopping_mall_products.id} that this snapshot
+  /// captures.
+  shopping_mall_product_id String
+  
+  /// Category's {@link shopping_mall_categories.id} at the time of snapshot
+  /// creation.
+  shopping_mall_category_id String
+  
+  /// Seller's {@link shopping_mall_sellers.id} who created this snapshot.
+  shopping_mall_seller_id String
+  
+  /// Product name captured at snapshot time.
+  name String
+  
+  /// Product description captured at snapshot time.
+  description String
+  
+  /// Product base price captured at snapshot time.
+  base_price Float
+  
+  /// Timestamp when the snapshot was created, capturing the product state at
+  /// this moment.
+  snapshot_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  category shopping_mall_categories @relation(fields: [shopping_mall_category_id], references: [id], onDelete: Cascade)
+  snapshotBy shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images shopping_mall_product_snapshot_images[]
+  variantSnapshots shopping_mall_product_variant_snapshots[]
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, snapshot_at], map: "shopping_mall_product_snapshots_shopping_mall_product__16a3b747")
+  @@index([shopping_mall_category_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, snapshot_at], map: "shopping_mall_product_snapshots_shopping_mall_seller_i_4d899b5d")
+}
+
+/// Images captured within product snapshots, preserving the historical
+/// visual state of products at the time of snapshot creation. These images
+/// are referenced by order items to maintain accurate product representation
+/// in historical purchase records. Each snapshot can have multiple images
+/// with display order for proper presentation sequence.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshot_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product snapshot's {@link shopping_mall_product_snapshots.id}.
+  shopping_mall_product_snapshot_id String
+  
+  /// URL location of the product image in the snapshot.
+  image_url String
+  
+  /// Display sequence order of the image within the snapshot, starting from 0.
+  display_order Int
+  
+  /// Timestamp when the snapshot image was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot shopping_mall_product_snapshots @relation(fields: [shopping_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_snapshot_id, display_order], map: "shopping_mall_product_snapshot_images_shopping_mall_pr_128f0d5c")
+}
+
+/// Immutable point-in-time captures of product variant state including SKU
+/// code, option values, price, and stock quantity. Each snapshot preserves
+/// the exact variant configuration at the time of product snapshot creation,
+/// ensuring historical accuracy for order items. Referenced by {@link
+/// shopping_mall_order_items} to maintain complete purchase history even
+/// when original variants are modified or deleted. Snapshots are append-only
+/// and never updated or deleted after creation.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Source product variant's {@link shopping_mall_product_variants.id} that
+  /// was snapshotted.
+  product_variant_id String
+  
+  /// Parent product snapshot's {@link shopping_mall_product_snapshots.id} that
+  /// contains this variant snapshot.
+  product_snapshot_id String
+  
+  /// SKU (Stock Keeping Unit) code of the variant at the time of snapshot
+  /// capture.
+  sku_code String
+  
+  /// JSON string representing the variant's option configuration (e.g., color,
+  /// size) at snapshot time.
+  option_values String
+  
+  /// Price override for this variant at snapshot time. Null indicates using
+  /// the product's base price.
+  price Float?
+  
+  /// Available stock quantity of the variant at the time of snapshot.
+  stock_quantity Int
+  
+  /// Timestamp when this variant snapshot was created, capturing the
+  /// point-in-time state.
+  snapshot_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  productSnapshot shopping_mall_product_snapshots @relation(fields: [product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([product_variant_id, snapshot_at], map: "shopping_mall_product_variant_snapshots_product_varian_7621b345")
+  @@index([product_snapshot_id])
+}
+
+/// Normalized child table storing product variant option key-value pairs to
+/// maintain First Normal Form (1NF) compliance. Each row represents a single
+/// option attribute (e.g., color=Red, size=Large) for a product variant.
+/// This design enables efficient querying and indexing of individual option
+/// values without parsing JSON.
+///
+/// Belongs to {@link shopping_mall_product_variants} and is managed through
+/// the parent variant's lifecycle. Multiple options can exist for a single
+/// variant, but each option key must be unique per variant to prevent
+/// conflicting definitions.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Option attribute name such as color, size, material, or other variant
+  /// distinguishing characteristics.
+  key String
+  
+  /// Option attribute value such as Red, Large, Cotton, or the specific value
+  /// for the option key.
+  value String
+  
+  /// Timestamp when this option record was created.
+  created_at DateTime
+  
+  /// Timestamp when this option record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_variant_id, key], map: "shopping_mall_product_variant_options_shopping_mall_pr_23282872")
+}

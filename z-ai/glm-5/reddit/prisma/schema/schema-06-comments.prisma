@@ -1,0 +1,152 @@
+/// Threaded discussion comments on posts with unlimited reply depth via
+/// self-referential parent_comment_id.
+///
+/// Each comment contains text content written by a member, belongs to a
+/// specific post, and can optionally be a reply to another comment creating
+/// a nested discussion thread. Comments support voting (score stored for
+/// performance), soft deletion, and full-text search.
+///
+/// Key relationships:
+/// - Author: {@link community_platform_members} (member who wrote the comment)
+/// - Post: {@link community_platform_posts} (post being discussed)
+/// - Parent Comment: Self-referential for threaded replies (null for
+/// top-level comments)
+/// - Child Comments: Replies to this comment via inverse relation
+/// - Votes: {@link community_platform_comment_votes} (tracked in separate
+/// table)
+///
+/// Voting is managed through community_platform_comment_votes table with one
+/// vote per user per comment. Vote score is denormalized here for sorting
+/// performance (Top, Best, New, Controversial).
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the comment. References {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Post this comment belongs to. References {@link
+  /// community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Parent comment for threaded replies. Null for top-level comments.
+  /// Self-referential {@link community_platform_comments.id}.
+  parent_comment_id String?
+  
+  /// The text body of the comment. Can be edited by the author.
+  content String
+  
+  /// Current vote score (upvotes minus downvotes). Denormalized for sorting
+  /// performance. Updated when votes are added, changed, or removed.
+  vote_score Int
+  
+  /// Timestamp when the comment was created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last edited.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  parentComment community_platform_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies community_platform_comments[] @relation("recursive")
+  commentVotes community_platform_comment_votes[]
+  reportComments community_platform_report_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_comments_community_platform_post_id_520bb25f")
+  @@index([parent_comment_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comments_community_platform_member__5ac10bc6")
+  @@index([vote_score])
+}
+
+/// User votes on comments tracking upvote or downvote type with one vote per
+/// user per comment constraint.
+///
+/// Each member can cast exactly one vote per comment - either an upvote
+/// (adds 1 to comment score) or a downvote (subtracts 1 from comment score).
+/// Members can change their vote type at any time, which updates the
+/// updated_at timestamp. When a vote is removed, the row is deleted and the
+/// karma effect is reversed.
+///
+/// The unique constraint on [comment_id, member_id] enforces the
+/// one-vote-per-user-per-comment business rule. Vote data enables comment
+/// score calculation and supports Best/New/Controversial sorting algorithms.
+///
+/// Relationships:
+/// - Belongs to {@link community_platform_comments} (the comment being voted
+/// on)
+/// - Belongs to {@link community_platform_members} (the voter)
+///
+/// @namespace Comments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment being voted on. {@link community_platform_comments.id}
+  community_platform_comment_id String
+  
+  /// The member who cast this vote. {@link community_platform_members.id}
+  community_platform_member_id String
+  
+  /// Vote type indicating the member's evaluation of the comment. Value
+  /// 'upvote' adds 1 to the comment's vote score and increases the comment
+  /// author's karma by 1. Value 'downvote' subtracts 1 from the comment's vote
+  /// score and decreases the comment author's karma by 1. Only these two
+  /// values are allowed.
+  vote_type String
+  
+  /// Timestamp when the vote was initially cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote type was last changed. Equals created_at if the
+  /// vote has never been modified.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was removed. Null if vote is active. When a vote
+  /// is removed, the karma effect on the comment author is reversed (upvote
+  /// removal: -1 karma, downvote removal: +1 karma). Note: Votes are typically
+  /// hard-deleted rather than soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_comment_id, community_platform_member_id], map: "community_platform_comment_votes_community_platform_co_c5f3e82e")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_comment_votes_community_platform_me_2c59b90a")
+}

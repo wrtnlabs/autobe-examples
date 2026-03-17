@@ -1,0 +1,58 @@
+/// Product classification categories with one-level nesting hierarchy for
+/// organizing products in the catalog. Categories are created and managed by
+/// administrators, supporting parent-child relationships where each category
+/// can have at most one parent level. Products reference categories for
+/// classification and filtering.
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category's {@link shopping_mall_categories.id} for hierarchical
+  /// nesting. Null for root-level categories.
+  parent_category_id String?
+  
+  /// Administrator's {@link shopping_mall_admins.id} who created this category.
+  created_by_admin_id String
+  
+  /// Category name for display and identification.
+  name String
+  
+  /// Category description explaining the product classification scope.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_category_id], references: [id], onDelete: Cascade)
+  createdByAdmin shopping_mall_admins @relation(fields: [created_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children shopping_mall_categories[] @relation("recursive")
+  products shopping_mall_products[]
+  productSnapshots shopping_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_category_id])
+  @@index([created_by_admin_id])
+}

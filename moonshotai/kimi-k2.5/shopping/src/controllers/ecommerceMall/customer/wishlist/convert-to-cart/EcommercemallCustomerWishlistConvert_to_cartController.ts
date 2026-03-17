@@ -1,0 +1,81 @@
+import { TypedBody, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia from "typia";
+
+import { IEcommerceMallCartItem } from "../../../../../api/structures/IEcommerceMallCartItem";
+import { IEcommerceMallWishlistItem } from "../../../../../api/structures/IEcommerceMallWishlistItem";
+import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
+import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
+import { postEcommerceMallCustomerWishlistConvertToCart } from "../../../../../providers/postEcommerceMallCustomerWishlistConvertToCart";
+
+@Controller("/ecommerceMall/customer/wishlist/convert-to-cart")
+export class EcommercemallCustomerWishlistConvert_to_cartController {
+  /**
+   * Convert a wishlist item to a shopping cart item.
+   *
+   * This API allows customers to move a product from their wishlist to their shopping cart by selecting a specific product variant and quantity. The wishlist operates at the product level (customers save products without specifying size, color, etc.), while the cart requires a specific variant (e.g., "Red / Large").
+   *
+   * The conversion process validates that:
+   * 1. The wishlist item exists and belongs to the authenticated customer
+   * 2. The requested variant belongs to the wishlisted product
+   * 3. The variant has sufficient stock for the requested quantity
+   * 4. If the same variant already exists in the customer's cart, quantities are combined per the unique constraint on cart items
+   *
+   * Upon successful conversion, the product is added to the cart. The wishlist entry remains intact and must be explicitly removed via a separate operation if desired. This allows customers to keep items in their wishlist while also having them in their cart, supporting the 'save for later' use case where customers may wishlist multiple variants or keep products for future consideration.
+   *
+   * Stock quantity is checked at conversion time but cart availability is re-validated at checkout. The cart and wishlist are independent collections - changes to one do not automatically affect the other.
+   *
+   * Related operations:
+   * - `POST /cart` - Directly add a variant to cart without going through wishlist
+   * - `DELETE /wishlist/{wishlistItemId}` - Remove item from wishlist after conversion if desired
+   * - `PATCH /wishlist` - List all wishlist items to find conversion candidates
+   *
+   * @param connection
+   * @param body Conversion parameters for converting wishlist item to cart entry
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification This operation implements the wishlist-to-cart conversion workflow. The service layer must:
+   *
+   * 1. Validate Authentication: Ensure the customer is authenticated via JWT token.
+   *
+   * 2. Locate Wishlist Item: Query ecommerce_mall_wishlist_items by the provided wishlistItemId. Verify the item exists and belongs to the authenticated customer (customer_id match). If not found or not owned, return 404 Not Found.
+   *
+   * 3. Validate Product Existence: Join with ecommerce_mall_products to ensure the product exists and is not soft-deleted (deleted_at is null).
+   *
+   * 4. Validate Variant: Query ecommerce_mall_product_variants to find the requested variantId. Verify the variant exists, is not soft-deleted, and belongs to the wishlisted product (product_id match with wishlist item's product_id). If variant doesn't exist or belongs to different product, return 400 Bad Request.
+   *
+   * 5. Check Stock Availability: Query inventory records for the variant. Calculate current stock by summing all inventory record quantities. If quantity parameter exceeds available stock, return 422 Unprocessable Entity with appropriate error message.
+   *
+   * 6. Check Cart Existence: Query ecommerce_mall_cart_items for existing entry with same customer_id and product_variant_id combination. The schema has @@unique([customer_id, product_variant_id]) constraint.
+   *
+   * 7. Handle Cart Update vs Create:
+   *    - If cart item exists: Update the quantity by adding the new quantity to existing quantity. Update updated_at timestamp. No soft delete check needed as cart item is being modified.
+   *    - If cart item doesn't exist: Create new cart item with generated UUID, customer_id, product_variant_id, and quantity. Set created_at and updated_at timestamps.
+   *
+   * 8. Return Result: Return the created or updated cart item with full details including joined product and variant information.
+   *
+   * Edge Cases:
+   * - If quantity combined with existing cart item would exceed stock, reject the operation
+   * - If wishlist item was already removed (concurrent request), return 404
+   * - If variant was deleted between wishlist creation and conversion, return 400
+   * - Stock can become 0 during the operation - validate at checkout time as well
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async convertToCart(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IEcommerceMallWishlistItem.IConvertToCart,
+  ): Promise<IEcommerceMallCartItem> {
+    try {
+      return await postEcommerceMallCustomerWishlistConvertToCart({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

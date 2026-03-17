@@ -1,0 +1,163 @@
+/// Private profile record for a member account within the todo application's
+/// personal workspace.
+///
+/// This table stores profile-specific identity data that is separate from
+/// authentication credentials in {@link todo_app_members}. Each profile
+/// belongs to exactly one member through a one-to-one relationship and is
+/// visible only within that member's private account scope.
+///
+/// The model is intentionally minimal and normalized, keeping only profile
+/// attributes such as the display name while account login data remains in
+/// the actor table.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning member's {@link todo_app_members.id}.
+  todo_app_member_id String
+  
+  /// Private display name shown for the member inside the personal workspace.
+  display_name String
+  
+  /// Timestamp when the profile record was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the profile record when it becomes inactive
+  /// or is removed through account lifecycle handling.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_member_id])
+}
+
+/// Private todo items owned by a registered member within the personal todo
+/// workspace.
+///
+/// This table stores the core task data that members directly create,
+/// browse, update, complete, move to trash, restore, and permanently remove.
+/// Each todo belongs to exactly one {@link todo_app_members} record and
+/// remains private to that owner.
+///
+/// The model keeps only atomic task attributes and lifecycle state needed
+/// for active-list and trash behavior. Historical edit details are
+/// intentionally excluded from this table and belong in the separate child
+/// history model linked through this todo.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link todo_app_members.id}.
+  todo_app_member_id String
+  
+  /// Required task title shown in the member's private todo lists.
+  title String
+  
+  /// Optional longer task description entered by the member for additional
+  /// details.
+  description String?
+  
+  /// Optional planned start date and time for the todo.
+  start_date DateTime?
+  
+  /// Optional due date and time for the todo.
+  due_date DateTime?
+  
+  /// Whether the todo is currently marked as completed.
+  completed Boolean
+  
+  /// Timestamp when the todo was most recently marked completed.
+  completed_at DateTime?
+  
+  /// When the todo was originally created.
+  created_at DateTime
+  
+  /// When the todo was last updated.
+  updated_at DateTime
+  
+  /// When the todo was moved to trash. Null means the todo is still in the
+  /// active list.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_todo_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, deleted_at, updated_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_member_id, completed, deleted_at, updated_at], map: "todo_app_todos_todo_app_member_id_completed_deleted_at_d0307fd8")
+  @@index([todo_app_member_id, due_date, deleted_at])
+  @@index([todo_app_member_id, created_at])
+}
+
+/// Chronological edit history records for a member-owned todo.
+///
+/// Each row captures one recorded edit event for a specific {@link
+/// todo_app_todos.id} so the application can list a todo's edit timeline in
+/// chronological order. This table is a historical child entity of the todo
+/// and keeps only child-specific audit data rather than duplicating parent
+/// todo fields.
+///
+/// History rows remain associated with the parent todo while it exists, and
+/// their lifecycle is expected to follow the parent todo and owning account
+/// through cascade policies managed by parent entities.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent todo's {@link todo_app_todos.id}.
+  todo_app_todo_id String
+  
+  /// Timestamp when this history entry was created as the recorded edit event.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}

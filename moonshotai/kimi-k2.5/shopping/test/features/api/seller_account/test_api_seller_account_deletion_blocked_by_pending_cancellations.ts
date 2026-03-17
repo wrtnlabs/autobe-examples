@@ -1,0 +1,126 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import type { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+import type { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
+import type { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
+import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+import type { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import type { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import type { IEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistration";
+import type { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+import type { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+import type { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
+import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
+import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
+import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
+import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_ecommerce_mall_customer_cancellation_requests_create } from "../../../generate/generate_random_ecommerce_mall_customer_cancellation_requests_create";
+import { generate_random_ecommerce_mall_customer_cart_create } from "../../../generate/generate_random_ecommerce_mall_customer_cart_create";
+import { generate_random_ecommerce_mall_customer_checkout_create } from "../../../generate/generate_random_ecommerce_mall_customer_checkout_create";
+import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
+import { generate_random_ecommerce_mall_seller_registrations_create } from "../../../generate/generate_random_ecommerce_mall_seller_registrations_create";
+import { prepare_random_ecommerce_mall_cancellation_request } from "../../../prepare/prepare_random_ecommerce_mall_cancellation_request";
+import { prepare_random_ecommerce_mall_cart_item } from "../../../prepare/prepare_random_ecommerce_mall_cart_item";
+import { prepare_random_ecommerce_mall_order } from "../../../prepare/prepare_random_ecommerce_mall_order";
+import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
+import { prepare_random_ecommerce_mall_product_image } from "../../../prepare/prepare_random_ecommerce_mall_product_image";
+import { prepare_random_ecommerce_mall_seller_registration } from "../../../prepare/prepare_random_ecommerce_mall_seller_registration";
+
+export async function test_api_seller_account_deletion_blocked_by_pending_cancellations(
+  connection: api.IConnection,
+): Promise<void> {
+  // Create two seller connections
+  const sellerWithPendingCancellations: api.IConnection = {
+    host: connection.host,
+  };
+  await authorize_seller_join(sellerWithPendingCancellations, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+    },
+  });
+  const cleanSeller: api.IConnection = { host: connection.host };
+  await authorize_seller_join(cleanSeller, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+    },
+  });
+  // Create a pending cancellation scenario for the first seller
+  // This involves creating an order and then requesting cancellation
+  const customerConnection: api.IConnection = { host: connection.host };
+  await authorize_customer_join(customerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+    },
+  });
+  // Create a product for the seller
+  const product = await generate_random_ecommerce_mall_seller_products_create(
+    sellerWithPendingCancellations,
+    {},
+  );
+  typia.assert(product);
+  // Create an order as customer
+  const order = await generate_random_ecommerce_mall_customer_checkout_create(
+    customerConnection,
+    {
+      body: {
+        recipientName: RandomGenerator.name(),
+        recipientPhone: RandomGenerator.mobile(),
+        streetAddress: RandomGenerator.paragraph({ sentences: 1 }),
+        city: RandomGenerator.alphabets(5),
+        state: null,
+        postalCode: RandomGenerator.alphaNumeric(5),
+        country: RandomGenerator.alphabets(2).toUpperCase(),
+      } satisfies IEcommerceMallOrder.ICreate,
+    },
+  );
+  typia.assert(order);
+  // Request cancellation - creates pending cancellation state
+  const orderItem = order.orderItems[0] as IEcommerceMallOrderItem.ISummary;
+  typia.assert(orderItem);
+  const cancellation =
+    await generate_random_ecommerce_mall_customer_cancellation_requests_create(
+      customerConnection,
+      {
+        body: {
+          orderItemId: orderItem.id,
+          reason: RandomGenerator.paragraph({ sentences: 1 }),
+        } satisfies IEcommerceMallCancellationRequest.ICreate,
+      },
+    );
+  typia.assert(cancellation);
+  // Try to delete seller account with pending cancellations - should fail
+  await TestValidator.error(
+    "seller deletion blocked by pending cancellations",
+    async () => {
+      await api.functional.ecommerceMall.seller.account.erase(
+        sellerWithPendingCancellations,
+      );
+    },
+  );
+  // Clean seller should be able to delete account successfully
+  // (Assuming they have no pending cancellations)
+  await api.functional.ecommerceMall.seller.account.erase(cleanSeller);
+}

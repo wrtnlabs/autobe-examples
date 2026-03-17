@@ -1,0 +1,33 @@
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+export function prepare_random_ecommerce_mall_product(
+  input?: DeepPartial<IEcommerceMallProduct.ICreate>,
+): IEcommerceMallProduct.ICreate {
+  return {
+    name:
+      input?.name ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 4 }),
+    description:
+      input?.description ?? RandomGenerator.content({ paragraphs: 2 }) ?? null,
+    category_id:
+      input?.category_id ?? typia.random<string & tags.Format<"uuid">>(),
+    base_price:
+      input?.base_price ??
+      typia.random<
+        number & tags.Type<"uint32"> & tags.Minimum<1000> & tags.Maximum<999999>
+      >(),
+    slug:
+      input?.slug ??
+      (input?.name
+        ? input.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "")
+        : typia.random<string & tags.Pattern<"^[a-z][a-z0-9-]*$">>()),
+  };
+}

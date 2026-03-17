@@ -1,0 +1,71 @@
+/// Product categories with optional parent-child hierarchy for organizing
+/// products.
+///
+/// Categories provide the primary organizational structure for the product
+/// catalog. Each category can have an optional parent category, enabling one
+/// level of nesting (subcategory). Categories are created and managed
+/// exclusively by administrators and are browsable by all customers.
+///
+/// When a category is deleted, products belonging to that category become
+/// uncategorized. Categories are non-transactional metadata and do not
+/// require snapshot tracking.
+///
+/// Key relationships:
+/// - Self-referential parent-child relationship for subcategories
+/// - Referenced by {@link shopping_mall_products} for product categorization
+///
+/// @namespace Categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent category reference for subcategory relationship. When set, this
+  /// category is a subcategory of the referenced parent. Only one level of
+  /// nesting is allowed (parent must be a top-level category). Null for
+  /// top-level categories.
+  parent_id String?
+  
+  /// Unique category name displayed to customers and used for product
+  /// categorization. Required field that must be unique across all categories.
+  name String
+  
+  /// Optional detailed description of the category, its purpose, and the types
+  /// of products it contains. May be null for categories without detailed
+  /// descriptions.
+  description String?
+  
+  /// Timestamp when the category was created by an administrator.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null for active categories.
+  /// Soft delete preserves referential integrity while hiding from customer
+  /// view.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children shopping_mall_categories[] @relation("recursive")
+  products shopping_mall_products[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([parent_id])
+  @@index([created_at])
+}
