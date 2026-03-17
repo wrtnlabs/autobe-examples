@@ -1,1 +1,0 @@
-Make the e2e test functions.

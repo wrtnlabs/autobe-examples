@@ -1,9 +1,0 @@
-export * as admins from "./admins/index";
-export * as audit_logs from "./audit_logs/index";
-export * as system_configurations from "./system_configurations/index";
-export * as performance_metrics from "./performance_metrics/index";
-export * as uptime_monitorings from "./uptime_monitorings/index";
-export * as error_logs from "./error_logs/index";
-export * as system_maintenance_logs from "./system_maintenance_logs/index";
-export * as data_retention_policies from "./data_retention_policies/index";
-export * as backup_logs from "./backup_logs/index";
