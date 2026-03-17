@@ -1,9 +1,0 @@
-export * as admins from "./admins/index";
-export * as audit_logs from "./audit_logs/index";
-export * as reports from "./reports/index";
-export * as communities from "./communities/index";
-export * as dashboard from "./dashboard/index";
-export * as analytics from "./analytics/index";
-export * as monitoring from "./monitoring/index";
-export * as health from "./health/index";
-export * as audit from "./audit/index";
